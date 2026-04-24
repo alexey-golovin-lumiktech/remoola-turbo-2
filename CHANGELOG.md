@@ -9,415 +9,945 @@
 
 # Changelog (September 2025)
 
-- **2025-09-01:** Initial analysis of the 3 separate repositories.
+<details>
+<summary>2025-09-01</summary>
 
-- **2025-09-02:** Created new Turborepo structure with `apps/` and `packages/`.
-  Added base `turbo.json`.
+- **2025-09-01:**
 
-- **2025-09-03:** Migrated first repository (`backend-nestjs`) into `apps/backend`.
-  Verified build.
-
-- **2025-09-04:** Migrated second repository (`frontend-nextjs`) into `apps/frontend`.
-  Fixed ESLint/TS issues.
-
-- **2025-09-05:** Migrated shared library repo into `packages/ui` and `packages/utils`.
-  Linked via workspaces.
-
-- **2025-09-08:** Integrated NestJS modules from old repos into monorepo.
-
-- **2025-09-09:** Fixed TypeORM migrations (UUID migration, FK adjustments).
-
-- **2025-09-10:** Standardized DTOs, validation decorators.
-
-- **2025-09-11:** Integrated shared utils/UI libs into Next.js frontend.
-
-- **2025-09-12:** Fixed aliasing issues (`@/utils`, `@/ui`), standardized API client
-  with OpenAPI.
-
-- **2025-09-15:** Start implementing **role-based management** system,
-  allowing **super admin to assign and manage admin roles**.
-  Defined DB schema changes and initial service structure.
-
-- **2025-09-16:** Continued development of role-based management.
-
-- **2025-09-17:** Continued development of role-based management.
-
-- **2025-09-18:** Removed legacy configs from old repos, cleaned unused files.
-
-- **2025-09-19:** Added Husky + lint-staged for pre-commit checks.
-
-- **2025-09-22:** Fixed path alias issues and Webpack/Turbo config.
-
-- **2025-09-23:** Standardized API client usage with OpenAPI-generated types.
-
-- **2025-09-24:** Fixed mismatched dependencies (React versions, NestJS peer deps).
-
-- **2025-09-25:** Continued development of role-based management.
-
-- **2025-09-26:** Continued development of role-based management.
-
-- **2025-09-29:** Continued development of role-based management.
-
-- **2025-09-30:** Continued development of role-based management.
+  ### 🚀 Feature
+  - Initial analysis of the 3 separate repositories.
 
 </details>
 
----
+<details>
+<summary>2025-09-02</summary>
+
+- **2025-09-02:**
+
+  ### 🛠 DevEx
+  - Created new Turborepo structure with `apps/` and `packages/`. Added base `turbo.json`.
+
+</details>
+
+<details>
+<summary>2025-09-03</summary>
+
+- **2025-09-03:**
+
+  ### 🛠 DevEx
+  - Migrated first repository (`backend-nestjs`) into `apps/backend`. Verified build.
+
+</details>
+
+<details>
+<summary>2025-09-04</summary>
+
+- **2025-09-04:**
+
+  ### 🛠 DevEx
+  - Migrated second repository (`frontend-nextjs`) into `apps/frontend`. Fixed ESLint/TS issues.
+
+</details>
+
+<details>
+<summary>2025-09-05</summary>
+
+- **2025-09-05:**
+
+  ### 🛠 DevEx
+  - Migrated shared library repo into `packages/ui` and `packages/utils`. Linked via workspaces.
+
+</details>
+
+<details>
+<summary>2025-09-08</summary>
+
+- **2025-09-08:**
+
+  ### 🚀 Feature
+  - Integrated NestJS modules from old repos into monorepo.
+
+</details>
+
+<details>
+<summary>2025-09-09</summary>
+
+- **2025-09-09:**
+
+  ### 🗄 Database & Migrations
+  - Fixed TypeORM migrations (UUID migration, FK adjustments).
+
+</details>
+
+<details>
+<summary>2025-09-10</summary>
+
+- **2025-09-10:**
+
+  ### 🚀 Feature
+  - Standardized DTOs, validation decorators.
+
+</details>
+
+<details>
+<summary>2025-09-11</summary>
+
+- **2025-09-11:**
+
+  ### 🚀 Feature
+  - Integrated shared utils/UI libs into Next.js frontend.
+
+</details>
+
+<details>
+<summary>2025-09-12</summary>
+
+- **2025-09-12:**
+
+  ### 🚀 Feature
+  - Fixed aliasing issues (`@/utils`, `@/ui`), standardized API client with OpenAPI.
+
+</details>
+
+<details>
+<summary>2025-09-15</summary>
+
+- **2025-09-15:**
+
+  ### 🗄 Database & Migrations
+  - Start implementing **role-based management** system, allowing **super admin to assign and manage admin roles**. Defined DB schema changes and initial service structure.
+
+</details>
+
+<details>
+<summary>2025-09-16</summary>
+
+- **2025-09-16:**
+
+  ### 🚀 Feature
+  - Continued development of role-based management.
+
+</details>
+
+<details>
+<summary>2025-09-17</summary>
+
+- **2025-09-17:**
+
+  ### 🚀 Feature
+  - Continued development of role-based management.
+
+</details>
+
+<details>
+<summary>2025-09-18</summary>
+
+- **2025-09-18:**
+
+  ### 🛠 DevEx
+  - Removed legacy configs from old repos, cleaned unused files.
+
+</details>
+
+<details>
+<summary>2025-09-19</summary>
+
+- **2025-09-19:**
+
+  ### 🛠 DevEx
+  - Added Husky + lint-staged for pre-commit checks.
+
+</details>
+
+<details>
+<summary>2025-09-22</summary>
+
+- **2025-09-22:**
+
+  ### 🛠 DevEx
+  - Fixed path alias issues and Webpack/Turbo config.
+
+</details>
+
+<details>
+<summary>2025-09-23</summary>
+
+- **2025-09-23:**
+
+  ### 🚀 Feature
+  - Standardized API client usage with OpenAPI-generated types.
+
+</details>
+
+<details>
+<summary>2025-09-24</summary>
+
+- **2025-09-24:**
+
+  ### 🚀 Feature
+  - Fixed mismatched dependencies (React versions, NestJS peer deps).
+
+</details>
+
+<details>
+<summary>2025-09-25</summary>
+
+- **2025-09-25:**
+
+  ### 🚀 Feature
+  - Continued development of role-based management.
+
+</details>
+
+<details>
+<summary>2025-09-26</summary>
+
+- **2025-09-26:**
+
+  ### 🚀 Feature
+  - Continued development of role-based management.
+
+</details>
+
+<details>
+<summary>2025-09-29</summary>
+
+- **2025-09-29:**
+
+  ### 🚀 Feature
+  - Continued development of role-based management.
+
+</details>
+
+<details>
+<summary>2025-09-30</summary>
+
+- **2025-09-30:**
+
+  ### 🚀 Feature
+  - Continued development of role-based management.
+
+</details>
+
+</details>
 
 <details>
 <summary><strong>Changelog (October 2025)</strong></summary>
 
 # Changelog (October 2025)
 
-- **2025-10-02:** Increased monorepo stability; fixed module import issues
-  and improved concurrent dev experience.
+<details>
+<summary>2025-10-02</summary>
 
-- **2025-10-03:** Implemented role-based access control:
-  superadmins manage admins/clients, admins manage clients only.
+- **2025-10-02:**
 
-- **2025-10-06:** Added unified global search service across entities
-  with optimized SQL and simplified payloads.
-
-- **2025-10-07:** Introduced `v1` versioned routing for admin and consumer APIs,
-  reorganized module structure.
-
-- **2025-10-08:** Implemented `/v1/admin/clients/:clientId` backend endpoints
-  for detailed client lookup.
-
-- **2025-10-09:** Upgraded OpenAPI spec to `v1` with enhanced schemas
-  and versioned endpoints.
-
-- **2025-10-10:** Standardized all admin routes under `/admin/admins`.
-
-- **2025-10-13:** Unified API documentation and Swagger with version switching;
-  improved visibility across all modules.
-
-- **2025-10-14:** Split monolithic `AdminService` into modular domain-specific
-  services for admins, clients, payments, etc.
-
-- **2025-10-15:** Improved developer tooling by creating shared ESLint config and
-  fixing Turborepo workspace issues.
-
-- **2025-10-16:** Refactored API client to use relative path prefixes for better
-  environment portability.
-
-- **2025-10-17:** Implemented versioned IndexedDB wrapper for offline caching with
-  schema migrations and auto-cleanup.
-
-- **2025-10-20:** Rebuilt API client with caching, SWR, retries, and concurrency limiting;
-  added dependency-based invalidation.
-
-- **2025-10-21:** Simplified global search return value by removing unnecessary
-  wrapper objects.
-
-- **2025-10-22:** Added admin-facing pages for managing clients with search and
-  filtering integrated into new API.
-
-- **2025-10-23:** Introduced shared `@remoola/env` package for centralized environment
-  configuration using Zod validation.
-
-- **2025-10-24:** Replaced local `.env` loaders across apps with
-  unified `@remoola/env` import; removed redundant logic.
-
-- **2025-10-28:** Performed multiple Vercel deployment iterations (v3–v12);
-  reverted and retested deploy 6; improved Turbo + Vercel integration;
-  merged `api-versioning` branch; stabilized deployment and
-  routing configuration.
-
-- **2025-10-29:** Restructured repository and cleaned up API and Turbo configuration;
-  resolved Vercel cookie/domain issues; fixed routing and parameter handling;
-  improved OpenAPI generation and migration setup; enhanced
-  debugging and ESLint configuration; finalized admin and frontend
-  integration.
-
-- **2025-10-30:** Updated migrations and schema configuration for Wirebill;
-  added schedule modules; removed deprecated OpenAPI and web code;
-  cleaned redundant extras; improved consumer package references;
-  fixed ORM configuration and deployment stability.
-
-- **2025-10-31:** Finalized minor adjustments and cleanup related to recent
-  integration work. Continue moving API.
+  ### 🚀 Feature
+  - Increased monorepo stability; fixed module import issues and improved concurrent dev experience.
 
 </details>
 
----
+<details>
+<summary>2025-10-03</summary>
+
+- **2025-10-03:**
+
+  ### 🚀 Feature
+  - Implemented role-based access control: superadmins manage admins/clients, admins manage clients only.
+
+</details>
+
+<details>
+<summary>2025-10-06</summary>
+
+- **2025-10-06:**
+
+  ### 🚀 Feature
+  - Added unified global search service across entities with optimized SQL and simplified payloads.
+
+</details>
+
+<details>
+<summary>2025-10-07</summary>
+
+- **2025-10-07:**
+
+  ### 🚀 Feature
+  - Introduced `v1` versioned routing for admin and consumer APIs, reorganized module structure.
+
+</details>
+
+<details>
+<summary>2025-10-08</summary>
+
+- **2025-10-08:**
+
+  ### 🚀 Feature
+  - Implemented `/v1/admin/clients/:clientId` backend endpoints for detailed client lookup.
+
+</details>
+
+<details>
+<summary>2025-10-09</summary>
+
+- **2025-10-09:**
+
+  ### 🗄 Database & Migrations
+  - Upgraded OpenAPI spec to `v1` with enhanced schemas and versioned endpoints.
+
+</details>
+
+<details>
+<summary>2025-10-10</summary>
+
+- **2025-10-10:**
+
+  ### 🚀 Feature
+  - Standardized all admin routes under `/admin/admins`.
+
+</details>
+
+<details>
+<summary>2025-10-13</summary>
+
+- **2025-10-13:**
+
+  ### 🚀 Feature
+  - Unified API documentation and Swagger with version switching; improved visibility across all modules.
+
+</details>
+
+<details>
+<summary>2025-10-14</summary>
+
+- **2025-10-14:**
+
+  ### 🚀 Feature
+  - Split monolithic `AdminService` into modular domain-specific services for admins, clients, payments, etc.
+
+</details>
+
+<details>
+<summary>2025-10-15</summary>
+
+- **2025-10-15:**
+
+  ### 🛠 DevEx
+  - Improved developer tooling by creating shared ESLint config and fixing Turborepo workspace issues.
+
+</details>
+
+<details>
+<summary>2025-10-16</summary>
+
+- **2025-10-16:**
+
+  ### 🚀 Feature
+  - Refactored API client to use relative path prefixes for better environment portability.
+
+</details>
+
+<details>
+<summary>2025-10-17</summary>
+
+- **2025-10-17:**
+
+  ### 🗄 Database & Migrations
+  - Implemented versioned IndexedDB wrapper for offline caching with schema migrations and auto-cleanup.
+
+</details>
+
+<details>
+<summary>2025-10-20</summary>
+
+- **2025-10-20:**
+
+  ### 🚀 Feature
+  - Rebuilt API client with caching, SWR, retries, and concurrency limiting; added dependency-based invalidation.
+
+</details>
+
+<details>
+<summary>2025-10-21</summary>
+
+- **2025-10-21:**
+
+  ### 🚀 Feature
+  - Simplified global search return value by removing unnecessary wrapper objects.
+
+</details>
+
+<details>
+<summary>2025-10-22</summary>
+
+- **2025-10-22:**
+
+  ### 🚀 Feature
+  - Added admin-facing pages for managing clients with search and filtering integrated into new API.
+
+</details>
+
+<details>
+<summary>2025-10-23</summary>
+
+- **2025-10-23:**
+
+  ### 🛠 DevEx
+  - Introduced shared `@remoola/env` package for centralized environment configuration using Zod validation.
+
+</details>
+
+<details>
+<summary>2025-10-24</summary>
+
+- **2025-10-24:**
+
+  ### 🚀 Feature
+  - Replaced local `.env` loaders across apps with unified `@remoola/env` import; removed redundant logic.
+
+</details>
+
+<details>
+<summary>2025-10-28</summary>
+
+- **2025-10-28:**
+
+  ### 🛠 DevEx
+  - Performed multiple Vercel deployment iterations (v3–v12); reverted and retested deploy 6; improved Turbo + Vercel integration; merged `api-versioning` branch; stabilized deployment and routing configuration.
+
+</details>
+
+<details>
+<summary>2025-10-29</summary>
+
+- **2025-10-29:**
+
+  ### 🗄 Database & Migrations
+  - Restructured repository and cleaned up API and Turbo configuration; resolved Vercel cookie/domain issues; fixed routing and parameter handling; improved OpenAPI generation and migration setup; enhanced debugging and ESLint configuration; finalized admin and frontend integration.
+
+</details>
+
+<details>
+<summary>2025-10-30</summary>
+
+- **2025-10-30:**
+
+  ### 🗄 Database & Migrations
+  - Updated migrations and schema configuration for Wirebill; added schedule modules; removed deprecated OpenAPI and web code; cleaned redundant extras; improved consumer package references; fixed ORM configuration and deployment stability.
+
+</details>
+
+<details>
+<summary>2025-10-31</summary>
+
+- **2025-10-31:**
+
+  ### 🚀 Feature
+  - Finalized minor adjustments and cleanup related to recent integration work. Continue moving API.
+
+</details>
+
+</details>
 
 <details>
 <summary><strong>Changelog (November 2025)</strong></summary>
 
 # Changelog (November 2025)
 
-- **2025-11-03:** Reorganized signup types by splitting the monolithic file into focused
-  modules and consolidating imports through a centralized index.
+<details>
+<summary>2025-11-03</summary>
 
-- **2025-11-04:** Renamed form sections and step identifiers to descriptive names,
-  updated step naming (e.g., SIGNUP → SIGNUP_DETAILS), and removed debug logs.
+- **2025-11-03:**
 
-- **2025-11-05:** Updated Consumer schema with cascade deletes and field restructuring.
-
-- **2025-11-06:** Cleaned up unused files and dependencies across the consumer module
-  and signup flow.
-
-- **2025-11-07:** Replaced custom signup components with reusable shared UI components from
-  the design system.
-
-- **2025-11-10:** Implemented full multi-step signup flow for contractors and businesses,
-  added email templates, introduced Prisma error handling with detailed
-  validation messages, implemented secure cookie-based auth, added
-  comprehensive client-side validation, and created reusable UI components.
-
-- **2025-11-11:** Refined multi-step signup validation and improved frontend–backend consistency.
-
-- **2025-11-12:** Enhanced backend validation and standardized error handling across signup
-  steps.
-
-- **2025-11-13:** Expanded consumer API layer and improved backend support for the multi-step
-  signup workflow.
-
-- **2025-11-14:** Improved signup backend logic, aligned step validation, and refined profile
-  creation integration.
-
-- **2025-11-17:** Performed additional refactoring of signup domain logic and standardized
-  step data structures.
-
-- **2025-11-18:** Prepared controller and routing architecture for signup consolidation.
-
-- **2025-11-19:** Refactored signup architecture by modularizing types, renaming sections and
-  steps, and removing legacy components.
-
-- **2025-11-20:** Aligned codebase with the new type structure and fixed inconsistencies after
-  the refactor.
-
-- **2025-11-21:** Cleaned up deprecated signup flows, DTOs, and services ahead of final
-  controller consolidation.
-
-- **2025-11-24:** Consolidated all signup endpoints into `AuthController`, removed duplicate
-  controllers and services, updated route to `/auth/signup`, unified profile
-  creation flow, updated frontend calls.
-
-- **2025-11-25:** Updated consumer API and site modules, added tagging support, and prepared
-  consumer-facing components for upcoming functionality.
-
-- **2025-11-26:** Added consumer payment methods module with full Stripe integration,
-  implemented consumer contacts UI, performed consumer site updates.
-
-- **2025-11-28:** “Verify Me” functionality, identity verification flow for consumers.
+  ### 🚀 Feature
+  - Reorganized signup types by splitting the monolithic file into focused modules and consolidating imports through a centralized index.
 
 </details>
 
----
+<details>
+<summary>2025-11-04</summary>
+
+- **2025-11-04:**
+
+  ### 🚀 Feature
+  - Renamed form sections and step identifiers to descriptive names, updated step naming (e.g., SIGNUP → SIGNUP_DETAILS), and removed debug logs.
+
+</details>
+
+<details>
+<summary>2025-11-05</summary>
+
+- **2025-11-05:**
+
+  ### 🗄 Database & Migrations
+  - Updated Consumer schema with cascade deletes and field restructuring.
+
+</details>
+
+<details>
+<summary>2025-11-06</summary>
+
+- **2025-11-06:**
+
+  ### 🚀 Feature
+  - Cleaned up unused files and dependencies across the consumer module and signup flow.
+
+</details>
+
+<details>
+<summary>2025-11-07</summary>
+
+- **2025-11-07:**
+
+  ### 🚀 Feature
+  - Replaced custom signup components with reusable shared UI components from the design system.
+
+</details>
+
+<details>
+<summary>2025-11-10</summary>
+
+- **2025-11-10:**
+
+  ### 🔐 Security / Production Safety
+  - Implemented full multi-step signup flow for contractors and businesses, added email templates, introduced Prisma error handling with detailed validation messages, implemented secure cookie-based auth, added comprehensive client-side validation, and created reusable UI components.
+
+</details>
+
+<details>
+<summary>2025-11-11</summary>
+
+- **2025-11-11:**
+
+  ### 🚀 Feature
+  - Refined multi-step signup validation and improved frontend–backend consistency.
+
+</details>
+
+<details>
+<summary>2025-11-12</summary>
+
+- **2025-11-12:**
+
+  ### 🚀 Feature
+  - Enhanced backend validation and standardized error handling across signup steps.
+
+</details>
+
+<details>
+<summary>2025-11-13</summary>
+
+- **2025-11-13:**
+
+  ### 🚀 Feature
+  - Expanded consumer API layer and improved backend support for the multi-step signup workflow.
+
+</details>
+
+<details>
+<summary>2025-11-14</summary>
+
+- **2025-11-14:**
+
+  ### 🚀 Feature
+  - Improved signup backend logic, aligned step validation, and refined profile creation integration.
+
+</details>
+
+<details>
+<summary>2025-11-17</summary>
+
+- **2025-11-17:**
+
+  ### 🚀 Feature
+  - Performed additional refactoring of signup domain logic and standardized step data structures.
+
+</details>
+
+<details>
+<summary>2025-11-18</summary>
+
+- **2025-11-18:**
+
+  ### 🚀 Feature
+  - Prepared controller and routing architecture for signup consolidation.
+
+</details>
+
+<details>
+<summary>2025-11-19</summary>
+
+- **2025-11-19:**
+
+  ### 🚀 Feature
+  - Refactored signup architecture by modularizing types, renaming sections and steps, and removing legacy components.
+
+</details>
+
+<details>
+<summary>2025-11-20</summary>
+
+- **2025-11-20:**
+
+  ### 🚀 Feature
+  - Aligned codebase with the new type structure and fixed inconsistencies after the refactor.
+
+</details>
+
+<details>
+<summary>2025-11-21</summary>
+
+- **2025-11-21:**
+
+  ### 🚀 Feature
+  - Cleaned up deprecated signup flows, DTOs, and services ahead of final controller consolidation.
+
+</details>
+
+<details>
+<summary>2025-11-24</summary>
+
+- **2025-11-24:**
+
+  ### 🔐 Security / Production Safety
+  - Consolidated all signup endpoints into `AuthController`, removed duplicate controllers and services, updated route to `/auth/signup`, unified profile creation flow, updated frontend calls.
+
+</details>
+
+<details>
+<summary>2025-11-25</summary>
+
+- **2025-11-25:**
+
+  ### 🚀 Feature
+  - Updated consumer API and site modules, added tagging support, and prepared consumer-facing components for upcoming functionality.
+
+</details>
+
+<details>
+<summary>2025-11-26</summary>
+
+- **2025-11-26:**
+
+  ### 🚀 Feature
+  - Added consumer payment methods module with full Stripe integration, implemented consumer contacts UI, performed consumer site updates.
+
+</details>
+
+<details>
+<summary>2025-11-28</summary>
+
+- **2025-11-28:**
+
+  ### 🚀 Feature
+  - “Verify Me” functionality, identity verification flow for consumers.
+
+</details>
+
+</details>
 
 <details>
 <summary><strong>Changelog (December 2025)</strong></summary>
 
 # Changelog (December 2025)
 
-- **2025-12-01:** Internal updates and preparations for December feature work.
+<details>
+<summary>2025-12-01</summary>
 
-- **2025-12-02:** Migrated authentication from localStorage tokens to secure cookie-based authentication,
-  standardized fetch configurations, refactored API routes with PATCH/DELETE support,
-  added Stripe session endpoints, moved auth types to shared directory, consolidated dashboard
-  types and logic, added Stripe identity verification with webhook handling, improved component
-  exports, added contact details page, and removed legacy signup controllers in favor of unified
-  `/auth/signup` endpoint.
+- **2025-12-01:**
 
-- **2025-12-03:** Updated login endpoint to accept credentials via request body, standardized header handling,
-  normalized CORS header names, cleaned unused imports, replaced manual cookie forwarding
-  with request-based forwarding, added workspace-specific dev scripts, improved Stripe webhook
-  raw-body handling, and performed extensive cleanup of deprecated API code from previous architecture.
-
-- **2025-12-04:** Performed large-scale Vercel-related fixes: Prisma generate issues, React hook dependency corrections,
-  extracted verification and auth callback logic, improved `/me` headers and debug logging,
-  resolved redirect issues for consumer login/signup, added Vercel backend URL for email verification,
-  added Vercel domain to allowed origins, fixed cookie issues, and improved Swagger configuration.
-
-- **2025-12-05:** Added wallet functionality with balance, withdraw, and transfer features; added currency exchange with
-  multi-currency balance support; standardized fetch request headers; fixed documents API routes;
-  improved DTO naming, parameter naming, and removed `Dto` suffix; cleaned up debug logs and comments;
-  fixed billing phone formatting; added Swagger decorators; added proxy routes for documents and payments;
-  and improved code readability.
-
-- **2025-12-08:** Updated Next.js version according to Vercel CVE-2025-55182 security recommendations and
-  performed additional fixes in consumer/admin apps.
-
-- **2025-12-09:** Fixed build scripts, performed linting updates, improved internal configurations,
-  and completed a framework upgrade across packages.
-
-- **2025-12-10:** Implemented full consumer profile management (personal, address, organization),
-  added profile update + password change flows, created profile settings UI,
-  added updated API routes with header forwarding, removed deprecated profile controller,
-  and applied minor fixes and polish.
-
-- **2025-12-11:** Added unique constraint for `payment_request_attachment`, standardized naming (`originalname` → `originalName`),
-  centralized JWT cookie constants, improved file upload handling and S3 bucket switching,
-  refined invoice tagging/numbering, and standardized API endpoint construction using `URL`.
-
-- **2025-12-12:** Refactored transaction system to signed double-entry ledger entries by replacing `TransactionModel`
-  with `LedgerEntryModel`, adding ledger enums/types and rails, migrating schema, and updating balance calculations
-  and payment flows accordingly.
-
-- **2025-12-16:** Replaced `actionType` with a direction enum and introduced payment deduplication logic to reduce duplicate processing.
-
-- **2025-12-17:** Improved contact creation with duplicate email validation and error handling, centralized Puppeteer/PDF
-  generation configuration, updated DB build pipeline to include Prisma generation,
-  added ledger entry deduplication + uniqueness constraints and indexes, improved ledger idempotency/transaction safety,
-  and added POST endpoint for currency exchange conversion.
-
-- **2025-12-19:** Added Stripe `paymentMethodId` field with DB constraints and migration, renamed `@Identity()` param to `consumer`
-  across controllers with import cleanup, updated Stripe webhook service signature, and moved Stripe endpoints
-  from payment-methods into a dedicated Stripe controller.
+  ### 🚀 Feature
+  - Internal updates and preparations for December feature work.
 
 </details>
 
----
+<details>
+<summary>2025-12-02</summary>
+
+- **2025-12-02:**
+
+  ### 🛠 DevEx
+  - Migrated authentication from localStorage tokens to secure cookie-based authentication, standardized fetch configurations, refactored API routes with PATCH/DELETE support, added Stripe session endpoints, moved auth types to shared directory, consolidated dashboard types and logic, added Stripe identity verification with webhook handling, improved component exports, added contact details page, and removed legacy signup controllers in favor of unified `/auth/signup` endpoint.
+
+</details>
+
+<details>
+<summary>2025-12-03</summary>
+
+- **2025-12-03:**
+
+  ### 🛠 DevEx
+  - Updated login endpoint to accept credentials via request body, standardized header handling, normalized CORS header names, cleaned unused imports, replaced manual cookie forwarding with request-based forwarding, added workspace-specific dev scripts, improved Stripe webhook raw-body handling, and performed extensive cleanup of deprecated API code from previous architecture.
+
+</details>
+
+<details>
+<summary>2025-12-04</summary>
+
+- **2025-12-04:**
+
+  ### 🛠 DevEx
+  - Performed large-scale Vercel-related fixes: Prisma generate issues, React hook dependency corrections, extracted verification and auth callback logic, improved `/me` headers and debug logging, resolved redirect issues for consumer login/signup, added Vercel backend URL for email verification, added Vercel domain to allowed origins, fixed cookie issues, and improved Swagger configuration.
+
+</details>
+
+<details>
+<summary>2025-12-05</summary>
+
+- **2025-12-05:**
+
+  ### 🚀 Feature
+  - Added wallet functionality with balance, withdraw, and transfer features; added currency exchange with multi-currency balance support; standardized fetch request headers; fixed documents API routes; improved DTO naming, parameter naming, and removed `Dto` suffix; cleaned up debug logs and comments; fixed billing phone formatting; added Swagger decorators; added proxy routes for documents and payments; and improved code readability.
+
+</details>
+
+<details>
+<summary>2025-12-08</summary>
+
+- **2025-12-08:**
+
+  ### 🔐 Security / Production Safety
+  - Updated Next.js version according to Vercel CVE-2025-55182 security recommendations and performed additional fixes in consumer/admin apps.
+
+</details>
+
+<details>
+<summary>2025-12-09</summary>
+
+- **2025-12-09:**
+
+  ### 🛠 DevEx
+  - Fixed build scripts, performed linting updates, improved internal configurations, and completed a framework upgrade across packages.
+
+</details>
+
+<details>
+<summary>2025-12-10</summary>
+
+- **2025-12-10:**
+
+  ### 🚀 Feature
+  - Implemented full consumer profile management (personal, address, organization), added profile update + password change flows, created profile settings UI, added updated API routes with header forwarding, removed deprecated profile controller, and applied minor fixes and polish.
+
+</details>
+
+<details>
+<summary>2025-12-11</summary>
+
+- **2025-12-11:**
+
+  ### 🔐 Security / Production Safety
+  - Added unique constraint for `payment_request_attachment`, standardized naming (`originalname` → `originalName`), centralized JWT cookie constants, improved file upload handling and S3 bucket switching, refined invoice tagging/numbering, and standardized API endpoint construction using `URL`.
+
+</details>
+
+<details>
+<summary>2025-12-12</summary>
+
+- **2025-12-12:**
+
+  ### 🗄 Database & Migrations
+  - Refactored transaction system to signed double-entry ledger entries by replacing `TransactionModel` with `LedgerEntryModel`, adding ledger enums/types and rails, migrating schema, and updating balance calculations and payment flows accordingly.
+
+</details>
+
+<details>
+<summary>2025-12-16</summary>
+
+- **2025-12-16:**
+
+  ### 🚀 Feature
+  - Replaced `actionType` with a direction enum and introduced payment deduplication logic to reduce duplicate processing.
+
+</details>
+
+<details>
+<summary>2025-12-17</summary>
+
+- **2025-12-17:**
+
+  ### 🛠 DevEx
+  - Improved contact creation with duplicate email validation and error handling, centralized Puppeteer/PDF generation configuration, updated DB build pipeline to include Prisma generation, added ledger entry deduplication + uniqueness constraints and indexes, improved ledger idempotency/transaction safety, and added POST endpoint for currency exchange conversion.
+
+</details>
+
+<details>
+<summary>2025-12-19</summary>
+
+- **2025-12-19:**
+
+  ### 🗄 Database & Migrations
+  - Added Stripe `paymentMethodId` field with DB constraints and migration, renamed `@Identity()` param to `consumer` across controllers with import cleanup, updated Stripe webhook service signature, and moved Stripe endpoints from payment-methods into a dedicated Stripe controller.
+
+</details>
+
+</details>
 
 <details>
 <summary><strong>Changelog (January 2026)</strong></summary>
 
 # Changelog (January 2026)
 
-- **2026-01-12:** Prepared database and infrastructure refactoring by reviewing schema consistency,
-  auditing timestamp usage, evaluating foreign key performance,
-  and planning enhancements for payment methods, ledger idempotency,
-  and resource access standardization. (Database Audit and Refactoring Plan for Payments & Ledger)
+<details>
+<summary>2026-01-12</summary>
 
-- **2026-01-13:** Implemented foundational database improvements by adding strategic indexes,
-  defining cascade delete rules, increasing FX rate precision,
-  introducing enums for resource access, and preparing ledger idempotency
-  mechanisms for exactly-once processing. (Database Foundations & Ledger Idempotency)
+- **2026-01-12:**
 
-- **2026-01-14:** Finalized database and infrastructure standardization by making
-  `createdAt` / `updatedAt` non-nullable with `@updatedAt`,
-  enhancing `PaymentMethodModel` with bank account support and Stripe fingerprinting,
-  adding ledger idempotency keys, and introducing telemetry opt-out
-  environment variables to turbo.json for Vercel. (DB & Infra Standardization)
-
-- **2026-01-15:** Simplified admin frontend architecture by switching to a direct
-  Next.js API proxy with lightweight `apiFetch`, removed complex SWR setup,
-  added admin pages (consumers, payment requests, ledger, admin management),
-  improved naming and redirect logic, cleaned up legacy components,
-  and removed debug logging. (Admin FE Cleanup & Refactor)
-
-- **2026-01-17:** Refactored admin frontend with improved routing, client-boundary loading
-  patterns, variable naming cleanup, enhanced dashboard and listing pages,
-  merged admin FE refactoring pull request, and attempted Vercel deployment
-  configuration which was later reverted. (Admin FE Routing Refinements)
-
-- **2026-01-18:** Hardened API security, performance, and environment management by implementing
-  secure CORS configuration, rate limiting, response compression, Helmet security headers,
-  structured logging with correlation IDs, health check endpoints, reduced upload limits,
-  fixed Swagger routing and documentation, removed dead code and unused imports,
-  replaced RouterModule routing with explicit controller paths, and configured
-  Swagger UI for CSP compliance on Vercel with iterative fixes. (Harden API Security and Infrastructure)
-
-- **2026-01-19:** Implemented robust consumer SWR architecture, corrected all consumer-specific
-  API route prefixes, introduced a centralized ApiClient with caching,
-  deduplication and retry logic, and migrated data fetching to type-safe
-  SWR hooks and mutations. (Implement Robust Consumer SWR Architecture)
-
-- **2026-01-20:** Added global error boundaries with user-friendly fallbacks,
-  replaced blank screens with skeleton loading components,
-  improved resilience of the consumer app under failure states,
-  and enhanced overall UX consistency during loading and errors.(Consumer UX Resilience)
-
-- **2026-01-21:** Simplified consumer error handling by removing the `ApiResponseError` abstraction,
-  eliminated unused utilities and redundant exports, cleaned up debug logging,
-  fixed unused parameter warnings in SWR hooks,
-  and finalized performance optimizations and bundle cleanup. (Simplify Consumer Error Handling and Cleanup)
-
-- **2026-01-22:** Implemented saved payment methods with Stripe customer attachment,
-  added `stripePaymentMethodId` to enable payment method reuse,
-  implemented off-session payments with saved methods,
-  added Stripe customer creation and attachment logic,
-  created payment method migration system for existing records,
-  added admin endpoint for manual payment method migration,
-  updated payment UI to support saved method selection,
-  enhanced error handling for Stripe attachment failures,
-  removed debug console logs from payment service (Stripe Customer Attachment & Off-Session Payments),
-  implemented dark/light theme switching for the consumer app,
-  added `UserSettingsModel` with theme preference,
-  created backend API endpoints for theme settings,
-  implemented `ThemeProvider` with React context,
-  added CSS custom properties for dark theme support,
-  integrated theme selection into user profile settings,
-  and added system preference detection with localStorage persistence (Consumer light/dark mode).
-
-- **2026-01-24:** Refactored consumer UI styling by centralizing and extracting reusable
-  CSS class constants, introducing a `joinClasses` utility,
-  migrating consumer components to CSS modules,
-  and removing legacy class-name helpers,
-  fixed dark mode by aligning theme classes and selectors,
-  set default theme to SYSTEM in `user_settings`,
-  renamed theme-related interfaces and settings for clarity,
-  extracted reusable `FormCard` and `FormField` components,
-  and fixed password change form by wrapping fields in a proper form,
-  adding autocomplete support and preserving existing layout.
-
-- **2026-01-26:** Normalized consumer flows and admin actions by refining signup steps,
-  dashboard data views, modal interactions, and shared UI components,
-  added admin theme switching with CSS custom properties and a topbar toggle,
-  centralized admin styling into CSS modules and cleaned up views,
-  implemented comprehensive admin dashboard metrics including status totals,
-  recent payments, ledger anomalies and verification queue,
-  introduced `AdminDashboardService` for statistics and anomaly detection,
-  added consumer verification workflow with approve/reject/flag actions,
-  extended `Consumer` model with verification state and audit fields,
-  implemented ledger anomaly detection logic,
-  added dashboard API endpoints with client-side hooks,
-  and added admin API guard to prevent self-delete.
-
-- **2026-01-27:** Implemented consumer payment request creation and sending flow,
-  added API endpoints for draft and send actions,
-  improved currency selection and formatting consistency,
-  applied role-based permissions for payment actions,
-  and refined payment-related UI flows.
-
-- **2026-01-28:** Added FX automation UI with admin controls and scheduled conversions,
-  implemented server-driven currency feeds,
-  added supporting API endpoints and scheduler hooks,
-  improved consumer signup validation with step-level errors,
-  introduced consumer-specific password input component,
-  refined signup UI styles and layouts,
-  performed minor admin UI cleanup,
-  and added comprehensive project and feature documentation
-  covering the current codebase state.
-
-- **2026-01-29:** Added Google OAuth for consumers with PKCE-based authentication,
-  integrated OAuth users into the existing signup flow with prefilled data,
-  hardened OAuth state handling and validation,
-  updated login UI to support Google sign-in,
-  extended environment configuration for Google OAuth,
-  adjusted cookie handling for OAuth-based auth,
-  wrapped signup start page with ErrorBoundary and Suspense,
-  added mobile navigation and responsive layout improvements,
-  implemented mobile header and bottom navigation,
-  refined shell layout and responsive breakpoints,
-  updated README with full Remoola documentation and setup instructions,
-  formatted OAuth utilities for readability,
-  and merged Turborepo-related changes into main.
-
-- **2026-01-30:** Implemented robust exchange rate management with versioned rates,
-  approval workflow, provider metadata, staleness handling,
-  currency-aware rounding rules, backfill migration, and new
-  uniqueness constraints; added admin and consumer API endpoints
-  and updated UI for managing and viewing exchange rates;
-  improved exchange UI rate modal layout with two-column forms,
-  enforced mutually exclusive create/edit modals, and simplified
-  modal state handling; fixed OAuth cross-domain cookie issues by
-  introducing a secure OAuth token exchange flow with a new
-  `/oauth/exchange` endpoint; simplified OAuth cookie options and
-  removed stale maxAge handling; added email notifications for
-  payment requests by introducing a dedicated payment request
-  email template, implementing a shared mailer helper with
-  centralized configuration, and notifying payers via email when
-  a payment request is sent; added null-safety checks, fixed admin
-  seeding logic, corrected exchange service indentation and
-  variable references, and performed general cleanup and
-  changelog updates.
+  ### 🗄 Database & Migrations
+  - Prepared database and infrastructure refactoring by reviewing schema consistency, auditing timestamp usage, evaluating foreign key performance, and planning enhancements for payment methods, ledger idempotency, and resource access standardization. (Database Audit and Refactoring Plan for Payments & Ledger)
 
 </details>
 
----
+<details>
+<summary>2026-01-13</summary>
+
+- **2026-01-13:**
+
+  ### 🗄 Database & Migrations
+  - Implemented foundational database improvements by adding strategic indexes, defining cascade delete rules, increasing FX rate precision, introducing enums for resource access, and preparing ledger idempotency mechanisms for exactly-once processing. (Database Foundations & Ledger Idempotency)
+
+</details>
+
+<details>
+<summary>2026-01-14</summary>
+
+- **2026-01-14:**
+
+  ### 🗄 Database & Migrations
+  - Finalized database and infrastructure standardization by making `createdAt` / `updatedAt` non-nullable with `@updatedAt`, enhancing `PaymentMethodModel` with bank account support and Stripe fingerprinting, adding ledger idempotency keys, and introducing telemetry opt-out environment variables to turbo.json for Vercel. (DB & Infra Standardization)
+
+</details>
+
+<details>
+<summary>2026-01-15</summary>
+
+- **2026-01-15:**
+
+  ### 🚀 Feature
+  - Simplified admin frontend architecture by switching to a direct Next.js API proxy with lightweight `apiFetch`, removed complex SWR setup, added admin pages (consumers, payment requests, ledger, admin management), improved naming and redirect logic, cleaned up legacy components, and removed debug logging. (Admin FE Cleanup & Refactor)
+
+</details>
+
+<details>
+<summary>2026-01-17</summary>
+
+- **2026-01-17:**
+
+  ### 🛠 DevEx
+  - Refactored admin frontend with improved routing, client-boundary loading patterns, variable naming cleanup, enhanced dashboard and listing pages, merged admin FE refactoring pull request, and attempted Vercel deployment configuration which was later reverted. (Admin FE Routing Refinements)
+
+</details>
+
+<details>
+<summary>2026-01-18</summary>
+
+- **2026-01-18:**
+
+  ### 🛠 DevEx
+  - Hardened API security, performance, and environment management by implementing secure CORS configuration, rate limiting, response compression, Helmet security headers, structured logging with correlation IDs, health check endpoints, reduced upload limits, fixed Swagger routing and documentation, removed dead code and unused imports, replaced RouterModule routing with explicit controller paths, and configured Swagger UI for CSP compliance on Vercel with iterative fixes. (Harden API Security and Infrastructure)
+
+</details>
+
+<details>
+<summary>2026-01-19</summary>
+
+- **2026-01-19:**
+
+  ### 🚀 Feature
+  - Implemented robust consumer SWR architecture, corrected all consumer-specific API route prefixes, introduced a centralized ApiClient with caching, deduplication and retry logic, and migrated data fetching to type-safe SWR hooks and mutations. (Implement Robust Consumer SWR Architecture)
+
+</details>
+
+<details>
+<summary>2026-01-20</summary>
+
+- **2026-01-20:**
+
+  ### 🚀 Feature
+  - Added global error boundaries with user-friendly fallbacks, replaced blank screens with skeleton loading components, improved resilience of the consumer app under failure states, and enhanced overall UX consistency during loading and errors.(Consumer UX Resilience)
+
+</details>
+
+<details>
+<summary>2026-01-21</summary>
+
+- **2026-01-21:**
+
+  ### 🚀 Feature
+  - Simplified consumer error handling by removing the `ApiResponseError` abstraction, eliminated unused utilities and redundant exports, cleaned up debug logging, fixed unused parameter warnings in SWR hooks, and finalized performance optimizations and bundle cleanup. (Simplify Consumer Error Handling and Cleanup)
+
+</details>
+
+<details>
+<summary>2026-01-22</summary>
+
+- **2026-01-22:**
+
+  ### 🗄 Database & Migrations
+  - Implemented saved payment methods with Stripe customer attachment, added `stripePaymentMethodId` to enable payment method reuse, implemented off-session payments with saved methods, added Stripe customer creation and attachment logic, created payment method migration system for existing records, added admin endpoint for manual payment method migration, updated payment UI to support saved method selection, enhanced error handling for Stripe attachment failures, removed debug console logs from payment service (Stripe Customer Attachment & Off-Session Payments), implemented dark/light theme switching for the consumer app, added `UserSettingsModel` with theme preference, created backend API endpoints for theme settings, implemented `ThemeProvider` with React context, added CSS custom properties for dark theme support, integrated theme selection into user profile settings, and added system preference detection with localStorage persistence (Consumer light/dark mode).
+
+</details>
+
+<details>
+<summary>2026-01-24</summary>
+
+- **2026-01-24:**
+
+  ### 🚀 Feature
+  - Refactored consumer UI styling by centralizing and extracting reusable CSS class constants, introducing a `joinClasses` utility, migrating consumer components to CSS modules, and removing legacy class-name helpers, fixed dark mode by aligning theme classes and selectors, set default theme to SYSTEM in `user_settings`, renamed theme-related interfaces and settings for clarity, extracted reusable `FormCard` and `FormField` components, and fixed password change form by wrapping fields in a proper form, adding autocomplete support and preserving existing layout.
+
+</details>
+
+<details>
+<summary>2026-01-26</summary>
+
+- **2026-01-26:**
+
+  ### 🚀 Feature
+  - Normalized consumer flows and admin actions by refining signup steps, dashboard data views, modal interactions, and shared UI components, added admin theme switching with CSS custom properties and a topbar toggle, centralized admin styling into CSS modules and cleaned up views, implemented comprehensive admin dashboard metrics including status totals, recent payments, ledger anomalies and verification queue, introduced `AdminDashboardService` for statistics and anomaly detection, added consumer verification workflow with approve/reject/flag actions, extended `Consumer` model with verification state and audit fields, implemented ledger anomaly detection logic, added dashboard API endpoints with client-side hooks, and added admin API guard to prevent self-delete.
+
+</details>
+
+<details>
+<summary>2026-01-27</summary>
+
+- **2026-01-27:**
+
+  ### 🚀 Feature
+  - Implemented consumer payment request creation and sending flow, added API endpoints for draft and send actions, improved currency selection and formatting consistency, applied role-based permissions for payment actions, and refined payment-related UI flows.
+
+</details>
+
+<details>
+<summary>2026-01-28</summary>
+
+- **2026-01-28:**
+
+  ### 🚀 Feature
+  - Added FX automation UI with admin controls and scheduled conversions, implemented server-driven currency feeds, added supporting API endpoints and scheduler hooks, improved consumer signup validation with step-level errors, introduced consumer-specific password input component, refined signup UI styles and layouts, performed minor admin UI cleanup, and added comprehensive project and feature documentation covering the current codebase state.
+
+</details>
+
+<details>
+<summary>2026-01-29</summary>
+
+- **2026-01-29:**
+
+  ### 📄 Documentation
+  - Added Google OAuth for consumers with PKCE-based authentication, integrated OAuth users into the existing signup flow with prefilled data, hardened OAuth state handling and validation, updated login UI to support Google sign-in, extended environment configuration for Google OAuth, adjusted cookie handling for OAuth-based auth, wrapped signup start page with ErrorBoundary and Suspense, added mobile navigation and responsive layout improvements, implemented mobile header and bottom navigation, refined shell layout and responsive breakpoints, updated README with full Remoola documentation and setup instructions, formatted OAuth utilities for readability, and merged Turborepo-related changes into main.
+
+</details>
+
+<details>
+<summary>2026-01-30</summary>
+
+- **2026-01-30:**
+
+  ### 🗄 Database & Migrations
+  - Implemented robust exchange rate management with versioned rates, approval workflow, provider metadata, staleness handling, currency-aware rounding rules, backfill migration, and new uniqueness constraints; added admin and consumer API endpoints and updated UI for managing and viewing exchange rates; improved exchange UI rate modal layout with two-column forms, enforced mutually exclusive create/edit modals, and simplified modal state handling; fixed OAuth cross-domain cookie issues by introducing a secure OAuth token exchange flow with a new `/oauth/exchange` endpoint; simplified OAuth cookie options and removed stale maxAge handling; added email notifications for payment requests by introducing a dedicated payment request email template, implementing a shared mailer helper with centralized configuration, and notifying payers via email when a payment request is sent; added null-safety checks, fixed admin seeding logic, corrected exchange service indentation and variable references, and performed general cleanup and changelog updates.
+
+</details>
+
+</details>
 
 <details>
 <summary><strong>Changelog (February 2026)</strong></summary>
@@ -502,7 +1032,7 @@
 - **2026-02-17:** ### 🚀 Feature - Scaffolded new shared `@remoola/api-types` workspace package
   with domain modules: common / auth / payments / contacts / http - Expanded cross-app adoption of shared type contracts - Replaced `uuid` with Node `crypto.randomUUID()` to simplify runtime
 
-                  ### 🔐 Security
+                  ### 🔐 Security / Production Safety
                   - Hardened Google OAuth for Vercel:
                     - Moved OAuth `state` to one-time server-side storage
                     - Fixed `invalid_state` production issues
@@ -511,7 +1041,7 @@
                   - Tightened CORS, cookie, and proxy configuration for Vercel
                   - Centralized environment validation and secure cookie handling
 
-                  ### 📦 Types & Contracts
+                  ### 🛠 DevEx
                   - Migrated admin & consumer auth/signup/payment unions to `@remoola/api-types`
                   - Centralized auth cookie keys under shared http module
                   - Standardized API/SWR typing to `ApiResponseShape`
@@ -538,14 +1068,14 @@
 
 - **2026-02-18:** ### 🚀 Feature - Add contact handoff flow from payment request modal: - Allow unknown-recipient flow (continue without contact / create contact with prefilled email) - Preserve draft values when returning from contact creation - Improve modal UX with default **Continue** action + **More Actions** dropdown - Allow email-only payers in payment requests: - Store `payerEmail` when `payerId` is missing - Support claiming email-only payer requests safely - Add confirmation flow to add/skip contact creation - Remove `expectationDate` from payment requests: - Archive historical data safely before column removal - Add admin endpoints & UI for archived expectation visibility - Introduce isolated temporary test DB harness (`@remoola/test-db`): - Per-file temporary Postgres instances - Docker-compose with testcontainers fallback - Automatic migrations + fixture seeding - Strict local-only isolation
 
-                  ### 🔐 Security
+                  ### 🔐 Security / Production Safety
                   - Preserve ledger invariants while enabling email-only payers
                   - Add regression tests to prevent ledger anomalies
                   - Redact recipient details from mailer success logs
                   - Extract password hashing & verification utilities into `security-utils` package
                   - Enforce strict DB isolation for test runs to prevent accidental prod/dev cross-use
 
-                  ### 📦 Types & Contracts
+                  ### 🛠 DevEx
                   - Tighten auth typing with explicit DTO usage
                   - Replace untyped login bodies with structured DTOs
                   - Use `NotFoundException` for safer contact lookups
@@ -576,7 +1106,7 @@
 - **2026-02-19:** ### 🚀 Feature - Add full admin list pagination, filters, and debounced search across: - Admins, Consumers, Ledger, Payment Requests,
   Exchange Rules/Scheduled, Expectation Archive - Extract reusable \*TableBlock components for all admin list views - Introduce shared admin list query types and constants in `@remoola/api-types` - Add fintech-safe withdraw/transfer: - Idempotency-key support - Balance checks inside DB transaction - Advisory locks to prevent race conditions - Require idempotency-key header for withdraw and transfer (400 if missing) - Replace Redis OAuth state store with PostgreSQL: - New `oauth_state` table - Atomic consume via DELETE RETURNING - Cleanup scheduler - Improve invoice generation: - Deduplicate within 60s window - Safe error wrapping (`INVOICE_GENERATION_FAILED`) - Payment view auto-refresh - Add Sonner toasts across consumer app - Add searchable selects, masked monetary inputs, DateInput - Add `data-testid` attributes across consumer UI - Introduce shared error codes via `@remoola/shared-constants`
 
-                  ### 🔐 Security
+                  ### 🔐 Security / Production Safety
                   - Enforce non-negative consumer balances (exchange + reversals)
                   - Add advisory locks + balance re-check inside transaction
                   - Stripe reversals throw 503 for retry safety on insufficient balance
@@ -586,7 +1116,7 @@
                   - Stripe amount calculation by currency fraction digits (fix JPY & non-2-decimal currencies)
                   - Replace Redis OAuth state store with DB-backed secure implementation
 
-                  ### 📦 Types & Contracts
+                  ### 🛠 DevEx
                   - Add admin list DTOs and query types in `@remoola/api-types`
                   - Standardize paginated responses `{ items, total, page, pageSize }`
                   - Add canonical error codes package and map to consumer-facing messages
@@ -615,12 +1145,12 @@
 - **2026-02-20:** ### 🚀 Feature - Add pagination to consumer list endpoints: - Contacts, Contracts, Documents, Payments,
   Exchange Rules, Scheduled Conversions - Introduce `PaginationBar` component (positioned outside table card for Contracts) - Replace hardcoded currency arrays with `CURRENCY_CODES` from `@remoola/api-types` - Add consumer preferred currency setting (API + UI with allowlist validation) - Introduce new UI components: - `AmountCurrencyInput` - `RecipientEmailField` - Align consumer layouts (Contacts/Documents consistency) - Standardize form controls (42px height, `rounded-lg`) - Add authentication audit + lockout mechanism (migrations + shared module)
 
-                  ### 🔐 Security
+                  ### 🔐 Security / Production Safety
                   - Add login audit tracking and account lockout protections
                   - Improve auth refresh + session-expired handling logic
                   - Enforce currency allowlist via shared api-types contracts
 
-                  ### 📦 Types & Contracts
+                  ### 🛠 DevEx
                   - Add `PaginatedResponsePage` to `@remoola/api-types`
                   - Centralize currency types in shared package
                   - Add consumer settings types to shared contracts
@@ -648,14 +1178,14 @@
 
 - **2026-02-24:** ### 🚀 Feature - Standardize shared domain constants across platform via `@remoola/api-types` - Introduce new shared modules: - `consumer/theme` (`THEME`) - `payment-reversal` (`PAYMENT_REVERSAL_KIND`) - `query-params` (`BOOLEAN_QUERY_VALUE`) - Add currency helper utilities: - `isCurrencyCode` - `toCurrencyOr*` - `getCurrencySymbol(TCurrencyCode)` - Apply shared constants across API, Admin, and Consumer flows: - Signup and consumer settings - Payments and reversals - Exchange and withdraw workflows - Dashboard and FX scheduling
 
-                  ### 🔐 Security
+                  ### 🔐 Security / Production Safety
                   - Add `@Throttle` protection to refund and chargeback endpoints
                   - Restore strict validation for Google Sign-In credentials
                     (`@IsString()` enforcement)
                   - Improve null/undefined sanitization via hardened `remove-nil`
                     recursive cleanup logic
 
-                  ### 📦 Types & Contracts
+                  ### 🛠 DevEx
                   - Standardize enum-like constants to `SCREAMING_SNAKE_CASE`
                   - Introduce shared constant arrays:
                     - `ADMIN_TYPES`
@@ -797,7 +1327,7 @@
   modal (continue / add contact and continue / add full contact) - WithdrawTransferPageClient: use BalancesPanel - Admin payment-requests archive: WHERE from Prisma.sql
   fragments only (parameterized)
 
-                ### 🔐 Security / Financial Safety
+                ### 🔐 Security / Production Safety
                 - Ledger: effective status for balance/anomalies; no
                   UPDATE/DELETE on financial history; double-entry and
                   idempotency unchanged
@@ -827,7 +1357,7 @@
                   prefer fixing forward; migration README for deploy order
                 - Types/format refactor: no new migrations; rollback revert-only
 
-                ### 📦 Types & Contracts
+                ### 🛠 DevEx
                 - Admin, consumer, Stripe flows use `requesterEmail` and handle
                   null `requesterId`; shared shapes aligned for pay-by-email
                 - Consolidate shared types: single source for consumer contact,
@@ -863,7 +1393,7 @@
                 - getSteps.test: TContractorKind assert instead of any;
                   remaining any limited to API spec mocks (test-only)
 
-                ### 🛠 DevEx & Infrastructure
+                ### 🛠 DevEx
                 - test-db: PrismaClient datasourceUrl; Jest cache false
                 - admin: Jest config and format tests; shared formatAmount and
                   ApiErrorSchema from api-types; consumer: shared currency
@@ -944,7 +1474,7 @@
     (filters, pagination, SUPER-only redirect); local toast keys and error
     mapping for audit load failures.
 
-  ### 🔐 Security / Financial Safety
+  ### 🔐 Security / Production Safety
   - Session expiry handling ensures tokens and cookies are cleared before
     redirect; audit log is append-only and does not affect main transaction flows.
   - SUPER-only access to audit endpoints enforced in controller.
@@ -954,7 +1484,7 @@
     `admin_action_audit_log` (admin_id, action, resource, resource_id, metadata,
     ip_address, user_agent, created_at) with indexes; FK to admin.
 
-  ### 🛠 DevEx & Infrastructure
+  ### 🛠 DevEx
   - db-fixtures: `APP_TABLES` extended with `auth_audit_log`, `auth_login_lockout`,
     `admin_action_audit_log`, `ledger_entry_outcome`, `ledger_entry_dispute` for
     refresh truncate; expectation_date_archive insert summary only when table
@@ -974,7 +1504,7 @@
   - E2E: `admin-step-up.e2e-spec.ts` covers step-up on admin password reset
     and admin delete (password confirmation required).
 
-  ### Fixed
+  ### 🚀 Feature
   - Admin list views: filter/search no longer triggers full view refresh;
     `useAdmins` uses `keepPreviousData` and table-only "Updating…" overlay;
     same overlay and pagination "Updating…" on Consumers, Payment Requests,
@@ -994,7 +1524,7 @@
   - Table block Refresh: `refreshKey` in `load` dependency array (with
     eslint-disable) so Refresh button triggers refetch in all list table blocks.
 
-  ### Changed
+  ### 🚀 Feature
   - Admin app: all text inputs and textareas set
     `autoComplete="off"` (or `new-password` where appropriate),
     `autoCorrect="off"`, `autoCapitalize="off"` to avoid autofill/autocorrect.
@@ -1035,7 +1565,7 @@
     `StartPaymentForm`, and `TransferForm`.
   - No ledger or idempotency changes in this feature; no new migrations.
 
-  ### 🔐 Security / Financial Safety
+  ### 🔐 Security / Production Safety
   - Ledger & payment idempotency (`docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`): outcome
     creation with `externalId` now uses `createOutcomeIdempotent()`; P2002
     is caught and treated as already-processed (Stripe webhook, stripe.service,
@@ -1054,7 +1584,7 @@
     align with Prisma `@@map` and snake_case DB naming (MIGRATION_AUDIT.md
     BLOCKER 1); schema updated with `@@map("exchange_rate_status_enum")`.
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - Consumer app uses shared SVG icons from `@remoola/ui`.
   - Added `CreditCard`, `Landmark`, `Star`, `Pencil`, `Trash`, `Clipboard`,
     and `FileDown` icons to `packages/ui`; `apps/consumer` now imports these
@@ -1084,7 +1614,7 @@
     soft-delete (`consumer.deleted_at`) for production consumers with financial
     history.
 
-  ### ♻️ Audit follow-up
+  ### ⚠️ Notes
   - **Ledger:** COMPLETED_AND_PENDING balance now uses
     `IN ('COMPLETED','PENDING')`; added `balance-calculation.service.spec.ts`
     and `getBalancesIncludePending` test.
@@ -1099,7 +1629,7 @@
   - **Docs:** `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` updated (FOR UPDATE vs
     advisory lock; migration backfill/lock notes; balance mode note).
 
-  ### Optionals
+  ### ⚠️ Notes
   - **Docs:** Exchange row in critical surfaces now notes serialization:
     advisory lock + re-read target in tx (no FOR UPDATE on balance rows).
   - **Stripe:** DENIED outcome loop wrapped in `$transaction` for atomicity.
@@ -1151,7 +1681,7 @@
   - Add database connection retry logic (30 attempts, 500ms delay) before bootstrap
   - Extend CORS configuration to include consumer(mobile)
 
-  ### 🔐 Security
+  ### 🔐 Security / Production Safety
   - Validate `returnOrigin` against CORS_ALLOWED_ORIGINS before using in OAuth redirect
   - Persist validated `returnOrigin` in OAuth state for callback flow
   - Add rate limiting to OAuth `/google/start` endpoint (20 requests/min)
@@ -1166,7 +1696,7 @@
   - Document OAuth `returnOrigin` parameter usage in API docs
   - Document CORS configuration for three apps (admin, consumer, consumer-mobile)
 
-  ### ✅ Governance & Review
+  ### ⚠️ Notes
   - Resolved: logging exemption, PII removal, test documentation
   - Issues fixed: rate limiting, CORS verification
   - TypeScript: ✅ No errors, Linting: ✅ Pass, Tests: ✅ 65/65 passing
@@ -1205,7 +1735,7 @@
     - New shared UI components: `IconBadge` (gradient variants, sizes, rings), `PageHeader` (mobile-optimized with sticky header support), `SearchInput` (with clear button and debounced interaction)
     - Brand assets: favicon.ico and icon.svg for consumer-mobile app
 
-  ### 🔐 Security
+  ### 🔐 Security / Production Safety
   - Centralized OAuth crypto utilities in `@remoola/security-utils`:
     - PKCE code verifier/challenge generation (RFC 7636)
     - OAuth state token generation with HMAC signing
@@ -1218,7 +1748,7 @@
     - `client.test.ts`: token refresh flows, SWR fetcher, fetchWithAuth, retry logic, session expiry handling
     - `middleware.test.ts`: Next.js middleware auth flows, token validation, refresh token rotation, OAuth callback handling
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - Extracted duplicate origin validation logic into `OriginResolverService`
   - Replaced inline crypto calls in `AuthController` and `GoogleOAuthService` with `@remoola/security-utils` utilities
   - Updated `OAuthStateStoreService` to use centralized crypto helpers
@@ -1235,7 +1765,7 @@
   - Updated `.env.example` files with `CONSUMER_MOBILE_APP_ORIGIN` and `ADMIN_APP_ORIGIN`
   - Added `CONSUMER_MOBILE_APP_ORIGIN` to `turbo.json` globalEnv for build-time availability
 
-  ### 🐛 Fixed
+  ### 🚀 Feature
   - Added null-safety check in `DocumentPreviewModal` to prevent rendering without valid URL
   - Fixed document preview modal only opening when URL is available
   - Added proper null-handling for document URL before preview modal invocation
@@ -1247,7 +1777,7 @@
 
 - **2026-03-10:**
 
-  ### 🔐 Security
+  ### 🔐 Security / Production Safety
   - Auth cookie policy refactor: single source of truth for cookie names and options.
   - Shared policy in `@remoola/api-types` (http/auth-cookie-policy); API (`apps/api` shared-common), admin, consumer, and consumer-mobile use the same policy.
   - Production/Vercel uses \_\_Host- prefixed cookie names (RFC 6265); local development uses plain names; secure/sameSite/path from policy only.
@@ -1257,7 +1787,7 @@
   - Database-backed sessions: hashed refresh token storage, `session_family_id`, `replaced_by_id` for refresh rotation lineage, `revoked_at` and `invalidated_reason` for revocation.
   - No destructive changes to existing auth tables; allows gradual migration from legacy access/refresh flows.
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - Cookie keys and options centralized; controllers and middleware no longer determine cookie mode.
   - Admin and consumer auth controllers, Next.js middleware and API routes (login, logout, refresh, clear-cookies, me, oauth/exchange) aligned to shared policy across apps/admin, apps/api, apps/consumer, apps/consumer-mobile.
 
@@ -1270,7 +1800,7 @@
 <summary>2026-03-11</summary>
 
 - **2026-03-11:**
-  ### 🐛 Fixes
+  ### 🚀 Feature
   - **theme system (mobile):** ThemeProvider, ThemeSwitcher, ThemeSettingsForm, ThemeInitializer, ThemeColorMeta; light theme UI across layout, login, balances, exchange, dashboard, documents, payments, contracts.
   - **Signup flow:** CountrySelect, PhoneInput, libphonenumber validation, address parsing, date 18+/not future; organization size/roles and HOW other; address prefill and onBlur validation.
   - **Balance display:** Dashboard and Payments now show the same balance value. API dashboard summary used to treat ledger sum as dollars and multiply by 100; ledger stores minor units (cents), so `balanceCents` is now derived without the extra factor (apps/api consumer-dashboard).
@@ -1288,13 +1818,13 @@
 
 - **2026-03-12:**
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - **Consumer mobile – centralized error messaging:** New `apps/consumer-mobile/src/lib/error-messages.ts` maps API error codes (`@remoola/shared-constants`) to user-facing messages and defines local toast keys for client-side failures; 37 files switched to `getErrorMessageForUser`, `getLocalToastMessage`, and `showErrorToast` for consistent, safe user-facing toasts. No API, ledger, or migration changes.
   - **Cookie forwarding and fetch cache:** Admin proxy uses multi-cookie forwarding (`getSetCookie`/`appendSetCookies`) so all auth cookies are preserved; consumer and consumer-mobile API routes use `appendSetCookies` for all proxy responses; consumer-mobile `proxyApiRequest` and logout/middleware/documents server-action fetches use `cache: no-store`. No new packages or schema changes.
   - **BFF mutation contract hardening:** Consumer and consumer-mobile mutation proxy routes now enforce `application/json` and valid JSON payloads before forwarding; invalid content type/body returns `400` (`INVALID_CONTENT_TYPE`/`INVALID_JSON`), oversized JSON returns `413` (`PAYLOAD_TOO_LARGE`), and invoice generation accepts an empty JSON body for backward compatibility.
   - **Date normalization for `<input type="date">`:** Normalize to `yyyy-MM-dd` (toDateOnly) in consumer and consumer-mobile; new `apps/consumer-mobile/src/lib/date-utils.ts`; used in CreatePaymentRequestView, PersonalDetailsStep, DateInput, PersonalDetailsForm. No API/DB/migrations.
 
-  ### 🔐 Security
+  ### 🔐 Security / Production Safety
   - **Header forwarding hardening at proxy boundaries:** Shared BFF proxy helpers now forward an explicit header allowlist (instead of broad pass-through), while preserving multi-cookie `Set-Cookie` propagation and `cache: no-store` behavior on authenticated route flows; admin proxy mutation routes now enforce JSON payload validation plus request-size limits with `413 PAYLOAD_TOO_LARGE` on oversize requests.
 
   ### 🛠 DevEx
@@ -1314,7 +1844,7 @@
   - Shared `cn()` helper in `packages/ui` now uses `tailwind-merge` to resolve
     conflicting utility classes deterministically.
 
-  ### 🔐 Security
+  ### 🔐 Security / Production Safety
   - Consumer mobile login `next` parameter is sanitized to prevent unsafe redirects
     (`http(s)://`, `//`, malformed encodings, and CRLF payloads now fall back to
     `/dashboard`).
@@ -1349,7 +1879,7 @@
     - correlation-id normalization middleware hardening and corresponding middleware tests;
     - shared consumer action log service + partition utility/scheduler modules integrated into consumer auth module.
 
-  ### 🔐 Security / Financial Safety
+  ### 🔐 Security / Production Safety
   - OAuth callback hardening:
     - startup now hard-fails in staging/production if `CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK=true`;
     - runtime callback path allows missing-state-cookie fallback only in development/test; staging/production return `invalid_state`;
@@ -1442,7 +1972,7 @@
     - Failure redirects use `verified=no`; consumer and consumer-mobile
       verification pages accept `verified` without `email`.
 
-  ### 🔐 Security
+  ### 🔐 Security / Production Safety
   - Centralize outbound email API base URL resolution with
     `resolveEmailApiBaseUrl`; production now requires
     `NEST_APP_EXTERNAL_ORIGIN`.
@@ -1474,7 +2004,7 @@
     - Surface verification state across consumer dashboard and settings flows in web and consumer-mobile, including compliance-task / retry / continue-verification UX.
     - Align consumer DTOs, models, and shared verification-state helpers so API responses expose a consistent lifecycle view (`not_started`, `pending_submission`, `requires_input`, `verified`, review-negative states).
 
-  ### 🔐 Security / Compliance
+  ### 🔐 Security / Production Safety
   - Stripe Identity webhook hardening:
     - managed verification lifecycle updates (`requires_input`, `verified`, `canceled`, `redacted`) now ignore stale sessions and only mutate the active consumer verification session.
     - verification success preserves existing passport / ID data instead of destructively clearing compliance-critical profile fields.
@@ -1538,7 +2068,7 @@
 
 - **2026-03-25:**
 
-  ### 📦 Types & Contracts
+  ### 🛠 DevEx
   - Add canonical Prisma schema surface under `packages/api-types/src/schema`:
     - `prisma-generated.ts` re-exports the generated Prisma client types from `@remoola/database-2`
     - `models.ts` provides generated `...WithRelations` and composite-key helpers derived from `packages/database-2/prisma/schema.prisma`
@@ -1550,7 +2080,7 @@
   - Add `db:validate` to `packages/database-2` and pin `prisma` / `@prisma/client` to `6.19.0` to keep CLI and generated client versions deterministic.
   - Rollout remains backward compatible; no migration-first deploy is required for this commit.
 
-  ### 🛠 DevEx & Infrastructure
+  ### 🛠 DevEx
   - Add schema sync guardrails:
     - root scripts `schema:generate:helpers` and `schema:check`
     - `@remoola/api-types` `schema:generate`, `build`, and `typecheck` now regenerate schema helpers before compile
@@ -1572,7 +2102,7 @@
 
 - **2026-03-26:**
 
-  ### ♿ Accessibility
+  ### 🚀 Feature
   - **consumer — loading fallbacks (8 pages):** Replace `aria-hidden` with `role="status"` on Suspense fallback `<p>` elements in all affected shell pages (`withdraw-transfer`, `exchange`, `exchange/rules`, `exchange/scheduled`, `payment-methods`, `contacts`, `payment-requests/new`, `payments/start`); screen readers now announce loading state; visual output unchanged.
   - **consumer — shell header search control:** Add `role="button"`, `aria-label="Open command palette"`, and `aria-haspopup="dialog"` to the readOnly search input in `(shell)/layout.tsx`; `data-testid="consumer-shell-search"`, click/keyboard behavior, and palette open logic untouched.
   - **consumer — More Actions dropdown state:** Add `aria-expanded={actionsOpen}`, `aria-haspopup="true"`, and `aria-controls` + matching `id` to the More Actions button in `CreatePaymentRequestForm` and `StartPaymentForm`; toggle behavior, outside-click close, submit flow, and API payload shape unchanged.
@@ -1583,7 +2113,7 @@
   - **consumer-mobile — route-level loading for `payment-requests/new`:** Add `loading.tsx` + `loading.module.css` with animated pulse skeleton consistent with neighboring shell routes; `page.tsx` and `data-testid="consumer-mobile-payment-request-new"` untouched.
   - **consumer-mobile — dashboard error branch retry:** Add "Try again" link in `DashboardView` when `data === null`; hard-navigates to `/dashboard` to force a server component re-fetch; `getDashboardData()` contract and the success branch unchanged; new `.retryLink` style added to `DashboardView.module.css`.
 
-  ### 🐛 Fixed
+  ### 🚀 Feature
   - **consumer-mobile — not-found CTA:** Change CTA target from `/` to `/dashboard` to eliminate the redundant redirect hop; auth redirect behavior unchanged.
   - **consumer-mobile — dashboard empty-state link:** Replace `<a href="/payment-requests/new">` with `<Link>` for client-side navigation consistency.
   - **consumer-mobile — header top safe-area:** Split `py-3` into `pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]` in `ShellNav.module.css`; respects existing `viewportFit: cover`; non-notch devices see no visual change; tap targets preserved.
@@ -1595,12 +2125,12 @@
 
 - **2026-03-27:**
 
-  ### ♿ Accessibility
+  ### 🚀 Feature
   - **consumer-mobile — auth loading fallbacks:** Add `role="status" aria-live="polite"` to the `Suspense` fallback text in `app/auth/callback/page.tsx` and `app/(auth)/signup/verification/page.tsx`; auth flow and route structure unchanged.
   - **consumer — loading/status leftovers:** Add `role="status" aria-live="polite"` to the remaining plain loading states in `components/payments/PaymentView.tsx`, `components/exchange/BalancesPanel.tsx`, `app/auth/callback/page.tsx`, and `app/(auth)/signup/verification/page.tsx`; fetch/data flow and visual behavior preserved.
   - **consumer-mobile — app-level error fallback:** Align `AppErrorBoundary` with shared `ErrorState`; keep retry behavior as `window.location.reload()` and remove the now-unused custom fallback styles from `AppProviders.module.css`.
 
-  ### 🐛 Fixed
+  ### 🚀 Feature
   - **consumer — mobile More drawer runtime state:** Stabilize drawer open/close handling in `(shell)/layout.tsx`:
     - move `Escape` close handling to shell-level state management;
     - make `aria-expanded` explicitly reflect `moreOpen`;
@@ -1620,11 +2150,11 @@
 
 - **2026-03-30:**
 
-  ### ♿ Accessibility
+  ### 🚀 Feature
   - **consumer-web shell and forms:** Add a skip link to `(shell)/layout.tsx` and restore explicit `label`/`input` association in `components/ui/FormInput.tsx`; keyboard navigation and screen-reader flow now reach main content and form controls more reliably without changing route structure or submit behavior.
   - **consumer-mobile auth and error boundaries:** Keep login auxiliary controls in the natural tab order, add `role="status" aria-live="polite"` to signup Suspense fallbacks, and align `app/error.tsx` plus `app/(auth)/error.tsx` to the shared `ErrorState` component with the same retry semantics.
 
-  ### 🐛 Fixed
+  ### 🚀 Feature
   - **consumer-web first-load state handling:** Align contacts, contracts, documents, exchange balances, payment methods, and payments with explicit loading/error/empty branches:
     - contacts and contracts render skeleton/loading UI instead of premature empty states;
     - documents distinguish initial load, retryable load failure, and true empty results;
@@ -1645,7 +2175,7 @@
 
 - **2026-03-31:**
 
-  ### ♿ Accessibility
+  ### 🚀 Feature
   - **consumer-mobile auth and contacts loading fallbacks:** Add `role="status" aria-live="polite"` to the remaining auth and contacts route fallbacks in `app/(auth)/forgot-password/confirm/page.tsx`, `app/(auth)/login/page.tsx`, `app/(auth)/login/loading.tsx`, and `app/(shell)/contacts/page.tsx`; spinner-only states now hide decorative spinners from assistive tech while preserving the same visual loading pattern.
   - **consumer-web route metadata and error-state alignment:** Add static page titles for `contracts`, `settings`, `payments/[paymentRequestId]`, and `contacts/[id]/details`; add contextual `aria-label` values to `components/ui/PaginationBar.tsx`; align `app/error.tsx`, `app/(shell)/error.tsx`, and `app/global-error.tsx` on the shared `ErrorState` pattern while preserving retry semantics and existing test ids.
   - **consumer-mobile state feedback and empty-state consistency:** Replace the incorrect `PAYMENT_NOT_FOUND` toast on payment-method load failure with a payment-method-specific message, distinguish unavailable vs zero vs non-zero balance display in `features/payments/ui/WithdrawTransferView.tsx`, and switch the contacts zero-state in `features/contacts/ui/ContactsListView.tsx` to the shared `EmptyState` component while keeping the same modal-open CTA.
@@ -1656,7 +2186,7 @@
   - **consumer-web auth and loading announcements:** Add live-region semantics to `app/login/page.tsx`, `components/ui/Skeleton.tsx`, and `components/payments/PaymentView.tsx`, and clarify the command-palette search label in `components/ui/CommandPalette.tsx`; loading and not-found states are now announced more reliably without changing auth, dashboard, or payment behavior.
   - **consumer-mobile loading and search semantics:** Add status semantics to `app/loading.tsx`, add `aria-label` support to `shared/ui/SearchInput.tsx`, and keep pagination controls in `features/contracts/ui/ContractsListView.tsx` explicitly non-submit buttons so search and paging remain accessible without altering data flow.
 
-  ### 🐛 Fixed
+  ### 🚀 Feature
   - **consumer-web login and shell search UX:** Remove seeded `user@example.com` / `password` defaults from `app/login/LoginForm.tsx` and update the shell search trigger copy in `app/(shell)/layout.tsx` to `Open command palette...` without changing login submit flow, command-palette behavior, keyboard shortcuts, or `data-testid` contracts.
   - **consumer-mobile documents empty state:** Remove the redundant all-documents empty wrapper in `features/documents/ui/EnhancedDocumentsView.tsx` and keep `EmptyState` as the single source of empty-state markup; copy, upload flow, filtered-empty behavior, and document actions remain unchanged.
   - **consumer-web auth metadata and root error theme bootstrap:** Add route-specific metadata titles for `login`, `forgot-password`, `forgot-password/confirm`, and `auth/callback`, and harden `app/global-error.tsx` so stored light/dark theme is applied on first render while preserving root retry semantics and error logging.
@@ -1686,7 +2216,7 @@
 
 - **2026-04-03:**
 
-  ### 🔐 Security
+  ### 🔐 Security / Production Safety
   - **Cookie-first browser auth hardening (admin + consumer apps):**
     - align `apps/api`, `apps/admin`, `apps/consumer`, and `apps/consumer-mobile` on cookie-backed login, refresh, logout, and `/me` flows;
     - browser-facing auth responses now establish server-side access, refresh, and CSRF cookies and return `ok`-style payloads instead of exposing browser auth tokens in JSON;
@@ -1702,7 +2232,7 @@
     - shared origin resolution now preserves the correct consumer app boundary across browser auth, refresh, payment, and mail-linked flows.
   - **Cross-app auth/payment boundary preservation:** Consumer app scope is now preserved through payment-request, Stripe, forgot-password, and mail-driven links so auth/session continuation does not drift between consumer surfaces.
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - **Middleware + route alignment across admin and consumer frontends:** Next.js middleware now reads scoped cookie keys, probes or refreshes cookie sessions before redirecting, clears stale auth cookies on session-expired paths, and avoids auth-page redirect loops caused by expired or malformed browser cookies.
   - **Frontend auth UX alignment:** Auth callback clients now use bounded session polling after OAuth completion; consumer and consumer-mobile signup flows can resume from app-owned Google signup session state; logout-all and auth-notice flows now route users through explicit re-auth states after password changes or full-session revocation.
   - **Shared auth contracts in `@remoola/api-types`:** Expanded cookie-policy helpers, auth notices, OAuth helpers, and scoped cookie-key resolution so API and frontend apps consume the same browser-auth contract from a single source of truth.
@@ -1746,7 +2276,7 @@
   - Consumer sessions now persist `appScope` and token hashes so the backend can validate both scope ownership and stored token/session binding.
   - Rollout remains migration-first and coordinated with the new scoped backend/frontend contract.
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - Shared auth contracts now expose `CONSUMER_APP_SCOPE_HEADER` from `@remoola/api-types`.
   - Trust-layer/origin-resolution helpers were aligned around canonical scope validation instead of ambiguous redirect-origin helper paths.
 
@@ -1812,7 +2342,7 @@
   - **Invariant preserved:** Existing auth, session, cookie, CSRF, and backend authorization contracts remain unchanged while contract-scoped payment and document flows are added on top.
   - **Document safety guardrails remain visible at the contract layer:** Draft-attached versus non-draft-attached file state is now surfaced consistently so destructive document actions do not silently break payment-record integrity.
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - **Relationship-first consumer flow alignment:** Contracts, documents, contacts, and payment helper paths now share a common contract-context model (`contractId` + `returnTo`) so route construction, back-links, and revalidation behavior stay aligned across the consumer web surface.
   - **Contracts workspace query normalization:** Add dedicated contract search/filter helpers and backend-driven search-param handling for contract status, file presence, payment presence, and sorting.
 
@@ -1847,7 +2377,7 @@
   - **Explicit invalid-slug recovery path:** Unknown guide slugs now resolve through a dedicated `/help` recovery experience instead of rendering a broken or partially resolved guide-detail page.
   - **Invariant preserved:** Existing auth, session, cookie, CSRF, and guest verification/forgot-password behavior remain unchanged; help coverage stays scoped to the intended signed-in consumer workspace routes.
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - **Route-affinity based guide resolution:** Help selection is now normalized around route affinity, preferred guide ordering, and shared category/feature labels so the same contract can drive the Help Center hub, guide-detail pages, and inline contextual-help placements.
   - **Empty-state and orientation flow alignment:** Dashboard and adjacent workspace/payment surfaces now reuse shared contextual-help components to explain next steps when data is empty, a flow has not started, or the user needs route-specific guidance.
 
@@ -1909,7 +2439,7 @@
   ### 🧪 Testing
   - Cover RBAC expansion, latest-outcome status semantics, dispute metadata mapping, inclusive date filters, and admin auth/audit paths for the new workspaces.
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - Extend `AdminV2Capability` and workspace exposure with `payments.read` and `ledger.read`; add API-type coverage for payment/ledger relations consumed by the new admin surfaces.
 
 </details>
@@ -1931,7 +2461,7 @@
   - Add schema-backed admin role/permission/invitation/override models and extend models for admin-linked password resets, consumer suspension fields, and payment-method disable tracking.
   - Migrations are included; rollout must be migration-first because the new API and UI paths depend on the added schema.
 
-  ### ♻️ Refactor
+  ### 🛠 DevEx
   - **`consumer-css-grid` data-access split by domain:** Extract banking, documents, and settings helper logic out of page clients; move consumer API types into `consumer-api.types.ts`; centralize server fetch and unauthorized-redirect handling in `consumer-api-fetch.server.ts`; split `consumer-api.server.ts` into domain queries and `consumer-mutations.server.ts` into domain mutation modules; align help/signup type imports with the new type-only import style.
   - **Invariant preserved:** Session-expiry redirect behavior, payment-side idempotency, correlation headers, existing revalidation paths, API-scope headers, and redirect sanitization all stay centralized to avoid cross-module drift on auth-sensitive and payment-sensitive flows.
 
@@ -2032,7 +2562,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-04-22</summary>
 
 - **2026-04-22:**
@@ -2079,6 +2609,55 @@
   - The bulk `getActiveAssigneesForResource` helper is now consumed by six list surfaces (`verification`, `/exchange/scheduled`, `/documents`, `/payments/operations`, `/payouts`, `/payments`) plus the per-resource case pages. Treat any future change to its signature, return shape, or SQL as a coordinated cross-workspace contract change.
   - The throttle realignment is config-only at the controller decorator layer — no migration, no env binding, no shared-constant extraction (deferred). The named-throttler refactor (introducing a third `{ name: 'adminV2', ... }` entry on `ThrottlerModule.forRoot([...])`) remains available as a separate future slice; today's change keeps `apps/api-v2/src/app.module.ts` frozen.
   - The `payments` list activation is the first responsive-triple-render consumer of the assignee-cell family — handle any future cell-shape change as a synchronized edit across `PaymentsMobileCards`, `PaymentsTabletRows`, and `PaymentsDesktopTable` so the three render modes do not drift.
+
+</details>
+
+<details>
+<summary>2026-04-23</summary>
+
+- **2026-04-23:**
+
+  ### 🚀 Feature
+  - **Admin-v2 mobile shell cleanup:** Remove legacy gate-driven shell behavior, align mobile navigation state with the active route, and tighten sticky shell chrome spacing so the admin-v2 shell behaves consistently across compact breakpoints.
+
+  ### 🔐 Security / Production Safety
+  - **Accessibility and navigation safety:** Normalize mobile navigation accessibility behavior so shell state and visible affordances stay in sync during operator navigation flows.
+
+  ### 🧪 Testing
+  - **Regression coverage alignment:** Update ledger-anomalies saved-view assertions and refresh nearby admin-v2 test coverage after the shell and gate cleanup.
+
+  ### 🛠 DevEx
+  - **Scoped git hooks:** Restrict Husky execution to affected workspaces so local validation remains proportional to the touched surface.
+
+  ### ⚠️ Notes
+  - **Chore-sized follow-up commits:** The `test` / cleanup commits on this date were folded into the same shell-stability narrative instead of being listed as raw git subjects.
+
+</details>
+
+<details open>
+<summary>2026-04-24</summary>
+
+- **2026-04-24:**
+
+  ### 🚀 Feature
+  - **Canonical operator entry surfaces:** Land the admin-v2 shell quickstarts and operator workspace surfaces, then migrate the affected shell pages onto tailwind-first primitives so the shell presents a more consistent operator-facing entry point.
+  - **Shared admin-v2 surface alignment:** Extract shared workspace metadata and formatting helpers so saved-view paths, anomaly labels, alert workspace metadata, bytes/date formatting, and default lookback ranges stay aligned across admin-v2 surfaces.
+  - **Load-state normalization:** Harden consumer-support side effects and normalize admin read/load states so shell surfaces behave predictably while data is pending or being refreshed.
+
+  ### 🔐 Security / Production Safety
+  - **Origin hardening:** Remove the implicit localhost origin fallback from the admin-v2 request-origin path and require explicit origin resolution through the supported config surface.
+
+  ### 🧪 Testing
+  - **Shared-helper regression coverage:** Add targeted tests for the new admin-v2 metadata/format helper layer and keep the touched admin-v2 pages covered after the shell refactor.
+
+  ### 🛠 DevEx
+  - **Generated surface refresh:** Fold the generated updates and helper extraction into the same admin-v2 shell cleanup so shared primitives and generated artifacts remain in sync.
+
+  ### 📄 Documentation
+  - **Changelog normalization handoff:** Record the admin-v2 shell, hardening, and shared-helper cleanup in the daily changelog structure that now serves as the canonical format.
+
+  ### ⚠️ Notes
+  - **No new migration surface:** The quickstarts, shell refactor, origin hardening, and shared-helper extraction landed without introducing a new database migration.
 
 </details>
 
