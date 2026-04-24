@@ -28,11 +28,9 @@
     "typecheck": "turbo run typecheck",
     "typecheck:v2-apps": "yarn workspace @remoola/consumer-css-grid run typecheck && yarn workspace @remoola/admin-v2 run typecheck && yarn workspace @remoola/api-v2 run typecheck",
     "typecheck:watch": "turbo run typecheck:watch --parallel",
-    "verify:admin-v2-gates": "node ./scripts/admin-v2-gates/verify.mjs",
     "verify:prisma-format": "yarn workspace @remoola/database-2 prisma format && git diff --exit-code packages/database-2/prisma/schema.prisma",
     "verify:prisma-migrate-status": "yarn workspace @remoola/database-2 prisma migrate status",
     "test": "TERM=dumb NO_COLOR=1 node ./scripts/ensure-local-development.js root:test && turbo run test",
-    "test:admin-v2": "yarn workspace @remoola/api-v2 run test --testPathPatterns='admin-v2'",
     "test-db:cleanup": "TERM=dumb NO_COLOR=1 node ./scripts/cleanup-stale-test-dbs.js",
     "test:e2e": "TERM=dumb NO_COLOR=1 node ./scripts/ensure-local-development.js root:test:e2e && node ./scripts/cleanup-stale-test-dbs.js && turbo run test:e2e",
     "test:e2e:fast": "TERM=dumb NO_COLOR=1 node ./scripts/ensure-local-development.js root:test:e2e:fast && node ./scripts/cleanup-stale-test-dbs.js && turbo run test:e2e:fast",
@@ -65,7 +63,8 @@
     "turbo:dev:admin-v2": "turbo run dev --filter=@remoola/admin-v2",
     "turbo:dev:consumer-mobile": "turbo run dev --filter=@remoola/consumer-mobile",
     "lint:fix:apps": "yarn lint:fix:api && yarn lint:fix:api-v2 && yarn lint:fix:consumer && yarn lint:fix:admin && yarn lint:fix:admin-v2 && yarn lint:fix:consumer-mobile && yarn lint:fix:consumer-css-grid",
-    "lint:fix:v2-apps": "yarn lint:fix:api-v2 && yarn lint:fix:admin-v2 && yarn lint:fix:consumer-css-grid"
+    "lint:fix:v2-apps": "yarn lint:fix:api-v2 && yarn lint:fix:admin-v2 && yarn lint:fix:consumer-css-grid",
+    "test:admin-v2": "yarn workspace @remoola/api-v2 run test --testPathPatterns='admin-v2'"
   },
   "dependencies": {},
   "devDependencies": {

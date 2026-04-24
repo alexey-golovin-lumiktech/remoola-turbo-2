@@ -1,4 +1,9 @@
-import type { AdminRef, AdminsListResponse, AssignmentHistoryItem, AssignmentSummary } from '../lib/admin-api.server';
+import {
+  type AdminRef,
+  type AdminsListResponse,
+  type AssignmentHistoryItem,
+  type AssignmentSummary,
+} from '../lib/admin-api.server';
 
 type ReassignCandidate = AdminsListResponse[`items`][number];
 

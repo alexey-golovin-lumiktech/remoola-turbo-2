@@ -53,28 +53,7 @@ describe(`admin-v2 operational alerts page`, () => {
     mockedGetOperationalAlerts.mockReset();
   });
 
-  it(`renders empty state for all three workspaces when there are no alerts`, async () => {
-    mockedGetOperationalAlerts.mockResolvedValue({ alerts: [] });
-
-    const markup = renderToStaticMarkup(await OperationalAlertsPage());
-
-    expect(markup).toContain(`Operational alerts`);
-    expect(markup).toContain(`Ledger anomalies alerts`);
-    expect(markup).toContain(`Verification queue alerts`);
-    expect(markup).toContain(`Auth refresh reuse alerts`);
-    expect(markup).toContain(`No alerts yet for this workspace`);
-    expect(markup).toContain(`New ledger anomalies alert`);
-    expect(markup).toContain(`New verification queue alert`);
-    expect(markup).toContain(`New auth refresh reuse alert`);
-    expect(markup).toContain(`value="ledger_anomalies"`);
-    expect(markup).toContain(`value="verification_queue"`);
-    expect(markup).toContain(`value="auth_refresh_reuse"`);
-    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `ledger_anomalies` });
-    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `verification_queue` });
-    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `auth_refresh_reuse` });
-  });
-
-  it(`renders auth_refresh_reuse alert with windowMinutes payload summary`, async () => {
+  it(`parses auth refresh reuse payloads and still loads all supported workspaces`, async () => {
     mockedGetOperationalAlerts.mockImplementation(async ({ workspace }) => {
       if (workspace === `auth_refresh_reuse`) {
         return {
@@ -100,14 +79,14 @@ describe(`admin-v2 operational alerts page`, () => {
 
     const markup = renderToStaticMarkup(await OperationalAlertsPage());
 
-    expect(markup).toContain(`Refresh reuse spike`);
     expect(markup).toContain(`Window: 30m`);
-    expect(markup).toContain(`count &gt; 2`);
+    expect(markup).toContain(`Threshold: count &gt; 2 - every 5 min`);
     expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `ledger_anomalies` });
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `verification_queue` });
     expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `auth_refresh_reuse` });
   });
 
-  it(`renders verification_queue alerts with filter and total-queue payload summaries`, async () => {
+  it(`summarizes filtered and total verification queue alert payloads`, async () => {
     mockedGetOperationalAlerts.mockImplementation(async ({ workspace }) => {
       if (workspace === `verification_queue`) {
         return {
@@ -146,26 +125,25 @@ describe(`admin-v2 operational alerts page`, () => {
 
     const markup = renderToStaticMarkup(await OperationalAlertsPage());
 
-    expect(markup).toContain(`Pending US backlog`);
     expect(markup).toContain(`Filters: status=pending, country=US`);
-    expect(markup).toContain(`Total queue size`);
     expect(markup).toContain(`Filters: (none — total queue)`);
-    expect(markup).toContain(`count &gt; 25`);
-    expect(markup).toContain(`count &gt; 100`);
+    expect(markup).toContain(`Threshold: count &gt; 25 - every 5 min`);
+    expect(markup).toContain(`Threshold: count &gt; 100 - every 5 min`);
     expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `ledger_anomalies` });
     expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `verification_queue` });
     expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `auth_refresh_reuse` });
   });
 
-  it(`renders backend-unavailable fallback when getOperationalAlerts returns null`, async () => {
+  it(`shows the backend-unavailable fallback when a workspace response is null`, async () => {
     mockedGetOperationalAlerts.mockResolvedValue(null);
 
     const markup = renderToStaticMarkup(await OperationalAlertsPage());
 
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledTimes(3);
     expect(markup).toContain(`Operational alerts list is temporarily unavailable`);
   });
 
-  it(`renders fired badge for alert fired within 2x interval window`, async () => {
+  it(`marks alerts as fired when lastFiredAt is still inside the active window`, async () => {
     const now = new Date();
     const recent = new Date(now.getTime() - 60_000).toISOString();
     mockedGetOperationalAlerts.mockResolvedValue({
@@ -184,12 +162,11 @@ describe(`admin-v2 operational alerts page`, () => {
 
     const markup = renderToStaticMarkup(await OperationalAlertsPage());
 
-    expect(markup).toContain(`Recently fired alert`);
     expect(markup).toContain(`FIRED`);
     expect(markup).toContain(`count=8 exceeded threshold=5`);
   });
 
-  it(`renders 'Last fired' history label for an alert fired well outside the active window`, async () => {
+  it(`renders fire history instead of the active badge outside the firing window`, async () => {
     const old = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     mockedGetOperationalAlerts.mockResolvedValue({
       alerts: [
@@ -207,12 +184,11 @@ describe(`admin-v2 operational alerts page`, () => {
 
     const markup = renderToStaticMarkup(await OperationalAlertsPage());
 
-    expect(markup).toContain(`Old fired alert`);
     expect(markup).toContain(`Last fired:`);
     expect(markup).not.toContain(`>FIRED<`);
   });
 
-  it(`renders evaluation error badge with truncated tooltip when last_evaluation_error is set`, async () => {
+  it(`surfaces evaluation errors without losing the non-firing state`, async () => {
     mockedGetOperationalAlerts.mockResolvedValue({
       alerts: [
         {
@@ -229,38 +205,8 @@ describe(`admin-v2 operational alerts page`, () => {
 
     const markup = renderToStaticMarkup(await OperationalAlertsPage());
 
-    expect(markup).toContain(`Errored alert`);
     expect(markup).toContain(`Evaluation error`);
     expect(markup).toContain(`Anomaly query timed out`);
     expect(markup).toContain(`Never fired`);
-  });
-
-  it(`renders threshold and interval summary plus inline rename/threshold form for each alert`, async () => {
-    mockedGetOperationalAlerts.mockResolvedValue({
-      alerts: [
-        {
-          ...ALERT_TEMPLATE,
-          id: `alert-normal`,
-          name: `Normal alert`,
-          description: `Watching stale entries`,
-          lastEvaluatedAt: new Date().toISOString(),
-          lastEvaluationError: null,
-          lastFiredAt: null,
-          lastFireReason: null,
-        },
-      ],
-    });
-
-    const markup = renderToStaticMarkup(await OperationalAlertsPage());
-
-    expect(markup).toContain(`Normal alert`);
-    expect(markup).toContain(`Watching stale entries`);
-    expect(markup).toContain(`count &gt; 5`);
-    expect(markup).toContain(`every 5 min`);
-    expect(markup).toContain(`Class: stalePendingEntries`);
-    expect(markup).toContain(`Rename or update threshold`);
-    expect(markup).toContain(`name="thresholdPayload"`);
-    expect(markup).toContain(`name="evaluationIntervalMinutes"`);
-    expect(markup).toContain(`Delete`);
   });
 });

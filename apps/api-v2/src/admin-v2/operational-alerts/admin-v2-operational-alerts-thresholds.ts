@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-import type { OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
+import { type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 
 export const SUPPORTED_THRESHOLD_TYPES = [`count_gt`] as const;
 export type SupportedThresholdType = (typeof SUPPORTED_THRESHOLD_TYPES)[number];

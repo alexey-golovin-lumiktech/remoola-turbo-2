@@ -11,6 +11,7 @@ jest.mock(`next/link`, () => ({
 }));
 
 jest.mock(`../../../lib/admin-api.server`, () => ({
+  getQuickstart: jest.fn(),
   getVerificationQueue: jest.fn(),
   getSavedViews: jest.fn(),
 }));
@@ -21,9 +22,20 @@ jest.mock(`../../../lib/admin-mutations.server`, () => ({
   deleteSavedViewAction: jest.fn(async () => undefined),
 }));
 
-const { getVerificationQueue: mockedGetVerificationQueue, getSavedViews: mockedGetSavedViews } = jest.requireMock(
-  `../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+const {
+  getQuickstart: mockedGetQuickstart,
+  getVerificationQueue: mockedGetVerificationQueue,
+  getSavedViews: mockedGetSavedViews,
+} = jest.requireMock(`../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+
+function expectDisabledLink(markup: string, href: string): void {
+  const escapedHref = href.replace(/[.*+?^${}()|[\]\\]/g, `\\$&`);
+  expect(markup).toMatch(
+    new RegExp(
+      `<a[^>]*(href="${escapedHref}"[^>]*aria-disabled="true"|aria-disabled="true"[^>]*href="${escapedHref}")`,
+    ),
+  );
+}
 
 async function loadSubject() {
   return (await import(`./page`)).default;
@@ -69,12 +81,14 @@ describe(`admin-v2 verification queue assignment column`, () => {
   });
 
   beforeEach(() => {
+    mockedGetQuickstart.mockReset();
     mockedGetVerificationQueue.mockReset();
     mockedGetSavedViews.mockReset();
+    mockedGetQuickstart.mockResolvedValue(null);
     mockedGetSavedViews.mockResolvedValue({ views: [] });
   });
 
-  it(`renders an assignee row and an unassigned row side by side`, async () => {
+  it(`maps assigned and unassigned rows into queue links and assignee output`, async () => {
     mockedGetVerificationQueue.mockResolvedValue({
       items: [
         baseRow({
@@ -97,7 +111,15 @@ describe(`admin-v2 verification queue assignment column`, () => {
 
     const markup = renderToStaticMarkup(await VerificationQueuePage({ searchParams: Promise.resolve({}) }));
 
-    expect(markup).toContain(`Assigned to`);
+    expect(mockedGetVerificationQueue).toHaveBeenCalledWith({
+      page: 1,
+      status: undefined,
+      stripeIdentityStatus: undefined,
+      country: undefined,
+      contractorKind: undefined,
+      missingProfileData: false,
+      missingDocuments: false,
+    });
     expect(markup).toContain(`ops7@example.com`);
     expect(markup).toContain(`/verification/consumer-assigned`);
     expect(markup).toContain(`/verification/consumer-free`);
@@ -111,25 +133,15 @@ describe(`admin-v2 verification queue saved views section`, () => {
   });
 
   beforeEach(() => {
+    mockedGetQuickstart.mockReset();
     mockedGetVerificationQueue.mockReset();
     mockedGetSavedViews.mockReset();
+    mockedGetQuickstart.mockResolvedValue(null);
     mockedGetVerificationQueue.mockResolvedValue(emptyQueue());
     mockedGetSavedViews.mockResolvedValue({ views: [] });
   });
 
-  it(`renders the saved views empty state with the save current view form`, async () => {
-    const markup = renderToStaticMarkup(await VerificationQueuePage({ searchParams: Promise.resolve({}) }));
-
-    expect(markup).toContain(`Saved views`);
-    expect(markup).toContain(`No saved views yet.`);
-    expect(markup).toContain(`Save current view`);
-    expect(markup).toContain(`maxLength="100"`);
-    expect(markup).toContain(`name="workspace" value="verification_queue"`);
-    expect(markup).toContain(`cannot be used by alert evaluation (frontend-only filters)`);
-    expect(mockedGetSavedViews).toHaveBeenCalledWith({ workspace: `verification_queue` });
-  });
-
-  it(`renders saved view rows with apply, delete and rename and an extracted href`, async () => {
+  it(`maps valid saved view payloads into apply links and rejects invalid payloads`, async () => {
     mockedGetSavedViews.mockResolvedValue({
       views: [
         {
@@ -164,30 +176,26 @@ describe(`admin-v2 verification queue saved views section`, () => {
 
     const markup = renderToStaticMarkup(await VerificationQueuePage({ searchParams: Promise.resolve({}) }));
 
-    expect(markup).toContain(`Pending DE individuals`);
-    expect(markup).toContain(`Stuck pending individual consumers in DE`);
-    expect(markup).toContain(`Missing docs cohort`);
-    expect(markup).toContain(`Legacy shape`);
+    expect(mockedGetSavedViews).toHaveBeenCalledWith({ workspace: `verification_queue` });
     expect(markup).toContain(
       `href="/verification?status=PENDING&amp;country=DE&amp;contractorKind=INDIVIDUAL&amp;page=1"`,
     );
     expect(markup).toContain(`href="/verification?missingProfileData=true&amp;missingDocuments=true&amp;page=1"`);
     expect(markup).toContain(`Saved view payload could not be applied.`);
-    expect(markup).toContain(`One or more saved views have an unrecognised payload shape and cannot be applied.`);
-    expect(markup).toContain(`Delete`);
-    expect(markup).toContain(`Rename or update`);
+    expectDisabledLink(markup, `/verification?page=1`);
   });
 
-  it(`falls back gracefully when the saved views fetch returns null`, async () => {
+  it(`falls back to an empty saved-view list when the fetch returns null`, async () => {
     mockedGetSavedViews.mockResolvedValue(null);
 
     const markup = renderToStaticMarkup(await VerificationQueuePage({ searchParams: Promise.resolve({}) }));
 
-    expect(markup).toContain(`Saved views`);
-    expect(markup).toContain(`No saved views yet.`);
+    expect(mockedGetSavedViews).toHaveBeenCalledWith({ workspace: `verification_queue` });
+    expect(markup).toContain(`name="workspace" value="verification_queue"`);
+    expect(markup).toContain(`name="queryPayload" value="{}"`);
   });
 
-  it(`reflects current search params in the saved view payload preview`, async () => {
+  it(`maps current filters into the saved view payload contract`, async () => {
     const markup = renderToStaticMarkup(
       await VerificationQueuePage({
         searchParams: Promise.resolve({
@@ -198,15 +206,21 @@ describe(`admin-v2 verification queue saved views section`, () => {
       }),
     );
 
-    expect(markup).toContain(`status=PENDING`);
-    expect(markup).toContain(`country=US`);
-    expect(markup).toContain(`missingDocuments=true`);
+    expect(mockedGetVerificationQueue).toHaveBeenCalledWith({
+      page: 1,
+      status: `PENDING`,
+      stripeIdentityStatus: undefined,
+      country: `US`,
+      contractorKind: undefined,
+      missingProfileData: false,
+      missingDocuments: true,
+    });
     expect(markup).toContain(
       `name="queryPayload" value="{&quot;status&quot;:&quot;PENDING&quot;,&quot;country&quot;:&quot;US&quot;,&quot;missingDocuments&quot;:true}"`,
     );
   });
 
-  it(`rejects array-shaped saved view payloads as unapplyable`, async () => {
+  it(`treats array-shaped saved view payloads as invalid and falls back to defaults`, async () => {
     mockedGetSavedViews.mockResolvedValue({
       views: [
         {
@@ -223,8 +237,68 @@ describe(`admin-v2 verification queue saved views section`, () => {
 
     const markup = renderToStaticMarkup(await VerificationQueuePage({ searchParams: Promise.resolve({}) }));
 
-    expect(markup).toContain(`Bad array payload`);
     expect(markup).toContain(`Saved view payload could not be applied.`);
     expect(markup).toContain(`Use defaults`);
+    expectDisabledLink(markup, `/verification?page=1`);
+  });
+});
+
+describe(`admin-v2 verification quickstarts`, () => {
+  beforeAll(async () => {
+    VerificationQueuePage = await loadSubject();
+  });
+
+  beforeEach(() => {
+    mockedGetQuickstart.mockReset();
+    mockedGetVerificationQueue.mockReset();
+    mockedGetSavedViews.mockReset();
+    mockedGetSavedViews.mockResolvedValue({ views: [] });
+    mockedGetVerificationQueue.mockResolvedValue(emptyQueue());
+  });
+
+  it(`resolves verification quickstarts server-side before loading the queue`, async () => {
+    mockedGetQuickstart.mockResolvedValue({
+      id: `verification-missing-documents`,
+      label: `Verification missing documents`,
+      description: `Focus the verification queue on cases blocked by missing consumer documents.`,
+      eyebrow: `QUEUE-FIRST`,
+      targetPath: `/verification`,
+      surfaces: [`shell`, `overview`],
+      filters: { missingDocuments: true },
+    } as never);
+
+    const markup = renderToStaticMarkup(
+      await VerificationQueuePage({
+        searchParams: Promise.resolve({ quickstart: `verification-missing-documents` }),
+      }),
+    );
+
+    expect(mockedGetQuickstart).toHaveBeenCalledWith(`verification-missing-documents`);
+    expect(mockedGetVerificationQueue).toHaveBeenCalledWith({
+      page: 1,
+      status: undefined,
+      stripeIdentityStatus: undefined,
+      country: undefined,
+      contractorKind: undefined,
+      missingProfileData: false,
+      missingDocuments: true,
+    });
+    expect(markup).toContain(`href="/verification"`);
+  });
+
+  it(`shows a fallback banner when the quickstart id is invalid`, async () => {
+    const markup = renderToStaticMarkup(
+      await VerificationQueuePage({
+        searchParams: Promise.resolve({ quickstart: `not-real` }),
+      }),
+    );
+
+    expect(mockedGetQuickstart).not.toHaveBeenCalled();
+    expect(mockedGetVerificationQueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        missingDocuments: false,
+      }),
+    );
+    expect(markup).toContain(`could not be resolved`);
   });
 });

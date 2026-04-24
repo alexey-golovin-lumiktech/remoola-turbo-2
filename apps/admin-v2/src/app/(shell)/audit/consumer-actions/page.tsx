@@ -1,10 +1,123 @@
 import Link from 'next/link';
 
+import { DenseTable } from '../../../../components/dense-table';
+import { MobileQueueCard } from '../../../../components/mobile-queue-card';
+import { TabletRow } from '../../../../components/tablet-row';
+import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getConsumerActionAudit } from '../../../../lib/admin-api.server';
 
 function formatDate(value: unknown): string {
   if (typeof value !== `string`) return `-`;
   return new Date(value).toLocaleString();
+}
+
+type ConsumerActionRow = Record<string, unknown>;
+
+function renderConsumerLink(item: ConsumerActionRow) {
+  if (typeof item.consumerId === `string`) {
+    return <Link href={`/consumers/${item.consumerId}`}>{item.consumerId}</Link>;
+  }
+  return `-`;
+}
+
+function ConsumerActionsMobileCards({ items }: { items: ConsumerActionRow[] }) {
+  if (items.length === 0) {
+    return (
+      <div className="readSurface md:hidden" data-view="mobile">
+        <div className="panel muted">No consumer actions match the current filters.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="readSurface md:hidden" data-view="mobile">
+      <div className="queueCards">
+        {items.map((item, index) => (
+          <MobileQueueCard
+            key={String(item.id ?? index)}
+            id={String(item.id ?? index)}
+            title={String(item.action ?? `-`)}
+            subtitle={<span className="mono">{renderConsumerLink(item)}</span>}
+          >
+            <div>
+              {String(item.resource ?? `-`)}
+              {` `}
+              <span className="muted mono">{String(item.resourceId ?? `-`)}</span>
+            </div>
+            <div className="muted mono">{JSON.stringify(item.metadata ?? {})}</div>
+            <div className="muted">Created: {formatDate(item.createdAt)}</div>
+          </MobileQueueCard>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ConsumerActionsTabletRows({ items }: { items: ConsumerActionRow[] }) {
+  if (items.length === 0) {
+    return (
+      <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
+        <div className="panel muted">No consumer actions match the current filters.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
+      <div className="condensedList">
+        {items.map((item, index) => (
+          <TabletRow
+            key={String(item.id ?? index)}
+            primary={
+              <>
+                <strong>{String(item.action ?? `-`)}</strong>
+                <div className="muted mono">{renderConsumerLink(item)}</div>
+              </>
+            }
+            cells={[
+              <div key="resource">
+                {String(item.resource ?? `-`)}
+                <div className="muted mono">{String(item.resourceId ?? `-`)}</div>
+              </div>,
+              <div className="muted mono" key="metadata">
+                {JSON.stringify(item.metadata ?? {})}
+              </div>,
+              <div className="muted" key="created">
+                {formatDate(item.createdAt)}
+              </div>,
+              null,
+            ]}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ConsumerActionsDesktopTable({ items }: { items: ConsumerActionRow[] }) {
+  return (
+    <div className="readSurface hidden xl:block" data-view="desktop">
+      <DenseTable
+        headers={[`Consumer`, `Action`, `Resource`, `Metadata`, `Created`]}
+        emptyMessage="No consumer actions match the current filters."
+      >
+        {items.length === 0
+          ? null
+          : items.map((item, index) => (
+              <tr key={String(item.id ?? index)}>
+                <td className="mono">{renderConsumerLink(item)}</td>
+                <td>{String(item.action ?? `-`)}</td>
+                <td>
+                  {String(item.resource ?? `-`)}
+                  <div className="muted mono">{String(item.resourceId ?? `-`)}</div>
+                </td>
+                <td className="mono">{JSON.stringify(item.metadata ?? {})}</td>
+                <td>{formatDate(item.createdAt)}</td>
+              </tr>
+            ))}
+      </DenseTable>
+    </div>
+  );
 }
 
 export default async function AuditConsumerActionsPage({
@@ -39,77 +152,57 @@ export default async function AuditConsumerActionsPage({
     return `/audit/consumer-actions?${query.toString()}`;
   }
 
+  const items = (data?.items ?? []) as Array<Record<string, unknown>> as ConsumerActionRow[];
+
   return (
-    <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Audit / Consumer Actions</h1>
-          <p className="muted">Time-bounded consumer action log explorer. Default range is the last 7 days.</p>
-        </div>
-        <form className="actionsRow" method="get">
-          <input name="consumerId" defaultValue={params?.consumerId ?? ``} placeholder="consumer id" />
-          <input name="action" defaultValue={params?.action ?? ``} placeholder="action" />
-          <input
-            name="dateFrom"
-            defaultValue={params?.dateFrom ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()}
-            placeholder="dateFrom"
-          />
-          <input name="dateTo" defaultValue={params?.dateTo ?? new Date().toISOString()} placeholder="dateTo" />
-          <button className="secondaryButton" type="submit">
-            Apply
-          </button>
-        </form>
-      </section>
-      <section className="panel tableWrap">
-        <div className="pageHeader">
-          <p className="muted">
-            {data?.total ?? 0} results · page {data?.page ?? 1} / {totalPages}
-          </p>
-          <div className="actionsRow">
-            <a className="secondaryButton" aria-disabled={page <= 1} href={page > 1 ? pageHref(page - 1) : pageHref(1)}>
-              Previous
-            </a>
-            <a
-              className="secondaryButton"
-              aria-disabled={page >= totalPages}
-              href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
-            >
-              Next
-            </a>
+    <WorkspaceLayout workspace="audit/consumer-actions">
+      <>
+        <section className="panel pageHeader">
+          <div>
+            <h1>Audit / Consumer Actions</h1>
+            <p className="muted">Time-bounded consumer action log explorer. Default range is the last 7 days.</p>
           </div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Consumer</th>
-              <th>Action</th>
-              <th>Resource</th>
-              <th>Metadata</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {((data?.items ?? []) as Array<Record<string, unknown>>).map((item, index) => (
-              <tr key={String(item.id ?? index)}>
-                <td className="mono">
-                  {typeof item.consumerId === `string` ? (
-                    <Link href={`/consumers/${item.consumerId}`}>{item.consumerId}</Link>
-                  ) : (
-                    `-`
-                  )}
-                </td>
-                <td>{String(item.action ?? `-`)}</td>
-                <td>
-                  {String(item.resource ?? `-`)}
-                  <div className="muted mono">{String(item.resourceId ?? `-`)}</div>
-                </td>
-                <td className="mono">{JSON.stringify(item.metadata ?? {})}</td>
-                <td>{formatDate(item.createdAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    </>
+          <form className="actionsRow" method="get">
+            <input name="consumerId" defaultValue={params?.consumerId ?? ``} placeholder="consumer id" />
+            <input name="action" defaultValue={params?.action ?? ``} placeholder="action" />
+            <input
+              name="dateFrom"
+              defaultValue={params?.dateFrom ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()}
+              placeholder="dateFrom"
+            />
+            <input name="dateTo" defaultValue={params?.dateTo ?? new Date().toISOString()} placeholder="dateTo" />
+            <button className="secondaryButton" type="submit">
+              Apply
+            </button>
+          </form>
+        </section>
+        <section className="panel">
+          <div className="pageHeader">
+            <p className="muted">
+              {data?.total ?? 0} results · page {data?.page ?? 1} / {totalPages}
+            </p>
+            <div className="actionsRow">
+              <a
+                className="secondaryButton"
+                aria-disabled={page <= 1}
+                href={page > 1 ? pageHref(page - 1) : pageHref(1)}
+              >
+                Previous
+              </a>
+              <a
+                className="secondaryButton"
+                aria-disabled={page >= totalPages}
+                href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
+              >
+                Next
+              </a>
+            </div>
+          </div>
+          <ConsumerActionsMobileCards items={items} />
+          <ConsumerActionsTabletRows items={items} />
+          <ConsumerActionsDesktopTable items={items} />
+        </section>
+      </>
+    </WorkspaceLayout>
   );
 }

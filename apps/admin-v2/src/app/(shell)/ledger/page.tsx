@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+import { DenseTable } from '../../../components/dense-table';
+import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { TabletRow } from '../../../components/tablet-row';
+import { WorkspaceLayout } from '../../../components/workspace-layout';
 import {
   getLedgerDisputes,
   getLedgerEntries,
@@ -82,40 +86,38 @@ function DisputeMetadataViewer({ dispute }: { dispute: DisputeItem }) {
 function LedgerEntriesMobileCards({ items }: { items: LedgerEntryItem[] }) {
   if (items.length === 0) {
     return (
-      <div className="readSurface" data-view="mobile">
+      <div className="readSurface md:hidden" data-view="mobile">
         <div className="panel muted">No ledger entries found for the current filters.</div>
       </div>
     );
   }
 
   return (
-    <div className="readSurface" data-view="mobile">
+    <div className="readSurface md:hidden" data-view="mobile">
       <div className="queueCards">
         {items.map((entry) => (
-          <article className="queueCard" key={entry.id}>
-            <div className="pageHeader">
-              <div>
-                <Link href={`/ledger/${entry.id}`}>
-                  <strong>{entry.type}</strong>
-                </Link>
-                <div className="muted mono">{entry.id}</div>
-              </div>
-              <div className="muted">
+          <MobileQueueCard
+            key={entry.id}
+            id={entry.id}
+            href={`/ledger/${entry.id}`}
+            title={entry.type}
+            subtitle={<span className="mono">{entry.id}</span>}
+            trailing={
+              <>
                 {entry.amount} {entry.currencyCode}
-              </div>
+              </>
+            }
+          >
+            <div className="muted">{entry.paymentRail ?? `No rail`}</div>
+            <LedgerEntryLinks entry={entry} />
+            <div>{entry.effectiveStatus}</div>
+            <div className="muted">Persisted: {entry.persistedStatus}</div>
+            <div className="muted">Disputes: {entry.disputeCount}</div>
+            <div className="muted">Created: {formatDate(entry.createdAt)}</div>
+            <div className="muted">
+              Assigned to: <LedgerEntryAssignedTo entry={entry} />
             </div>
-            <div className="queueCardBody">
-              <div className="muted">{entry.paymentRail ?? `No rail`}</div>
-              <LedgerEntryLinks entry={entry} />
-              <div>{entry.effectiveStatus}</div>
-              <div className="muted">Persisted: {entry.persistedStatus}</div>
-              <div className="muted">Disputes: {entry.disputeCount}</div>
-              <div className="muted">Created: {formatDate(entry.createdAt)}</div>
-              <div className="muted">
-                Assigned to: <LedgerEntryAssignedTo entry={entry} />
-              </div>
-            </div>
-          </article>
+          </MobileQueueCard>
         ))}
       </div>
     </div>
@@ -125,44 +127,47 @@ function LedgerEntriesMobileCards({ items }: { items: LedgerEntryItem[] }) {
 function LedgerEntriesTabletRows({ items }: { items: LedgerEntryItem[] }) {
   if (items.length === 0) {
     return (
-      <div className="readSurface" data-view="tablet">
+      <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
         <div className="panel muted">No ledger entries found for the current filters.</div>
       </div>
     );
   }
 
   return (
-    <div className="readSurface" data-view="tablet">
+    <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
       <div className="condensedList">
         {items.map((entry) => (
-          <article className="condensedRow" key={entry.id}>
-            <div className="condensedRowPrimary">
-              <Link href={`/ledger/${entry.id}`}>
-                <strong>{entry.type}</strong>
-              </Link>
-              <div className="muted mono">{entry.id}</div>
-            </div>
-            <div className="condensedRowMeta">
-              <LedgerEntryLinks entry={entry} />
-            </div>
-            <div className="condensedRowMeta">
-              <div>{entry.effectiveStatus}</div>
-              <div className="muted">Persisted: {entry.persistedStatus}</div>
-            </div>
-            <div className="condensedRowMeta">
-              <div>
-                {entry.amount} {entry.currencyCode}
-              </div>
-              <div className="muted">{entry.paymentRail ?? `No rail`}</div>
-            </div>
-            <div className="condensedRowMeta">
-              <div className="muted">Disputes: {entry.disputeCount}</div>
-              <div className="muted">Created: {formatDate(entry.createdAt)}</div>
-            </div>
-            <div className="condensedRowMeta">
-              <LedgerEntryAssignedTo entry={entry} />
-            </div>
-          </article>
+          <TabletRow
+            key={entry.id}
+            primary={
+              <>
+                <Link href={`/ledger/${entry.id}`}>
+                  <strong>{entry.type}</strong>
+                </Link>
+                <div className="muted mono">{entry.id}</div>
+              </>
+            }
+            cells={[
+              <LedgerEntryLinks entry={entry} key="links" />,
+              <div key="status">
+                <div>{entry.effectiveStatus}</div>
+                <div className="muted">Persisted: {entry.persistedStatus}</div>
+              </div>,
+              <div key="amount">
+                <div>
+                  {entry.amount} {entry.currencyCode}
+                </div>
+                <div className="muted">{entry.paymentRail ?? `No rail`}</div>
+              </div>,
+              <div key="disputes-assigned">
+                <div className="muted">Disputes: {entry.disputeCount}</div>
+                <div className="muted">Created: {formatDate(entry.createdAt)}</div>
+                <div className="muted">
+                  Assigned: <LedgerEntryAssignedTo entry={entry} />
+                </div>
+              </div>,
+            ]}
+          />
         ))}
       </div>
     </div>
@@ -171,22 +176,14 @@ function LedgerEntriesTabletRows({ items }: { items: LedgerEntryItem[] }) {
 
 function LedgerEntriesDesktopTable({ items }: { items: LedgerEntryItem[] }) {
   return (
-    <div className="readSurface" data-view="desktop">
-      <div className="tableWrap">
-        <table className="tableDense">
-          <thead>
-            <tr>
-              <th>Ledger entry</th>
-              <th>Links</th>
-              <th>Status</th>
-              <th>Assigned to</th>
-              <th>Amount</th>
-              <th>Disputes</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((entry) => (
+    <div className="readSurface hidden xl:block" data-view="desktop">
+      <DenseTable
+        headers={[`Ledger entry`, `Links`, `Status`, `Assigned to`, `Amount`, `Disputes`, `Created`]}
+        emptyMessage="No ledger entries found for the current filters."
+      >
+        {items.length === 0
+          ? null
+          : items.map((entry) => (
               <tr key={entry.id}>
                 <td>
                   <Link href={`/ledger/${entry.id}`}>
@@ -212,14 +209,7 @@ function LedgerEntriesDesktopTable({ items }: { items: LedgerEntryItem[] }) {
                 <td>{formatDate(entry.createdAt)}</td>
               </tr>
             ))}
-            {items.length === 0 ? (
-              <tr>
-                <td colSpan={7}>No ledger entries found for the current filters.</td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+      </DenseTable>
     </div>
   );
 }
@@ -227,35 +217,32 @@ function LedgerEntriesDesktopTable({ items }: { items: LedgerEntryItem[] }) {
 function DisputesMobileCards({ items }: { items: DisputeItem[] }) {
   if (items.length === 0) {
     return (
-      <div className="readSurface" data-view="mobile">
+      <div className="readSurface md:hidden" data-view="mobile">
         <div className="panel muted">No dispute records found for the current filters.</div>
       </div>
     );
   }
 
   return (
-    <div className="readSurface" data-view="mobile">
+    <div className="readSurface md:hidden" data-view="mobile">
       <div className="queueCards">
         {items.map((dispute) => (
-          <article className="queueCard" key={dispute.id}>
-            <div className="pageHeader">
-              <div>
-                <strong>{dispute.stripeDisputeId}</strong>
-                <div className="muted mono">{dispute.id}</div>
-              </div>
-              <div className="muted">{dispute.disputeStatus ?? `-`}</div>
+          <MobileQueueCard
+            key={dispute.id}
+            id={dispute.id}
+            title={dispute.stripeDisputeId}
+            subtitle={<span className="mono">{dispute.id}</span>}
+            trailing={dispute.disputeStatus ?? `-`}
+          >
+            <div>
+              <Link href={`/ledger/${dispute.ledgerEntry.id}`}>{dispute.ledgerEntry.type}</Link>
             </div>
-            <div className="queueCardBody">
-              <div>
-                <Link href={`/ledger/${dispute.ledgerEntry.id}`}>{dispute.ledgerEntry.type}</Link>
-              </div>
-              <div className="muted mono">{dispute.ledgerEntry.id}</div>
-              <DisputeLinks dispute={dispute} />
-              <div className="muted">Reason: {dispute.reason ?? `-`}</div>
-              <div className="muted">Captured: {formatDate(dispute.createdAt)}</div>
-              <DisputeMetadataViewer dispute={dispute} />
-            </div>
-          </article>
+            <div className="muted mono">{dispute.ledgerEntry.id}</div>
+            <DisputeLinks dispute={dispute} />
+            <div className="muted">Reason: {dispute.reason ?? `-`}</div>
+            <div className="muted">Captured: {formatDate(dispute.createdAt)}</div>
+            <DisputeMetadataViewer dispute={dispute} />
+          </MobileQueueCard>
         ))}
       </div>
     </div>
@@ -265,37 +252,40 @@ function DisputesMobileCards({ items }: { items: DisputeItem[] }) {
 function DisputesTabletRows({ items }: { items: DisputeItem[] }) {
   if (items.length === 0) {
     return (
-      <div className="readSurface" data-view="tablet">
+      <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
         <div className="panel muted">No dispute records found for the current filters.</div>
       </div>
     );
   }
 
   return (
-    <div className="readSurface" data-view="tablet">
+    <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
       <div className="condensedList">
         {items.map((dispute) => (
-          <article className="condensedRow" key={dispute.id}>
-            <div className="condensedRowPrimary">
-              <strong>{dispute.stripeDisputeId}</strong>
-              <div className="muted mono">{dispute.id}</div>
-            </div>
-            <div className="condensedRowMeta">
-              <Link href={`/ledger/${dispute.ledgerEntry.id}`}>{dispute.ledgerEntry.type}</Link>
-              <div className="muted mono">{dispute.ledgerEntry.id}</div>
-            </div>
-            <div className="condensedRowMeta">
-              <DisputeLinks dispute={dispute} />
-            </div>
-            <div className="condensedRowMeta">
-              <div>{dispute.disputeStatus ?? `-`}</div>
-              <div className="muted">Reason: {dispute.reason ?? `-`}</div>
-            </div>
-            <div className="condensedRowMeta">
-              <div className="muted">Captured: {formatDate(dispute.createdAt)}</div>
-              <DisputeMetadataViewer dispute={dispute} />
-            </div>
-          </article>
+          <TabletRow
+            key={dispute.id}
+            primary={
+              <>
+                <strong>{dispute.stripeDisputeId}</strong>
+                <div className="muted mono">{dispute.id}</div>
+              </>
+            }
+            cells={[
+              <div key="ledger">
+                <Link href={`/ledger/${dispute.ledgerEntry.id}`}>{dispute.ledgerEntry.type}</Link>
+                <div className="muted mono">{dispute.ledgerEntry.id}</div>
+              </div>,
+              <DisputeLinks dispute={dispute} key="links" />,
+              <div key="status">
+                <div>{dispute.disputeStatus ?? `-`}</div>
+                <div className="muted">Reason: {dispute.reason ?? `-`}</div>
+              </div>,
+              <div key="captured">
+                <div className="muted">Captured: {formatDate(dispute.createdAt)}</div>
+                <DisputeMetadataViewer dispute={dispute} />
+              </div>,
+            ]}
+          />
         ))}
       </div>
     </div>
@@ -304,21 +294,14 @@ function DisputesTabletRows({ items }: { items: DisputeItem[] }) {
 
 function DisputesDesktopTable({ items }: { items: DisputeItem[] }) {
   return (
-    <div className="readSurface" data-view="desktop">
-      <div className="tableWrap">
-        <table className="tableDense">
-          <thead>
-            <tr>
-              <th>Dispute</th>
-              <th>Ledger link</th>
-              <th>Payment / consumer</th>
-              <th>Status</th>
-              <th>Reason</th>
-              <th>Captured</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((dispute) => (
+    <div className="readSurface hidden xl:block" data-view="desktop">
+      <DenseTable
+        headers={[`Dispute`, `Ledger link`, `Payment / consumer`, `Status`, `Reason`, `Captured`]}
+        emptyMessage="No dispute records found for the current filters."
+      >
+        {items.length === 0
+          ? null
+          : items.map((dispute) => (
               <tr key={dispute.id}>
                 <td>
                   <strong>{dispute.stripeDisputeId}</strong>
@@ -337,14 +320,7 @@ function DisputesDesktopTable({ items }: { items: DisputeItem[] }) {
                 <td>{formatDate(dispute.createdAt)}</td>
               </tr>
             ))}
-            {items.length === 0 ? (
-              <tr>
-                <td colSpan={6}>No dispute records found for the current filters.</td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+      </DenseTable>
     </div>
   );
 }
@@ -425,81 +401,87 @@ export default async function LedgerPage({
   }
 
   return (
-    <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Ledger and Disputes</h1>
-          <p className="muted">MVP-1c read surfaces for exact ledger outcomes and append-only dispute drilldown.</p>
-        </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href={buildHref({ view: `entries` })}>
-            Ledger entries
-          </Link>
-          <Link className="secondaryButton" href={buildHref({ view: `disputes` })}>
-            Disputes
-          </Link>
-        </div>
-      </section>
-
-      <section className="panel pageHeader">
-        <form className="actionsRow" method="get">
-          {view === `disputes` ? <input type="hidden" name="view" value="disputes" /> : null}
-          <input name="q" defaultValue={q} placeholder="Search by ids, Stripe ids or idempotency key" />
-          {view === `entries` ? <input name="type" defaultValue={type} placeholder="type" /> : null}
-          {view === `entries` ? <input name="status" defaultValue={status} placeholder="effective status" /> : null}
-          {view === `entries` ? <input name="currencyCode" defaultValue={currencyCode} placeholder="currency" /> : null}
-          {view === `entries` ? <input name="amountSign" defaultValue={amountSign} placeholder="amount sign" /> : null}
-          <input name="paymentRequestId" defaultValue={paymentRequestId} placeholder="payment request id" />
-          <input name="consumerId" defaultValue={consumerId} placeholder="consumer id" />
-          <input name="dateFrom" type="date" defaultValue={dateFrom} aria-label="Date from" />
-          <input name="dateTo" type="date" defaultValue={dateTo} aria-label="Date to" />
-          <button className="secondaryButton" type="submit">
-            Apply
-          </button>
-          <Link className="secondaryButton" href={view === `disputes` ? `/ledger?view=disputes` : `/ledger`}>
-            Reset
-          </Link>
-        </form>
-      </section>
-
-      {view === `entries` ? (
-        <section className="panel">
-          <div className="pageHeader">
-            <div>
-              <h2>Ledger entries</h2>
-              <p className="muted">{entryItems.length} rows in this window</p>
-            </div>
-            {entries?.pageInfo.nextCursor ? (
-              <Link className="secondaryButton" href={buildHref({ cursor: entries.pageInfo.nextCursor })}>
-                Next
-              </Link>
-            ) : null}
+    <WorkspaceLayout workspace="ledger">
+      <>
+        <section className="panel pageHeader">
+          <div>
+            <h1>Ledger and Disputes</h1>
+            <p className="muted">MVP-1c read surfaces for exact ledger outcomes and append-only dispute drilldown.</p>
           </div>
-          <LedgerEntriesMobileCards items={entryItems} />
-          <LedgerEntriesTabletRows items={entryItems} />
-          <LedgerEntriesDesktopTable items={entryItems} />
-        </section>
-      ) : (
-        <section className="panel">
-          <div className="pageHeader">
-            <div>
-              <h2>Dispute log</h2>
-              <p className="muted">Append-only dispute records captured from Stripe webhooks.</p>
-            </div>
-            {disputes?.pageInfo.nextCursor ? (
-              <Link
-                className="secondaryButton"
-                href={buildHref({ view: `disputes`, cursor: disputes.pageInfo.nextCursor })}
-              >
-                Next
-              </Link>
-            ) : null}
+          <div className="actionsRow">
+            <Link className="secondaryButton" href={buildHref({ view: `entries` })}>
+              Ledger entries
+            </Link>
+            <Link className="secondaryButton" href={buildHref({ view: `disputes` })}>
+              Disputes
+            </Link>
           </div>
-          <DisputesMobileCards items={disputeItems} />
-          <DisputesTabletRows items={disputeItems} />
-          <DisputesDesktopTable items={disputeItems} />
         </section>
-      )}
-    </>
+
+        <section className="panel pageHeader">
+          <form className="actionsRow" method="get">
+            {view === `disputes` ? <input type="hidden" name="view" value="disputes" /> : null}
+            <input name="q" defaultValue={q} placeholder="Search by ids, Stripe ids or idempotency key" />
+            {view === `entries` ? <input name="type" defaultValue={type} placeholder="type" /> : null}
+            {view === `entries` ? <input name="status" defaultValue={status} placeholder="effective status" /> : null}
+            {view === `entries` ? (
+              <input name="currencyCode" defaultValue={currencyCode} placeholder="currency" />
+            ) : null}
+            {view === `entries` ? (
+              <input name="amountSign" defaultValue={amountSign} placeholder="amount sign" />
+            ) : null}
+            <input name="paymentRequestId" defaultValue={paymentRequestId} placeholder="payment request id" />
+            <input name="consumerId" defaultValue={consumerId} placeholder="consumer id" />
+            <input name="dateFrom" type="date" defaultValue={dateFrom} aria-label="Date from" />
+            <input name="dateTo" type="date" defaultValue={dateTo} aria-label="Date to" />
+            <button className="secondaryButton" type="submit">
+              Apply
+            </button>
+            <Link className="secondaryButton" href={view === `disputes` ? `/ledger?view=disputes` : `/ledger`}>
+              Reset
+            </Link>
+          </form>
+        </section>
+
+        {view === `entries` ? (
+          <section className="panel">
+            <div className="pageHeader">
+              <div>
+                <h2>Ledger entries</h2>
+                <p className="muted">{entryItems.length} rows in this window</p>
+              </div>
+              {entries?.pageInfo.nextCursor ? (
+                <Link className="secondaryButton" href={buildHref({ cursor: entries.pageInfo.nextCursor })}>
+                  Next
+                </Link>
+              ) : null}
+            </div>
+            <LedgerEntriesMobileCards items={entryItems} />
+            <LedgerEntriesTabletRows items={entryItems} />
+            <LedgerEntriesDesktopTable items={entryItems} />
+          </section>
+        ) : (
+          <section className="panel">
+            <div className="pageHeader">
+              <div>
+                <h2>Dispute log</h2>
+                <p className="muted">Append-only dispute records captured from Stripe webhooks.</p>
+              </div>
+              {disputes?.pageInfo.nextCursor ? (
+                <Link
+                  className="secondaryButton"
+                  href={buildHref({ view: `disputes`, cursor: disputes.pageInfo.nextCursor })}
+                >
+                  Next
+                </Link>
+              ) : null}
+            </div>
+            <DisputesMobileCards items={disputeItems} />
+            <DisputesTabletRows items={disputeItems} />
+            <DisputesDesktopTable items={disputeItems} />
+          </section>
+        )}
+      </>
+    </WorkspaceLayout>
   );
 }

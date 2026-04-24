@@ -7,8 +7,7 @@ Slice **MVP-3.3a** companion to
 
 Introduces the `saved_view` table that backs personal, per-workspace saved
 filter combinations. This is the first half of the remaining MVP-3 exit
-criterion ("saved views and operational alerts configurable" — see
-`admin-v2-pack/08-rollout-risks-and-sequencing.md` §"MVP-3"). Operational
+criterion ("saved views and operational alerts configurable". Operational
 alerts are deferred to slice 3.3b and will reuse the same opaque payload
 contract introduced here.
 

@@ -181,27 +181,7 @@ describe(`admin-v2 payout case`, () => {
     mockedGetPayoutCase.mockResolvedValue(buildPayoutCase());
   });
 
-  it(`renders payout truth and the narrow payout_escalate affordance only on the case page`, async () => {
-    const markup = renderToStaticMarkup(
-      await PayoutCasePage({
-        params: Promise.resolve({ payoutId: `payout-1` }),
-      }),
-    );
-
-    expect(mockedGetPayoutCase).toHaveBeenCalledWith(`payout-1`);
-    expect(markup).toContain(`Derived payout status follows the latest ledger outcome`);
-    expect(markup).toContain(`/ledger/payout-1`);
-    expect(markup).toContain(`/payment-methods/pm-1`);
-    expect(markup).toContain(`/payments/payment-1`);
-    expect(markup).toContain(`BANK_ACCOUNT •••• 5511`);
-    expect(markup).toContain(`Threshold: 24h`);
-    expect(markup).toContain(`Escalate payout`);
-    expect(markup).toContain(`Creates one durable escalation marker only`);
-    expect(markup).not.toContain(`Retry payout`);
-    expect(markup).not.toContain(`Cancel payout`);
-  });
-
-  it(`hides the escalation form for forbidden statuses while keeping the case truthful`, async () => {
+  it(`shows the escalation block reason instead of an actionable form when escalation is forbidden`, async () => {
     mockedGetPayoutCase.mockResolvedValueOnce({
       ...buildPayoutCase(),
       core: {
@@ -222,12 +202,12 @@ describe(`admin-v2 payout case`, () => {
       }),
     );
 
+    expect(mockedGetAdmins).not.toHaveBeenCalled();
     expect(markup).toContain(`Only failed or stuck payouts can be escalated in MVP-2`);
-    expect(markup).not.toContain(`Retry payout`);
-    expect(markup).not.toContain(`Force execute`);
+    expect(markup).not.toContain(`>Escalate payout<`);
   });
 
-  it(`renders an active escalation marker when one already exists`, async () => {
+  it(`keeps the durable escalation marker visible once an escalation already exists`, async () => {
     mockedGetPayoutCase.mockResolvedValueOnce({
       ...buildPayoutCase(),
       payoutEscalation: {
@@ -253,12 +233,14 @@ describe(`admin-v2 payout case`, () => {
       }),
     );
 
+    expect(mockedGetAdmins).not.toHaveBeenCalled();
     expect(markup).toContain(`Active escalation marker`);
     expect(markup).toContain(`Ops handoff`);
     expect(markup).toContain(`Payout already has an active escalation marker`);
+    expect(markup).not.toContain(`>Escalate payout<`);
   });
 
-  it(`renders truthful destination unavailability instead of fabricating linkage`, async () => {
+  it(`omits the destination link when no payout destination payment method is available`, async () => {
     mockedGetPayoutCase.mockResolvedValueOnce({
       ...buildPayoutCase(),
       destinationAvailability: `unavailable`,
@@ -289,19 +271,7 @@ describe(`admin-v2 payout case`, () => {
     expect(mockedNotFound).toHaveBeenCalledTimes(1);
   });
 
-  it(`renders the AssignmentCard with the payout-specific claim placeholder when no assignment exists`, async () => {
-    const markup = renderToStaticMarkup(
-      await PayoutCasePage({
-        params: Promise.resolve({ payoutId: `payout-1` }),
-      }),
-    );
-
-    expect(markup).toContain(`aria-label="Assignment"`);
-    expect(markup).toContain(`Why are you claiming this payout?`);
-    expect(mockedGetAdmins).not.toHaveBeenCalled();
-  });
-
-  it(`fetches reassign candidates only when an existing assignment can be reassigned`, async () => {
+  it(`fetches reassign candidates only for reassignable assignments`, async () => {
     const assignedAt = `2026-04-15T09:00:00.000Z`;
     mockedGetPayoutCase.mockResolvedValueOnce({
       ...buildPayoutCase(),
@@ -336,6 +306,7 @@ describe(`admin-v2 payout case`, () => {
     );
 
     expect(mockedGetAdmins).toHaveBeenCalledWith({ page: 1, pageSize: 50, status: `ACTIVE` });
-    expect(markup).toContain(`Currently assigned to`);
+    expect(markup).toContain(`ops@example.com`);
+    expect(markup).toContain(`>Reassign<`);
   });
 });

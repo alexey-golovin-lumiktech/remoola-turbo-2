@@ -28,6 +28,7 @@ Open [http://localhost:3002](http://localhost:3002). Unauthenticated users are r
 - **[docs/DESIGN_RULES_SUMMARY.md](docs/DESIGN_RULES_SUMMARY.md)** — One-page quick reference
 
 **Key documentation:**
+
 - [docs/error-handling/](docs/error-handling/) — Error handling, toast patterns, logging
 - [docs/ui-ux/](docs/ui-ux/) — Mobile-first UI patterns, components, accessibility
 - [docs/logging/](docs/logging/) — PII protection, structured logging
@@ -41,8 +42,9 @@ See [docs/E2E_SCOPE.md](docs/E2E_SCOPE.md) for critical flows to cover when addi
 ## Governance
 
 This app follows:
+
 - [governance/05_WEBAPP_NEXTJS_RULES.md](../../governance/05_WEBAPP_NEXTJS_RULES.md) — Fintech hardening rules
 - [governance/06_WEBAPP_NEXTJS_STRICT_RULES.md](../../governance/06_WEBAPP_NEXTJS_STRICT_RULES.md) — Next.js strict rules
-- [governance/MOBILE_FIRST_MODAL_ALTERNATIVES_NEXTJS.md](../../governance/MOBILE_FIRST_MODAL_ALTERNATIVES_NEXTJS.md) — Mobile UX patterns
+- [governance/remoola-domain/MOBILE_FIRST_MODAL_ALTERNATIVES_NEXTJS.md](../../governance/remoola-domain/MOBILE_FIRST_MODAL_ALTERNATIVES_NEXTJS.md) — Mobile UX patterns
 
 All new features must comply with [docs/DESIGN_RULES.md](docs/DESIGN_RULES.md).

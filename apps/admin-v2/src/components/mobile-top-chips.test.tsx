@@ -11,6 +11,15 @@ jest.mock(`next/link`, () => ({
 }));
 
 describe(`admin-v2 mobile top chips`, () => {
+  function expectChipActive(markup: string, href: string): void {
+    const escapedHref = href.replace(/[.*+?^${}()|[\]\\]/g, `\\$&`);
+    expect(markup).toMatch(
+      new RegExp(
+        `<a[^>]*(href="${escapedHref}"[^>]*aria-current="page"|aria-current="page"[^>]*href="${escapedHref}")`,
+      ),
+    );
+  }
+
   const identity = {
     id: `admin-1`,
     email: `ops@example.com`,
@@ -21,18 +30,17 @@ describe(`admin-v2 mobile top chips`, () => {
     workspaces: [`exchange`, `documents`, `system`],
   };
 
-  it(`marks the active secondary workspace chip with aria-current`, () => {
+  it(`marks only the active secondary workspace chip as current`, () => {
     const markup = renderToStaticMarkup(<MobileTopChips identity={identity} activePath="/exchange/rates" />);
 
-    expect(markup).toContain(`href="/exchange"`);
-    expect(markup).toContain(`aria-current="page"`);
-    expect(markup).toContain(`data-active="true"`);
+    expectChipActive(markup, `/exchange`);
+    expect(markup).not.toContain(`href="/documents" aria-current="page"`);
   });
 
   it(`keeps non-active chips unmarked`, () => {
     const markup = renderToStaticMarkup(<MobileTopChips identity={identity} activePath="/system" />);
 
-    expect(markup).toContain(`href="/documents"`);
+    expectChipActive(markup, `/system`);
     expect(markup).not.toContain(`href="/documents" aria-current="page"`);
   });
 });

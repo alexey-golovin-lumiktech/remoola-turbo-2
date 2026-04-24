@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { type ReactElement } from 'react';
 
 export type StatusPillTone = `rose` | `amber` | `emerald` | `cyan` | `neutral`;
 

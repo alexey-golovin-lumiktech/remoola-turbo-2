@@ -9,17 +9,16 @@ import {
 } from '@remoola/api-types';
 
 import { ConsumerAuthController } from './auth.controller';
+import { type ConsumerAuthService } from './auth.service';
+import { type GoogleOAuthService } from './google-oauth.service';
+import { type OAuthStateStoreService } from './oauth-state-store.service';
 import { envs } from '../../envs';
+import { type OriginResolverService } from '../../shared/origin-resolver.service';
 import {
   CSRF_TOKEN_COOKIE_KEY,
   getApiConsumerGoogleSignupSessionCookieKey,
   GOOGLE_OAUTH_STATE_COOKIE_KEY,
 } from '../../shared-common';
-
-import type { ConsumerAuthService } from './auth.service';
-import type { GoogleOAuthService } from './google-oauth.service';
-import type { OAuthStateStoreService } from './oauth-state-store.service';
-import type { OriginResolverService } from '../../shared/origin-resolver.service';
 
 describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   let controller: ConsumerAuthController;

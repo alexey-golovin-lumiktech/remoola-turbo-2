@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 
 import { Prisma } from '@remoola/database-2';
 
+import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
 import {
   LedgerAnomaliesAlertEvaluator,
   type EvaluationResult,
@@ -13,8 +14,6 @@ import { AuthRefreshReuseAlertEvaluator } from './admin-v2-operational-alerts-wo
 import { VerificationQueueAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-verification';
 import { OPERATIONAL_ALERT_WORKSPACES, type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 import { PrismaService } from '../../shared/prisma.service';
-
-import type { OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
 
 export const EVALUATOR_TICK_MAX_ALERTS = 100;
 export const EVALUATOR_PER_ALERT_TIMEOUT_MS = 10_000;

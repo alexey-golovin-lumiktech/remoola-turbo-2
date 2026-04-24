@@ -1,4 +1,4 @@
-import type { Prisma } from '@remoola/database-2';
+import { type Prisma } from '@remoola/database-2';
 
 // This file is auto-generated from packages/database-2/prisma/schema.prisma.
 // Run `yarn schema:generate:helpers` from the repo root to regenerate it.
@@ -209,12 +209,13 @@ export type PaymentMethodModelWithRelations = Prisma.PaymentMethodModelGetPayloa
   };
 }>;
 
-export type PaymentMethodDuplicateEscalationModelWithRelations = Prisma.PaymentMethodDuplicateEscalationModelGetPayload<{
-  include: {
-    paymentMethod: true;
-    escalatedByAdmin: true;
-  };
-}>;
+export type PaymentMethodDuplicateEscalationModelWithRelations =
+  Prisma.PaymentMethodDuplicateEscalationModelGetPayload<{
+    include: {
+      paymentMethod: true;
+      escalatedByAdmin: true;
+    };
+  }>;
 
 export type PaymentRequestModelWithRelations = Prisma.PaymentRequestModelGetPayload<{
   include: {

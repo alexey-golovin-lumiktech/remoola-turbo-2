@@ -4,8 +4,7 @@ import {
   EVALUATOR_TICK_MAX_ALERTS,
   EVALUATOR_TICK_WALL_BUDGET_MS,
 } from './admin-v2-operational-alerts-evaluator.service';
-
-import type { OperationalAlertWorkspaceEvaluator } from './admin-v2-operational-alerts-workspace-evaluators';
+import { type OperationalAlertWorkspaceEvaluator } from './admin-v2-operational-alerts-workspace-evaluators';
 
 type DueAlertRow = {
   id: string;

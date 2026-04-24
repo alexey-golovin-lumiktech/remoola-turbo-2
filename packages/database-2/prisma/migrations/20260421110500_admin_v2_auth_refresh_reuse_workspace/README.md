@@ -29,9 +29,7 @@ this migration uses.
 
 The `auth_refresh_reuse` workspace is the second to take the upgrade
 because admin session-management observability is the final Risk 13
-mitigation step (see
-[`admin-v2-pack/08-rollout-risks-and-sequencing.md`](../../../../../admin-v2-pack/08-rollout-risks-and-sequencing.md)
-lines 680-693): the new operational-alert evaluator
+mitigation step: the new operational-alert evaluator
 `AuthRefreshReuseAlertEvaluator` reads `auth_audit_log` rows where
 `event = 'refresh_reuse'` and fires when `count > threshold` over a
 configurable `windowMinutes` payload, and operators need to be able to

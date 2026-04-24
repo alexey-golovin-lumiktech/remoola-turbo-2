@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { type ReactElement } from 'react';
 
 import { ActionGhost } from '@/components/action-ghost';
 import { ActionPrimary } from '@/components/action-primary';
@@ -7,8 +8,6 @@ import { cn } from '@/lib/cn';
 
 import { NavIcon } from './nav-icon';
 import { getActivePathFromHeaders } from '../app/(shell)/nav-state';
-
-import type { ReactElement } from 'react';
 
 const ID_PREFIX_ROUTES: ReadonlyArray<{ prefix: string; path: (id: string) => string }> = [
   { prefix: `pr_`, path: (id) => `/payments/${id}` },

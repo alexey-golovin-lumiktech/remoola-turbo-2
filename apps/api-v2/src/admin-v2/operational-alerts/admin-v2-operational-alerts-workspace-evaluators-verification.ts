@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import { AdminV2VerificationService } from '../verification/admin-v2-verification.service';
-
-import type { OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
-import type {
-  EvaluationResult,
-  OperationalAlertWorkspaceEvaluator,
+import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
+import {
+  type EvaluationResult,
+  type OperationalAlertWorkspaceEvaluator,
 } from './admin-v2-operational-alerts-workspace-evaluators';
+import { AdminV2VerificationService } from '../verification/admin-v2-verification.service';
 
 type VerificationQueueQuery = {
   status?: string;

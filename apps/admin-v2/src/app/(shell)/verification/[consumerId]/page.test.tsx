@@ -168,7 +168,7 @@ describe(`admin-v2 verification case assignment card`, () => {
     });
   });
 
-  it(`renders unassigned state with an enabled Claim button for managers`, async () => {
+  it(`enables claim for unassigned cases without loading reassign candidates`, async () => {
     mockedGetAdminIdentity.mockResolvedValue(CURRENT_ADMIN_IDENTITY);
     mockedGetVerificationCase.mockResolvedValue(
       buildCase({
@@ -181,14 +181,15 @@ describe(`admin-v2 verification case assignment card`, () => {
       await VerificationCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
     );
 
-    expect(markup).toContain(`Unassigned`);
+    expect(mockedGetAdmins).not.toHaveBeenCalled();
+    expect(markup).toContain(`Why are you claiming this case?`);
     expect(markup).toContain(`>Claim<`);
     expect(markup).not.toContain(`>Claim</button><!-- -->`);
     expect(markup).not.toMatch(/>Claim<\/button>[\s\S]{0,50}disabled/);
     expect(markup).not.toContain(`>Reassign<`);
   });
 
-  it(`renders an assigned-to-self state with an enabled Release button`, async () => {
+  it(`enables release for the current assignee without loading reassign candidates`, async () => {
     mockedGetAdminIdentity.mockResolvedValue(CURRENT_ADMIN_IDENTITY);
     mockedGetVerificationCase.mockResolvedValue(
       buildCase({
@@ -211,14 +212,14 @@ describe(`admin-v2 verification case assignment card`, () => {
       await VerificationCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
     );
 
-    expect(markup).toContain(`Currently assigned to:`);
+    expect(mockedGetAdmins).not.toHaveBeenCalled();
     expect(markup).toContain(`self@example.com`);
     expect(markup).toContain(`>Release<`);
     expect(markup).not.toContain(`>Reassign<`);
     expect(markup).not.toContain(`>Claim<`);
   });
 
-  it(`renders a reassign picker for super-admins when assignment belongs to someone else`, async () => {
+  it(`loads reassign candidates only when the current admin can reassign`, async () => {
     mockedGetAdminIdentity.mockResolvedValue({
       ...CURRENT_ADMIN_IDENTITY,
       id: `admin-super`,
@@ -246,13 +247,13 @@ describe(`admin-v2 verification case assignment card`, () => {
       await VerificationCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
     );
 
-    expect(markup).toContain(`>Reassign<`);
+    expect(mockedGetAdmins).toHaveBeenCalledWith({ page: 1, pageSize: 50, status: `ACTIVE` });
     expect(markup).toContain(`candidate1@example.com`);
+    expect(markup).toContain(`>Reassign<`);
     expect(markup).toContain(`>Release<`);
-    expect(mockedGetAdmins).toHaveBeenCalled();
   });
 
-  it(`disables claim and release for admins without the assignments.manage capability`, async () => {
+  it(`keeps claim disabled when assignment management is unavailable`, async () => {
     mockedGetAdminIdentity.mockResolvedValue(OTHER_ADMIN_IDENTITY);
     mockedGetVerificationCase.mockResolvedValue(
       buildCase({
@@ -265,7 +266,7 @@ describe(`admin-v2 verification case assignment card`, () => {
       await VerificationCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
     );
 
-    expect(markup).toContain(`Unassigned`);
+    expect(mockedGetAdmins).not.toHaveBeenCalled();
     expect(markup).toMatch(/<button[^>]*disabled[^>]*>Claim<\/button>/);
     expect(markup).not.toContain(`>Reassign<`);
   });

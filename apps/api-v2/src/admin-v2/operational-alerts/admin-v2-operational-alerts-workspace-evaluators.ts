@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
+import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
+import { type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 import { LEDGER_ANOMALY_CLASSES, type LedgerAnomalyClass } from '../ledger/anomalies/admin-v2-ledger-anomalies.dto';
 import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
-
-import type { OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
-import type { OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 
 export type EvaluationResult = {
   fired: boolean;

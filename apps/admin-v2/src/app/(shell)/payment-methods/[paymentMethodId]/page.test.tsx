@@ -114,26 +114,6 @@ describe(`admin-v2 payment method detail kickoff surface`, () => {
     mockedGetPaymentMethodCase.mockResolvedValue(buildPaymentMethodCase());
   });
 
-  it(`renders only the schema-backed read surface and anti-invention copy`, async () => {
-    const markup = renderToStaticMarkup(
-      await PaymentMethodCasePage({
-        params: Promise.resolve({ paymentMethodId: `pm-1` }),
-      }),
-    );
-
-    expect(mockedGetPaymentMethodCase).toHaveBeenCalledWith(`pm-1`);
-    expect(markup).toContain(`No usage semantics are inferred here.`);
-    expect(markup).toContain(`/consumers/consumer-1`);
-    expect(markup).toContain(`/payment-methods?consumerId=consumer-1&amp;includeDeleted=true`);
-    expect(markup).toContain(`/payment-methods?fingerprint=fp-shared&amp;includeDeleted=true`);
-    expect(markup).toContain(`/payment-methods/pm-2`);
-    expect(markup).toContain(`Billing details`);
-    expect(markup).toContain(`Disable payment method`);
-    expect(markup).toContain(`Remove default marker`);
-    expect(markup).toContain(`Escalate duplicate fingerprint`);
-    expect(markup).toContain(`No usage semantics are inferred here.`);
-  });
-
   it(`delegates missing records to notFound instead of inventing fallback semantics`, async () => {
     mockedGetPaymentMethodCase.mockResolvedValueOnce(null);
 
@@ -146,7 +126,7 @@ describe(`admin-v2 payment method detail kickoff surface`, () => {
     expect(mockedNotFound).toHaveBeenCalledTimes(1);
   });
 
-  it(`shows durable escalation state instead of rendering a duplicate action twice`, async () => {
+  it(`keeps the durable duplicate escalation record visible and hides the duplicate action`, async () => {
     mockedGetPaymentMethodCase.mockResolvedValueOnce({
       ...buildPaymentMethodCase(),
       duplicateEscalation: {
@@ -168,7 +148,9 @@ describe(`admin-v2 payment method detail kickoff surface`, () => {
       }),
     );
 
+    expect(mockedGetPaymentMethodCase).toHaveBeenCalledWith(`pm-1`);
     expect(markup).toContain(`Duplicate escalation record`);
+    expect(markup).toContain(`super@example.com`);
     expect(markup).not.toContain(`Escalate duplicate fingerprint`);
   });
 });

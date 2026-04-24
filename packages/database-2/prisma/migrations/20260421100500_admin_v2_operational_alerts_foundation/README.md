@@ -8,9 +8,7 @@ Slice **MVP-3.3b** companion to
 Introduces the `operational_alert` table that backs personal,
 per-workspace operational alert definitions, evaluated by the new
 `AdminV2OperationalAlertsEvaluatorService` `@Cron` scheduler. This is
-the second (and last) half of the remaining MVP-3 exit criterion
-("saved views and operational alerts configurable" — see
-`admin-v2-pack/08-rollout-risks-and-sequencing.md` §"MVP-3"). After
+the second (and last) half of the remaining MVP-3 exit criterion. After
 this slice lands, the MVP-3 maturity track is closed.
 
 ## Why now / phase

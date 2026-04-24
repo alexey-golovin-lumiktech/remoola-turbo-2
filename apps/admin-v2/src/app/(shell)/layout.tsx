@@ -16,6 +16,7 @@ import {
   type OverviewSummaryResponse,
   type QuickstartCard,
 } from '../../lib/admin-api.server';
+import { filterQuickstartsForWorkspaces } from '../../lib/quickstart-investigations';
 
 export {
   auditExplorerItems,
@@ -79,6 +80,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
     safeGetActivePath(),
   ]);
   const signalCounts = buildSignalCounts(summary);
+  const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity?.workspaces);
 
   return (
     <div
@@ -90,14 +92,14 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       <aside
         className={cn(
           `sidebar`,
-          `hidden md:flex md:h-screen md:flex-col md:overflow-y-auto md:border-r md:border-white/10 md:bg-[#0d1627]`,
+          `hidden md:grid md:h-screen md:min-h-0 md:overflow-hidden md:border-r md:border-white/10 md:bg-[#0d1627]`,
         )}
       >
         <SidebarContents
           identity={identity}
           activePath={activePath}
           signalCounts={signalCounts}
-          quickstarts={quickstarts}
+          quickstarts={visibleQuickstarts}
         />
       </aside>
       <main className={cn(`content`, `min-w-0`)}>
@@ -109,7 +111,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
                 identity={identity}
                 activePath={activePath}
                 signalCounts={signalCounts}
-                quickstarts={quickstarts}
+                quickstarts={visibleQuickstarts}
               />
             </MobileShellDrawer>
             <MobileTopChips identity={identity} activePath={activePath} />

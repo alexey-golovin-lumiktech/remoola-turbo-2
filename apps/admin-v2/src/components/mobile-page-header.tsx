@@ -1,6 +1,6 @@
-import { cn } from '@/lib/cn';
+import { type ReactElement } from 'react';
 
-import type { ReactElement } from 'react';
+import { cn } from '@/lib/cn';
 
 const WORKSPACE_CLASSIFICATION: ReadonlyArray<{
   prefix: string;

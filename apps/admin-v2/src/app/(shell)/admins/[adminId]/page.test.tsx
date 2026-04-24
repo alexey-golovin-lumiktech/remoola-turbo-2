@@ -201,35 +201,7 @@ describe(`admin-v2 admin case`, () => {
     });
   });
 
-  it(`renders exact lifecycle actions and audit shortcuts without leaking system controls`, async () => {
-    const markup = renderToStaticMarkup(
-      await AdminCasePage({
-        params: Promise.resolve({ adminId: `admin-2` }),
-      }),
-    );
-
-    expect(mockedGetAdminCaseRecord).toHaveBeenCalledWith(`admin-2`);
-    expect(markup).toContain(`Deactivate admin`);
-    expect(markup).toContain(`Change role`);
-    expect(markup).toContain(`Save overrides`);
-    expect(markup).toContain(`SUPPORT_ADMIN`);
-    expect(markup).toContain(`READONLY_ADMIN`);
-    expect(markup).toContain(`inherit role baseline`);
-    expect(markup).toContain(`documents.manage`);
-    expect(markup).toContain(`Send password reset`);
-    expect(markup).toContain(`href="/audit/admin-actions?adminId=admin-2"`);
-    expect(markup).toContain(`admin_role_change`);
-    expect(markup).not.toContain(`System`);
-    expect(mockedGetAdminSessions).toHaveBeenCalledWith(`admin-2`);
-    expect(markup).toContain(`Active sessions`);
-    expect(markup).toContain(`session-active`);
-    expect(markup).toContain(`session-revoked`);
-    expect(markup).toContain(`cross_admin_revoked`);
-    const revokeButtons = markup.match(/Revoke session/g) ?? [];
-    expect(revokeButtons.length).toBe(1);
-  });
-
-  it(`hides cross-admin revoke and shows self banner when viewing own admin record`, async () => {
+  it(`loads self sessions but hides cross-admin revoke controls on the self case`, async () => {
     const selfRecord = buildAdminRecord();
     selfRecord.id = `admin-1`;
     selfRecord.core = {
@@ -249,13 +221,14 @@ describe(`admin-v2 admin case`, () => {
       }),
     );
 
+    expect(mockedGetAdminSessions).toHaveBeenCalledWith(`admin-1`);
     expect(markup).toContain(`Active sessions`);
     expect(markup).toContain(`session-active`);
     expect(markup).not.toContain(`Revoke session`);
     expect(markup).toContain(`Use My sessions for self-revoke`);
   });
 
-  it(`omits the sessions section for admins without admins.read capability`, async () => {
+  it(`skips the session lookup entirely when admins.read is unavailable`, async () => {
     mockedGetAdminIdentity.mockResolvedValueOnce({
       id: `admin-1`,
       email: `support@example.com`,
@@ -272,6 +245,7 @@ describe(`admin-v2 admin case`, () => {
       }),
     );
 
+    expect(mockedGetAdminSessions).not.toHaveBeenCalled();
     expect(markup).not.toContain(`Active sessions`);
   });
 

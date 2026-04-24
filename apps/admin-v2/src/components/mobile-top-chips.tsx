@@ -1,13 +1,12 @@
 import Link from 'next/link';
+import { type ReactElement } from 'react';
 
 import { cn } from '@/lib/cn';
 
 import { NavIcon } from './nav-icon';
 import { isNavItemActive } from '../app/(shell)/nav-state';
 import { laterBreadthItems, maturityItems, topLevelBreadthItems } from '../app/(shell)/shell-nav';
-
-import type { AdminIdentity } from '../lib/admin-api.server';
-import type { ReactElement } from 'react';
+import { type AdminIdentity } from '../lib/admin-api.server';
 
 type MobileTopChipsProps = {
   identity: AdminIdentity | null;

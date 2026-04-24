@@ -1,11 +1,10 @@
 import { headers } from 'next/headers';
 import Link from 'next/link';
+import { type ReactElement, type ReactNode } from 'react';
 
 import { cn } from '@/lib/cn';
 
 import { getActivePathFromHeaders, isNavItemActive } from '../nav-state';
-
-import type { ReactElement, ReactNode } from 'react';
 
 const AUDIT_TABS: ReadonlyArray<{ href: string; label: string; eyebrow: string }> = [
   { href: `/audit/auth`, label: `Auth events`, eyebrow: `AUTH` },

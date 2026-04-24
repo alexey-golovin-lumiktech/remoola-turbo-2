@@ -1,5 +1,6 @@
-import type { StatusPillTone } from './status-pill';
-import type { ReactElement, ReactNode } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
+
+import { type StatusPillTone } from './status-pill';
 
 export type TinyPillProps = {
   children: ReactNode;

@@ -32,33 +32,33 @@ The package root re-exports these as type-only exports, so consumers can import 
 Use raw Prisma-generated types when you need exact schema coverage:
 
 ```ts
-import type {
-  ConsumerModel,
-  ConsumerModelCreateInput,
-  ConsumerModelWhereUniqueInput,
-  ConsumerModelSelect,
-  Prisma,
+import {
+  type ConsumerModel,
+  type ConsumerModelCreateInput,
+  type ConsumerModelWhereUniqueInput,
+  type ConsumerModelSelect,
+  type Prisma,
 } from '@remoola/api-types';
 ```
 
 Use relation helper types when you want a common include shape without repeating the Prisma payload definition:
 
 ```ts
-import type {
-  ConsumerModelWithRelations,
-  LedgerEntryModelWithRelations,
-  PaymentRequestModelWithRelations,
+import {
+  type ConsumerModelWithRelations,
+  type LedgerEntryModelWithRelations,
+  type PaymentRequestModelWithRelations,
 } from '@remoola/api-types';
 ```
 
 Use scalar helpers when you need reusable aliases for Prisma-backed values:
 
 ```ts
-import type {
-  SchemaDateTime,
-  SchemaDecimal,
-  SchemaJsonValue,
-  SerializedSchemaValue,
+import {
+  type SchemaDateTime,
+  type SchemaDecimal,
+  type SchemaJsonValue,
+  type SerializedSchemaValue,
 } from '@remoola/api-types';
 ```
 

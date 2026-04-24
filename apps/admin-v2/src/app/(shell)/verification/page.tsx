@@ -1,11 +1,22 @@
 import Link from 'next/link';
 
-import { getSavedViews, getVerificationQueue, type SavedViewSummary } from '../../../lib/admin-api.server';
+import { DenseTable } from '../../../components/dense-table';
+import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { StatusPill } from '../../../components/status-pill';
+import { TabletRow } from '../../../components/tablet-row';
+import { WorkspaceLayout } from '../../../components/workspace-layout';
+import {
+  getQuickstart,
+  getSavedViews,
+  getVerificationQueue,
+  type SavedViewSummary,
+} from '../../../lib/admin-api.server';
 import {
   createSavedViewAction,
   deleteSavedViewAction,
   updateSavedViewAction,
 } from '../../../lib/admin-mutations.server';
+import { parseQuickstartId } from '../../../lib/quickstart-investigations';
 
 const SAVED_VIEW_WORKSPACE = `verification_queue` as const;
 const MAX_SAVED_VIEW_NAME_LENGTH = 100;
@@ -28,6 +39,13 @@ const SUPPORTED_PAYLOAD_KEYS = new Set<keyof VerificationQueueSavedViewPayload>(
   `missingProfileData`,
   `missingDocuments`,
 ]);
+
+type VerificationItem = NonNullable<Awaited<ReturnType<typeof getVerificationQueue>>>[`items`][number];
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return `-`;
+  return new Date(value).toLocaleString();
+}
 
 function parseSavedViewPayload(raw: unknown): VerificationQueueSavedViewPayload | null {
   if (raw === null || typeof raw !== `object` || Array.isArray(raw)) {
@@ -77,6 +95,154 @@ function appendPayloadToQuery(query: URLSearchParams, payload: VerificationQueue
   if (payload.contractorKind?.trim()) query.set(`contractorKind`, payload.contractorKind.trim());
   if (payload.missingProfileData === true) query.set(`missingProfileData`, `true`);
   if (payload.missingDocuments === true) query.set(`missingDocuments`, `true`);
+}
+
+function renderVerificationAssignee(item: VerificationItem) {
+  if (!item.assignedTo) {
+    return <span className="muted">—</span>;
+  }
+
+  return (
+    <>
+      <div>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</div>
+      {item.assignedTo.email ? <div className="muted">{item.assignedTo.email}</div> : null}
+    </>
+  );
+}
+
+function renderVerificationAssigneeSummary(item: VerificationItem): string {
+  if (!item.assignedTo) {
+    return `—`;
+  }
+
+  return item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id;
+}
+
+function VerificationMobileCards({ items }: { items: VerificationItem[] }) {
+  if (items.length === 0) {
+    return (
+      <div className="readSurface md:hidden" data-view="mobile">
+        <div className="panel muted">No verification cases matched the current filters.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="readSurface md:hidden" data-view="mobile">
+      <div className="queueCards">
+        {items.map((item) => (
+          <MobileQueueCard
+            key={item.id}
+            id={item.id}
+            href={`/verification/${item.id}`}
+            title={item.email}
+            subtitle={item.id}
+            trailing={<StatusPill status={item.verificationStatus} />}
+          >
+            <div className="muted">Stripe: {item.stripeIdentityStatus ?? `-`}</div>
+            <div>
+              {item.accountType} · {item.country ?? `-`}
+            </div>
+            <div className="muted">{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+            <div className="muted">
+              {item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}
+            </div>
+            <div className="muted">SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
+            <div className="muted">Assigned: {renderVerificationAssigneeSummary(item)}</div>
+            <div className="muted">Updated: {formatDate(item.updatedAt)}</div>
+          </MobileQueueCard>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VerificationTabletRows({ items }: { items: VerificationItem[] }) {
+  if (items.length === 0) {
+    return (
+      <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
+        <div className="panel muted">No verification cases matched the current filters.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
+      <div className="condensedList">
+        {items.map((item) => (
+          <TabletRow
+            key={item.id}
+            primary={
+              <>
+                <Link href={`/verification/${item.id}`}>
+                  <strong>{item.email}</strong>
+                </Link>
+                <div className="muted mono">{item.id}</div>
+              </>
+            }
+            cells={[
+              <div key="status">
+                <div>
+                  <StatusPill status={item.verificationStatus} />
+                </div>
+                <div className="muted">{item.stripeIdentityStatus ?? `-`}</div>
+              </div>,
+              <div key="profile">
+                <div>{item.accountType}</div>
+                <div className="muted">{item.country ?? `-`}</div>
+                <div className="muted">{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+              </div>,
+              <div key="docs-sla">
+                <div>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</div>
+                <div className="muted">{item.slaBreached ? `Breached` : `Within SLA`}</div>
+              </div>,
+              <div key="assigned-updated">
+                <div>{renderVerificationAssigneeSummary(item)}</div>
+                <div className="muted">{formatDate(item.updatedAt)}</div>
+              </div>,
+            ]}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VerificationDesktopTable({ items }: { items: VerificationItem[] }) {
+  return (
+    <div className="readSurface hidden xl:block" data-view="desktop">
+      <DenseTable
+        headers={[`Consumer`, `Status`, `Profile`, `Docs`, `SLA`, `Assigned to`, `Updated`]}
+        emptyMessage="No verification cases matched the current filters."
+      >
+        {items.length === 0
+          ? null
+          : items.map((item) => (
+              <tr key={item.id}>
+                <td>
+                  <Link href={`/verification/${item.id}`}>{item.email}</Link>
+                  <div className="muted mono">{item.id}</div>
+                </td>
+                <td>
+                  <div>
+                    <StatusPill status={item.verificationStatus} />
+                  </div>
+                  <div className="muted">{item.stripeIdentityStatus ?? `-`}</div>
+                </td>
+                <td>
+                  <div>{item.accountType}</div>
+                  <div className="muted">{item.country ?? `-`}</div>
+                  <div className="muted">{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+                </td>
+                <td>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</td>
+                <td>{item.slaBreached ? `Breached` : `Within SLA`}</td>
+                <td>{renderVerificationAssignee(item)}</td>
+                <td>{formatDate(item.updatedAt)}</td>
+              </tr>
+            ))}
+      </DenseTable>
+    </div>
+  );
 }
 
 function SavedViewRow({ view, buildHref }: { view: SavedViewSummary; buildHref: BuildHrefFn }) {
@@ -225,6 +391,7 @@ export default async function VerificationQueuePage({
   searchParams,
 }: {
   searchParams?: Promise<{
+    quickstart?: string;
     page?: string;
     status?: string;
     stripeIdentityStatus?: string;
@@ -236,16 +403,30 @@ export default async function VerificationQueuePage({
 }) {
   const params = await searchParams;
   const page = params?.page ? Number(params.page) : 1;
+  const requestedQuickstartId = parseQuickstartId(params?.quickstart);
+  const resolvedQuickstart = requestedQuickstartId ? await getQuickstart(requestedQuickstartId) : null;
+  const appliedQuickstart = resolvedQuickstart?.targetPath === `/verification` ? resolvedQuickstart : null;
+  const status = params?.status?.trim() || appliedQuickstart?.filters.status || undefined;
+  const stripeIdentityStatus =
+    params?.stripeIdentityStatus?.trim() || appliedQuickstart?.filters.stripeIdentityStatus || undefined;
+  const country = params?.country?.trim() || appliedQuickstart?.filters.country || undefined;
+  const contractorKind = params?.contractorKind?.trim() || appliedQuickstart?.filters.contractorKind || undefined;
+  const missingProfileData =
+    params?.missingProfileData === `true` ||
+    (params?.missingProfileData == null && appliedQuickstart?.filters.missingProfileData === true);
+  const missingDocuments =
+    params?.missingDocuments === `true` ||
+    (params?.missingDocuments == null && appliedQuickstart?.filters.missingDocuments === true);
 
   const [queue, savedViewsResponse] = await Promise.all([
     getVerificationQueue({
       page,
-      status: params?.status,
-      stripeIdentityStatus: params?.stripeIdentityStatus,
-      country: params?.country,
-      contractorKind: params?.contractorKind,
-      missingProfileData: params?.missingProfileData === `true`,
-      missingDocuments: params?.missingDocuments === `true`,
+      status,
+      stripeIdentityStatus,
+      country,
+      contractorKind,
+      missingProfileData,
+      missingDocuments,
     }),
     getSavedViews({ workspace: SAVED_VIEW_WORKSPACE }),
   ]);
@@ -253,14 +434,15 @@ export default async function VerificationQueuePage({
   const totalPages = queue ? Math.max(1, Math.ceil(queue.total / queue.pageSize)) : 1;
   const savedViews = savedViewsResponse?.views ?? [];
   const hasInvalidPayload = savedViews.some((view) => parseSavedViewPayload(view.queryPayload) === null);
+  const items = queue?.items ?? [];
 
   const currentPayload: VerificationQueueSavedViewPayload = {
-    status: params?.status?.trim() || undefined,
-    stripeIdentityStatus: params?.stripeIdentityStatus?.trim() || undefined,
-    country: params?.country?.trim() || undefined,
-    contractorKind: params?.contractorKind?.trim() || undefined,
-    missingProfileData: params?.missingProfileData === `true` ? true : undefined,
-    missingDocuments: params?.missingDocuments === `true` ? true : undefined,
+    status,
+    stripeIdentityStatus,
+    country,
+    contractorKind,
+    missingProfileData: missingProfileData ? true : undefined,
+    missingDocuments: missingDocuments ? true : undefined,
   };
 
   function buildHref(next: { payload?: VerificationQueueSavedViewPayload | null; page?: number }): string {
@@ -276,133 +458,102 @@ export default async function VerificationQueuePage({
 
   function pageHref(nextPage: number) {
     const query = new URLSearchParams();
-    if (params?.status?.trim()) query.set(`status`, params.status.trim());
-    if (params?.stripeIdentityStatus?.trim()) query.set(`stripeIdentityStatus`, params.stripeIdentityStatus.trim());
-    if (params?.country?.trim()) query.set(`country`, params.country.trim());
-    if (params?.contractorKind?.trim()) query.set(`contractorKind`, params.contractorKind.trim());
-    if (params?.missingProfileData === `true`) query.set(`missingProfileData`, `true`);
-    if (params?.missingDocuments === `true`) query.set(`missingDocuments`, `true`);
+    if (requestedQuickstartId) query.set(`quickstart`, requestedQuickstartId);
+    if (status) query.set(`status`, status);
+    if (stripeIdentityStatus) query.set(`stripeIdentityStatus`, stripeIdentityStatus);
+    if (country) query.set(`country`, country);
+    if (contractorKind) query.set(`contractorKind`, contractorKind);
+    if (missingProfileData) query.set(`missingProfileData`, `true`);
+    if (missingDocuments) query.set(`missingDocuments`, `true`);
     query.set(`page`, String(nextPage));
     return `/verification?${query.toString()}`;
   }
 
   return (
-    <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Verification Queue</h1>
-          <p className="muted">Verification queue for canonical review states: PENDING, MORE_INFO and FLAGGED.</p>
-        </div>
-        <p className="muted">
-          SLA breached: {queue?.sla.breachedCount ?? 0} · threshold {queue?.sla.thresholdHours ?? 24}h
-        </p>
-      </section>
-
-      <SavedViewsSection
-        views={savedViews}
-        currentPayload={currentPayload}
-        buildHref={buildHref}
-        hasInvalidPayload={hasInvalidPayload}
-      />
-
-      <section className="panel pageHeader">
-        <form className="actionsRow" method="get">
-          <input name="status" defaultValue={params?.status ?? ``} placeholder="status" />
-          <input
-            name="stripeIdentityStatus"
-            defaultValue={params?.stripeIdentityStatus ?? ``}
-            placeholder="stripe status"
-          />
-          <input name="country" defaultValue={params?.country ?? ``} placeholder="country" />
-          <input name="contractorKind" defaultValue={params?.contractorKind ?? ``} placeholder="contractor kind" />
-          <label className="field">
-            <span>Missing profile</span>
-            <input
-              type="checkbox"
-              name="missingProfileData"
-              value="true"
-              defaultChecked={params?.missingProfileData === `true`}
-            />
-          </label>
-          <label className="field">
-            <span>Missing docs</span>
-            <input
-              type="checkbox"
-              name="missingDocuments"
-              value="true"
-              defaultChecked={params?.missingDocuments === `true`}
-            />
-          </label>
-          <button className="secondaryButton" type="submit">
-            Apply
-          </button>
-        </form>
-      </section>
-
-      <section className="panel tableWrap">
-        <div className="pageHeader">
-          <p className="muted">
-            {queue?.total ?? 0} results · page {queue?.page ?? 1} / {totalPages}
-          </p>
-          <div className="actionsRow">
-            <a className="secondaryButton" aria-disabled={page <= 1} href={page > 1 ? pageHref(page - 1) : pageHref(1)}>
-              Previous
-            </a>
-            <a
-              className="secondaryButton"
-              aria-disabled={page >= totalPages}
-              href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
-            >
-              Next
-            </a>
+    <WorkspaceLayout workspace="verification">
+      <>
+        <section className="panel pageHeader">
+          <div>
+            <h1>Verification Queue</h1>
+            <p className="muted">Verification queue for canonical review states: PENDING, MORE_INFO and FLAGGED.</p>
           </div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Consumer</th>
-              <th>Status</th>
-              <th>Profile</th>
-              <th>Docs</th>
-              <th>SLA</th>
-              <th>Assigned to</th>
-              <th>Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(queue?.items ?? []).map((item) => (
-              <tr key={item.id}>
-                <td>
-                  <Link href={`/verification/${item.id}`}>{item.email}</Link>
-                  <div className="muted mono">{item.id}</div>
-                </td>
-                <td>
-                  {item.verificationStatus}
-                  <div className="muted">{item.stripeIdentityStatus ?? `-`}</div>
-                </td>
-                <td>
-                  {item.accountType}
-                  <div className="muted">{item.country ?? `-`}</div>
-                  <div className="muted">{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
-                </td>
-                <td>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</td>
-                <td>{item.slaBreached ? `Breached` : `Within SLA`}</td>
-                <td>
-                  {item.assignedTo ? (
-                    <>
-                      <div>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</div>
-                      {item.assignedTo.email ? <div className="muted">{item.assignedTo.email}</div> : null}
-                    </>
-                  ) : (
-                    <span className="muted">—</span>
-                  )}
-                </td>
-                <td>{new Date(item.updatedAt).toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    </>
+          <p className="muted">
+            SLA breached: {queue?.sla.breachedCount ?? 0} · threshold {queue?.sla.thresholdHours ?? 24}h
+          </p>
+        </section>
+
+        {appliedQuickstart ? (
+          <section className="panel">
+            <div className="pageHeader">
+              <div>
+                <h2>{appliedQuickstart.label}</h2>
+                <p className="muted">{appliedQuickstart.description}</p>
+              </div>
+              <Link className="secondaryButton" href="/verification">
+                Remove quickstart
+              </Link>
+            </div>
+          </section>
+        ) : params?.quickstart ? (
+          <section className="panel">
+            <p className="muted">The requested quickstart could not be resolved for the verification queue.</p>
+          </section>
+        ) : null}
+
+        <SavedViewsSection
+          views={savedViews}
+          currentPayload={currentPayload}
+          buildHref={buildHref}
+          hasInvalidPayload={hasInvalidPayload}
+        />
+
+        <section className="panel pageHeader">
+          <form className="actionsRow" method="get">
+            <input name="status" defaultValue={status ?? ``} placeholder="status" />
+            <input name="stripeIdentityStatus" defaultValue={stripeIdentityStatus ?? ``} placeholder="stripe status" />
+            <input name="country" defaultValue={country ?? ``} placeholder="country" />
+            <input name="contractorKind" defaultValue={contractorKind ?? ``} placeholder="contractor kind" />
+            <label className="field">
+              <span>Missing profile</span>
+              <input type="checkbox" name="missingProfileData" value="true" defaultChecked={missingProfileData} />
+            </label>
+            <label className="field">
+              <span>Missing docs</span>
+              <input type="checkbox" name="missingDocuments" value="true" defaultChecked={missingDocuments} />
+            </label>
+            <button className="secondaryButton" type="submit">
+              Apply
+            </button>
+          </form>
+        </section>
+
+        <section className="panel">
+          <div className="pageHeader">
+            <p className="muted">
+              {queue?.total ?? 0} results · page {queue?.page ?? 1} / {totalPages}
+            </p>
+            <div className="actionsRow">
+              <a
+                className="secondaryButton"
+                aria-disabled={page <= 1}
+                href={page > 1 ? pageHref(page - 1) : pageHref(1)}
+              >
+                Previous
+              </a>
+              <a
+                className="secondaryButton"
+                aria-disabled={page >= totalPages}
+                href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
+              >
+                Next
+              </a>
+            </div>
+          </div>
+          <VerificationMobileCards items={items} />
+          <VerificationTabletRows items={items} />
+          <VerificationDesktopTable items={items} />
+        </section>
+      </>
+    </WorkspaceLayout>
   );
 }

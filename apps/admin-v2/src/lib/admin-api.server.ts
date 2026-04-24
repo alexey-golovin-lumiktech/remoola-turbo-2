@@ -1180,6 +1180,73 @@ export async function getLedgerAnomaliesSummary(): Promise<LedgerAnomalySummaryR
   return fetchAdminApi<LedgerAnomalySummaryResponse>(`/admin-v2/ledger/anomalies/summary`);
 }
 
+export type QuickstartId = `verification-missing-documents` | `overdue-payments-sweep` | `force-logout-audit-trail`;
+export type QuickstartSurface = `shell` | `overview` | `all`;
+export type QuickstartTargetRoute = `/verification` | `/payments` | `/audit/admin-actions`;
+
+export type QuickstartCard = {
+  id: QuickstartId;
+  label: string;
+  description: string;
+  eyebrow: string;
+  targetPath: QuickstartTargetRoute;
+  surfaces: Array<Exclude<QuickstartSurface, `all`>>;
+};
+
+export type QuickstartResolvedPreset =
+  | (QuickstartCard & {
+      targetPath: `/verification`;
+      filters: {
+        status?: string;
+        stripeIdentityStatus?: string;
+        country?: string;
+        contractorKind?: string;
+        missingProfileData?: true;
+        missingDocuments?: true;
+      };
+    })
+  | (QuickstartCard & {
+      targetPath: `/payments`;
+      filters: {
+        status?: string;
+        paymentRail?: string;
+        currencyCode?: string;
+        overdue?: true;
+      };
+    })
+  | (QuickstartCard & {
+      targetPath: `/audit/admin-actions`;
+      filters: {
+        action?: string;
+        adminId?: string;
+        email?: string;
+        resourceId?: string;
+        dateFrom?: string;
+        dateTo?: string;
+      };
+    });
+
+type QuickstartsListResponse = {
+  items: QuickstartCard[];
+};
+
+export async function getQuickstarts(surface: QuickstartSurface = `all`): Promise<QuickstartCard[]> {
+  const searchParams = new URLSearchParams();
+  if (surface !== `all`) {
+    searchParams.set(`surface`, surface);
+  }
+  const query = searchParams.toString();
+  const response = await fetchAdminApi<QuickstartsListResponse>(
+    query ? `/admin-v2/quickstarts?${query}` : `/admin-v2/quickstarts`,
+  );
+  return response?.items ?? [];
+}
+
+export async function getQuickstart(quickstartId: QuickstartId): Promise<QuickstartResolvedPreset | null> {
+  if (!quickstartId.trim()) return null;
+  return fetchAdminApi<QuickstartResolvedPreset>(`/admin-v2/quickstarts/${quickstartId}`);
+}
+
 export type SavedViewWorkspace = `ledger_anomalies` | `verification_queue`;
 
 export type SavedViewSummary = {

@@ -137,6 +137,9 @@ export async function middleware(req: NextRequest) {
   const refreshToken = getPreferredAdminCookieValue(req, `refresh`);
   const csrfToken = getPreferredAdminCookieValue(req, `csrf`);
 
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set(`x-pathname`, req.nextUrl.pathname);
+
   const isAuthPage = req.nextUrl.pathname.startsWith(`/login`);
   const isLogoutRoute = req.nextUrl.pathname.startsWith(`/logout`);
   const isProtected = !isAuthPage && !isLogoutRoute;
@@ -160,7 +163,6 @@ export async function middleware(req: NextRequest) {
     if (hasValidRefreshTokenShape && refreshToken) {
       const refreshResponse = await refreshAccess(req, refreshToken, csrfToken, `protected_page`);
       if (refreshResponse) {
-        const requestHeaders = new Headers(req.headers);
         requestHeaders.set(`cookie`, applySetCookieHeaders(req.headers.get(`cookie`), refreshResponse.headers));
         const response = NextResponse.next({ request: { headers: requestHeaders } });
         appendSetCookies(response.headers, refreshResponse.headers);
@@ -174,13 +176,12 @@ export async function middleware(req: NextRequest) {
     if (hasPotentialAccessToken(accessToken)) {
       const probeResponse = await probeAccessSession(req, accessToken);
       if (probeResponse?.ok) {
-        return NextResponse.next();
+        return NextResponse.next({ request: { headers: requestHeaders } });
       }
     }
     if (hasValidRefreshTokenShape && refreshToken) {
       const refreshResponse = await refreshAccess(req, refreshToken, csrfToken, `protected_page`);
       if (refreshResponse) {
-        const requestHeaders = new Headers(req.headers);
         requestHeaders.set(`cookie`, applySetCookieHeaders(req.headers.get(`cookie`), refreshResponse.headers));
         const response = NextResponse.next({ request: { headers: requestHeaders } });
         appendSetCookies(response.headers, refreshResponse.headers);
@@ -190,7 +191,7 @@ export async function middleware(req: NextRequest) {
     return loginRedirect();
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = { matcher: [`/((?!_next|favicon.ico|assets|api/.*).*)`] };

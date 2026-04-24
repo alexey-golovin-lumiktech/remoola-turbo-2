@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import type { ConsumerAppScope } from '@remoola/api-types';
+import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';

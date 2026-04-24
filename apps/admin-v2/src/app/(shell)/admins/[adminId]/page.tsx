@@ -1,3 +1,5 @@
+// Admin case is intentionally a leaf surface — no canonical row in the Cross-links Matrix
+// requires outbound investigation links from the admin case page.
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 

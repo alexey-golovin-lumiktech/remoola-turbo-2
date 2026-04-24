@@ -1,5 +1,6 @@
-import type { StatusPillTone } from './status-pill';
-import type { ReactElement } from 'react';
+import { type ReactElement } from 'react';
+
+import { type StatusPillTone } from './status-pill';
 
 export type PriorityPillProps = {
   priority: `High` | `Medium` | `Low` | string | null | undefined;

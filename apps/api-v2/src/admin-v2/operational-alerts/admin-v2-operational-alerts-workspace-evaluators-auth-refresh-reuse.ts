@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
+import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
+import {
+  type EvaluationResult,
+  type OperationalAlertWorkspaceEvaluator,
+} from './admin-v2-operational-alerts-workspace-evaluators';
 import { AUTH_AUDIT_EVENTS } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
-
-import type { OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
-import type {
-  EvaluationResult,
-  OperationalAlertWorkspaceEvaluator,
-} from './admin-v2-operational-alerts-workspace-evaluators';
 
 type AuthRefreshReuseQuery = { windowMinutes: number };
 

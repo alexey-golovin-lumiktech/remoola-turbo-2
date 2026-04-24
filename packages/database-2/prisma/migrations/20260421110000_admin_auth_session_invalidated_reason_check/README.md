@@ -27,9 +27,7 @@ type stays `TEXT` and the schema-side declaration in
 
 ## Why now / phase
 
-This is the final **Risk 13** mitigation step (see
-[`admin-v2-pack/08-rollout-risks-and-sequencing.md`](../../../../../admin-v2-pack/08-rollout-risks-and-sequencing.md)
-lines 680-693). Prior steps landed:
+This is the final **Risk 13** mitigation step. Prior steps landed:
 
 - 3.5a — backend hardening (plaintext fallback retirement,
   `admin_session_revoke` audit baseline).

@@ -43,6 +43,7 @@ describe(`admin-v2 mobile bottom nav active state`, () => {
   it(`keeps the full label available for long bottom-nav items`, () => {
     const markup = renderToStaticMarkup(<MobileBottomNav identity={identity} activePath="/ledger" />);
 
+    expectLinkActive(markup, `/ledger`);
     expect(markup).toContain(`title="Ledger and Disputes"`);
     expect(markup).toContain(`aria-label="Ledger and Disputes"`);
   });

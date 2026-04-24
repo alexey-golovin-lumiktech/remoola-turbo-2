@@ -13,5 +13,10 @@ export default async () => {
     cache: false,
     testEnvironment: `node`,
     roots: [`<rootDir>/src`],
+    moduleNameMapper: {
+      ...((config as { moduleNameMapper?: Record<string, string> }).moduleNameMapper ?? {}),
+      'next/font/(.*)': `<rootDir>/src/test/next-font-google-mock.ts`,
+      '@next/font/(.*)': `<rootDir>/src/test/next-font-google-mock.ts`,
+    },
   };
 };

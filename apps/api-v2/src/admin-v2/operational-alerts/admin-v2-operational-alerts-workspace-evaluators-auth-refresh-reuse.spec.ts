@@ -1,7 +1,6 @@
+import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
 import { AuthRefreshReuseAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-auth-refresh-reuse';
 import { AUTH_AUDIT_EVENTS } from '../../shared/auth-audit.service';
-
-import type { OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
 
 function buildHarness(count = 0) {
   const authAuditCount = jest.fn(async () => count);

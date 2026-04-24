@@ -1,4 +1,9 @@
-import type { AddressDetails, OrganizationDetails, PersonalDetails, SignupDetails } from './SignupFormContext';
+import {
+  type AddressDetails,
+  type OrganizationDetails,
+  type PersonalDetails,
+  type SignupDetails,
+} from './SignupFormContext';
 
 type SignupPayload = {
   email: string;

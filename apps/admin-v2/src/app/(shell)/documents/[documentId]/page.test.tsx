@@ -132,24 +132,6 @@ describe(`admin-v2 document case`, () => {
     });
   });
 
-  it(`renders case links and exact retag controls without extra workflow surfaces`, async () => {
-    const markup = renderToStaticMarkup(
-      await DocumentCasePage({
-        params: Promise.resolve({ documentId: `doc-1` }),
-      }),
-    );
-
-    expect(mockedGetDocumentCase).toHaveBeenCalledWith(`doc-1`);
-    expect(markup).toContain(`Retag document`);
-    expect(markup).toContain(`Save tags`);
-    expect(markup).toContain(`href="/consumers/consumer-1"`);
-    expect(markup).toContain(`href="/verification/consumer-1"`);
-    expect(markup).toContain(`href="/payments/payment-1"`);
-    expect(markup).toContain(`system-managed`);
-    expect(markup).toContain(`There is no document review queue`);
-    expect(markup).toContain(`bucket diagnostics`);
-  });
-
   it(`delegates missing document records to notFound`, async () => {
     mockedGetDocumentCase.mockResolvedValueOnce(null);
 

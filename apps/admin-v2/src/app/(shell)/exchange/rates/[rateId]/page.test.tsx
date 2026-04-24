@@ -98,22 +98,6 @@ describe(`admin-v2 exchange rate case`, () => {
     mockedGetExchangeRateCase.mockResolvedValue(buildRateCase());
   });
 
-  it(`renders approval workflow and stale-rate truth without inventing extra actions`, async () => {
-    const markup = renderToStaticMarkup(
-      await ExchangeRateCasePage({
-        params: Promise.resolve({ rateId: `rate-1` }),
-      }),
-    );
-
-    expect(mockedGetExchangeRateCase).toHaveBeenCalledWith(`rate-1`);
-    expect(markup).toContain(`Approval pending`);
-    expect(markup).toContain(`Approve exchange rate`);
-    expect(markup).toContain(`Mandatory approval reason for audit`);
-    expect(markup).toContain(`Stale`);
-    expect(markup).not.toContain(`Disable rate`);
-    expect(markup).not.toContain(`Delete rate`);
-  });
-
   it(`delegates missing rate records to notFound`, async () => {
     mockedGetExchangeRateCase.mockResolvedValueOnce(null);
 

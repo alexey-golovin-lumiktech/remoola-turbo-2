@@ -1,6 +1,7 @@
 import { createReadStream } from 'fs';
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
+import { type Readable } from 'stream';
 
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
@@ -8,8 +9,6 @@ import { Injectable, InternalServerErrorException, NotFoundException } from '@ne
 import { errorCodes } from '@remoola/shared-constants';
 
 import { envs } from '../../../envs';
-
-import type { Readable } from 'stream';
 
 @Injectable()
 export class FileStorageService {

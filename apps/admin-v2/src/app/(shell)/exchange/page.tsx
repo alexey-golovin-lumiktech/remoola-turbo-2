@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { WorkspaceLayout } from '../../../components/workspace-layout';
+
 export default function ExchangeWorkspacePage() {
   const sections = [
     {
@@ -20,33 +22,35 @@ export default function ExchangeWorkspacePage() {
   ];
 
   return (
-    <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Exchange workspace</h1>
-          <p className="muted">
-            Narrow MVP-2 surface only: exchange read visibility, exact six canonical actions and truthful overview
-            linkage.
-          </p>
-        </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href="/overview">
-            Back to overview
-          </Link>
-        </div>
-      </section>
-
-      <section className="statsGrid">
-        {sections.map((section) => (
-          <article className="panel" key={section.href}>
-            <h2>{section.title}</h2>
-            <p className="muted">{section.description}</p>
-            <Link className="secondaryButton" href={section.href}>
-              Open
+    <WorkspaceLayout workspace="exchange">
+      <>
+        <section className="panel pageHeader">
+          <div>
+            <h1>Exchange workspace</h1>
+            <p className="muted">
+              Narrow MVP-2 surface only: exchange read visibility, exact six canonical actions and truthful overview
+              linkage.
+            </p>
+          </div>
+          <div className="actionsRow">
+            <Link className="secondaryButton" href="/overview">
+              Back to overview
             </Link>
-          </article>
-        ))}
-      </section>
-    </>
+          </div>
+        </section>
+
+        <section className="statsGrid">
+          {sections.map((section) => (
+            <article className="panel" key={section.href}>
+              <h2>{section.title}</h2>
+              <p className="muted">{section.description}</p>
+              <Link className="secondaryButton" href={section.href}>
+                Open
+              </Link>
+            </article>
+          ))}
+        </section>
+      </>
+    </WorkspaceLayout>
   );
 }
