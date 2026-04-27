@@ -349,14 +349,14 @@ describe(`StripeWebhookService payment link scope`, () => {
       1,
       expect.objectContaining({
         recipientEmail: `payer@example.com`,
-        consumerAppScope: `consumer-mobile`,
+        consumerAppScope: `consumer-css-grid`,
       }),
     );
     expect(mailingService.sendPaymentChargebackEmail).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         recipientEmail: `requester@example.com`,
-        consumerAppScope: `consumer-mobile`,
+        consumerAppScope: `consumer-css-grid`,
       }),
     );
   });
@@ -431,14 +431,14 @@ describe(`StripeWebhookService payment link scope`, () => {
       1,
       expect.objectContaining({
         recipientEmail: `payer@example.com`,
-        consumerAppScope: `consumer-mobile`,
+        consumerAppScope: `consumer-css-grid`,
       }),
     );
     expect(mailingService.sendPaymentChargebackEmail).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         recipientEmail: `requester@example.com`,
-        consumerAppScope: `consumer-mobile`,
+        consumerAppScope: `consumer-css-grid`,
       }),
     );
   });

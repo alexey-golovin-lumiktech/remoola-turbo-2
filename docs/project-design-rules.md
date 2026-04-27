@@ -65,8 +65,8 @@ Apps MUST NOT import from other apps.
 
 Forbidden:
 
-- `apps/consumer` → `apps/api`
-- `apps/admin` → `apps/consumer` (and vice versa)
+- `apps/consumer-css-grid` → `apps/api-v2`
+- `apps/admin-v2` → `apps/consumer-css-grid` (and vice versa)
 
 Allowed shared locations:
 

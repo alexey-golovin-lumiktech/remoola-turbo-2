@@ -31,7 +31,7 @@ Capture the effective production values for these controls without exposing secr
 - `PUBLIC_MAIL_TRANSPORT_HEALTH_ENABLED=false`.
 - `HEALTH_TEST_EMAIL_ENABLED=false`.
 - `NGROK_ENABLED=false` and `NGROK_AUTH_TOKEN` / `NGROK_DOMAIN` are not blank and not set to enable public ingress in production unless there is explicit operational approval.
-- Frontend example envs and deploy-time config for the cutover set explicitly declare `CONSUMER_APP_ORIGIN`, `CONSUMER_MOBILE_APP_ORIGIN`, and `CONSUMER_CSS_GRID_APP_ORIGIN` as the canonical production app origins.
+- Frontend example envs and deploy-time config explicitly declare `CONSUMER_CSS_GRID_APP_ORIGIN` as the canonical production consumer origin.
 - `NEXT_PUBLIC_APP_ORIGIN` is treated only as legacy compatibility fallback, not as release evidence or the primary production contract.
 
 ### consumer-css-grid + api-v2 minimum production contract
@@ -65,16 +65,12 @@ Source of truth:
 
 Collect proof from the target environment:
 
-All runtime evidence for this cutover must be collected on canonical production
-consumer domains backed by:
-
-- `CONSUMER_APP_ORIGIN`
-- `CONSUMER_MOBILE_APP_ORIGIN`
-- `CONSUMER_CSS_GRID_APP_ORIGIN`
+All runtime evidence for this cutover must be collected on the canonical
+production consumer domain backed by `CONSUMER_CSS_GRID_APP_ORIGIN`.
 
 For boundary clarity: `consumer-css-grid` evidence belongs to the `apps/api-v2`
-release surface. Legacy `apps/api` is not the backend authority for
-`CONSUMER_CSS_GRID_APP_ORIGIN`.
+release surface and must be collected only against the maintained backend
+authority for `CONSUMER_CSS_GRID_APP_ORIGIN`.
 
 Do not use Vercel preview / branch deployment hostnames as release evidence for
 consumer auth, CSRF, OAuth, or ancillary app-scope routing.
@@ -96,16 +92,16 @@ This release is a synchronized cutover, not a rolling migration.
 
 Required deployment choreography:
 
-1. Freeze the release set: `apps/api-v2`, `apps/consumer`, `apps/consumer-mobile`, `apps/consumer-css-grid`.
-2. Deploy the frozen backend and all three consumer apps in one coordinated release window.
-3. Run auth, CSRF, OAuth, and ancillary smoke checks only on canonical production domains backed by the configured consumer app origin envs.
-4. If any auth/cookie/csrf/app-scope smoke fails, perform a coordinated rollback across backend and all three consumer apps.
+1. Freeze the release set: `apps/api-v2`, `apps/consumer-css-grid`.
+2. Deploy the frozen backend and canonical consumer app in one coordinated release window.
+3. Run auth, CSRF, OAuth, and ancillary smoke checks only on the canonical production domain backed by `CONSUMER_CSS_GRID_APP_ORIGIN`.
+4. If any auth/cookie/csrf/app-scope smoke fails, perform a coordinated rollback across backend and `consumer-css-grid`.
 
 Explicitly unsupported for go/no-go evidence:
 
 - backend-first rollout with later consumer app deployment
 - frontend-first rollout with later backend deployment
-- partial rollout of only one or two consumer apps
+- partial rollout that leaves `api-v2` and `consumer-css-grid` skewed
 - preview / branch deployment smoke as a substitute for canonical production smoke
 - mixed-version skew where backend requires the new ancillary `appScope` contract but any consumer app still runs the old BFF behavior
 
@@ -208,6 +204,6 @@ Do not release if any of the following are true:
 - Stripe webhook replay after a transient failure can still poison retries and silently skip handler work
 - consumer auth works only for legacy sessions and fails for fresh sessions
 - targeted auth/BFF verification is missing or red
-- any planned or actual deployment skew exists between `apps/api-v2` and one or more consumer apps in the cutover set
+- any planned or actual deployment skew exists between `apps/api-v2` and `apps/consumer-css-grid`
 - release smoke was executed primarily on preview / branch deployment URLs instead of canonical configured production domains
 - no coordinated deployment window / rollback window was defined for the backend plus all three consumer apps

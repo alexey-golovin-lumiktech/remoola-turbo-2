@@ -44,7 +44,7 @@ describe(`ConsumerAuthService.login`, () => {
   };
 
   const body = { email: `user@example.com`, password: `secret-password` };
-  const appScope = `consumer` as const;
+  const appScope = `consumer-css-grid` as const;
   const identity = {
     id: `consumer-id`,
     email: `user@example.com`,

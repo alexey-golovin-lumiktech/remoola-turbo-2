@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { isConsumerAppScope as isKnownConsumerAppScope, type ConsumerAppScope } from '@remoola/api-types';
+import { CURRENT_CONSUMER_APP_SCOPE, normalizeLegacyConsumerAppScope, type ConsumerAppScope } from '@remoola/api-types';
 
 import { envs } from '../envs';
 
@@ -8,15 +8,13 @@ type HeaderValue = string | string[] | undefined;
 
 @Injectable()
 export class OriginResolverService {
-  private readonly defaultOriginPlaceholder = `CONSUMER_APP_ORIGIN`;
-  private readonly mobileOriginPlaceholder = `CONSUMER_MOBILE_APP_ORIGIN`;
   private readonly cssGridOriginPlaceholder = `CONSUMER_CSS_GRID_APP_ORIGIN`;
   private readonly adminOriginPlaceholder = `ADMIN_APP_ORIGIN`;
   private readonly adminV2OriginPlaceholder = `ADMIN_V2_APP_ORIGIN`;
   private readonly consumerLocalDevOriginScopes = new Map<string, ConsumerAppScope>([
-    [`3001`, `consumer`],
-    [`3002`, `consumer-mobile`],
-    [`3003`, `consumer-css-grid`],
+    [`3001`, CURRENT_CONSUMER_APP_SCOPE],
+    [`3002`, CURRENT_CONSUMER_APP_SCOPE],
+    [`3003`, CURRENT_CONSUMER_APP_SCOPE],
   ]);
   private readonly adminLocalDevAllowedPorts = new Set([`3010`, `3011`]);
 
@@ -51,16 +49,8 @@ export class OriginResolverService {
   private getConfiguredConsumerOriginsByScope(): Map<ConsumerAppScope, string> {
     const origins = new Map<ConsumerAppScope, string>();
 
-    if (this.isValidOrigin(envs.CONSUMER_APP_ORIGIN, this.defaultOriginPlaceholder)) {
-      origins.set(`consumer`, this.normalizeOrigin(envs.CONSUMER_APP_ORIGIN));
-    }
-
-    if (this.isValidOrigin(envs.CONSUMER_MOBILE_APP_ORIGIN, this.mobileOriginPlaceholder)) {
-      origins.set(`consumer-mobile`, this.normalizeOrigin(envs.CONSUMER_MOBILE_APP_ORIGIN));
-    }
-
     if (this.isValidOrigin(envs.CONSUMER_CSS_GRID_APP_ORIGIN, this.cssGridOriginPlaceholder)) {
-      origins.set(`consumer-css-grid`, this.normalizeOrigin(envs.CONSUMER_CSS_GRID_APP_ORIGIN));
+      origins.set(CURRENT_CONSUMER_APP_SCOPE, this.normalizeOrigin(envs.CONSUMER_CSS_GRID_APP_ORIGIN));
     }
 
     return origins;
@@ -135,7 +125,7 @@ export class OriginResolverService {
   }
 
   validateConsumerAppScope(appScope?: string | null): ConsumerAppScope | undefined {
-    return isKnownConsumerAppScope(appScope) ? appScope : undefined;
+    return normalizeLegacyConsumerAppScope(appScope);
   }
 
   validateConsumerAppScopeHeader(headerValue?: HeaderValue): ConsumerAppScope | undefined {

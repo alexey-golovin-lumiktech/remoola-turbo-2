@@ -286,22 +286,25 @@ describe(`AdminV2AccessService`, () => {
     expect(profile.capabilities).toEqual([`me.read`]);
   });
 
-  it(`keeps only super-admin bootstrap compatibility when schema role rows contain unknown capability values`, async () => {
-    const service = makeService({
-      roleKey: `SUPER_ADMIN`,
-      roleCapabilities: [...superBridgeCapabilities, `not.real.capability`],
-    });
+  it(
+    `keeps only super-admin bootstrap compatibility ` + `when schema role rows contain unknown capability values`,
+    async () => {
+      const service = makeService({
+        roleKey: `SUPER_ADMIN`,
+        roleCapabilities: [...superBridgeCapabilities, `not.real.capability`],
+      });
 
-    const profile = await service.getAccessProfile({
-      id: `admin-super`,
-      email: `super@example.com`,
-      type: `SUPER`,
-    });
+      const profile = await service.getAccessProfile({
+        id: `admin-super`,
+        email: `super@example.com`,
+        type: `SUPER`,
+      });
 
-    expect(profile.source).toBe(`bridge-bootstrap`);
-    expect(profile.capabilities).toContain(`admins.read`);
-    expect(profile.capabilities).not.toContain(`not.real.capability` as never);
-  });
+      expect(profile.source).toBe(`bridge-bootstrap`);
+      expect(profile.capabilities).toContain(`admins.read`);
+      expect(profile.capabilities).not.toContain(`not.real.capability` as never);
+    },
+  );
 
   it(`limits non-super admins to bootstrap-only access when schema role capabilities are empty`, async () => {
     const service = makeService({
@@ -320,22 +323,25 @@ describe(`AdminV2AccessService`, () => {
     expect(profile.capabilities).toEqual([`me.read`]);
   });
 
-  it(`limits non-super admins to bootstrap-only access when schema role capabilities cannot bootstrap me.read`, async () => {
-    const service = makeService({
-      roleKey: `SUPPORT_ADMIN`,
-      roleCapabilities: [`overview.read`, `consumers.read`, `audit.read`],
-    });
+  it(
+    `limits non-super admins to bootstrap-only access ` + `when schema role capabilities cannot bootstrap me.read`,
+    async () => {
+      const service = makeService({
+        roleKey: `SUPPORT_ADMIN`,
+        roleCapabilities: [`overview.read`, `consumers.read`, `audit.read`],
+      });
 
-    const profile = await service.getAccessProfile({
-      id: `admin-support`,
-      email: `support@example.com`,
-      type: `ADMIN`,
-    });
+      const profile = await service.getAccessProfile({
+        id: `admin-support`,
+        email: `support@example.com`,
+        type: `ADMIN`,
+      });
 
-    expect(profile.source).toBe(`bridge-bootstrap`);
-    expect(profile.role).toBeNull();
-    expect(profile.capabilities).toEqual([`me.read`]);
-  });
+      expect(profile.source).toBe(`bridge-bootstrap`);
+      expect(profile.role).toBeNull();
+      expect(profile.capabilities).toEqual([`me.read`]);
+    },
+  );
 
   it(`denies access for identities outside the allowed bridge types`, async () => {
     const service = makeService(null);

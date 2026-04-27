@@ -1,5 +1,0 @@
-@reference "tailwindcss";
-
-.wrapper {
-  @apply flex min-h-[50vh] items-center justify-center text-neutral-600;
-}

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Swagger pages served by `apps/api` and `apps/api-v2` are now cookie-first.
+The Swagger pages served by `apps/api-v2` are cookie-first.
 
 - Do not use `Authorization` headers for manual Swagger testing.
 - Do not use Swagger's old Basic auth mental model.
@@ -40,7 +40,7 @@ Expected behavior:
 - the browser reuses the consumer session cookies automatically
 - no manual `Authorization` header is required
 - the Swagger page auto-sends `x-csrf-token` for same-origin consumer auth mutation routes that require CSRF parity
-- these API-origin Swagger cookies are separate from frontend BFF cookie namespaces such as `consumer`, `consumer-mobile`, and `consumer-css-grid`
+- these API-origin Swagger cookies are separate from the frontend BFF cookie namespace used by `consumer-css-grid`
 
 ## Consumer Routes With CSRF Requirements
 

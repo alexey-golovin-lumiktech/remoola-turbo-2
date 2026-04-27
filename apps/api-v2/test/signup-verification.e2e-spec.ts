@@ -23,19 +23,15 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
   let jwtService: JwtService;
   let consumerId: string;
   let consumerEmail: string;
-  let initialConsumerOrigin: string;
-  let initialConsumerMobileOrigin: string;
+  let initialConsumerCssGridOrigin: string;
 
-  const consumerOrigin = `http://127.0.0.1:3001`;
-  const consumerMobileOrigin = `http://127.0.0.1:3002`;
-  const consumerMobileAppScope = `consumer-mobile` as const;
+  const consumerCssGridOrigin = `http://127.0.0.1:3003`;
+  const consumerAppScope = `consumer-css-grid` as const;
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
-    initialConsumerOrigin = envs.CONSUMER_APP_ORIGIN;
-    initialConsumerMobileOrigin = envs.CONSUMER_MOBILE_APP_ORIGIN;
-    envs.CONSUMER_APP_ORIGIN = consumerOrigin;
-    envs.CONSUMER_MOBILE_APP_ORIGIN = consumerMobileOrigin;
+    initialConsumerCssGridOrigin = envs.CONSUMER_CSS_GRID_APP_ORIGIN;
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = consumerCssGridOrigin;
 
     prisma = new PrismaClient();
     await prisma.$connect();
@@ -76,15 +72,14 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
-    envs.CONSUMER_APP_ORIGIN = initialConsumerOrigin;
-    envs.CONSUMER_MOBILE_APP_ORIGIN = initialConsumerMobileOrigin;
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
     await app.close();
   });
 
   it(`complete-profile-creation rejects requests without app scope header`, async () => {
     const res = await request(app.getHttpServer())
-      .get(`/api/consumer/auth/signup/${consumerId}/complete-profile-creation?appScope=${consumerMobileAppScope}`)
+      .get(`/api/consumer/auth/signup/${consumerId}/complete-profile-creation?appScope=${consumerAppScope}`)
       .expect(401);
 
     expect(res.body?.message).toBe(`Invalid app scope`);
@@ -92,8 +87,8 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
 
   it(`issues token-only signup verification mail and redirects by token app scope`, async () => {
     const completeRes = await request(app.getHttpServer())
-      .get(`/api/consumer/auth/signup/${consumerId}/complete-profile-creation?appScope=${consumerMobileAppScope}`)
-      .set(CONSUMER_APP_SCOPE_HEADER, consumerMobileAppScope)
+      .get(`/api/consumer/auth/signup/${consumerId}/complete-profile-creation?appScope=${consumerAppScope}`)
+      .set(CONSUMER_APP_SCOPE_HEADER, consumerAppScope)
       .expect(200);
     expect(completeRes.text).toBe(`success`);
 
@@ -117,7 +112,7 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
       .get(`/api/consumer/auth/signup/verification`)
       .query({ token: mailCall!.token })
       .expect(302);
-    expect(verifyRes.headers.location).toContain(`${consumerMobileOrigin}/signup/verification`);
+    expect(verifyRes.headers.location).toContain(`${consumerCssGridOrigin}/signup/verification`);
     expect(verifyRes.headers.location).toContain(`verified=yes`);
     expect(verifyRes.headers.location).toContain(`email=`);
 
@@ -135,7 +130,7 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
         identityId: consumerId,
         typ: `access`,
         scope: `consumer`,
-        appScope: `consumer-mobile`,
+        appScope: `consumer-css-grid`,
       },
       { expiresIn: -1, secret: envs.JWT_ACCESS_SECRET },
     );
@@ -145,6 +140,6 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
       .query({ token: expiredToken })
       .expect(302);
 
-    expect(verifyRes.headers.location).toBe(`${consumerMobileOrigin}/signup/verification?verified=no`);
+    expect(verifyRes.headers.location).toBe(`${consumerCssGridOrigin}/signup/verification?verified=no`);
   });
 });

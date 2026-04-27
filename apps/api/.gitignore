@@ -1,6 +1,0 @@
-# Local env files
-.env*
-!.env.example
-
-uploads
-.vercel

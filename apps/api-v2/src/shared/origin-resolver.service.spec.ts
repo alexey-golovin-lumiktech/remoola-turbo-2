@@ -12,8 +12,6 @@ jest.mock(`../envs`, () => ({
       DEVELOPMENT: `development`,
       TEST: `test`,
     },
-    CONSUMER_APP_ORIGIN: `https://consumer.example.com`,
-    CONSUMER_MOBILE_APP_ORIGIN: `https://mobile.example.com`,
     CONSUMER_CSS_GRID_APP_ORIGIN: `https://grid.example.com`,
     ADMIN_APP_ORIGIN: `https://admin.example.com`,
     ADMIN_V2_APP_ORIGIN: `https://admin-v2.example.com`,
@@ -60,8 +58,6 @@ describe(`OriginResolverService`, () => {
       const origins = service.getAllowedOrigins();
 
       expect(origins.size).toBeGreaterThan(0);
-      expect(origins.has(`https://consumer.example.com`)).toBe(true);
-      expect(origins.has(`https://mobile.example.com`)).toBe(true);
       expect(origins.has(`https://grid.example.com`)).toBe(true);
       expect(origins.has(`https://admin.example.com`)).toBe(true);
       expect(origins.has(`https://admin-v2.example.com`)).toBe(true);
@@ -71,15 +67,15 @@ describe(`OriginResolverService`, () => {
     it(`should normalize origins in the set`, () => {
       const origins = service.getAllowedOrigins();
 
-      expect(origins.has(`https://consumer.example.com/`)).toBe(false);
-      expect(origins.has(`https://consumer.example.com`)).toBe(true);
+      expect(origins.has(`https://grid.example.com/`)).toBe(false);
+      expect(origins.has(`https://grid.example.com`)).toBe(true);
     });
   });
 
   describe(`validateConsumerAppScope`, () => {
     it(`accepts every supported consumer app scope`, () => {
-      expect(service.validateConsumerAppScope(`consumer`)).toBe(`consumer`);
-      expect(service.validateConsumerAppScope(`consumer-mobile`)).toBe(`consumer-mobile`);
+      expect(service.validateConsumerAppScope(`consumer`)).toBe(`consumer-css-grid`);
+      expect(service.validateConsumerAppScope(`consumer-mobile`)).toBe(`consumer-css-grid`);
       expect(service.validateConsumerAppScope(`consumer-css-grid`)).toBe(`consumer-css-grid`);
     });
 
@@ -101,8 +97,8 @@ describe(`OriginResolverService`, () => {
     });
 
     it(`should return normalized origin for allowed origin`, () => {
-      const result = service.validateConsumerCorsOrigin(`https://consumer.example.com/path`);
-      expect(result).toBe(`https://consumer.example.com`);
+      const result = service.validateConsumerCorsOrigin(`https://grid.example.com/path`);
+      expect(result).toBe(`https://grid.example.com`);
     });
 
     it(`should return undefined for disallowed origin`, () => {
@@ -111,8 +107,8 @@ describe(`OriginResolverService`, () => {
     });
 
     it(`should handle trailing slashes`, () => {
-      const result = service.validateConsumerCorsOrigin(`https://consumer.example.com/`);
-      expect(result).toBe(`https://consumer.example.com`);
+      const result = service.validateConsumerCorsOrigin(`https://grid.example.com/`);
+      expect(result).toBe(`https://grid.example.com`);
     });
 
     it(`should allow localhost consumer origin in development`, () => {
@@ -132,15 +128,13 @@ describe(`OriginResolverService`, () => {
 
   describe(`resolveConsumerOriginByScope`, () => {
     it(`returns the configured origin for each consumer scope`, () => {
-      expect(service.resolveConsumerOriginByScope(`consumer`)).toBe(`https://consumer.example.com`);
-      expect(service.resolveConsumerOriginByScope(`consumer-mobile`)).toBe(`https://mobile.example.com`);
       expect(service.resolveConsumerOriginByScope(`consumer-css-grid`)).toBe(`https://grid.example.com`);
     });
 
     it(`returns null when a scope has no configured canonical origin`, () => {
-      (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
+      (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
 
-      expect(service.resolveConsumerOriginByScope(`consumer-mobile`)).toBeNull();
+      expect(service.resolveConsumerOriginByScope(`consumer-css-grid`)).toBeNull();
     });
   });
 

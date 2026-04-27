@@ -73,7 +73,8 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
   {
     id: `exchange-scheduled-review`,
     label: `Scheduled FX review`,
-    description: `Inspect scheduled conversions, retries, and linked ledger outcomes without detouring through overview.`,
+    description:
+      `Inspect scheduled conversions, retries, and linked ledger outcomes ` + `without detouring through overview.`,
     eyebrow: `Queue-first`,
     targetPath: `/exchange/scheduled`,
     surfaces: [`shell`, `overview`],
@@ -102,7 +103,8 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
   {
     id: `system-alerts-console`,
     label: `System alerts console`,
-    description: `Open operational alerts directly when you need to edit thresholds instead of reading the summary cards.`,
+    description:
+      `Open operational alerts directly when you need to edit thresholds ` + `instead of reading the summary cards.`,
     eyebrow: `Queue-first`,
     targetPath: `/system/alerts`,
     surfaces: [`shell`, `overview`],

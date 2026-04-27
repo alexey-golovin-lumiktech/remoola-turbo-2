@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
+import { CURRENT_CONSUMER_APP_SCOPE, type ConsumerAppScope } from '@remoola/api-types';
 
 import { generatePdf } from '../shared-common';
 import { BrevoMailService, type BrevoAttachment, type BrevoSendMailOptions } from './brevo-mail.service';
@@ -109,7 +109,7 @@ export class MailingService {
   }
 
   private resolveConsumerPaymentLinkOrigin(consumerAppScope?: ConsumerAppScope): string | null {
-    return consumerAppScope ? (this.originResolver.resolveConsumerOriginByScope(consumerAppScope) ?? null) : null;
+    return this.originResolver.resolveConsumerOriginByScope(consumerAppScope ?? CURRENT_CONSUMER_APP_SCOPE) ?? null;
   }
 
   async sendLogsEmail(data: unknown = null, email?: string) {
@@ -203,7 +203,7 @@ export class MailingService {
     const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
 
     if (!origin) {
-      this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
+      this.logger.error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
       return;
     }
 
@@ -242,7 +242,7 @@ export class MailingService {
     const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
 
     if (!origin) {
-      this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
+      this.logger.error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
       return;
     }
 
@@ -283,7 +283,7 @@ export class MailingService {
     const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
 
     if (!origin) {
-      this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
+      this.logger.error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
       return;
     }
 

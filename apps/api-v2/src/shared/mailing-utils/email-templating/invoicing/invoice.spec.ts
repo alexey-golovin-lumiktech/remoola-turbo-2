@@ -10,7 +10,7 @@ jest.mock(`../../../../envs`, () => ({
       DEVELOPMENT: `development`,
       TEST: `test`,
     },
-    CONSUMER_APP_ORIGIN: `https://consumer.example.com`,
+    CONSUMER_CSS_GRID_APP_ORIGIN: `https://grid.example.com`,
   },
 }));
 
@@ -35,20 +35,20 @@ describe(`invoice template pay-online origin`, () => {
   it(`uses the canonical consumer app origin when configured`, () => {
     const html = processor(baseInvoice);
 
-    expect(html).toContain(`href="https://consumer.example.com/dashboard"`);
+    expect(html).toContain(`href="https://grid.example.com/dashboard"`);
   });
 
   it(`falls back to localhost in test when the canonical origin is still a placeholder`, () => {
-    (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
+    (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
 
     const html = processor(baseInvoice);
 
-    expect(html).toContain(`href="http://localhost:3001/dashboard"`);
+    expect(html).toContain(`href="http://localhost:3003/dashboard"`);
   });
 
   it(`fails closed in production-like environments when no canonical origin is configured`, () => {
     (envs as any).NODE_ENV = `production`;
-    (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
+    (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
 
     const html = processor(baseInvoice);
 

@@ -45,7 +45,6 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   let googleOnlyConsumerEmail: string;
   let googleOnlyConsumerId: string;
   let mailingService: MailingService;
-  let initialConsumerOrigin: string;
   let initialConsumerCssGridOrigin: string;
   const initialPassword = `ForgotReset1!`;
   const updatedPassword = `ForgotReset2!`;
@@ -83,9 +82,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
-    initialConsumerOrigin = envs.CONSUMER_APP_ORIGIN;
     initialConsumerCssGridOrigin = envs.CONSUMER_CSS_GRID_APP_ORIGIN;
-    envs.CONSUMER_APP_ORIGIN = origin;
     envs.CONSUMER_CSS_GRID_APP_ORIGIN = origin;
     prisma = new PrismaClient();
     await prisma.$connect();
@@ -145,7 +142,6 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
-    envs.CONSUMER_APP_ORIGIN = initialConsumerOrigin;
     envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
     await app.close();

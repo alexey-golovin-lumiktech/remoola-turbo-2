@@ -3,8 +3,8 @@
 **Canonical:** This document is the current canonical reference for the Stripe webhook contract and related fintech safety notes.
 
 **Last updated:** 2026-03-31  
-**Scope:** Remoola monorepo — `apps/api`, `apps/api-v2`, `apps/consumer-css-grid`; ledger, payments, Stripe webhooks, Stripe Identity verification state, auth/BFF boundaries, raw SQL, PostgreSQL design rules  
-**Status:** Strict-fintech remediation applied on critical surfaces; docs now distinguish legacy `apps/api` from active `apps/api-v2` / `apps/consumer-css-grid` behavior.
+**Scope:** Remoola monorepo — `apps/api-v2`, `apps/consumer-css-grid`; ledger, payments, Stripe webhooks, Stripe Identity verification state, auth/BFF boundaries, raw SQL, PostgreSQL design rules  
+**Status:** Strict-fintech remediation applied on the maintained `apps/api-v2` / `apps/consumer-css-grid` surfaces.
 
 ---
 
@@ -118,7 +118,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 | Stripe webhook entry | `processStripeEvent` | Insert into `stripe_webhook_event` first; on P2002 return 200. |
 | Ledger status / dispute | Stripe webhook handlers, reversal scheduler | Append-only: `ledgerEntryOutcomeModel.create`, `ledgerEntryDisputeModel.create`; no `ledgerEntryModel.update`/`updateMany`. |
 | Stripe Identity verification | `ConsumerVerificationController`, `StripeWebhookService` | Canonical start route, persisted lifecycle state on `consumer`, stale-session guard on webhook updates, and shared effective-verification helper used by UI and payment limits. |
-| BFF request boundary | `apps/admin/src/lib/proxy.ts`, `apps/consumer/src/lib/api-utils.ts`, `apps/consumer-mobile/src/lib/api-utils.ts`, `apps/consumer-css-grid/src/lib/api-utils.ts` | Header allowlist forwarding, multi-cookie passthrough, mutation JSON validation, payload-size limits, `cache: no-store` on authenticated proxy fetches. `consumer-css-grid` auth mutations explicitly strip raw passthrough headers like `authorization`/`host`. |
+| BFF request boundary | `apps/admin-v2/src/lib/api-utils.ts`, `apps/consumer-css-grid/src/lib/api-utils.ts` | Header allowlist forwarding, multi-cookie passthrough, mutation JSON validation, payload-size limits, `cache: no-store` on authenticated proxy fetches. `consumer-css-grid` auth mutations explicitly strip raw passthrough headers like `authorization`/`host`. |
 
 ---
 
@@ -135,7 +135,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 | oauth-state-store.service.ts | `$queryRaw` (DELETE … RETURNING) | Yes | Single op | Non–money. |
 | health.service.ts | `$queryRaw` SELECT 1 | Yes | No | On DB error: generic message, not raw `error.message`. |
 
-Production raw queries use **parameterized** APIs; DB column names are **snake_case** (`consumer_id`, `deleted_at`, etc.) to match schema. No `$queryRawUnsafe`/`$executeRawUnsafe` in `apps/api/src`; the only Unsafe usage is in test utilities (`test/temp-db-isolation-*.e2e-spec.ts`).
+Production raw queries use **parameterized** APIs; DB column names are **snake_case** (`consumer_id`, `deleted_at`, etc.) to match schema. No `$queryRawUnsafe`/`$executeRawUnsafe` in `apps/api-v2/src`; the only Unsafe usage is in test utilities (`test/temp-db-isolation-*.e2e-spec.ts`).
 
 ### 6.2 Applied fixes
 
@@ -207,16 +207,16 @@ cd apps/api-v2 && yarn test:e2e
 ## 10. Verification checklist
 
 - [ ] **Prisma:** `npx prisma generate` in `packages/database-2` succeeds.
-- [ ] **No ledger mutation in app:** No remaining `ledgerEntryModel.update` / `updateMany` / `delete` in `apps/api`.
+- [ ] **No ledger mutation in app:** No remaining `ledgerEntryModel.update` / `updateMany` / `delete` in `apps/api-v2`.
 - [ ] **Balance queries:** Still use `ledger_entry` with `status = COMPLETED`; trigger keeps status in sync.
 - [ ] **Idempotency:** Unique constraints on `idempotency_key` and `event_id` unchanged.
 - [ ] **Stripe Identity state:** `POST /api/consumer/verification/sessions` creates or reuses the active verification session and persists lifecycle state on `consumer`.
 - [ ] **Stale-session guard:** Managed Stripe Identity webhook events update only the active session and ignore stale session ids.
 - [ ] **KYC limits:** Withdraw / transfer limits continue to use effective verification, not `legal_verified` alone.
-- [ ] **TypeScript:** `npx tsc --noEmit` in `apps/api` (or workspace build).
-- [ ] **Tests:** Run payment/webhook/ledger unit and concurrency specs; run E2E (`yarn test:e2e` in `apps/api`) so `critical-updates.e2e-spec.ts` and `consumer-verification.e2e-spec.ts` pass.
+- [ ] **TypeScript:** `npx tsc --noEmit` in `apps/api-v2` (or workspace build).
+- [ ] **Tests:** Run payment/webhook/ledger unit and concurrency specs; run E2E (`yarn test:e2e` in `apps/api-v2`) so `critical-updates.e2e-spec.ts` and `consumer-verification.e2e-spec.ts` pass.
 - [ ] **Deploy:** Apply migrations above before deploying app.
-- [ ] **Monorepo:** No cross-app imports; DB layer in `packages/database-2`, API in `apps/api`.
+- [ ] **Monorepo:** No cross-app imports; DB layer in `packages/database-2`, API in `apps/api-v2`.
 
 ---
 

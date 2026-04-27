@@ -27,8 +27,8 @@ Do not promote runtime deployment until the migration is applied successfully in
 
 Run and capture outputs in CI/staging:
 
-1. `yarn workspace @remoola/api test --runInBand src/consumer/modules/payment-methods/stripe-webhook.service.spec.ts`
-2. `yarn workspace @remoola/api test --runInBand test/consumer-verification.e2e-spec.ts`
+1. `yarn workspace @remoola/api-v2 test --runInBand src/consumer/modules/payment-methods/stripe-webhook.service.spec.ts`
+2. `yarn workspace @remoola/api-v2 test --runInBand test/consumer-verification.e2e-spec.ts`
 3. `yarn workspace @remoola/api-e2e test -- --runInBand test/consumer-auth-oauth-full-flow.e2e-spec.ts`
 
 Operational validation after migrate:

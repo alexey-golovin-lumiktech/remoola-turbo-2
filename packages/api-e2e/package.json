@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "pretest": "TERM=dumb NO_COLOR=1 node ../../scripts/cleanup-stale-test-dbs.js && node ../../scripts/ensure-local-development.js api-e2e:pretest && yarn workspace @remoola/test-db build",
-    "test": "TERM=dumb NO_COLOR=1 node ../../scripts/run-jest-with-memory-cap.js --config ./jest-e2e.json",
-    "test:e2e:standalone": "TERM=dumb NO_COLOR=1 node ../../scripts/run-jest-with-memory-cap.js --config ./jest-e2e.json"
+    "test": "TERM=dumb NO_COLOR=1 node ../../scripts/run-jest-with-memory-cap.js --config ./jest-e2e.api-v2.json",
+    "test:e2e:standalone": "TERM=dumb NO_COLOR=1 node ../../scripts/run-jest-with-memory-cap.js --config ./jest-e2e.api-v2.json"
   },
   "devDependencies": {
     "@remoola/jest-config": "^0.0.0",

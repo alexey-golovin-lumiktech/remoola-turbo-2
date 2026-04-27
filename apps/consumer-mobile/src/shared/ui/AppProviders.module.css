@@ -1,3 +1,0 @@
-@reference "tailwindcss";
-@reference "../../app/globals.css";
-@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));

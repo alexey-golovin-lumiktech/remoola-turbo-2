@@ -1,5 +1,0 @@
-@reference "tailwindcss";
-
-.fallback {
-  @apply p-4 text-neutral-600;
-}

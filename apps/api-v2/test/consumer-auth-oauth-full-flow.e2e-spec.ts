@@ -30,14 +30,9 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   let prisma: PrismaClient;
   const consumerEmail = `oauth-existing-consumer@local.test`;
   const consumerPassword = `OauthConsumer1!`;
-  const appOrigins: Record<ConsumerAppScope, string> = {
-    consumer: `http://127.0.0.1:3001`,
-    'consumer-mobile': `http://127.0.0.1:3002`,
-    'consumer-css-grid': `http://127.0.0.1:3003`,
-  };
+  const appScope: ConsumerAppScope = `consumer-css-grid`;
+  const consumerOrigin = `http://127.0.0.1:3003`;
   let consumerId = ``;
-  let initialConsumerOrigin: string;
-  let initialConsumerMobileOrigin: string;
   let initialConsumerCssGridOrigin: string;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
@@ -68,12 +63,8 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
-    initialConsumerOrigin = envs.CONSUMER_APP_ORIGIN;
-    initialConsumerMobileOrigin = envs.CONSUMER_MOBILE_APP_ORIGIN;
     initialConsumerCssGridOrigin = envs.CONSUMER_CSS_GRID_APP_ORIGIN;
-    envs.CONSUMER_APP_ORIGIN = appOrigins.consumer;
-    envs.CONSUMER_MOBILE_APP_ORIGIN = appOrigins[`consumer-mobile`];
-    envs.CONSUMER_CSS_GRID_APP_ORIGIN = appOrigins[`consumer-css-grid`];
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = consumerOrigin;
     prisma = new PrismaClient();
     await prisma.$connect();
 
@@ -144,18 +135,12 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
-    envs.CONSUMER_APP_ORIGIN = initialConsumerOrigin;
-    envs.CONSUMER_MOBILE_APP_ORIGIN = initialConsumerMobileOrigin;
     envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
     await app.close();
   });
 
-  it.each([
-    [`consumer`, appOrigins.consumer],
-    [`consumer-mobile`, appOrigins[`consumer-mobile`]],
-    [`consumer-css-grid`, appOrigins[`consumer-css-grid`]],
-  ] as const)(`completes OAuth full flow for %s`, async (appScope, consumerOrigin) => {
+  it(`completes OAuth full flow for the canonical css-grid scope`, async () => {
     const oauthAgent = request.agent(app.getHttpServer());
 
     const startRes = await oauthAgent

@@ -1,7 +1,8 @@
 # Remoola API v2
 
-NestJS backend for the Remoola monorepo. This app serves the admin, consumer,
-and consumer-mobile clients under the global `/api` prefix.
+NestJS backend for the Remoola monorepo. This app serves the canonical
+`consumer-css-grid` surface together with the admin APIs under the global `/api`
+prefix.
 
 ## Run locally
 

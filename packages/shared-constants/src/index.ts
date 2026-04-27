@@ -144,7 +144,7 @@ export const errorCodes = {
 } as const;
 
 /**
- * Admin API error codes. Each code is used in exactly one throw site in apps/api admin.
+ * Admin API error codes. Each code is used in exactly one throw site in the maintained admin API surface.
  * Admin app maps these to user-facing messages via getErrorMessageForUser().
  */
 export const adminErrorCodes = {

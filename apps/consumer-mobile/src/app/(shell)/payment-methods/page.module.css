@@ -1,7 +1,0 @@
-@reference "tailwindcss";
-@reference "../../globals.css";
-@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
-
-.root {
-  @apply mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6 lg:p-8;
-}

@@ -642,19 +642,19 @@ describe(`AdminV2ConsumersService`, () => {
     const result = await service.resendConsumerEmail(
       `consumer-1`,
       `admin-1`,
-      { emailKind: `password_recovery`, appScope: `consumer` },
+      { emailKind: `password_recovery`, appScope: `consumer-css-grid` },
       { ipAddress: `127.0.0.1`, userAgent: `jest`, idempotencyKey: `email-idem-1` },
     );
 
     expect(idempotency.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         adminId: `admin-1`,
-        scope: `consumer-email-resend:consumer-1:password_recovery:consumer`,
+        scope: `consumer-email-resend:consumer-1:password_recovery:consumer-css-grid`,
         key: `email-idem-1`,
         payload: {
           consumerId: `consumer-1`,
           requestedEmailKind: `password_recovery`,
-          appScope: `consumer`,
+          appScope: `consumer-css-grid`,
         },
       }),
     );
@@ -664,7 +664,7 @@ describe(`AdminV2ConsumersService`, () => {
         metadata: expect.objectContaining({
           requestedEmailKind: `password_recovery`,
           dispatchedEmailKind: `password_reset`,
-          appScope: `consumer`,
+          appScope: `consumer-css-grid`,
         }),
       }),
     );

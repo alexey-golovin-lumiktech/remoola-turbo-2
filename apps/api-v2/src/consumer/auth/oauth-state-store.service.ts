@@ -1,6 +1,6 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
+import { normalizeLegacyConsumerAppScope, type ConsumerAppScope } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 
@@ -240,12 +240,13 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       const { nonce, codeVerifier, nextPath, createdAt, signupEntryPath, accountType, contractorKind, appScope } =
         parsed;
 
+      const normalizedAppScope = typeof appScope === `string` ? normalizeLegacyConsumerAppScope(appScope) : undefined;
       if (
         typeof nonce !== `string` ||
         typeof codeVerifier !== `string` ||
         typeof nextPath !== `string` ||
         typeof createdAt !== `number` ||
-        (appScope !== `consumer` && appScope !== `consumer-mobile` && appScope !== `consumer-css-grid`)
+        !normalizedAppScope
       ) {
         return null;
       }
@@ -258,7 +259,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
         signupEntryPath: typeof signupEntryPath === `string` ? signupEntryPath : undefined,
         accountType: typeof accountType === `string` ? accountType : undefined,
         contractorKind: typeof contractorKind === `string` ? contractorKind : undefined,
-        appScope,
+        appScope: normalizedAppScope,
       };
     } catch {
       return null;

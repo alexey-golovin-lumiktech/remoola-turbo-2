@@ -355,7 +355,7 @@ async function runGlobalFallback() {
 
   return runCommand(
     'yarn',
-    ['--silent', 'workspace', '@remoola/api', 'run', 'test:e2e:fast'],
+    ['--silent', 'workspace', '@remoola/api-v2', 'run', 'test:e2e:fast'],
     {
       env: {
         ...process.env,

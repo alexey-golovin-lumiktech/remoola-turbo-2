@@ -1,16 +1,13 @@
 # Remoola Project Documentation
 
-Single-file documentation covering API, Admin, Consumer, and Database.
+Single-file documentation covering the maintained `api-v2`, `admin-v2`, `consumer-css-grid`, and database surfaces.
 
 ## Overview
 
 Remoola is a Turborepo monorepo with:
 
-- `apps/api`: NestJS backend authority for `consumer` and `consumer-mobile`.
 - `apps/api-v2`: NestJS backend authority for `consumer-css-grid` and current auth-sensitive cutovers.
-- `apps/admin`: Next.js admin dashboard on port `3010`.
-- `apps/consumer`: Next.js consumer portal on port `3001`.
-- `apps/consumer-mobile`: Next.js mobile-first consumer app on port `3002`.
+- `apps/admin-v2`: Next.js admin dashboard on port `3011`.
 - `apps/consumer-css-grid`: Next.js consumer app with css-grid shell on port `3003`.
 - `packages/database-2`: Prisma schema, migrations, and generated client.
 - Shared packages for API contracts, security utilities, testing, UI, linting, and TS config.
@@ -24,11 +21,11 @@ Root workflow highlights:
 - There is no root `.env.example`; setup is driven by `packages/database-2/.env.example` plus the per-app `apps/*/.env.example` files you actually need.
 - Root `yarn test`, `yarn test:e2e`, and `yarn test:e2e:fast` are local-only entrypoints guarded by `scripts/ensure-local-development.js`.
 - Local test/e2e flows rely on `@remoola/test-db` and Testcontainers, so Docker is an expected prerequisite.
-- `.husky/pre-commit` skips docs-only changes and otherwise runs lint, builds `@remoola/test-db`, then runs consumer unit tests, api unit tests, and `apps/api` fast e2e.
+- `.husky/pre-commit` skips docs-only changes and otherwise runs lint, builds `@remoola/test-db`, then runs maintained unit tests plus `apps/api-v2` fast e2e coverage.
 
 ## API (NestJS) - Implemented Features
 
-Base backend lives in `apps/api`, which remains the backend authority for `consumer` and `consumer-mobile`. `apps/api-v2` is the backend authority for `consumer-css-grid` and the synchronized auth-sensitive cutover surface documented in `docs/API_V2_PRODUCTION_RELEASE_GATE.md`. All API routes use the global prefix `/api` (e.g. `/api/admin/auth`, `/api/consumer/auth`). Auth on the Nest API is namespaced under `admin` and `consumer` only; shared JWT wiring lives under `apps/api/src/auth` (`JwtPassportModule`, `JwtStrategy`) but does not expose a root `/api/auth` route. The Admin Next.js app may still use BFF paths like `/api/auth/login` that proxy to `/api/admin/auth` on the backend.
+Base backend lives in `apps/api-v2`, which is the maintained backend authority for `consumer-css-grid` and the synchronized auth-sensitive release surface documented in `docs/API_V2_PRODUCTION_RELEASE_GATE.md`. All API routes use the global prefix `/api` (e.g. `/api/admin/auth`, `/api/consumer/auth`). Auth on the Nest API is namespaced under `admin` and `consumer` only; shared JWT wiring lives under `apps/api-v2/src/auth` (`JwtPassportModule`, `JwtStrategy`) and does not expose a root `/api/auth` route. The Admin Next.js app may still use BFF paths like `/api/auth/login` that proxy to `/api/admin/auth` on the backend.
 
 ### Admin APIs
 
@@ -105,10 +102,10 @@ Auth (`/consumer/auth`):
   links omit both `email` and routing-layer `referer`; the signed token now carries
   canonical `appScope`, and successful redirects to the consumer verification page may
   still include `email` for compatibility/UX.
-- Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires explicit `appScope=consumer|consumer-mobile|consumer-css-grid`, and the backend requires exact match between claimed `appScope` and `x-remoola-app-scope`); `GET /forgot-password/verify?token=…` — token-only verify contract; validate token and redirect only when stored `appScope` is present and valid, otherwise fail with `ORIGIN_REQUIRED`; `POST /password/reset` (body: token, password) — set new password with token from email.
+- Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires explicit `appScope=consumer-css-grid`, and the backend requires exact match between claimed `appScope` and `x-remoola-app-scope`); `GET /forgot-password/verify?token=…` — token-only verify contract; validate token and redirect only when stored `appScope` is present and valid, otherwise fail with `ORIGIN_REQUIRED`; `POST /password/reset` (body: token, password) — set new password with token from email.
 - Authenticated password update: `PATCH /consumer/profile/password` (see Profile below). This route supports both password change and first-time password creation for Google-only / no-password accounts.
 - Google OAuth flows:
-  - `GET /google/start`: start OAuth flow with explicit `appScope` as the only public redirect identity. Supported contract is `GET /google/start?appScope=consumer|consumer-mobile|consumer-css-grid&next=...`; browser-facing callers are expected to use same-origin BFF routes under `/api/consumer/auth/google/start`, and the backend requires exact match between query `appScope` and `x-remoola-app-scope`.
+  - `GET /google/start`: start OAuth flow with explicit `appScope` as the only public redirect identity. Supported contract is `GET /google/start?appScope=consumer-css-grid&next=...`; browser-facing callers are expected to use same-origin BFF routes under `/api/consumer/auth/google/start`, and the backend requires exact match between query `appScope` and `x-remoola-app-scope`.
   - `GET /google/callback`: OAuth redirect handling; reads `appScope` from OAuth state and builds login/signup/callback redirects through configured `appScope -> origin` mapping rather than request-derived origin.
   - `GET /google/signup-session`: fetch OAuth signup session data.
   - `POST /oauth/complete`: exchange short-lived OAuth handoff token for access/refresh cookies. Browser-facing callers must go through frontend same-origin BFF routes rather than calling the API origin directly.
@@ -240,7 +237,7 @@ Settings (`/consumer/settings`):
 
 ### Shared Backend Capabilities
 
-Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
+Common infrastructure in `apps/api-v2/src/shared` and `apps/api-v2/src/shared-common`:
 
 - Prisma DB module and service.
 - Email templates and mailing service (transactional email via Brevo API; see FEATURES_CURRENT.md).
@@ -256,87 +253,38 @@ Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
 
 Recent runtime hardening (API pipeline and scheduler safety):
 
-- Global request pipeline wiring in `apps/api/src/main.ts` now explicitly includes:
+- Global request pipeline wiring in `apps/api-v2/src/main.ts` now explicitly includes:
   - `CorrelationIdMiddleware` (normalizes/sets `x-correlation-id`),
   - `deviceIdMiddleware` (consumer-path browser identity resolution),
   - `ConsumerActionInterceptor` (decorator-gated append-only action logging).
-- `StripeReversalScheduler` in both `apps/api/src/consumer/modules/payment-methods/stripe-reversal.scheduler.ts` and `apps/api-v2/src/consumer/modules/payment-methods/stripe-reversal.scheduler.ts` uses transaction-scoped advisory lock selection and bounded per-run reconciliation to reduce pooled-connection lock hazards while preserving idempotent outcome writes.
+- `StripeReversalScheduler` in `apps/api-v2/src/consumer/modules/payment-methods/stripe-reversal.scheduler.ts` uses transaction-scoped advisory lock selection and bounded per-run reconciliation to reduce pooled-connection lock hazards while preserving idempotent outcome writes.
 - `StripeWebhookService.processStripeEvent` top-level failure path logs sanitized warning telemetry (`stripe_webhook_processing_failed`) without exposing raw webhook payload/error text in logs.
-- Consumer, consumer-mobile, and consumer-css-grid BFF mutation routes preserve idempotency/correlation header forwarding and backend `Set-Cookie` passthrough behavior for auth/payment compatibility within their supported backend surfaces.
+- Admin and consumer-css-grid BFF mutation routes preserve idempotency/correlation header forwarding and backend `Set-Cookie` passthrough behavior for auth/payment compatibility within their supported backend surfaces.
 
 Consumer/browser tracking reference:
 
 - `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md`: browser identity (`deviceId`), action tracking (`@TrackConsumerAction` + interceptor), append-only `consumer_action_log`, compatibility contracts, and verification checklist.
 
-## Admin App (Next.js)
+## Admin V2 App (Next.js)
 
-Admin UI is in `apps/admin`. It has server routes and internal API handlers under `apps/admin/src/app/api` to communicate with the backend.
+Admin UI is in `apps/admin-v2`. It is the maintained operator frontend and uses same-origin BFF routes plus middleware-driven session refresh.
 
-Implemented screens:
+Implemented surfaces include:
 
-- `/(auth)/login`: admin login flow.
-- `/(protected)/dashboard`: dashboard metrics and queues.
-- `/(protected)/admins`: admin list and admin details pages.
-- `/(protected)/consumers`: consumer list and consumer details pages.
-- `/(protected)/payment-requests`: list, details, and expectation-date archive.
-- `/(protected)/payment-requests/expectation-date-archive`: expectation-date archive view.
-- `/(protected)/ledger`: ledger listing and ledger anomalies view.
-- `/(protected)/exchange/rules`: review auto-conversion rules.
-- `/(protected)/exchange/scheduled`: review scheduled FX conversions.
-- `/(protected)/exchange/rates`: manage exchange rates.
-- `/(protected)/ledger/anomalies`: dedicated ledger anomalies view.
+- auth pages for login, forgot-password, reset-password, and invitation acceptance
+- protected operator pages for overview, consumers, verification, payments, ledger, payouts, payment methods, exchange, documents, audit, admins, and system
+- centralized 401/session-expired handling in middleware and logout flow
 
-Dashboard widgets in `apps/admin/src/components/dashboard`:
+Internal admin-v2 server routes:
 
-- Status totals and recent payment requests.
-- Ledger anomalies and verification queue.
+- auth routes under `/api/admin-v2/auth/*`
+- identity route `GET /api/me`
+- shared header/cookie forwarding through `apps/admin-v2/src/lib/api-utils.ts`
+- backend `Set-Cookie` passthrough via `appendSetCookies(...)`
 
-Internal Admin API routes (server-side):
+## Legacy Consumer Apps
 
-- Auth routes (`/api/auth/*`) for login/logout/me.
-- Admin management routes (`/api/admins/*`).
-- Consumer management routes (`/api/consumers/*`, including verification updates).
-- Dashboard data routes (`/api/dashboard/*`).
-- Ledger and payment request data routes (`/api/ledger`, `/api/payment-requests/*`, `/api/payment-requests/expectation-date-archive`).
-- Exchange routes (`/api/exchange/*`).
-
-## Consumer App (Next.js)
-
-Consumer UI is in `apps/consumer`, with internal API handlers in `apps/consumer/src/app/api` to call the backend.
-
-Recent consumer UX updates:
-
-- The authenticated shell now includes a command palette for pages and primary actions. Users can open it from the header search affordance or via `Cmd+K` on Apple platforms and `Ctrl+/` on Linux/Windows.
-- Mobile navigation keeps a compact bottom bar for Home, Payments, Contacts, and Contracts, while secondary destinations move into a `More` drawer.
-- Desktop navigation labels were polished to better match product language, including `Bank & Cards`, `Withdraw`, and `Exchange`.
-- Theme resolution is applied before paint in the root layout so light/dark preference is visible earlier and hydration mismatch risk is reduced.
-- Signup and profile entry points now use stricter date parsing, clearer verification/completion copy, country-aware passport/ID hints, broader address parsing across US/Canada/UK/Russia/Germany formats, and `countryHint` support for ambiguous address prefill inputs.
-- Settings now distinguish `Set Password` from `Change Password`: accounts with `hasPassword === false` can create a first password without entering a current password, then are redirected through `auth_notice=password_set` to sign in again.
-
-## Consumer Mobile App (Next.js)
-
-Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts and enhanced touch interactions. Uses the shared consumer OAuth model where same-origin BFF routes forward `appScope=consumer-mobile`, and backend callback/handoff routing resolves target origin from stored `appScope`.
-
-Recent hardening and architecture updates:
-
-- Styling migrated to CSS Modules across routes/features/shared UI (`*.module.css`) to keep presentation separated from TSX logic.
-- Login `next` query handling is sanitized (unsafe absolute/protocol-relative/malformed/CRLF values are rejected and fallback to `/dashboard`).
-- Middleware refresh flow emits `x-remoola-auth-refresh-*` headers and `server-timing` metrics for refresh observability and avoids auth-page redirect loops with expired cookies.
-- Settings mirrors consumer web password behavior: `hasPassword` controls whether the form is `Set Password` or `Change Password`, current-password validation is conditional, and success can redirect via `auth_notice=password_set`.
-
-### Enhanced UI Features
-
-- **Documents View**: Card-based responsive grid layout (1/2/3 columns), filter chips with counts, skeleton loading states, improved empty states
-- **Touch-Optimized**: 44px minimum touch targets, swipe gestures, smooth animations
-- **Visual Polish**: Gradients, shadows, backdrop blur effects, improved spacing and typography
-- **Responsive Design**: Sticky headers with backdrop blur, mobile-first layouts that scale to desktop
-
-### Shared UI Library (`apps/consumer-mobile/src/shared/ui`)
-
-- **ConfirmationModal**: Reusable confirmation dialog (moved from documents feature); supports title, message, confirm/cancel labels, danger variant, optional error text.
-- **Shared components**: AlertBanner, FilterChip, IconButton, NavCard, PaginationButton, SegmentedButton, form-classes; EmailNotInContactsModal for payment flows.
-- **Icon Library** (`icons/`): 49 SVG icon components with unified `IconProps` interface:
-  - Navigation & Actions: ArrowDown, ArrowRight, ArrowUp, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Home, Plus, Refresh, Search, X
+Removed legacy consumer apps no longer participate in the maintained release surface. Their redirect responsibility and runtime contract now live on `apps/consumer-css-grid`, which is the only supported consumer frontend in this repository.
   - Financial: Bank, CreditCard, CurrencyDollar, Exchange, TrendingUp
   - Documents & Files: Clipboard, ClipboardCopy, ClipboardList, Document, Download, Paperclip, Upload
   - Communication: Bell, Mail, Phone
@@ -399,7 +347,7 @@ Internal Consumer API routes:
 
 ## Consumer CSS Grid App (Next.js)
 
-CSS-grid consumer UI is in `apps/consumer-css-grid`, running on port 3003. `apps/api-v2` is its backend authority; legacy `apps/api` is not part of the supported css-grid release surface.
+CSS-grid consumer UI is in `apps/consumer-css-grid`, running on port 3003. `apps/api-v2` is its backend authority for the supported css-grid release surface.
 
 Auth and routing contract:
 
@@ -496,7 +444,7 @@ Shared packages used across apps:
 Current env/runtime contract notes:
 
 - Canonical frontend origin envs now live in the app-level env files and runtime consumers of those envs, not in a standalone `packages/env` workspace.
-- `CONSUMER_APP_ORIGIN`, `CONSUMER_MOBILE_APP_ORIGIN`, `CONSUMER_CSS_GRID_APP_ORIGIN`, and `ADMIN_APP_ORIGIN` are part of the current runtime contract.
+- `CONSUMER_CSS_GRID_APP_ORIGIN` and `ADMIN_APP_ORIGIN` are part of the maintained runtime contract.
 - `NEXT_PUBLIC_APP_ORIGIN` remains legacy compatibility fallback only and is not the primary production release contract.
 
 ## Additional documentation

@@ -188,7 +188,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
       method: $Enums.PaymentMethodType.CREDIT_CARD,
     };
 
-    const result = await service.startPayment(consumerId, body, `consumer-mobile`);
+    const result = await service.startPayment(consumerId, body, `consumer-css-grid`);
 
     expect(result).toEqual({ paymentRequestId: `pr-1`, ledgerId: expect.any(String) });
     expect(prisma.consumerModel.findFirst).toHaveBeenCalledWith({
@@ -220,7 +220,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           metadata: expect.objectContaining({
             rail: $Enums.PaymentRail.CARD,
             counterpartyId: `recipient-1`,
-            consumerAppScope: `consumer-mobile`,
+            consumerAppScope: `consumer-css-grid`,
           }),
         }),
       }),
@@ -236,7 +236,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           metadata: expect.objectContaining({
             rail: $Enums.PaymentRail.CARD,
             counterpartyId: consumerId,
-            consumerAppScope: `consumer-mobile`,
+            consumerAppScope: `consumer-css-grid`,
           }),
         }),
       }),
@@ -504,7 +504,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
     });
     tx.paymentRequestModel.update.mockResolvedValue({ id: `pr-2` });
 
-    const result = await service.sendPaymentRequest(consumerId, `pr-2`, `consumer`);
+    const result = await service.sendPaymentRequest(consumerId, `pr-2`, `consumer-css-grid`);
 
     expect(result).toEqual({ paymentRequestId: `pr-2` });
     expect(tx.ledgerEntryModel.create).not.toHaveBeenCalled();
@@ -512,7 +512,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
       expect.objectContaining({
         payerEmail: `outside@example.com`,
         requesterEmail,
-        consumerAppScope: `consumer`,
+        consumerAppScope: `consumer-css-grid`,
       }),
     );
   });

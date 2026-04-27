@@ -542,14 +542,14 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       emailVerified: true,
       nextPath: `/dashboard`,
       signupEntryPath: `/signup/start`,
-      appScope: `consumer-mobile`,
+      appScope: `consumer-css-grid`,
     });
     const req = makeReq({
-      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` },
-      cookies: { consumer_google_signup_session: `signup-session-token` },
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer-css-grid` },
+      cookies: { consumer_css_grid_google_signup_session: `signup-session-token` },
     });
 
-    await expect(controller.googleSignupSession(req, `consumer`)).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(controller.googleSignupSession(req, `consumer-mobile`)).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it(`google signup session establish rejects when stored app scope mismatches claimed scope`, async () => {
@@ -702,17 +702,17 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     expect(service.refreshAccess).toHaveBeenCalledWith(`mobile-refresh-token`, `consumer-mobile`, expect.any(Object));
     expect(res.cookie).toHaveBeenCalledWith(
-      expect.stringMatching(/consumer_mobile_access_token/),
+      expect.stringMatching(/consumer_css_grid_access_token/),
       `a`,
       expect.objectContaining({ httpOnly: true }),
     );
     expect(res.cookie).toHaveBeenCalledWith(
-      expect.stringMatching(/consumer_mobile_refresh_token/),
+      expect.stringMatching(/consumer_css_grid_refresh_token/),
       `r`,
       expect.objectContaining({ httpOnly: true }),
     );
     expect(res.cookie).toHaveBeenCalledWith(
-      expect.stringMatching(/consumer_mobile_csrf_token/),
+      expect.stringMatching(/consumer_css_grid_csrf_token/),
       expect.any(String),
       expect.objectContaining({ httpOnly: false }),
     );
@@ -834,12 +834,12 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       email: `new@example.com`,
       emailVerified: true,
       type: `google_signup`,
-      appScope: `consumer-mobile`,
+      appScope: `consumer-css-grid`,
     });
 
     const req = makeReq({
-      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` },
-      cookies: { consumer_google_signup_session: `signup-session-token` },
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer-css-grid` },
+      cookies: { consumer_css_grid_google_signup_session: `signup-session-token` },
     });
 
     await expect(
@@ -851,7 +851,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
           accountType: `BUSINESS`,
           addressDetails: { postalCode: `1`, country: `US` } as any,
         } as any,
-        `consumer`,
+        `consumer-mobile`,
       ),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(service.signup).not.toHaveBeenCalled();

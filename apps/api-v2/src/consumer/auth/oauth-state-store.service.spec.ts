@@ -18,7 +18,7 @@ describe(`OAuthStateStoreService`, () => {
       codeVerifier: `verifier`,
       nextPath: `/dashboard`,
       createdAt: Date.now(),
-      appScope: `consumer`,
+      appScope: `consumer-css-grid`,
     });
 
     prisma.oauthStateModel.create.mockResolvedValue(undefined);
@@ -31,7 +31,7 @@ describe(`OAuthStateStoreService`, () => {
         codeVerifier: `verifier`,
         nextPath: `/dashboard`,
         createdAt: Date.now(),
-        appScope: `consumer`,
+        appScope: `consumer-css-grid`,
       },
       10_000,
     );
@@ -56,7 +56,7 @@ describe(`OAuthStateStoreService`, () => {
         codeVerifier: `verifier`,
         nextPath: `/dashboard`,
         createdAt: Date.now(),
-        appScope: `consumer`,
+        appScope: `consumer-css-grid`,
       },
       1,
     );
@@ -81,7 +81,7 @@ describe(`OAuthStateStoreService`, () => {
           createdAt,
           signupEntryPath: `/signup`,
           accountType: `BUSINESS`,
-          appScope: `consumer-mobile`,
+          appScope: `consumer-css-grid`,
         }),
       },
     ]);
@@ -95,7 +95,7 @@ describe(`OAuthStateStoreService`, () => {
         createdAt,
         signupEntryPath: `/signup`,
         accountType: `BUSINESS`,
-        appScope: `consumer-mobile`,
+        appScope: `consumer-css-grid`,
       },
       10_000,
     );
@@ -110,7 +110,7 @@ describe(`OAuthStateStoreService`, () => {
       signupEntryPath: `/signup`,
       accountType: `BUSINESS`,
       contractorKind: undefined,
-      appScope: `consumer-mobile`,
+      appScope: `consumer-css-grid`,
     });
   });
 

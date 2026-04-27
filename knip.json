@@ -4,11 +4,11 @@
     "**/eslint.config.mjs"
   ],
   "ignoreIssues": {
-    "apps/api/src/**/dto/**/*.ts": [
+    "apps/api-v2/src/**/dto/**/*.ts": [
       "exports",
       "types"
     ],
-    "apps/api/src/**/dtos/**/*.ts": [
+    "apps/api-v2/src/**/dtos/**/*.ts": [
       "exports",
       "types"
     ]

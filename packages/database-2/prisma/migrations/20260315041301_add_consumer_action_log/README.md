@@ -13,10 +13,10 @@ This migration is additive-only and creates the append-only `consumer_action_log
 
 Run and capture outputs in CI/staging:
 
-1. `yarn workspace @remoola/api test --runInBand src/consumer/auth/consumer-action-log-partition-maintenance.scheduler.spec.ts`
-2. `yarn workspace @remoola/api test --runInBand src/consumer/auth/consumer-action-log-retention.scheduler.spec.ts`
-3. `yarn workspace @remoola/api test --runInBand test/consumer-action-log.e2e-spec.ts`
-4. `yarn workspace @remoola/api test --runInBand test/consumer-action-log-retention.e2e-spec.ts`
+1. `yarn workspace @remoola/api-v2 test --runInBand src/consumer/auth/consumer-action-log-partition-maintenance.scheduler.spec.ts`
+2. `yarn workspace @remoola/api-v2 test --runInBand src/consumer/auth/consumer-action-log-retention.scheduler.spec.ts`
+3. `yarn workspace @remoola/api-v2 test --runInBand test/consumer-action-log.e2e-spec.ts`
+4. `yarn workspace @remoola/api-v2 test --runInBand test/consumer-action-log-retention.e2e-spec.ts`
 
 Operational validation:
 

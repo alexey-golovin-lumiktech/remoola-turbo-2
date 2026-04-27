@@ -1,6 +1,0 @@
-@reference "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
-
-.hydrateErrorBox {
-  @apply mb-4 w-full max-w-md space-y-4;
-}

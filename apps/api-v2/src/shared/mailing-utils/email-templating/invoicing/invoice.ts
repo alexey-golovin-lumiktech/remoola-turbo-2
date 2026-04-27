@@ -7,15 +7,15 @@ import * as invoiceItemToHtml from './invoiceItem';
 import { envs } from '../../../../envs';
 import { formatCurrency } from '../../../../shared-common';
 
-const CONSUMER_ORIGIN_PLACEHOLDER = `CONSUMER_APP_ORIGIN`;
+const CONSUMER_ORIGIN_PLACEHOLDER = `CONSUMER_CSS_GRID_APP_ORIGIN`;
 
 function resolveConsumerDashboardOrigin(): string | null {
-  const configuredOrigin = envs.CONSUMER_APP_ORIGIN;
+  const configuredOrigin = envs.CONSUMER_CSS_GRID_APP_ORIGIN;
   if (configuredOrigin && configuredOrigin !== CONSUMER_ORIGIN_PLACEHOLDER) {
     return configuredOrigin;
   }
   if (envs.NODE_ENV === envs.ENVIRONMENT.DEVELOPMENT || envs.NODE_ENV === envs.ENVIRONMENT.TEST) {
-    return `http://localhost:3001`;
+    return `http://localhost:3003`;
   }
   return null;
 }

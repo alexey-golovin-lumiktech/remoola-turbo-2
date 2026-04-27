@@ -1,17 +1,14 @@
 # Remoola
 
-Remoola is a Turborepo monorepo for the Remoola payments and FX platform. The current repo contains two NestJS backends, four Next.js frontends, and shared packages for API contracts, database access, security utilities, testing, and UI primitives.
+Remoola is a Turborepo monorepo for the Remoola payments and FX platform. The current repo contains the active `api-v2` + `consumer-css-grid` release surface, the maintained `admin-v2` frontend, and shared packages for API contracts, database access, security utilities, testing, and UI primitives.
 
 ## Repo layout
 
 ```text
 .
 ├── apps
-│   ├── api                # Legacy backend authority for consumer + consumer-mobile
-│   ├── api-v2             # Backend authority for consumer-css-grid and current auth-sensitive cutovers
-│   ├── admin              # Next.js admin dashboard (port 3010)
-│   ├── consumer           # Next.js consumer web app (port 3001)
-│   ├── consumer-mobile    # Next.js mobile-first consumer app (port 3002)
+│   ├── api-v2             # Backend authority for the canonical consumer-css-grid surface
+│   ├── admin-v2           # Next.js admin dashboard (port 3011)
 │   └── consumer-css-grid  # Next.js css-grid consumer app (port 3003)
 └── packages
     ├── api-e2e            # Shared Jest e2e configs
@@ -49,12 +46,8 @@ yarn
 ```bash
 cp packages/database-2/.env.example packages/database-2/.env
 
-cp apps/api/.env.example apps/api/.env
-cp apps/admin/.env.example apps/admin/.env
-cp apps/consumer/.env.example apps/consumer/.env
-cp apps/consumer-mobile/.env.example apps/consumer-mobile/.env
+cp apps/admin-v2/.env.example apps/admin-v2/.env
 
-# only if you work on the api-v2 / css-grid surface
 cp apps/api-v2/.env.example apps/api-v2/.env
 cp apps/consumer-css-grid/.env.example apps/consumer-css-grid/.env
 ```
@@ -72,21 +65,15 @@ yarn db:generate
 yarn dev
 
 # targeted development
-yarn dev:api
 yarn dev:api-v2
-yarn dev:admin
-yarn dev:consumer
-yarn dev:consumer-mobile
+yarn dev:admin-v2
 yarn dev:consumer-css-grid
 ```
 
 Default local ports from the current app scripts and env examples:
 
-- `apps/api`: `3333`
 - `apps/api-v2`: `3334`
-- `apps/admin`: `3010`
-- `apps/consumer`: `3001`
-- `apps/consumer-mobile`: `3002`
+- `apps/admin-v2`: `3011`
 - `apps/consumer-css-grid`: `3003`
 
 ## Common commands
@@ -102,7 +89,6 @@ yarn format
 yarn test
 yarn test:e2e
 yarn test:e2e:fast
-yarn workspace @remoola/api test:e2e:fast
 yarn workspace @remoola/api-v2 test:e2e:fast
 
 # database (Prisma)
@@ -117,15 +103,15 @@ yarn db:studio
 
 - Root `yarn dev` runs all workspace `dev` tasks in parallel and depends on `db:generate` through `turbo.json`.
 - Root `yarn build` generates the Prisma client first, then runs the Turborepo build pipeline.
-- `.husky/pre-commit` skips lint/tests for docs-only commits. For code changes it runs `yarn lint`, builds `@remoola/test-db`, then runs consumer unit tests, api unit tests, and `apps/api` fast e2e.
-- `build:vercel-guard` now covers both legacy and v2 consumer release surfaces, including `@remoola/api-v2` and `@remoola/consumer-css-grid`.
+- `.husky/pre-commit` skips lint/tests for docs-only commits. For code changes it runs staged lint/typecheck/test helpers; fast e2e fallback now targets `apps/api-v2`.
+- `build:vercel-guard` covers the maintained Vercel release surface: `@remoola/api-v2`, `@remoola/consumer-css-grid`, and `@remoola/admin-v2`.
 - Use `yarn verify:v2-apps` as the dedicated pre-PR / pre-production gate for the `api-v2` + `consumer-css-grid` release surface.
 
 ## Deployment notes
 
 - Apply database migrations before deploying runtime changes that depend on new Prisma fields.
 - Verify Me / Stripe Identity rollout requires migration `20260323120000_stripe_identity_consumer_state` before runtime deployment because auth and consumer reads expect the `stripe_identity_*` columns to exist.
-- Auth/cookie/cutover changes for the consumer surfaces are documented as coordinated releases, not as independent rolling deployments.
+- Auth/cookie/cutover changes for the maintained consumer surface are documented as `api-v2 + consumer-css-grid`, not as a three-app coordinated rollout.
 - The repo currently has no `vercel.json` or `vercel.ts`; production deployment for `apps/api-v2` and `apps/consumer-css-grid` therefore depends on Vercel dashboard/project configuration plus the canonical origin env contract documented in `docs/API_V2_PRODUCTION_RELEASE_GATE.md`.
 
 ## Documentation map
@@ -145,7 +131,7 @@ Operational and release docs:
 - `docs/CONSUMER_AUTH_COOKIE_POLICY.md` - canonical browser/BFF cookie contract
 - `docs/API_V2_PRODUCTION_RELEASE_GATE.md` - required evidence for auth-sensitive `api-v2` releases
 - `docs/SWAGGER_COOKIE_AUTH_USAGE.md` - same-origin Swagger cookie-auth workflow
-- `docs/CONSUMER_AUTH_CUTOVER_RELEASE_HANDOFF.md` - release-specific handoff and closure notes
+- `docs/CONSUMER_AUTH_CUTOVER_RELEASE_HANDOFF.md` - historical cutover handoff and closure notes
 - `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md` - browser identity and consumer action-log contracts
 - `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` - fintech safety, ledger invariants, idempotency
 

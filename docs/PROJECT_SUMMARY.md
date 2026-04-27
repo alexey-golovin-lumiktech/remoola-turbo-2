@@ -1,6 +1,6 @@
 # Remoola - Project Summary
 
-Remoola is a payments and FX platform delivered as a Turborepo monorepo. The current repository state is two NestJS backends, four Next.js frontends, and a shared package layer for API contracts, database access, security utilities, testing, and UI.
+Remoola is a payments and FX platform delivered as a Turborepo monorepo. The maintained repository state is centered on `apps/api-v2`, `apps/consumer-css-grid`, `apps/admin-v2`, and a shared package layer for API contracts, database access, security utilities, testing, and UI.
 
 ---
 
@@ -8,11 +8,8 @@ Remoola is a payments and FX platform delivered as a Turborepo monorepo. The cur
 
 | Layer | Path | Role |
 |------|------|------|
-| Backend | `apps/api` | Legacy NestJS REST API authority for `consumer` and `consumer-mobile` |
 | Backend | `apps/api-v2` | NestJS REST API authority for `consumer-css-grid` and current auth-sensitive cutovers |
-| Admin UI | `apps/admin` | Next.js dashboard for operators on port `3010` |
-| Consumer UI | `apps/consumer` | Next.js desktop consumer portal on port `3001` |
-| Consumer Mobile | `apps/consumer-mobile` | Next.js mobile-first consumer app on port `3002` |
+| Admin UI | `apps/admin-v2` | Next.js dashboard for operators on port `3011` |
 | Consumer CSS Grid | `apps/consumer-css-grid` | Next.js css-grid consumer shell on port `3003` |
 | Database | `packages/database-2` | Prisma schema, migrations, generated client |
 | Shared packages | `packages/api-types`, `packages/security-utils`, `packages/test-db`, `packages/ui`, `packages/shared-constants`, `packages/api-e2e` | Contracts, auth helpers, testing, UI, tooling |
@@ -21,11 +18,8 @@ Remoola is a payments and FX platform delivered as a Turborepo monorepo. The cur
 
 ## Current architecture split
 
-- `apps/api` remains the backend authority for `apps/consumer` and `apps/consumer-mobile`.
-- `apps/api-v2` is the backend authority for `apps/consumer-css-grid` and the coordinated auth/cutover surface documented in the release docs.
+- `apps/api-v2` is the backend authority for `apps/consumer-css-grid` and the maintained auth/cutover surface documented in the release docs.
 - Consumer browser auth is cookie-first and same-origin BFF-driven. Per-app canonical frontend origins are now part of the runtime contract:
-  - `CONSUMER_APP_ORIGIN`
-  - `CONSUMER_MOBILE_APP_ORIGIN`
   - `CONSUMER_CSS_GRID_APP_ORIGIN`
 - `NEXT_PUBLIC_APP_ORIGIN` still exists only as a legacy compatibility fallback and is not the primary production contract.
 
@@ -33,11 +27,8 @@ Remoola is a payments and FX platform delivered as a Turborepo monorepo. The cur
 
 ## What each app does
 
-- **`apps/api`** - admin and consumer auth, dashboard data, contacts, contracts, documents, exchange, payment methods, payment requests, payments, profile/settings, Stripe, Verify Me lifecycle, and ledger-backed financial flows for the legacy consumer surfaces.
-- **`apps/api-v2`** - mirrored/active backend surface for current auth-sensitive cutovers and the canonical backend for `consumer-css-grid`, including auth/cookie/app-scope runtime enforcement.
-- **`apps/admin`** - operator dashboard with auth, verification workflows, consumer/admin management, payment request tooling, ledger views, exchange views, and audit access.
-- **`apps/consumer`** - desktop consumer portal with auth, signup, OAuth, dashboard, contacts, contracts, documents, payment methods, payments, exchange, Verify Me, and settings.
-- **`apps/consumer-mobile`** - mobile-first consumer experience sharing the legacy API authority, with CSS Modules-first UI, hardened auth navigation, and shared consumer app-scope routing.
+- **`apps/api-v2`** - active backend surface for current auth-sensitive cutovers and the canonical backend for `consumer-css-grid`, including auth/cookie/app-scope runtime enforcement.
+- **`apps/admin-v2`** - operator dashboard with auth, verification workflows, consumer/admin management, payment request tooling, ledger views, exchange views, audit access, and the maintained admin frontend contract.
 - **`apps/consumer-css-grid`** - css-grid consumer shell backed by `apps/api-v2`, with the same app-scope-driven auth/cookie model and stricter production-origin contract.
 
 ---
@@ -66,12 +57,7 @@ yarn
 ```bash
 cp packages/database-2/.env.example packages/database-2/.env
 
-cp apps/api/.env.example apps/api/.env
-cp apps/admin/.env.example apps/admin/.env
-cp apps/consumer/.env.example apps/consumer/.env
-cp apps/consumer-mobile/.env.example apps/consumer-mobile/.env
-
-# optional api-v2 / css-grid surface
+cp apps/admin-v2/.env.example apps/admin-v2/.env
 cp apps/api-v2/.env.example apps/api-v2/.env
 cp apps/consumer-css-grid/.env.example apps/consumer-css-grid/.env
 ```
@@ -87,21 +73,15 @@ yarn db:generate
 ```bash
 yarn dev
 
-yarn dev:api
 yarn dev:api-v2
-yarn dev:admin
-yarn dev:consumer
-yarn dev:consumer-mobile
+yarn dev:admin-v2
 yarn dev:consumer-css-grid
 ```
 
 Local defaults from the current app scripts and env examples:
 
-- API: `http://localhost:3333/api`
 - API v2: `http://localhost:3334/api`
-- Admin: `http://localhost:3010`
-- Consumer: `http://localhost:3001`
-- Consumer Mobile: `http://localhost:3002`
+- Admin v2: `http://localhost:3011`
 - Consumer CSS Grid: `http://localhost:3003`
 
 Use the same hostname family (`localhost` or `127.0.0.1`) across backend, frontend, and OAuth config. Mixed-host local auth flows are intentionally unsupported because cookies are scoped per host.
@@ -120,7 +100,7 @@ Use the same hostname family (`localhost` or `127.0.0.1`) across backend, fronte
   - `yarn db:studio`
 - `yarn test`, `yarn test:e2e`, and `yarn test:e2e:fast` are local-development-only entrypoints and are blocked in CI/Vercel by `scripts/ensure-local-development.js`.
 - Local test/e2e flows rely on `@remoola/test-db` and Testcontainers, so Docker availability is part of the expected developer environment.
-- `.husky/pre-commit` skips lint/tests for docs-only changes; for code changes it runs `yarn lint`, builds `@remoola/test-db`, then runs consumer unit tests, api unit tests, and `apps/api` fast e2e.
+- `.husky/pre-commit` skips lint/tests for docs-only changes; for code changes it runs `yarn lint`, builds `@remoola/test-db`, then runs maintained unit tests and `apps/api-v2` fast e2e.
 
 ---
 

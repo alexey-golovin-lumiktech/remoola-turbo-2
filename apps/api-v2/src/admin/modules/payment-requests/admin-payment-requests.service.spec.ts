@@ -44,14 +44,14 @@ describe(`AdminPaymentRequestsService`, () => {
       1,
       expect.objectContaining({
         recipientEmail: `payer@example.com`,
-        consumerAppScope: `consumer-mobile`,
+        consumerAppScope: `consumer-css-grid`,
       }),
     );
     expect(mailingService.sendPaymentRefundEmail).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         recipientEmail: `requester@example.com`,
-        consumerAppScope: `consumer-mobile`,
+        consumerAppScope: `consumer-css-grid`,
       }),
     );
   });
@@ -127,14 +127,14 @@ describe(`AdminPaymentRequestsService`, () => {
       1,
       expect.objectContaining({
         recipientEmail: `payer@example.com`,
-        consumerAppScope: `consumer-mobile`,
+        consumerAppScope: `consumer-css-grid`,
       }),
     );
     expect(mailingService.sendPaymentRefundEmail).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         recipientEmail: `requester@example.com`,
-        consumerAppScope: `consumer-mobile`,
+        consumerAppScope: `consumer-css-grid`,
       }),
     );
   });

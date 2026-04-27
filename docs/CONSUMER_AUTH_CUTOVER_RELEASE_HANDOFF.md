@@ -6,26 +6,18 @@ This document is a release-specific handoff and closure artifact for the consume
 
 ## Scope
 
-This handoff covers the final Step 5 closure for the canonical consumer auth cutover in:
+This handoff is historical evidence from the multi-app auth cutover that
+preceded the current legacy-app removal. The maintained runtime contract is now
+owned by:
 
 - `apps/api-v2`
-- `apps/api` (kept aligned as mirrored authority for the same contract)
-- consumer FE/BFF auth-adjacent surfaces still participating in the current contract
-- release/readiness docs and evidence
-
-Additional follow-up hardening in the broader consumer stack now requires
-explicit canonical consumer app origin envs in `apps/consumer`,
-`apps/consumer-mobile`, and `apps/consumer-css-grid`, and keeps the mirrored
-`apps/api` trust-layer semantics aligned with `apps/api-v2`.
+- `apps/consumer-css-grid`
+- release/readiness docs and evidence for that canonical pair
 
 ## Code-Proven Now
 
-- Active consumer auth public surface in:
-  - `apps/api-v2`
-  - `apps/consumer`
-  - `apps/consumer-mobile`
-  - `apps/consumer-css-grid`
-  contains no `returnOrigin`.
+- Active maintained consumer auth public surface in `apps/api-v2` +
+  `apps/consumer-css-grid` contains no `returnOrigin`.
 - Forgot-password verify is token-only and does not depend on query `referer`.
 - Signup verification is token-only and does not depend on query `referer`.
 - Forgot-password request now requires explicit claimed `appScope`, and the backend
@@ -76,20 +68,17 @@ explicit canonical consumer app origin envs in `apps/consumer`,
 
 ## Release Model
 
-This cutover is approved only as a coordinated one-window deployment across:
-
-- `apps/api-v2`
-- `apps/consumer`
-- `apps/consumer-mobile`
-- `apps/consumer-css-grid`
+At the time of this handoff, the cutover was approved only as a coordinated
+one-window deployment across the old multi-app set. That is no longer the
+maintained release model.
 
 Release rules:
 
 - no backend-first rollout
 - no frontend-first rollout
 - no partial app rollout
-- no mixed-version skew between backend and any consumer app
-- rollback must also be coordinated across backend and all three consumer apps
+- no mixed-version skew between `apps/api-v2` and `apps/consumer-css-grid`
+- rollback for the maintained surface is coordinated across `apps/api-v2` and `apps/consumer-css-grid`
 
 Operational meaning:
 
@@ -139,10 +128,6 @@ These use request `Origin` / `Referer` only to validate the caller or select the
 - `apps/api-v2/src/consumer/auth/auth.service.signup-verification.spec.ts`
 - `apps/api-v2/test/forgot-reset-password.e2e-spec.ts`
 - `apps/api-v2/test/signup-verification.e2e-spec.ts`
-- `apps/consumer/src/app/(auth)/signup/verification/Verification.test.tsx`
-- `apps/consumer/src/app/forgot-password/confirm/page.test.tsx`
-- `apps/consumer-mobile/src/features/signup/VerificationView.test.tsx`
-- `apps/consumer-mobile/src/features/auth/ui/ResetPasswordConfirmForm.test.tsx`
 - `apps/consumer-css-grid/src/app/(auth)/signup/verification/page.test.tsx`
 - `apps/consumer-css-grid/src/app/(auth)/forgot-password/confirm/page.test.tsx`
 
@@ -205,36 +190,6 @@ Result:
 - `2` suites passed
 - `15` tests passed
 
-### Consumer FE/BFF sweep
-
-```bash
-yarn workspace @remoola/consumer test --runInBand --runTestsByPath \
-  "src/app/api/payment-requests/[paymentRequestId]/send/route.test.ts" \
-  "src/app/api/stripe/[paymentRequestId]/stripe-session/route.test.ts" \
-  "src/app/(auth)/signup/verification/Verification.test.tsx" \
-  "src/app/forgot-password/confirm/page.test.tsx"
-```
-
-Result:
-
-- `4` suites passed
-- `7` tests passed
-
-### Consumer-mobile FE/BFF sweep
-
-```bash
-yarn workspace @remoola/consumer-mobile test --runInBand --runTestsByPath \
-  "src/app/api/payment-requests/[paymentRequestId]/send/route.test.ts" \
-  "src/app/api/stripe/[paymentRequestId]/stripe-session/route.test.ts" \
-  "src/features/signup/VerificationView.test.tsx" \
-  "src/features/auth/ui/ResetPasswordConfirmForm.test.tsx"
-```
-
-Result:
-
-- `4` suites passed
-- `7` tests passed
-
 ### Consumer css-grid FE/BFF sweep
 
 ```bash
@@ -253,11 +208,11 @@ Result:
 
 The following cannot be honestly proven in chat and must remain release-owner smoke checks:
 
-- synchronized backend and FE/BFF deployment timing
+- synchronized backend and FE/BFF deployment timing for the canonical maintained surface
 - confirmation that no external clients still depend on removed legacy contracts
-- live Google OAuth login/signup smoke in all consumer apps on canonical production domains only
-- live forgot-password request + verify + reset smoke in all consumer apps on canonical production domains only
-- live signup verification email + redirect smoke in all consumer apps on canonical production domains only
+- live Google OAuth login/signup smoke on the canonical `consumer-css-grid` production domain only
+- live forgot-password request + verify + reset smoke on the canonical `consumer-css-grid` production domain only
+- live signup verification email + redirect smoke on the canonical `consumer-css-grid` production domain only
 - production cookie scope, session invalidation, refresh, logout, and logout-all behavior on canonical production domains only
 - production monitoring / rollback readiness during the cutover window
 

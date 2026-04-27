@@ -3,7 +3,7 @@ services:
     container_name: remoola_postgres
     image: postgres:latest
     env_file:
-      - ../apps/api/.env.$NODE_ENV
+      - ../apps/api-v2/.env.$NODE_ENV
     ports:
       - "5433:5432"
     volumes:

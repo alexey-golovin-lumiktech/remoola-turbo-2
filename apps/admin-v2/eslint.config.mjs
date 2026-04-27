@@ -12,7 +12,7 @@ export default [
         {
           patterns: [
             {
-              group: [`**/apps/admin/**`, `**/apps/consumer/**`, `**/apps/api/**`],
+              group: [`**/apps/consumer-css-grid/**`, `**/apps/api-v2/**`],
               message: `No cross-app imports.`,
             },
           ],

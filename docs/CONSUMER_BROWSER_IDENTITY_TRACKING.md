@@ -1,12 +1,11 @@
 # Consumer Browser Identity and Tracking
 
-This document describes how consumer tracking currently works in the API, and how browser identity is correlated to consumer actions across web and mobile clients.
+This document describes how consumer tracking currently works in the maintained API/frontend surface, and how browser identity is correlated to consumer actions in `consumer-css-grid`.
 
 ## Scope
 
-- API: `apps/api`
-- Web app: `apps/consumer`
-- Mobile-first app: `apps/consumer-mobile`
+- API: `apps/api-v2`
+- Web app: `apps/consumer-css-grid`
 - Persistence: `packages/database-2` (`consumer_action_log`)
 
 ## Goals
@@ -14,14 +13,14 @@ This document describes how consumer tracking currently works in the API, and ho
 - Keep browser identity backend-managed via `deviceId` cookie.
 - Track consumer actions on selected endpoints only.
 - Keep tracking append-only and non-blocking.
-- Preserve auth, CSRF, OAuth, mobile, and BFF compatibility.
-- Keep browser identity app-scoped so `consumer`, `consumer-mobile`, and `consumer-css-grid` do not overwrite each other's device cookies on the same host.
+- Preserve auth, CSRF, OAuth, and BFF compatibility.
+- Keep browser identity aligned to the canonical `consumer-css-grid` scope.
 
 ## Core Components
 
 ### 1) Browser identity resolver (`deviceIdMiddleware`)
 
-Path: `apps/api/src/common/middleware/device-id.middleware.ts`
+Path: `apps/api-v2/src/common/middleware/device-id.middleware.ts`
 
 Responsibilities:
 
@@ -36,7 +35,7 @@ Responsibilities:
 
 ### 2) Action decorator (`TrackConsumerAction`)
 
-Path: `apps/api/src/common/decorators/track-consumer-action.decorator.ts`
+Path: `apps/api-v2/src/common/decorators/track-consumer-action.decorator.ts`
 
 Responsibilities:
 
@@ -45,7 +44,7 @@ Responsibilities:
 
 ### 3) Tracking interceptor (`ConsumerActionInterceptor`)
 
-Path: `apps/api/src/common/interceptors/consumer-action.interceptor.ts`
+Path: `apps/api-v2/src/common/interceptors/consumer-action.interceptor.ts`
 
 Responsibilities:
 
@@ -61,7 +60,7 @@ Responsibilities:
 
 ### 4) Persistence service (`ConsumerActionLogService`)
 
-Path: `apps/api/src/shared/consumer-action-log.service.ts`
+Path: `apps/api-v2/src/shared/consumer-action-log.service.ts`
 
 Responsibilities:
 
@@ -95,8 +94,8 @@ Governance exception note:
 
 Paths:
 
-- `apps/api/src/consumer/auth/consumer-action-log-partition-maintenance.scheduler.ts`
-- `apps/api/src/consumer/auth/consumer-action-log-retention.scheduler.ts`
+- `apps/api-v2/src/consumer/auth/consumer-action-log-partition-maintenance.scheduler.ts`
+- `apps/api-v2/src/consumer/auth/consumer-action-log-retention.scheduler.ts`
 
 Responsibilities:
 
@@ -155,7 +154,7 @@ Governance exception note:
 
 ## Auth/CSRF and OAuth Compatibility
 
-Path: `apps/api/src/consumer/auth/auth.controller.ts`
+Path: `apps/api-v2/src/consumer/auth/auth.controller.ts`
 
 Behavior preserved:
 
@@ -171,8 +170,7 @@ Behavior preserved:
 
 Paths:
 
-- `apps/consumer/src/app/api/consumer/auth/refresh/route.ts`
-- `apps/consumer-mobile/src/app/api/consumer/auth/refresh/route.ts`
+- `apps/consumer-css-grid/src/app/api/consumer/auth/refresh/route.ts`
 
 BFF behavior:
 
@@ -195,15 +193,15 @@ BFF behavior:
 
 Current tests covering the contract:
 
-- `apps/api/src/common/middleware/device-id.middleware.spec.ts`
+- `apps/api-v2/src/common/middleware/device-id.middleware.spec.ts`
   - deviceId generation, reuse, regeneration after cookie clear, consumer-path scoping
-- `apps/api/src/common/interceptors/consumer-action.interceptor.spec.ts`
+- `apps/api-v2/src/common/interceptors/consumer-action.interceptor.spec.ts`
   - success/failure naming, decorator gating, admin-path no-op
-- `apps/api/src/shared/consumer-action-log.service.spec.ts`
+- `apps/api-v2/src/shared/consumer-action-log.service.spec.ts`
   - allowlist sanitization, write-failure safety
-- `apps/api/src/consumer/auth/auth.controller.spec.ts`
+- `apps/api-v2/src/consumer/auth/auth.controller.spec.ts`
   - CSRF rejection for refresh/logout/logout-all, legacy `refresh-access` undecorated
-- `apps/api/test/consumer-auth-csrf.e2e-spec.ts`
+- `apps/api-v2/test/consumer-auth-csrf.e2e-spec.ts`
   - CSRF rejection paths and positive CSRF-pair path behavior for refresh
 
 ## Operational Checklist (Before Release)
@@ -213,7 +211,7 @@ Current tests covering the contract:
 - Confirm partition maintenance/retention cron jobs are running and logging healthy.
 - Verify logs show expected action suffixes (`_success`, `_failure`).
 - Confirm no admin routes are included in consumer tracking.
-- Smoke-test web and mobile OAuth callback flow (`oauthToken` exchange + `/api/me`).
+- Smoke-test the `consumer-css-grid` OAuth callback flow (`oauthToken` exchange + `/api/me`).
 - Release note: OAuth callback now requires both query `state` and OAuth state cookie to be present and matching (`invalid_state` on missing/mismatch).
 
 ## Rollout and Runbook
@@ -237,7 +235,7 @@ Rollback policy:
   - keep the table and existing indexes in place;
   - if migration-side constraints cannot complete safely, stop rollout, tune migration window/timeouts, and retry in a controlled window.
 
-Config knobs (`apps/api/src/envs.ts`):
+Config knobs (`apps/api-v2/src/envs.ts`):
 
 - `CONSUMER_ACTION_LOG_RETENTION_DAYS` (default `30`)
 - `CONSUMER_ACTION_LOG_PARTITION_PRECREATE_MONTHS` (default `2`)
@@ -258,7 +256,7 @@ Recommended alert thresholds (starting point):
 - Trigger heartbeat warning when no scheduler success event is observed for more than 2x expected cadence (for example: >2m for 1-minute jobs, >10m for 5-minute jobs, >20m for 10-minute jobs).
 - For audit logging backpressure, warn when `consumer_action_log_backpressure_summary` reports sustained dropped events across 3+ consecutive summaries.
 
-Scheduler alert taxonomy (`apps/api`):
+Scheduler alert taxonomy (`apps/api-v2`):
 
 | Job | Success event | Failure event | Throws? |
 | --- | --- | --- | --- |

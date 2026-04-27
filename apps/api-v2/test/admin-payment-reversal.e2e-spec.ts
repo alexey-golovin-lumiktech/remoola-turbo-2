@@ -100,7 +100,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
         stripeId: stripeId ?? undefined,
         createdBy: payer.id,
         updatedBy: payer.id,
-        metadata: { consumerAppScope: `consumer-mobile` },
+        metadata: { consumerAppScope: `consumer-css-grid` },
       },
     });
     await prisma.ledgerEntryModel.create({
@@ -114,7 +114,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
         amount: amount,
         createdBy: payer.id,
         updatedBy: payer.id,
-        metadata: { consumerAppScope: `consumer-mobile` },
+        metadata: { consumerAppScope: `consumer-css-grid` },
       },
     });
     for (let index = 0; index < newerScopeLessEntries; index += 1) {
@@ -138,10 +138,10 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
-    initialConsumerMobileOrigin = envs.CONSUMER_MOBILE_APP_ORIGIN;
+    initialConsumerMobileOrigin = envs.CONSUMER_CSS_GRID_APP_ORIGIN;
     initialBrevoApiKey = envs.BREVO_API_KEY;
     initialBrevoDefaultFromEmail = envs.BREVO_DEFAULT_FROM_EMAIL;
-    envs.CONSUMER_MOBILE_APP_ORIGIN = consumerMobileOrigin;
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = consumerMobileOrigin;
     envs.BREVO_API_KEY = `test-api-key`;
     envs.BREVO_DEFAULT_FROM_EMAIL = `noreply@local.test`;
     prisma = new PrismaClient();
@@ -205,7 +205,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
-    envs.CONSUMER_MOBILE_APP_ORIGIN = initialConsumerMobileOrigin;
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerMobileOrigin;
     envs.BREVO_API_KEY = initialBrevoApiKey;
     envs.BREVO_DEFAULT_FROM_EMAIL = initialBrevoDefaultFromEmail;
     await prisma.$disconnect();

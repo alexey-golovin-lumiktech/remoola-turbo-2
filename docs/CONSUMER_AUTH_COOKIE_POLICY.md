@@ -3,30 +3,23 @@
 ## Source Of Truth
 
 - Browser-facing consumer session cookies must be created and refreshed only by the same-origin BFF of the app that owns the session:
-  - `apps/consumer`
-  - `apps/consumer-mobile`
   - `apps/consumer-css-grid`
-- `apps/api` is the backend authority for `consumer` and `consumer-mobile`.
-- `apps/api-v2` is the backend authority for `consumer-css-grid`.
-- `CONSUMER_CSS_GRID_APP_ORIGIN` belongs to the `apps/api-v2` release surface, not to legacy `apps/api`.
+- `apps/api-v2` is the backend authority for `apps/consumer-css-grid`.
+- `CONSUMER_CSS_GRID_APP_ORIGIN` is the canonical consumer browser origin.
 - Consumer-facing browser auth in this repo is cookie-first. `Authorization: Bearer` is not part of the supported browser/BFF auth contract.
 
 ## Dedicated Namespace
 
-- Every browser app now has its own runtime cookie namespace.
+- The maintained consumer runtime uses a single canonical cookie namespace.
 - Secure production keys:
-  - `consumer`: `__Host-consumer_*`
-  - `consumer-mobile`: `__Host-consumer_mobile_*`
   - `consumer-css-grid`: `__Host-consumer_css_grid_*`
   - `admin`: `__Host-admin_*`
-- Local HTTP fallbacks follow the same split without the `__Host-` prefix.
-- Hard rule: no consumer app may read, refresh, clear, or validate another consumer app's auth cookies as a fallback.
+- Local HTTP fallbacks use the same canonical consumer namespace without the `__Host-` prefix.
+- Legacy `consumer` / `consumer-mobile` scope values are normalized only as bounded compatibility input and no longer represent independent runtime surfaces.
 
 ## Local Development Policy
 
 - Supported local matrices:
-  - `consumer` on `http://localhost:3001` or `http://127.0.0.1:3001`
-  - `consumer-mobile` on `http://localhost:3002` or `http://127.0.0.1:3002`
   - `consumer-css-grid` on `http://localhost:3003` with `api-v2` external origin and frontend URLs also on `localhost`
   - `consumer-css-grid` on `http://127.0.0.1:3003` with `api-v2` external origin and frontend URLs also on `127.0.0.1`
 - Mixed-host flows such as `localhost` frontend with `127.0.0.1` API are unsupported because browsers keep separate cookie jars for those hosts.
@@ -38,8 +31,6 @@
 - Browser-facing BFF routes must forward consumer identity via `cookie`; do not widen the trust boundary by forwarding client-supplied `Authorization` headers upstream.
 - Browser-facing BFF routes must also send a trusted frontend `Origin` on upstream auth-protected reads and mutations so the backend can resolve the correct per-app cookie scope.
 - Canonical production auth origins are only the configured app origins behind:
-  - `CONSUMER_APP_ORIGIN`
-  - `CONSUMER_MOBILE_APP_ORIGIN`
   - `CONSUMER_CSS_GRID_APP_ORIGIN`
 - These app-specific envs are the production source of truth for same-origin BFF/auth flows.
 - `NEXT_PUBLIC_APP_ORIGIN` is legacy compatibility fallback only and must not be treated as the primary release contract.

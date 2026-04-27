@@ -88,7 +88,7 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
   it(`returns unknown_or_unsupported for emails that do not match a consumer`, async () => {
     prisma.consumerModel.findFirst.mockResolvedValue(null);
 
-    await expect(service.requestPasswordReset(`missing@example.com`, `consumer`)).resolves.toBe(
+    await expect(service.requestPasswordReset(`missing@example.com`, `consumer-css-grid`)).resolves.toBe(
       `unknown_or_unsupported`,
     );
     expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalled();
@@ -96,30 +96,29 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
     expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
   });
 
-  it.each([
-    [`consumer`, `http://127.0.0.1:3003/login?auth_notice=google_signin_required`],
-    [`consumer-mobile`, `http://127.0.0.1:3002/login?auth_notice=google_signin_required`],
-    [`consumer-css-grid`, `http://127.0.0.1:3001/login?auth_notice=google_signin_required`],
-  ] as const)(`sends Google sign-in guidance for passwordless consumers in %s scope`, async (appScope, loginUrl) => {
-    prisma.consumerModel.findFirst.mockResolvedValue({
-      id: `consumer-id`,
-      email: `google-only@example.com`,
-      password: null,
-      salt: null,
-    });
+  it.each([[`consumer-css-grid`, `http://127.0.0.1:3001/login?auth_notice=google_signin_required`]] as const)(
+    `sends Google sign-in guidance for passwordless consumers in %s scope`,
+    async (appScope, loginUrl) => {
+      prisma.consumerModel.findFirst.mockResolvedValue({
+        id: `consumer-id`,
+        email: `google-only@example.com`,
+        password: null,
+        salt: null,
+      });
 
-    await expect(service.requestPasswordReset(`google-only@example.com`, appScope)).resolves.toBe(
-      `provider_guidance_email_sent`,
-    );
-    expect(mailingService.sendConsumerPasswordlessRecoveryEmail).toHaveBeenCalledWith({
-      email: `google-only@example.com`,
-      loginUrl,
-    });
-    expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalled();
-    expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
-  });
+      await expect(service.requestPasswordReset(`google-only@example.com`, appScope)).resolves.toBe(
+        `provider_guidance_email_sent`,
+      );
+      expect(mailingService.sendConsumerPasswordlessRecoveryEmail).toHaveBeenCalledWith({
+        email: `google-only@example.com`,
+        loginUrl,
+      });
+      expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalled();
+      expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
+    },
+  );
 
-  it.each([[`consumer`], [`consumer-mobile`], [`consumer-css-grid`]] as const)(
+  it.each([[`consumer-css-grid`]] as const)(
     `creates a reset token and sends the standard email for password-backed consumers in %s scope`,
     async (appScope) => {
       prisma.consumerModel.findFirst.mockResolvedValue({
@@ -161,7 +160,7 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
     });
     prisma.resetPasswordModel.findFirst.mockResolvedValue({ id: `cooldown-hit` });
 
-    await expect(service.requestPasswordReset(`user@example.com`, `consumer`)).resolves.toBe(`cooldown_noop`);
+    await expect(service.requestPasswordReset(`user@example.com`, `consumer-css-grid`)).resolves.toBe(`cooldown_noop`);
     expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
     expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalled();
     expect(mailingService.sendConsumerPasswordlessRecoveryEmail).not.toHaveBeenCalled();

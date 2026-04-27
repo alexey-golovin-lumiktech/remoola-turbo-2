@@ -2,12 +2,10 @@ import { CONSUMER_APP_SCOPE_HEADER, COOKIE_KEYS } from '@remoola/api-types';
 
 jest.mock(`../shared/origin-resolver.service`, () => ({
   OriginResolverService: class {
-    validateConsumerAppScopeHeader(
-      value?: string | string[],
-    ): `consumer` | `consumer-mobile` | `consumer-css-grid` | undefined {
+    validateConsumerAppScopeHeader(value?: string | string[]): `consumer-css-grid` | undefined {
       const headerValue = Array.isArray(value) ? value[0] : value;
       if (headerValue === `consumer` || headerValue === `consumer-mobile` || headerValue === `consumer-css-grid`) {
-        return headerValue;
+        return `consumer-css-grid`;
       }
       return undefined;
     }
@@ -37,7 +35,7 @@ describe(`JwtStrategy`, () => {
         [consumerKey]: `consumer-token`,
       },
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer-css-grid`,
         authorization: `legacy-token`,
       },
     });
@@ -58,8 +56,8 @@ describe(`JwtStrategy`, () => {
     expect(token).toBeNull();
   });
 
-  it(`extracts the mobile consumer cookie token when app scope header selects mobile scope`, () => {
-    const mobileKey = getApiConsumerAccessTokenCookieKeysForRead(`consumer-mobile`)[0];
+  it(`normalizes legacy consumer app scope headers to the css-grid cookie namespace`, () => {
+    const mobileKey = getApiConsumerAccessTokenCookieKeysForRead(`consumer-css-grid`)[0];
     const token = extractToken({
       path: `/api/consumer/dashboard`,
       cookies: {
@@ -104,7 +102,7 @@ describe(`JwtStrategy`, () => {
       path: `/api/consumer/dashboard`,
       cookies: {},
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer-css-grid`,
         authorization: `legacy-token`,
       },
     });

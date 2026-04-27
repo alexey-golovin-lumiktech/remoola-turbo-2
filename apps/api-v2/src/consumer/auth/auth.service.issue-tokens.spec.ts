@@ -75,7 +75,7 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
   });
 
   it(`stores both access and refresh token hashes on the created auth session`, async () => {
-    const result = await service.issueTokensForConsumer(`consumer-1`, `consumer`);
+    const result = await service.issueTokensForConsumer(`consumer-1`, `consumer-css-grid`);
 
     expect(result).toEqual({
       accessToken: `access-token`,
@@ -86,7 +86,7 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
     expect(prisma.authSessionModel.create).toHaveBeenCalledWith({
       data: {
         consumerId: `consumer-1`,
-        appScope: `consumer`,
+        appScope: `consumer-css-grid`,
         sessionFamilyId: `consumer-1`,
         refreshTokenHash: expect.stringMatching(/^pending:/),
         expiresAt: expect.any(Date),
