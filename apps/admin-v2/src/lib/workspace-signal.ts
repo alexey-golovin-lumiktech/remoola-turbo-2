@@ -1,8 +1,8 @@
 import {
+  administrationItems,
   auditExplorerItems,
   coreShellItems,
   financeBreadthItems,
-  laterBreadthItems,
   maturityItems,
   topLevelBreadthItems,
 } from '../app/(shell)/shell-nav';
@@ -21,8 +21,8 @@ export function readCurrentWorkspaceSignalCount(
     ...coreShellItems,
     ...topLevelBreadthItems,
     ...financeBreadthItems,
+    ...administrationItems,
     ...maturityItems,
-    ...laterBreadthItems,
     ...auditExplorerItems,
   ];
 

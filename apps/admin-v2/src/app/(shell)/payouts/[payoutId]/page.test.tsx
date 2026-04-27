@@ -194,7 +194,7 @@ describe(`admin-v2 payout case`, () => {
         actionControls: {
           canEscalate: false,
           allowedActions: [],
-          escalateBlockedReason: `Only failed or stuck payouts can be escalated.`,
+          escalateBlockedReason: `Only failed or stuck payouts can receive an escalation marker in the current operator slice`,
         },
       },
     });
@@ -206,7 +206,9 @@ describe(`admin-v2 payout case`, () => {
     );
 
     expect(mockedGetAdmins).not.toHaveBeenCalled();
-    expect(markup).toContain(`Only failed or stuck payouts can be escalated.`);
+    expect(markup).toContain(
+      `Only failed or stuck payouts can receive an escalation marker in the current operator slice`,
+    );
     expect(markup).not.toContain(`>Escalate payout<`);
   });
 
@@ -240,7 +242,7 @@ describe(`admin-v2 payout case`, () => {
     );
 
     expect(mockedGetAdmins).not.toHaveBeenCalled();
-    expect(markup).toContain(`Active escalation marker`);
+    expect(markup).toContain(`Active payout escalation marker`);
     expect(markup).toContain(`Ops handoff`);
     expect(markup).toContain(`Payout already has an active escalation marker`);
     expect(markup).not.toContain(`>Escalate payout<`);

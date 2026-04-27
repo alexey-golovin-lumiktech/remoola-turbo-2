@@ -6,41 +6,47 @@ import { cn } from '@remoola/ui';
 import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { Panel } from '../../../components/panel';
-import { SignalCard, type SignalCardAvailability } from '../../../components/signal-card';
+import { SignalCard, type SignalCardAvailability, type SignalCardPhaseStatus } from '../../../components/signal-card';
 import { TinyPill } from '../../../components/tiny-pill';
-import { getAdminIdentity, getOverviewSummary, getQuickstarts } from '../../../lib/admin-api.server';
+import {
+  getAdminIdentity,
+  getOverviewSummary,
+  getQuickstarts,
+  type OverviewSignalSummary,
+} from '../../../lib/admin-api.server';
 import { formatDateTime } from '../../../lib/admin-format';
 import {
   buildQuickstartHref,
+  describeQuickstartOperatorModel,
   filterQuickstartsForWorkspaces,
   normalizeQuickstartEyebrow,
 } from '../../../lib/quickstart-investigations';
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return (value && typeof value === `object` ? value : {}) as Record<string, unknown>;
+function asSignal(value: unknown): OverviewSignalSummary {
+  return (value && typeof value === `object` ? value : {}) as OverviewSignalSummary;
 }
 
-function readCount(signal: Record<string, unknown>): number | null {
+function readCount(signal: OverviewSignalSummary): number | null {
   return typeof signal.count === `number` ? signal.count : null;
 }
 
-function readSlaBreached(signal: Record<string, unknown>): number | null {
+function readSlaBreached(signal: OverviewSignalSummary): number | null {
   return typeof signal.slaBreachedCount === `number` ? signal.slaBreachedCount : null;
 }
 
-function readPhaseStatus(signal: Record<string, unknown>): string | null {
-  return typeof signal.phaseStatus === `string` ? signal.phaseStatus : null;
+function readPhaseStatus(signal: OverviewSignalSummary): SignalCardPhaseStatus | null {
+  return typeof signal.phaseStatus === `string` ? (signal.phaseStatus as SignalCardPhaseStatus) : null;
 }
 
-function readAvailability(signal: Record<string, unknown>): SignalCardAvailability {
-  return typeof signal.availability === `string` ? (signal.availability as SignalCardAvailability) : ``;
+function readAvailability(signal: OverviewSignalSummary): SignalCardAvailability {
+  return typeof signal.availability === `string` ? (signal.availability as SignalCardAvailability) : `available`;
 }
 
-function readHref(signal: Record<string, unknown>): string | null {
+function readHref(signal: OverviewSignalSummary): string | null {
   return typeof signal.href === `string` && signal.href.length > 0 ? signal.href : null;
 }
 
-function readLabel(signal: Record<string, unknown>, fallback: string): string {
+function readLabel(signal: OverviewSignalSummary, fallback: string): string {
   return typeof signal.label === `string` ? signal.label : fallback;
 }
 
@@ -51,7 +57,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
     getQuickstarts(`overview`),
   ]);
   const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity);
-  const signals = asRecord(summary?.signals);
+  const signals = (summary?.signals ?? {}) as Record<string, OverviewSignalSummary>;
   const activeSignalOrder = [
     `pendingVerifications`,
     `recentAdminActions`,
@@ -63,13 +69,13 @@ export default async function OverviewPage(): Promise<ReactElement> {
   ];
   const breadthSignalOrder = [`failedScheduledConversions`, `staleExchangeRates`];
   const activeStatKeys = activeSignalOrder.filter((key) => key !== `recentAdminActions`);
-  const recentAdminActions = asRecord(signals.recentAdminActions);
+  const recentAdminActions = asSignal(signals.recentAdminActions);
   const recentItems = Array.isArray(recentAdminActions.items) ? recentAdminActions.items : [];
   const recentHref = readHref(recentAdminActions);
-  const activeSignals = activeStatKeys.map((key) => asRecord(signals[key]));
-  const actionReadySignals = activeSignals.filter((signal) => readAvailability(signal) === `live-actionable`).length;
+  const activeSignals = activeStatKeys.map((key) => asSignal(signals[key]));
+  const actionReadySignals = activeSignals.filter((signal) => readPhaseStatus(signal) === `live-actionable`).length;
   const activePressureCount = activeSignals.reduce((sum, signal) => sum + (readCount(signal) ?? 0), 0);
-  const breadthSignals = breadthSignalOrder.map((key) => asRecord(signals[key]));
+  const breadthSignals = breadthSignalOrder.map((key) => asSignal(signals[key]));
   const secondarySignalCount = breadthSignals.reduce((sum, signal) => sum + (readCount(signal) ?? 0), 0);
 
   return (
@@ -130,7 +136,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {activeStatKeys.map((key) => {
-            const signal = asRecord(signals[key]);
+            const signal = asSignal(signals[key]);
             return (
               <SignalCard
                 key={key}
@@ -170,6 +176,9 @@ export default async function OverviewPage(): Promise<ReactElement> {
               </div>
               <div className="text-sm font-medium text-white/95 group-hover:text-white">{item.label}</div>
               <div className="text-xs leading-5 text-white/55">{item.description}</div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-white/32">
+                {describeQuickstartOperatorModel(item.operatorModel)}
+              </div>
             </Link>
           ))}
         </div>
@@ -183,7 +192,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {breadthSignalOrder.map((key) => {
-            const signal = asRecord(signals[key]);
+            const signal = asSignal(signals[key]);
             return (
               <SignalCard
                 key={key}
@@ -207,7 +216,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
       >
         <DenseTable headers={[`Action`, `Resource`, `Admin`, `Created`]} emptyMessage="No recent admin actions.">
           {recentItems.map((item, index) => {
-            const row = asRecord(item);
+            const row = (item && typeof item === `object` ? item : {}) as Record<string, unknown>;
             return (
               <tr key={String(row.id ?? index)} className="text-white/85">
                 <td className="px-3 py-3">

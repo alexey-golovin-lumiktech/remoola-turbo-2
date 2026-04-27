@@ -11,16 +11,17 @@ import { ActionGhost } from '@/components/action-ghost';
 import { SidebarSection } from './sidebar-section';
 import { normalizeActivePath } from '../app/(shell)/nav-state';
 import {
+  administrationItems,
   auditExplorerItems,
   coreShellItems,
   financeBreadthItems,
-  laterBreadthItems,
   maturityItems,
   topLevelBreadthItems,
 } from '../app/(shell)/shell-nav';
 import { type AdminIdentity, type QuickstartCard } from '../lib/admin-api.server';
 import {
   buildQuickstartHref,
+  describeQuickstartOperatorModel,
   filterQuickstartsForWorkspaces,
   normalizeQuickstartEyebrow,
 } from '../lib/quickstart-investigations';
@@ -33,6 +34,19 @@ type SidebarContentsProps = {
   signalCounts: Record<string, SignalCount>;
   quickstarts: QuickstartCard[];
 };
+
+function describeAccessMode(accessMode: string | undefined): string {
+  if (accessMode === `schema-active`) return `Schema-backed access`;
+  if (accessMode === `bridge-bootstrap-super-admin`) return `Bootstrap compatibility (super admin)`;
+  if (accessMode === `bridge-bootstrap-minimal`) return `Bootstrap compatibility (minimal)`;
+  if (accessMode === `bridge-compatible`) return `Bridge-compatible access`;
+  return `Workspace access`;
+}
+
+function describeFeatureMaturity(featureMaturity: string | undefined): string {
+  if (featureMaturity === `selective-operator-platform`) return `Selective operator platform`;
+  return `Workspace maturity`;
+}
 
 export function SidebarContents({
   identity,
@@ -47,8 +61,8 @@ export function SidebarContents({
   const visibleSupportingItems = [
     ...topLevelBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace)),
     ...financeBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace)),
+    ...administrationItems.filter((item) => allowedWorkspaces.has(item.workspace)),
     ...maturityItems.filter((item) => allowedWorkspaces.has(item.workspace)),
-    ...laterBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace)),
   ];
   const visibleAuditExplorerItems = auditExplorerItems.filter((item) => allowedWorkspaces.has(item.workspace));
   const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity);
@@ -119,6 +133,9 @@ export function SidebarContents({
                   </div>
                   <div className="mt-1 text-sm font-medium text-white/85 group-hover:text-white">{view.label}</div>
                   <div className="mt-1 text-[11px] leading-5 text-white/45">{view.description}</div>
+                  <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/32">
+                    {describeQuickstartOperatorModel(view.operatorModel)}
+                  </div>
                 </div>
                 <span aria-hidden="true" className="pt-0.5 text-xs text-white/35 group-hover:text-cyan-200">
                   →
@@ -136,7 +153,11 @@ export function SidebarContents({
               ? `${identity.role ?? `UNAUTHORIZED`} · actor attribution required`
               : `This admin type is outside the allowed Admin v2 surfaces.`}
           </div>
-          <div className="mt-1 text-xs text-white/35">Access: {identity?.phase ?? `Workspace access`}</div>
+          <div className="mt-1 text-xs text-white/35">Access: {describeAccessMode(identity?.accessMode)}</div>
+          <div className="mt-1 text-xs text-white/30">
+            Platform:{` `}
+            {identity ? describeFeatureMaturity(identity.featureMaturity) : `Workspace access`}
+          </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {identity ? (
               <Link

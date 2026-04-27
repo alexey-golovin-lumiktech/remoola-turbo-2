@@ -2,10 +2,10 @@ import { headers } from 'next/headers';
 
 import { getActivePathFromHeaders } from './nav-state';
 import {
+  administrationItems,
   auditExplorerItems,
   coreShellItems,
   financeBreadthItems,
-  laterBreadthItems,
   maturityItems,
   topLevelBreadthItems,
 } from './shell-nav';
@@ -20,6 +20,7 @@ import { SidebarContents } from '../../components/sidebar-contents';
 import {
   getAdminIdentityResult,
   getOverviewSummary,
+  type OverviewSignalSummary,
   getQuickstarts,
   type OverviewSummaryResponse,
   type QuickstartCard,
@@ -28,10 +29,10 @@ import { filterQuickstartsForWorkspaces } from '../../lib/quickstart-investigati
 import { readCurrentWorkspaceSignalCount, type SignalCount } from '../../lib/workspace-signal';
 
 export {
+  administrationItems,
   auditExplorerItems,
   coreShellItems,
   financeBreadthItems,
-  laterBreadthItems,
   maturityItems,
   topLevelBreadthItems,
 };
@@ -65,7 +66,14 @@ async function safeGetActivePath(): Promise<string | null> {
 }
 
 function renderAccessWarning(
-  identity: { source?: string; role?: string | null; workspaces?: string[]; bootstrapReason?: string | null } | null,
+  identity: {
+    source?: string;
+    role?: string | null;
+    workspaces?: string[];
+    bootstrapReason?: string | null;
+    accessMode?: string;
+    featureMaturity?: string;
+  } | null,
 ) {
   if (!identity || identity.source === `schema`) {
     return null;
@@ -90,6 +98,9 @@ function renderAccessWarning(
     <div className="rounded-card border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
       <p className="font-medium">RBAC bootstrap mode</p>
       <p className="mt-1 text-amber-50/85">{description}</p>
+      <p className="mt-2 text-xs text-amber-50/70">
+        Access mode: {identity.accessMode ?? `bootstrap`} · Platform: {identity.featureMaturity ?? `selective rollout`}
+      </p>
     </div>
   );
 }
@@ -100,11 +111,10 @@ function buildSignalCounts(summary: OverviewSummaryResponse | null): Record<stri
     return out;
   }
   for (const [key, raw] of Object.entries(summary.signals)) {
-    const sig = (raw && typeof raw === `object` ? raw : {}) as Record<string, unknown>;
+    const sig = (raw && typeof raw === `object` ? raw : {}) as OverviewSignalSummary;
     const count = typeof sig.count === `number` && Number.isFinite(sig.count) ? sig.count : null;
     if (count == null) continue;
-    const availability = typeof sig.availability === `string` ? sig.availability : null;
-    out[key] = { count, deferred: availability === `deferred` };
+    out[key] = { count, deferred: sig.phaseStatus === `deferred` };
   }
   return out;
 }

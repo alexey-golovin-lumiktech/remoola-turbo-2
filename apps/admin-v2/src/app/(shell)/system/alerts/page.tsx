@@ -754,7 +754,7 @@ export default async function OperationalAlertsPage() {
     <>
       <Panel
         title="Operational alerts"
-        description="Personal alerts for supported workspaces. Checked every 5 minutes; badges update in app only."
+        description="Personal alerts for supported workspaces. Saved-view-compatible workspaces share the same query model here; auth refresh reuse stays alert-only. Checked every 5 minutes; badges update in app only."
       />
 
       {workspaceResponses.map(({ workspace, response }) => {

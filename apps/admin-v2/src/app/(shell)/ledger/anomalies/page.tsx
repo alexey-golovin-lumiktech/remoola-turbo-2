@@ -258,7 +258,10 @@ function SavedViewsSection({
       <div className="pageHeader">
         <div>
           <h2>Saved views</h2>
-          <p className="muted">Personal saved filters for the ledger anomalies workspace.</p>
+          <p className="muted">
+            Personal durable filters for ledger anomalies. Alerts use the same query model, but a saved view is not
+            linked to an alert automatically.
+          </p>
         </div>
       </div>
       <div className="formStack">
@@ -301,6 +304,9 @@ function SavedViewsSection({
             </label>
             <p className="muted mono">
               class={currentPayload.class}, dateFrom={currentPayload.dateFrom}, dateTo={currentPayload.dateTo}
+            </p>
+            <p className="muted">
+              Alerts evaluate the same query payload, but saving a view does not create or update an alert.
             </p>
             <button className="primaryButton" type="submit">
               Save current view

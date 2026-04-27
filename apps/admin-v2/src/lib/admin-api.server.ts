@@ -13,8 +13,22 @@ export type AdminIdentity = {
   source?: string;
   bootstrapReason?: string | null;
   phase: string;
+  accessMode?: string;
+  featureMaturity?: string;
   capabilities: string[];
   workspaces: string[];
+};
+
+export type SignalPhaseStatus = `live-actionable` | `count-only` | `deferred`;
+export type SignalAvailability = `available` | `temporarily-unavailable`;
+export type OverviewSignalSummary = {
+  label: string;
+  phaseStatus: SignalPhaseStatus;
+  availability: SignalAvailability;
+  href: string | null;
+  count?: number | null;
+  slaBreachedCount?: number | null;
+  items?: Array<Record<string, unknown>>;
 };
 
 export type ConsumersListResponse = {
@@ -161,7 +175,7 @@ export type AuditListResponse = {
 
 export type OverviewSummaryResponse = {
   computedAt: string;
-  signals: Record<string, Record<string, unknown>>;
+  signals: Record<string, OverviewSignalSummary>;
 };
 
 export type SystemSummaryCard = {
@@ -1225,6 +1239,7 @@ export type QuickstartId =
   | `force-logout-audit-trail`
   | `system-alerts-console`;
 export type QuickstartSurface = `shell` | `overview` | `all`;
+export type QuickstartOperatorModel = `entry-only` | `saved-view-compatible` | `threshold-editor`;
 export type QuickstartTargetRoute =
   | `/verification`
   | `/payments`
@@ -1241,6 +1256,7 @@ export type QuickstartCard = {
   label: string;
   description: string;
   eyebrow: string;
+  operatorModel: QuickstartOperatorModel;
   targetPath: QuickstartTargetRoute;
   surfaces: Array<Exclude<QuickstartSurface, `all`>>;
   requiredCapabilities?: string[];

@@ -1,4 +1,9 @@
-import { type QuickstartCard, type QuickstartId, type QuickstartTargetRoute } from './admin-api.server';
+import {
+  type QuickstartCard,
+  type QuickstartId,
+  type QuickstartOperatorModel,
+  type QuickstartTargetRoute,
+} from './admin-api.server';
 
 export type QuickstartInvestigation = QuickstartCard;
 export type QuickstartWorkspace =
@@ -71,6 +76,12 @@ export function normalizeQuickstartEyebrow(eyebrow: string): string {
   if (normalized.includes(`derived artifact`)) return `Reference`;
 
   return eyebrow;
+}
+
+export function describeQuickstartOperatorModel(operatorModel: QuickstartOperatorModel): string {
+  if (operatorModel === `saved-view-compatible`) return `Durable preset available`;
+  if (operatorModel === `threshold-editor`) return `Threshold editor`;
+  return `Fast entry`;
 }
 
 export function isQuickstartId(value: string): value is QuickstartId {

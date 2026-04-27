@@ -60,11 +60,19 @@ export type AdminV2BootstrapReason =
   | `schema_missing_me_read`;
 
 export type AdminV2AccessSource = `bridge` | `schema` | `bridge-bootstrap`;
+export type AdminV2AccessMode =
+  | `bridge-compatible`
+  | `schema-active`
+  | `bridge-bootstrap-minimal`
+  | `bridge-bootstrap-super-admin`;
+export type AdminV2FeatureMaturity = `selective-operator-platform`;
 export type AdminV2AccessProfile = {
   role: AdminV2Role | null;
   capabilities: AdminV2Capability[];
   workspaces: AdminV2Workspace[];
   source: AdminV2AccessSource;
+  accessMode: AdminV2AccessMode;
+  featureMaturity: AdminV2FeatureMaturity;
   bootstrapReason?: AdminV2BootstrapReason;
 };
 
@@ -231,6 +239,8 @@ export function getAdminV2AccessProfile(admin: { type: string }): AdminV2AccessP
     capabilities,
     workspaces: deriveAdminV2Workspaces(capabilities),
     source: `bridge`,
+    accessMode: `bridge-compatible`,
+    featureMaturity: `selective-operator-platform`,
   };
 }
 

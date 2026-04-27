@@ -24,7 +24,10 @@ export class AdminV2Controller {
       role: profile.role,
       source: profile.source,
       bootstrapReason: profile.bootstrapReason ?? null,
-      phase: `MVP-3 system maturity kickoff`,
+      accessMode: profile.accessMode,
+      featureMaturity: profile.featureMaturity,
+      phase:
+        profile.featureMaturity === `selective-operator-platform` ? `Selective operator platform` : `Workspace access`,
       capabilities: profile.capabilities,
       workspaces: profile.workspaces,
     };

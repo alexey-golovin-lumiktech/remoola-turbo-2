@@ -385,7 +385,7 @@ function SavedViewsSection({
   return (
     <Panel
       title="Saved views"
-      description="Personal saved filters for the verification queue workspace."
+      description="Personal durable filters for the verification queue. Alerts use the same query model, but a saved view is not linked to an alert automatically."
       actions={
         <div className={buttonRowClass}>
           <TinyPill tone="cyan">{views.length} saved</TinyPill>
@@ -454,7 +454,9 @@ function SavedViewsSection({
                   aria-label="New saved view description"
                 />
               </label>
-              <p className={mutedTextClass}>Note: these filters are saved with the view, but alerts do not use them.</p>
+              <p className={mutedTextClass}>
+                Note: alerts evaluate the same query payload, but saving a view does not create or update an alert.
+              </p>
               <p className={monoMutedTextClass}>
                 status={currentPayload.status ?? `-`}, stripeIdentityStatus={currentPayload.stripeIdentityStatus ?? `-`}
                 , country={currentPayload.country ?? `-`}, contractorKind={currentPayload.contractorKind ?? `-`},

@@ -55,6 +55,6 @@ export const auditExplorerItems = [
   { href: `/audit/consumer-actions`, label: `Consumer Actions`, workspace: `audit`, icon: `audit` },
 ] as const satisfies ReadonlyArray<NavTupleItem>;
 
-export const laterBreadthItems = [
+export const administrationItems = [
   { href: `/admins`, label: `Admins`, workspace: `admins`, icon: `admins` },
 ] as const satisfies ReadonlyArray<NavTupleItem>;

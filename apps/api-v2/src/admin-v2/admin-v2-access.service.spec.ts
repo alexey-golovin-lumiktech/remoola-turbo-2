@@ -68,6 +68,8 @@ describe(`AdminV2AccessService`, () => {
     });
 
     expect(profile.source).toBe(`schema`);
+    expect(profile.accessMode).toBe(`schema-active`);
+    expect(profile.featureMaturity).toBe(`selective-operator-platform`);
     expect(profile.role).toBe(`OPS_ADMIN`);
     expect(profile.capabilities).toEqual(opsBridgeCapabilities);
     expect(profile.bootstrapReason).toBeUndefined();
@@ -123,6 +125,7 @@ describe(`AdminV2AccessService`, () => {
     });
 
     expect(profile.source).toBe(`bridge-bootstrap`);
+    expect(profile.accessMode).toBe(`bridge-bootstrap-super-admin`);
     expect(profile.role).toBe(`SUPER_ADMIN`);
     expect(profile.bootstrapReason).toBe(`schema_role_missing`);
     expect(profile.capabilities).toEqual(
@@ -151,6 +154,7 @@ describe(`AdminV2AccessService`, () => {
     });
 
     expect(profile.source).toBe(`bridge-bootstrap`);
+    expect(profile.accessMode).toBe(`bridge-bootstrap-minimal`);
     expect(profile.role).toBeNull();
     expect(profile.bootstrapReason).toBe(`schema_role_missing`);
     expect(profile.capabilities).toEqual([`me.read`]);

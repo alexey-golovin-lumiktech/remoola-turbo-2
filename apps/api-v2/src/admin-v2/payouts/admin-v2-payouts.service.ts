@@ -347,7 +347,7 @@ export class AdminV2PayoutsService {
     }
 
     if (params.derivedStatus !== `failed` && params.derivedStatus !== `stuck`) {
-      return `Only failed or stuck payouts can be escalated in MVP-2`;
+      return `Only failed or stuck payouts can receive an escalation marker in the current operator slice`;
     }
 
     return null;

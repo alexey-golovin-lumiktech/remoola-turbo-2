@@ -46,7 +46,7 @@ export const OPERATIONAL_ALERT_WORKSPACE_ORDER = [
 export const OPERATIONAL_ALERT_WORKSPACE_META: Record<OperationalAlertWorkspace, OperationalAlertWorkspaceMeta> = {
   ledger_anomalies: {
     sectionTitle: `Ledger anomalies alerts`,
-    sectionCaption: `Threshold-based monitoring on ledger anomaly counts.`,
+    sectionCaption: `Threshold-based monitoring on the same anomaly query model used by saved views in this workspace.`,
     createTitle: `New ledger anomalies alert`,
     namePlaceholder: `e.g. Stale pending entries spike`,
   },
@@ -58,7 +58,7 @@ export const OPERATIONAL_ALERT_WORKSPACE_META: Record<OperationalAlertWorkspace,
   },
   auth_refresh_reuse: {
     sectionTitle: `Auth refresh reuse alerts`,
-    sectionCaption: `Threshold-based monitoring on admin refresh-token reuse detections.`,
+    sectionCaption: `Threshold-based monitoring on admin refresh-token reuse detections. This workspace is alert-only and does not expose saved views.`,
     createTitle: `New auth refresh reuse alert`,
     namePlaceholder: `e.g. Refresh reuse spike`,
   },

@@ -47,6 +47,8 @@ export class AdminV2AccessService {
       return {
         ...bridgeProfile,
         source: `bridge-bootstrap`,
+        accessMode: `bridge-bootstrap-super-admin`,
+        featureMaturity: `selective-operator-platform`,
         bootstrapReason: reason,
       };
     }
@@ -56,6 +58,8 @@ export class AdminV2AccessService {
       capabilities: [`me.read`],
       workspaces: [],
       source: `bridge-bootstrap`,
+      accessMode: `bridge-bootstrap-minimal`,
+      featureMaturity: `selective-operator-platform`,
       bootstrapReason: reason,
     };
   }
@@ -110,6 +114,8 @@ export class AdminV2AccessService {
       capabilities: normalizedSchemaCapabilities,
       workspaces: deriveAdminV2Workspaces(normalizedSchemaCapabilities),
       source: `schema`,
+      accessMode: `schema-active`,
+      featureMaturity: `selective-operator-platform`,
     };
   }
 

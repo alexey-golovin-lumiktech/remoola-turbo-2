@@ -15,6 +15,7 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
     label: `Verification missing documents`,
     description: `Focus the verification queue on cases waiting for missing consumer documents.`,
     eyebrow: `Priority queue`,
+    operatorModel: `saved-view-compatible`,
     targetPath: `/verification`,
     surfaces: [`shell`, `overview`],
     filters: {
@@ -26,6 +27,7 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
     label: `Verification profile gaps`,
     description: `Focus the verification queue on consumers whose profile data is still incomplete.`,
     eyebrow: `Priority queue`,
+    operatorModel: `saved-view-compatible`,
     targetPath: `/verification`,
     surfaces: [`shell`, `overview`],
     filters: {
@@ -37,6 +39,7 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
     label: `Overdue payments sweep`,
     description: `Open overdue payment requests that likely need collections review.`,
     eyebrow: `Priority queue`,
+    operatorModel: `entry-only`,
     targetPath: `/payments`,
     surfaces: [`shell`, `overview`],
     filters: {
@@ -48,6 +51,7 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
     label: `Payment operations review`,
     description: `Jump straight into the manual review buckets for payment cases with derived follow-up reasons.`,
     eyebrow: `Queue-first`,
+    operatorModel: `entry-only`,
     targetPath: `/payments/operations`,
     surfaces: [`shell`, `overview`],
     filters: {},
@@ -57,6 +61,7 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
     label: `Ledger anomalies triage`,
     description: `Open the anomaly workspace to work the live discrepancy backlog before drilling into entries.`,
     eyebrow: `Case-first`,
+    operatorModel: `saved-view-compatible`,
     targetPath: `/ledger/anomalies`,
     surfaces: [`shell`, `overview`],
     filters: {},
@@ -66,6 +71,7 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
     label: `Documents intake review`,
     description: `Open the evidence workspace for document tagging, linkage review, and intake cleanup.`,
     eyebrow: `Queue-first`,
+    operatorModel: `entry-only`,
     targetPath: `/documents`,
     surfaces: [`shell`, `overview`],
     filters: {},
@@ -76,6 +82,7 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
     description:
       `Inspect scheduled conversions, retries, and linked ledger outcomes ` + `without detouring through overview.`,
     eyebrow: `Queue-first`,
+    operatorModel: `entry-only`,
     targetPath: `/exchange/scheduled`,
     surfaces: [`shell`, `overview`],
     filters: {},
@@ -83,8 +90,11 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
   {
     id: `admins-access-review`,
     label: `Admin access review`,
-    description: `Go directly to the admin directory to review invitations, access posture, and role assignments.`,
+    description:
+      `Go directly to the admin directory for role posture and lifecycle review. ` +
+      `This is a fast entry surface, not a durable preset workflow.`,
     eyebrow: `Case-first`,
+    operatorModel: `entry-only`,
     targetPath: `/admins`,
     surfaces: [`shell`, `overview`],
     filters: {},
@@ -94,6 +104,7 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
     label: `Force logout audit trail`,
     description: `Review consumer force logout activity from the admin action log.`,
     eyebrow: `Audit trail`,
+    operatorModel: `entry-only`,
     targetPath: `/audit/admin-actions`,
     surfaces: [`shell`, `overview`],
     filters: {
@@ -104,8 +115,9 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
     id: `system-alerts-console`,
     label: `System alerts console`,
     description:
-      `Open operational alerts directly when you need to edit thresholds ` + `instead of reading the summary cards.`,
+      `Open the threshold editor directly for supported workspaces ` + `instead of staying on summary cards.`,
     eyebrow: `Queue-first`,
+    operatorModel: `threshold-editor`,
     targetPath: `/system/alerts`,
     surfaces: [`shell`, `overview`],
     requiredCapabilities: [`alerts.manage`],
@@ -121,6 +133,7 @@ export class AdminV2QuickstartsService {
       label: entry.label,
       description: entry.description,
       eyebrow: entry.eyebrow,
+      operatorModel: entry.operatorModel,
       targetPath: entry.targetPath,
       surfaces: [...entry.surfaces],
       ...(entry.requiredCapabilities ? { requiredCapabilities: [...entry.requiredCapabilities] } : {}),

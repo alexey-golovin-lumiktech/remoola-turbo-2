@@ -214,15 +214,15 @@ export default async function PayoutCasePage({
       {canManageEscalation || payoutCase.payoutEscalation ? (
         <section className="detailGrid">
           {canManageEscalation ? (
-            <Panel title="Payout escalation">
+            <Panel title="Payout escalation marker">
               {canSubmitEscalation ? (
                 <form action={escalatePayoutAction.bind(null, payoutCase.id)} className={stackClass}>
                   <input type="hidden" name="version" value={String(payoutCase.version)} />
                   <input type="hidden" name="consumerId" value={payoutCase.consumer.id} />
                   <input type="hidden" name="confirmed" value="false" />
                   <p className={mutedTextClass}>
-                    Creates an escalation record only. It does not change payout state, ledger outcomes, or destination
-                    links.
+                    Creates a marker only. It does not change payout state, ledger outcomes, destination links, or any
+                    downstream execution.
                   </p>
                   <label className={fieldClass}>
                     <span className={fieldLabelClass}>Reason</span>
@@ -245,7 +245,7 @@ export default async function PayoutCasePage({
                 <div className={stackClass}>
                   <p className={mutedTextClass}>
                     {payoutCase.actionControls.escalateBlockedReason ??
-                      `Payout escalation is not available for this case.`}
+                      `A payout escalation marker is not available for this case.`}
                   </p>
                 </div>
               )}
@@ -253,7 +253,7 @@ export default async function PayoutCasePage({
           ) : null}
 
           {payoutCase.payoutEscalation ? (
-            <Panel title="Active escalation marker">
+            <Panel title="Active payout escalation marker">
               <div className={stackClass}>
                 <p className={mutedTextClass}>
                   Escalated by:{` `}

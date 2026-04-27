@@ -8,7 +8,12 @@ import { cn } from '@remoola/ui';
 
 import { NavIcon } from './nav-icon';
 import { isNavItemActive, normalizeActivePath } from '../app/(shell)/nav-state';
-import { financeBreadthItems, laterBreadthItems, maturityItems, topLevelBreadthItems } from '../app/(shell)/shell-nav';
+import {
+  administrationItems,
+  financeBreadthItems,
+  maturityItems,
+  topLevelBreadthItems,
+} from '../app/(shell)/shell-nav';
 import { type AdminIdentity } from '../lib/admin-api.server';
 import { getWorkspaceMeta } from '../lib/workspace-meta';
 
@@ -28,7 +33,7 @@ export function MobileTopChips({ identity, activePath }: MobileTopChipsProps): R
   const workspaceMeta = getWorkspaceMeta(resolvedActivePath);
   const compactChrome = workspaceMeta.mobileChromeMode === `compact`;
   const allowed = new Set(identity.workspaces ?? []);
-  const items = [...topLevelBreadthItems, ...financeBreadthItems, ...laterBreadthItems, ...maturityItems].filter(
+  const items = [...topLevelBreadthItems, ...financeBreadthItems, ...administrationItems, ...maturityItems].filter(
     (item) => allowed.has(item.workspace),
   );
 

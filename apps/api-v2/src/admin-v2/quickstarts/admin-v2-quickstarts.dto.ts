@@ -12,6 +12,7 @@ export const QUICKSTART_IDS = [
 ] as const;
 
 export const QUICKSTART_SURFACES = [`shell`, `overview`, `all`] as const;
+export const QUICKSTART_OPERATOR_MODELS = [`entry-only`, `saved-view-compatible`, `threshold-editor`] as const;
 export const QUICKSTART_TARGET_ROUTES = [
   `/verification`,
   `/payments`,
@@ -26,6 +27,7 @@ export const QUICKSTART_TARGET_ROUTES = [
 
 export type QuickstartId = (typeof QUICKSTART_IDS)[number];
 export type QuickstartSurface = (typeof QUICKSTART_SURFACES)[number];
+export type QuickstartOperatorModel = (typeof QUICKSTART_OPERATOR_MODELS)[number];
 export type QuickstartTargetRoute = (typeof QUICKSTART_TARGET_ROUTES)[number];
 
 export type VerificationQuickstartFilters = {
@@ -58,6 +60,7 @@ export type QuickstartCardDTO = {
   label: string;
   description: string;
   eyebrow: string;
+  operatorModel: QuickstartOperatorModel;
   targetPath: QuickstartTargetRoute;
   surfaces: Array<Exclude<QuickstartSurface, `all`>>;
   requiredCapabilities?: string[];

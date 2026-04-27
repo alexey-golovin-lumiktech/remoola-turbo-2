@@ -6,31 +6,40 @@ import { cn } from '@remoola/ui';
 import { StatusPill } from './status-pill';
 import { panelSurfaceClass } from './ui-classes';
 
-export type SignalCardAvailability = `live-actionable` | `count-only` | `deferred` | string;
+export type SignalCardAvailability = `available` | `temporarily-unavailable` | string;
+export type SignalCardPhaseStatus = `live-actionable` | `count-only` | `deferred` | string;
 
 export type SignalCardProps = {
   label: string;
   count: number | null;
   href: string | null;
   availability: SignalCardAvailability;
-  phaseStatus?: string | null;
+  phaseStatus?: SignalCardPhaseStatus | null;
   slaBreachedCount?: number | null;
 };
 
-function availabilityCopy(availability: SignalCardAvailability): string | null {
-  if (availability === `count-only`) return `Read-only count`;
-  if (availability === `deferred`) return `Unavailable in current phase`;
-  if (availability === `temporarily-unavailable`) return `Temporary delivery issue`;
-  if (availability === `live-actionable`) return `Live workload`;
+function phaseCopy(phaseStatus: SignalCardPhaseStatus | null | undefined): string | null {
+  if (phaseStatus === `count-only`) return `Read-only count`;
+  if (phaseStatus === `deferred`) return `Unavailable in current phase`;
+  if (phaseStatus === `live-actionable`) return `Live workload`;
   return null;
 }
 
-function availabilityEyebrow(availability: SignalCardAvailability): string {
-  if (availability === `live-actionable`) return `LIVE SIGNAL`;
-  if (availability === `count-only`) return `READ-ONLY COUNT`;
-  if (availability === `deferred`) return `DEFERRED`;
-  if (availability === `temporarily-unavailable`) return `TEMPORARILY UNAVAILABLE`;
+function availabilityCopy(availability: SignalCardAvailability): string | null {
+  if (availability === `temporarily-unavailable`) return `Temporary delivery issue`;
+  return null;
+}
+
+function phaseEyebrow(phaseStatus: SignalCardPhaseStatus | null | undefined): string {
+  if (phaseStatus === `live-actionable`) return `LIVE SIGNAL`;
+  if (phaseStatus === `count-only`) return `READ-ONLY COUNT`;
+  if (phaseStatus === `deferred`) return `DEFERRED`;
   return `OBSERVED`;
+}
+
+function availabilityEyebrow(availability: SignalCardAvailability): string | null {
+  if (availability === `temporarily-unavailable`) return `TEMPORARILY UNAVAILABLE`;
+  return null;
 }
 
 function formatStateLabel(value: string | null | undefined): string {
@@ -50,24 +59,26 @@ export function SignalCard({
   phaseStatus,
   slaBreachedCount,
 }: SignalCardProps): ReactElement {
-  const isLive = availability === `live-actionable`;
-  const clickable = isLive && typeof href === `string` && href.length > 0;
-  const isUnavailable = availability === `temporarily-unavailable` || availability === `deferred`;
+  const isLive = phaseStatus === `live-actionable`;
+  const isDeferred = phaseStatus === `deferred`;
+  const isUnavailable = availability === `temporarily-unavailable`;
+  const clickable = isLive && !isUnavailable && typeof href === `string` && href.length > 0;
   const cardClassName = cn(
     panelSurfaceClass,
     `flex min-h-[196px] flex-col gap-4 p-5 transition`,
     clickable ? `cursor-pointer hover:border-white/20 hover:bg-white/[0.02]` : ``,
-    isLive ? `border-cyan-400/10` : isUnavailable ? `border-amber-400/24` : `border-white/10`,
+    isUnavailable ? `border-amber-400/24` : isLive ? `border-cyan-400/10` : `border-white/10`,
   );
   const pillStatus = isLive ? `PROCESSING` : isUnavailable ? `Unavailable` : `Observed`;
-  const supplemental = availabilityCopy(availability);
-  const eyebrow = availabilityEyebrow(availability);
-  const countValue = availability === `temporarily-unavailable` ? `Unavailable` : count == null ? `—` : String(count);
-  const operatorCopy =
-    availability === `temporarily-unavailable`
-      ? `Signal delivery is degraded right now. Keep the queue visible and avoid interpreting this state as zero workload.`
-      : availability === `deferred`
-        ? `This signal exists, but it is intentionally hidden in the current workspace phase.`
+  const supplemental = availabilityCopy(availability) ?? phaseCopy(phaseStatus);
+  const eyebrow = availabilityEyebrow(availability) ?? phaseEyebrow(phaseStatus);
+  const countValue = isUnavailable ? `Unavailable` : count == null ? `—` : String(count);
+  const operatorCopy = isUnavailable
+    ? `Signal delivery is degraded right now. Keep the queue visible and avoid interpreting this state as zero workload.`
+    : isDeferred
+      ? `This signal exists, but it is intentionally hidden in the current workspace phase.`
+      : phaseStatus === `count-only`
+        ? `This signal stays visible as a reference count, but it does not open an active queue.`
         : label;
 
   const body = (
@@ -85,6 +96,7 @@ export function SignalCard({
       </div>
       <div className="mt-auto flex flex-wrap items-center gap-2 text-xs text-white/55">
         <span className="text-white/55">State: {formatStateLabel(phaseStatus)}</span>
+        {isUnavailable ? <span className="text-white/45">Delivery: {formatStateLabel(availability)}</span> : null}
         <span
           className={
             typeof slaBreachedCount === `number` && slaBreachedCount > 0
