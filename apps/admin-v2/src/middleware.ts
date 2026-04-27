@@ -9,10 +9,24 @@ import {
 import { appendSetCookies, getSetCookieValues } from './lib/api-utils';
 import { clearAdminAuthCookies, getAdminV2CookieRuntime, getPreferredAdminCookieValue } from './lib/auth-cookie-policy';
 
+const AUTH_TELEMETRY_HEADERS_FLAG = `NEXT_PUBLIC_AUTH_TELEMETRY_HEADERS`;
 const REFRESH_PATH = `/api/admin-v2/auth/refresh-access`;
 const ACCESS_TOKEN_EXPIRY_SKEW_MS = 5_000;
 
 type RefreshScope = `auth_page` | `protected_page`;
+type RefreshOutcome = `success` | `http_error` | `network_error`;
+
+interface RefreshAttemptTelemetry {
+  scope: RefreshScope;
+  outcome: RefreshOutcome;
+  latencyMs: number;
+  statusCode?: number;
+}
+
+interface RefreshResult {
+  response: Response | null;
+  telemetry: RefreshAttemptTelemetry;
+}
 
 function isAuthPagePath(pathname: string): boolean {
   return (
@@ -98,7 +112,8 @@ async function refreshAccess(
   refreshToken: string,
   csrfToken: string | undefined,
   scope: RefreshScope,
-): Promise<Response | null> {
+): Promise<RefreshResult> {
+  const startedAt = Date.now();
   const runtime = getAdminV2CookieRuntime(req);
   const refreshCookieKey = getAdminRefreshTokenCookieKey(runtime);
   const csrfCookieKey = getAdminCsrfTokenCookieKey(runtime);
@@ -118,9 +133,25 @@ async function refreshAccess(
       signal: AbortSignal.timeout(10000),
       cache: `no-store`,
     });
-    return response.ok ? response : null;
+    const latencyMs = Math.max(0, Date.now() - startedAt);
+    return {
+      response: response.ok ? response : null,
+      telemetry: {
+        scope,
+        outcome: response.ok ? `success` : `http_error`,
+        latencyMs,
+        statusCode: response.status,
+      },
+    };
   } catch {
-    return null;
+    return {
+      response: null,
+      telemetry: {
+        scope,
+        outcome: `network_error`,
+        latencyMs: Math.max(0, Date.now() - startedAt),
+      },
+    };
   }
 }
 
@@ -139,6 +170,29 @@ async function probeAccessSession(req: NextRequest, accessToken: string): Promis
   } catch {
     return null;
   }
+}
+
+function appendServerTiming(existingServerTiming: string | null, metric: string): string {
+  return existingServerTiming ? `${existingServerTiming}, ${metric}` : metric;
+}
+
+function applyRefreshTelemetry(res: NextResponse, telemetry: RefreshAttemptTelemetry): NextResponse {
+  const verboseTelemetryHeadersEnabled = process.env[AUTH_TELEMETRY_HEADERS_FLAG] === `true`;
+  if (verboseTelemetryHeadersEnabled) {
+    res.headers.set(`x-remoola-auth-refresh-attempted`, `1`);
+    res.headers.set(`x-remoola-auth-refresh-scope`, telemetry.scope);
+    res.headers.set(`x-remoola-auth-refresh-outcome`, telemetry.outcome);
+    res.headers.set(`x-remoola-auth-refresh-latency-ms`, String(telemetry.latencyMs));
+    if (typeof telemetry.statusCode === `number`) {
+      res.headers.set(`x-remoola-auth-refresh-status`, String(telemetry.statusCode));
+    }
+    if (telemetry.latencyMs >= 3000) {
+      res.headers.set(`x-remoola-auth-refresh-slow`, `1`);
+    }
+  }
+  const metric = `auth_refresh;dur=${telemetry.latencyMs};desc="${telemetry.scope}:${telemetry.outcome}"`;
+  res.headers.set(`server-timing`, appendServerTiming(res.headers.get(`server-timing`), metric));
+  return res;
 }
 
 export async function middleware(req: NextRequest) {
@@ -170,13 +224,15 @@ export async function middleware(req: NextRequest) {
 
   if (isProtected && !hasValidAccessTokenShape) {
     if (hasValidRefreshTokenShape && refreshToken) {
-      const refreshResponse = await refreshAccess(req, refreshToken, csrfToken, `protected_page`);
+      const refreshResult = await refreshAccess(req, refreshToken, csrfToken, `protected_page`);
+      const refreshResponse = refreshResult.response;
       if (refreshResponse) {
         requestHeaders.set(`cookie`, applySetCookieHeaders(req.headers.get(`cookie`), refreshResponse.headers));
         const response = NextResponse.next({ request: { headers: requestHeaders } });
         appendSetCookies(response.headers, refreshResponse.headers);
-        return response;
+        return applyRefreshTelemetry(response, refreshResult.telemetry);
       }
+      return applyRefreshTelemetry(loginRedirect(), refreshResult.telemetry);
     }
     return loginRedirect();
   }
@@ -189,13 +245,15 @@ export async function middleware(req: NextRequest) {
       }
     }
     if (hasValidRefreshTokenShape && refreshToken) {
-      const refreshResponse = await refreshAccess(req, refreshToken, csrfToken, `protected_page`);
+      const refreshResult = await refreshAccess(req, refreshToken, csrfToken, `protected_page`);
+      const refreshResponse = refreshResult.response;
       if (refreshResponse) {
         requestHeaders.set(`cookie`, applySetCookieHeaders(req.headers.get(`cookie`), refreshResponse.headers));
         const response = NextResponse.next({ request: { headers: requestHeaders } });
         appendSetCookies(response.headers, refreshResponse.headers);
-        return response;
+        return applyRefreshTelemetry(response, refreshResult.telemetry);
       }
+      return applyRefreshTelemetry(loginRedirect(), refreshResult.telemetry);
     }
     return loginRedirect();
   }

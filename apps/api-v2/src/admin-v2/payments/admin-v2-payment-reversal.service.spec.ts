@@ -56,7 +56,10 @@ describe(`AdminV2PaymentReversalService`, () => {
     );
   });
 
-  it(`allows reversal when raw payment request status is stale but latest settlement outcome is completed`, async () => {
+  it(`
+      allows reversal when raw payment request status is stale
+      but latest settlement outcome is completed
+    `, async () => {
     const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
     const prisma = {
       paymentRequestModel: {

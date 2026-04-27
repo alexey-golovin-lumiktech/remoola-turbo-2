@@ -118,7 +118,7 @@ describe(`admin-v2 shell layout read states`, () => {
     );
 
     expect(markup).toContain(
-      `grid min-h-screen grid-cols-1 bg-bg lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]`,
+      `grid min-h-screen grid-cols-1 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.06),transparent_28%),var(--bg)] lg:grid-cols-[296px_minmax(0,1fr)] xl:grid-cols-[336px_minmax(0,1fr)]`,
     );
     expect(markup).toContain(`hidden lg:flex`);
     expect(markup).toContain(`pb-24`);
