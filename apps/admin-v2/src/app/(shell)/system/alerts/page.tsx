@@ -59,6 +59,8 @@ type VerificationQueueQueryPayload = {
   stripeIdentityStatus?: string;
   country?: string;
   contractorKind?: string;
+  missingProfileData?: boolean;
+  missingDocuments?: boolean;
 };
 
 function parseLedgerAnomaliesAlertQuery(raw: unknown): LedgerAnomaliesAlertQueryPayload | null {
@@ -109,7 +111,17 @@ function parseVerificationQueueQuery(raw: unknown): VerificationQueueQueryPayloa
   if (typeof candidate.contractorKind === `string` && candidate.contractorKind.trim().length > 0) {
     result.contractorKind = candidate.contractorKind.trim();
   }
+  if (candidate.missingProfileData === true) {
+    result.missingProfileData = true;
+  }
+  if (candidate.missingDocuments === true) {
+    result.missingDocuments = true;
+  }
   return result;
+}
+
+function getCountThresholdValue(threshold: OperationalAlertThreshold): number {
+  return threshold.type === `count_gt` ? threshold.value : MIN_COUNT_GT_VALUE;
 }
 
 function formatThreshold(threshold: OperationalAlertThreshold): string {
@@ -156,6 +168,8 @@ function describeQueryPayload(workspace: OperationalAlertWorkspace, raw: unknown
       parsed.stripeIdentityStatus ? `stripeIdentityStatus=${parsed.stripeIdentityStatus}` : null,
       parsed.country ? `country=${parsed.country}` : null,
       parsed.contractorKind ? `contractorKind=${parsed.contractorKind}` : null,
+      parsed.missingProfileData ? `missingProfileData=true` : null,
+      parsed.missingDocuments ? `missingDocuments=true` : null,
     ].filter(Boolean);
     return parts.length === 0 ? `Filters: (none — total queue)` : `Filters: ${parts.join(`, `)}`;
   }
@@ -186,10 +200,150 @@ function AlertStateBadges({ alert, now }: { alert: OperationalAlertSummary; now:
   );
 }
 
-function AlertRow({ alert, now }: { alert: OperationalAlertSummary; now: Date }) {
-  const queryPayloadJson = JSON.stringify(alert.queryPayload ?? null);
-  const thresholdJson = JSON.stringify(alert.thresholdPayload);
+function LedgerAnomaliesQueryFields({ raw }: { raw: unknown }) {
+  const parsed = parseLedgerAnomaliesAlertQuery(raw) ?? { class: `stalePendingEntries` as const };
+  return (
+    <>
+      <label className={fieldClass}>
+        <span className={fieldLabelClass}>Anomaly class</span>
+        <select
+          className={textInputClass}
+          name="anomalyClass"
+          defaultValue={parsed.class}
+          aria-label="Alert anomaly class"
+        >
+          {LEDGER_ANOMALY_CLASS_ORDER.map((item) => (
+            <option key={item} value={item}>
+              {LEDGER_ANOMALY_CLASS_LABELS[item]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={fieldClass}>
+        <span className={fieldLabelClass}>Date from</span>
+        <input
+          className={textInputClass}
+          name="dateFrom"
+          type="date"
+          defaultValue={parsed.dateFrom ?? ``}
+          aria-label="Alert anomaly date from"
+        />
+      </label>
+      <label className={fieldClass}>
+        <span className={fieldLabelClass}>Date to</span>
+        <input
+          className={textInputClass}
+          name="dateTo"
+          type="date"
+          defaultValue={parsed.dateTo ?? ``}
+          aria-label="Alert anomaly date to"
+        />
+      </label>
+    </>
+  );
+}
 
+function AuthRefreshReuseQueryFields({ raw }: { raw: unknown }) {
+  const parsed = parseAuthRefreshReuseQuery(raw) ?? { windowMinutes: DEFAULT_AUTH_REFRESH_WINDOW_MINUTES };
+  return (
+    <label className={fieldClass}>
+      <span className={fieldLabelClass}>Rolling window (minutes)</span>
+      <input
+        className={textInputClass}
+        name="windowMinutes"
+        type="number"
+        defaultValue={parsed.windowMinutes}
+        min={MIN_AUTH_REFRESH_WINDOW_MINUTES}
+        max={MAX_AUTH_REFRESH_WINDOW_MINUTES}
+        aria-label="Alert refresh reuse window"
+      />
+    </label>
+  );
+}
+
+function VerificationQueueQueryFields({ raw }: { raw: unknown }) {
+  const parsed = parseVerificationQueueQuery(raw) ?? {};
+  return (
+    <>
+      <label className={fieldClass}>
+        <span className={fieldLabelClass}>Verification status</span>
+        <input
+          className={textInputClass}
+          name="status"
+          defaultValue={parsed.status ?? ``}
+          placeholder="status"
+          aria-label="Alert verification status"
+        />
+      </label>
+      <label className={fieldClass}>
+        <span className={fieldLabelClass}>Stripe status</span>
+        <input
+          className={textInputClass}
+          name="stripeIdentityStatus"
+          defaultValue={parsed.stripeIdentityStatus ?? ``}
+          placeholder="stripe status"
+          aria-label="Alert stripe status"
+        />
+      </label>
+      <label className={fieldClass}>
+        <span className={fieldLabelClass}>Country</span>
+        <input
+          className={textInputClass}
+          name="country"
+          defaultValue={parsed.country ?? ``}
+          placeholder="country"
+          aria-label="Alert verification country"
+        />
+      </label>
+      <label className={fieldClass}>
+        <span className={fieldLabelClass}>Contractor kind</span>
+        <input
+          className={textInputClass}
+          name="contractorKind"
+          defaultValue={parsed.contractorKind ?? ``}
+          placeholder="contractor kind"
+          aria-label="Alert contractor kind"
+        />
+      </label>
+      <div className="flex flex-col justify-end gap-3 md:col-span-2">
+        <div className="flex flex-wrap gap-3">
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Profile completeness</span>
+            <input
+              type="checkbox"
+              name="missingProfileData"
+              value="true"
+              defaultChecked={parsed.missingProfileData === true}
+              aria-label="Alert missing profile data only"
+            />
+          </label>
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Document completeness</span>
+            <input
+              type="checkbox"
+              name="missingDocuments"
+              value="true"
+              defaultChecked={parsed.missingDocuments === true}
+              aria-label="Alert missing documents only"
+            />
+          </label>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function AlertQueryFields({ workspace, raw }: { workspace: OperationalAlertWorkspace; raw: unknown }) {
+  if (workspace === `ledger_anomalies`) {
+    return <LedgerAnomaliesQueryFields raw={raw} />;
+  }
+  if (workspace === `auth_refresh_reuse`) {
+    return <AuthRefreshReuseQueryFields raw={raw} />;
+  }
+  return <VerificationQueueQueryFields raw={raw} />;
+}
+
+function AlertRow({ alert, now }: { alert: OperationalAlertSummary; now: Date }) {
   return (
     <Panel actions={<AlertStateBadges alert={alert} now={now} />}>
       <div>
@@ -216,7 +370,7 @@ function AlertRow({ alert, now }: { alert: OperationalAlertSummary; now: Date })
       <details>
         <summary className={detailsSummaryClass}>Rename or update threshold</summary>
         <form action={updateOperationalAlertAction.bind(null, alert.id)} className={stackClass}>
-          <input type="hidden" name="queryPayload" value={queryPayloadJson} />
+          <input type="hidden" name="workspace" value={alert.workspace} />
           <label className={fieldClass}>
             <span className={fieldLabelClass}>Name</span>
             <input
@@ -238,19 +392,19 @@ function AlertRow({ alert, now }: { alert: OperationalAlertSummary; now: Date })
               aria-label="Operational alert description"
             />
           </label>
+          <AlertQueryFields workspace={alert.workspace} raw={alert.queryPayload} />
           <label className={fieldClass}>
-            <span className={fieldLabelClass}>Threshold (count_gt value)</span>
+            <span className={fieldLabelClass}>Threshold count</span>
             <input
               className={textInputClass}
-              name="thresholdPayload"
-              type="text"
-              defaultValue={thresholdJson}
+              name="countThreshold"
+              type="number"
+              defaultValue={getCountThresholdValue(alert.thresholdPayload)}
+              min={MIN_COUNT_GT_VALUE}
+              max={MAX_COUNT_GT_VALUE}
               required
-              aria-label="Operational alert threshold payload JSON"
+              aria-label="Operational alert threshold count"
             />
-            <span className={mutedTextClass}>
-              JSON shape: {`{ "type": "count_gt", "value": <integer ${MIN_COUNT_GT_VALUE}-${MAX_COUNT_GT_VALUE}> }`}
-            </span>
           </label>
           <label className={fieldClass}>
             <span className={fieldLabelClass}>Evaluation interval (minutes)</span>
@@ -272,14 +426,11 @@ function AlertRow({ alert, now }: { alert: OperationalAlertSummary; now: Date })
 }
 
 function CreateLedgerAnomaliesAlertForm() {
-  const defaultQueryPayload: LedgerAnomaliesAlertQueryPayload = { class: `stalePendingEntries` };
-  const defaultThresholdPayload = { type: `count_gt`, value: 5 };
   const meta = OPERATIONAL_ALERT_WORKSPACE_META.ledger_anomalies;
   return (
     <Panel title={meta.createTitle}>
       <p className={mutedTextClass}>
-        Backend treats queryPayload as opaque (workspace handler owns the schema) and parses thresholdPayload
-        structurally. Only count_gt is supported.
+        Monitor a specific anomaly class, with optional date bounds and a count threshold.
       </p>
       <form action={createOperationalAlertAction} className={stackClass}>
         <input type="hidden" name="workspace" value="ledger_anomalies" />
@@ -305,33 +456,44 @@ function CreateLedgerAnomaliesAlertForm() {
           />
         </label>
         <label className={fieldClass}>
-          <span className={fieldLabelClass}>Query payload (anomaly class)</span>
-          <input
+          <span className={fieldLabelClass}>Anomaly class</span>
+          <select
             className={textInputClass}
-            name="queryPayload"
-            type="text"
-            defaultValue={JSON.stringify(defaultQueryPayload)}
-            required
-            aria-label="New ledger anomalies alert query payload"
-          />
-          <span className={mutedTextClass}>
-            JSON shape:{` `}
-            {`{ "class": "<one of: ${LEDGER_ANOMALY_CLASS_ORDER.join(`|`)}>", "dateFrom"?: "YYYY-MM-DD", "dateTo"?: "YYYY-MM-DD" }`}
-          </span>
+            name="anomalyClass"
+            defaultValue="stalePendingEntries"
+            aria-label="New anomaly class"
+          >
+            {LEDGER_ANOMALY_CLASS_ORDER.map((item) => (
+              <option key={item} value={item}>
+                {LEDGER_ANOMALY_CLASS_LABELS[item]}
+              </option>
+            ))}
+          </select>
         </label>
         <label className={fieldClass}>
-          <span className={fieldLabelClass}>Threshold payload</span>
+          <span className={fieldLabelClass}>Date from</span>
           <input
             className={textInputClass}
-            name="thresholdPayload"
-            type="text"
-            defaultValue={JSON.stringify(defaultThresholdPayload)}
-            required
-            aria-label="New ledger anomalies alert threshold payload"
+            name="dateFrom"
+            type="date"
+            aria-label="New ledger anomalies alert date from"
           />
-          <span className={mutedTextClass}>
-            JSON shape: {`{ "type": "count_gt", "value": <integer ${MIN_COUNT_GT_VALUE}-${MAX_COUNT_GT_VALUE}> }`}
-          </span>
+        </label>
+        <label className={fieldClass}>
+          <span className={fieldLabelClass}>Date to</span>
+          <input className={textInputClass} name="dateTo" type="date" aria-label="New ledger anomalies alert date to" />
+        </label>
+        <label className={fieldClass}>
+          <span className={fieldLabelClass}>Threshold count</span>
+          <input
+            className={textInputClass}
+            name="countThreshold"
+            type="number"
+            defaultValue={5}
+            min={MIN_COUNT_GT_VALUE}
+            max={MAX_COUNT_GT_VALUE}
+            aria-label="New ledger anomalies alert threshold count"
+          />
         </label>
         <label className={fieldClass}>
           <span className={fieldLabelClass}>Evaluation interval (minutes)</span>
@@ -352,10 +514,6 @@ function CreateLedgerAnomaliesAlertForm() {
 }
 
 function CreateAuthRefreshReuseAlertForm() {
-  const defaultQueryPayload: AuthRefreshReuseQueryPayload = {
-    windowMinutes: DEFAULT_AUTH_REFRESH_WINDOW_MINUTES,
-  };
-  const defaultThresholdPayload = { type: `count_gt`, value: 1 };
   const meta = OPERATIONAL_ALERT_WORKSPACE_META.auth_refresh_reuse;
   return (
     <Panel title={meta.createTitle}>
@@ -387,33 +545,30 @@ function CreateAuthRefreshReuseAlertForm() {
           />
         </label>
         <label className={fieldClass}>
-          <span className={fieldLabelClass}>Query payload (rolling window)</span>
+          <span className={fieldLabelClass}>Rolling window (minutes)</span>
           <input
             className={textInputClass}
-            name="queryPayload"
-            type="text"
-            defaultValue={JSON.stringify(defaultQueryPayload)}
+            name="windowMinutes"
+            type="number"
+            defaultValue={DEFAULT_AUTH_REFRESH_WINDOW_MINUTES}
             required
-            aria-label="New auth refresh reuse alert query payload"
+            min={MIN_AUTH_REFRESH_WINDOW_MINUTES}
+            max={MAX_AUTH_REFRESH_WINDOW_MINUTES}
+            aria-label="New auth refresh reuse alert window"
           />
-          <span className={mutedTextClass}>
-            JSON shape:{` `}
-            {`{ "windowMinutes": <integer ${MIN_AUTH_REFRESH_WINDOW_MINUTES}-${MAX_AUTH_REFRESH_WINDOW_MINUTES}> }`}
-          </span>
         </label>
         <label className={fieldClass}>
-          <span className={fieldLabelClass}>Threshold payload</span>
+          <span className={fieldLabelClass}>Threshold count</span>
           <input
             className={textInputClass}
-            name="thresholdPayload"
-            type="text"
-            defaultValue={JSON.stringify(defaultThresholdPayload)}
+            name="countThreshold"
+            type="number"
+            defaultValue={1}
             required
-            aria-label="New auth refresh reuse alert threshold payload"
+            min={MIN_COUNT_GT_VALUE}
+            max={MAX_COUNT_GT_VALUE}
+            aria-label="New auth refresh reuse alert threshold count"
           />
-          <span className={mutedTextClass}>
-            JSON shape: {`{ "type": "count_gt", "value": <integer ${MIN_COUNT_GT_VALUE}-${MAX_COUNT_GT_VALUE}> }`}
-          </span>
         </label>
         <label className={fieldClass}>
           <span className={fieldLabelClass}>Evaluation interval (minutes)</span>
@@ -434,8 +589,6 @@ function CreateAuthRefreshReuseAlertForm() {
 }
 
 function CreateVerificationQueueAlertForm() {
-  const defaultQueryPayload: VerificationQueueQueryPayload = {};
-  const defaultThresholdPayload = { type: `count_gt`, value: 25 };
   const meta = OPERATIONAL_ALERT_WORKSPACE_META.verification_queue;
   return (
     <Panel title={meta.createTitle}>
@@ -467,37 +620,62 @@ function CreateVerificationQueueAlertForm() {
           />
         </label>
         <label className={fieldClass}>
-          <span className={fieldLabelClass}>Query payload (optional filters)</span>
+          <span className={fieldLabelClass}>Verification status</span>
           <input
             className={textInputClass}
-            name="queryPayload"
-            type="text"
-            defaultValue={JSON.stringify(defaultQueryPayload)}
-            required
-            aria-label="New verification queue alert query payload"
+            name="status"
+            placeholder="status"
+            aria-label="New verification queue alert status"
           />
-          <span className={mutedTextClass}>
-            JSON shape:{` `}
-            {`{ "status"?: string, "stripeIdentityStatus"?: string, "country"?: string, "contractorKind"?: string }`}
-          </span>
-          <span className={mutedTextClass}>
-            Note: filters <code>missingProfileData</code> and <code>missingDocuments</code> are saved with the view, but
-            alerts ignore them because they only affect the current UI.
-          </span>
         </label>
         <label className={fieldClass}>
-          <span className={fieldLabelClass}>Threshold payload</span>
+          <span className={fieldLabelClass}>Stripe status</span>
           <input
             className={textInputClass}
-            name="thresholdPayload"
-            type="text"
-            defaultValue={JSON.stringify(defaultThresholdPayload)}
-            required
-            aria-label="New verification queue alert threshold payload"
+            name="stripeIdentityStatus"
+            placeholder="stripe status"
+            aria-label="New verification queue alert stripe status"
           />
-          <span className={mutedTextClass}>
-            JSON shape: {`{ "type": "count_gt", "value": <integer ${MIN_COUNT_GT_VALUE}-${MAX_COUNT_GT_VALUE}> }`}
-          </span>
+        </label>
+        <label className={fieldClass}>
+          <span className={fieldLabelClass}>Country</span>
+          <input
+            className={textInputClass}
+            name="country"
+            aria-label="New verification queue alert country"
+            placeholder="country"
+          />
+        </label>
+        <label className={fieldClass}>
+          <span className={fieldLabelClass}>Contractor kind</span>
+          <input
+            className={textInputClass}
+            name="contractorKind"
+            aria-label="New verification queue alert contractor kind"
+            placeholder="contractor kind"
+          />
+        </label>
+        <div className="flex flex-wrap gap-3">
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Profile completeness</span>
+            <input type="checkbox" name="missingProfileData" value="true" aria-label="New alert missing profile only" />
+          </label>
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Document completeness</span>
+            <input type="checkbox" name="missingDocuments" value="true" aria-label="New alert missing documents only" />
+          </label>
+        </div>
+        <label className={fieldClass}>
+          <span className={fieldLabelClass}>Threshold count</span>
+          <input
+            className={textInputClass}
+            name="countThreshold"
+            type="number"
+            defaultValue={25}
+            min={MIN_COUNT_GT_VALUE}
+            max={MAX_COUNT_GT_VALUE}
+            aria-label="New verification queue alert threshold count"
+          />
         </label>
         <label className={fieldClass}>
           <span className={fieldLabelClass}>Evaluation interval (minutes)</span>

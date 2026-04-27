@@ -37,6 +37,22 @@
   @apply rounded-input border border-emerald-400/20 bg-emerald-500/15 px-4 py-3 text-sm text-emerald-100;
 }
 
+.fieldError {
+  @apply text-sm text-rose-200;
+}
+
+.helperCopy {
+  @apply mt-2 text-sm text-emerald-50/80;
+}
+
+.inlineLinkRow {
+  @apply text-center text-sm text-muted-56;
+}
+
+.inlineLink {
+  @apply text-cyan-200 transition hover:text-white;
+}
+
 .submitBtn {
   @apply inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-input border border-cyan-400/30 bg-cyan-500/15 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/25 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-400/30 disabled:cursor-not-allowed disabled:opacity-60;
 }

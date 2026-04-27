@@ -51,7 +51,7 @@ export function SidebarContents({
     ...laterBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace)),
   ];
   const visibleAuditExplorerItems = auditExplorerItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity?.workspaces);
+  const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity);
 
   return (
     <>

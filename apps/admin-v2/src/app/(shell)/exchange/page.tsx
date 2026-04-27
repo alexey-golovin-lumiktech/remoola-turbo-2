@@ -27,7 +27,7 @@ export default function ExchangeWorkspacePage() {
       <>
         <Panel
           title="Exchange workspace"
-          description="Preview layer for exchange observability and configuration. Use the linked sub-workspaces when you need rate, rule, or schedule detail."
+          description="Exchange operations hub for rate integrity, rule governance, and scheduled conversion follow-up."
           actions={<ActionGhost href="/overview">Back to overview</ActionGhost>}
           surface="meta"
         />
@@ -38,7 +38,7 @@ export default function ExchangeWorkspacePage() {
               key={section.href}
               title={section.title}
               description={section.description}
-              actions={<TinyPill>Preview</TinyPill>}
+              actions={<TinyPill>Actionable</TinyPill>}
               surface="meta"
             >
               <div className="pt-1">

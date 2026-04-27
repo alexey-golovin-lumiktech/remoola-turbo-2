@@ -5,12 +5,12 @@ import { type NestExpressApplication } from '@nestjs/platform-express';
 import { $Enums, type PrismaClient } from '@remoola/database-2';
 
 import { AppModule } from './app.module';
+import { syncBootstrapAdminSeedAccounts } from './bootstrap/admin-bootstrap-rbac';
 import { configureApp } from './configure-app';
 import { envs } from './envs';
 import { NgrokIngressService } from './infrastructure/ngrok/ngrok-ingress.service';
 import { OriginResolverService } from './shared/origin-resolver.service';
 import { PrismaService } from './shared/prisma.service';
-import { passwordUtils } from './shared-common';
 
 const logger = new Logger(`Bootstrap`);
 
@@ -57,57 +57,11 @@ async function seed(prisma: PrismaClient): Promise<void> {
     },
   ];
 
-  for (const admin of admins) {
-    const dbAdmin = await prisma.adminModel.findFirst({
-      where: { email: admin.email },
-    });
-
-    if (!dbAdmin) {
-      const { salt, hash } = await passwordUtils.hashPassword(admin.password);
-
-      await prisma.adminModel.create({
-        data: {
-          email: admin.email,
-          password: hash,
-          salt,
-          type: admin.type,
-        },
-      });
-
-      continue;
-    }
-
-    const validPassword = await passwordUtils.verifyPassword({
-      password: admin.password,
-      storedHash: dbAdmin.password,
-      storedSalt: dbAdmin.salt,
-    });
-
-    if (validPassword && dbAdmin.type === admin.type) {
-      continue;
-    }
-
-    const nextData: {
-      type?: $Enums.AdminType;
-      password?: string;
-      salt?: string;
-    } = {};
-
-    if (dbAdmin.type !== admin.type) {
-      nextData.type = admin.type;
-    }
-
-    if (!validPassword) {
-      const { salt, hash } = await passwordUtils.hashPassword(admin.password);
-      nextData.password = hash;
-      nextData.salt = salt;
-    }
-
-    await prisma.adminModel.update({
-      where: { id: dbAdmin.id },
-      data: nextData,
-    });
-  }
+  await syncBootstrapAdminSeedAccounts({
+    prisma,
+    admins,
+    logger,
+  });
 
   const lookup = [
     { fromCurrency: $Enums.CurrencyCode.USD, toCurrency: $Enums.CurrencyCode.EUR, rate: 0.95 },

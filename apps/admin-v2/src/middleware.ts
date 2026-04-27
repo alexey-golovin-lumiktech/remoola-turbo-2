@@ -14,6 +14,15 @@ const ACCESS_TOKEN_EXPIRY_SKEW_MS = 5_000;
 
 type RefreshScope = `auth_page` | `protected_page`;
 
+function isAuthPagePath(pathname: string): boolean {
+  return (
+    pathname.startsWith(`/login`) ||
+    pathname.startsWith(`/forgot-password`) ||
+    pathname.startsWith(`/reset-password`) ||
+    pathname.startsWith(`/accept-invite`)
+  );
+}
+
 function isObviouslyInvalidCookieToken(token: string | undefined): boolean {
   if (!token) return true;
   if (token.length > 4096) return true;
@@ -140,7 +149,7 @@ export async function middleware(req: NextRequest) {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set(`x-pathname`, req.nextUrl.pathname);
 
-  const isAuthPage = req.nextUrl.pathname.startsWith(`/login`);
+  const isAuthPage = isAuthPagePath(req.nextUrl.pathname);
   const isLogoutRoute = req.nextUrl.pathname.startsWith(`/logout`);
   const isProtected = !isAuthPage && !isLogoutRoute;
   const hasValidAccessTokenShape = !isObviouslyInvalidCookieToken(accessToken);

@@ -50,7 +50,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
     getOverviewSummary(),
     getQuickstarts(`overview`),
   ]);
-  const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity?.workspaces);
+  const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity);
   const signals = asRecord(summary?.signals);
   const activeSignalOrder = [
     `pendingVerifications`,

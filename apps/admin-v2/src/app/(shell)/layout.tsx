@@ -64,6 +64,36 @@ async function safeGetActivePath(): Promise<string | null> {
   }
 }
 
+function renderAccessWarning(
+  identity: { source?: string; role?: string | null; workspaces?: string[]; bootstrapReason?: string | null } | null,
+) {
+  if (!identity || identity.source === `schema`) {
+    return null;
+  }
+
+  const hasWorkspaces = (identity.workspaces?.length ?? 0) > 0;
+  const descriptionByReason: Record<string, string> = {
+    schema_role_missing: hasWorkspaces
+      ? `Schema-backed RBAC is degraded because this admin record is missing a schema role assignment. Bootstrap compatibility is active until the role link is repaired.`
+      : `This admin identity can only bootstrap into Admin v2 because no schema-backed role assignment is linked yet. Workspace access stays locked until RBAC is repaired.`,
+    schema_role_unknown: `Schema-backed RBAC is degraded because the linked admin role is outside the current Admin v2 role catalog. Review the role catalog before relying on this posture.`,
+    schema_capabilities_invalid: `Schema-backed RBAC is degraded because the linked role contains invalid or duplicated capability values. Repair the schema role definition before relying on this posture.`,
+    schema_missing_me_read: `Schema-backed RBAC is degraded because the linked role cannot satisfy the required me.read capability. Repair the role capability set before relying on this posture.`,
+  };
+  const description =
+    (identity.bootstrapReason ? descriptionByReason[identity.bootstrapReason] : null) ??
+    (hasWorkspaces
+      ? `Schema-backed RBAC is not fully available for this admin identity. Bootstrap compatibility is active; review role assignment before relying on this posture.`
+      : `This admin identity can only bootstrap into Admin v2 until a schema-backed role is assigned. Workspace access stays locked until RBAC is repaired.`);
+
+  return (
+    <div className="rounded-card border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+      <p className="font-medium">RBAC bootstrap mode</p>
+      <p className="mt-1 text-amber-50/85">{description}</p>
+    </div>
+  );
+}
+
 function buildSignalCounts(summary: OverviewSummaryResponse | null): Record<string, SignalCount> {
   const out: Record<string, SignalCount> = {};
   if (!summary || !summary.signals || typeof summary.signals !== `object`) {
@@ -88,7 +118,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   ]);
   const identity = identityResult.status === `ready` ? identityResult.data : null;
   const signalCounts = buildSignalCounts(summary);
-  const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity?.workspaces);
+  const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity);
   const currentWorkspaceSignalCount = readCurrentWorkspaceSignalCount(activePath, signalCounts);
 
   return (
@@ -105,6 +135,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
         {identity ? (
           <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
             <ShellHeader />
+            {renderAccessWarning(identity)}
             <MobileShellDrawer activePath={activePath}>
               <SidebarContents
                 identity={identity}

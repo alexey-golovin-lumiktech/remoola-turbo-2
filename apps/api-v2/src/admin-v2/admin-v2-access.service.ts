@@ -2,9 +2,9 @@ import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 
 import {
   applyAdminV2PermissionOverrides,
+  type AdminV2BootstrapReason,
   deriveAdminV2Workspaces,
   getAdminV2AccessProfile,
-  hasBridgeCapabilityCoverage,
   hasValidAdminV2CapabilitySet,
   isKnownAdminV2Role,
   normalizeAdminV2Capabilities,
@@ -26,6 +26,40 @@ export class AdminV2AccessService {
 
   constructor(private readonly repository: AdminV2AccessRepository) {}
 
+  private buildBootstrapProfile(
+    admin: AdminV2Identity,
+    reason: AdminV2BootstrapReason,
+    details?: Record<string, unknown>,
+  ): AdminV2AccessProfile {
+    const bridgeProfile = getAdminV2AccessProfile(admin);
+    this.logger.warn(
+      `Admin-v2 bridge bootstrap activated ${JSON.stringify({
+        adminId: admin.id ?? `unknown`,
+        adminEmail: admin.email ?? `unknown`,
+        adminType: admin.type,
+        source: `bridge-bootstrap`,
+        reason,
+        ...(details ?? {}),
+      })}`,
+    );
+
+    if (bridgeProfile.role === `SUPER_ADMIN`) {
+      return {
+        ...bridgeProfile,
+        source: `bridge-bootstrap`,
+        bootstrapReason: reason,
+      };
+    }
+
+    return {
+      role: null,
+      capabilities: [`me.read`],
+      workspaces: [],
+      source: `bridge-bootstrap`,
+      bootstrapReason: reason,
+    };
+  }
+
   async getAccessProfile(admin: AdminV2Identity): Promise<AdminV2AccessProfile> {
     const bridgeProfile = getAdminV2AccessProfile(admin);
     if (!bridgeProfile.role || !admin.id) {
@@ -34,23 +68,13 @@ export class AdminV2AccessService {
 
     const schemaRecord = await this.repository.findAdminAccessRecord(admin.id);
     if (!schemaRecord?.roleKey) {
-      return {
-        ...bridgeProfile,
-        source: `bridge-fallback`,
-      };
+      return this.buildBootstrapProfile(admin, `schema_role_missing`);
     }
 
     if (!isKnownAdminV2Role(schemaRecord.roleKey)) {
-      this.logger.warn(
-        `Ignoring unknown schema-backed RBAC role for admin-v2 identity ${JSON.stringify({
-          adminId: admin.id,
-          schemaRole: schemaRecord.roleKey,
-        })}`,
-      );
-      return {
-        ...bridgeProfile,
-        source: `bridge-fallback`,
-      };
+      return this.buildBootstrapProfile(admin, `schema_role_unknown`, {
+        schemaRole: schemaRecord.roleKey,
+      });
     }
 
     const { allowed: allowedOverrides, ignored: ignoredOverrides } = partitionAdminV2PermissionOverrides(
@@ -59,7 +83,7 @@ export class AdminV2AccessService {
 
     if (ignoredOverrides.length > 0) {
       this.logger.warn(
-        `Ignoring out-of-scope admin-v2 permission overrides for prerequisite slice ${JSON.stringify({
+        `Ignoring out-of-scope admin-v2 permission overrides ${JSON.stringify({
           adminId: admin.id,
           ignoredCapabilities: ignoredOverrides.map((override) => override.capability),
         })}`,
@@ -67,38 +91,9 @@ export class AdminV2AccessService {
     }
 
     if (!hasValidAdminV2CapabilitySet(schemaRecord.roleCapabilities)) {
-      const mismatchDetails = JSON.stringify({
-        adminId: admin.id ?? `unknown`,
-        schemaCapabilities: schemaRecord.roleCapabilities,
+      return this.buildBootstrapProfile(admin, `schema_capabilities_invalid`, {
+        schemaRole: schemaRecord.roleKey,
       });
-      this.logger.warn(
-        `Schema-backed RBAC capability set is invalid for admin-v2 role ${schemaRecord.roleKey}; ` +
-          `falling back to bridge posture ${mismatchDetails}`,
-      );
-      return {
-        ...bridgeProfile,
-        source: `bridge-fallback`,
-      };
-    }
-
-    if (
-      bridgeProfile.role &&
-      schemaRecord.roleKey === bridgeProfile.role &&
-      !hasBridgeCapabilityCoverage(schemaRecord.roleCapabilities, bridgeProfile.capabilities)
-    ) {
-      const mismatchDetails = JSON.stringify({
-        adminId: admin.id ?? `unknown`,
-        schemaCapabilities: schemaRecord.roleCapabilities,
-        bridgeCapabilities: bridgeProfile.capabilities,
-      });
-      this.logger.warn(
-        `Schema-backed RBAC bridge coverage mismatch for admin-v2 role ${bridgeProfile.role}; ` +
-          `falling back to bridge posture ${mismatchDetails}`,
-      );
-      return {
-        ...bridgeProfile,
-        source: `bridge-fallback`,
-      };
     }
 
     const normalizedSchemaCapabilities =
@@ -106,19 +101,9 @@ export class AdminV2AccessService {
         ? applyAdminV2PermissionOverrides(schemaRecord.roleCapabilities, allowedOverrides)
         : normalizeAdminV2Capabilities(schemaRecord.roleCapabilities);
     if (normalizedSchemaCapabilities.length === 0 || !normalizedSchemaCapabilities.includes(`me.read`)) {
-      const mismatchDetails = JSON.stringify({
-        adminId: admin.id ?? `unknown`,
+      return this.buildBootstrapProfile(admin, `schema_missing_me_read`, {
         schemaRole: schemaRecord.roleKey,
-        normalizedSchemaCapabilities,
       });
-      this.logger.warn(
-        `Schema-backed RBAC capability set cannot bootstrap admin-v2 role ${schemaRecord.roleKey}; ` +
-          `falling back to bridge posture ${mismatchDetails}`,
-      );
-      return {
-        ...bridgeProfile,
-        source: `bridge-fallback`,
-      };
     }
     return {
       role: schemaRecord.roleKey,

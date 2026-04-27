@@ -8,6 +8,8 @@ import { adminErrorCodes } from '@remoola/shared-constants';
 import { AdminAuthService } from './admin-auth.service';
 import { envs } from '../../envs';
 import { AuthAuditService } from '../../shared/auth-audit.service';
+import { MailingService } from '../../shared/mailing.service';
+import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils } from '../../shared-common';
 
@@ -35,6 +37,7 @@ describe(`AdminAuthService`, () => {
     $transaction: jest.Mock;
   };
   let jwtService: { signAsync: jest.Mock; verify: jest.Mock };
+  let mailingService: { sendAdminV2PasswordResetEmail: jest.Mock };
   beforeEach(async () => {
     jest.clearAllMocks();
     prisma = {
@@ -63,6 +66,12 @@ describe(`AdminAuthService`, () => {
       recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
       clearLockout: jest.fn().mockResolvedValue(undefined),
     };
+    mailingService = {
+      sendAdminV2PasswordResetEmail: jest.fn().mockResolvedValue(true),
+    };
+    const originResolver = {
+      normalizeOrigin: jest.fn((value: string) => value),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -70,6 +79,8 @@ describe(`AdminAuthService`, () => {
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwtService },
         { provide: AuthAuditService, useValue: authAudit },
+        { provide: MailingService, useValue: mailingService },
+        { provide: OriginResolverService, useValue: originResolver },
       ],
     }).compile();
 
@@ -405,30 +416,40 @@ describe(`AdminAuthService`, () => {
 
   describe(`issueAdminPasswordReset`, () => {
     it(`creates an admin-scoped reset artifact`, async () => {
+      const previousAdminV2Origin = envs.ADMIN_V2_APP_ORIGIN;
+      Object.assign(envs, { ADMIN_V2_APP_ORIGIN: `https://admin-v2.example.com` });
       prisma.adminModel.findFirst.mockResolvedValue({
         id: `admin-id`,
         email: `admin@example.com`,
       });
 
-      const result = await service.issueAdminPasswordReset(`admin-id`);
+      try {
+        const result = await service.issueAdminPasswordReset(`admin-id`);
 
-      expect(result).toMatchObject({
-        adminId: `admin-id`,
-        emailDispatched: false,
-        deliveryStatus: `verify_contract_missing`,
-      });
-      expect(prisma.resetPasswordModel.updateMany).toHaveBeenCalledWith({
-        where: { adminId: `admin-id`, deletedAt: null },
-        data: { deletedAt: expect.any(Date) },
-      });
-      expect(prisma.resetPasswordModel.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+        expect(result).toMatchObject({
           adminId: `admin-id`,
-          tokenHash: expect.any(String),
-          expiredAt: expect.any(Date),
-          appScope: `admin-v2`,
-        }),
-      });
+          emailDispatched: true,
+          deliveryStatus: `sent`,
+        });
+        expect(prisma.resetPasswordModel.updateMany).toHaveBeenCalledWith({
+          where: { adminId: `admin-id`, deletedAt: null },
+          data: { deletedAt: expect.any(Date) },
+        });
+        expect(prisma.resetPasswordModel.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({
+            adminId: `admin-id`,
+            tokenHash: expect.any(String),
+            expiredAt: expect.any(Date),
+            appScope: `admin-v2`,
+          }),
+        });
+        expect(mailingService.sendAdminV2PasswordResetEmail).toHaveBeenCalledWith({
+          email: `admin@example.com`,
+          forgotPasswordLink: expect.stringContaining(`/reset-password?token=`),
+        });
+      } finally {
+        Object.assign(envs, { ADMIN_V2_APP_ORIGIN: previousAdminV2Origin });
+      }
     });
 
     it(`rejects unknown admins`, async () => {

@@ -6,6 +6,8 @@ type GetQueueCountFilters = {
   stripeIdentityStatus?: string;
   country?: string;
   contractorKind?: string;
+  missingProfileData?: boolean;
+  missingDocuments?: boolean;
 };
 
 function buildEvaluator(
@@ -93,22 +95,45 @@ describe(`VerificationQueueAlertEvaluator`, () => {
       expect(getQueueCount).toHaveBeenCalledWith({});
     });
 
-    it(`rejects payloads containing missingProfileData (frontend-only filter)`, async () => {
+    it(`forwards missingProfileData to getQueueCount`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await expect(evaluator.evaluate({ missingProfileData: true }, COUNT_GT_FIVE)).rejects.toThrow(
-        /missingProfileData[\s\S]*not supported by verification_queue evaluator/,
-      );
-      expect(getQueueCount).not.toHaveBeenCalled();
+      await evaluator.evaluate({ missingProfileData: true }, COUNT_GT_FIVE);
+
+      expect(getQueueCount).toHaveBeenCalledWith({ missingProfileData: true });
     });
 
-    it(`rejects payloads containing missingDocuments (frontend-only filter)`, async () => {
+    it(`forwards missingDocuments to getQueueCount`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await expect(evaluator.evaluate({ missingDocuments: true }, COUNT_GT_FIVE)).rejects.toThrow(
-        /missingDocuments[\s\S]*not supported by verification_queue evaluator/,
+      await evaluator.evaluate({ missingDocuments: true }, COUNT_GT_FIVE);
+
+      expect(getQueueCount).toHaveBeenCalledWith({ missingDocuments: true });
+    });
+
+    it(`forwards all supported filters including saved-view parity booleans`, async () => {
+      const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
+
+      await evaluator.evaluate(
+        {
+          status: `MORE_INFO`,
+          stripeIdentityStatus: `requires_input`,
+          country: `DE`,
+          contractorKind: `BUSINESS`,
+          missingProfileData: true,
+          missingDocuments: true,
+        },
+        COUNT_GT_FIVE,
       );
-      expect(getQueueCount).not.toHaveBeenCalled();
+
+      expect(getQueueCount).toHaveBeenCalledWith({
+        status: `MORE_INFO`,
+        stripeIdentityStatus: `requires_input`,
+        country: `DE`,
+        contractorKind: `BUSINESS`,
+        missingProfileData: true,
+        missingDocuments: true,
+      });
     });
 
     it(`rejects payloads containing page (pagination is not part of an alert query)`, async () => {

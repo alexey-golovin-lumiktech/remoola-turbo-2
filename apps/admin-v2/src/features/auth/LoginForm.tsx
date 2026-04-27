@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -63,6 +64,11 @@ export function LoginForm() {
       <button className={styles.submitBtn} type="submit" disabled={pending}>
         {pending ? `Signing in...` : `Sign in`}
       </button>
+      <p className={styles.inlineLinkRow}>
+        <Link href="/forgot-password" className={styles.inlineLink}>
+          Forgot password?
+        </Link>
+      </p>
     </form>
   );
 }

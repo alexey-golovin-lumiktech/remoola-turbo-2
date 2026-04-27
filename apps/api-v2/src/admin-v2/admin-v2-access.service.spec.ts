@@ -70,6 +70,7 @@ describe(`AdminV2AccessService`, () => {
     expect(profile.source).toBe(`schema`);
     expect(profile.role).toBe(`OPS_ADMIN`);
     expect(profile.capabilities).toEqual(opsBridgeCapabilities);
+    expect(profile.bootstrapReason).toBeUndefined();
   });
 
   it(`keeps schema-only admins capabilities off the bridge path`, async () => {
@@ -112,7 +113,7 @@ describe(`AdminV2AccessService`, () => {
     expect(profile.capabilities).not.toContain(`documents.manage`);
   });
 
-  it(`falls back to the bridge posture when schema rows are not ready`, async () => {
+  it(`keeps super-admin bootstrap compatibility when schema rows are not ready`, async () => {
     const service = makeService(null);
 
     const profile = await service.getAccessProfile({
@@ -121,8 +122,9 @@ describe(`AdminV2AccessService`, () => {
       type: `SUPER`,
     });
 
-    expect(profile.source).toBe(`bridge-fallback`);
+    expect(profile.source).toBe(`bridge-bootstrap`);
     expect(profile.role).toBe(`SUPER_ADMIN`);
+    expect(profile.bootstrapReason).toBe(`schema_role_missing`);
     expect(profile.capabilities).toEqual(
       expect.arrayContaining([
         `admins.read`,
@@ -137,6 +139,22 @@ describe(`AdminV2AccessService`, () => {
         `consumers.email_resend`,
       ]),
     );
+  });
+
+  it(`limits non-super admins to bootstrap-only access when schema rows are missing`, async () => {
+    const service = makeService(null);
+
+    const profile = await service.getAccessProfile({
+      id: `admin-ops`,
+      email: `ops@example.com`,
+      type: `ADMIN`,
+    });
+
+    expect(profile.source).toBe(`bridge-bootstrap`);
+    expect(profile.role).toBeNull();
+    expect(profile.bootstrapReason).toBe(`schema_role_missing`);
+    expect(profile.capabilities).toEqual([`me.read`]);
+    expect(profile.workspaces).toEqual([]);
   });
 
   it(`prefers a valid schema role assignment even when it is broader than the bridge identity type`, async () => {
@@ -156,7 +174,7 @@ describe(`AdminV2AccessService`, () => {
     expect(profile.capabilities).toEqual(expect.arrayContaining([`admins.read`, `admins.manage`]));
   });
 
-  it(`falls back when schema misses a required bridge capability`, async () => {
+  it(`trusts valid schema capabilities even when they are narrower than the old bridge baseline`, async () => {
     const service = makeService({
       roleKey: `OPS_ADMIN`,
       roleCapabilities: [
@@ -179,11 +197,22 @@ describe(`AdminV2AccessService`, () => {
       type: `ADMIN`,
     });
 
-    expect(profile.source).toBe(`bridge-fallback`);
-    expect(profile.capabilities).toEqual(opsBridgeCapabilities);
+    expect(profile.source).toBe(`schema`);
+    expect(profile.role).toBe(`OPS_ADMIN`);
+    expect(profile.capabilities).toEqual([
+      `me.read`,
+      `overview.read`,
+      `verification.read`,
+      `consumers.read`,
+      `payments.read`,
+      `ledger.read`,
+      `ledger.anomalies`,
+      `consumers.notes`,
+      `audit.read`,
+    ]);
   });
 
-  it(`keeps fallback safety active even when allowed admin overrides exist`, async () => {
+  it(`applies allowed overrides on top of a valid schema posture instead of restoring bridge access`, async () => {
     const service = makeService({
       roleKey: `OPS_ADMIN`,
       roleCapabilities: [
@@ -206,9 +235,20 @@ describe(`AdminV2AccessService`, () => {
       type: `ADMIN`,
     });
 
-    expect(profile.source).toBe(`bridge-fallback`);
-    expect(profile.capabilities).toEqual(opsBridgeCapabilities);
-    expect(profile.capabilities).not.toContain(`admins.read`);
+    expect(profile.source).toBe(`schema`);
+    expect(profile.capabilities).toEqual(
+      expect.arrayContaining([
+        `me.read`,
+        `overview.read`,
+        `verification.read`,
+        `consumers.read`,
+        `payments.read`,
+        `ledger.read`,
+        `audit.read`,
+        `consumers.notes`,
+        `admins.read`,
+      ]),
+    );
   });
 
   it(`applies schema-backed overrides across the canonical admin-v2 capability set`, async () => {
@@ -229,7 +269,7 @@ describe(`AdminV2AccessService`, () => {
     expect(profile.capabilities).not.toContain(`admins.read`);
   });
 
-  it(`falls back when schema role rows contain duplicated capability values`, async () => {
+  it(`drops into bootstrap mode when schema role rows contain duplicated capability values`, async () => {
     const service = makeService({
       roleKey: `OPS_ADMIN`,
       roleCapabilities: [...opsBridgeCapabilities, `audit.read`],
@@ -241,11 +281,12 @@ describe(`AdminV2AccessService`, () => {
       type: `ADMIN`,
     });
 
-    expect(profile.source).toBe(`bridge-fallback`);
-    expect(profile.capabilities).toEqual(opsBridgeCapabilities);
+    expect(profile.source).toBe(`bridge-bootstrap`);
+    expect(profile.role).toBeNull();
+    expect(profile.capabilities).toEqual([`me.read`]);
   });
 
-  it(`falls back when schema role rows contain unknown capability values`, async () => {
+  it(`keeps only super-admin bootstrap compatibility when schema role rows contain unknown capability values`, async () => {
     const service = makeService({
       roleKey: `SUPER_ADMIN`,
       roleCapabilities: [...superBridgeCapabilities, `not.real.capability`],
@@ -257,12 +298,12 @@ describe(`AdminV2AccessService`, () => {
       type: `SUPER`,
     });
 
-    expect(profile.source).toBe(`bridge-fallback`);
+    expect(profile.source).toBe(`bridge-bootstrap`);
     expect(profile.capabilities).toContain(`admins.read`);
     expect(profile.capabilities).not.toContain(`not.real.capability` as never);
   });
 
-  it(`falls back when schema role capabilities are empty`, async () => {
+  it(`limits non-super admins to bootstrap-only access when schema role capabilities are empty`, async () => {
     const service = makeService({
       roleKey: `READONLY_ADMIN`,
       roleCapabilities: [],
@@ -274,11 +315,12 @@ describe(`AdminV2AccessService`, () => {
       type: `ADMIN`,
     });
 
-    expect(profile.source).toBe(`bridge-fallback`);
-    expect(profile.capabilities).toEqual(opsBridgeCapabilities);
+    expect(profile.source).toBe(`bridge-bootstrap`);
+    expect(profile.role).toBeNull();
+    expect(profile.capabilities).toEqual([`me.read`]);
   });
 
-  it(`falls back when schema role capabilities cannot bootstrap me.read`, async () => {
+  it(`limits non-super admins to bootstrap-only access when schema role capabilities cannot bootstrap me.read`, async () => {
     const service = makeService({
       roleKey: `SUPPORT_ADMIN`,
       roleCapabilities: [`overview.read`, `consumers.read`, `audit.read`],
@@ -290,8 +332,9 @@ describe(`AdminV2AccessService`, () => {
       type: `ADMIN`,
     });
 
-    expect(profile.source).toBe(`bridge-fallback`);
-    expect(profile.capabilities).toEqual(opsBridgeCapabilities);
+    expect(profile.source).toBe(`bridge-bootstrap`);
+    expect(profile.role).toBeNull();
+    expect(profile.capabilities).toEqual([`me.read`]);
   });
 
   it(`denies access for identities outside the allowed bridge types`, async () => {

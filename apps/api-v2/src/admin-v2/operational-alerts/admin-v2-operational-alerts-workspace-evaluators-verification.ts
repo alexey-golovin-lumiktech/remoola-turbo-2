@@ -12,11 +12,20 @@ type VerificationQueueQuery = {
   stripeIdentityStatus?: string;
   country?: string;
   contractorKind?: string;
+  missingProfileData?: boolean;
+  missingDocuments?: boolean;
 };
 
-const SUPPORTED_PAYLOAD_KEYS = new Set([`status`, `stripeIdentityStatus`, `country`, `contractorKind`]);
+const SUPPORTED_PAYLOAD_KEYS = new Set([
+  `status`,
+  `stripeIdentityStatus`,
+  `country`,
+  `contractorKind`,
+  `missingProfileData`,
+  `missingDocuments`,
+]);
 
-const REJECTED_PAYLOAD_KEYS = new Set([`missingProfileData`, `missingDocuments`, `page`, `pageSize`]);
+const REJECTED_PAYLOAD_KEYS = new Set([`page`, `pageSize`]);
 
 function parseVerificationQueuePayload(raw: unknown): VerificationQueueQuery {
   if (raw === null || raw === undefined) {
@@ -48,6 +57,22 @@ function parseVerificationQueuePayload(raw: unknown): VerificationQueueQuery {
   }
   if (typeof obj.contractorKind === `string` && obj.contractorKind.trim().length > 0) {
     result.contractorKind = obj.contractorKind.trim();
+  }
+  if (obj.missingProfileData !== undefined) {
+    if (typeof obj.missingProfileData !== `boolean`) {
+      throw new Error(`queryPayload.missingProfileData must be boolean`);
+    }
+    if (obj.missingProfileData) {
+      result.missingProfileData = true;
+    }
+  }
+  if (obj.missingDocuments !== undefined) {
+    if (typeof obj.missingDocuments !== `boolean`) {
+      throw new Error(`queryPayload.missingDocuments must be boolean`);
+    }
+    if (obj.missingDocuments) {
+      result.missingDocuments = true;
+    }
   }
   return result;
 }

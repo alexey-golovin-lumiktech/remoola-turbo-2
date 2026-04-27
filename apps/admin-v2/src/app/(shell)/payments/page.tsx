@@ -380,7 +380,7 @@ export default async function PaymentsPage({
       <>
         <Panel
           title="Payments"
-          description="Read-only payment request investigation with finance-safe cross-links."
+          description="Payment request triage with direct escalation into operations buckets and case drilldowns."
           actions={
             <div className={buttonRowClass}>
               <TinyPill tone="cyan">{items.length} visible</TinyPill>

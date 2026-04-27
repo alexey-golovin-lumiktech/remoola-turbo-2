@@ -3,6 +3,8 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Req,
   Res,
@@ -11,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 import express from 'express';
 
 import { oauthCrypto } from '@remoola/security-utils';
@@ -59,6 +61,12 @@ class ResetAdminV2PasswordBodyDTO {
   @IsString()
   @MinLength(8)
   password!: string;
+}
+
+class RequestAdminV2PasswordResetBodyDTO {
+  @IsString()
+  @IsEmail()
+  email!: string;
 }
 
 @ApiTags(`Admin v2: Auth`)
@@ -118,8 +126,21 @@ export class AdminV2AuthController {
   }
 
   @PublicEndpoint()
+  @Post(`forgot-password`)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async requestPasswordReset(@Body() body: RequestAdminV2PasswordResetBodyDTO) {
+    await this.adminsService.requestPasswordReset(body);
+    return {
+      message: `If an active admin account exists, we sent recovery instructions.`,
+      recoveryMode: `generic`,
+    };
+  }
+
+  @PublicEndpoint()
   @Post(`password/reset`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() body: ResetAdminV2PasswordBodyDTO) {
     return this.adminsService.resetPasswordWithToken(body);
   }

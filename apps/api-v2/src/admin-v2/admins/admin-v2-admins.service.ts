@@ -25,6 +25,7 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
 const INVITATION_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000;
 const REASON_MAX_LENGTH = 500;
 const RECENT_ACTIVITY_LIMIT = 20;
 const ALLOWED_ROLE_KEYS = new Set<string>(ADMIN_V2_SCHEMA_ROLES);
@@ -155,6 +156,32 @@ export class AdminV2AdminsService {
       return this.originResolver.normalizeOrigin(legacy);
     }
     throw new InternalServerErrorException(`Admin v2 app origin is not configured`);
+  }
+
+  private async sendAdminV2PasswordResetEmail(params: {
+    email: string;
+    token: string;
+    auditId: string;
+    metadata: Prisma.InputJsonValue;
+  }): Promise<{ notificationSent: boolean; deliveryStatus: `sent` | `failed` }> {
+    const resetUrl = new URL(`/reset-password`, this.resolveAdminV2Origin());
+    resetUrl.searchParams.set(`token`, params.token);
+    const notificationSent = await this.mailingService.sendAdminV2PasswordResetEmail({
+      email: params.email,
+      forgotPasswordLink: resetUrl.toString(),
+    });
+    await this.prisma.adminActionAuditLogModel.update({
+      where: { id: params.auditId },
+      data: {
+        metadata: {
+          ...(params.metadata as Record<string, unknown>),
+          notificationSent,
+          notificationType: `email`,
+          deliveryStatus: notificationSent ? `sent` : `failed`,
+        } as Prisma.InputJsonValue,
+      },
+    });
+    return { notificationSent, deliveryStatus: notificationSent ? `sent` : `failed` };
   }
 
   private async trySendInvitationEmail(params: { email: string; signupLink: string }): Promise<boolean> {
@@ -686,6 +713,78 @@ export class AdminV2AdminsService {
           notificationSent,
           deliveryStatus: notificationSent ? `sent` : `failed`,
         };
+      },
+    });
+  }
+
+  async requestPasswordReset(body: { email?: string | null }) {
+    const email = normalizeEmail(String(body.email ?? ``));
+    if (!email) {
+      throw new BadRequestException(`Email is required`);
+    }
+
+    const admin = await this.prisma.adminModel.findFirst({
+      where: { email, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+    if (!admin) {
+      return;
+    }
+
+    const token = oauthCrypto.generateOAuthState();
+    const tokenHash = oauthCrypto.hashOAuthState(token);
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS);
+    const created = await this.prisma.$transaction(async (tx) => {
+      await tx.resetPasswordModel.updateMany({
+        where: {
+          adminId: admin.id,
+          deletedAt: null,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+      await tx.resetPasswordModel.create({
+        data: {
+          adminId: admin.id,
+          tokenHash,
+          expiredAt: expiresAt,
+          appScope: `admin-v2`,
+        },
+      });
+      const audit = await tx.adminActionAuditLogModel.create({
+        data: {
+          adminId: admin.id,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_password_reset,
+          resource: `admin`,
+          resourceId: admin.id,
+          metadata: {
+            targetEmail: admin.email,
+            initiatedBy: `self_service`,
+            notificationSent: false,
+            notificationType: `email`,
+            deliveryStatus: `pending`,
+          },
+          ipAddress: null,
+          userAgent: null,
+        },
+        select: {
+          id: true,
+        },
+      });
+      return { auditId: audit.id };
+    });
+
+    await this.sendAdminV2PasswordResetEmail({
+      email: admin.email,
+      token,
+      auditId: created.auditId,
+      metadata: {
+        targetEmail: admin.email,
+        initiatedBy: `self_service`,
       },
     });
   }
@@ -1254,7 +1353,7 @@ export class AdminV2AdminsService {
         }
 
         const token = oauthCrypto.generateOAuthState();
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS);
         const tokenHash = oauthCrypto.hashOAuthState(token);
         const created = await this.prisma.$transaction(async (tx) => {
           await tx.resetPasswordModel.updateMany({
@@ -1297,22 +1396,12 @@ export class AdminV2AdminsService {
             auditId: audit.id,
           };
         });
-        const origin = this.resolveAdminV2Origin();
-        const resetUrl = new URL(`/reset-password`, origin);
-        resetUrl.searchParams.set(`token`, token);
-        const notificationSent = await this.mailingService.sendAdminV2PasswordResetEmail({
+        const { notificationSent, deliveryStatus } = await this.sendAdminV2PasswordResetEmail({
           email: target.email,
-          forgotPasswordLink: resetUrl.toString(),
-        });
-        await this.prisma.adminActionAuditLogModel.update({
-          where: { id: created.auditId },
-          data: {
-            metadata: {
-              targetEmail: target.email,
-              notificationSent,
-              notificationType: `email`,
-              deliveryStatus: notificationSent ? `sent` : `failed`,
-            } as Prisma.InputJsonValue,
+          token,
+          auditId: created.auditId,
+          metadata: {
+            targetEmail: target.email,
           },
         });
         return {
@@ -1320,7 +1409,7 @@ export class AdminV2AdminsService {
           email: target.email,
           version: deriveVersion(target.updatedAt),
           notificationSent,
-          deliveryStatus: notificationSent ? `sent` : `failed`,
+          deliveryStatus,
         };
       },
     });

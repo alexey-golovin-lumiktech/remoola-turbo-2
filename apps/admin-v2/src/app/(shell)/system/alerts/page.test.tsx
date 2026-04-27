@@ -108,7 +108,7 @@ describe(`admin-v2 operational alerts page`, () => {
               id: `alert-vq-filtered`,
               name: `Pending US backlog`,
               description: `Watch pending verifications from US`,
-              queryPayload: { status: `pending`, country: `US` },
+              queryPayload: { status: `pending`, country: `US`, missingDocuments: true },
               thresholdPayload: { type: `count_gt`, value: 25 },
               lastEvaluatedAt: new Date().toISOString(),
               lastEvaluationError: null,
@@ -136,7 +136,7 @@ describe(`admin-v2 operational alerts page`, () => {
 
     const markup = renderToStaticMarkup(await OperationalAlertsPage());
 
-    expect(markup).toContain(`Filters: status=pending, country=US`);
+    expect(markup).toContain(`Filters: status=pending, country=US, missingDocuments=true`);
     expect(markup).toContain(`Filters: (none — total queue)`);
     expect(markup).toContain(`Threshold: count &gt; 25 - every 5 min`);
     expect(markup).toContain(`Threshold: count &gt; 100 - every 5 min`);

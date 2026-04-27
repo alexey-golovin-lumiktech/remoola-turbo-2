@@ -30,8 +30,13 @@ export default async function SystemPage() {
       <>
         <Panel
           title="System"
-          description="Read-only preview of product and background health. Use related workspaces for actual queue work or deeper investigation."
-          actions={<p className={mutedTextClass}>Computed: {formatDateTime(summary?.computedAt)}</p>}
+          description="Triage surface for shared health signals, with direct hand-offs into alerts and related investigative workspaces."
+          actions={
+            <div className="actionsRow">
+              <ActionGhost href="/system/alerts">Open alerts</ActionGhost>
+              <p className={mutedTextClass}>Computed: {formatDateTime(summary?.computedAt)}</p>
+            </div>
+          }
           surface="meta"
         />
 

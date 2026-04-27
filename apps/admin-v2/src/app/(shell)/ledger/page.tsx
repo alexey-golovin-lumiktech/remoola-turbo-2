@@ -437,7 +437,7 @@ export default async function LedgerPage({
       <>
         <Panel
           title="Ledger and Disputes"
-          description="Read-only workspace for exact ledger outcomes and dispute review."
+          description="Ledger triage workspace for exact outcomes, anomaly follow-up, and dispute escalation context."
           actions={
             <div className={buttonRowClass}>
               <ActionGhost href={buildHref({ view: `entries` })}>Ledger entries</ActionGhost>

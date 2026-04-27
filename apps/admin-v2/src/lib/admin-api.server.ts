@@ -10,6 +10,8 @@ export type AdminIdentity = {
   email: string;
   type: string;
   role: string | null;
+  source?: string;
+  bootstrapReason?: string | null;
   phase: string;
   capabilities: string[];
   workspaces: string[];
@@ -1211,9 +1213,28 @@ export async function getLedgerAnomaliesSummary(): Promise<LedgerAnomalySummaryR
   return fetchAdminApi<LedgerAnomalySummaryResponse>(`/admin-v2/ledger/anomalies/summary`);
 }
 
-export type QuickstartId = `verification-missing-documents` | `overdue-payments-sweep` | `force-logout-audit-trail`;
+export type QuickstartId =
+  | `verification-missing-documents`
+  | `verification-missing-profile`
+  | `overdue-payments-sweep`
+  | `payment-operations-review`
+  | `ledger-anomalies-triage`
+  | `documents-intake-review`
+  | `exchange-scheduled-review`
+  | `admins-access-review`
+  | `force-logout-audit-trail`
+  | `system-alerts-console`;
 export type QuickstartSurface = `shell` | `overview` | `all`;
-export type QuickstartTargetRoute = `/verification` | `/payments` | `/audit/admin-actions`;
+export type QuickstartTargetRoute =
+  | `/verification`
+  | `/payments`
+  | `/payments/operations`
+  | `/ledger/anomalies`
+  | `/documents`
+  | `/exchange/scheduled`
+  | `/admins`
+  | `/audit/admin-actions`
+  | `/system/alerts`;
 
 export type QuickstartCard = {
   id: QuickstartId;
@@ -1222,6 +1243,7 @@ export type QuickstartCard = {
   eyebrow: string;
   targetPath: QuickstartTargetRoute;
   surfaces: Array<Exclude<QuickstartSurface, `all`>>;
+  requiredCapabilities?: string[];
 };
 
 export type QuickstartResolvedPreset =
@@ -1255,6 +1277,16 @@ export type QuickstartResolvedPreset =
         dateFrom?: string;
         dateTo?: string;
       };
+    })
+  | (QuickstartCard & {
+      targetPath:
+        | `/payments/operations`
+        | `/ledger/anomalies`
+        | `/documents`
+        | `/exchange/scheduled`
+        | `/admins`
+        | `/system/alerts`;
+      filters: Record<string, never>;
     });
 
 type QuickstartsListResponse = {

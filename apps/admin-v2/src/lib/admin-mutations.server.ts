@@ -985,6 +985,80 @@ function parsePositiveIntegerField(raw: string | null, label: string): number | 
   return value;
 }
 
+function parseCheckboxField(raw: FormDataEntryValue | null): boolean | undefined {
+  if (raw == null) return undefined;
+  const value = String(raw).trim().toLowerCase();
+  if (!value) return undefined;
+  if (value === `true` || value === `on` || value === `1`) return true;
+  if (value === `false` || value === `0`) return false;
+  throw new Error(`checkbox field must be boolean-like`);
+}
+
+function parseTrimmedField(raw: FormDataEntryValue | null): string | undefined {
+  if (raw == null) return undefined;
+  const value = String(raw).trim();
+  return value || undefined;
+}
+
+function buildOperationalAlertQueryPayload(workspace: string, formData: FormData): unknown {
+  const rawQueryPayload = formData.get(`queryPayload`);
+  if (rawQueryPayload !== null) {
+    return parseOperationalAlertJsonField(String(rawQueryPayload), `queryPayload`);
+  }
+
+  if (workspace === `ledger_anomalies`) {
+    const anomalyClass = parseTrimmedField(formData.get(`anomalyClass`));
+    if (!anomalyClass) {
+      throw new Error(`anomalyClass is required`);
+    }
+    return {
+      class: anomalyClass,
+      ...(parseTrimmedField(formData.get(`dateFrom`)) ? { dateFrom: parseTrimmedField(formData.get(`dateFrom`)) } : {}),
+      ...(parseTrimmedField(formData.get(`dateTo`)) ? { dateTo: parseTrimmedField(formData.get(`dateTo`)) } : {}),
+    };
+  }
+
+  if (workspace === `auth_refresh_reuse`) {
+    const windowMinutes = parsePositiveIntegerField(formData.get(`windowMinutes`) as string | null, `windowMinutes`);
+    if (windowMinutes === undefined) {
+      throw new Error(`windowMinutes is required`);
+    }
+    return { windowMinutes };
+  }
+
+  if (workspace === `verification_queue`) {
+    const missingProfileData = parseCheckboxField(formData.get(`missingProfileData`));
+    const missingDocuments = parseCheckboxField(formData.get(`missingDocuments`));
+    return {
+      ...(parseTrimmedField(formData.get(`status`)) ? { status: parseTrimmedField(formData.get(`status`)) } : {}),
+      ...(parseTrimmedField(formData.get(`stripeIdentityStatus`))
+        ? { stripeIdentityStatus: parseTrimmedField(formData.get(`stripeIdentityStatus`)) }
+        : {}),
+      ...(parseTrimmedField(formData.get(`country`)) ? { country: parseTrimmedField(formData.get(`country`)) } : {}),
+      ...(parseTrimmedField(formData.get(`contractorKind`))
+        ? { contractorKind: parseTrimmedField(formData.get(`contractorKind`)) }
+        : {}),
+      ...(missingProfileData ? { missingProfileData: true } : {}),
+      ...(missingDocuments ? { missingDocuments: true } : {}),
+    };
+  }
+
+  throw new Error(`workspace is not supported`);
+}
+
+function buildOperationalAlertThresholdPayload(formData: FormData): unknown {
+  const rawThresholdPayload = formData.get(`thresholdPayload`);
+  if (rawThresholdPayload !== null) {
+    return parseOperationalAlertJsonField(String(rawThresholdPayload), `thresholdPayload`);
+  }
+
+  const countThreshold = parsePositiveIntegerField(formData.get(`countThreshold`) as string | null, `countThreshold`);
+  if (countThreshold === undefined) {
+    throw new Error(`countThreshold is required`);
+  }
+  return { type: `count_gt`, value: countThreshold };
+}
+
 export async function createOperationalAlertAction(formData: FormData): Promise<void> {
   const workspace = String(formData.get(`workspace`) ?? ``).trim();
   if (!workspace) {
@@ -995,11 +1069,8 @@ export async function createOperationalAlertAction(formData: FormData): Promise<
     throw new Error(`name is required`);
   }
   const description = String(formData.get(`description`) ?? ``).trim();
-  const queryPayload = parseOperationalAlertJsonField(String(formData.get(`queryPayload`) ?? ``), `queryPayload`);
-  const thresholdPayload = parseOperationalAlertJsonField(
-    String(formData.get(`thresholdPayload`) ?? ``),
-    `thresholdPayload`,
-  );
+  const queryPayload = buildOperationalAlertQueryPayload(workspace, formData);
+  const thresholdPayload = buildOperationalAlertThresholdPayload(formData);
   const evaluationIntervalMinutes = parsePositiveIntegerField(
     formData.get(`evaluationIntervalMinutes`) as string | null,
     `evaluationIntervalMinutes`,
@@ -1047,12 +1118,13 @@ export async function updateOperationalAlertAction(operationalAlertId: string, f
     body.description = description || null;
   }
   const rawQuery = formData.get(`queryPayload`);
-  if (rawQuery !== null) {
-    body.queryPayload = parseOperationalAlertJsonField(String(rawQuery), `queryPayload`);
+  const workspace = String(formData.get(`workspace`) ?? ``).trim();
+  if (rawQuery !== null || workspace) {
+    body.queryPayload = buildOperationalAlertQueryPayload(workspace, formData);
   }
   const rawThreshold = formData.get(`thresholdPayload`);
-  if (rawThreshold !== null) {
-    body.thresholdPayload = parseOperationalAlertJsonField(String(rawThreshold), `thresholdPayload`);
+  if (rawThreshold !== null || formData.get(`countThreshold`) !== null) {
+    body.thresholdPayload = buildOperationalAlertThresholdPayload(formData);
   }
   const interval = parsePositiveIntegerField(
     formData.get(`evaluationIntervalMinutes`) as string | null,

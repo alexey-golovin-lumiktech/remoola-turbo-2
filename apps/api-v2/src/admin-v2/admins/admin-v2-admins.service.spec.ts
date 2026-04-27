@@ -417,6 +417,107 @@ describe(`AdminV2AdminsService`, () => {
     expect(events).toEqual([`createReset`, `createAudit`, `commit`, `sendMail`, `updateAudit`]);
   });
 
+  it(`requestPasswordReset creates a self-service reset artifact for active admins`, async () => {
+    const events: string[] = [];
+    const tx = {
+      resetPasswordModel: {
+        updateMany: jest.fn(async () => {
+          events.push(`invalidatePrevious`);
+          return { count: 1 };
+        }),
+        create: jest.fn(async () => {
+          events.push(`createReset`);
+          return { id: `reset-2` };
+        }),
+      },
+      adminActionAuditLogModel: {
+        create: jest.fn(async () => {
+          events.push(`createAudit`);
+          return { id: `audit-3` };
+        }),
+      },
+    };
+    const prisma = {
+      adminModel: {
+        findFirst: jest.fn(async () => ({
+          id: `admin-2`,
+          email: `ops@example.com`,
+        })),
+      },
+      adminActionAuditLogModel: {
+        update: jest.fn(async () => {
+          events.push(`updateAudit`);
+          return { id: `audit-3` };
+        }),
+      },
+      $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => {
+        const result = await callback(tx as never);
+        events.push(`commit`);
+        return result;
+      }),
+    };
+    const mailingService = {
+      sendAdminV2PasswordResetEmail: jest.fn(async () => {
+        events.push(`sendMail`);
+        return true;
+      }),
+    };
+    const service = new AdminV2AdminsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      {} as never,
+      mailingService as never,
+      { normalizeOrigin: jest.fn((value: string) => value) } as never,
+    );
+    Object.assign(service as object, {
+      resolveAdminV2Origin: () => `https://admin-v2.example.com`,
+    });
+
+    await expect(service.requestPasswordReset({ email: `ops@example.com` })).resolves.toBeUndefined();
+    expect(tx.adminActionAuditLogModel.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        adminId: `admin-2`,
+        action: `admin_password_reset`,
+        resource: `admin`,
+        resourceId: `admin-2`,
+        metadata: expect.objectContaining({
+          targetEmail: `ops@example.com`,
+          initiatedBy: `self_service`,
+          deliveryStatus: `pending`,
+        }),
+      }),
+      select: { id: true },
+    });
+    expect(mailingService.sendAdminV2PasswordResetEmail).toHaveBeenCalledWith({
+      email: `ops@example.com`,
+      forgotPasswordLink: expect.stringContaining(`https://admin-v2.example.com/reset-password?token=`),
+    });
+    expect(events).toEqual([`invalidatePrevious`, `createReset`, `createAudit`, `commit`, `sendMail`, `updateAudit`]);
+  });
+
+  it(`requestPasswordReset stays generic for unknown admins`, async () => {
+    const prisma = {
+      adminModel: {
+        findFirst: jest.fn(async () => null),
+      },
+    };
+    const mailingService = {
+      sendAdminV2PasswordResetEmail: jest.fn(async () => true),
+    };
+    const service = new AdminV2AdminsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      {} as never,
+      mailingService as never,
+      {} as never,
+    );
+
+    await expect(service.requestPasswordReset({ email: `missing@example.com` })).resolves.toBeUndefined();
+    expect(mailingService.sendAdminV2PasswordResetEmail).not.toHaveBeenCalled();
+  });
+
   it(`resetPasswordWithToken revokes legacy access refresh records`, async () => {
     const tx = {
       resetPasswordModel: {

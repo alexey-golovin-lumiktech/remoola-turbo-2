@@ -215,6 +215,8 @@ export class AdminV2VerificationService {
     stripeIdentityStatus?: string;
     country?: string;
     contractorKind?: string;
+    missingProfileData?: boolean;
+    missingDocuments?: boolean;
   }): Promise<number> {
     const where: Prisma.ConsumerModelWhereInput = {
       deletedAt: null,
@@ -231,6 +233,46 @@ export class AdminV2VerificationService {
         : {}),
       ...(filters?.country?.trim() ? { addressDetails: { is: { country: filters.country.trim() } } } : {}),
     };
+
+    if (filters?.missingProfileData === true || filters?.missingDocuments === true) {
+      const rows = await this.prisma.consumerModel.findMany({
+        where,
+        select: {
+          accountType: true,
+          personalDetails: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          organizationDetails: {
+            select: {
+              name: true,
+            },
+          },
+          addressDetails: {
+            select: {
+              country: true,
+            },
+          },
+          _count: {
+            select: {
+              consumerResources: {
+                where: { deletedAt: null, resource: { deletedAt: null } },
+              },
+            },
+          },
+        },
+      });
+
+      return rows.filter((item) => {
+        const missingProfileData = hasMissingProfileData(item);
+        const missingDocuments = item._count.consumerResources === 0;
+        if (filters.missingProfileData === true && !missingProfileData) return false;
+        if (filters.missingDocuments === true && !missingDocuments) return false;
+        return true;
+      }).length;
+    }
 
     return this.prisma.consumerModel.count({ where });
   }

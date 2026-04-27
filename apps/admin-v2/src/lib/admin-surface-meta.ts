@@ -52,7 +52,7 @@ export const OPERATIONAL_ALERT_WORKSPACE_META: Record<OperationalAlertWorkspace,
   },
   verification_queue: {
     sectionTitle: `Verification queue alerts`,
-    sectionCaption: `Threshold-based monitoring on verification queue size (filtered or total).`,
+    sectionCaption: `Threshold-based monitoring on verification queue size with the same filter semantics as saved views.`,
     createTitle: `New verification queue alert`,
     namePlaceholder: `e.g. Verification queue backlog`,
   },

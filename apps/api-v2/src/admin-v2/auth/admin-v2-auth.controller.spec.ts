@@ -25,6 +25,7 @@ const buildOriginResolver = () => ({
 
 const buildAdminsService = () => ({
   acceptInvitation: jest.fn(async () => ({ accepted: true })),
+  requestPasswordReset: jest.fn(async () => undefined),
   resetPasswordWithToken: jest.fn(async () => ({ success: true })),
 });
 
@@ -67,6 +68,18 @@ const buildController = (overrides?: {
 };
 
 describe(`AdminV2AuthController`, () => {
+  describe(`requestPasswordReset`, () => {
+    it(`returns a generic recovery response and delegates to admins service`, async () => {
+      const { controller, adminsService } = buildController();
+
+      await expect(controller.requestPasswordReset({ email: `admin@example.com` })).resolves.toEqual({
+        message: `If an active admin account exists, we sent recovery instructions.`,
+        recoveryMode: `generic`,
+      });
+      expect(adminsService.requestPasswordReset).toHaveBeenCalledWith({ email: `admin@example.com` });
+    });
+  });
+
   describe(`revokeSession`, () => {
     const csrfCookieKey = `__Host-admin_csrf_token`;
 

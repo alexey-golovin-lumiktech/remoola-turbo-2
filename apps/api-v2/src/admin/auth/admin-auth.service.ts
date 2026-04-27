@@ -12,6 +12,8 @@ import { Credentials } from '../../dtos/admin';
 import { IJwtTokenPayload } from '../../dtos/consumer';
 import { envs } from '../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
+import { MailingService } from '../../shared/mailing.service';
+import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils, secureCompare } from '../../shared-common';
 
@@ -23,6 +25,21 @@ export type AdminLoginContext = {
 
 const ADMIN_AUTH_SESSION_LIST_RETENTION_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000;
+
+function normalizeOriginCandidate(candidate: string | null | undefined): string | null {
+  if (!candidate) return null;
+  const trimmed = candidate.trim();
+  if (!trimmed || trimmed === `ADMIN_V2_APP_ORIGIN` || trimmed === `ADMIN_APP_ORIGIN`) {
+    return null;
+  }
+  const withScheme = trimmed.includes(`://`) ? trimmed : `https://${trimmed}`;
+  try {
+    return new URL(withScheme).origin;
+  } catch {
+    return null;
+  }
+}
 
 export type AdminAuthSessionView = {
   id: string;
@@ -49,6 +66,8 @@ export class AdminAuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly authAudit: AuthAuditService,
+    private readonly mailingService: MailingService,
+    private readonly originResolver: OriginResolverService,
   ) {}
 
   async login(body: Credentials, ctx?: AdminLoginContext) {
@@ -275,7 +294,7 @@ export class AdminAuthService {
 
     const token = oauthCrypto.generateOAuthState();
     const tokenHash = this.hashToken(token);
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.resetPasswordModel.updateMany({
@@ -292,21 +311,24 @@ export class AdminAuthService {
       });
     });
 
-    // The prerequisite slice only lands the reset artifact foundation.
-    // The verify/reset contract for admin-v2 is not implemented yet, so we must
-    // not dispatch an email that points to a non-existent route.
-    this.logger.warn({
-      event: `admin_auth_password_reset_email_deferred`,
-      adminId: admin.id,
-      appScope: `admin-v2`,
-      reason: `verify_contract_missing`,
+    const directOrigin = normalizeOriginCandidate(envs.ADMIN_V2_APP_ORIGIN);
+    const legacyOrigin = normalizeOriginCandidate(envs.ADMIN_APP_ORIGIN);
+    const originCandidate = directOrigin ?? legacyOrigin;
+    if (!originCandidate) {
+      throw new BadRequestException(`Admin v2 app origin is not configured`);
+    }
+    const resetUrl = new URL(`/reset-password`, this.originResolver.normalizeOrigin(originCandidate));
+    resetUrl.searchParams.set(`token`, token);
+    const emailDispatched = await this.mailingService.sendAdminV2PasswordResetEmail({
+      email: admin.email,
+      forgotPasswordLink: resetUrl.toString(),
     });
 
     return {
       adminId: admin.id,
       expiresAt: expiresAt.toISOString(),
-      emailDispatched: false as const,
-      deliveryStatus: `verify_contract_missing` as const,
+      emailDispatched,
+      deliveryStatus: emailDispatched ? (`sent` as const) : (`failed` as const),
     };
   }
 

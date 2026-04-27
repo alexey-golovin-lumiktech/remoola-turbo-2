@@ -53,12 +53,19 @@ export type AdminV2Capability =
   | `saved_views.manage`
   | `alerts.manage`;
 
-export type AdminV2AccessSource = `bridge` | `schema` | `bridge-fallback`;
+export type AdminV2BootstrapReason =
+  | `schema_role_missing`
+  | `schema_role_unknown`
+  | `schema_capabilities_invalid`
+  | `schema_missing_me_read`;
+
+export type AdminV2AccessSource = `bridge` | `schema` | `bridge-bootstrap`;
 export type AdminV2AccessProfile = {
   role: AdminV2Role | null;
   capabilities: AdminV2Capability[];
   workspaces: AdminV2Workspace[];
   source: AdminV2AccessSource;
+  bootstrapReason?: AdminV2BootstrapReason;
 };
 
 export const KNOWN_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [

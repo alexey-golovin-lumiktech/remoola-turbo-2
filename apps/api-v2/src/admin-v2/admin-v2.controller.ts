@@ -22,6 +22,8 @@ export class AdminV2Controller {
       email: admin.email,
       type: admin.type,
       role: profile.role,
+      source: profile.source,
+      bootstrapReason: profile.bootstrapReason ?? null,
       phase: `MVP-3 system maturity kickoff`,
       capabilities: profile.capabilities,
       workspaces: profile.workspaces,
