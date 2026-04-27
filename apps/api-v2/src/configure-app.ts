@@ -10,7 +10,6 @@ import helmet from 'helmet';
 
 import { isAdminApiPath, CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 
-import { AdminModule } from './admin/admin.module';
 import { AdminV2Module } from './admin-v2/admin-v2.module';
 import {
   ConsumerActionInterceptor,
@@ -72,7 +71,7 @@ function setupSwagger(app: INestApplication): void {
   const adminConfig = buildSwaggerCookieAuthDocumentConfig(`admin`, linkTo(`Consumer`));
 
   const adminDocument = SwaggerModule.createDocument(app, adminConfig, {
-    include: [AdminModule, AdminV2Module],
+    include: [AdminV2Module],
     deepScanRoutes: true,
   });
 

@@ -8,14 +8,14 @@ import { oauthCrypto } from '@remoola/security-utils';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { ADMIN_AUTH_SESSION_REVOKE_REASONS, type AdminAuthSessionRevokeReason } from './admin-auth-session-reasons';
-import { Credentials } from '../../dtos/admin';
-import { IJwtTokenPayload } from '../../dtos/consumer';
-import { envs } from '../../envs';
-import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
-import { MailingService } from '../../shared/mailing.service';
-import { OriginResolverService } from '../../shared/origin-resolver.service';
-import { PrismaService } from '../../shared/prisma.service';
-import { passwordUtils, secureCompare } from '../../shared-common';
+import { Credentials } from '../dtos/admin';
+import { type IJwtTokenPayload } from '../dtos/consumer';
+import { envs } from '../envs';
+import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../shared/auth-audit.service';
+import { MailingService } from '../shared/mailing.service';
+import { OriginResolverService } from '../shared/origin-resolver.service';
+import { PrismaService } from '../shared/prisma.service';
+import { passwordUtils, secureCompare } from '../shared-common';
 
 export type AdminLoginContext = {
   ipAddress?: string | null;

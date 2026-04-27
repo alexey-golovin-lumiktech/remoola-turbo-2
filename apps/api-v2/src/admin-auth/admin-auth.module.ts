@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
 import { AdminAuthService } from './admin-auth.service';
-import { envs } from '../../envs';
-import { AuthAuditModule } from '../../shared/auth-audit.module';
-import { DatabaseModule } from '../../shared/database.module';
-import { MailingModule } from '../../shared/mailing.module';
+import { envs } from '../envs';
+import { AuthAuditModule } from '../shared/auth-audit.module';
+import { DatabaseModule } from '../shared/database.module';
+import { MailingModule } from '../shared/mailing.module';
 
 @Module({
   imports: [

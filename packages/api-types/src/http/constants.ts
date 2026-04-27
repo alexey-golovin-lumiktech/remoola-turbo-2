@@ -22,7 +22,7 @@ const LOCAL_CONSUMER_CSS_GRID_GOOGLE_OAUTH_STATE = `consumer_css_grid_google_oau
 const LOCAL_CONSUMER_CSS_GRID_GOOGLE_SIGNUP_SESSION = `consumer_css_grid_google_signup_session` as const;
 
 export const COOKIE_KEYS = {
-  /** Admin auth; use for /api/admin/* so admin and consumer sessions coexist. */
+  /** Admin auth; use for /api/admin-v2/* so admin and consumer sessions coexist. */
   ADMIN_ACCESS_TOKEN: `__Host-admin_access_token`,
   ADMIN_REFRESH_TOKEN: `__Host-admin_refresh_token`,
   ADMIN_CSRF_TOKEN: `__Host-admin_csrf_token`,

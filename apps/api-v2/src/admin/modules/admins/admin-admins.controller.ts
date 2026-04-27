@@ -7,11 +7,11 @@ import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminAdminsService } from './admin-admins.service';
 import { AdminAdminsListQuery, AdminPasswordPatchBody, AdminUpdateBody } from './dto';
+import { AdminAuthService } from '../../../admin-auth/admin-auth.service';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 import { StripeWebhookService } from '../../../consumer/modules/payment-methods/stripe-webhook.service';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../../shared/admin-action-audit.service';
-import { AdminAuthService } from '../../auth/admin-auth.service';
 
 function one(v: string | string[] | undefined): string | undefined {
   return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;

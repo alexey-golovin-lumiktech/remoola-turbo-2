@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -10,13 +11,13 @@ import { JwtService } from '@nestjs/jwt';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 
-import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin/auth/admin-auth-session-reasons';
+import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin-auth/admin-auth-session-reasons';
 import { envs } from '../../envs';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { PrismaService } from '../../shared/prisma.service';
-import { passwordUtils } from '../../shared-common';
+import { hashPassword, passwordUtils } from '../../shared-common';
 import { ADMIN_V2_SCHEMA_ROLES, OVERRIDABLE_ADMIN_V2_CAPABILITIES } from '../admin-v2-access';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
@@ -137,6 +138,8 @@ function buildActiveInvitationStatus(
 
 @Injectable()
 export class AdminV2AdminsService {
+  private readonly logger = new Logger(AdminV2AdminsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly accessService: AdminV2AccessService,
@@ -190,6 +193,37 @@ export class AdminV2AdminsService {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  private async recordAdminActionAudit(params: {
+    adminId: string;
+    action: string;
+    resourceId: string;
+    metadata?: Prisma.InputJsonValue;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+  }): Promise<void> {
+    try {
+      await this.prisma.adminActionAuditLogModel.create({
+        data: {
+          adminId: params.adminId,
+          action: params.action,
+          resource: `admin`,
+          resourceId: params.resourceId,
+          metadata: params.metadata ?? Prisma.JsonNull,
+          ipAddress: params.ipAddress ?? null,
+          userAgent: params.userAgent ?? null,
+        },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to record admin compatibility audit ${JSON.stringify({
+          action: params.action,
+          resourceId: params.resourceId,
+          message: error instanceof Error ? error.message : String(error),
+        })}`,
+      );
     }
   }
 
@@ -562,6 +596,78 @@ export class AdminV2AdminsService {
       updatedAt: admin.updatedAt.toISOString(),
       staleWarning: false,
       dataFreshnessClass: `exact`,
+    };
+  }
+
+  async patchAdminPassword(targetAdminId: string, password: string, actorAdminId: string, meta: RequestMeta) {
+    const { hash, salt } = await hashPassword(password);
+    const updated = await this.prisma.adminModel.update({
+      where: { id: targetAdminId },
+      data: { password: hash, salt },
+      select: {
+        id: true,
+        email: true,
+        type: true,
+        deletedAt: true,
+        updatedAt: true,
+      },
+    });
+
+    await this.recordAdminActionAudit({
+      adminId: actorAdminId,
+      action: ADMIN_ACTION_AUDIT_ACTIONS.admin_password_change,
+      resourceId: updated.id,
+      metadata: {
+        targetEmail: updated.email,
+      },
+      ipAddress: meta.ipAddress ?? null,
+      userAgent: meta.userAgent ?? null,
+    });
+
+    return {
+      adminId: updated.id,
+      email: updated.email,
+      type: updated.type,
+      status: deriveStatus(updated.deletedAt),
+      version: deriveVersion(updated.updatedAt),
+    };
+  }
+
+  async updateAdminStatus(
+    targetAdminId: string,
+    action: `delete` | `restore`,
+    actorAdminId: string,
+    meta: RequestMeta,
+  ) {
+    const updated = await this.prisma.adminModel.update({
+      where: { id: targetAdminId },
+      data: {
+        deletedAt: action === `delete` ? new Date() : null,
+      },
+      select: {
+        id: true,
+        email: true,
+        deletedAt: true,
+        updatedAt: true,
+      },
+    });
+
+    await this.recordAdminActionAudit({
+      adminId: actorAdminId,
+      action: action === `delete` ? ADMIN_ACTION_AUDIT_ACTIONS.admin_delete : ADMIN_ACTION_AUDIT_ACTIONS.admin_restore,
+      resourceId: updated.id,
+      metadata: {
+        targetEmail: updated.email,
+      },
+      ipAddress: meta.ipAddress ?? null,
+      userAgent: meta.userAgent ?? null,
+    });
+
+    return {
+      adminId: updated.id,
+      status: deriveStatus(updated.deletedAt),
+      deletedAt: toNullableIso(updated.deletedAt),
+      version: deriveVersion(updated.updatedAt),
     };
   }
 

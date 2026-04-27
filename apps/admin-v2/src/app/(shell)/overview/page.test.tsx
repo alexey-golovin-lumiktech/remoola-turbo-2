@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import type * as AdminApi from '../../../lib/admin-api.server';
+
 jest.mock(`next/link`, () => ({
   __esModule: true,
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
@@ -23,11 +25,9 @@ jest.mock(`../../../lib/quickstart-investigations`, () => ({
   normalizeQuickstartEyebrow: jest.fn((value: string) => value),
 }));
 
-const { getAdminIdentity, getOverviewSummary, getQuickstarts } = jest.requireMock(`../../../lib/admin-api.server`) as {
-  getAdminIdentity: jest.Mock;
-  getOverviewSummary: jest.Mock;
-  getQuickstarts: jest.Mock;
-};
+const { getAdminIdentity, getOverviewSummary, getQuickstarts } = jest.requireMock(
+  `../../../lib/admin-api.server`,
+) as jest.Mocked<typeof AdminApi>;
 
 describe(`admin-v2 overview page`, () => {
   beforeEach(() => {
@@ -45,8 +45,8 @@ describe(`admin-v2 overview page`, () => {
       featureMaturity: `selective-operator-platform`,
       capabilities: [`overview.read`],
       workspaces: [`overview`, `verification`, `payments`, `ledger`],
-    });
-    getQuickstarts.mockResolvedValue([]);
+    } as never);
+    getQuickstarts.mockResolvedValue([] as never);
   });
 
   it(`counts live workspaces from phaseStatus instead of availability`, async () => {
@@ -118,7 +118,7 @@ describe(`admin-v2 overview page`, () => {
           href: `/exchange/rates?stale=true`,
         },
       },
-    });
+    } as never);
 
     const OverviewPage = (await import(`./page`)).default;
     const markup = renderToStaticMarkup(await OverviewPage());

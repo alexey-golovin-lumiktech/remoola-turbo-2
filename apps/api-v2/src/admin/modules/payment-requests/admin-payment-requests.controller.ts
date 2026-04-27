@@ -7,8 +7,8 @@ import { type AdminModel } from '@remoola/database-2';
 
 import { AdminPaymentRequestsService } from './admin-payment-requests.service';
 import { AdminExpectationDateArchiveQuery, AdminPaymentRequestsListQuery, PaymentReversalBody } from './dto';
+import { AdminAuthService } from '../../../admin-auth/admin-auth.service';
 import { Identity } from '../../../common';
-import { AdminAuthService } from '../../auth/admin-auth.service';
 
 function one(v: string | string[] | undefined): string | undefined {
   return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;

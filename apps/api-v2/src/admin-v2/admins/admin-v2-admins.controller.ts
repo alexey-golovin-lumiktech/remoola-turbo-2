@@ -1,12 +1,16 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import express from 'express';
 
+import { adminErrorCodes } from '@remoola/shared-constants';
+
+import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
+import { constants } from '../../shared-common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2AdminSessionsService } from './admin-v2-admin-sessions.service';
 import { AdminV2AdminsService } from './admin-v2-admins.service';
@@ -91,6 +95,30 @@ class ChangeAdminPermissionsBodyDTO extends VersionedAdminMutationBodyDTO {
   capabilityOverrides!: PermissionOverrideDTO[];
 }
 
+class AdminPasswordPatchBodyDTO {
+  @Expose()
+  @IsString()
+  @Matches(constants.PASSWORD_RE, { message: constants.INVALID_PASSWORD })
+  password!: string;
+
+  @Expose()
+  @IsString()
+  @MaxLength(256)
+  passwordConfirmation!: string;
+}
+
+class LegacyAdminStatusBodyDTO {
+  @Expose()
+  @IsIn([`delete`, `restore`])
+  action!: `delete` | `restore`;
+
+  @Expose()
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  passwordConfirmation?: string;
+}
+
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Admins`)
@@ -101,6 +129,7 @@ export class AdminV2AdminsController {
     private readonly service: AdminV2AdminsService,
     private readonly accessService: AdminV2AccessService,
     private readonly adminSessionsService: AdminV2AdminSessionsService,
+    private readonly adminAuthService: AdminAuthService,
   ) {}
 
   @Get()
@@ -183,6 +212,45 @@ export class AdminV2AdminsController {
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     return this.service.resetAdminPassword(id, admin.id, body, requestMeta(req));
+  }
+
+  @Patch(`:id/password`)
+  async patchAdminPassword(
+    @Identity() admin: IIdentityContext,
+    @Param(`id`) id: string,
+    @Body() body: AdminPasswordPatchBodyDTO,
+    @Req() req: express.Request,
+  ) {
+    await this.accessService.assertCapability(admin, `admins.manage`);
+    if (admin.type !== `SUPER`) {
+      throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_SUPER_CAN_CHANGE_PASSWORDS);
+    }
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    return this.service.patchAdminPassword(id, body.password, admin.id, requestMeta(req));
+  }
+
+  @Patch(`:id`)
+  async updateAdminStatus(
+    @Identity() admin: IIdentityContext,
+    @Param(`id`) id: string,
+    @Body() body: LegacyAdminStatusBodyDTO,
+    @Req() req: express.Request,
+  ) {
+    await this.accessService.assertCapability(admin, `admins.manage`);
+    if (admin.type !== `SUPER`) {
+      throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_SUPER_CAN_UPDATE_ADMINS);
+    }
+    if (body.action === `delete` && id === admin.id) {
+      throw new BadRequestException(adminErrorCodes.ADMIN_CANNOT_DELETE_YOURSELF);
+    }
+    if (body.action === `delete`) {
+      const confirmation = typeof body.passwordConfirmation === `string` ? body.passwordConfirmation.trim() : ``;
+      if (confirmation.length === 0) {
+        throw new BadRequestException(adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED);
+      }
+      await this.adminAuthService.verifyStepUp(admin.id, confirmation);
+    }
+    return this.service.updateAdminStatus(id, body.action, admin.id, requestMeta(req));
   }
 
   @Get(`:id/sessions`)

@@ -50,13 +50,24 @@ describe(`AdminV2AdminsController`, () => {
         changeAdminRole: jest.fn(),
         changeAdminPermissions: jest.fn(),
         resetAdminPassword: jest.fn(),
+        patchAdminPassword: jest.fn(),
+        updateAdminStatus: jest.fn(),
       };
+      const verifyStepUp = jest.fn(async () => undefined);
       const controller = new AdminV2AdminsController(
         adminsService as never,
         { assertCapability } as never,
         { listSessionsForAdmin, revokeSessionAsManager } as never,
+        { verifyStepUp } as never,
       );
-      return { controller, assertCapability, listSessionsForAdmin, revokeSessionAsManager };
+      return {
+        controller,
+        assertCapability,
+        listSessionsForAdmin,
+        revokeSessionAsManager,
+        adminsService,
+        verifyStepUp,
+      };
     }
 
     const actor = { id: `admin-1`, email: `admin@example.com`, type: `SUPER`, sessionId: `session-self` } as never;
@@ -115,6 +126,39 @@ describe(`AdminV2AdminsController`, () => {
         BadRequestException,
       );
       expect(revokeSessionAsManager).not.toHaveBeenCalled();
+    });
+
+    it(`patchAdminPassword: verifies step-up and delegates`, async () => {
+      const { controller, assertCapability, adminsService, verifyStepUp } = buildSessionsHarness();
+      adminsService.patchAdminPassword.mockResolvedValue({ adminId: `admin-2` });
+
+      const result = await controller.patchAdminPassword(
+        actor,
+        `admin-2`,
+        { password: `NewValid1!@#abc`, passwordConfirmation: `Current1!@#abc` } as never,
+        buildReq(),
+      );
+
+      expect(assertCapability).toHaveBeenCalledWith(actor, `admins.manage`);
+      expect(verifyStepUp).toHaveBeenCalledWith(`admin-1`, `Current1!@#abc`);
+      expect(adminsService.patchAdminPassword).toHaveBeenCalledWith(
+        `admin-2`,
+        `NewValid1!@#abc`,
+        `admin-1`,
+        expect.objectContaining({ ipAddress: `203.0.113.5`, userAgent: `jest`, idempotencyKey: `idem-7` }),
+      );
+      expect(result).toEqual({ adminId: `admin-2` });
+    });
+
+    it(`updateAdminStatus: requires delete confirmation password`, async () => {
+      const { controller, adminsService, verifyStepUp } = buildSessionsHarness();
+
+      await expect(
+        controller.updateAdminStatus(actor, `admin-2`, { action: `delete` } as never, buildReq()),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(verifyStepUp).not.toHaveBeenCalled();
+      expect(adminsService.updateAdminStatus).not.toHaveBeenCalled();
     });
   });
 });

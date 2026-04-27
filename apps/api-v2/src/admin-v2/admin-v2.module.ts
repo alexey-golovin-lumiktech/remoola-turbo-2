@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { AdminV2SharedModule } from './admin-v2-shared.module';
 import { AdminV2Controller } from './admin-v2.controller';
 import { AdminV2AdminsModule } from './admins/admin-v2-admins.module';
-import { AdminAuthModule } from '../admin/auth/admin-auth.module';
+import { AdminAuthModule } from '../admin-auth/admin-auth.module';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 import { AdminV2AssignmentsModule } from './assignments/admin-v2-assignments.module';
 import { AdminV2AuditModule } from './audit/admin-v2-audit.module';

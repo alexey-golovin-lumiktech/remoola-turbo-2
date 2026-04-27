@@ -88,7 +88,7 @@ describe(`deviceIdMiddleware`, () => {
   });
 
   it(`does not set deviceId for non-consumer path`, (done) => {
-    const req = mockReq({ path: `/api/admin/users` });
+    const req = mockReq({ path: `/api/admin-v2/users` });
     const res = mockRes();
     const next = jest.fn(() => {
       expect(req.deviceId).toBeUndefined();

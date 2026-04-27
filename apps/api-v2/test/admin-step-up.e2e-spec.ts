@@ -106,7 +106,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
     await app.close();
   });
 
-  describe(`PATCH /api/admin/admins/:adminId/password (step-up required)`, () => {
+  describe(`PATCH /api/admin-v2/admins/:adminId/password (step-up required)`, () => {
     it(`returns 400 when passwordConfirmation is missing`, async () => {
       const agent = request.agent(app.getHttpServer());
       const loginRes = await agent
@@ -118,7 +118,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
       expect(csrf).toBeTruthy();
 
       const res = await agent
-        .patch(`/api/admin/admins/${targetAdminId}/password`)
+        .patch(`/api/admin-v2/admins/${targetAdminId}/password`)
         .set(`origin`, adminOrigin)
         .set(`x-csrf-token`, csrf ?? ``)
         .send({ password: `NewValid1!@#abc` })
@@ -140,7 +140,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
       expect(csrf).toBeTruthy();
 
       const res = await agent
-        .patch(`/api/admin/admins/${targetAdminId}/password`)
+        .patch(`/api/admin-v2/admins/${targetAdminId}/password`)
         .set(`origin`, adminOrigin)
         .set(`x-csrf-token`, csrf ?? ``)
         .send({ password: `NewValid1!@#abc`, passwordConfirmation: `` })
@@ -161,7 +161,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
       expect(csrf).toBeTruthy();
 
       const res = await agent
-        .patch(`/api/admin/admins/${targetAdminId}/password`)
+        .patch(`/api/admin-v2/admins/${targetAdminId}/password`)
         .set(`origin`, adminOrigin)
         .set(`x-csrf-token`, csrf ?? ``)
         .send({ password: `NewValid1!@#abc`, passwordConfirmation: `WrongPassword1!@#` })
@@ -172,7 +172,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
     });
   });
 
-  describe(`PATCH /api/admin/admins/:adminId (delete, step-up required)`, () => {
+  describe(`PATCH /api/admin-v2/admins/:adminId (delete, step-up required)`, () => {
     it(`returns 400 when passwordConfirmation is missing for delete`, async () => {
       const agent = request.agent(app.getHttpServer());
       const loginRes = await agent
@@ -184,7 +184,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
       expect(csrf).toBeTruthy();
 
       const res = await agent
-        .patch(`/api/admin/admins/${targetAdminId}`)
+        .patch(`/api/admin-v2/admins/${targetAdminId}`)
         .set(`origin`, adminOrigin)
         .set(`x-csrf-token`, csrf ?? ``)
         .send({ action: `delete` })
@@ -205,7 +205,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
       expect(csrf).toBeTruthy();
 
       const res = await agent
-        .patch(`/api/admin/admins/${targetAdminId}`)
+        .patch(`/api/admin-v2/admins/${targetAdminId}`)
         .set(`origin`, adminOrigin)
         .set(`x-csrf-token`, csrf ?? ``)
         .send({ action: `delete`, passwordConfirmation: `WrongPassword1!@#` })

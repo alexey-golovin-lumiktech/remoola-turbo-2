@@ -93,11 +93,10 @@ Admin domain features:
 - Consumer management (list/details) and verification workflow (approve/reject/flag/more info).
 - Dashboard metrics: status totals, recent payment requests, ledger anomalies, verification queue.
 - Ledger list endpoint.
-- Payment requests listing, expectation-date archive, details, plus refund and chargeback actions (step-up password confirmation required for reversal).
-- Admin-side migration endpoint for payment method migration.
+- Payment requests listing, operations queue, details, plus refund and chargeback actions on `/api/admin-v2/payments/*` (step-up password confirmation required for reversal).
 - Exchange rate management (list/create/update/delete) and supported currencies.
 - Admin action audit: append-only `admin_action_audit_log`; sensitive actions (refund, chargeback, admin CRUD, consumer verification, exchange rate/rule/scheduled) recorded with admin id, action, resource, IP, user agent.
-- Audit read endpoints: GET `/admin/audit/auth` (auth_audit_log for admins, paginated, SUPER-only), GET `/admin/audit/actions` (admin_action_audit_log, paginated, filters, SUPER-only).
+- Audit read endpoints: GET `/admin-v2/audit/auth`, GET `/admin-v2/audit/admin-actions`, and GET `/admin-v2/audit/consumer-actions`.
 
 Infrastructure and platform:
 
@@ -108,7 +107,7 @@ Infrastructure and platform:
 - Invoice email/PDF template behavior: explicit `InvoiceForTemplate.payOnlineUrl`
   accepts only absolute `http(s)` URLs; invalid values fall back to the
   env-derived/default link (`CONSUMER_CSS_GRID_APP_ORIGIN` or local development default).
-- Nest API auth is namespaced under `/api/admin/auth` and `/api/consumer/auth` only (`JwtPassportModule` registers the shared JWT strategy; there is no root `/api/auth` controller on the API). The Admin Next.js app may expose BFF routes under `/api/auth/*` that proxy to backend admin auth.
+- Nest API auth is namespaced under `/api/admin-v2/auth` and `/api/consumer/auth` only (`JwtPassportModule` registers the shared JWT strategy; there is no root `/api/auth` controller on the API). The Admin Next.js app may expose BFF routes under `/api/auth/*` that proxy to backend admin auth.
 - Health endpoints (`/health`, `/health/detailed`, `/health/mail-transport`, `POST /health/test-email`) for service, DB, mail transport, and optional test-email.
 - CORS configuration and security headers (Helmet).
 - Rate limiting and response compression.

@@ -25,66 +25,39 @@ Root workflow highlights:
 
 ## API (NestJS) - Implemented Features
 
-Base backend lives in `apps/api-v2`, which is the maintained backend authority for `consumer-css-grid` and the synchronized auth-sensitive release surface documented in `docs/API_V2_PRODUCTION_RELEASE_GATE.md`. All API routes use the global prefix `/api` (e.g. `/api/admin/auth`, `/api/consumer/auth`). Auth on the Nest API is namespaced under `admin` and `consumer` only; shared JWT wiring lives under `apps/api-v2/src/auth` (`JwtPassportModule`, `JwtStrategy`) and does not expose a root `/api/auth` route. The Admin Next.js app may still use BFF paths like `/api/auth/login` that proxy to `/api/admin/auth` on the backend.
+Base backend lives in `apps/api-v2`, which is the maintained backend authority for `consumer-css-grid` and the synchronized auth-sensitive release surface documented in `docs/API_V2_PRODUCTION_RELEASE_GATE.md`. All API routes use the global prefix `/api` (e.g. `/api/admin-v2/auth`, `/api/consumer/auth`). Auth on the Nest API is namespaced under `admin-v2` and `consumer`; shared JWT wiring lives under `apps/api-v2/src/auth` (`JwtPassportModule`, `JwtStrategy`) and does not expose a root `/api/auth` route. The Admin Next.js app may still use BFF paths like `/api/auth/login` that proxy to `/api/admin-v2/auth` on the backend.
 
-### Admin APIs
+### Admin APIs (`/admin-v2/*`)
 
-Auth (`/admin/auth`):
+Auth (`/admin-v2/auth`):
 
 - `POST /login`: authenticate admin; sets access/refresh cookies.
 - `POST /refresh-access`: refresh access token.
 - `POST /logout`: clear auth cookies.
 - `GET /me`: current admin identity.
+- `GET /me/sessions`: list current admin sessions.
+- `POST /revoke-session`: revoke the current admin session or another owned session.
 
-Admins (`/admin/admins`):
+Admins (`/admin-v2/admins`):
 
 - `GET /`: list admins.
-- `POST /`: create admin (SUPER only).
-- `GET /:adminId`: admin details.
-- `PATCH /:adminId/password`: change admin password (SUPER only).
-- `PATCH /:adminId`: delete or restore admin (SUPER only).
-- `POST /system/migrate-payment-methods`: migration for payment methods (SUPER only).
+- `GET /:id`: admin details.
+- `PATCH /:id/password`: change admin password with step-up confirmation (SUPER only).
+- `PATCH /:id`: legacy-compatible delete/restore mutation on the maintained `admin-v2` surface (SUPER only).
+- `POST /invite`: create admin invitation.
+- `POST /:id/deactivate`, `POST /:id/restore`: versioned lifecycle mutations.
+- `POST /:id/role-change`, `POST /:id/permissions-change`, `POST /:id/password-reset`: schema-backed admin management mutations.
+- `GET /:id/sessions`, `POST /:id/sessions/:sessionId/revoke`: session operations for managed admins.
 
-Consumers (`/admin/consumers`):
+Payments (`/admin-v2/payments`):
 
-- `GET /`: list consumers.
-- `GET /:id`: consumer details.
-- `PATCH /:id/verification`: update verification status and reason.
+- `GET /`: list payment requests.
+- `GET /operations-queue`: operator follow-up queue.
+- `GET /:id`: payment request case details.
+- `POST /:id/refund`: create refund reversal for a payment request with step-up confirmation.
+- `POST /:id/chargeback`: create chargeback reversal for a payment request with step-up confirmation.
 
-Dashboard (`/admin/dashboard`):
-
-- `GET /stats`: high-level stats.
-- `GET /payment-requests-by-status`: distribution of payment request statuses.
-- `GET /recent-payment-requests`: recent requests list.
-- `GET /ledger-anomalies`: anomaly list for ledger.
-- `GET /verification-queue`: consumers awaiting verification.
-
-Ledger (`/admin/ledger`):
-
-- `GET /`: list ledger entries or ledger view data.
-
-Payment Requests (`/admin/payment-requests`):
-
-- `GET /`: list all payment requests.
-- `GET /expectation-date-archive`: list payment requests in expectation-date archive (query params).
-- `GET /:id`: payment request details.
-- `POST /:id/refund`: create refund reversal for a payment request.
-- `POST /:id/chargeback`: create chargeback reversal for a payment request.
-
-Exchange (`/admin/exchange`):
-
-- `GET /rules`: list auto-conversion rules across consumers.
-- `PATCH /rules/:ruleId`: update/override a rule.
-- `POST /rules/:ruleId/run`: force-run a rule immediately.
-- `GET /scheduled`: list scheduled FX conversions.
-- `POST /scheduled/:conversionId/cancel`: cancel a scheduled conversion.
-- `POST /scheduled/:conversionId/execute`: force-execute a scheduled conversion.
-- `GET /rates`: list exchange rates (with query filters).
-- `GET /rates/:rateId`: get exchange rate details.
-- `POST /rates`: create exchange rate.
-- `PATCH /rates/:rateId`: update exchange rate.
-- `DELETE /rates/:rateId`: delete exchange rate.
-- `GET /currencies`: list supported currencies.
+Consumers, ledger, exchange, audit, overview, verification, documents, payouts, quickstarts, saved views, operational alerts, and system slices all live under `/admin-v2/*`; the legacy `/api/admin/*` runtime surface has been retired.
 
 ### Consumer APIs
 

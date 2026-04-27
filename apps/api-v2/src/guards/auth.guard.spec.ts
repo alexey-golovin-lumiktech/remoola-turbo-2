@@ -100,8 +100,8 @@ describe(`AuthGuard`, () => {
 
   it(`rejects a consumer-scoped token on admin routes`, async () => {
     const request: MockRequest = {
-      path: `/api/admin/consumers`,
-      url: `/api/admin/consumers`,
+      path: `/api/admin-v2/consumers`,
+      url: `/api/admin-v2/consumers`,
       cookies: {
         [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: `token`,
       },
@@ -375,8 +375,8 @@ describe(`AuthGuard`, () => {
     const token = `admin-token`;
     const request: MockRequest = {
       method: `GET`,
-      path: `/api/admin/consumers`,
-      url: `/api/admin/consumers`,
+      path: `/api/admin-v2/consumers`,
+      url: `/api/admin-v2/consumers`,
       cookies: {
         [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
       },
@@ -397,8 +397,8 @@ describe(`AuthGuard`, () => {
     const token = `admin-token`;
     const request: MockRequest = {
       method: `GET`,
-      path: `/api/admin/consumers`,
-      url: `/api/admin/consumers`,
+      path: `/api/admin-v2/consumers`,
+      url: `/api/admin-v2/consumers`,
       cookies: {
         [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
       },
@@ -422,8 +422,8 @@ describe(`AuthGuard`, () => {
     const token = `admin-token`;
     const request: MockRequest = {
       method: `GET`,
-      path: `/api/admin/consumers`,
-      url: `/api/admin/consumers`,
+      path: `/api/admin-v2/consumers`,
+      url: `/api/admin-v2/consumers`,
       cookies: {
         [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
       },
@@ -450,8 +450,8 @@ describe(`AuthGuard`, () => {
     const token = `admin-token`;
     const request: MockRequest = {
       method: `GET`,
-      path: `/api/admin/consumers`,
-      url: `/api/admin/consumers`,
+      path: `/api/admin-v2/consumers`,
+      url: `/api/admin-v2/consumers`,
       cookies: {
         [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
       },
@@ -479,8 +479,8 @@ describe(`AuthGuard`, () => {
     const token = `admin-token`;
     const request: MockRequest = {
       method: `GET`,
-      path: `/api/admin/consumers`,
-      url: `/api/admin/consumers`,
+      path: `/api/admin-v2/consumers`,
+      url: `/api/admin-v2/consumers`,
       cookies: {
         [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
       },

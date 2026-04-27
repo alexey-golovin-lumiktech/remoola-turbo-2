@@ -1,7 +1,13 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { Expose } from 'class-transformer';
+import { IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
+import { PAYMENT_REVERSAL_KIND } from '@remoola/api-types';
+
+import { AdminPaymentRequestsService } from '../../admin/modules/payment-requests/admin-payment-requests.service';
+import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
@@ -29,6 +35,25 @@ function parseDate(value: string | undefined): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
+class PaymentReversalBodyDTO {
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  amount?: number;
+
+  @Expose()
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+
+  @Expose()
+  @IsString()
+  @MaxLength(256)
+  passwordConfirmation!: string;
+}
+
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Payments`)
@@ -38,6 +63,8 @@ export class AdminV2PaymentsController {
   constructor(
     private readonly service: AdminV2PaymentsService,
     private readonly accessService: AdminV2AccessService,
+    private readonly adminAuthService: AdminAuthService,
+    private readonly adminPaymentRequestsService: AdminPaymentRequestsService,
   ) {}
 
   @Get()
@@ -73,5 +100,35 @@ export class AdminV2PaymentsController {
   async getPaymentRequestCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
     await this.accessService.assertCapability(admin, `payments.read`);
     return this.service.getPaymentRequestCase(id);
+  }
+
+  @Post(`:id/refund`)
+  async createRefund(
+    @Identity() admin: IIdentityContext,
+    @Param(`id`) id: string,
+    @Body() body: PaymentReversalBodyDTO,
+  ) {
+    // Keep legacy refund/chargeback availability during /api/admin -> /api/admin-v2 cutover.
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    return this.adminPaymentRequestsService.createReversal(
+      id,
+      { amount: body.amount, reason: body.reason, kind: PAYMENT_REVERSAL_KIND.REFUND },
+      admin.id,
+    );
+  }
+
+  @Post(`:id/chargeback`)
+  async createChargeback(
+    @Identity() admin: IIdentityContext,
+    @Param(`id`) id: string,
+    @Body() body: PaymentReversalBodyDTO,
+  ) {
+    // Keep legacy refund/chargeback availability during /api/admin -> /api/admin-v2 cutover.
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    return this.adminPaymentRequestsService.createReversal(
+      id,
+      { amount: body.amount, reason: body.reason, kind: PAYMENT_REVERSAL_KIND.CHARGEBACK },
+      admin.id,
+    );
   }
 }

@@ -50,7 +50,7 @@ describe(`swagger cookie auth helpers`, () => {
     expect(script).toContain(`window.fetch = function remoolaSwaggerCookieAuthFetch`);
     expect(script).toContain(`credentials = 'include'`);
     expect(script).toContain(getApiAdminCsrfTokenCookieKey());
-    expect(script).toContain(`/api/admin/`);
+    expect(script).toContain(`/api/admin-v2/`);
     expect(script).toContain(`protectedPathPrefixes.some`);
     expect(script).toContain(`method.toUpperCase()`);
     expect(script).toContain(`x-csrf-token`);

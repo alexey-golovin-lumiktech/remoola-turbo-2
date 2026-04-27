@@ -2,8 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { adminErrorCodes } from '@remoola/shared-constants';
 
-import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin/auth/admin-auth-session-reasons';
-import { AdminAuthService, type AdminAuthSessionView } from '../../admin/auth/admin-auth.service';
+import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin-auth/admin-auth-session-reasons';
+import { AdminAuthService, type AdminAuthSessionView } from '../../admin-auth/admin-auth.service';
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 

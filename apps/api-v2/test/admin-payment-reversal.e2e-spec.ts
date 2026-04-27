@@ -219,7 +219,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     expect(csrf).toBeTruthy();
 
     const first = await agent
-      .post(`/api/admin/payment-requests/${refundPaymentRequestId}/refund`)
+      .post(`/api/admin-v2/payments/${refundPaymentRequestId}/refund`)
       .set(`origin`, adminOrigin)
       .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 7, reason: `e2e-refund`, passwordConfirmation: adminPassword })
@@ -228,7 +228,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     expect(first.body?.kind).toBe(`REFUND`);
 
     const second = await agent
-      .post(`/api/admin/payment-requests/${refundPaymentRequestId}/refund`)
+      .post(`/api/admin-v2/payments/${refundPaymentRequestId}/refund`)
       .set(`origin`, adminOrigin)
       .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 7, reason: `e2e-refund`, passwordConfirmation: adminPassword })
@@ -269,7 +269,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     expect(csrf).toBeTruthy();
 
     const response = await agent
-      .post(`/api/admin/payment-requests/${chargebackPaymentRequestId}/chargeback`)
+      .post(`/api/admin-v2/payments/${chargebackPaymentRequestId}/chargeback`)
       .set(`origin`, adminOrigin)
       .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 5, reason: `e2e-chargeback`, passwordConfirmation: adminPassword })

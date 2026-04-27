@@ -18,7 +18,7 @@ const SWAGGER_CSRF_COOKIE_KEYS_BY_AUDIENCE: Record<SwaggerCookieAuthAudience, re
   consumer: [getApiConsumerCsrfTokenCookieKey()],
 };
 const SWAGGER_PROTECTED_PATH_PREFIXES_BY_AUDIENCE: Record<SwaggerCookieAuthAudience, readonly string[]> = {
-  admin: [`/api/admin/`],
+  admin: [`/api/admin-v2/`],
   consumer: [`/api/consumer/`],
 };
 

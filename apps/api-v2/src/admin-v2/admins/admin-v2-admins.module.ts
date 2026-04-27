@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
-import { AdminAuthModule } from '../../admin/auth/admin-auth.module';
+import { AdminAuthModule } from '../../admin-auth/admin-auth.module';
 import { envs } from '../../envs';
 import { MailingModule } from '../../shared/mailing.module';
 import { AdminV2SharedModule } from '../admin-v2-shared.module';

@@ -15,16 +15,16 @@ Swagger works best when opened on the same API origin that serves the docs page 
 Use this flow on `/docs/admin`:
 
 1. Open the Swagger page from the API origin you want to test.
-2. Run `POST /api/admin/auth/login` with the JSON body credentials.
+2. Run `POST /api/admin-v2/auth/login` with the JSON body credentials.
 3. Let the browser store the returned auth cookies on that API origin.
 4. Use `Try it out` on protected admin endpoints from the same page.
 
 Expected behavior:
 
 - the browser reuses the admin session cookies automatically
-- the Swagger page auto-sends `x-csrf-token` for same-origin `POST /api/admin/auth/refresh-access`
+- the Swagger page auto-sends `x-csrf-token` for same-origin `POST /api/admin-v2/auth/refresh-access`
 - no manual `Authorization` header is required
-- `POST /api/admin/auth/logout` clears the session cookies
+- `POST /api/admin-v2/auth/logout` clears the session cookies
 
 ## Consumer Swagger Flow
 
@@ -49,7 +49,7 @@ For same-origin Swagger usage, the docs page should mirror the readable CSRF coo
 - `POST /api/consumer/auth/refresh`
 - `POST /api/consumer/auth/logout`
 - `POST /api/consumer/auth/logout-all`
-- `POST /api/admin/auth/refresh-access`
+- `POST /api/admin-v2/auth/refresh-access`
 
 If one of these routes returns `Invalid CSRF token`, first log in again from the same Swagger page and retry from the same API origin.
 

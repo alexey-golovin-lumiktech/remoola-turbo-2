@@ -18,7 +18,7 @@ import express from 'express';
 
 import { oauthCrypto } from '@remoola/security-utils';
 
-import { AdminAuthService } from '../../admin/auth/admin-auth.service';
+import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
 import { ADMIN } from '../../dtos';
