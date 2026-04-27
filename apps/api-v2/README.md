@@ -60,5 +60,7 @@ root before running API-only commands.
 
 - This app depends on shared packages in `packages/*`, especially
   `@remoola/database-2`, `@remoola/api-types`, and `@remoola/env`.
+- The maintained admin backend surface is `/api/admin-v2/*`; legacy
+  `src/admin/modules/*` is not part of the runtime graph anymore.
 - Prefer the repo docs above over generic NestJS starter guidance when making
   changes in this codebase.

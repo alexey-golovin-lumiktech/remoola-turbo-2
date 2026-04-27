@@ -8,7 +8,7 @@ import { oauthCrypto } from '@remoola/security-utils';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { ADMIN_AUTH_SESSION_REVOKE_REASONS, type AdminAuthSessionRevokeReason } from './admin-auth-session-reasons';
-import { Credentials } from '../dtos/admin';
+import { BackofficeCredentials } from '../dtos/backoffice';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { envs } from '../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../shared/auth-audit.service';
@@ -70,7 +70,7 @@ export class AdminAuthService {
     private readonly originResolver: OriginResolverService,
   ) {}
 
-  async login(body: Credentials, ctx?: AdminLoginContext) {
+  async login(body: BackofficeCredentials, ctx?: AdminLoginContext) {
     const email = body.email?.trim()?.toLowerCase() ?? ``;
     await this.authAudit.checkLockoutAndRateLimit(AUTH_IDENTITY_TYPES.admin, email);
 

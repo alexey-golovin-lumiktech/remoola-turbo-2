@@ -57,7 +57,7 @@ Payments (`/admin-v2/payments`):
 - `POST /:id/refund`: create refund reversal for a payment request with step-up confirmation.
 - `POST /:id/chargeback`: create chargeback reversal for a payment request with step-up confirmation.
 
-Consumers, ledger, exchange, audit, overview, verification, documents, payouts, quickstarts, saved views, operational alerts, and system slices all live under `/admin-v2/*`; the legacy `/api/admin/*` runtime surface has been retired.
+Consumers, ledger, exchange, audit, overview, verification, documents, payouts, quickstarts, saved views, operational alerts, and system slices all live under `/admin-v2/*`; the legacy `/api/admin/*` runtime surface has been retired. Admin payment reversal logic also now lives on the maintained `admin-v2` path, so `apps/api-v2/src/admin/modules/*` is no longer part of the backend runtime graph.
 
 ### Consumer APIs
 

@@ -7,7 +7,7 @@ import { $Enums } from '@remoola/database-2';
 import { type IAdminCreate, type IAdminModel, type IAdminResponse, type IAdminUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
 
-class Admin extends BaseModel implements IAdminModel {
+class BackofficeAdminRecord extends BaseModel implements IAdminModel {
   @Expose()
   @IsString()
   @ApiProperty({ description: `Admin email address (used for authentication)` })
@@ -28,21 +28,23 @@ class Admin extends BaseModel implements IAdminModel {
   salt: string;
 }
 
-export class AdminResponse extends OmitType(Admin, [`deletedAt`] as const) implements IAdminResponse {}
+export class BackofficeAdminResponse
+  extends OmitType(BackofficeAdminRecord, [`deletedAt`] as const)
+  implements IAdminResponse {}
 
-export class AdminListResponse {
+export class BackofficeAdminListResponse {
   @Expose()
   @ApiProperty({ description: `Total number of admins in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ description: `Array of admin records`, required: true, type: [AdminResponse] })
-  @Type(() => AdminResponse)
-  data: AdminResponse[];
+  @ApiProperty({ description: `Array of admin records`, required: true, type: [BackofficeAdminResponse] })
+  @Type(() => BackofficeAdminResponse)
+  data: BackofficeAdminResponse[];
 }
 
-export class AdminCreate
-  extends PickType(Admin, [`email`, `password`, `type`] as const)
+export class BackofficeAdminCreate
+  extends PickType(BackofficeAdminRecord, [`email`, `password`, `type`] as const)
   implements Omit<IAdminCreate, `salt`> {}
 
-export class AdminUpdate extends PartialType(AdminCreate) implements IAdminUpdate {}
+export class BackofficeAdminUpdate extends PartialType(BackofficeAdminCreate) implements IAdminUpdate {}

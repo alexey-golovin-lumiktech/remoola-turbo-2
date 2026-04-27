@@ -1,2 +1,2 @@
-export * as ADMIN from './admin';
+export * as BACKOFFICE from './backoffice';
 export * as CONSUMER from './consumer';

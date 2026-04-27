@@ -21,8 +21,8 @@ import { oauthCrypto } from '@remoola/security-utils';
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
-import { ADMIN } from '../../dtos';
-import { Credentials } from '../../dtos/admin';
+import { BACKOFFICE } from '../../dtos';
+import { BackofficeCredentials } from '../../dtos/backoffice';
 import { envs } from '../../envs';
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
@@ -149,8 +149,8 @@ export class AdminV2AuthController {
   @Post(`login`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ operationId: `admin_v2_auth_login` })
-  @ApiOkResponse({ type: ADMIN.Access })
-  async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: Credentials) {
+  @ApiOkResponse({ type: BACKOFFICE.BackofficeAccess })
+  async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: BackofficeCredentials) {
     const resolvedOrigin = this.originResolver.resolveAdminRequestOrigin(req.headers.origin, req.headers.referer);
     if (!resolvedOrigin) {
       throw new UnauthorizedException(`Invalid request origin`);
@@ -170,7 +170,7 @@ export class AdminV2AuthController {
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiCookieAuth()
   @ApiOperation({ operationId: `admin_v2_refresh_access` })
-  @ApiOkResponse({ type: ADMIN.Access })
+  @ApiOkResponse({ type: BACKOFFICE.BackofficeAccess })
   async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
     this.ensureCsrf(req);
     const refreshToken = this.getRefreshTokenFromRequest(req);

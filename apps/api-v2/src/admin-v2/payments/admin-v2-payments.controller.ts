@@ -6,11 +6,11 @@ import { IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator'
 
 import { PAYMENT_REVERSAL_KIND } from '@remoola/api-types';
 
-import { AdminPaymentRequestsService } from '../../admin/modules/payment-requests/admin-payment-requests.service';
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { AdminV2PaymentReversalService } from './admin-v2-payment-reversal.service';
 import { AdminV2PaymentsService } from './admin-v2-payments.service';
 
 function one(value: string | string[] | undefined): string | undefined {
@@ -64,7 +64,7 @@ export class AdminV2PaymentsController {
     private readonly service: AdminV2PaymentsService,
     private readonly accessService: AdminV2AccessService,
     private readonly adminAuthService: AdminAuthService,
-    private readonly adminPaymentRequestsService: AdminPaymentRequestsService,
+    private readonly adminPaymentReversalService: AdminV2PaymentReversalService,
   ) {}
 
   @Get()
@@ -108,9 +108,8 @@ export class AdminV2PaymentsController {
     @Param(`id`) id: string,
     @Body() body: PaymentReversalBodyDTO,
   ) {
-    // Keep legacy refund/chargeback availability during /api/admin -> /api/admin-v2 cutover.
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
-    return this.adminPaymentRequestsService.createReversal(
+    return this.adminPaymentReversalService.createReversal(
       id,
       { amount: body.amount, reason: body.reason, kind: PAYMENT_REVERSAL_KIND.REFUND },
       admin.id,
@@ -123,9 +122,8 @@ export class AdminV2PaymentsController {
     @Param(`id`) id: string,
     @Body() body: PaymentReversalBodyDTO,
   ) {
-    // Keep legacy refund/chargeback availability during /api/admin -> /api/admin-v2 cutover.
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
-    return this.adminPaymentRequestsService.createReversal(
+    return this.adminPaymentReversalService.createReversal(
       id,
       { amount: body.amount, reason: body.reason, kind: PAYMENT_REVERSAL_KIND.CHARGEBACK },
       admin.id,

@@ -4,7 +4,7 @@ import { Matches } from 'class-validator';
 
 import { type EmailPasswordCredentials, constants, IsValidEmail } from '../../shared-common';
 
-export class Credentials implements EmailPasswordCredentials {
+export class BackofficeCredentials implements EmailPasswordCredentials {
   @Expose()
   @IsValidEmail({ message: constants.INVALID_EMAIL })
   @ApiProperty({ example: `regular.admin@wirebill.com` })

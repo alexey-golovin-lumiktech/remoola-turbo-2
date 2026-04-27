@@ -15,7 +15,7 @@ import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
-import { AdminPaymentRequestsService } from '../src/admin/modules/payment-requests/admin-payment-requests.service';
+import { AdminV2PaymentReversalService } from '../src/admin-v2/payments/admin-v2-payment-reversal.service';
 import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
@@ -160,7 +160,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
       imports: [AppModule],
     }).compile();
 
-    const adminPaymentRequestsService = moduleFixture.get(AdminPaymentRequestsService) as unknown as {
+    const adminPaymentRequestsService = moduleFixture.get(AdminV2PaymentReversalService) as unknown as {
       stripe: { refunds: { create: (...args: unknown[]) => Promise<{ id: string; status: string }> } };
     };
     const brevoMailService = moduleFixture.get(BrevoMailService) as unknown as {

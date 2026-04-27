@@ -30,7 +30,10 @@ export class OrganizationDetailsResponse
 
 export class OrganizationDetailsListResponse {
   @Expose()
-  @ApiProperty({ description: `Total number of organization details in the result set`, required: true })
+  @ApiProperty({
+    description: `Total number of organization details in the result set`,
+    required: true,
+  })
   count: number;
 
   @Expose()

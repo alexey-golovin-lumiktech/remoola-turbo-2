@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsNotEmpty } from 'class-validator';
 
-export class Access {
+export class BackofficeAccess {
   @Expose()
   @ApiProperty({ description: `Cookie-backed admin session was established successfully`, example: true })
   @IsNotEmpty()
