@@ -2634,7 +2634,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-04-24</summary>
 
 - **2026-04-24:**
@@ -2660,6 +2660,56 @@
 
   ### ⚠️ Notes
   - **No new migration surface:** The shell rollout, copy cleanup, origin hardening, support-flow changes, and helper extraction landed without introducing a new database migration or schema contract change.
+
+</details>
+
+<details open>
+<summary>2026-04-27</summary>
+
+- **2026-04-27:**
+
+  ### 🚀 Feature
+  - **Admin-v2 self-service password recovery:** Land the admin-v2 forgot-password entry point, BFF route (`/api/admin-v2/auth/forgot-password`), middleware allowlist update, and login CTA, and route reset emails through the admin-v2 origin instead of the legacy deferred path.
+  - **Typed operational alert authoring:** Replace the raw JSON operational-alert input on `/system/alerts` with typed operator forms and align alert evaluators plus verification queue counting with saved-view semantics for `missingProfileData` and `missingDocuments`.
+  - **Quickstart and capability surface expansion:** Widen quickstart navigation coverage, add quickstart contracts and capability-gate entries that require elevated access, and remove preview/read-only framing from active workspaces.
+  - **Mobile shell context and review-first surfaces:** Move admin-v2 mobile workspace context to a client pathname source so shell labels, active nav, and queue context update correctly across SPA transitions, split shell search and quick actions into reusable mobile-friendly components, and reframe `payments`, `payments/operations`, `payouts`, `audit`, `documents`, and detail pages around clearer review-first hierarchy and bucket navigation. Reduce `consumers/[consumerId]` scroll fatigue by collapsing large raw-object sections into preview-plus-details disclosures.
+
+  ### 🔐 Security / Production Safety
+  - **Auth refresh telemetry hardening:** Add `server-timing` metrics for protected-page refresh attempts on both success and login-redirect failure paths, and gate verbose `x-remoola-auth-refresh-*` headers behind `NEXT_PUBLIC_AUTH_TELEMETRY_HEADERS` so debug detail stays opt-in. Refresh remains scoped to admin cookies and still clears auth cookies on failure.
+  - **Bounded admin-v2 route error recovery:** Add `app/error.tsx` and `app/(shell)/error.tsx` so unexpected runtime failures surface a safe retry/navigation recovery flow instead of leaving auth-adjacent crashes in an unhandled state.
+  - **Schema-backed RBAC hardening:** Expose explicit `accessMode`, `featureMaturity`, and `bridge-bootstrap` reason metadata so `SUPER_ADMIN` break-glass access is treated as an explicit fallback rather than ambiguous rollout copy. Add idempotent startup repair/backfill in `apps/api-v2/src/bootstrap/admin-bootstrap-rbac.ts` so seeded admin rows missing `roleId` (`AdminType.SUPER -> SUPER_ADMIN`, `AdminType.ADMIN -> OPS_ADMIN`) recover into schema-backed RBAC instead of drifting in bootstrap mode.
+  - **Legacy `/api/admin/*` runtime retirement:** Move shared admin auth into `apps/api-v2/src/admin-auth`, add canonical admin-v2 replacements for step-up admin mutations and payment refund/chargeback flows, remove `AdminModule` plus `/api/admin/*` route publication from runtime and Swagger includes, and narrow admin path detection plus Swagger cookie auth to `/api/admin-v2/*` only. Session-bound admin auth, cookie/CSRF enforcement, step-up confirmation on sensitive admin and payment actions, and the existing idempotent, append-only payment reversal path are preserved.
+  - **Legacy admin module removal:** Delete the unused `apps/api-v2/src/admin/modules/*` runtime surface, move payment reversal handling into `AdminV2PaymentReversalService`, and rewire admin-v2 payments to the maintained service path. Append-only ledger reversal behavior and reversal idempotency are preserved by reusing the same service logic under the maintained module path.
+  - **Legacy app retirement and single-scope consumer alignment:** Remove legacy `apps/api`, `apps/consumer`, `apps/consumer-mobile`, and `apps/admin` from the maintained monorepo, align api-v2 auth, origin, mailing, and payment-link expectations with the canonical single-scope `consumer-css-grid` runtime, and keep request-vs-stored app-scope validation strict in consumer auth flows. Stripe webhook idempotency and append-only ledger behavior are preserved.
+  - **Marker-only payout escalation invariant:** Keep payout escalation explicitly marker-only in API copy so escalation records do not imply or mutate payout state, ledger outcomes, or downstream execution.
+  - **Stale auth/payment annotation cleanup:** Tighten inline guidance around best-effort cleanup and idempotent transitions in auth, logout, Stripe, balance, and webhook flows without changing behavior, mitigating drift from comments that could mislead future changes.
+
+  ### 🗄 Database & Migrations
+  - **No schema or migration changes today.** The bootstrap RBAC alignment is an idempotent runtime repair at startup, not a database migration; rollout is safe without a migration-first sequence.
+
+  ### 🧪 Testing
+  - **Auth refresh middleware coverage:** Add admin-v2 middleware tests for refresh success telemetry, failed-refresh redirect telemetry, and the verbose-header flag path.
+  - **Forgot-password and RBAC repair coverage:** Add targeted coverage for forgot-password requests, bootstrap role repair, and `SUPER_ADMIN` recovery from `bridge-bootstrap` back to `source=schema`, and extend alert, quickstart, and RBAC specs to cover the new typed UX and capability/repair paths.
+  - **Signal and quickstart contracts:** Add admin-v2 tests for overview signal counting and `SignalCard` clickability/degraded-state behavior, and extend api-v2 access and quickstart specs for the new `accessMode` / `featureMaturity` / `operatorModel` rollout contracts.
+  - **Legacy retirement regression:** Update reversal e2e coverage to resolve the new admin-v2 service path, refresh focused auth/swagger/controller specs against `/api/admin-v2/*` only, and rewrite stale auth, OAuth, Stripe, mailing, and admin payment-request specs that still asserted legacy `consumer-mobile` or legacy cookie namespaces. Restore green verification across `@remoola/api-v2`, `yarn test:v2-apps`, `@remoola/api-e2e`, and root `yarn test`.
+  - **Mobile shell stability:** Verify admin-v2 layout and `consumers/[consumerId]` page tests still pass after the shell context refactor (`yarn tsc --noEmit`, `(shell)/layout.test.tsx`, `(shell)/consumers/[consumerId]/page.test.tsx`).
+
+  ### 🛠 DevEx
+  - **Shared admin-v2 UI primitives:** Extend `panel.tsx`, `assignment-card.tsx`, `workspace-layout.tsx`, and `ui-classes.ts`, and restructure consumer, verification, payments, ledger, payouts, documents, payment-methods, admins, and audit pages around shared `Panel` + `WorkspaceLayout` + `ui-classes` so confirm blocks, destructive CTAs, secondary actions, and raw/debug disclosures follow one visual pattern. Reduce drift between legacy page-local form layouts and the current reusable component system. Verified with `yarn lint` and `yarn typecheck`.
+  - **Shell, queue, and auth surface alignment:** Normalize admin-v2 design tokens, shell chrome, sidebar, header, mobile navigation, panels, tables, queue cards, and auth screens (overview, system, alerts, ledger anomalies, payout case, admin case) without changing route behavior or data flow.
+  - **Operator rollout vocabulary alignment:** Add `operatorModel` to quickstart contracts, normalize signal actionability around `phaseStatus` plus degraded-delivery semantics from `availability`, replace `laterBreadthItems` with a normal admin navigation group, and remove the unused `planned-signal-card` surface.
+  - **Backoffice DTO namespace move:** Rename `apps/api-v2/src/dtos/admin/*` to `apps/api-v2/src/dtos/backoffice/*` with updated exports and admin auth imports, reducing legacy-namespace drift across guards, CSRF, cookies, and docs.
+  - **Dependency hygiene:** Add `scripts/sync-dependency-versions.sh` to normalize external dependency versions across the workspace, drop the unused `@nestjs-modules/mailer` direct dependency from api-v2, add explicit `zod` ownership in consumer-css-grid, normalize `@jest-environment` declarations into shared test packages, and prune stale transitive entries from `yarn.lock`.
+  - **Repo tooling realignment:** Update root scripts and workspace guards to target only maintained v2 apps and packages, repoint `packages/api-e2e` to `jest-e2e.api-v2.json` so root monorepo test runs execute against the maintained backend suite, and remove obsolete legacy-app references from repo tooling, agent guidance, and verification flows.
+
+  ### 📄 Documentation
+  - **Admin API surface narrative:** Update `docs/PROJECT_DOCUMENTATION.md`, `docs/FEATURES_CURRENT.md`, `docs/SWAGGER_COOKIE_AUTH_USAGE.md`, and `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` to reflect that `/api/admin/*` is retired, `admin-v2` is the maintained admin surface, legacy admin modules are no longer in the runtime graph, and Swagger cookie auth is scoped to `/api/admin-v2/*` only.
+  - **Legacy-topology cleanup:** Remove or rewrite legacy-app references across repo docs, governance notes, templates, and archived operational context (`docs/API_V2_PRODUCTION_RELEASE_GATE.md`, `docs/CONSUMER_AUTH_COOKIE_POLICY.md`, `docs/CONSUMER_AUTH_CUTOVER_RELEASE_HANDOFF.md`, `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md`, `docs/PROJECT_SUMMARY.md`, `docs/project-design-rules.md`) so the documented topology matches the maintained codebase.
+
+  ### ⚠️ Notes
+  - **No database migration introduced today.** The legacy `/api/admin/*` retirement, legacy app removal, admin-v2 password-recovery work, and bootstrap RBAC repair are runtime/contract changes only.
+  - **Coordinated cutover risk:** Legacy `apps/api`, `apps/consumer`, `apps/consumer-mobile`, and `apps/admin` removal plus the `/api/admin/*` retirement must deploy together with the admin-v2 surface and the canonical single-scope consumer runtime so no client is left depending on the dropped routes or namespaces.
+  - **UI alignment is presentation-only:** The shell, queue, detail, operator-form, and auth-surface refactors do not alter API calls, mutation handlers, route behavior, or queue/assignment semantics; existing auth, capability, session, payment, and ledger invariants are preserved.
 
 </details>
 
