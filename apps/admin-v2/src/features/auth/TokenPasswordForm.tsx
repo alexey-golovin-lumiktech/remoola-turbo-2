@@ -81,6 +81,8 @@ export function TokenPasswordForm({
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           type="password"
+          autoComplete="new-password"
+          placeholder="At least 8 characters"
           required
         />
       </label>
@@ -91,6 +93,8 @@ export function TokenPasswordForm({
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           type="password"
+          autoComplete="new-password"
+          placeholder="Repeat the new password"
           required
         />
       </label>
@@ -99,6 +103,10 @@ export function TokenPasswordForm({
       <button className={styles.submitBtn} type="submit" disabled={pending}>
         {pending ? `Working...` : submitLabel}
       </button>
+      <p className={styles.supportCopy}>
+        Choose a password you do not reuse elsewhere. Access still depends on your Admin v2 role and workspace
+        permissions.
+      </p>
     </form>
   );
 }

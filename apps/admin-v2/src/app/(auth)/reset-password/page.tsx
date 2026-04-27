@@ -9,6 +9,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
     <div className={styles.root}>
       <div className={styles.card}>
         <div className={styles.header}>
+          <div className={styles.eyebrow}>Recovery flow</div>
           <h1 className={styles.title}>Reset admin password</h1>
           <p className={styles.subtitle}>Choose a new password to complete the Admin v2 recovery flow.</p>
         </div>
@@ -19,6 +20,9 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
           successRedirectPath="/login"
           successMessage="Password updated. Redirecting to sign in..."
         />
+        <p className={styles.footerCopy}>
+          This link only completes the password update. Access still follows your current Admin v2 permissions.
+        </p>
       </div>
     </div>
   );

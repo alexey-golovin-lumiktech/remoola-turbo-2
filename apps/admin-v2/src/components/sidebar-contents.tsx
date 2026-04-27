@@ -69,25 +69,25 @@ export function SidebarContents({
 
   return (
     <>
-      <div className="px-5 py-5">
+      <div className="border-b border-white/6 px-5 py-5">
         <div className="flex items-center gap-3">
           <div
             className={cn(
               `brandBug`,
-              `flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 font-semibold text-cyan-200`,
+              `flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-linear-to-br from-cyan-500/16 to-cyan-400/10 font-semibold text-cyan-100 shadow-[0_12px_28px_rgba(8,47,73,0.18)]`,
             )}
             aria-hidden="true"
           >
             A2
           </div>
           <div className={cn(`brand`, `min-w-0`)}>
-            <div className="text-lg font-semibold leading-tight">Admin v2</div>
-            <div className="text-xs text-white/40">Admin workspace</div>
+            <div className="text-lg font-semibold leading-tight text-white/96">Admin v2</div>
+            <div className="text-xs text-white/42">Operator workspace</div>
           </div>
         </div>
       </div>
 
-      <nav className="min-h-0 flex-1 space-y-5 px-3 pb-5" aria-label="Admin workspace navigation">
+      <nav className="min-h-0 flex-1 space-y-5 px-3 py-5" aria-label="Admin workspace navigation">
         <SidebarSection
           title="Primary workspaces"
           description="Main operational routes with the shortest path into active queues and reviews."
@@ -112,7 +112,7 @@ export function SidebarContents({
         />
       </nav>
 
-      <div className="border-t border-white/10 bg-white/[0.02] px-5 py-4">
+      <div className="border-t border-white/8 bg-white/[0.02] px-5 py-4">
         <div className="text-[11px] uppercase tracking-[0.24em] text-white/[0.32]">Shortcuts</div>
         <div className="mt-1 text-xs leading-5 text-white/40">
           Recommended investigation starts for the current admin scope.
@@ -123,7 +123,7 @@ export function SidebarContents({
               key={view.id}
               href={buildQuickstartHref(view.targetPath, view.id)}
               className={cn(
-                `group block w-full rounded-xl border border-white/8 bg-white/[0.02] px-3 py-2.5 text-left transition hover:border-cyan-400/24 hover:bg-cyan-500/[0.05]`,
+                `group block w-full rounded-2xl border border-white/8 bg-white/[0.02] px-3 py-3 text-left transition hover:-translate-y-px hover:border-cyan-400/24 hover:bg-cyan-500/[0.05]`,
               )}
             >
               <div className="flex items-start justify-between gap-3">
@@ -145,9 +145,9 @@ export function SidebarContents({
           ))}
         </div>
 
-        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm shadow-xs">
+        <div className="mt-5 rounded-[20px] border border-white/10 bg-linear-to-br from-white/[0.05] to-white/[0.025] p-4 text-sm shadow-[0_18px_40px_rgba(2,6,23,0.16)]">
           <div className="text-[11px] uppercase tracking-[0.2em] text-white/[0.32]">Identity</div>
-          <div className="font-medium text-white/85">{identity?.email ?? `Access denied`}</div>
+          <div className="mt-1 font-medium text-white/88">{identity?.email ?? `Access denied`}</div>
           <div className="mt-1 text-white/45">
             {identity
               ? `${identity.role ?? `UNAUTHORIZED`} · actor attribution required`

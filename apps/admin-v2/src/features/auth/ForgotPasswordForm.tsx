@@ -82,6 +82,7 @@ export function ForgotPasswordForm() {
           }}
           type="email"
           autoComplete="email"
+          placeholder="operator@company.com"
           required
           aria-invalid={fieldError ? true : undefined}
           aria-describedby={fieldError ? `admin-forgot-password-email-error` : undefined}
@@ -96,6 +97,9 @@ export function ForgotPasswordForm() {
       <button className={styles.submitBtn} type="submit" disabled={pending}>
         {pending ? `Sending...` : `Send reset link`}
       </button>
+      <p className={styles.supportCopy}>
+        If the account exists and is active, recovery instructions will be sent without exposing account presence.
+      </p>
       <p className={styles.inlineLinkRow}>
         <Link href="/login" className={styles.inlineLink}>
           Back to sign in

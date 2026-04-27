@@ -31,7 +31,7 @@ export function MobilePageHeader({
   return (
     <div
       className={cn(
-        `mx-4 mt-1 rounded-card border border-white/8 bg-white/[0.02] px-4 py-3 lg:hidden`,
+        `mx-4 mt-1 rounded-card border border-white/8 bg-linear-to-br from-white/[0.04] to-white/[0.02] px-4 py-3 shadow-[0_12px_30px_rgba(2,6,23,0.16)] lg:hidden`,
         compactChrome && `md:py-2.5`,
       )}
     >
@@ -45,7 +45,7 @@ export function MobilePageHeader({
             {workspaceMeta.queueIntent}
           </div>
         </div>
-        <div className="rounded-pill border border-cyan-400/20 bg-cyan-500/10 px-2.5 py-1 text-[11px] text-cyan-100">
+        <div className="rounded-pill border border-cyan-400/20 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-medium text-cyan-100">
           {countLabel}
         </div>
       </div>

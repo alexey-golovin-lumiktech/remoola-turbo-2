@@ -13,6 +13,7 @@ import {
   stackClass,
   textInputClass,
 } from '../../../../components/ui-classes';
+import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import {
   getAdminIdentity,
   getOperationalAlerts,
@@ -751,25 +752,33 @@ export default async function OperationalAlertsPage() {
   const now = new Date();
 
   return (
-    <>
-      <Panel
-        title="Operational alerts"
-        description="Personal alerts for supported workspaces. Saved-view-compatible workspaces share the same query model here; auth refresh reuse stays alert-only. Checked every 5 minutes; badges update in app only."
-      />
+    <WorkspaceLayout workspace="system-alerts">
+      <>
+        <Panel
+          title="Operational alerts"
+          description="Personal alerts for supported workspaces. Saved-view-compatible workspaces share the same query model here; auth refresh reuse stays alert-only. Checked every 5 minutes; badges update in app only."
+          actions={<TinyPill tone="cyan">{workspaceResponses.length} workspaces</TinyPill>}
+          surface="primary"
+        >
+          <p className={mutedTextClass}>
+            Manage operator-specific alert thresholds without changing queue logic or saved-view behavior.
+          </p>
+        </Panel>
 
-      {workspaceResponses.map(({ workspace, response }) => {
-        const meta = OPERATIONAL_ALERT_WORKSPACE_META[workspace];
-        return (
-          <WorkspaceSection
-            key={workspace}
-            workspace={workspace}
-            title={meta.sectionTitle}
-            caption={meta.sectionCaption}
-            response={response}
-            now={now}
-          />
-        );
-      })}
-    </>
+        {workspaceResponses.map(({ workspace, response }) => {
+          const meta = OPERATIONAL_ALERT_WORKSPACE_META[workspace];
+          return (
+            <WorkspaceSection
+              key={workspace}
+              workspace={workspace}
+              title={meta.sectionTitle}
+              caption={meta.sectionCaption}
+              response={response}
+              now={now}
+            />
+          );
+        })}
+      </>
+    </WorkspaceLayout>
   );
 }

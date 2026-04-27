@@ -5,6 +5,7 @@ import { DenseTable } from '../../../../components/dense-table';
 import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
 import { buttonRowClass, fieldClass, fieldLabelClass, textInputClass } from '../../../../components/ui-classes';
+import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import {
   getAdminIdentity,
   getLedgerAnomalies,
@@ -374,105 +375,124 @@ export default async function LedgerAnomaliesPage({
   }
 
   return (
-    <>
-      <Panel
-        title="Ledger anomalies"
-        description="Read-only investigation surface."
-        actions={<TinyPill>Computed {formatDateTime(summary?.computedAt)}</TinyPill>}
-      />
+    <WorkspaceLayout workspace="ledger-anomalies">
+      <>
+        <Panel
+          title="Ledger anomalies"
+          description="Read-only investigation surface."
+          actions={
+            <div className={buttonRowClass}>
+              <TinyPill tone="cyan">{list?.items.length ?? 0} visible</TinyPill>
+              <TinyPill>{LEDGER_ANOMALY_CLASS_LABELS[className]}</TinyPill>
+              <TinyPill>Computed {formatDateTime(summary?.computedAt)}</TinyPill>
+            </div>
+          }
+          surface="primary"
+        >
+          <p className="text-sm leading-6 text-white/62">
+            Compare anomaly buckets, tighten the date window and stay inside the current saved-view context while
+            triaging.
+          </p>
+        </Panel>
 
-      <section className="statsGrid">
-        {LEDGER_ANOMALY_CLASS_ORDER.map((key) => {
-          const item = summary?.classes[key];
-          return (
-            <article key={key} className="panel">
-              <div className="pageHeader">
-                <div>
-                  <h2>{item?.label ?? key}</h2>
-                  <p className="muted">State: {formatStateLabel(item?.phaseStatus)}</p>
+        <section className="statsGrid">
+          {LEDGER_ANOMALY_CLASS_ORDER.map((key) => {
+            const item = summary?.classes[key];
+            return (
+              <article key={key} className="panel">
+                <div className="pageHeader">
+                  <div>
+                    <h2>{item?.label ?? key}</h2>
+                    <p className="muted">State: {formatStateLabel(item?.phaseStatus)}</p>
+                  </div>
+                  <ActionGhost href={buildHref({ className: key, cursor: null })}>Open</ActionGhost>
                 </div>
-                <ActionGhost href={buildHref({ className: key, cursor: null })}>Open</ActionGhost>
-              </div>
-              <p className="muted">Availability: {item?.availability ?? `temporarily-unavailable`}</p>
-              <p>{item?.count == null ? `-` : String(item.count)} items</p>
-            </article>
-          );
-        })}
-      </section>
+                <p className="muted">Availability: {item?.availability ?? `temporarily-unavailable`}</p>
+                <p>{item?.count == null ? `-` : String(item.count)} items</p>
+              </article>
+            );
+          })}
+        </section>
 
-      <Panel title="Anomaly classes" description="Jump between anomaly buckets without leaving the saved-view context.">
-        <nav className={buttonRowClass} aria-label="Anomaly classes">
-          {LEDGER_ANOMALY_CLASS_ORDER.map((key) => (
-            <Link
-              key={key}
-              href={buildHref({ className: key, cursor: null })}
-              aria-current={key === className ? `page` : undefined}
-              className={key === className ? `secondaryButton` : `secondaryButton`}
-            >
-              {LEDGER_ANOMALY_CLASS_LABELS[key]}
-            </Link>
-          ))}
-        </nav>
-      </Panel>
+        <Panel
+          title="Anomaly classes"
+          description="Jump between anomaly buckets without leaving the saved-view context."
+          surface="support"
+        >
+          <nav className={buttonRowClass} aria-label="Anomaly classes">
+            {LEDGER_ANOMALY_CLASS_ORDER.map((key) => (
+              <Link
+                key={key}
+                href={buildHref({ className: key, cursor: null })}
+                aria-current={key === className ? `page` : undefined}
+                className={key === className ? `secondaryButton` : `secondaryButton`}
+              >
+                {LEDGER_ANOMALY_CLASS_LABELS[key]}
+              </Link>
+            ))}
+          </nav>
+        </Panel>
 
-      <SavedViewsSection
-        views={savedViews}
-        currentPayload={currentPayload}
-        buildHref={buildHref}
-        canManageSavedViews={canManageSavedViews}
-      />
+        <SavedViewsSection
+          views={savedViews}
+          currentPayload={currentPayload}
+          buildHref={buildHref}
+          canManageSavedViews={canManageSavedViews}
+        />
 
-      <Panel
-        title="Time window"
-        description="Keep the class fixed and tighten the anomaly window only when needed for review."
-      >
-        <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
-          <input type="hidden" name="class" value={className} />
-          <label className={fieldClass}>
-            <span className={fieldLabelClass}>Date from</span>
-            <input className={textInputClass} name="dateFrom" type="date" defaultValue={dateFrom} />
-          </label>
-          <label className={fieldClass}>
-            <span className={fieldLabelClass}>Date to</span>
-            <input className={textInputClass} name="dateTo" type="date" defaultValue={dateTo} />
-          </label>
-          <div className="flex items-end gap-2 xl:col-span-2">
-            <ActionGhost type="submit">Apply</ActionGhost>
-            <ActionGhost
-              href={buildHref({ className, dateFrom: defaults.dateFrom, dateTo: defaults.dateTo, cursor: null })}
-            >
-              Reset
-            </ActionGhost>
-          </div>
-        </form>
-      </Panel>
+        <Panel
+          title="Time window"
+          description="Keep the class fixed and tighten the anomaly window only when needed for review."
+        >
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
+            <input type="hidden" name="class" value={className} />
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date from</span>
+              <input className={textInputClass} name="dateFrom" type="date" defaultValue={dateFrom} />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date to</span>
+              <input className={textInputClass} name="dateTo" type="date" defaultValue={dateTo} />
+            </label>
+            <div className="flex items-end gap-2 xl:col-span-2">
+              <ActionGhost type="submit">Apply</ActionGhost>
+              <ActionGhost
+                href={buildHref({ className, dateFrom: defaults.dateFrom, dateTo: defaults.dateTo, cursor: null })}
+              >
+                Reset
+              </ActionGhost>
+            </div>
+          </form>
+        </Panel>
 
-      <Panel
-        title={activeClass?.label ?? `Ledger anomalies`}
-        description={
-          list ? `${list.items.length} rows in this window` : `Queue unavailable from the backend read contract.`
-        }
-        actions={
-          list?.nextCursor ? <ActionGhost href={buildHref({ cursor: list.nextCursor })}>Next</ActionGhost> : null
-        }
-      >
-        {list ? (
-          <>
-            <AnomalyCards items={list.items} />
-            <AnomalyTable items={list.items} />
-          </>
-        ) : (
-          <p className="muted">
-            Ledger anomaly queue is temporarily unavailable. Use the overview or system surface for fallback navigation.
-          </p>
-        )}
-        {activeClass?.availability === `temporarily-unavailable` && list?.items.length === 0 ? (
-          <p className="muted">
-            This anomaly class is temporarily unavailable right now. Retry later or use overview/system for fallback
-            triage.
-          </p>
-        ) : null}
-      </Panel>
-    </>
+        <Panel
+          title={activeClass?.label ?? `Ledger anomalies`}
+          description={
+            list ? `${list.items.length} rows in this window` : `Queue unavailable from the backend read contract.`
+          }
+          actions={
+            list?.nextCursor ? <ActionGhost href={buildHref({ cursor: list.nextCursor })}>Next</ActionGhost> : null
+          }
+        >
+          {list ? (
+            <>
+              <AnomalyCards items={list.items} />
+              <AnomalyTable items={list.items} />
+            </>
+          ) : (
+            <p className="muted">
+              Ledger anomaly queue is temporarily unavailable. Use the overview or system surface for fallback
+              navigation.
+            </p>
+          )}
+          {activeClass?.availability === `temporarily-unavailable` && list?.items.length === 0 ? (
+            <p className="muted">
+              This anomaly class is temporarily unavailable right now. Retry later or use overview/system for fallback
+              triage.
+            </p>
+          ) : null}
+        </Panel>
+      </>
+    </WorkspaceLayout>
   );
 }

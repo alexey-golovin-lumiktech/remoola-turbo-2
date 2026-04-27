@@ -47,6 +47,8 @@ export function LoginForm() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           type="email"
+          autoComplete="email"
+          placeholder="operator@company.com"
           required
         />
       </label>
@@ -57,6 +59,8 @@ export function LoginForm() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           type="password"
+          autoComplete="current-password"
+          placeholder="Enter your password"
           required
         />
       </label>
@@ -64,6 +68,9 @@ export function LoginForm() {
       <button className={styles.submitBtn} type="submit" disabled={pending}>
         {pending ? `Signing in...` : `Sign in`}
       </button>
+      <p className={styles.supportCopy}>
+        Use your Admin v2 credentials. Session and access policy checks happen after sign in.
+      </p>
       <p className={styles.inlineLinkRow}>
         <Link href="/forgot-password" className={styles.inlineLink}>
           Forgot password?

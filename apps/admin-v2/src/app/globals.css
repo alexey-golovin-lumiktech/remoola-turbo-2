@@ -2,11 +2,11 @@
 
 @theme {
   --color-bg: #09121f;
-  --color-panel: #0d1627;
-  --color-panel-elevated: rgba(255, 255, 255, 0.04);
-  --color-panel-muted: rgba(255, 255, 255, 0.03);
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-panel: #0e182b;
+  --color-panel-elevated: rgba(255, 255, 255, 0.05);
+  --color-panel-muted: rgba(255, 255, 255, 0.035);
+  --color-border: rgba(255, 255, 255, 0.09);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
 
   --color-text: #edf3ff;
   --color-muted-72: rgba(255, 255, 255, 0.72);
@@ -256,7 +256,7 @@ button {
 .content {
   padding: 24px;
   display: grid;
-  gap: 20px;
+  gap: 24px;
 }
 
 .panel {
@@ -264,12 +264,13 @@ button {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.24);
 }
 
 .pageHeader {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
   align-items: flex-start;
 }
 
@@ -288,7 +289,7 @@ button {
 .auditGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .tableWrap {
@@ -310,7 +311,20 @@ button {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
-  background: rgba(17, 24, 39, 0.6);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+  box-shadow: 0 12px 34px rgba(2, 6, 23, 0.2);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.queueCard:hover,
+.condensedRow:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  transform: translateY(-1px);
 }
 
 .queueCardBody,
@@ -432,6 +446,7 @@ td {
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 24px;
+  box-shadow: 0 24px 64px rgba(2, 6, 23, 0.28);
 }
 
 .loginForm {
@@ -567,10 +582,11 @@ td {
   position: sticky;
   top: calc(env(safe-area-inset-top, 0px) + var(--mobile-shell-trigger-height));
   z-index: 34;
-  background: rgba(9, 18, 31, 0.88);
+  background: rgba(9, 18, 31, 0.9);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   scrollbar-width: none;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.12);
 }
 
 .mobileTopChips::-webkit-scrollbar {
@@ -599,9 +615,11 @@ td {
   grid-template-columns: repeat(var(--mobile-bottom-nav-count, 6), 1fr);
   padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
   min-height: var(--mobile-bottom-nav-base-height);
-  background: var(--panel);
+  background: rgba(13, 22, 39, 0.94);
   border-top: 1px solid var(--border);
   z-index: 50;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 -16px 36px rgba(2, 6, 23, 0.24);
 }
 
 .bottomNavLink {
@@ -837,12 +855,26 @@ td {
 
   .contextRail {
     display: block;
-    background: var(--panel-elevated);
+    background: linear-gradient(180deg, var(--panel-elevated), rgba(255, 255, 255, 0.02));
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
     padding: var(--space-4);
     align-self: start;
     position: sticky;
     top: var(--space-4);
+    box-shadow: 0 18px 48px rgba(2, 6, 23, 0.18);
+  }
+}
+
+@media (max-width: 767px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .statsGrid,
+  .detailGrid,
+  .auditGrid {
+    gap: 12px;
   }
 }

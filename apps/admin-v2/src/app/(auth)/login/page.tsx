@@ -6,6 +6,7 @@ export default function LoginPage({ searchParams }: { searchParams?: Promise<{ s
     <div className={styles.root}>
       <div className={styles.card}>
         <div className={styles.header}>
+          <div className={styles.eyebrow}>Operator access</div>
           <h1 className={styles.title}>Admin v2</h1>
           <p className={styles.subtitle}>
             Access operational workspaces for reviews, queues, investigations, and account administration from a single
@@ -14,6 +15,9 @@ export default function LoginPage({ searchParams }: { searchParams?: Promise<{ s
         </div>
         <LoginForm />
         <LoginNotice searchParams={searchParams} />
+        <p className={styles.footerCopy}>
+          Use the recovery flow only if you no longer have access to the active admin password.
+        </p>
       </div>
     </div>
   );

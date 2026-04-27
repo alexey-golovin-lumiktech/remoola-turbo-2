@@ -29,7 +29,7 @@ export function MobileShellUtilityBarClient({
   if (compactChrome) {
     return (
       <details className="lg:hidden">
-        <summary className="list-none rounded-card border border-white/8 bg-white/[0.02] px-4 py-3 text-sm text-white/80">
+        <summary className="list-none rounded-card border border-white/8 bg-linear-to-br from-white/[0.04] to-white/[0.02] px-4 py-3 text-sm text-white/80 shadow-[0_12px_30px_rgba(2,6,23,0.14)]">
           <span className="block font-medium text-white/92">Quick access</span>
           <span className="mt-1 block text-xs text-white/50">{workspaceMeta.queueIntent}</span>
         </summary>

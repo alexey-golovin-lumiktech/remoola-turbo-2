@@ -81,7 +81,9 @@ export default async function OverviewPage(): Promise<ReactElement> {
   return (
     <div className="flex flex-col gap-6">
       <section
-        className={cn(`rounded-card border border-border bg-linear-to-br from-bg via-panel to-bg p-6 shadow-xs`)}
+        className={cn(
+          `rounded-card border border-border bg-linear-to-br from-bg via-panel to-cyan-500/[0.04] p-6 shadow-[0_22px_56px_rgba(2,6,23,0.24)]`,
+        )}
       >
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -101,21 +103,21 @@ export default async function OverviewPage(): Promise<ReactElement> {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.06] p-4">
+            <div className="rounded-2xl border border-cyan-400/15 bg-linear-to-br from-cyan-500/[0.08] to-cyan-500/[0.03] p-4">
               <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-200/70">Operational pressure</div>
               <div className="mt-2 text-3xl font-semibold text-white">{activePressureCount}</div>
               <p className="mt-2 text-sm leading-6 text-white/60">
                 Visible items across the core action-ready investigation queues.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
               <div className="text-[11px] uppercase tracking-[0.2em] text-white/45">Reference breadth</div>
               <div className="mt-2 text-3xl font-semibold text-white">{secondarySignalCount}</div>
               <p className="mt-2 text-sm leading-6 text-white/60">
                 Exchange-adjacent signals kept outside the primary pressure grid.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
               <div className="text-[11px] uppercase tracking-[0.2em] text-white/45">Snapshot freshness</div>
               <div className="mt-2 text-sm font-medium text-white">
                 Computed {formatDateTime(summary?.computedAt, `—`)}
@@ -163,7 +165,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
               key={item.id}
               href={buildQuickstartHref(item.targetPath, item.id)}
               className={cn(
-                `group flex min-h-[148px] flex-col gap-3 rounded-card border border-white/10 bg-white/[0.03] p-4 shadow-xs transition hover:border-cyan-400/30 hover:bg-white/[0.02]`,
+                `group flex min-h-[148px] flex-col gap-3 rounded-card border border-white/10 bg-white/[0.03] p-4 shadow-[0_14px_36px_rgba(2,6,23,0.14)] transition hover:-translate-y-px hover:border-cyan-400/30 hover:bg-white/[0.02]`,
               )}
             >
               <div className="flex items-center justify-between gap-2">

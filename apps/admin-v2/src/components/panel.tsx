@@ -39,14 +39,16 @@ export function Panel({
   const hasBody = Boolean(children);
 
   return (
-    <section className={cn(panelClass, surfaceClassByTone[surface], className)}>
+    <section className={cn(panelClass, surfaceClassByTone[surface], `overflow-hidden`, className)}>
       {hasHeader ? (
         <div className={panelHeaderClass}>
           <div className={panelHeaderCopyClass}>
-            {title ? <h2 className="text-base font-semibold text-text">{title}</h2> : null}
-            {description ? <p className={panelDescriptionClass}>{description}</p> : null}
+            {title ? (
+              <h2 className="text-base font-semibold tracking-[-0.01em] text-text md:text-[1.0625rem]">{title}</h2>
+            ) : null}
+            {description ? <p className={cn(panelDescriptionClass, `mt-1`)}>{description}</p> : null}
           </div>
-          {actions ?? null}
+          {actions ? <div className="shrink-0 self-start">{actions}</div> : null}
         </div>
       ) : null}
       {hasBody ? <div className="min-w-0">{children}</div> : null}

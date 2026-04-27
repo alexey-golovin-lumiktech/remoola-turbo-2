@@ -9,6 +9,7 @@ export default async function AcceptInvitePage({ searchParams }: { searchParams?
     <div className={styles.root}>
       <div className={styles.card}>
         <div className={styles.header}>
+          <div className={styles.eyebrow}>Invite activation</div>
           <h1 className={styles.title}>Accept admin invitation</h1>
           <p className={styles.subtitle}>Set a password to activate the invited Admin v2 account.</p>
         </div>
@@ -19,6 +20,9 @@ export default async function AcceptInvitePage({ searchParams }: { searchParams?
           successRedirectPath="/login"
           successMessage="Invitation accepted. Redirecting to sign in..."
         />
+        <p className={styles.footerCopy}>
+          After activation, visible workspaces and actions still depend on the invited role and capabilities.
+        </p>
       </div>
     </div>
   );

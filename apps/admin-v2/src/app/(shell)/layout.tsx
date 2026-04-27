@@ -132,8 +132,8 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   const currentWorkspaceSignalCount = readCurrentWorkspaceSignalCount(activePath, signalCounts);
 
   return (
-    <div className="grid min-h-screen grid-cols-1 bg-bg lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="hidden lg:flex lg:min-h-screen lg:flex-col lg:overflow-hidden lg:border-r lg:border-border lg:bg-panel">
+    <div className="grid min-h-screen grid-cols-1 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.06),transparent_28%),var(--bg)] lg:grid-cols-[296px_minmax(0,1fr)] xl:grid-cols-[336px_minmax(0,1fr)]">
+      <aside className="hidden lg:flex lg:min-h-screen lg:flex-col lg:overflow-hidden lg:border-r lg:border-border lg:bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))]">
         <SidebarContents
           identity={identity}
           activePath={activePath}
@@ -143,7 +143,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       </aside>
       <main className="min-w-0 overflow-x-hidden px-4 py-4 pb-24 md:pb-6 lg:px-6 lg:py-6 lg:pb-6 xl:px-8">
         {identity ? (
-          <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
+          <div className="mx-auto flex min-w-0 max-w-[1560px] flex-col gap-4 lg:gap-6">
             <ShellHeader />
             {renderAccessWarning(identity)}
             <MobileShellDrawer activePath={activePath}>

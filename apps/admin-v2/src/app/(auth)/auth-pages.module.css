@@ -2,15 +2,28 @@
 @reference "../globals.css";
 
 .root {
-  @apply flex min-h-screen items-center justify-center px-4 py-8;
+  @apply relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8;
+}
+
+.root::before {
+  content: '';
+  @apply absolute inset-0;
+  background:
+    radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 55%);
+  pointer-events: none;
 }
 
 .card {
-  @apply w-full max-w-md rounded-shell border border-border bg-panel p-6 shadow-xs;
+  @apply relative w-full max-w-md rounded-shell border border-border bg-linear-to-br from-panel via-panel to-white/[0.03] p-6 shadow-[0_28px_72px_rgba(2,6,23,0.3)];
 }
 
 .header {
   @apply flex flex-col gap-2;
+}
+
+.eyebrow {
+  @apply text-[11px] font-medium uppercase tracking-[0.24em] text-cyan-200/72;
 }
 
 .title {
@@ -23,4 +36,8 @@
 
 .notice {
   @apply rounded-input border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100;
+}
+
+.footerCopy {
+  @apply text-xs leading-5 text-muted-56;
 }

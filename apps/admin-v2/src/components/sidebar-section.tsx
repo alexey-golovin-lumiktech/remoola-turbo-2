@@ -52,7 +52,7 @@ export function SidebarSection({
         {title}
       </div>
       {description && !compact ? <p className="mt-1 px-2 text-[11px] leading-5 text-white/45">{description}</p> : null}
-      <ul className="mt-2 space-y-1.5">
+      <ul className="mt-2 space-y-2">
         {items.map((item) => {
           const sig = item.queueSignalKey && signalCounts ? signalCounts[item.queueSignalKey] : undefined;
           const showSubtitle = !!sig && sig.count > 0 && !sig.deferred;
@@ -64,16 +64,22 @@ export function SidebarSection({
                 aria-current={active ? `page` : undefined}
                 title={item.label}
                 className={cn(
-                  `flex min-h-11 w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition`,
+                  `group flex min-h-11 w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition`,
                   compact && `rounded-xl px-3 py-2.5`,
                   active
-                    ? `border border-cyan-400/25 bg-cyan-500/10 text-white shadow-xs`
+                    ? `border border-cyan-400/25 bg-cyan-500/10 text-white shadow-[0_12px_32px_rgba(8,47,73,0.14)]`
                     : priority === `core`
-                      ? `border border-white/6 bg-white/[0.02] text-white/82 hover:border-cyan-400/18 hover:bg-cyan-500/[0.04] hover:text-white`
+                      ? `border border-white/6 bg-white/[0.02] text-white/82 hover:-translate-y-px hover:border-cyan-400/18 hover:bg-cyan-500/[0.04] hover:text-white`
                       : `border border-transparent text-white/64 hover:border-white/10 hover:bg-white/[0.03] hover:text-white`,
                 )}
               >
-                <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center text-sm">
+                <span
+                  className={cn(
+                    `mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-white/6 bg-white/[0.025] text-sm text-white/72 transition`,
+                    active && `border-cyan-400/22 bg-cyan-500/[0.08] text-cyan-100`,
+                    `group-hover:border-white/10 group-hover:text-white/88`,
+                  )}
+                >
                   {item.icon ? <NavIcon name={item.icon} /> : null}
                 </span>
                 <span className="min-w-0 flex-1">

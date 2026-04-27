@@ -34,13 +34,13 @@ export function MobileQueueCard({
 
   return (
     <article
-      className="rounded-card border border-border bg-panel p-4 shadow-xs transition hover:border-white/20"
+      className="rounded-card border border-border bg-linear-to-br from-panel via-panel to-white/[0.02] p-4 shadow-[0_18px_44px_rgba(2,6,23,0.18)] transition hover:-translate-y-px hover:border-white/18"
       data-card-id={id}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex flex-1 flex-col gap-1">
           {eyebrow ? (
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">{eyebrow}</div>
+            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/42">{eyebrow}</div>
           ) : null}
           {titleNode}
           {subtitle ? <div className="break-words text-xs text-muted-56">{subtitle}</div> : null}
@@ -48,7 +48,7 @@ export function MobileQueueCard({
         </div>
         {trailing ? <div className="max-w-[40%] shrink-0 text-right text-xs text-white/65">{trailing}</div> : null}
       </div>
-      <div className="mt-3 flex flex-col gap-2.5 text-sm text-white/72">{children}</div>
+      <div className="mt-3 flex flex-col gap-2.5 border-t border-white/6 pt-3 text-sm text-white/72">{children}</div>
     </article>
   );
 }
@@ -67,7 +67,7 @@ export function MobileQueueSection({ title, children, compact = false }: MobileQ
   return (
     <section
       className={cn(
-        `rounded-2xl border border-white/8 bg-white/[0.02] px-3 py-2.5`,
+        `rounded-2xl border border-white/8 bg-white/[0.025] px-3 py-2.5`,
         compact && `px-0 py-0 border-transparent bg-transparent`,
       )}
     >

@@ -46,7 +46,7 @@ export function ResponsiveFilterPanel({
       >
         <summary
           className={cn(
-            `flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 rounded-card border border-white/8 bg-white/[0.02] px-4 py-3 text-left transition hover:border-white/14 hover:bg-white/[0.03]`,
+            `flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 rounded-card border border-white/8 bg-linear-to-br from-white/[0.04] to-white/[0.02] px-4 py-3 text-left shadow-[0_12px_30px_rgba(2,6,23,0.12)] transition hover:border-white/14 hover:bg-white/[0.03]`,
             hasActiveFilters && `border-cyan-400/20 bg-cyan-500/[0.06]`,
             `lg:hidden`,
           )}
