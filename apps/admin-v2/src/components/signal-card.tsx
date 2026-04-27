@@ -21,11 +21,12 @@ function availabilityCopy(availability: SignalCardAvailability): string | null {
   if (availability === `count-only`) return `Read-only count`;
   if (availability === `deferred`) return `Unavailable in current phase`;
   if (availability === `temporarily-unavailable`) return `Temporary delivery issue`;
+  if (availability === `live-actionable`) return `Live workload`;
   return null;
 }
 
 function availabilityEyebrow(availability: SignalCardAvailability): string {
-  if (availability === `live-actionable`) return `ACTION READY`;
+  if (availability === `live-actionable`) return `LIVE SIGNAL`;
   if (availability === `count-only`) return `READ-ONLY COUNT`;
   if (availability === `deferred`) return `DEFERRED`;
   if (availability === `temporarily-unavailable`) return `TEMPORARILY UNAVAILABLE`;
@@ -34,7 +35,7 @@ function availabilityEyebrow(availability: SignalCardAvailability): string {
 
 function formatStateLabel(value: string | null | undefined): string {
   if (!value) return `—`;
-  if (value === `live-actionable`) return `Action ready`;
+  if (value === `live-actionable`) return `Live queue`;
   if (value === `count-only`) return `Read-only`;
   if (value === `deferred`) return `Deferred`;
   if (value === `temporarily-unavailable`) return `Temporarily unavailable`;
@@ -75,7 +76,7 @@ export function SignalCard({
         <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/65">
           {eyebrow}
         </span>
-        <span className="text-xs text-white/55">{supplemental ?? `Action ready`}</span>
+        <span className="text-xs text-white/55">{supplemental ?? `Live workload`}</span>
       </div>
       <div className="space-y-2">
         <div className="text-sm font-medium leading-6 text-white/92">{label}</div>

@@ -32,7 +32,7 @@ export const coreShellItems = [
     icon: `ledger`,
     queueSignalKey: `ledgerAnomalies`,
   },
-  { href: `/audit/auth`, label: `Audit`, workspace: `audit`, icon: `audit` },
+  { href: `/audit`, label: `Audit`, workspace: `audit`, icon: `audit` },
 ] as const satisfies ReadonlyArray<NavTupleItem>;
 
 export const topLevelBreadthItems = [

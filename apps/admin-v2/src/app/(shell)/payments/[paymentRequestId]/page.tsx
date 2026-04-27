@@ -21,6 +21,10 @@ import {
 } from '../../../../lib/admin-mutations.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
+function renderActorLabel(actor: { email?: string | null; id?: string | null }): string {
+  return actor.email ?? actor.id ?? `-`;
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
   return new Date(value).toLocaleString();
@@ -31,7 +35,16 @@ function renderMetadata(value: Record<string, unknown> | null | undefined) {
     return <p className={mutedTextClass}>No metadata.</p>;
   }
 
-  return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
+  const keys = Object.keys(value);
+
+  return (
+    <details className="rounded-card border border-white/10 bg-white/[0.02] p-3">
+      <summary className="cursor-pointer text-sm text-white/72">
+        Metadata ({keys.length} key{keys.length === 1 ? `` : `s`})
+      </summary>
+      <pre className="mono mt-3">{JSON.stringify(value, null, 2)}</pre>
+    </details>
+  );
 }
 
 export default async function PaymentCasePage({
@@ -109,9 +122,16 @@ export default async function PaymentCasePage({
         }
         surface="primary"
       >
+        <p className={mutedTextClass}>
+          Investigation summary for payment state, linked parties, assignment status, ledger context, and related audit
+          history.
+        </p>
         <p className={monoMutedTextClass}>{paymentCase.id}</p>
         <div className="pillRow">
           <TinyPill>{paymentCase.core.effectiveStatus}</TinyPill>
+          <TinyPill tone="cyan">
+            {paymentCase.core.amount} {paymentCase.core.currencyCode}
+          </TinyPill>
           <TinyPill>{paymentCase.core.currencyCode}</TinyPill>
           {paymentCase.core.paymentRail ? <TinyPill>{paymentCase.core.paymentRail}</TinyPill> : null}
           {paymentCase.staleWarning ? <TinyPill>Persisted status stale</TinyPill> : null}
@@ -120,6 +140,36 @@ export default async function PaymentCasePage({
       </Panel>
 
       <section className="statsGrid">
+        <Panel surface="meta">
+          <h3>Case summary</h3>
+          <p className={mutedTextClass}>
+            Amount: {paymentCase.core.amount} {paymentCase.core.currencyCode}
+          </p>
+          <p className={mutedTextClass}>Payment rail: {paymentCase.core.paymentRail ?? `-`}</p>
+          <p className={mutedTextClass}>Payer: {renderActorLabel(paymentCase.payer)}</p>
+          <p className={mutedTextClass}>Requester: {renderActorLabel(paymentCase.requester)}</p>
+          <p className={mutedTextClass}>Updated: {formatDate(paymentCase.updatedAt)}</p>
+        </Panel>
+        <Panel surface="meta">
+          <h3>Operational posture</h3>
+          <p className={mutedTextClass}>Effective: {paymentCase.core.effectiveStatus}</p>
+          <p className={mutedTextClass}>Persisted: {paymentCase.core.persistedStatus}</p>
+          <p className={mutedTextClass}>Data freshness: {paymentCase.dataFreshnessClass}</p>
+          <p className={mutedTextClass}>Assignment: {currentAssignment ? `Assigned` : `Unassigned`}</p>
+          <p className={mutedTextClass}>Linked ledger entries: {paymentCase.ledgerEntries.length}</p>
+        </Panel>
+        <Panel surface="meta">
+          <h3>Navigation</h3>
+          <p className={mutedTextClass}>
+            Queue and related-case navigation stay in the header above. Assignment controls stay separated so they do
+            not compete with the case summary.
+          </p>
+          <div className="pillRow">
+            <span className="pill">{canClaim ? `Claim available` : `Claim unavailable`}</span>
+            <span className="pill">{canRelease ? `Release available` : `Release unavailable`}</span>
+            <span className="pill">{canReassign ? `Reassign available` : `Reassign unavailable`}</span>
+          </div>
+        </Panel>
         <Panel>
           <h3>Request core</h3>
           <p className={mutedTextClass}>
@@ -147,6 +197,19 @@ export default async function PaymentCasePage({
           <p className={mutedTextClass}>Version: {paymentCase.version}</p>
         </Panel>
       </section>
+
+      <AssignmentCard
+        resourceId={paymentCase.id}
+        assignment={paymentCase.assignment}
+        reassignCandidates={reassignCandidates}
+        capabilities={{ canClaim, canRelease, canReassign }}
+        actions={{
+          claim: claimPaymentRequestAssignmentAction,
+          release: releasePaymentRequestAssignmentAction,
+          reassign: reassignPaymentRequestAssignmentAction,
+        }}
+        copy={{ claimReasonPlaceholder: `Why are you claiming this payment request?` }}
+      />
 
       <section className="detailGrid">
         <Panel title="Attachments / documents">
@@ -207,19 +270,6 @@ export default async function PaymentCasePage({
         </Panel>
       </section>
 
-      <AssignmentCard
-        resourceId={paymentCase.id}
-        assignment={paymentCase.assignment}
-        reassignCandidates={reassignCandidates}
-        capabilities={{ canClaim, canRelease, canReassign }}
-        actions={{
-          claim: claimPaymentRequestAssignmentAction,
-          release: releasePaymentRequestAssignmentAction,
-          reassign: reassignPaymentRequestAssignmentAction,
-        }}
-        copy={{ claimReasonPlaceholder: `Why are you claiming this payment request?` }}
-      />
-
       <section className="detailGrid">
         <Panel title="Timeline">
           <div className={stackClass}>
@@ -227,6 +277,11 @@ export default async function PaymentCasePage({
               <div className={panelClass} key={`${item.event}-${index}`}>
                 <strong>{item.event}</strong>
                 <p className={mutedTextClass}>{formatDate(item.timestamp)}</p>
+                <p className={mutedTextClass}>
+                  {item.metadata && Object.keys(item.metadata).length > 0
+                    ? `${Object.keys(item.metadata).length} metadata field${Object.keys(item.metadata).length === 1 ? `` : `s`}`
+                    : `No metadata`}
+                </p>
                 {renderMetadata(item.metadata)}
               </div>
             ))}

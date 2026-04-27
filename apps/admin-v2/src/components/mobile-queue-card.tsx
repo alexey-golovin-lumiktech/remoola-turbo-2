@@ -6,34 +6,49 @@ import { cn } from '@remoola/ui';
 export type MobileQueueCardProps = {
   id: string;
   href?: string;
+  eyebrow?: ReactNode;
   title: ReactNode;
   subtitle?: ReactNode;
   trailing?: ReactNode;
+  badges?: ReactNode;
   children: ReactNode;
 };
 
-export function MobileQueueCard({ id, href, title, subtitle, trailing, children }: MobileQueueCardProps): ReactElement {
+export function MobileQueueCard({
+  id,
+  href,
+  eyebrow,
+  title,
+  subtitle,
+  trailing,
+  badges,
+  children,
+}: MobileQueueCardProps): ReactElement {
   const titleNode = href ? (
-    <Link href={href} className="text-white transition hover:text-cyan-200">
-      <strong>{title}</strong>
+    <Link href={href} className="min-w-0 text-white transition hover:text-cyan-200">
+      <strong className="block break-words">{title}</strong>
     </Link>
   ) : (
-    <strong className="text-white">{title}</strong>
+    <strong className="block break-words text-white">{title}</strong>
   );
 
   return (
     <article
-      className="rounded-card border border-border bg-panel p-4 transition hover:border-white/20"
+      className="rounded-card border border-border bg-panel p-4 shadow-xs transition hover:border-white/20"
       data-card-id={id}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
+        <div className="min-w-0 flex flex-1 flex-col gap-1">
+          {eyebrow ? (
+            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">{eyebrow}</div>
+          ) : null}
           {titleNode}
-          {subtitle ? <div className="text-xs text-muted-56">{subtitle}</div> : null}
+          {subtitle ? <div className="break-words text-xs text-muted-56">{subtitle}</div> : null}
+          {badges ? <div className="mt-1 flex flex-wrap items-center gap-1.5">{badges}</div> : null}
         </div>
-        {trailing ? <div className="text-xs text-white/65">{trailing}</div> : null}
+        {trailing ? <div className="max-w-[40%] shrink-0 text-right text-xs text-white/65">{trailing}</div> : null}
       </div>
-      <div className="mt-3 flex flex-col gap-3 text-sm text-white/72">{children}</div>
+      <div className="mt-3 flex flex-col gap-2.5 text-sm text-white/72">{children}</div>
     </article>
   );
 }
@@ -57,7 +72,7 @@ export function MobileQueueSection({ title, children, compact = false }: MobileQ
       )}
     >
       <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">{title}</div>
-      <div className="mt-2 flex flex-col gap-1.5">{children}</div>
+      <div className="mt-2 flex flex-col gap-1.5 break-words">{children}</div>
     </section>
   );
 }

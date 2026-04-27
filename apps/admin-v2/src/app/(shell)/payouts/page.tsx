@@ -76,6 +76,26 @@ function renderHighValueThresholds(data: PayoutsListResponse | null) {
     .join(` · `);
 }
 
+function renderBucketMapLinks(
+  buckets: Array<{ key: string; label: string; items: Array<{ id: string }> }>,
+  idPrefix: string,
+): ReactElement {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {buckets.map((bucket) => (
+        <a
+          key={bucket.key}
+          href={`#${idPrefix}-${bucket.key}`}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-pill border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90"
+        >
+          <span>{bucket.label}</span>
+          <TinyPill>{bucket.items.length}</TinyPill>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 function bucketItems(items: PayoutItem[]) {
   return BUCKET_ORDER.map((key) => ({
     key,
@@ -95,6 +115,14 @@ function renderAssignedTo(item: PayoutItem): ReactNode {
       {item.assignedTo.email ? <span className={mutedTextClass}> {item.assignedTo.email}</span> : null}
     </>
   );
+}
+
+function shouldShowPersisted(item: PayoutItem): boolean {
+  return item.persistedStatus !== item.effectiveStatus;
+}
+
+function shouldShowFreshness(item: PayoutItem): boolean {
+  return item.dataFreshnessClass !== `exact`;
 }
 
 function renderPayoutPrimary(item: PayoutItem, returnTo: string): ReactElement {
@@ -274,26 +302,27 @@ function renderBucketMobileCards(items: PayoutItem[], emptyMessage: string, retu
             trailing={`${item.outcomeAgeHours.toFixed(1)}h`}
           >
             {renderBucketBadges(item)}
-            <div className={mutedTextClass}>
-              Persisted: {item.persistedStatus} · Effective: {item.effectiveStatus}
-            </div>
             <div className={mutedTextClass}>{renderPayoutConsumer(item, true, returnTo)}</div>
+            <div className={mutedTextClass}>Destination: {renderDestination(item)}</div>
             <div className={mutedTextClass}>
-              Destination: {renderDestination(item)} · Linkage: {item.destinationLinkageSource ?? `unavailable`}
+              Outcome age: {item.outcomeAgeHours.toFixed(1)}h · Updated: {formatDate(item.updatedAt)}
             </div>
-            <div className={mutedTextClass}>
-              External reference: {item.externalReference ?? `-`} · Outcome age: {item.outcomeAgeHours.toFixed(1)}h
-            </div>
-            <div className={mutedTextClass}>
-              High-value: {item.highValue.eligibility}
-              {item.highValue.thresholdAmount
-                ? ` · ${item.highValue.thresholdCurrency} >= ${item.highValue.thresholdAmount}`
-                : ``}
-            </div>
-            <div className={mutedTextClass}>
-              Updated: {formatDate(item.updatedAt)} · Freshness: {item.dataFreshnessClass}
-            </div>
-            <div className={mutedTextClass}>Assigned to: {renderAssignedTo(item)}</div>
+            {shouldShowPersisted(item) ? <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div> : null}
+            {item.destinationLinkageSource ? (
+              <div className={mutedTextClass}>Linkage: {item.destinationLinkageSource}</div>
+            ) : null}
+            {item.externalReference ? (
+              <div className={mutedTextClass}>External reference: {item.externalReference}</div>
+            ) : null}
+            {item.highValue.eligibility === `high-value` && item.highValue.thresholdAmount ? (
+              <div className={mutedTextClass}>
+                High-value threshold: {item.highValue.thresholdCurrency} &gt;= {item.highValue.thresholdAmount}
+              </div>
+            ) : null}
+            {shouldShowFreshness(item) ? (
+              <div className={mutedTextClass}>Freshness: {item.dataFreshnessClass}</div>
+            ) : null}
+            {item.assignedTo ? <div className={mutedTextClass}>Assigned to: {renderAssignedTo(item)}</div> : null}
           </MobileQueueCard>
         ))}
       </div>
@@ -321,18 +350,19 @@ function renderBucketTabletRows(items: PayoutItem[], emptyMessage: string, retur
               <div key="consumer">{renderPayoutConsumer(item, true, returnTo)}</div>,
               <div key="destination" className={mutedTextClass}>
                 Destination: {renderDestination(item)}
-                <div>Linkage: {item.destinationLinkageSource ?? `unavailable`}</div>
+                {item.destinationLinkageSource ? <div>Linkage: {item.destinationLinkageSource}</div> : null}
               </div>,
               <div key="status">
                 {renderBucketBadges(item)}
-                <div className={mutedTextClass}>
-                  Persisted: {item.persistedStatus} · Effective: {item.effectiveStatus}
-                </div>
+                {shouldShowPersisted(item) ? (
+                  <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
+                ) : null}
               </div>,
               <div key="timing" className={mutedTextClass}>
+                <div>Outcome age: {item.outcomeAgeHours.toFixed(1)}h</div>
                 <div>Updated: {formatDate(item.updatedAt)}</div>
-                <div>Freshness: {item.dataFreshnessClass}</div>
-                <div>Assigned: {renderAssignedTo(item)}</div>
+                {shouldShowFreshness(item) ? <div>Freshness: {item.dataFreshnessClass}</div> : null}
+                {item.assignedTo ? <div>Assigned: {renderAssignedTo(item)}</div> : null}
               </div>,
             ]}
           />
@@ -357,27 +387,32 @@ function renderBucketDesktopTable(items: PayoutItem[], emptyMessage: string, ret
                 <td>{renderPayoutConsumer(item, true, returnTo)}</td>
                 <td>
                   <div>{renderDestination(item)}</div>
-                  <div className={mutedTextClass}>Linkage: {item.destinationLinkageSource ?? `unavailable`}</div>
+                  {item.destinationLinkageSource ? (
+                    <div className={mutedTextClass}>Linkage: {item.destinationLinkageSource}</div>
+                  ) : null}
                 </td>
                 <td>
                   {renderBucketBadges(item)}
-                  <div className={mutedTextClass}>
-                    Persisted: {item.persistedStatus} · Effective: {item.effectiveStatus}
-                  </div>
-                  <div className={mutedTextClass}>
-                    High-value: {item.highValue.eligibility}
-                    {item.highValue.thresholdAmount
-                      ? ` · ${item.highValue.thresholdCurrency} >= ${item.highValue.thresholdAmount}`
-                      : ``}
-                  </div>
+                  {shouldShowPersisted(item) ? (
+                    <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
+                  ) : null}
+                  {item.highValue.eligibility === `high-value` && item.highValue.thresholdAmount ? (
+                    <div className={mutedTextClass}>
+                      Threshold: {item.highValue.thresholdCurrency} &gt;= {item.highValue.thresholdAmount}
+                    </div>
+                  ) : null}
                 </td>
                 <td>
-                  <div className={mutedTextClass}>External reference: {item.externalReference ?? `-`}</div>
                   <div className={mutedTextClass}>Outcome age: {item.outcomeAgeHours.toFixed(1)}h</div>
                   <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
-                  <div className={mutedTextClass}>Freshness: {item.dataFreshnessClass}</div>
+                  {item.externalReference ? (
+                    <div className={mutedTextClass}>External reference: {item.externalReference}</div>
+                  ) : null}
+                  {shouldShowFreshness(item) ? (
+                    <div className={mutedTextClass}>Freshness: {item.dataFreshnessClass}</div>
+                  ) : null}
                 </td>
-                <td>{renderAssignedTo(item)}</td>
+                <td>{item.assignedTo ? renderAssignedTo(item) : <span className={mutedTextClass}>—</span>}</td>
               </tr>
             ))}
       </DenseTable>
@@ -400,6 +435,8 @@ export default async function PayoutsPage({
   const items = data?.items ?? [];
   const currentQueueHref = buildPathWithSearch(`/payouts`, { cursor });
   const buckets = bucketItems(items);
+  const visibleBuckets = buckets.filter((bucket) => bucket.items.length > 0);
+  const hiddenBuckets = buckets.filter((bucket) => bucket.items.length === 0);
   const highValueItems = items.filter((item) => item.highValue.eligibility === `high-value`);
 
   function nextHref(nextCursor: string) {
@@ -413,7 +450,7 @@ export default async function PayoutsPage({
       <>
         <Panel
           title="Payouts"
-          description="Ledger-based payout queue with one available action: `payout_escalate` for failed or stuck cases."
+          description={`${items.length} payouts in the current window · ${visibleBuckets.length} live buckets${hiddenBuckets.length ? ` · ${hiddenBuckets.length} empty buckets hidden below` : ``}`}
           actions={
             <div className={buttonRowClass}>
               <ActionGhost href="/ledger">Back to ledger</ActionGhost>
@@ -427,76 +464,98 @@ export default async function PayoutsPage({
           <p className={mutedTextClass}>Generated: {formatDate(data?.generatedAt)}</p>
         </Panel>
 
-        <section className="statsGrid">
-          <Panel>
-            <h3>Queue posture</h3>
-            <p className={mutedTextClass}>{data?.posture.wording ?? `No payout queue data available.`}</p>
-            <p className={mutedTextClass}>Current window: {items.length} payouts</p>
-            <p className={mutedTextClass}>Freshness: status is based on the latest ledger outcome for each row</p>
-          </Panel>
-          <Panel>
-            <h3>Threshold details</h3>
-            <p className={mutedTextClass}>Threshold: {data?.stuckPolicy.thresholdHours ?? 24}h</p>
-            <p className={mutedTextClass}>Breach condition: {data?.stuckPolicy.breachCondition ?? `-`}</p>
-            <p className={mutedTextClass}>Escalation target: {data?.stuckPolicy.escalationTarget ?? `-`}</p>
-          </Panel>
-          <Panel>
-            <h3>Expected follow-up</h3>
-            <p className={mutedTextClass}>{data?.stuckPolicy.expectedOperatorReaction ?? `-`}</p>
-            <p className={mutedTextClass}>Automation: {data?.stuckPolicy.automationStatus ?? `-`}</p>
-          </Panel>
-        </section>
-
         <Panel
-          title="High-value payouts"
-          description={`Overlay bucket over the current payout window. ${data?.highValuePolicy.wording ?? `No high-value policy data.`}`}
-          actions={
-            <div className="pillRow">
-              <TinyPill>{highValueItems.length} items</TinyPill>
-              <TinyPill>{data?.highValuePolicy.availability ?? `unconfigured`}</TinyPill>
-            </div>
-          }
-          surface="support"
+          title="Queue signals"
+          description={data?.posture.wording ?? `No payout queue data available.`}
+          surface="meta"
         >
-          <p className={mutedTextClass}>Configured thresholds: {renderHighValueThresholds(data)}</p>
-          <div className={stackClass}>
-            {renderHighValueMobileCards(highValueItems, currentQueueHref)}
-            {renderHighValueTabletRows(highValueItems, currentQueueHref)}
-            {renderHighValueDesktopTable(highValueItems, currentQueueHref)}
+          <div className="grid gap-2 text-sm text-white/72 md:grid-cols-2 xl:grid-cols-4">
+            <p>Threshold: {data?.stuckPolicy.thresholdHours ?? 24}h</p>
+            <p>Breach condition: {data?.stuckPolicy.breachCondition ?? `-`}</p>
+            <p>Escalation target: {data?.stuckPolicy.escalationTarget ?? `-`}</p>
+            <p>Automation: {data?.stuckPolicy.automationStatus ?? `-`}</p>
           </div>
         </Panel>
 
-        {buckets.map((bucket) => (
+        {visibleBuckets.length > 0 ? (
           <Panel
-            key={bucket.key}
-            title={bucket.label}
-            description={bucket.operatorPrompt}
+            title="Bucket map"
+            description="Jump to the populated payout sections in the current window and avoid scanning the entire page top-to-bottom."
+            surface="meta"
+          >
+            {renderBucketMapLinks(visibleBuckets, `payout-bucket`)}
+          </Panel>
+        ) : null}
+
+        {highValueItems.length > 0 ? (
+          <Panel
+            title="High-value payouts"
+            description={`Overlay bucket for the current window · ${data?.highValuePolicy.availability ?? `unconfigured`}`}
             actions={
               <div className="pillRow">
-                <TinyPill>{bucket.items.length} items</TinyPill>
+                <TinyPill>{highValueItems.length} items</TinyPill>
               </div>
             }
             surface="support"
           >
+            <p className={mutedTextClass}>Configured thresholds: {renderHighValueThresholds(data)}</p>
             <div className={stackClass}>
-              {renderBucketMobileCards(
-                bucket.items,
-                `No payouts in this bucket for the current window.`,
-                currentQueueHref,
-              )}
-              {renderBucketTabletRows(
-                bucket.items,
-                `No payouts in this bucket for the current window.`,
-                currentQueueHref,
-              )}
-              {renderBucketDesktopTable(
-                bucket.items,
-                `No payouts in this bucket for the current window.`,
-                currentQueueHref,
-              )}
+              {renderHighValueMobileCards(highValueItems, currentQueueHref)}
+              {renderHighValueTabletRows(highValueItems, currentQueueHref)}
+              {renderHighValueDesktopTable(highValueItems, currentQueueHref)}
             </div>
           </Panel>
+        ) : null}
+
+        {visibleBuckets.map((bucket, index) => (
+          <section key={bucket.key} id={`payout-bucket-${bucket.key}`} className="scroll-mt-32 xl:scroll-mt-36">
+            <Panel
+              title={bucket.label}
+              description={bucket.operatorPrompt}
+              actions={
+                <div className="pillRow">
+                  <TinyPill>
+                    {index + 1} / {visibleBuckets.length}
+                  </TinyPill>
+                  <TinyPill>{bucket.items.length} items</TinyPill>
+                </div>
+              }
+              surface="support"
+            >
+              <div className={stackClass}>
+                {renderBucketMobileCards(
+                  bucket.items,
+                  `No payouts in this bucket for the current window.`,
+                  currentQueueHref,
+                )}
+                {renderBucketTabletRows(
+                  bucket.items,
+                  `No payouts in this bucket for the current window.`,
+                  currentQueueHref,
+                )}
+                {renderBucketDesktopTable(
+                  bucket.items,
+                  `No payouts in this bucket for the current window.`,
+                  currentQueueHref,
+                )}
+              </div>
+            </Panel>
+          </section>
         ))}
+
+        {hiddenBuckets.length > 0 ? (
+          <Panel
+            title="Hidden empty buckets"
+            description="Empty payout sections are collapsed by default to reduce scroll and visual noise."
+            surface="meta"
+          >
+            <div className="pillRow">
+              {hiddenBuckets.map((bucket) => (
+                <TinyPill key={bucket.key}>{bucket.label}</TinyPill>
+              ))}
+            </div>
+          </Panel>
+        ) : null}
       </>
     </WorkspaceLayout>
   );

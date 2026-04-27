@@ -1,12 +1,16 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from 'react';
 
 import { cn } from '@remoola/ui';
 
+import { normalizeActivePath } from '../app/(shell)/nav-state';
+import { getWorkspaceMeta } from '../lib/workspace-meta';
+
 type MobileShellDrawerProps = {
   children: ReactNode;
-  triggerLabel?: string;
+  activePath?: string | null;
 };
 
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
@@ -17,7 +21,7 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
   ).filter((element) => !element.hasAttribute(`disabled`) && element.getAttribute(`aria-hidden`) !== `true`);
 }
 
-export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: MobileShellDrawerProps): ReactElement {
+export function MobileShellDrawer({ children, activePath = null }: MobileShellDrawerProps): ReactElement {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -25,6 +29,9 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
   const previousFocusedElementRef = useRef<HTMLElement | null>(null);
   const previousOpenRef = useRef(false);
   const titleId = useId();
+  const pathname = usePathname();
+  const resolvedActivePath = normalizeActivePath(pathname) ?? activePath;
+  const workspaceMeta = getWorkspaceMeta(resolvedActivePath);
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -130,24 +137,32 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
 
   return (
     <div className="lg:hidden">
-      <div className="sticky top-0 z-[35] flex items-center gap-3 border-b border-border bg-bg/90 px-4 py-3 pt-[calc(var(--space-3)+env(safe-area-inset-top,0px))] backdrop-blur-md">
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-label="Open navigation"
-          aria-controls="mobile-shell-drawer-sheet"
-          aria-expanded={open}
-          onClick={() => setOpen(true)}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-input border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
-        >
-          <span className="sr-only">Open navigation</span>
-          <span aria-hidden="true" className="flex flex-col gap-1.5">
-            <span className="block h-0.5 w-5 bg-white/80" />
-            <span className="block h-0.5 w-5 bg-white/80" />
-            <span className="block h-0.5 w-5 bg-white/80" />
-          </span>
-        </button>
-        <span className="text-sm font-medium text-white/90">{triggerLabel}</span>
+      <div className="sticky top-0 z-[35] border-b border-border bg-bg/90 px-4 py-3 pt-[calc(var(--space-3)+env(safe-area-inset-top,0px))] backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <button
+            ref={triggerRef}
+            type="button"
+            aria-label="Open navigation"
+            aria-controls="mobile-shell-drawer-sheet"
+            aria-expanded={open}
+            onClick={() => setOpen(true)}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-input border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+          >
+            <span className="sr-only">Open navigation</span>
+            <span aria-hidden="true" className="flex flex-col gap-1.5">
+              <span className="block h-0.5 w-5 bg-white/80" />
+              <span className="block h-0.5 w-5 bg-white/80" />
+              <span className="block h-0.5 w-5 bg-white/80" />
+            </span>
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/38">
+              {workspaceMeta.eyebrow}
+            </div>
+            <div className="truncate text-sm font-semibold text-white/92">{workspaceMeta.title}</div>
+          </div>
+        </div>
+        <div className="mt-2 text-xs text-white/50">{workspaceMeta.queueLabel}</div>
       </div>
 
       <div

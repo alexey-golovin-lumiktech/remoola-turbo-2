@@ -16,6 +16,7 @@ import {
   fieldClass,
   fieldLabelClass,
   mutedTextClass,
+  subtleTextClass,
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
@@ -29,6 +30,10 @@ function formatDate(value: string | null | undefined): string {
 }
 
 type PaymentItem = PaymentsListResponse[`items`][number];
+
+function renderConsumerLabel(consumer: PaymentItem[`payer`] | PaymentItem[`requester`]): string {
+  return consumer.email ?? consumer.id ?? `Unknown consumer`;
+}
 
 function renderConsumerLink(consumer: PaymentItem[`payer`] | PaymentItem[`requester`], returnTo: string) {
   if (consumer.id) {
@@ -47,15 +52,21 @@ function PaymentParticipants({ item, returnTo }: { item: PaymentItem; returnTo: 
   );
 }
 
-function PaymentStatus({ item }: { item: PaymentItem }) {
+function PaymentParticipantsSummary({ item, returnTo }: { item: PaymentItem; returnTo: string }) {
   return (
-    <>
-      <div>
-        <StatusPill status={item.effectiveStatus} />
-      </div>
-      <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
-      <div className={mutedTextClass}>{item.staleWarning ? `Persisted status is stale` : `Exact enough for list`}</div>
-    </>
+    <div className="min-w-0">
+      <div className="truncate text-sm text-white/90">Payer: {renderConsumerLink(item.payer, returnTo)}</div>
+      <div className="truncate text-sm text-white/72">Requester: {renderConsumerLink(item.requester, returnTo)}</div>
+    </div>
+  );
+}
+
+function PaymentQueueHeading({ item }: { item: PaymentItem }) {
+  return (
+    <div className="min-w-0">
+      <div className="truncate text-sm text-white/95">{renderConsumerLabel(item.payer)}</div>
+      <div className="truncate text-xs text-white/56">Requester: {renderConsumerLabel(item.requester)}</div>
+    </div>
   );
 }
 
@@ -70,6 +81,14 @@ function PaymentAssignedTo({ item }: { item: PaymentItem }) {
       {item.assignedTo.email ? <span className={mutedTextClass}> {item.assignedTo.email}</span> : null}
     </>
   );
+}
+
+function shouldShowPersistedStatus(item: PaymentItem): boolean {
+  return item.persistedStatus !== item.effectiveStatus;
+}
+
+function shouldShowFreshnessLabel(item: PaymentItem): boolean {
+  return item.staleWarning || item.dataFreshnessClass !== `exact`;
 }
 
 function PaymentsMobileCards({ items, returnTo }: { items: PaymentItem[]; returnTo: string }) {
@@ -89,27 +108,39 @@ function PaymentsMobileCards({ items, returnTo }: { items: PaymentItem[]; return
             key={item.id}
             id={item.id}
             href={withReturnTo(`/payments/${item.id}`, returnTo)}
-            title={item.id}
-            subtitle={item.paymentRail ?? `No rail`}
+            eyebrow="Payment request"
+            title={<PaymentQueueHeading item={item} />}
+            subtitle={item.id}
             trailing={
               <>
                 {item.amount} {item.currencyCode}
               </>
             }
+            badges={
+              <>
+                <StatusPill status={item.effectiveStatus} />
+                {item.paymentRail ? <TinyPill>{item.paymentRail}</TinyPill> : null}
+              </>
+            }
           >
-            <MobileQueueSection title="Participants">
+            <MobileQueueSection title="Queue summary">
+              <div className={mutedTextClass}>
+                Assigned: <PaymentAssignedTo item={item} />
+              </div>
+              {shouldShowPersistedStatus(item) ? (
+                <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
+              ) : null}
+              <div className={mutedTextClass}>
+                {item.staleWarning ? `Persisted status is stale` : `Exact enough for list`}
+              </div>
+              <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
+            </MobileQueueSection>
+            <MobileQueueSection title="Participants" compact>
               <PaymentParticipants item={item} returnTo={returnTo} />
             </MobileQueueSection>
-            <MobileQueueSection title="Status and freshness">
-              <PaymentStatus item={item} />
+            <MobileQueueSection title="Freshness" compact>
               <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
-            </MobileQueueSection>
-            <MobileQueueSection title="Follow-up">
-              <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
               <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
-              <div className={mutedTextClass}>
-                Assigned to: <PaymentAssignedTo item={item} />
-              </div>
             </MobileQueueSection>
           </MobileQueueCard>
         ))}
@@ -133,29 +164,47 @@ function PaymentsTabletRows({ items, returnTo }: { items: PaymentItem[]; returnT
         {items.map((item) => (
           <TabletRow
             key={item.id}
+            eyebrow="Payment request"
             primary={
               <>
                 <Link href={withReturnTo(`/payments/${item.id}`, returnTo)}>
-                  <strong>{item.id}</strong>
+                  <strong>{renderConsumerLabel(item.payer)}</strong>
                 </Link>
-                <div className={mutedTextClass}>{item.paymentRail ?? `No rail`}</div>
+                <div className={mutedTextClass}>Requester: {renderConsumerLabel(item.requester)}</div>
+                <div className={subtleTextClass}>{item.id}</div>
+              </>
+            }
+            badges={
+              <>
+                <StatusPill status={item.effectiveStatus} />
+                <TinyPill tone="cyan">
+                  {item.amount} {item.currencyCode}
+                </TinyPill>
+                {item.paymentRail ? <TinyPill>{item.paymentRail}</TinyPill> : null}
               </>
             }
             cells={[
-              <PaymentParticipants item={item} key="participants" returnTo={returnTo} />,
-              <PaymentStatus item={item} key="status" />,
+              <PaymentParticipantsSummary item={item} key="participants" returnTo={returnTo} />,
+              <div key="status">
+                {shouldShowPersistedStatus(item) ? (
+                  <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
+                ) : null}
+                {item.staleWarning ? <div className={mutedTextClass}>Persisted status is stale</div> : null}
+              </div>,
               <div key="amount">
-                <div>
-                  {item.amount} {item.currencyCode}
-                </div>
-                <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
+                <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
+                <div className={mutedTextClass}>Rail: {item.paymentRail ?? `No rail`}</div>
               </div>,
               <div key="timing-assigned">
-                <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
                 <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
-                <div className={mutedTextClass}>
-                  Assigned: <PaymentAssignedTo item={item} />
-                </div>
+                {item.assignedTo ? (
+                  <div className={mutedTextClass}>
+                    Assigned: <PaymentAssignedTo item={item} />
+                  </div>
+                ) : null}
+                {item.attachmentsCount > 0 ? (
+                  <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
+                ) : null}
               </div>,
             ]}
           />
@@ -169,7 +218,7 @@ function PaymentsDesktopTable({ items, returnTo }: { items: PaymentItem[]; retur
   return (
     <div className="readSurface hidden xl:block" data-view="desktop">
       <DenseTable
-        headers={[`Payment request`, `Participants`, `Status`, `Assigned to`, `Amount`, `Freshness`, `Due / Updated`]}
+        headers={[`Request`, `Participants`, `Status / follow-up`, `Amount / timing`]}
         emptyMessage="No payment requests found for the current filters."
       >
         {items.length === 0
@@ -177,36 +226,48 @@ function PaymentsDesktopTable({ items, returnTo }: { items: PaymentItem[]; retur
           : items.map((item) => (
               <tr key={item.id}>
                 <td>
-                  <Link href={withReturnTo(`/payments/${item.id}`, returnTo)}>
-                    <strong>{item.id}</strong>
+                  <div className={subtleTextClass}>Payment request</div>
+                  <div className="mb-1 text-sm text-white/90">Payer: {renderConsumerLabel(item.payer)}</div>
+                  <div className={mutedTextClass}>Requester: {renderConsumerLabel(item.requester)}</div>
+                  <Link href={withReturnTo(`/payments/${item.id}`, returnTo)} className="block">
+                    <strong className="block text-white">{item.id}</strong>
                   </Link>
                   <div className={mutedTextClass}>{item.paymentRail ?? `No rail`}</div>
-                  <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
+                  {item.attachmentsCount > 0 ? (
+                    <div className={subtleTextClass}>Attachments: {item.attachmentsCount}</div>
+                  ) : null}
                 </td>
                 <td>
-                  <PaymentParticipants item={item} returnTo={returnTo} />
+                  <PaymentParticipantsSummary item={item} returnTo={returnTo} />
                 </td>
                 <td>
                   <div>
                     <StatusPill status={item.effectiveStatus} />
                   </div>
-                  <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
+                  {shouldShowPersistedStatus(item) ? (
+                    <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
+                  ) : null}
+                  {item.assignedTo ? (
+                    <div className={mutedTextClass}>
+                      Assigned: <PaymentAssignedTo item={item} />
+                    </div>
+                  ) : null}
+                  {shouldShowFreshnessLabel(item) ? (
+                    <div className={mutedTextClass}>
+                      {item.staleWarning ? `Persisted status is stale` : `Freshness: ${item.dataFreshnessClass}`}
+                    </div>
+                  ) : null}
                 </td>
                 <td>
-                  <PaymentAssignedTo item={item} />
-                </td>
-                <td>
-                  {item.amount} {item.currencyCode}
-                </td>
-                <td>
-                  <div>{item.dataFreshnessClass}</div>
-                  <div className={mutedTextClass}>
-                    {item.staleWarning ? `Persisted status is stale` : `Exact enough for list`}
+                  <div className="font-semibold text-white/92">
+                    {item.amount} {item.currencyCode}
                   </div>
-                </td>
-                <td>
                   <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
                   <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
+                  {!item.assignedTo ? <div className={subtleTextClass}>Unassigned</div> : null}
+                  {!shouldShowFreshnessLabel(item) ? (
+                    <div className={subtleTextClass}>Freshness: {item.dataFreshnessClass}</div>
+                  ) : null}
                 </td>
               </tr>
             ))}
@@ -285,6 +346,19 @@ export default async function PaymentsPage({
   }
 
   const items = data?.items ?? [];
+  const activeFilterCount = [
+    q,
+    status,
+    paymentRail,
+    currencyCode,
+    amountMin,
+    amountMax,
+    dueDateFrom,
+    dueDateTo,
+    createdFrom,
+    createdTo,
+    overdue ? `overdue` : ``,
+  ].filter(Boolean).length;
   const currentQueueHref = buildPathWithSearch(`/payments`, {
     quickstart: requestedQuickstartId,
     q,
@@ -307,7 +381,13 @@ export default async function PaymentsPage({
         <Panel
           title="Payments"
           description="Read-only payment request investigation with finance-safe cross-links."
-          actions={<ActionGhost href="/payments/operations">Open operations queue</ActionGhost>}
+          actions={
+            <div className={buttonRowClass}>
+              <TinyPill tone="cyan">{items.length} visible</TinyPill>
+              <TinyPill>{activeFilterCount > 0 ? `${activeFilterCount} filters active` : `All timing states`}</TinyPill>
+              <ActionGhost href="/payments/operations">Open operations queue</ActionGhost>
+            </div>
+          }
           surface="primary"
         >
           <p className={mutedTextClass}>
@@ -331,45 +411,13 @@ export default async function PaymentsPage({
           </Panel>
         ) : null}
 
-        <Panel
-          title="Queue summary"
-          description="See the active slice before opening filters or drilling into a payment request."
-          actions={
-            <div className={buttonRowClass}>
-              <TinyPill tone="cyan">{items.length} visible</TinyPill>
-              <TinyPill>{overdue ? `Overdue slice` : `All timing states`}</TinyPill>
-              {status ? <TinyPill>{status}</TinyPill> : null}
-            </div>
-          }
-          surface="support"
-        >
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Current slice</div>
-              <div className="mt-2 text-sm text-white/90">
-                {q ? `Search active` : `Queue window`}
-                {paymentRail ? ` · ${paymentRail}` : ``}
-                {currencyCode ? ` · ${currencyCode}` : ``}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Freshness cue</div>
-              <div className="mt-2 text-sm text-white/90">
-                Persisted and effective status are shown together so stale cases stay visible.
-              </div>
-            </div>
-            <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.06] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/70">Next step</div>
-              <div className="mt-2 text-sm text-white/92">Open the queue list below and drill into the next case.</div>
-            </div>
-          </div>
-        </Panel>
-
         <ResponsiveFilterPanel
+          className="order-3 xl:order-2"
           title="Queue filters"
           description="Narrow the operational slice without leaving the queue."
           summaryLabel="Filters"
-          summaryValue={`${[q, status, paymentRail, currencyCode, overdue ? `overdue` : ``].filter(Boolean).length} active`}
+          summaryValue={`${activeFilterCount} active`}
+          activeCount={activeFilterCount}
         >
           <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
             <label className={fieldClass}>
@@ -454,10 +502,13 @@ export default async function PaymentsPage({
         </ResponsiveFilterPanel>
 
         <Panel
+          className="order-2 xl:order-3"
           title="Payment request queue"
-          description={`${items.length} rows in this window · cursor ${cursor ? `active` : `start`}`}
+          description={`${items.length} rows in this window · cursor ${cursor ? `active` : `start`} · ${q ? `search active` : `queue window`}`}
           actions={
             <div className={buttonRowClass}>
+              {status ? <TinyPill>{status}</TinyPill> : null}
+              {overdue ? <TinyPill>Overdue slice</TinyPill> : null}
               {data?.pageInfo.nextCursor ? (
                 <ActionGhost href={nextHref(data.pageInfo.nextCursor)}>Next</ActionGhost>
               ) : null}

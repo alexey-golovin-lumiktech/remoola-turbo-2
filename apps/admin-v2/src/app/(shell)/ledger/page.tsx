@@ -1,10 +1,13 @@
 import Link from 'next/link';
 
+import { cn } from '@remoola/ui';
+
 import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
 import { TabletRow } from '../../../components/tablet-row';
+import { TinyPill } from '../../../components/tiny-pill';
 import { buttonRowClass, fieldClass, fieldLabelClass, textInputClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import {
@@ -29,6 +32,18 @@ function renderMetadata(value: Record<string, unknown>) {
 
 type LedgerEntryItem = LedgerEntriesListResponse[`items`][number];
 type DisputeItem = LedgerDisputesResponse[`items`][number];
+
+function isNegativeAmount(value: LedgerEntryItem[`amount`]): boolean {
+  return String(value).trim().startsWith(`-`);
+}
+
+function renderLedgerAmount(entry: LedgerEntryItem) {
+  return (
+    <span className={cn(`font-semibold text-white/92`, isNegativeAmount(entry.amount) && `text-rose-200`)}>
+      {entry.amount} {entry.currencyCode}
+    </span>
+  );
+}
 
 function LedgerEntryLinks({ entry }: { entry: LedgerEntryItem }) {
   return (
@@ -151,23 +166,26 @@ function LedgerEntriesTabletRows({ items }: { items: LedgerEntryItem[] }) {
               </>
             }
             cells={[
-              <LedgerEntryLinks entry={entry} key="links" />,
               <div key="status">
-                <div>{entry.effectiveStatus}</div>
-                <div className="muted">Persisted: {entry.persistedStatus}</div>
+                <div>{renderLedgerAmount(entry)}</div>
+                <div className="muted">{entry.effectiveStatus}</div>
+                {entry.persistedStatus !== entry.effectiveStatus ? (
+                  <div className="muted">Persisted: {entry.persistedStatus}</div>
+                ) : null}
               </div>,
-              <div key="amount">
-                <div>
-                  {entry.amount} {entry.currencyCode}
-                </div>
+              <LedgerEntryLinks entry={entry} key="links" />,
+              <div key="entry-meta">
+                <div>{entry.type}</div>
                 <div className="muted">{entry.paymentRail ?? `No rail`}</div>
               </div>,
               <div key="disputes-assigned">
                 <div className="muted">Disputes: {entry.disputeCount}</div>
                 <div className="muted">Created: {formatDate(entry.createdAt)}</div>
-                <div className="muted">
-                  Assigned: <LedgerEntryAssignedTo entry={entry} />
-                </div>
+                {entry.assignedTo ? (
+                  <div className="muted">
+                    Assigned: <LedgerEntryAssignedTo entry={entry} />
+                  </div>
+                ) : null}
               </div>,
             ]}
           />
@@ -181,7 +199,7 @@ function LedgerEntriesDesktopTable({ items }: { items: LedgerEntryItem[] }) {
   return (
     <div className="readSurface hidden xl:block" data-view="desktop">
       <DenseTable
-        headers={[`Ledger entry`, `Links`, `Status`, `Assigned to`, `Amount`, `Disputes`, `Created`]}
+        headers={[`Entry`, `Amount / status`, `Links`, `Follow-up`, `Created`]}
         emptyMessage="No ledger entries found for the current filters."
       >
         {items.length === 0
@@ -196,20 +214,31 @@ function LedgerEntriesDesktopTable({ items }: { items: LedgerEntryItem[] }) {
                   <div className="muted">{entry.paymentRail ?? `No rail`}</div>
                 </td>
                 <td>
+                  <div>{renderLedgerAmount(entry)}</div>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    <TinyPill>{entry.effectiveStatus}</TinyPill>
+                    {entry.persistedStatus !== entry.effectiveStatus ? (
+                      <TinyPill>{entry.persistedStatus}</TinyPill>
+                    ) : null}
+                  </div>
+                </td>
+                <td>
                   <LedgerEntryLinks entry={entry} />
                 </td>
                 <td>
-                  <div>{entry.effectiveStatus}</div>
-                  <div className="muted">Persisted: {entry.persistedStatus}</div>
+                  <div className="muted">Disputes: {entry.disputeCount}</div>
+                  {entry.assignedTo ? (
+                    <div className="muted">
+                      Assigned: <LedgerEntryAssignedTo entry={entry} />
+                    </div>
+                  ) : (
+                    <div className="muted">Unassigned</div>
+                  )}
                 </td>
                 <td>
-                  <LedgerEntryAssignedTo entry={entry} />
+                  <div>{formatDate(entry.createdAt)}</div>
+                  {isNegativeAmount(entry.amount) ? <div className="muted">Negative amount</div> : null}
                 </td>
-                <td>
-                  {entry.amount} {entry.currencyCode}
-                </td>
-                <td>{entry.disputeCount}</td>
-                <td>{formatDate(entry.createdAt)}</td>
               </tr>
             ))}
       </DenseTable>

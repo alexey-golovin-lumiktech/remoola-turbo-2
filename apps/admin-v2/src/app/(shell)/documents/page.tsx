@@ -2,15 +2,20 @@ import Link from 'next/link';
 
 import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
-import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { MobileQueueCard, MobileQueueSection } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
+import { ResponsiveFilterPanel } from '../../../components/responsive-filter-panel';
 import { TabletRow } from '../../../components/tablet-row';
+import { TinyPill } from '../../../components/tiny-pill';
 import {
   buttonRowClass,
   checkboxFieldClass,
   checkboxInputClass,
+  detailsSummaryClass,
   fieldClass,
   fieldLabelClass,
+  mutedTextClass,
+  stackClass,
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
@@ -147,23 +152,33 @@ function ExplorerTable({
                   key={document.id}
                   id={document.id}
                   href={`/documents/${document.id}`}
+                  eyebrow="Evidence file"
                   title={document.originalName}
                   subtitle={document.id}
                   trailing={<span className="pill">{document.access}</span>}
+                  badges={
+                    <>
+                      <span className="pill">{document.mimeType ?? `Unknown MIME`}</span>
+                      {document.tags.length > 0 ? <span className="pill">{document.tags.length} tags</span> : null}
+                    </>
+                  }
                 >
-                  <div className="muted">Created: {formatDateTime(document.createdAt)}</div>
-                  {canManage ? (
-                    <label className="field">
-                      <span>Select for bulk tag</span>
-                      {renderDocumentSelection(document)}
-                    </label>
-                  ) : null}
-                  <div className="muted">Owner</div>
-                  <div className="formStack">{renderDocumentOwners(document)}</div>
-                  <div className="muted">Assigned: {renderDocumentAssigneeSummary(document)}</div>
-                  <div className="muted">Tags: {renderDocumentTagSummary(document)}</div>
-                  <div className="muted">Payments: {renderDocumentPaymentSummary(document)}</div>
-                  {renderDocumentAccessDetails(document)}
+                  <MobileQueueSection title="Evidence summary">
+                    <div className="muted">Created: {formatDateTime(document.createdAt)}</div>
+                    <div className="muted">Assigned: {renderDocumentAssigneeSummary(document)}</div>
+                    <div className="muted">Tags: {renderDocumentTagSummary(document)}</div>
+                    <div className="muted">Payments: {renderDocumentPaymentSummary(document)}</div>
+                  </MobileQueueSection>
+                  <MobileQueueSection title="Ownership and access" compact>
+                    <div className="formStack">{renderDocumentOwners(document)}</div>
+                    {renderDocumentAccessDetails(document)}
+                    {canManage ? (
+                      <label className="field">
+                        <span>Select for batch action</span>
+                        {renderDocumentSelection(document)}
+                      </label>
+                    ) : null}
+                  </MobileQueueSection>
                 </MobileQueueCard>
               ))}
             </div>
@@ -174,6 +189,7 @@ function ExplorerTable({
               {items.map((document) => (
                 <TabletRow
                   key={document.id}
+                  eyebrow="Evidence file"
                   primary={
                     <>
                       <Link href={`/documents/${document.id}`}>
@@ -181,6 +197,12 @@ function ExplorerTable({
                       </Link>
                       <div className="muted mono">{document.id}</div>
                       <div className="muted">Created: {formatDateTime(document.createdAt)}</div>
+                    </>
+                  }
+                  badges={
+                    <>
+                      <span className="pill">{document.access}</span>
+                      <span className="pill">{document.mimeType ?? `Unknown MIME`}</span>
                     </>
                   }
                   cells={[
@@ -198,7 +220,7 @@ function ExplorerTable({
                       {renderDocumentAccessDetails(document)}
                       {canManage ? (
                         <label className="field">
-                          <span>Select</span>
+                          <span>Select for batch action</span>
                           {renderDocumentSelection(document)}
                         </label>
                       ) : null}
@@ -251,6 +273,54 @@ function ExplorerTable({
   );
 }
 
+function BulkTagPanel({ tags }: { tags: Awaited<ReturnType<typeof getDocumentTags>> | null }) {
+  const allTags = tags?.items ?? [];
+  const availableTags = allTags.filter((tag) => !tag.reserved);
+  const reservedTags = allTags.length - availableTags.length;
+
+  return (
+    <Panel
+      title="Batch action"
+      description="Keep review and selection in the explorer first, then open this section to apply bulk tags."
+      surface="meta"
+    >
+      <div className={stackClass}>
+        <div className={buttonRowClass}>
+          <TinyPill tone="cyan">{availableTags.length} selectable tags</TinyPill>
+          {reservedTags > 0 ? <TinyPill>{reservedTags} system-managed</TinyPill> : null}
+        </div>
+        <p className={mutedTextClass}>
+          This action stays intentionally secondary: review the evidence rows above, choose the exact documents there,
+          then expand the batch controls only when you are ready to submit.
+        </p>
+        <details>
+          <summary className={detailsSummaryClass}>Open bulk tag controls</summary>
+          <div className="mt-4 flex flex-col gap-4">
+            <div className="pillRow">
+              {allTags.map((tag) => (
+                <label className="pill" key={tag.id}>
+                  <input type="checkbox" name="tagIds" value={tag.id} disabled={tag.reserved} />
+                  {tag.name}
+                  {tag.reserved ? ` (system-managed)` : ``}
+                </label>
+              ))}
+            </div>
+            <p className={mutedTextClass}>
+              Select the documents to include from the explorer above, then submit this exact `document_bulk_tag`
+              action.
+            </p>
+            <div>
+              <button className="secondaryButton" type="submit">
+                Bulk tag selected documents
+              </button>
+            </div>
+          </div>
+        </details>
+      </div>
+    </Panel>
+  );
+}
+
 export default async function DocumentsPage({ searchParams }: { searchParams: Promise<DocumentsPageParams> }) {
   const params = await searchParams;
   const page = Number(typeof params.page === `string` ? params.page : `1`) || 1;
@@ -275,6 +345,19 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
     getDocumentTags(),
   ]);
   const canManage = identity?.capabilities.includes(`documents.manage`) ?? false;
+  const activeFilterCount = [
+    typeof params.q === `string` ? params.q : ``,
+    typeof params.consumerId === `string` ? params.consumerId : ``,
+    typeof params.paymentRequestId === `string` ? params.paymentRequestId : ``,
+    typeof params.tag === `string` ? params.tag : ``,
+    typeof params.access === `string` ? params.access : ``,
+    typeof params.mimetype === `string` ? params.mimetype : ``,
+    typeof params.sizeMin === `string` ? params.sizeMin : ``,
+    typeof params.sizeMax === `string` ? params.sizeMax : ``,
+    typeof params.createdFrom === `string` ? params.createdFrom : ``,
+    typeof params.createdTo === `string` ? params.createdTo : ``,
+    includeDeleted ? `include deleted` : ``,
+  ].filter(Boolean).length;
 
   return (
     <WorkspaceLayout workspace="documents">
@@ -282,7 +365,13 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
         <Panel
           title="Documents"
           description="Evidence review boundaries for uploaded resources linked to consumers or payment cases."
-          actions={<ActionGhost href="/documents/tags">Tag management</ActionGhost>}
+          actions={
+            <div className={buttonRowClass}>
+              <TinyPill tone="cyan">{documents?.total ?? 0} matched</TinyPill>
+              <TinyPill>{activeFilterCount > 0 ? `${activeFilterCount} filters active` : `All evidence`}</TinyPill>
+              <ActionGhost href="/documents/tags">Tag management</ActionGhost>
+            </div>
+          }
         >
           <p className="text-sm leading-6 text-white/60">
             This workspace stays investigation-first: no review queues, no storage diagnostics, no generic file
@@ -290,9 +379,13 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
           </p>
         </Panel>
 
-        <Panel
+        <ResponsiveFilterPanel
+          className="order-3"
           title="Explorer filters"
           description="Narrow the evidence explorer by owner, payment linkage, tag, access, size, or time window."
+          summaryLabel="Filters"
+          summaryValue={`${activeFilterCount} active`}
+          activeCount={activeFilterCount}
         >
           <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
             <label className={fieldClass}>
@@ -409,35 +502,23 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
               </div>
             </div>
           </form>
-        </Panel>
+        </ResponsiveFilterPanel>
 
         {canManage ? (
-          <form action={bulkTagDocumentsAction} className="formStack">
-            <section className="panel">
-              <div className="pageHeader">
-                <div>
-                  <h2>Bulk tag</h2>
-                  <p className="muted">Exact allowed bulk action only: add selected tags to selected documents.</p>
-                </div>
+          <form action={bulkTagDocumentsAction} className="formStack order-2">
+            <Panel
+              title="Review flow"
+              description="Explore evidence first. Batch actions stay available, but visually secondary, until the review slice is clear."
+              surface="meta"
+            >
+              <div className={buttonRowClass}>
+                <TinyPill tone="cyan">Step 1: Review evidence</TinyPill>
+                <TinyPill>Step 2: Select exact rows</TinyPill>
+                <TinyPill>Step 3: Open batch action</TinyPill>
               </div>
-              <div className="pillRow">
-                {(tags?.items ?? []).map((tag) => (
-                  <label className="pill" key={tag.id}>
-                    <input type="checkbox" name="tagIds" value={tag.id} disabled={tag.reserved} />
-                    {tag.name}
-                    {tag.reserved ? ` (system-managed)` : ``}
-                  </label>
-                ))}
-              </div>
-              <p className="muted">
-                Select the documents to include from the explorer table below, then submit this exact
-                `document_bulk_tag` action.
-              </p>
-              <button className="secondaryButton" type="submit">
-                Bulk tag selected documents
-              </button>
-            </section>
+            </Panel>
             <ExplorerTable canManage documents={documents} />
+            <BulkTagPanel tags={tags} />
           </form>
         ) : (
           <ExplorerTable canManage={false} documents={documents} />

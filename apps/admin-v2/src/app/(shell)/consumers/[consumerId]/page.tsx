@@ -22,15 +22,87 @@ import {
 } from '../../../../lib/admin-mutations.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
+function renderConsumerLabel(email: string | null | undefined, consumerId: string): string {
+  return email ?? consumerId;
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
   return new Date(value).toLocaleString();
 }
 
-function renderObject(value: Record<string, unknown> | null) {
-  if (!value) return <p className="muted">No data.</p>;
-  return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
+function formatPreviewValue(value: unknown): string | null {
+  if (value == null) {
+    return null;
+  }
+  if (typeof value === `string`) {
+    return value;
+  }
+  if (typeof value === `number` || typeof value === `boolean`) {
+    return String(value);
+  }
+  return null;
 }
+
+function formatPreviewLabel(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, `$1 $2`)
+    .replaceAll(`_`, ` `)
+    .replace(/^\w/, (char) => char.toUpperCase());
+}
+
+function buildPreviewEntries(value: Record<string, unknown>, preferredKeys: ReadonlyArray<string>) {
+  const preferred = preferredKeys
+    .map((key) => {
+      const formatted = formatPreviewValue(value[key]);
+      return formatted ? { label: formatPreviewLabel(key), value: formatted } : null;
+    })
+    .filter((entry): entry is { label: string; value: string } => entry !== null);
+
+  if (preferred.length > 0) {
+    return preferred;
+  }
+
+  return Object.entries(value)
+    .map(([key, raw]) => {
+      const formatted = formatPreviewValue(raw);
+      return formatted ? { label: formatPreviewLabel(key), value: formatted } : null;
+    })
+    .filter((entry): entry is { label: string; value: string } => entry !== null)
+    .slice(0, 4);
+}
+
+function renderObject(value: Record<string, unknown> | null, preferredKeys: ReadonlyArray<string> = []) {
+  if (!value) return <p className="muted">No data.</p>;
+
+  const previewEntries = buildPreviewEntries(value, preferredKeys);
+  const fieldCount = Object.keys(value).length;
+
+  return (
+    <div className="flex flex-col gap-3">
+      {previewEntries.length > 0 ? (
+        <div className={nestedCardClass}>
+          <div className="grid gap-2 md:grid-cols-2">
+            {previewEntries.map((entry) => (
+              <div key={`${entry.label}-${entry.value}`} className="min-w-0">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-white/40">{entry.label}</div>
+                <div className="mt-1 text-sm text-white/88">{entry.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <details className={nestedCardClass}>
+        <summary className="cursor-pointer text-sm text-white/72">
+          View raw record ({fieldCount} field{fieldCount === 1 ? `` : `s`})
+        </summary>
+        <pre className="mono mt-3 overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>
+      </details>
+    </div>
+  );
+}
+
+const nestedCardClass = `rounded-card border border-white/8 bg-white/[0.02] p-4`;
 
 export default async function ConsumerCasePage({
   params,
@@ -74,33 +146,84 @@ export default async function ConsumerCasePage({
   const ledgerRows = Object.entries(ledgerSummary?.summary ?? consumer.ledgerSummary ?? {});
   const canManageNotes = identity?.capabilities.includes(`consumers.notes`) ?? false;
   const canManageFlags = identity?.capabilities.includes(`consumers.flags`) ?? false;
+  const canForceLogout = identity?.capabilities.includes(`consumers.force_logout`) ?? false;
+  const canSuspend = identity?.capabilities.includes(`consumers.suspend`) ?? false;
+  const canResendEmail = identity?.capabilities.includes(`consumers.email_resend`) ?? false;
   const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/consumers`);
 
   return (
     <>
       <Panel
-        title={consumer.email}
+        title={renderConsumerLabel(consumer.email, consumer.id)}
         description={consumer.id}
         actions={
-          <div className="flex flex-wrap gap-2">
-            <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
-            <ActionGhost href={`/verification/${consumer.id}`}>Verification case</ActionGhost>
-            <ActionGhost href={`/audit/consumer-actions?consumerId=${consumer.id}`}>Consumer actions</ActionGhost>
-            <ActionGhost href={`/audit/admin-actions?resourceId=${consumer.id}`}>Related admin actions</ActionGhost>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">Queue</span>
+              <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+              <ActionGhost href={`/verification/${consumer.id}`}>Verification case</ActionGhost>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">Audit</span>
+              <ActionGhost href={`/audit/consumer-actions?consumerId=${consumer.id}`}>Consumer actions</ActionGhost>
+              <ActionGhost href={`/audit/admin-actions?resourceId=${consumer.id}`}>Related admin actions</ActionGhost>
+            </div>
           </div>
         }
         surface="primary"
       >
+        <p className="muted">
+          Consumer case summary for review, identity status, support actions, and cross-links into verification, audit,
+          payment methods, and recent payment activity.
+        </p>
         <div className="pillRow">
           <span className="pill">{consumer.accountType}</span>
           <span className="pill">{consumer.verificationStatus}</span>
           {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
+          {consumer.suspendedAt ? <span className="pill">Suspended</span> : null}
         </div>
-        {identity?.capabilities.includes(`consumers.force_logout`) ? (
-          <form
-            action={forceLogoutConsumerAction.bind(null, consumer.id)}
-            className="mt-4 flex flex-wrap items-end gap-2"
-          >
+      </Panel>
+
+      <section className="statsGrid">
+        <Panel surface="meta">
+          <h3>Case summary</h3>
+          <p className="muted">Email: {consumer.email ?? `-`}</p>
+          <p className="muted">Consumer id: {consumer.id}</p>
+          <p className="muted">Account type: {consumer.accountType}</p>
+          <p className="muted">Contractor kind: {consumer.contractorKind ?? `-`}</p>
+          <p className="muted">Updated: {formatDate(consumer.updatedAt)}</p>
+        </Panel>
+        <Panel surface="meta">
+          <h3>Immediate signals</h3>
+          <p className="muted">Verification: {consumer.verificationStatus}</p>
+          <p className="muted">Stripe identity: {consumer.stripeIdentityStatus ?? `No Stripe state`}</p>
+          <p className="muted">Suspended: {consumer.suspendedAt ? `Yes` : `No`}</p>
+          <p className="muted">Flags: {consumer._count.adminFlags}</p>
+          <p className="muted">Notes: {consumer._count.adminNotes}</p>
+        </Panel>
+        <Panel surface="meta">
+          <h3>Quick actions</h3>
+          <p className="muted">
+            Use verification and audit links above for navigation. Sensitive consumer actions stay separated below.
+          </p>
+          <div className="pillRow">
+            {canForceLogout ? <span className="pill">Force logout available</span> : null}
+            {canSuspend ? <span className="pill">Suspend available</span> : null}
+            {canResendEmail ? <span className="pill">Email resend available</span> : null}
+            {!canForceLogout && !canSuspend && !canResendEmail ? (
+              <span className="pill">Read-only support tools</span>
+            ) : null}
+          </div>
+        </Panel>
+      </section>
+
+      {canForceLogout ? (
+        <Panel
+          title="Session action"
+          description="High-friction session control for active consumer access."
+          surface="meta"
+        >
+          <form action={forceLogoutConsumerAction.bind(null, consumer.id)} className="flex flex-wrap items-end gap-2">
             <input type="hidden" name="confirmed" value="false" />
             <label className="field">
               <span>Confirm</span>
@@ -110,8 +233,8 @@ export default async function ConsumerCasePage({
               Force logout
             </button>
           </form>
-        ) : null}
-      </Panel>
+        </Panel>
+      ) : null}
 
       <section className="statsGrid">
         <article className="panel">
@@ -150,29 +273,29 @@ export default async function ConsumerCasePage({
       <section className="detailGrid">
         <article className="panel">
           <h2>Personal details</h2>
-          {renderObject(consumer.personalDetails)}
+          {renderObject(consumer.personalDetails, [`firstName`, `lastName`, `legalStatus`, `citizenOf`, `phoneNumber`])}
         </article>
         <article className="panel">
           <h2>Organization details</h2>
-          {renderObject(consumer.organizationDetails)}
+          {renderObject(consumer.organizationDetails, [`name`, `consumerRole`, `size`])}
         </article>
         <article className="panel">
           <h2>Address</h2>
-          {renderObject(consumer.addressDetails)}
+          {renderObject(consumer.addressDetails, [`street`, `city`, `state`, `country`, `postalCode`])}
         </article>
       </section>
 
       <section className="detailGrid">
         <article className="panel">
           <h2>Google profile</h2>
-          {renderObject(consumer.googleProfileDetails)}
+          {renderObject(consumer.googleProfileDetails, [`email`, `name`, `organization`, `emailVerified`])}
         </article>
         <article className="panel">
           <h2>Contacts</h2>
           <div className="formStack">
             {consumer.contacts.length === 0 ? <p className="muted">No contacts.</p> : null}
             {consumer.contacts.map((contact) => (
-              <div key={contact.id} className="panel">
+              <div key={contact.id} className={nestedCardClass}>
                 <strong>{contact.name ?? contact.email}</strong>
                 <p className="muted">{contact.email}</p>
                 <p className="muted">Updated: {formatDate(contact.updatedAt)}</p>
@@ -185,7 +308,7 @@ export default async function ConsumerCasePage({
           <div className="formStack">
             {ledgerRows.length === 0 ? <p className="muted">No ledger activity.</p> : null}
             {ledgerRows.map(([currencyCode, summary]) => (
-              <div key={currencyCode} className="panel">
+              <div key={currencyCode} className={nestedCardClass}>
                 <strong>{currencyCode}</strong>
                 <p className="muted">
                   Completed: {summary.completedAmount} ({summary.completedCount})
@@ -206,7 +329,7 @@ export default async function ConsumerCasePage({
             <p className="muted">
               Limited support actions only: suspension and explicit email resend. No general consumer edits.
             </p>
-            {identity?.capabilities.includes(`consumers.suspend`) ? (
+            {canSuspend ? (
               <form action={suspendConsumerAction.bind(null, consumer.id)} className="formStack">
                 <label className="field">
                   <span>Suspension reason</span>
@@ -227,7 +350,7 @@ export default async function ConsumerCasePage({
               </form>
             ) : null}
 
-            {identity?.capabilities.includes(`consumers.email_resend`) ? (
+            {canResendEmail ? (
               <>
                 <form action={resendConsumerEmailAction.bind(null, consumer.id)} className="formStack">
                   <input type="hidden" name="emailKind" value="signup_verification" />
@@ -291,7 +414,7 @@ export default async function ConsumerCasePage({
           <div className="formStack">
             {consumer.adminFlags.length === 0 ? <p className="muted">No active flags.</p> : null}
             {consumer.adminFlags.map((flag) => (
-              <div key={flag.id} className="panel">
+              <div key={flag.id} className={nestedCardClass}>
                 <div className="pageHeader">
                   <div>
                     <strong>{flag.flag}</strong>
@@ -318,7 +441,7 @@ export default async function ConsumerCasePage({
           <div className="formStack">
             {consumer.adminNotes.length === 0 ? <p className="muted">No notes yet.</p> : null}
             {consumer.adminNotes.map((note) => (
-              <div key={note.id} className="panel">
+              <div key={note.id} className={nestedCardClass}>
                 <p>{note.content}</p>
                 <p className="muted">
                   {note.admin.email} · {formatDate(note.createdAt)}
@@ -335,7 +458,7 @@ export default async function ConsumerCasePage({
           <div className="formStack">
             {(contracts?.items ?? []).length === 0 ? <p className="muted">No contract relationships found.</p> : null}
             {(contracts?.items ?? []).map((contract) => (
-              <div key={contract.id} className="panel">
+              <div key={contract.id} className={nestedCardClass}>
                 <strong>{contract.name || contract.email}</strong>
                 <p className="muted">{contract.email}</p>
                 <p className="muted">Last status: {contract.lastStatus ?? `-`}</p>
@@ -350,7 +473,7 @@ export default async function ConsumerCasePage({
           <div className="formStack">
             {consumer.recentPaymentRequests.length === 0 ? <p className="muted">No payment requests.</p> : null}
             {consumer.recentPaymentRequests.map((paymentRequest) => (
-              <div key={paymentRequest.id} className="panel">
+              <div key={paymentRequest.id} className={nestedCardClass}>
                 <strong>
                   <Link href={`/payments/${paymentRequest.id}`}>
                     {paymentRequest.amount} {paymentRequest.currencyCode}
@@ -376,7 +499,7 @@ export default async function ConsumerCasePage({
           <div className="formStack">
             {consumer.paymentMethods.length === 0 ? <p className="muted">No payment methods.</p> : null}
             {consumer.paymentMethods.map((paymentMethod) => (
-              <div key={String(paymentMethod.id)} className="panel">
+              <div key={String(paymentMethod.id)} className={nestedCardClass}>
                 <strong>
                   <Link href={`/payment-methods/${paymentMethod.id}`}>
                     {String(paymentMethod.type) === `CREDIT_CARD`
@@ -399,7 +522,7 @@ export default async function ConsumerCasePage({
           <h2>Documents</h2>
           <div className="formStack">
             {consumer.consumerResources.map((resource) => (
-              <div key={resource.id} className="panel">
+              <div key={resource.id} className={nestedCardClass}>
                 <strong>{resource.resource.originalName}</strong>
                 <p className="muted">{resource.resource.mimetype}</p>
                 <p className="muted">
@@ -417,7 +540,7 @@ export default async function ConsumerCasePage({
           <div className="formStack">
             {(authHistory?.items ?? []).length === 0 ? <p className="muted">No auth history.</p> : null}
             {(authHistory?.items ?? []).map((event, index) => (
-              <div key={String(event.id ?? index)} className="panel">
+              <div key={String(event.id ?? index)} className={nestedCardClass}>
                 <strong>{String(event.event ?? `event`)}</strong>
                 <p className="muted">{String(event.email ?? consumer.email)}</p>
                 <p className="muted">{formatDate(String(event.createdAt ?? ``))}</p>
@@ -432,7 +555,7 @@ export default async function ConsumerCasePage({
               <p className="muted">No admin actions.</p>
             ) : null}
             {(consumer.recentAdminActions as Array<Record<string, unknown>>).map((event, index) => (
-              <div key={String(event.id ?? index)} className="panel">
+              <div key={String(event.id ?? index)} className={nestedCardClass}>
                 <strong>{String(event.action ?? `action`)}</strong>
                 <p className="muted">{formatDate(String(event.createdAt ?? ``))}</p>
               </div>
@@ -444,7 +567,7 @@ export default async function ConsumerCasePage({
           <div className="formStack">
             {(actionLog?.items ?? []).length === 0 ? <p className="muted">No consumer actions.</p> : null}
             {(actionLog?.items ?? []).map((event, index) => (
-              <div key={String(event.id ?? index)} className="panel">
+              <div key={String(event.id ?? index)} className={nestedCardClass}>
                 <strong>{String(event.action ?? `action`)}</strong>
                 <p className="muted">{String(event.resource ?? `-`)}</p>
                 <p className="muted">{formatDate(String(event.createdAt ?? ``))}</p>

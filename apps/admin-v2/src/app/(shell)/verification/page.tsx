@@ -155,25 +155,32 @@ function VerificationMobileCards({ items, returnTo }: { items: VerificationItem[
             key={item.id}
             id={item.id}
             href={withReturnTo(`/verification/${item.id}`, returnTo)}
+            eyebrow="Verification case"
             title={item.email}
             subtitle={item.id}
             trailing={<StatusPill status={item.verificationStatus} />}
+            badges={
+              <>
+                <TinyPill>{item.accountType}</TinyPill>
+                <TinyPill>{item.country ?? `No country`}</TinyPill>
+              </>
+            }
           >
-            <MobileQueueSection title="Identity">
-              <div className={mutedTextClass}>Stripe: {item.stripeIdentityStatus ?? `-`}</div>
-              <div>
-                {item.accountType} · {item.country ?? `-`}
-              </div>
-            </MobileQueueSection>
-            <MobileQueueSection title="Completion blockers">
-              <div className={mutedTextClass}>{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+            <MobileQueueSection title="Review summary">
+              <div className={mutedTextClass}>Assigned: {renderVerificationAssigneeSummary(item)}</div>
               <div className={mutedTextClass}>
                 {item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}
               </div>
               <div className={mutedTextClass}>SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
             </MobileQueueSection>
-            <MobileQueueSection title="Ownership">
-              <div className={mutedTextClass}>Assigned: {renderVerificationAssigneeSummary(item)}</div>
+            <MobileQueueSection title="Identity" compact>
+              <div className={mutedTextClass}>Stripe: {item.stripeIdentityStatus ?? `-`}</div>
+              <div>
+                {item.accountType} · {item.country ?? `-`}
+              </div>
+            </MobileQueueSection>
+            <MobileQueueSection title="Completion blockers" compact>
+              <div className={mutedTextClass}>{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
               <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
             </MobileQueueSection>
           </MobileQueueCard>
@@ -198,6 +205,7 @@ function VerificationTabletRows({ items, returnTo }: { items: VerificationItem[]
         {items.map((item) => (
           <TabletRow
             key={item.id}
+            eyebrow="Verification case"
             primary={
               <>
                 <Link href={withReturnTo(`/verification/${item.id}`, returnTo)}>
@@ -206,11 +214,15 @@ function VerificationTabletRows({ items, returnTo }: { items: VerificationItem[]
                 <div className={monoMutedTextClass}>{item.id}</div>
               </>
             }
+            badges={
+              <>
+                <StatusPill status={item.verificationStatus} />
+                <TinyPill>{item.accountType}</TinyPill>
+                <TinyPill>{item.country ?? `No country`}</TinyPill>
+              </>
+            }
             cells={[
               <div key="status">
-                <div>
-                  <StatusPill status={item.verificationStatus} />
-                </div>
                 <div className={mutedTextClass}>{item.stripeIdentityStatus ?? `-`}</div>
               </div>,
               <div key="profile">
@@ -367,64 +379,92 @@ function SavedViewsSection({
   hasInvalidPayload: boolean;
   canManageSavedViews: boolean;
 }) {
+  const hasViews = views.length > 0;
+  const shouldExpandSavedViews = hasInvalidPayload || !hasViews;
+
   return (
-    <Panel title="Saved views" description="Personal saved filters for the verification queue workspace.">
+    <Panel
+      title="Saved views"
+      description="Personal saved filters for the verification queue workspace."
+      actions={
+        <div className={buttonRowClass}>
+          <TinyPill tone="cyan">{views.length} saved</TinyPill>
+          <TinyPill>{canManageSavedViews ? `Manage enabled` : `Read-only access`}</TinyPill>
+        </div>
+      }
+      surface="meta"
+    >
       {hasInvalidPayload ? (
         <p className={mutedTextClass}>
           One or more saved views have an unrecognised payload shape and cannot be applied. Default filters are used
           instead for those rows.
         </p>
       ) : null}
-      <div className={stackClass}>
-        {views.length === 0 ? (
-          <p className={mutedTextClass}>
-            {canManageSavedViews
-              ? `No saved views yet. Use the form below to save the current filters.`
-              : `Saved view management is not available for this admin identity.`}
-          </p>
-        ) : (
-          views.map((view) => (
-            <SavedViewRow key={view.id} view={view} buildHref={buildHref} canManageSavedViews={canManageSavedViews} />
-          ))
-        )}
-      </div>
+      <details open={shouldExpandSavedViews}>
+        <summary className={detailsSummaryClass}>
+          {hasViews ? `Open saved views list` : `Open saved views section`}
+        </summary>
+        <div className="mt-4">
+          <div className={stackClass}>
+            {!hasViews ? (
+              <p className={mutedTextClass}>
+                {canManageSavedViews
+                  ? `No saved views yet. Use the compact form below to save the current filters.`
+                  : `Saved view management is not available for this admin identity.`}
+              </p>
+            ) : (
+              views.map((view) => (
+                <SavedViewRow
+                  key={view.id}
+                  view={view}
+                  buildHref={buildHref}
+                  canManageSavedViews={canManageSavedViews}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </details>
       {canManageSavedViews ? (
-        <article className={cn(`mt-4`, panelClass)}>
-          <h3>Save current view</h3>
-          <form action={createSavedViewAction} className={stackClass}>
-            <input type="hidden" name="workspace" value={SAVED_VIEW_WORKSPACE} />
-            <input type="hidden" name="queryPayload" value={JSON.stringify(currentPayload)} />
-            <label className={fieldClass}>
-              <span className={fieldLabelClass}>Name</span>
-              <input
-                className={textInputClass}
-                name="name"
-                required
-                maxLength={SHARED_NAME_MAX_LENGTH}
-                placeholder="e.g. Pending DE individuals"
-                aria-label="New saved view name"
-              />
-            </label>
-            <label className={fieldClass}>
-              <span className={fieldLabelClass}>Description</span>
-              <input
-                className={textInputClass}
-                name="description"
-                maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
-                placeholder="Optional"
-                aria-label="New saved view description"
-              />
-            </label>
-            <p className={mutedTextClass}>Note: these filters are saved with the view, but alerts do not use them.</p>
-            <p className={monoMutedTextClass}>
-              status={currentPayload.status ?? `-`}, stripeIdentityStatus={currentPayload.stripeIdentityStatus ?? `-`},
-              country={currentPayload.country ?? `-`}, contractorKind={currentPayload.contractorKind ?? `-`},
-              missingProfileData={currentPayload.missingProfileData === true ? `true` : `false`}, missingDocuments=
-              {currentPayload.missingDocuments === true ? `true` : `false`}
-            </p>
-            <ActionPrimary type="submit">Save current view</ActionPrimary>
-          </form>
-        </article>
+        <details className="mt-4">
+          <summary className={detailsSummaryClass}>Save current filters as a view</summary>
+          <article className={cn(`mt-4`, panelClass)}>
+            <h3>Save current view</h3>
+            <form action={createSavedViewAction} className={stackClass}>
+              <input type="hidden" name="workspace" value={SAVED_VIEW_WORKSPACE} />
+              <input type="hidden" name="queryPayload" value={JSON.stringify(currentPayload)} />
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Name</span>
+                <input
+                  className={textInputClass}
+                  name="name"
+                  required
+                  maxLength={SHARED_NAME_MAX_LENGTH}
+                  placeholder="e.g. Pending DE individuals"
+                  aria-label="New saved view name"
+                />
+              </label>
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Description</span>
+                <input
+                  className={textInputClass}
+                  name="description"
+                  maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
+                  placeholder="Optional"
+                  aria-label="New saved view description"
+                />
+              </label>
+              <p className={mutedTextClass}>Note: these filters are saved with the view, but alerts do not use them.</p>
+              <p className={monoMutedTextClass}>
+                status={currentPayload.status ?? `-`}, stripeIdentityStatus={currentPayload.stripeIdentityStatus ?? `-`}
+                , country={currentPayload.country ?? `-`}, contractorKind={currentPayload.contractorKind ?? `-`},
+                missingProfileData={currentPayload.missingProfileData === true ? `true` : `false`}, missingDocuments=
+                {currentPayload.missingDocuments === true ? `true` : `false`}
+              </p>
+              <ActionPrimary type="submit">Save current view</ActionPrimary>
+            </form>
+          </article>
+        </details>
       ) : null}
     </Panel>
   );
@@ -480,6 +520,14 @@ export default async function VerificationQueuePage({
   const savedViews = savedViewsResponse?.views ?? [];
   const hasInvalidPayload = savedViews.some((view) => parseSavedViewPayload(view.queryPayload) === null);
   const items = queue?.items ?? [];
+  const activeFilterCount = [
+    status,
+    stripeIdentityStatus,
+    country,
+    contractorKind,
+    missingProfileData ? `missing profile` : ``,
+    missingDocuments ? `missing docs` : ``,
+  ].filter(Boolean).length;
   const currentQueueHref = buildPathWithSearch(`/verification`, {
     quickstart: requestedQuickstartId,
     page,
@@ -531,12 +579,22 @@ export default async function VerificationQueuePage({
           title="Verification Queue"
           description="Verification queue for active review states: PENDING, MORE_INFO, and FLAGGED."
           actions={
-            <p className={mutedTextClass}>
-              SLA breached: {queue?.sla.breachedCount ?? 0} · threshold {queue?.sla.thresholdHours ?? 24}h
-            </p>
+            <div className={buttonRowClass}>
+              <TinyPill tone="cyan">{queue?.total ?? 0} total</TinyPill>
+              <TinyPill>{queue?.sla.breachedCount ?? 0} breached</TinyPill>
+              <TinyPill>
+                {activeFilterCount > 0 ? `${activeFilterCount} filters active` : `All active statuses`}
+              </TinyPill>
+            </div>
           }
           surface="primary"
-        />
+        >
+          <p className={mutedTextClass}>
+            SLA breached: {queue?.sla.breachedCount ?? 0} · threshold {queue?.sla.thresholdHours ?? 24}h
+            {missingDocuments ? ` · document collection prioritized` : ``}
+            {missingProfileData ? ` · profile gaps prioritized` : ``}
+          </p>
+        </Panel>
 
         {appliedQuickstart ? (
           <Panel
@@ -551,68 +609,13 @@ export default async function VerificationQueuePage({
           </Panel>
         ) : null}
 
-        <Panel
-          title="Queue summary"
-          description="See pressure and blockers for the current verification slice before opening filters."
-          actions={
-            <div className={buttonRowClass}>
-              <TinyPill tone="cyan">{queue?.total ?? 0} total</TinyPill>
-              <TinyPill>{queue?.sla.breachedCount ?? 0} breached</TinyPill>
-              {missingDocuments ? <TinyPill>Missing docs</TinyPill> : null}
-            </div>
-          }
-          surface="support"
-        >
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Current slice</div>
-              <div className="mt-2 text-sm text-white/90">
-                {status ?? `All active statuses`}
-                {country ? ` · ${country}` : ``}
-                {contractorKind ? ` · ${contractorKind}` : ``}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Priority blocker</div>
-              <div className="mt-2 text-sm text-white/90">
-                {missingDocuments
-                  ? `Document collection is explicitly filtered into this slice.`
-                  : missingProfileData
-                    ? `Profile completion gaps are explicitly filtered into this slice.`
-                    : `Use filters to isolate missing profile or missing document cases.`}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.06] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/70">Next step</div>
-              <div className="mt-2 text-sm text-white/92">
-                Open the case list below and continue with the next review.
-              </div>
-            </div>
-          </div>
-        </Panel>
-
-        <SavedViewsSection
-          views={savedViews}
-          currentPayload={currentPayload}
-          buildHref={buildHref}
-          hasInvalidPayload={hasInvalidPayload}
-          canManageSavedViews={canManageSavedViews}
-        />
-
         <ResponsiveFilterPanel
+          className="order-3"
           title="Queue filters"
           description="Refine the active verification review list without leaving the workspace."
           summaryLabel="Filters"
-          summaryValue={`${
-            [
-              status,
-              stripeIdentityStatus,
-              country,
-              contractorKind,
-              missingProfileData ? `missing profile` : ``,
-              missingDocuments ? `missing docs` : ``,
-            ].filter(Boolean).length
-          } active`}
+          summaryValue={`${activeFilterCount} active`}
+          activeCount={activeFilterCount}
         >
           <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
             <label className={fieldClass}>
@@ -673,10 +676,15 @@ export default async function VerificationQueuePage({
         </ResponsiveFilterPanel>
 
         <Panel
+          className="order-2"
           title="Verification cases"
-          description={`${queue?.total ?? 0} results · page ${queue?.page ?? 1} / ${totalPages}`}
+          description={`${queue?.total ?? 0} results · page ${queue?.page ?? 1} / ${totalPages} · ${
+            status ?? `All active statuses`
+          }`}
           actions={
             <div className={buttonRowClass}>
+              {missingDocuments ? <TinyPill>Missing docs</TinyPill> : null}
+              {missingProfileData ? <TinyPill>Missing profile</TinyPill> : null}
               <a
                 className={cn(page <= 1 && `pointer-events-none opacity-50`, ghostButtonClass)}
                 href={page > 1 ? pageHref(page - 1) : pageHref(1)}
@@ -697,6 +705,14 @@ export default async function VerificationQueuePage({
           <VerificationTabletRows items={items} returnTo={currentQueueHref} />
           <VerificationDesktopTable items={items} returnTo={currentQueueHref} />
         </Panel>
+
+        <SavedViewsSection
+          views={savedViews}
+          currentPayload={currentPayload}
+          buildHref={buildHref}
+          hasInvalidPayload={hasInvalidPayload}
+          canManageSavedViews={canManageSavedViews}
+        />
       </>
     </WorkspaceLayout>
   );

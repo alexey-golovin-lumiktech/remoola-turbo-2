@@ -69,14 +69,18 @@ function ConsumersMobileCards({ items }: { items: ConsumerItem[] }) {
             key={consumer.id}
             id={consumer.id}
             href={`/consumers/${consumer.id}`}
+            eyebrow="Consumer case"
             title={renderConsumerLabel(consumer)}
             subtitle={consumer.email ?? `No email`}
             trailing={<StatusPill status={consumer.verificationStatus} />}
+            badges={
+              <>
+                <span className="pill">{consumer.accountType}</span>
+                {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
+              </>
+            }
           >
             <div className="muted mono">{consumer.id}</div>
-            <div>
-              {consumer.accountType} · {consumer.contractorKind ?? `-`}
-            </div>
             <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
             <div className="muted">Stripe identity: {consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
             <div className="muted">Flags: {renderConsumerFlagsSummary(consumer)}</div>
@@ -104,6 +108,7 @@ function ConsumersTabletRows({ items }: { items: ConsumerItem[] }) {
         {items.map((consumer) => (
           <TabletRow
             key={consumer.id}
+            eyebrow="Consumer case"
             primary={
               <>
                 <Link href={`/consumers/${consumer.id}`}>
@@ -113,16 +118,18 @@ function ConsumersTabletRows({ items }: { items: ConsumerItem[] }) {
                 <div className="muted mono">{consumer.id}</div>
               </>
             }
+            badges={
+              <>
+                <StatusPill status={consumer.verificationStatus} />
+                <span className="pill">{consumer.accountType}</span>
+                {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
+              </>
+            }
             cells={[
               <div key="type">
-                <div>{consumer.accountType}</div>
-                <div className="muted">{consumer.contractorKind ?? `-`}</div>
                 <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
               </div>,
               <div key="verification">
-                <div>
-                  <StatusPill status={consumer.verificationStatus} />
-                </div>
                 <div className="muted">{consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
               </div>,
               <div key="flags" className="muted">

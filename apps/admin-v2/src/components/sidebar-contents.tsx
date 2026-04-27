@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { type ReactElement } from 'react';
 
 import { cn } from '@remoola/ui';
@@ -6,6 +9,7 @@ import { cn } from '@remoola/ui';
 import { ActionGhost } from '@/components/action-ghost';
 
 import { SidebarSection } from './sidebar-section';
+import { normalizeActivePath } from '../app/(shell)/nav-state';
 import {
   auditExplorerItems,
   coreShellItems,
@@ -36,13 +40,17 @@ export function SidebarContents({
   signalCounts,
   quickstarts,
 }: SidebarContentsProps): ReactElement {
+  const pathname = usePathname();
+  const resolvedActivePath = normalizeActivePath(pathname) ?? activePath;
   const allowedWorkspaces = new Set(identity?.workspaces ?? []);
   const visibleCoreShellItems = coreShellItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleTopLevelBreadthItems = topLevelBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleFinanceBreadthItems = financeBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleMaturityItems = maturityItems.filter((item) => allowedWorkspaces.has(item.workspace));
+  const visibleSupportingItems = [
+    ...topLevelBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace)),
+    ...financeBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace)),
+    ...maturityItems.filter((item) => allowedWorkspaces.has(item.workspace)),
+    ...laterBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace)),
+  ];
   const visibleAuditExplorerItems = auditExplorerItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleLaterBreadthItems = laterBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace));
   const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity?.workspaces);
 
   return (
@@ -71,43 +79,22 @@ export function SidebarContents({
           description="Main operational routes with the shortest path into active queues and reviews."
           items={visibleCoreShellItems}
           signalCounts={signalCounts}
-          activePath={activePath}
+          activePath={resolvedActivePath}
           priority="core"
         />
         <SidebarSection
-          title="Breadth workspaces"
+          title="Supporting workspaces"
           compact
-          items={visibleTopLevelBreadthItems}
+          items={visibleSupportingItems}
           signalCounts={signalCounts}
-          activePath={activePath}
+          activePath={resolvedActivePath}
         />
         <SidebarSection
-          title="Finance tools"
-          compact
-          items={visibleFinanceBreadthItems}
-          signalCounts={signalCounts}
-          activePath={activePath}
-        />
-        <SidebarSection
-          title="System"
-          compact
-          items={visibleMaturityItems}
-          signalCounts={signalCounts}
-          activePath={activePath}
-        />
-        <SidebarSection
-          title="Audit logs"
+          title="Audit trails"
           compact
           items={visibleAuditExplorerItems}
           signalCounts={signalCounts}
-          activePath={activePath}
-        />
-        <SidebarSection
-          title="Admin tools"
-          compact
-          items={visibleLaterBreadthItems}
-          signalCounts={signalCounts}
-          activePath={activePath}
+          activePath={resolvedActivePath}
         />
       </nav>
 
@@ -122,7 +109,7 @@ export function SidebarContents({
               key={view.id}
               href={buildQuickstartHref(view.targetPath, view.id)}
               className={cn(
-                `group block w-full rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 text-left transition hover:border-cyan-400/30 hover:bg-cyan-500/[0.06]`,
+                `group block w-full rounded-xl border border-white/8 bg-white/[0.02] px-3 py-2.5 text-left transition hover:border-cyan-400/24 hover:bg-cyan-500/[0.05]`,
               )}
             >
               <div className="flex items-start justify-between gap-3">
@@ -131,7 +118,7 @@ export function SidebarContents({
                     {normalizeQuickstartEyebrow(view.eyebrow)}
                   </div>
                   <div className="mt-1 text-sm font-medium text-white/85 group-hover:text-white">{view.label}</div>
-                  <div className="mt-2 text-[11px] leading-5 text-white/45">{view.description}</div>
+                  <div className="mt-1 text-[11px] leading-5 text-white/45">{view.description}</div>
                 </div>
                 <span aria-hidden="true" className="pt-0.5 text-xs text-white/35 group-hover:text-cyan-200">
                   →

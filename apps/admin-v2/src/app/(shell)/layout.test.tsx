@@ -24,6 +24,10 @@ jest.mock(`../../components/mobile-shell-drawer`, () => ({
   MobileShellDrawer: ({ children }: { children: React.ReactNode }) => React.createElement(`div`, null, children),
 }));
 
+jest.mock(`../../components/mobile-shell-utility-bar`, () => ({
+  MobileShellUtilityBar: () => React.createElement(`div`, null, `mobile-shell-utility-bar`),
+}));
+
 jest.mock(`../../components/mobile-top-chips`, () => ({
   MobileTopChips: () => React.createElement(`div`, null, `mobile-top-chips`),
 }));
@@ -117,9 +121,11 @@ describe(`admin-v2 shell layout read states`, () => {
       `grid min-h-screen grid-cols-1 bg-bg lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]`,
     );
     expect(markup).toContain(`hidden lg:flex`);
+    expect(markup).toContain(`pb-24`);
     expect(markup).toContain(`mobile-bottom-nav`);
     expect(markup).toContain(`mobile-top-chips`);
     expect(markup).toContain(`mobile-page-header`);
+    expect(markup).toContain(`mobile-shell-utility-bar`);
     expect(markup).toContain(`shell-header`);
     expect(markup).toContain(`child-surface`);
   });

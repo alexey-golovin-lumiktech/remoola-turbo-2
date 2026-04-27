@@ -11,6 +11,7 @@ type ResponsiveFilterPanelProps = {
   description: string;
   summaryLabel: string;
   summaryValue?: string;
+  activeCount?: number;
   children: ReactNode;
   className?: string;
 };
@@ -20,13 +21,15 @@ export function ResponsiveFilterPanel({
   description,
   summaryLabel,
   summaryValue,
+  activeCount = 0,
   children,
   className,
 }: ResponsiveFilterPanelProps): ReactElement {
   const [open, setOpen] = useState(false);
+  const hasActiveFilters = activeCount > 0;
 
   useEffect(() => {
-    const media = window.matchMedia(`(min-width: 1280px)`);
+    const media = window.matchMedia(`(min-width: 1024px)`);
     const syncFromViewport = (): void => setOpen(media.matches);
 
     syncFromViewport();
@@ -44,7 +47,8 @@ export function ResponsiveFilterPanel({
         <summary
           className={cn(
             `flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 rounded-card border border-white/8 bg-white/[0.02] px-4 py-3 text-left transition hover:border-white/14 hover:bg-white/[0.03]`,
-            `xl:hidden`,
+            hasActiveFilters && `border-cyan-400/20 bg-cyan-500/[0.06]`,
+            `lg:hidden`,
           )}
         >
           <span className="min-w-0">
@@ -52,10 +56,18 @@ export function ResponsiveFilterPanel({
             <span className="mt-1 block text-xs leading-5 text-white/52">{description}</span>
           </span>
           <span className="flex shrink-0 items-center gap-2">
-            <span className="rounded-pill border border-cyan-400/20 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-medium text-cyan-100">
+            <span
+              className={cn(
+                `rounded-pill border px-2.5 py-1 text-[11px] font-medium`,
+                hasActiveFilters
+                  ? `border-cyan-400/20 bg-cyan-500/10 text-cyan-100`
+                  : `border-white/10 bg-white/[0.03] text-white/72`,
+              )}
+            >
               {summaryLabel}
             </span>
             {summaryValue ? <span className="text-xs text-white/55">{summaryValue}</span> : null}
+            <span className="text-xs text-white/45">{hasActiveFilters ? `Edit filters` : `Show filters`}</span>
             <span
               aria-hidden="true"
               className="text-sm text-white/45 transition group-open:rotate-180 group-open:text-white/70"
@@ -64,14 +76,29 @@ export function ResponsiveFilterPanel({
             </span>
           </span>
         </summary>
-        <div className="xl:pt-0">
-          <div className="hidden xl:pb-4 xl:group-open:block">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-base font-semibold text-text">{title}</h2>
-              <p className="max-w-3xl text-sm leading-6 text-muted-56">{description}</p>
+        <div className="lg:pt-0">
+          <div className="hidden lg:pb-4 lg:group-open:block">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-base font-semibold text-text">{title}</h2>
+                <p className="max-w-3xl text-sm leading-6 text-muted-56">{description}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    `rounded-pill border px-2.5 py-1 text-[11px] font-medium`,
+                    hasActiveFilters
+                      ? `border-cyan-400/20 bg-cyan-500/10 text-cyan-100`
+                      : `border-white/10 bg-white/[0.03] text-white/72`,
+                  )}
+                >
+                  {summaryLabel}
+                </span>
+                {summaryValue ? <span className="text-xs text-white/55">{summaryValue}</span> : null}
+              </div>
             </div>
           </div>
-          <div className="pt-4 xl:pt-0">{children}</div>
+          <div className="pt-4 lg:pt-0">{children}</div>
         </div>
       </details>
     </Panel>

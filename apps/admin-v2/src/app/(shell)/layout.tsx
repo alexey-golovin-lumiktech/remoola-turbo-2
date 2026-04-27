@@ -1,9 +1,19 @@
 import { headers } from 'next/headers';
 
 import { getActivePathFromHeaders } from './nav-state';
+import {
+  auditExplorerItems,
+  coreShellItems,
+  financeBreadthItems,
+  laterBreadthItems,
+  maturityItems,
+  topLevelBreadthItems,
+} from './shell-nav';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../components/admin-surface-state';
+import { MobileBottomNav } from '../../components/mobile-bottom-nav';
 import { MobilePageHeader } from '../../components/mobile-page-header';
 import { MobileShellDrawer } from '../../components/mobile-shell-drawer';
+import { MobileShellUtilityBar } from '../../components/mobile-shell-utility-bar';
 import { MobileTopChips } from '../../components/mobile-top-chips';
 import { ShellHeader } from '../../components/shell-header';
 import { SidebarContents } from '../../components/sidebar-contents';
@@ -15,6 +25,7 @@ import {
   type QuickstartCard,
 } from '../../lib/admin-api.server';
 import { filterQuickstartsForWorkspaces } from '../../lib/quickstart-investigations';
+import { readCurrentWorkspaceSignalCount, type SignalCount } from '../../lib/workspace-signal';
 
 export {
   auditExplorerItems,
@@ -23,9 +34,7 @@ export {
   laterBreadthItems,
   maturityItems,
   topLevelBreadthItems,
-} from './shell-nav';
-
-type SignalCount = { count: number; deferred: boolean };
+};
 
 async function safeGetOverviewSummary(): Promise<OverviewSummaryResponse | null> {
   try {
@@ -80,6 +89,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   const identity = identityResult.status === `ready` ? identityResult.data : null;
   const signalCounts = buildSignalCounts(summary);
   const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity?.workspaces);
+  const currentWorkspaceSignalCount = readCurrentWorkspaceSignalCount(activePath, signalCounts);
 
   return (
     <div className="grid min-h-screen grid-cols-1 bg-bg lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
@@ -91,11 +101,11 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           quickstarts={visibleQuickstarts}
         />
       </aside>
-      <main className="min-w-0 overflow-x-hidden px-4 py-4 pb-8 lg:px-6 lg:py-6 lg:pb-6 xl:px-8">
+      <main className="min-w-0 overflow-x-hidden px-4 py-4 pb-24 md:pb-6 lg:px-6 lg:py-6 lg:pb-6 xl:px-8">
         {identity ? (
-          <div className="flex min-w-0 flex-col gap-6">
+          <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
             <ShellHeader />
-            <MobileShellDrawer>
+            <MobileShellDrawer activePath={activePath}>
               <SidebarContents
                 identity={identity}
                 activePath={activePath}
@@ -104,8 +114,14 @@ export default async function ShellLayout({ children }: { children: React.ReactN
               />
             </MobileShellDrawer>
             <MobileTopChips identity={identity} activePath={activePath} />
-            <MobilePageHeader activePath={activePath} />
+            <MobilePageHeader
+              activePath={activePath}
+              signalCounts={signalCounts}
+              liveCount={currentWorkspaceSignalCount}
+            />
+            <MobileShellUtilityBar activePath={activePath} />
             {children}
+            <MobileBottomNav identity={identity} activePath={activePath} />
           </div>
         ) : identityResult.status === `forbidden` ? (
           <AdminSurfaceAccessDenied
