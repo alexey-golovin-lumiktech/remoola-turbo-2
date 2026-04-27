@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { type ReactElement, type ReactNode } from 'react';
 
 import { ActionGhost } from '../../../components/action-ghost';
+import { ContextStat } from '../../../components/context-stat';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
@@ -446,9 +447,35 @@ export default async function PayoutsPage({
   }
 
   return (
-    <WorkspaceLayout workspace="payouts">
+    <WorkspaceLayout
+      workspace="payouts"
+      context={
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <ContextStat label="Visible payouts" value={items.length} tone="cyan" />
+            <ContextStat label="Live buckets" value={visibleBuckets.length} />
+            <ContextStat
+              label="High-value"
+              value={highValueItems.length}
+              tone={highValueItems.length > 0 ? `amber` : `neutral`}
+            />
+            <ContextStat label="Next page" value={data?.pageInfo.nextCursor ? `Available` : `End`} />
+          </div>
+          <div className="contextRailSection">
+            <h4>Queue shortcuts</h4>
+            <div className="contextRailLinks">
+              <ActionGhost href="/ledger">Ledger</ActionGhost>
+              <ActionGhost href="/payments">Payments</ActionGhost>
+            </div>
+          </div>
+        </>
+      }
+      contextTitle="Queue context"
+      contextDescription="Bucket pressure, high-value overlay, and nearby queues for the current payout window."
+    >
       <>
         <Panel
+          eyebrow="Payout queue"
           title="Payouts"
           description={`${items.length} payouts in the current window · ${visibleBuckets.length} live buckets${hiddenBuckets.length ? ` · ${hiddenBuckets.length} empty buckets hidden below` : ``}`}
           actions={

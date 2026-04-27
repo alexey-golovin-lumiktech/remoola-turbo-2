@@ -2,7 +2,18 @@ import { notFound } from 'next/navigation';
 
 import { ActionGhost } from '../../../../components/action-ghost';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
+import { ContextStat } from '../../../../components/context-stat';
 import { Panel } from '../../../../components/panel';
+import {
+  operatorFormActionsClass,
+  operatorFormClass,
+  operatorFormConfirmClass,
+  operatorFormFieldsClass,
+  operatorFormFullWidthCtaClass,
+  operatorFormIntroClass,
+  operatorFormSecondaryClass,
+  operatorFormSectionClass,
+} from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminCaseRecordResult, getAdminIdentity, getAdminSessionsResult } from '../../../../lib/admin-api.server';
 import {
@@ -25,7 +36,9 @@ function renderJson(value: Record<string, unknown> | null) {
   if (!value) {
     return <p className="muted">No metadata.</p>;
   }
-  return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
+  return (
+    <pre className="mono rounded-card border border-white/8 bg-black/20 p-3">{JSON.stringify(value, null, 2)}</pre>
+  );
 }
 
 export default async function AdminCasePage({
@@ -72,11 +85,43 @@ export default async function AdminCasePage({
     ]),
   );
   const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/admins`);
+  const context = (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        <ContextStat
+          label="Status"
+          value={admin.core.status}
+          tone={admin.core.status === `ACTIVE` ? `emerald` : `rose`}
+        />
+        <ContextStat
+          label="Resolved role"
+          value={admin.accessProfile.resolvedRole ?? admin.core.role ?? `-`}
+          tone="cyan"
+        />
+        <ContextStat label="Capability count" value={admin.accessProfile.capabilities.length} />
+        <ContextStat label="Visible sessions" value={sessions.length} />
+      </div>
+      <div className="contextRailSection">
+        <h4>Quick links</h4>
+        <div className="contextRailLinks">
+          <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+          <ActionGhost href={admin.auditShortcuts.adminActionsHref}>Related admin actions</ActionGhost>
+          <ActionGhost href={admin.auditShortcuts.authHref}>Auth history</ActionGhost>
+        </div>
+      </div>
+    </>
+  );
 
   return (
-    <WorkspaceLayout workspace="admin-case">
+    <WorkspaceLayout
+      workspace="admin-case"
+      context={context}
+      contextTitle="Admin snapshot"
+      contextDescription="Lifecycle, access posture, and audit shortcuts for the current admin record."
+    >
       <>
         <Panel
+          eyebrow="Admin record"
           title={admin.core.email}
           description={admin.core.id}
           actions={
@@ -155,46 +200,80 @@ export default async function AdminCasePage({
               <h2>Lifecycle actions</h2>
               <div className="formStack">
                 {admin.core.status === `ACTIVE` ? (
-                  <form action={deactivateAdminAction.bind(null, admin.core.id)} className="formStack">
+                  <form action={deactivateAdminAction.bind(null, admin.core.id)} className={operatorFormClass}>
                     <input type="hidden" name="version" value={String(admin.version)} />
-                    <label className="field">
-                      <span>Reason</span>
-                      <textarea
-                        name="reason"
-                        maxLength={500}
-                        placeholder="Operational reason visible in audit log."
-                        disabled={isSelf}
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Confirm</span>
-                      <input type="checkbox" name="confirmed" value="true" required disabled={isSelf} />
-                    </label>
-                    {isSelf ? <p className="errorText">Self-deactivate is blocked.</p> : null}
-                    <button
-                      className="dangerButton"
-                      type="submit"
-                      name="confirmedSubmit"
-                      value="true"
-                      disabled={isSelf}
-                    >
-                      Deactivate admin
-                    </button>
+                    <div className={operatorFormSectionClass}>
+                      <div className={operatorFormIntroClass}>
+                        <p className="text-sm font-medium text-white/90">Deactivate admin</p>
+                        <p className="muted">Lifecycle action only. The reason stays visible in the audit log.</p>
+                      </div>
+                      <div className={operatorFormFieldsClass}>
+                        <label className="field">
+                          <span>Reason</span>
+                          <textarea
+                            name="reason"
+                            maxLength={500}
+                            placeholder="Operational reason visible in audit log."
+                            disabled={isSelf}
+                          />
+                        </label>
+                      </div>
+                      <div className={operatorFormConfirmClass}>
+                        <label className="field">
+                          <span>Confirm</span>
+                          <input type="checkbox" name="confirmed" value="true" required disabled={isSelf} />
+                        </label>
+                        {isSelf ? <p className="errorText mt-2">Self-deactivate is blocked.</p> : null}
+                      </div>
+                      <div className={operatorFormActionsClass}>
+                        <button
+                          className={`dangerButton ${operatorFormFullWidthCtaClass}`}
+                          type="submit"
+                          name="confirmedSubmit"
+                          value="true"
+                          disabled={isSelf}
+                        >
+                          Deactivate admin
+                        </button>
+                      </div>
+                    </div>
                   </form>
                 ) : (
-                  <form action={restoreAdminAction.bind(null, admin.core.id)} className="formStack">
+                  <form action={restoreAdminAction.bind(null, admin.core.id)} className={operatorFormClass}>
                     <input type="hidden" name="version" value={String(admin.version)} />
-                    <button className="primaryButton" type="submit">
-                      Restore admin
-                    </button>
+                    <div className={operatorFormSecondaryClass}>
+                      <div className={operatorFormIntroClass}>
+                        <p className="text-sm font-medium text-white/90">Restore admin</p>
+                        <p className="muted">
+                          Re-enables the admin record without changing current role configuration.
+                        </p>
+                      </div>
+                      <div className={operatorFormActionsClass}>
+                        <button className={`primaryButton ${operatorFormFullWidthCtaClass}`} type="submit">
+                          Restore admin
+                        </button>
+                      </div>
+                    </div>
                   </form>
                 )}
 
-                <form action={resetAdminPasswordAction.bind(null, admin.core.id)} className="formStack">
+                <form action={resetAdminPasswordAction.bind(null, admin.core.id)} className={operatorFormClass}>
                   <input type="hidden" name="version" value={String(admin.version)} />
-                  <button className="secondaryButton" type="submit" disabled={admin.core.status !== `ACTIVE`}>
-                    Send password reset
-                  </button>
+                  <div className={operatorFormSecondaryClass}>
+                    <div className={operatorFormIntroClass}>
+                      <p className="text-sm font-medium text-white/90">Password reset</p>
+                      <p className="muted">Secondary recovery action for active admins only.</p>
+                    </div>
+                    <div className={operatorFormActionsClass}>
+                      <button
+                        className={`secondaryButton ${operatorFormFullWidthCtaClass}`}
+                        type="submit"
+                        disabled={admin.core.status !== `ACTIVE`}
+                      >
+                        Send password reset
+                      </button>
+                    </div>
+                  </div>
                 </form>
               </div>
             </article>
@@ -204,28 +283,41 @@ export default async function AdminCasePage({
               <p className="muted">
                 Schema-backed lifecycle controls expose the full admin role set available in this workspace.
               </p>
-              <form action={changeAdminRoleAction.bind(null, admin.core.id)} className="formStack">
+              <form action={changeAdminRoleAction.bind(null, admin.core.id)} className={operatorFormClass}>
                 <input type="hidden" name="version" value={String(admin.version)} />
-                <label className="field">
-                  <span>Role</span>
-                  <select
-                    name="roleKey"
-                    defaultValue={admin.accessProfile.resolvedRole ?? admin.core.role ?? `OPS_ADMIN`}
-                  >
-                    {ADMIN_V2_ROLE_OPTIONS.map((role) => (
-                      <option key={role.key} value={role.key}>
-                        {role.key}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>Confirm</span>
-                  <input type="checkbox" name="confirmed" value="true" required />
-                </label>
-                <button className="primaryButton" type="submit" name="confirmedSubmit" value="true">
-                  Change role
-                </button>
+                <div className={operatorFormSectionClass}>
+                  <div className={operatorFormFieldsClass}>
+                    <label className="field">
+                      <span>Role</span>
+                      <select
+                        name="roleKey"
+                        defaultValue={admin.accessProfile.resolvedRole ?? admin.core.role ?? `OPS_ADMIN`}
+                      >
+                        {ADMIN_V2_ROLE_OPTIONS.map((role) => (
+                          <option key={role.key} value={role.key}>
+                            {role.key}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div className={operatorFormConfirmClass}>
+                    <label className="field">
+                      <span>Confirm</span>
+                      <input type="checkbox" name="confirmed" value="true" required />
+                    </label>
+                  </div>
+                  <div className={operatorFormActionsClass}>
+                    <button
+                      className={`primaryButton ${operatorFormFullWidthCtaClass}`}
+                      type="submit"
+                      name="confirmedSubmit"
+                      value="true"
+                    >
+                      Change role
+                    </button>
+                  </div>
+                </div>
               </form>
             </article>
 
@@ -235,24 +327,30 @@ export default async function AdminCasePage({
                 Explicit overrides remain schema-backed and apply as inherit, grant, or deny across the available admin
                 capabilities.
               </p>
-              <form action={changeAdminPermissionsAction.bind(null, admin.core.id)} className="formStack">
+              <form action={changeAdminPermissionsAction.bind(null, admin.core.id)} className={operatorFormClass}>
                 <input type="hidden" name="version" value={String(admin.version)} />
-                {admin.accessProfile.availablePermissionCapabilities.map((capability) => (
-                  <label key={capability} className="field">
-                    <span className="mono">{capability}</span>
-                    <select
-                      name={`capability_override_${capability}`}
-                      defaultValue={overrideModeByCapability.get(capability) ?? `inherit`}
-                    >
-                      <option value="inherit">inherit role baseline</option>
-                      <option value="grant">explicit grant</option>
-                      <option value="deny">explicit deny</option>
-                    </select>
-                  </label>
-                ))}
-                <button className="primaryButton" type="submit">
-                  Save overrides
-                </button>
+                <div className={operatorFormSectionClass}>
+                  <div className={operatorFormFieldsClass}>
+                    {admin.accessProfile.availablePermissionCapabilities.map((capability) => (
+                      <label key={capability} className="field">
+                        <span className="mono">{capability}</span>
+                        <select
+                          name={`capability_override_${capability}`}
+                          defaultValue={overrideModeByCapability.get(capability) ?? `inherit`}
+                        >
+                          <option value="inherit">inherit role baseline</option>
+                          <option value="grant">explicit grant</option>
+                          <option value="deny">explicit deny</option>
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                  <div className={operatorFormActionsClass}>
+                    <button className={`primaryButton ${operatorFormFullWidthCtaClass}`} type="submit">
+                      Save overrides
+                    </button>
+                  </div>
+                </div>
               </form>
             </article>
           </section>

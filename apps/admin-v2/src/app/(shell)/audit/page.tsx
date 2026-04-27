@@ -3,6 +3,7 @@ import { type ReactElement } from 'react';
 
 import { cn } from '@remoola/ui';
 
+import { ContextStat } from '@/components/context-stat';
 import { Panel } from '@/components/panel';
 import { WorkspaceLayout } from '@/components/workspace-layout';
 
@@ -38,7 +39,19 @@ const AUDIT_ENTRIES: ReadonlyArray<{
 
 export default function AuditOverviewPage(): ReactElement {
   return (
-    <WorkspaceLayout workspace="audit/auth">
+    <WorkspaceLayout
+      workspace="audit/auth"
+      context={
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <ContextStat label="Explorers" value={AUDIT_ENTRIES.length} tone="cyan" />
+            <ContextStat label="Primary use" value="Reference" />
+          </div>
+        </>
+      }
+      contextTitle="Audit context"
+      contextDescription="Immutable audit explorers for auth, admin actions, and consumer actions."
+    >
       <>
         <section className={cn(`rounded-card border border-border bg-linear-to-br from-bg via-panel to-bg p-6`)}>
           <div className="flex flex-col gap-2">

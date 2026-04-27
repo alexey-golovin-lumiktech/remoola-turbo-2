@@ -4,6 +4,7 @@ import { cn } from '@remoola/ui';
 
 import { ActionGhost } from '../../../components/action-ghost';
 import { ActionPrimary } from '../../../components/action-primary';
+import { ContextStat } from '../../../components/context-stat';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard, MobileQueueSection } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
@@ -575,9 +576,40 @@ export default async function VerificationQueuePage({
   }
 
   return (
-    <WorkspaceLayout workspace="verification">
+    <WorkspaceLayout
+      workspace="verification"
+      context={
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <ContextStat label="Total in queue" value={queue?.total ?? 0} tone="cyan" />
+            <ContextStat
+              label="SLA breached"
+              value={queue?.sla.breachedCount ?? 0}
+              tone={(queue?.sla.breachedCount ?? 0) > 0 ? `rose` : `emerald`}
+            />
+            <ContextStat
+              label="Active filters"
+              value={activeFilterCount}
+              tone={activeFilterCount > 0 ? `amber` : `neutral`}
+            />
+            <ContextStat label="Saved views" value={savedViews.length} />
+          </div>
+          <div className="contextRailSection">
+            <h4>Queue shortcuts</h4>
+            <div className="contextRailLinks">
+              <ActionGhost href="/consumers">Consumer queue</ActionGhost>
+              <ActionGhost href="/documents">Documents</ActionGhost>
+              <ActionGhost href="/audit/admin-actions">Admin actions</ActionGhost>
+            </div>
+          </div>
+        </>
+      }
+      contextTitle="Queue context"
+      contextDescription="Live verification volume, SLA pressure, and shortcuts around the current review slice."
+    >
       <>
         <Panel
+          eyebrow="Verification queue"
           title="Verification Queue"
           description="Verification queue for active review states: PENDING, MORE_INFO, and FLAGGED."
           actions={

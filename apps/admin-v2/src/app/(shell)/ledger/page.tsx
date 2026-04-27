@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { cn } from '@remoola/ui';
 
 import { ActionGhost } from '../../../components/action-ghost';
+import { ContextStat } from '../../../components/context-stat';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
@@ -433,9 +434,46 @@ export default async function LedgerPage({
   }
 
   return (
-    <WorkspaceLayout workspace="ledger">
+    <WorkspaceLayout
+      workspace="ledger"
+      context={
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <ContextStat label="View" value={view === `disputes` ? `Disputes` : `Entries`} tone="cyan" />
+            <ContextStat label="Visible rows" value={view === `disputes` ? disputeItems.length : entryItems.length} />
+            <ContextStat label="Cursor" value={cursor ? `Active` : `Start`} />
+            <ContextStat
+              label="Active filters"
+              value={
+                [q, type, status, currencyCode, amountSign, paymentRequestId, consumerId, dateFrom, dateTo].filter(
+                  Boolean,
+                ).length
+              }
+              tone={
+                [q, type, status, currencyCode, amountSign, paymentRequestId, consumerId, dateFrom, dateTo].filter(
+                  Boolean,
+                ).length > 0
+                  ? `amber`
+                  : `neutral`
+              }
+            />
+          </div>
+          <div className="contextRailSection">
+            <h4>Queue shortcuts</h4>
+            <div className="contextRailLinks">
+              <ActionGhost href="/ledger/anomalies">Anomalies</ActionGhost>
+              <ActionGhost href="/payments">Payments</ActionGhost>
+              <ActionGhost href="/payouts">Payouts</ActionGhost>
+            </div>
+          </div>
+        </>
+      }
+      contextTitle="Queue context"
+      contextDescription="Current ledger/dispute slice, filter load, and nearby investigation workspaces."
+    >
       <>
         <Panel
+          eyebrow="Ledger queue"
           title="Ledger and Disputes"
           description="Ledger triage workspace for exact outcomes, anomaly follow-up, and dispute escalation context."
           actions={

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ActionGhost } from '../../../../components/action-ghost';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../components/assignment-card';
+import { ContextStat } from '../../../../components/context-stat';
 import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
 import {
@@ -15,7 +16,15 @@ import {
   fieldLabelClass,
   monoMutedTextClass,
   mutedTextClass,
-  panelClass,
+  nestedPanelClass,
+  operatorFormActionsClass,
+  operatorFormClass,
+  operatorFormConfirmClass,
+  operatorFormFieldsClass,
+  operatorFormFullWidthCtaClass,
+  operatorFormIntroClass,
+  operatorFormSectionClass,
+  rawDataClass,
   stackClass,
   textAreaClass,
 } from '../../../../components/ui-classes';
@@ -39,7 +48,7 @@ function renderMetadata(value: Record<string, unknown> | null | undefined) {
     return <p className={mutedTextClass}>No metadata.</p>;
   }
 
-  return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
+  return <pre className={rawDataClass}>{JSON.stringify(value, null, 2)}</pre>;
 }
 
 function renderDestinationLabel(paymentMethod: {
@@ -105,11 +114,54 @@ export default async function PayoutCasePage({
   const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
     (admin) => admin.id !== currentAssignment?.assignedTo.id,
   );
+  const context = (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        <ContextStat label="Derived status" value={payoutCase.core.derivedStatus} tone="cyan" />
+        <ContextStat
+          label="Escalated"
+          value={payoutCase.payoutEscalation ? `Yes` : `No`}
+          tone={payoutCase.payoutEscalation ? `amber` : `neutral`}
+        />
+        <ContextStat
+          label="Threshold"
+          value={payoutCase.slaBreachDetected ? `Breached` : `Within SLA`}
+          tone={payoutCase.slaBreachDetected ? `rose` : `emerald`}
+        />
+        <ContextStat
+          label="Assignment"
+          value={currentAssignment ? `Assigned` : `Open`}
+          tone={currentAssignment ? `cyan` : `neutral`}
+        />
+      </div>
+      <div className="contextRailSection">
+        <h4>Quick links</h4>
+        <div className="contextRailLinks">
+          <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+          <ActionGhost href={`/consumers/${payoutCase.consumer.id}`}>Consumer case</ActionGhost>
+          {payoutCase.paymentRequest ? (
+            <ActionGhost href={`/payments/${payoutCase.paymentRequest.id}`}>Payment request</ActionGhost>
+          ) : null}
+          {payoutCase.destinationPaymentMethodSummary ? (
+            <ActionGhost href={`/payment-methods/${payoutCase.destinationPaymentMethodSummary.id}`}>
+              Destination method
+            </ActionGhost>
+          ) : null}
+        </div>
+      </div>
+    </>
+  );
 
   return (
-    <WorkspaceLayout workspace="payout-case">
+    <WorkspaceLayout
+      workspace="payout-case"
+      context={context}
+      contextTitle="Payout snapshot"
+      contextDescription="Status, escalation posture, and linked-case shortcuts for the current payout."
+    >
       <>
         <Panel
+          eyebrow="Payout case"
           title="Payout case"
           description={payoutCase.id}
           actions={
@@ -222,30 +274,52 @@ export default async function PayoutCasePage({
             {canManageEscalation ? (
               <Panel title="Payout escalation marker">
                 {canSubmitEscalation ? (
-                  <form action={escalatePayoutAction.bind(null, payoutCase.id)} className={stackClass}>
+                  <form action={escalatePayoutAction.bind(null, payoutCase.id)} className={operatorFormClass}>
                     <input type="hidden" name="version" value={String(payoutCase.version)} />
                     <input type="hidden" name="consumerId" value={payoutCase.consumer.id} />
                     <input type="hidden" name="confirmed" value="false" />
-                    <p className={mutedTextClass}>
-                      Creates a marker only. It does not change payout state, ledger outcomes, destination links, or any
-                      downstream execution.
-                    </p>
-                    <label className={fieldClass}>
-                      <span className={fieldLabelClass}>Reason</span>
-                      <textarea
-                        className={textAreaClass}
-                        name="reason"
-                        maxLength={500}
-                        placeholder="Optional operational context for the audit trail."
-                      />
-                    </label>
-                    <label className={checkboxFieldClass}>
-                      <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
-                      <span className={fieldLabelClass}>Confirmation</span>
-                    </label>
-                    <button className={dangerButtonClass} type="submit" name="confirmedSubmit" value="true">
-                      Escalate payout
-                    </button>
+                    <div className={operatorFormSectionClass}>
+                      <div className={operatorFormIntroClass}>
+                        <p className="text-sm font-medium text-white/90">Escalate payout</p>
+                        <p className={mutedTextClass}>
+                          Creates a marker only. It does not change payout state, ledger outcomes, destination links, or
+                          any downstream execution.
+                        </p>
+                      </div>
+                      <div className={operatorFormFieldsClass}>
+                        <label className={fieldClass}>
+                          <span className={fieldLabelClass}>Reason</span>
+                          <textarea
+                            className={textAreaClass}
+                            name="reason"
+                            maxLength={500}
+                            placeholder="Optional operational context for the audit trail."
+                          />
+                        </label>
+                      </div>
+                      <div className={operatorFormConfirmClass}>
+                        <label className={checkboxFieldClass}>
+                          <input
+                            className={checkboxInputClass}
+                            type="checkbox"
+                            name="confirmed"
+                            value="true"
+                            required
+                          />
+                          <span className={fieldLabelClass}>Confirmation</span>
+                        </label>
+                      </div>
+                      <div className={operatorFormActionsClass}>
+                        <button
+                          className={`${dangerButtonClass} ${operatorFormFullWidthCtaClass}`}
+                          type="submit"
+                          name="confirmedSubmit"
+                          value="true"
+                        >
+                          Escalate payout
+                        </button>
+                      </div>
+                    </div>
                   </form>
                 ) : (
                   <div className={stackClass}>
@@ -279,7 +353,7 @@ export default async function PayoutCasePage({
             <div className={stackClass}>
               {payoutCase.outcomes.length === 0 ? <p className={mutedTextClass}>No outcomes.</p> : null}
               {payoutCase.outcomes.map((outcome) => (
-                <div className={panelClass} key={outcome.id}>
+                <div className={nestedPanelClass} key={outcome.id}>
                   <strong>{outcome.status}</strong>
                   <p className={mutedTextClass}>Source: {outcome.source ?? `-`}</p>
                   <p className={mutedTextClass}>External id: {outcome.externalId ?? `-`}</p>
@@ -291,7 +365,7 @@ export default async function PayoutCasePage({
           <Panel title="Related ledger chain">
             <div className={stackClass}>
               {payoutCase.relatedEntries.map((entry) => (
-                <div className={panelClass} key={entry.id}>
+                <div className={nestedPanelClass} key={entry.id}>
                   <strong>{entry.type}</strong>
                   <p className={mutedTextClass}>
                     {entry.amount} {entry.currencyCode}
@@ -323,7 +397,7 @@ export default async function PayoutCasePage({
           <div className={stackClass}>
             {payoutCase.auditContext.length === 0 ? <p className={mutedTextClass}>No related admin actions.</p> : null}
             {payoutCase.auditContext.map((item) => (
-              <div className={panelClass} key={item.id}>
+              <div className={nestedPanelClass} key={item.id}>
                 <strong>{item.action}</strong>
                 <p className={mutedTextClass}>{item.adminEmail ?? `Unknown admin`}</p>
                 <p className={mutedTextClass}>{formatDate(item.createdAt)}</p>

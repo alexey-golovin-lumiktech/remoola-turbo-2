@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { ActionGhost } from '../../../components/action-ghost';
+import { ContextStat } from '../../../components/context-stat';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
@@ -208,6 +209,13 @@ export default async function ConsumersPage({
   const data = await getConsumers({ page, q, accountType, contractorKind, verificationStatus, includeDeleted });
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
   const items = data?.items ?? [];
+  const activeFilterCount = [
+    q,
+    accountType,
+    contractorKind,
+    verificationStatus,
+    includeDeleted ? `deleted` : ``,
+  ].filter(Boolean).length;
 
   function pageHref(nextPage: number) {
     const query = new URLSearchParams();
@@ -221,9 +229,39 @@ export default async function ConsumersPage({
   }
 
   return (
-    <WorkspaceLayout workspace="consumers">
+    <WorkspaceLayout
+      workspace="consumers"
+      context={
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <ContextStat label="Matched" value={data?.total ?? 0} tone="cyan" />
+            <ContextStat label="Visible" value={items.length} />
+            <ContextStat label="Page" value={`${data?.page ?? 1}/${totalPages}`} />
+            <ContextStat
+              label="Active filters"
+              value={activeFilterCount}
+              tone={activeFilterCount > 0 ? `amber` : `neutral`}
+            />
+          </div>
+          <div className="contextRailSection">
+            <h4>Queue shortcuts</h4>
+            <div className="contextRailLinks">
+              <ActionGhost href="/verification">Verification queue</ActionGhost>
+              <ActionGhost href="/payment-methods">Payment methods</ActionGhost>
+              <ActionGhost href="/audit/consumer-actions">Consumer actions</ActionGhost>
+            </div>
+          </div>
+        </>
+      }
+      contextTitle="Queue context"
+      contextDescription="Current consumer queue volume, pagination, and nearby investigation paths."
+    >
       <>
-        <Panel title="Consumers" description="Consumer investigation surface with notes, flags and audit drilldowns.">
+        <Panel
+          eyebrow="Consumer queue"
+          title="Consumers"
+          description="Consumer investigation surface with notes, flags and audit drilldowns."
+        >
           <form method="get" className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             <label className={fieldClass}>
               <span className={fieldLabelClass}>Search</span>

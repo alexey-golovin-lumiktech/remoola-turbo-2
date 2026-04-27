@@ -5,6 +5,7 @@ import { cn } from '@remoola/ui';
 import {
   panelClass,
   panelDescriptionClass,
+  panelEyebrowClass,
   panelHeaderClass,
   panelHeaderCopyClass,
   panelMetaClass,
@@ -13,11 +14,13 @@ import {
 } from './ui-classes';
 
 export type PanelProps = {
+  eyebrow?: string;
   title?: string;
   description?: string;
   actions?: ReactNode;
   children?: ReactNode;
   className?: string;
+  bodyClassName?: string;
   surface?: `primary` | `support` | `meta`;
 };
 
@@ -28,14 +31,16 @@ const surfaceClassByTone = {
 } as const;
 
 export function Panel({
+  eyebrow,
   title,
   description,
   actions,
   children,
   className,
+  bodyClassName,
   surface = `support`,
 }: PanelProps): ReactElement {
-  const hasHeader = Boolean(title) || Boolean(description) || Boolean(actions);
+  const hasHeader = Boolean(eyebrow) || Boolean(title) || Boolean(description) || Boolean(actions);
   const hasBody = Boolean(children);
 
   return (
@@ -43,15 +48,23 @@ export function Panel({
       {hasHeader ? (
         <div className={panelHeaderClass}>
           <div className={panelHeaderCopyClass}>
+            {eyebrow ? <div className={panelEyebrowClass}>{eyebrow}</div> : null}
             {title ? (
-              <h2 className="text-base font-semibold tracking-[-0.01em] text-text md:text-[1.0625rem]">{title}</h2>
+              <h2
+                className={cn(
+                  `text-base font-semibold tracking-[-0.01em] text-text md:text-[1.0625rem]`,
+                  eyebrow ? `mt-1` : ``,
+                )}
+              >
+                {title}
+              </h2>
             ) : null}
             {description ? <p className={cn(panelDescriptionClass, `mt-1`)}>{description}</p> : null}
           </div>
           {actions ? <div className="shrink-0 self-start">{actions}</div> : null}
         </div>
       ) : null}
-      {hasBody ? <div className="min-w-0">{children}</div> : null}
+      {hasBody ? <div className={cn(`min-w-0`, bodyClassName)}>{children}</div> : null}
     </section>
   );
 }

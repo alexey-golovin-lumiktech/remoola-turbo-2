@@ -52,12 +52,14 @@ export function ShellSearchForm({ compact = false, className }: ShellSearchFormP
       action={searchAction}
       role="search"
       className={cn(
-        `flex min-w-0 items-center gap-3 rounded-shell border border-border bg-white/[0.03] px-4 py-2.5 text-sm text-white/60`,
-        compact ? `w-full rounded-card` : `flex-1 lg:min-w-[360px]`,
+        `flex min-w-0 items-center gap-3 rounded-shell border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]`,
+        compact ? `w-full rounded-card` : `flex-1 lg:min-w-[380px]`,
         className,
       )}
     >
-      <NavIcon name="search" />
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-white/8 bg-white/[0.04] text-white/58">
+        <NavIcon name="search" />
+      </div>
       <input
         type="text"
         name="q"
@@ -66,6 +68,11 @@ export function ShellSearchForm({ compact = false, className }: ShellSearchFormP
         autoComplete="off"
         className="min-w-0 flex-1 bg-transparent text-text placeholder:text-white/40 focus:outline-hidden"
       />
+      {!compact ? (
+        <span className="hidden rounded-pill border border-white/8 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/48 xl:inline-flex">
+          ids, email, case links
+        </span>
+      ) : null}
       <button type="submit" aria-label="Submit search" className="sr-only">
         Submit
       </button>

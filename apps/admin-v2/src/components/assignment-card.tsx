@@ -9,7 +9,7 @@ import {
   fieldClass,
   fieldLabelClass,
   mutedTextClass,
-  panelClass,
+  nestedPanelClass,
   stackClass,
   textAreaClass,
   textInputClass,
@@ -68,96 +68,113 @@ export function AssignmentCard({
   const claimPlaceholder = copy?.claimReasonPlaceholder ?? `Why are you claiming this?`;
 
   return (
-    <Panel title="Assignment">
-      {currentAssignment ? (
-        <>
-          <p>
-            Currently assigned to: <strong>{describeAdmin(currentAssignment.assignedTo)}</strong>
-            {currentAssignment.assignedTo.email ? (
-              <span className={mutedTextClass}> · {currentAssignment.assignedTo.email}</span>
+    <Panel
+      eyebrow="Ownership"
+      title="Assignment"
+      description="Claim, release, and reassignment controls stay grouped here so they do not compete with case facts."
+    >
+      <div className={nestedPanelClass}>
+        {currentAssignment ? (
+          <div className={stackClass}>
+            <p>
+              Currently assigned to: <strong>{describeAdmin(currentAssignment.assignedTo)}</strong>
+              {currentAssignment.assignedTo.email ? (
+                <span className={mutedTextClass}> · {currentAssignment.assignedTo.email}</span>
+              ) : null}
+            </p>
+            <p className={mutedTextClass}>Since: {formatDateTime(currentAssignment.assignedAt)}</p>
+            {currentAssignment.reason ? (
+              <p className={mutedTextClass}>Reason: &ldquo;{currentAssignment.reason}&rdquo;</p>
             ) : null}
-          </p>
-          <p className={mutedTextClass}>Since: {formatDateTime(currentAssignment.assignedAt)}</p>
-          {currentAssignment.reason ? (
-            <p className={mutedTextClass}>Reason: &ldquo;{currentAssignment.reason}&rdquo;</p>
-          ) : null}
-          {currentAssignment.expiresAt ? (
-            <p className={mutedTextClass}>Expires: {formatDateTime(currentAssignment.expiresAt)}</p>
-          ) : null}
-        </>
-      ) : (
-        <p className={mutedTextClass}>Unassigned</p>
-      )}
-      <div className="flex flex-wrap gap-4">
+            {currentAssignment.expiresAt ? (
+              <p className={mutedTextClass}>Expires: {formatDateTime(currentAssignment.expiresAt)}</p>
+            ) : null}
+          </div>
+        ) : (
+          <p className={mutedTextClass}>Unassigned</p>
+        )}
+      </div>
+      <div className="grid gap-4 xl:grid-cols-3">
         {!currentAssignment ? (
-          <form action={actions.claim.bind(null, resourceId)} className={stackClass}>
-            <label className={fieldClass}>
-              <span className={fieldLabelClass}>Reason (optional)</span>
-              <textarea className={textAreaClass} name="reason" placeholder={claimPlaceholder} maxLength={500} />
-            </label>
-            <ActionPrimary type="submit" disabled={!capabilities.canClaim}>
-              Claim
-            </ActionPrimary>
+          <form action={actions.claim.bind(null, resourceId)} className={nestedPanelClass}>
+            <div className={stackClass}>
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Reason (optional)</span>
+                <textarea className={textAreaClass} name="reason" placeholder={claimPlaceholder} maxLength={500} />
+              </label>
+              <ActionPrimary type="submit" disabled={!capabilities.canClaim}>
+                Claim
+              </ActionPrimary>
+            </div>
           </form>
         ) : null}
         {currentAssignment ? (
-          <form action={actions.release.bind(null, resourceId)} className={stackClass}>
-            <input type="hidden" name="assignmentId" value={currentAssignment.id} />
-            <label className={fieldClass}>
-              <span className={fieldLabelClass}>Reason (optional)</span>
-              <textarea className={textAreaClass} name="reason" placeholder="Why are you releasing?" maxLength={500} />
-            </label>
-            <ActionGhost type="submit" disabled={!capabilities.canRelease}>
-              Release
-            </ActionGhost>
+          <form action={actions.release.bind(null, resourceId)} className={nestedPanelClass}>
+            <div className={stackClass}>
+              <input type="hidden" name="assignmentId" value={currentAssignment.id} />
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Reason (optional)</span>
+                <textarea
+                  className={textAreaClass}
+                  name="reason"
+                  placeholder="Why are you releasing?"
+                  maxLength={500}
+                />
+              </label>
+              <ActionGhost type="submit" disabled={!capabilities.canRelease}>
+                Release
+              </ActionGhost>
+            </div>
           </form>
         ) : null}
         {capabilities.canReassign && currentAssignment ? (
-          <form action={actions.reassign.bind(null, resourceId)} className={stackClass}>
-            <input type="hidden" name="assignmentId" value={currentAssignment.id} />
-            <input type="hidden" name="confirmed" value="false" />
-            <label className={fieldClass}>
-              <span className={fieldLabelClass}>New assignee</span>
-              <select className={textInputClass} name="newAssigneeId" required defaultValue="">
-                <option value="" disabled>
-                  Select an admin
-                </option>
-                {reassignCandidates.map((admin) => (
-                  <option key={admin.id} value={admin.id}>
-                    {admin.email}
+          <form action={actions.reassign.bind(null, resourceId)} className={nestedPanelClass}>
+            <div className={stackClass}>
+              <input type="hidden" name="assignmentId" value={currentAssignment.id} />
+              <input type="hidden" name="confirmed" value="false" />
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>New assignee</span>
+                <select className={textInputClass} name="newAssigneeId" required defaultValue="">
+                  <option value="" disabled>
+                    Select an admin
                   </option>
-                ))}
-              </select>
-            </label>
-            <label className={fieldClass}>
-              <span className={fieldLabelClass}>Reason (required, min 10 chars)</span>
-              <textarea
-                className={textAreaClass}
-                name="reason"
-                required
-                minLength={10}
-                maxLength={500}
-                placeholder="Reason for reassignment"
-              />
-            </label>
-            <label className={checkboxFieldClass}>
-              <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
-              <span className={fieldLabelClass}>Confirmation</span>
-            </label>
-            <button className={dangerButtonClass} type="submit" name="confirmedSubmit" value="true">
-              Reassign
-            </button>
+                  {reassignCandidates.map((admin) => (
+                    <option key={admin.id} value={admin.id}>
+                      {admin.email}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Reason (required, min 10 chars)</span>
+                <textarea
+                  className={textAreaClass}
+                  name="reason"
+                  required
+                  minLength={10}
+                  maxLength={500}
+                  placeholder="Reason for reassignment"
+                />
+              </label>
+              <label className={checkboxFieldClass}>
+                <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+                <span className={fieldLabelClass}>Confirmation</span>
+              </label>
+              <button className={dangerButtonClass} type="submit" name="confirmedSubmit" value="true">
+                Reassign
+              </button>
+            </div>
           </form>
         ) : null}
       </div>
-      <details>
+      <details className={nestedPanelClass}>
         <summary className={detailsSummaryClass}>Assignment history ({history.length})</summary>
         {history.length === 0 ? (
           <p className={mutedTextClass}>No previous assignments.</p>
         ) : (
           <ul className={stackClass}>
             {history.map((entry) => (
-              <li className={panelClass} key={entry.id}>
+              <li className={nestedPanelClass} key={entry.id}>
                 <p>
                   <strong>{describeAdmin(entry.assignedTo)}</strong>
                   <span className={mutedTextClass}> · claimed {formatDateTime(entry.assignedAt)}</span>

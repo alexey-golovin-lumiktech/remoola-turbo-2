@@ -32,8 +32,8 @@ export function ShellQuickActions({ compact = false }: ShellQuickActionsProps): 
   }
 
   return (
-    <div className="flex flex-wrap items-start gap-4">
-      <div className={actionGroupClass}>
+    <div className="flex flex-wrap items-start gap-3">
+      <div className={cn(actionGroupClass, `rounded-card border border-white/8 bg-white/[0.025] px-3 py-2`)}>
         <span className={actionGroupLabelClass}>Investigate</span>
         <ActionGhost href="/audit">
           <NavIcon name="eye" />
@@ -44,7 +44,7 @@ export function ShellQuickActions({ compact = false }: ShellQuickActionsProps): 
           <span>Review queue</span>
         </ActionGhost>
       </div>
-      <div className={cn(actionGroupClass, `min-w-0`)}>
+      <div className={cn(actionGroupClass, `min-w-0 rounded-card border border-white/8 bg-white/[0.025] px-3 py-2`)}>
         <span className={actionGroupLabelClass}>Workflow</span>
         <ActionPrimary href="/me/sessions" ariaDisabled title="Coming soon">
           <NavIcon name="plus" />

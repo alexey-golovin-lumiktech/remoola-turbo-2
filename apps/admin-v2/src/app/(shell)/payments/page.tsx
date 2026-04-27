@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { ActionGhost } from '../../../components/action-ghost';
+import { ContextStat } from '../../../components/context-stat';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard, MobileQueueSection } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
@@ -376,9 +377,36 @@ export default async function PaymentsPage({
   });
 
   return (
-    <WorkspaceLayout workspace="payments">
+    <WorkspaceLayout
+      workspace="payments"
+      context={
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <ContextStat label="Visible" value={items.length} tone="cyan" />
+            <ContextStat
+              label="Active filters"
+              value={activeFilterCount}
+              tone={activeFilterCount > 0 ? `amber` : `neutral`}
+            />
+            <ContextStat label="Window" value={cursor ? `Cursor` : `Start`} />
+            <ContextStat label="Next page" value={data?.pageInfo.nextCursor ? `Available` : `End`} />
+          </div>
+          <div className="contextRailSection">
+            <h4>Queue shortcuts</h4>
+            <div className="contextRailLinks">
+              <ActionGhost href="/payments/operations">Operations queue</ActionGhost>
+              <ActionGhost href="/payouts">Payouts</ActionGhost>
+              <ActionGhost href="/audit/admin-actions">Admin actions</ActionGhost>
+            </div>
+          </div>
+        </>
+      }
+      contextTitle="Queue context"
+      contextDescription="Volume, filter pressure, and nearby operational queues for the current payment slice."
+    >
       <>
         <Panel
+          eyebrow="Payment queue"
           title="Payments"
           description="Payment request triage with direct escalation into operations buckets and case drilldowns."
           actions={

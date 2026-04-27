@@ -1,10 +1,12 @@
 export const panelSurfaceClass = `rounded-card border border-border/90 bg-linear-to-br from-panel via-panel to-white/[0.015] shadow-[0_18px_48px_rgba(2,6,23,0.24)]`;
-export const panelPrimaryClass = `border-cyan-400/16 bg-linear-to-br from-panel via-panel to-cyan-500/[0.04] shadow-[0_18px_48px_rgba(8,47,73,0.22)]`;
-export const panelSupportClass = `border-white/8 bg-linear-to-br from-panel via-panel to-white/[0.02]`;
+export const panelPrimaryClass = `border-cyan-400/16 bg-linear-to-br from-panel via-panel to-cyan-500/[0.04] shadow-[0_20px_56px_rgba(8,47,73,0.24)]`;
+export const panelSupportClass = `border-white/8 bg-linear-to-br from-panel via-panel to-white/[0.02] shadow-[0_14px_36px_rgba(2,6,23,0.18)]`;
 export const panelMetaClass = `border-white/8 bg-white/[0.025] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`;
 export const panelClass = `${panelSurfaceClass} p-4 md:p-5 lg:p-6`;
+export const nestedPanelClass = `rounded-card border border-white/8 bg-linear-to-br from-white/[0.045] to-white/[0.02] p-4 shadow-[0_12px_30px_rgba(2,6,23,0.16)]`;
 export const panelHeaderClass = `mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-start md:justify-between`;
 export const panelHeaderCopyClass = `min-w-0 flex-1`;
+export const panelEyebrowClass = `text-[11px] font-medium uppercase tracking-[0.22em] text-cyan-300/72`;
 export const panelDescriptionClass = `max-w-3xl text-sm leading-6 text-muted-56`;
 export const mutedTextClass = `text-sm leading-6 text-white/60`;
 export const subtleTextClass = `text-xs leading-5 text-white/42`;
@@ -14,6 +16,24 @@ export const buttonRowClass = `flex flex-wrap items-center gap-2`;
 export const actionGroupClass = `flex flex-wrap items-center gap-2`;
 export const actionGroupLabelClass = `text-[11px] font-medium uppercase tracking-[0.2em] text-white/35`;
 export const stackClass = `flex flex-col gap-4`;
+export const sectionIntroClass = `flex flex-col gap-2`;
+export const sectionEyebrowClass = `text-[11px] font-medium uppercase tracking-[0.22em] text-white/42`;
+export const keyValueGridClass = `grid gap-3`;
+export const keyValueCardClass = `rounded-card border border-white/8 bg-white/[0.02] px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]`;
+export const keyValueLabelClass = `text-[11px] font-medium uppercase tracking-[0.18em] text-white/38`;
+export const keyValueValueClass = `mt-1 text-sm leading-6 text-white/88`;
+export const contextRailSectionClass = `flex flex-col gap-3`;
+export const contextRailLinksClass = `flex flex-col gap-2`;
+export const rawDataClass = `mono overflow-x-auto rounded-card border border-white/8 bg-black/20 p-3 text-xs leading-6 text-white/68`;
+export const operatorFormClass = `flex flex-col gap-4`;
+export const operatorFormIntroClass = `flex flex-col gap-2`;
+export const operatorFormFieldsClass = `grid gap-3`;
+export const operatorFormSectionClass = `rounded-card border border-white/8 bg-white/[0.02] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]`;
+export const operatorFormSecondaryClass = `rounded-card border border-white/8 bg-white/[0.015] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]`;
+export const operatorFormConfirmClass = `rounded-card border border-white/8 bg-black/10 px-3 py-3 text-sm text-white/72`;
+export const operatorFormActionsClass = `flex flex-col gap-2 pt-1`;
+export const operatorFormFullWidthCtaClass = `w-full justify-center`;
+export const operatorFormPillGroupClass = `flex flex-wrap gap-2`;
 
 export const pillBaseClass = `inline-flex items-center rounded-pill border px-2.5 py-1 text-xs font-medium leading-none transition-colors`;
 export const pillDenseClass = `px-2 py-0.5 text-[11px]`;
@@ -42,6 +62,7 @@ export const dangerButtonClass = [
   `hover:from-rose-500/25 hover:to-rose-400/16 hover:text-white focus-visible:outline-hidden`,
   `focus-visible:ring-2 focus-visible:ring-rose-400/25 disabled:pointer-events-none disabled:opacity-50`,
 ].join(` `);
+export const softDangerPanelClass = `rounded-card border border-rose-400/18 bg-rose-500/[0.05] p-4 shadow-[0_12px_30px_rgba(76,5,25,0.08)]`;
 
 export const fieldClass = `grid gap-2`;
 export const fieldLabelClass = `text-sm font-medium text-text`;

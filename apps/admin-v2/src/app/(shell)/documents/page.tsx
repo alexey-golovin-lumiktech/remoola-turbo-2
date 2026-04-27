@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { ActionGhost } from '../../../components/action-ghost';
+import { ContextStat } from '../../../components/context-stat';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard, MobileQueueSection } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
@@ -360,9 +361,36 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
   ].filter(Boolean).length;
 
   return (
-    <WorkspaceLayout workspace="documents">
+    <WorkspaceLayout
+      workspace="documents"
+      context={
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <ContextStat label="Matched" value={documents?.total ?? 0} tone="cyan" />
+            <ContextStat label="Visible rows" value={documents?.items.length ?? 0} />
+            <ContextStat
+              label="Active filters"
+              value={activeFilterCount}
+              tone={activeFilterCount > 0 ? `amber` : `neutral`}
+            />
+            <ContextStat label="Tag options" value={tags?.items.length ?? 0} />
+          </div>
+          <div className="contextRailSection">
+            <h4>Queue shortcuts</h4>
+            <div className="contextRailLinks">
+              <ActionGhost href="/documents/tags">Tag management</ActionGhost>
+              <ActionGhost href="/verification">Verification queue</ActionGhost>
+              <ActionGhost href="/payments">Payments</ActionGhost>
+            </div>
+          </div>
+        </>
+      }
+      contextTitle="Explorer context"
+      contextDescription="Current evidence volume, filter pressure, and nearby review workspaces."
+    >
       <>
         <Panel
+          eyebrow="Evidence explorer"
           title="Documents"
           description="Evidence review boundaries for uploaded resources linked to consumers or payment cases."
           actions={
