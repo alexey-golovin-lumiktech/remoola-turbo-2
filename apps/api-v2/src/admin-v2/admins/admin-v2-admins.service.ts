@@ -75,20 +75,6 @@ function normalizeReason(value?: string | null): string | null {
   return normalized;
 }
 
-function normalizeOriginCandidate(candidate: string | null | undefined): string | null {
-  if (!candidate) return null;
-  const trimmed = candidate.trim();
-  if (!trimmed || trimmed === `ADMIN_V2_APP_ORIGIN` || trimmed === `ADMIN_APP_ORIGIN`) {
-    return null;
-  }
-  const withScheme = trimmed.includes(`://`) ? trimmed : `https://${trimmed}`;
-  try {
-    return new URL(withScheme).origin;
-  } catch {
-    return null;
-  }
-}
-
 function deriveVersion(updatedAt: Date): number {
   return updatedAt.getTime();
 }
@@ -150,13 +136,9 @@ export class AdminV2AdminsService {
   ) {}
 
   private resolveAdminV2Origin(): string {
-    const direct = normalizeOriginCandidate(envs.ADMIN_V2_APP_ORIGIN);
-    if (direct) {
-      return this.originResolver.normalizeOrigin(direct);
-    }
-    const legacy = normalizeOriginCandidate(envs.ADMIN_APP_ORIGIN);
-    if (legacy) {
-      return this.originResolver.normalizeOrigin(legacy);
+    const configuredOrigin = this.originResolver.resolveConfiguredAdminOrigin();
+    if (configuredOrigin) {
+      return configuredOrigin;
     }
     throw new InternalServerErrorException(`Admin v2 app origin is not configured`);
   }

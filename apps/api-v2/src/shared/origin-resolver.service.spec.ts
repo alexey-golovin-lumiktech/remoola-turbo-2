@@ -13,7 +13,6 @@ jest.mock(`../envs`, () => ({
       TEST: `test`,
     },
     CONSUMER_CSS_GRID_APP_ORIGIN: `https://grid.example.com`,
-    ADMIN_APP_ORIGIN: `https://admin.example.com`,
     ADMIN_V2_APP_ORIGIN: `https://admin-v2.example.com`,
   },
 }));
@@ -59,7 +58,6 @@ describe(`OriginResolverService`, () => {
 
       expect(origins.size).toBeGreaterThan(0);
       expect(origins.has(`https://grid.example.com`)).toBe(true);
-      expect(origins.has(`https://admin.example.com`)).toBe(true);
       expect(origins.has(`https://admin-v2.example.com`)).toBe(true);
       expect(origins.has(`https://allowed1.example.com`)).toBe(false);
     });
@@ -69,6 +67,18 @@ describe(`OriginResolverService`, () => {
 
       expect(origins.has(`https://grid.example.com/`)).toBe(false);
       expect(origins.has(`https://grid.example.com`)).toBe(true);
+    });
+  });
+
+  describe(`resolveConfiguredAdminOrigin`, () => {
+    it(`returns ADMIN_V2_APP_ORIGIN when configured`, () => {
+      expect(service.resolveConfiguredAdminOrigin()).toBe(`https://admin-v2.example.com`);
+    });
+
+    it(`returns null when ADMIN_V2_APP_ORIGIN is unset`, () => {
+      (envs as any).ADMIN_V2_APP_ORIGIN = `ADMIN_V2_APP_ORIGIN`;
+
+      expect(service.resolveConfiguredAdminOrigin()).toBeNull();
     });
   });
 
@@ -140,9 +150,9 @@ describe(`OriginResolverService`, () => {
 
   describe(`resolveAdminRequestOrigin`, () => {
     it(`uses admin validation for admin paths`, () => {
-      const result = service.resolveAdminRequestOrigin(`https://admin.example.com/dashboard`, undefined);
+      const result = service.resolveAdminRequestOrigin(`https://admin-v2.example.com/dashboard`, undefined);
 
-      expect(result).toBe(`https://admin.example.com`);
+      expect(result).toBe(`https://admin-v2.example.com`);
     });
 
     it(`accepts the dedicated admin-v2 origin`, () => {

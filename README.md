@@ -52,6 +52,9 @@ cp apps/api-v2/.env.example apps/api-v2/.env
 cp apps/consumer-css-grid/.env.example apps/consumer-css-grid/.env
 ```
 
+For the maintained admin surface, set the same `ADMIN_V2_APP_ORIGIN` value in
+both `apps/admin-v2/.env` and `apps/api-v2/.env`.
+
 3. Generate the Prisma client:
 
 ```bash
@@ -105,14 +108,14 @@ yarn db:studio
 - Root `yarn build` generates the Prisma client first, then runs the Turborepo build pipeline.
 - `.husky/pre-commit` skips lint/tests for docs-only commits. For code changes it runs staged lint/typecheck/test helpers; fast e2e fallback now targets `apps/api-v2`.
 - `build:vercel-guard` covers the maintained Vercel release surface: `@remoola/api-v2`, `@remoola/consumer-css-grid`, and `@remoola/admin-v2`.
-- Use `yarn verify:v2-apps` as the dedicated pre-PR / pre-production gate for the `api-v2` + `consumer-css-grid` release surface.
+- Use `yarn verify:v2-apps` as the dedicated pre-PR / pre-production gate for the maintained `api-v2` + `consumer-css-grid` + `admin-v2` surface.
 
 ## Deployment notes
 
 - Apply database migrations before deploying runtime changes that depend on new Prisma fields.
 - Verify Me / Stripe Identity rollout requires migration `20260323120000_stripe_identity_consumer_state` before runtime deployment because auth and consumer reads expect the `stripe_identity_*` columns to exist.
 - Auth/cookie/cutover changes for the maintained consumer surface are documented as `api-v2 + consumer-css-grid`, not as a three-app coordinated rollout.
-- The repo currently has no `vercel.json` or `vercel.ts`; production deployment for `apps/api-v2` and `apps/consumer-css-grid` therefore depends on Vercel dashboard/project configuration plus the canonical origin env contract documented in `docs/API_V2_PRODUCTION_RELEASE_GATE.md`.
+- The repo currently has no `vercel.json` or `vercel.ts`; production deployment for the maintained apps therefore depends on Vercel dashboard/project configuration plus the canonical origin env contract documented in `docs/API_V2_PRODUCTION_RELEASE_GATE.md`.
 
 ## Documentation map
 

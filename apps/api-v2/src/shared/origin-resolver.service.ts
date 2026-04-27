@@ -9,7 +9,6 @@ type HeaderValue = string | string[] | undefined;
 @Injectable()
 export class OriginResolverService {
   private readonly cssGridOriginPlaceholder = `CONSUMER_CSS_GRID_APP_ORIGIN`;
-  private readonly adminOriginPlaceholder = `ADMIN_APP_ORIGIN`;
   private readonly adminV2OriginPlaceholder = `ADMIN_V2_APP_ORIGIN`;
   private readonly consumerLocalDevOriginScopes = new Map<string, ConsumerAppScope>([
     [`3001`, CURRENT_CONSUMER_APP_SCOPE],
@@ -76,17 +75,19 @@ export class OriginResolverService {
     return new Set(this.getConfiguredConsumerOriginScopes().keys());
   }
 
-  getAdminAllowedOrigins(): Set<string> {
-    const origins = new Set<string>();
-
-    if (this.isValidOrigin(envs.ADMIN_APP_ORIGIN, this.adminOriginPlaceholder)) {
-      origins.add(this.normalizeOrigin(envs.ADMIN_APP_ORIGIN));
-    }
+  private getConfiguredAdminOriginsInPriorityOrder(): string[] {
     if (this.isValidOrigin(envs.ADMIN_V2_APP_ORIGIN, this.adminV2OriginPlaceholder)) {
-      origins.add(this.normalizeOrigin(envs.ADMIN_V2_APP_ORIGIN));
+      return [this.normalizeOrigin(envs.ADMIN_V2_APP_ORIGIN)];
     }
+    return [];
+  }
 
-    return origins;
+  getAdminAllowedOrigins(): Set<string> {
+    return new Set(this.getConfiguredAdminOriginsInPriorityOrder());
+  }
+
+  resolveConfiguredAdminOrigin(): string | null {
+    return this.getConfiguredAdminOriginsInPriorityOrder()[0] ?? null;
   }
 
   getAllowedOrigins(): Set<string> {

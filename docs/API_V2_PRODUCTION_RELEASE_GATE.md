@@ -31,8 +31,8 @@ Capture the effective production values for these controls without exposing secr
 - `PUBLIC_MAIL_TRANSPORT_HEALTH_ENABLED=false`.
 - `HEALTH_TEST_EMAIL_ENABLED=false`.
 - `NGROK_ENABLED=false` and `NGROK_AUTH_TOKEN` / `NGROK_DOMAIN` are not blank and not set to enable public ingress in production unless there is explicit operational approval.
-- Frontend example envs and deploy-time config explicitly declare `CONSUMER_CSS_GRID_APP_ORIGIN` as the canonical production consumer origin.
-- `NEXT_PUBLIC_APP_ORIGIN` is treated only as legacy compatibility fallback, not as release evidence or the primary production contract.
+- Frontend example envs and deploy-time config explicitly declare `CONSUMER_CSS_GRID_APP_ORIGIN` as the canonical production consumer origin and `ADMIN_V2_APP_ORIGIN` as the canonical production admin origin.
+- `NEXT_PUBLIC_APP_ORIGIN` is treated only as a legacy frontend fallback, not as release evidence or the primary production contract.
 
 ### consumer-css-grid + api-v2 minimum production contract
 

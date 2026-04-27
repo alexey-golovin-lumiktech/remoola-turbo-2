@@ -76,7 +76,6 @@ const nest = {
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
   PUBLIC_BRAND_WEBSITE_URL: z.string().url().default(`https://remoola.app`),
   CONSUMER_CSS_GRID_APP_ORIGIN: z.string().default(`CONSUMER_CSS_GRID_APP_ORIGIN`),
-  ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
   ADMIN_V2_APP_ORIGIN: z.string().default(`ADMIN_V2_APP_ORIGIN`),
 };
 

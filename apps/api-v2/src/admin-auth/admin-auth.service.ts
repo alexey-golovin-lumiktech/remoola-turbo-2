@@ -27,20 +27,6 @@ const ADMIN_AUTH_SESSION_LIST_RETENTION_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000;
 
-function normalizeOriginCandidate(candidate: string | null | undefined): string | null {
-  if (!candidate) return null;
-  const trimmed = candidate.trim();
-  if (!trimmed || trimmed === `ADMIN_V2_APP_ORIGIN` || trimmed === `ADMIN_APP_ORIGIN`) {
-    return null;
-  }
-  const withScheme = trimmed.includes(`://`) ? trimmed : `https://${trimmed}`;
-  try {
-    return new URL(withScheme).origin;
-  } catch {
-    return null;
-  }
-}
-
 export type AdminAuthSessionView = {
   id: string;
   sessionFamilyId: string;
@@ -307,9 +293,7 @@ export class AdminAuthService {
       });
     });
 
-    const directOrigin = normalizeOriginCandidate(envs.ADMIN_V2_APP_ORIGIN);
-    const legacyOrigin = normalizeOriginCandidate(envs.ADMIN_APP_ORIGIN);
-    const originCandidate = directOrigin ?? legacyOrigin;
+    const originCandidate = this.originResolver.resolveConfiguredAdminOrigin();
     if (!originCandidate) {
       throw new BadRequestException(`Admin v2 app origin is not configured`);
     }

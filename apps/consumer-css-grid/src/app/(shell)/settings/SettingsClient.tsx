@@ -68,6 +68,7 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
       : null,
   );
   const [isSigningOutAll, setIsSigningOutAll] = useState(false);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
   const [signOutAllConfirmOpen, setSignOutAllConfirmOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const savedTheme = normalizeTheme(settings?.theme);
@@ -468,7 +469,7 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
 
         <div className="grid grid-cols-1 gap-5">
           <Panel title="Edit preferences">
-            <div className="space-y-4">
+            <div className="space-y-4" aria-busy={isSavingPreferences}>
               <div>
                 <div className={fieldLabelClass}>Theme</div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -478,6 +479,7 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
                       <button
                         key={themeOption}
                         type="button"
+                        disabled={isSavingPreferences}
                         onClick={() => {
                           const nextTheme = normalizeTheme(themeOption);
                           setPreferencesForm((current) => ({ ...current, theme: nextTheme }));
@@ -487,7 +489,7 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
                           active
                             ? `border-[color:var(--app-primary)] bg-[var(--app-primary-soft)] shadow-[var(--app-shadow)]`
                             : `border-[color:var(--app-border)] bg-[var(--app-surface)] hover:bg-[var(--app-surface-strong)]`
-                        }`}
+                        } disabled:cursor-not-allowed disabled:opacity-70`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="text-sm font-semibold text-[var(--app-text)]">
@@ -526,6 +528,7 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
                 </label>
                 <select
                   id="settings-preferred-currency"
+                  disabled={isSavingPreferences}
                   value={preferencesForm.preferredCurrency}
                   onChange={(event) =>
                     setPreferencesForm((current) => ({ ...current, preferredCurrency: event.target.value }))
@@ -546,26 +549,31 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
 
               <button
                 type="button"
-                disabled={isPending || Object.keys(preferencesChanges).length === 0}
+                disabled={isPending || isSavingPreferences || Object.keys(preferencesChanges).length === 0}
                 onClick={() => {
                   setMessage(null);
+                  setIsSavingPreferences(true);
                   startTransition(async () => {
-                    const result = await updateSettingsMutation(preferencesChanges);
-                    if (!result.ok) {
-                      if (handleSessionExpiredError(result.error)) return;
-                      setTheme(savedTheme);
-                      setPreferencesForm((current) => ({ ...current, theme: savedTheme }));
-                      setMessage({ type: `error`, text: result.error.message });
-                      return;
+                    try {
+                      const result = await updateSettingsMutation(preferencesChanges);
+                      if (!result.ok) {
+                        if (handleSessionExpiredError(result.error)) return;
+                        setTheme(savedTheme);
+                        setPreferencesForm((current) => ({ ...current, theme: savedTheme }));
+                        setMessage({ type: `error`, text: result.error.message });
+                        return;
+                      }
+                      setMessage({ type: `success`, text: result.message ?? `Preferences updated` });
+                      router.refresh();
+                    } finally {
+                      setIsSavingPreferences(false);
                     }
-                    setMessage({ type: `success`, text: result.message ?? `Preferences updated` });
-                    router.refresh();
                   });
                 }}
                 className={primaryButtonClass}
               >
-                {isPending
-                  ? `Saving...`
+                {isSavingPreferences
+                  ? `Saving preferences...`
                   : Object.keys(preferencesChanges).length === 0
                     ? `No preference changes yet`
                     : `Save preferences`}

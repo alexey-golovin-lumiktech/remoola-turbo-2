@@ -255,9 +255,9 @@ Internal admin-v2 server routes:
 - shared header/cookie forwarding through `apps/admin-v2/src/lib/api-utils.ts`
 - backend `Set-Cookie` passthrough via `appendSetCookies(...)`
 
-## Legacy Consumer Apps
+## Consumer CSS Grid App (Next.js)
 
-Removed legacy consumer apps no longer participate in the maintained release surface. Their redirect responsibility and runtime contract now live on `apps/consumer-css-grid`, which is the only supported consumer frontend in this repository.
+`apps/consumer-css-grid` is the only supported consumer frontend in this repository. Legacy consumer apps no longer participate in the maintained release surface.
   - Financial: Bank, CreditCard, CurrencyDollar, Exchange, TrendingUp
   - Documents & Files: Clipboard, ClipboardCopy, ClipboardList, Document, Download, Paperclip, Upload
   - Communication: Bell, Mail, Phone
@@ -318,7 +318,7 @@ Internal Consumer API routes:
 - Payment request creation and send.
 - Profile, theme, and preferred-currency settings.
 
-## Consumer CSS Grid App (Next.js)
+### Runtime contract
 
 CSS-grid consumer UI is in `apps/consumer-css-grid`, running on port 3003. `apps/api-v2` is its backend authority for the supported css-grid release surface.
 
@@ -417,8 +417,8 @@ Shared packages used across apps:
 Current env/runtime contract notes:
 
 - Canonical frontend origin envs now live in the app-level env files and runtime consumers of those envs, not in a standalone `packages/env` workspace.
-- `CONSUMER_CSS_GRID_APP_ORIGIN` and `ADMIN_APP_ORIGIN` are part of the maintained runtime contract.
-- `NEXT_PUBLIC_APP_ORIGIN` remains legacy compatibility fallback only and is not the primary production release contract.
+- `CONSUMER_CSS_GRID_APP_ORIGIN` and `ADMIN_V2_APP_ORIGIN` are the maintained app-origin envs for the active frontend surfaces.
+- `NEXT_PUBLIC_APP_ORIGIN` remains only as a legacy frontend fallback and is not the primary production release contract.
 
 ## Additional documentation
 

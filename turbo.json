@@ -1,7 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "globalEnv": [
-    "ADMIN_APP_ORIGIN",
     "ALLOW_PRODUCTION_BOOTSTRAP_SEED",
     "AWS_ACCESS_KEY_ID",
     "AWS_BUCKET",
@@ -102,7 +101,7 @@
       "dependsOn": ["^build", "db:generate"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": ["DATABASE_URL", "NEXT_PUBLIC_APP_ORIGIN"]
+      "env": ["DATABASE_URL", "NEXT_PUBLIC_APP_ORIGIN", "ADMIN_V2_APP_ORIGIN"]
     },
     "lint": {
       "inputs": ["src/**", "test/**", "tests/**", "eslint.config.*", ".eslintrc*", "tsconfig*.json", "package.json"]

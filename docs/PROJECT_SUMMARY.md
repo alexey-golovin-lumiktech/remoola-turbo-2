@@ -21,7 +21,8 @@ Remoola is a payments and FX platform delivered as a Turborepo monorepo. The mai
 - `apps/api-v2` is the backend authority for `apps/consumer-css-grid` and the maintained auth/cutover surface documented in the release docs.
 - Consumer browser auth is cookie-first and same-origin BFF-driven. Per-app canonical frontend origins are now part of the runtime contract:
   - `CONSUMER_CSS_GRID_APP_ORIGIN`
-- `NEXT_PUBLIC_APP_ORIGIN` still exists only as a legacy compatibility fallback and is not the primary production contract.
+  - `ADMIN_V2_APP_ORIGIN`
+- `NEXT_PUBLIC_APP_ORIGIN` remains only as a legacy frontend fallback and is not the primary production contract.
 
 ---
 
@@ -101,6 +102,7 @@ Use the same hostname family (`localhost` or `127.0.0.1`) across backend, fronte
 - `yarn test`, `yarn test:e2e`, and `yarn test:e2e:fast` are local-development-only entrypoints and are blocked in CI/Vercel by `scripts/ensure-local-development.js`.
 - Local test/e2e flows rely on `@remoola/test-db` and Testcontainers, so Docker availability is part of the expected developer environment.
 - `.husky/pre-commit` skips lint/tests for docs-only changes; for code changes it runs `yarn lint`, builds `@remoola/test-db`, then runs maintained unit tests and `apps/api-v2` fast e2e.
+- `yarn verify:v2-apps` is the root verification gate for the maintained `api-v2` + `consumer-css-grid` + `admin-v2` surface.
 
 ---
 
