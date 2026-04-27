@@ -1,5 +1,3 @@
-// Admin case is intentionally a leaf surface — no row in the cross-links listing
-// requires outbound investigation links from the admin case page.
 import { notFound } from 'next/navigation';
 
 import { ActionGhost } from '../../../../components/action-ghost';

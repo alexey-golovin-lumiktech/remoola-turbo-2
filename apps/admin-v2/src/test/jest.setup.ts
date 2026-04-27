@@ -3,7 +3,7 @@ import type * as ReactModule from 'react';
 process.env.COOKIE_SECURE = `false`;
 process.env.COOKIE_SECURE = `false`;
 
-/** Lets async server components in shell + tests resolve `headers()` / `cookies()` under Jest (no request context). */
+/** Allow async server components to resolve `headers()` and `cookies()` in Jest. */
 jest.mock(`next/headers`, () => ({
   headers: async () => ({
     get: (name: string) => (name === `next-url` || name === `x-pathname` ? null : null),
@@ -13,10 +13,7 @@ jest.mock(`next/headers`, () => ({
   }),
 }));
 
-/**
- * `renderToStaticMarkup` + client boundaries: replace the real drawer (hooks, effects) with a passthrough so shell
- * layout tests stay synchronous (SLICE-005); drawer behavior is covered by manual / e2e checks.
- */
+/** Keep shell layout tests synchronous by replacing the drawer with a passthrough. */
 jest.mock(`../components/mobile-shell-drawer`, () => {
   const React = jest.requireActual<typeof ReactModule>(`react`);
   return {
@@ -25,7 +22,7 @@ jest.mock(`../components/mobile-shell-drawer`, () => {
   };
 });
 
-/** Async RSC + `renderToStaticMarkup` suspends in Jest; stub for layout integration tests. */
+/** Stub shell header for layout integration tests. */
 jest.mock(`../components/shell-header`, () => {
   const React = jest.requireActual<typeof ReactModule>(`react`);
   return {

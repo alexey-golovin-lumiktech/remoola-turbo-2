@@ -289,8 +289,6 @@ export class StripeWebhookService {
         }
       }
 
-      // Only record the event as processed after the handler succeeds. This preserves
-      // Stripe retries for transient handler failures instead of silently dropping them.
       try {
         await this.recordWebhookEventProcessed(event.id);
       } catch (dedupErr) {
@@ -327,7 +325,6 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    // Append-only: record outcome in tx for parity with DENIED path.
     await this.prisma.$transaction(async (tx) => {
       await createOutcomeIdempotent(
         tx,
@@ -347,7 +344,6 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    // Append-only: record outcome in tx for parity with stripe.service DENIED path
     await this.prisma.$transaction(async (tx) => {
       await createOutcomeIdempotent(
         tx,
@@ -636,8 +632,7 @@ export class StripeWebhookService {
       }
     }
 
-    // Append-only: record outcome for each non-completed settlement entry.
-    // Effective status is derived from latest outcome or entry.status.
+    // Append a completion outcome only for settlement entries that are not already effectively completed.
     await this.prisma.$transaction(async (tx) => {
       await this.ensureCardPaymentRail(tx, paymentRequestId, `stripe`);
       const entries = await tx.ledgerEntryModel.findMany({
@@ -681,12 +676,10 @@ export class StripeWebhookService {
       });
     });
 
-    // Collect and store the payment method used in this checkout session
     try {
       await this.collectPaymentMethodFromCheckout(session, consumerId);
     } catch {
       this.logger.warn({ message: `Failed to collect payment method from checkout session` });
-      // Don't fail the entire webhook if payment method collection fails
     }
   }
 
@@ -725,7 +718,6 @@ export class StripeWebhookService {
     return { consumer, customerId: customer.id };
   }
 
-  // Manual migration method - can be called from an admin endpoint
   async migrateAllPaymentMethods() {
     this.logger.log({ message: `Payment method migration started` });
 
@@ -794,7 +786,6 @@ export class StripeWebhookService {
   }
 
   private async collectPaymentMethodFromCheckout(session: Stripe.Checkout.Session, consumerId: string) {
-    // Get the payment intent to access the payment method
     if (!session.payment_intent) return;
 
     let paymentIntent: Stripe.PaymentIntent;
@@ -813,13 +804,11 @@ export class StripeWebhookService {
       paymentMethod = paymentIntent.payment_method as Stripe.PaymentMethod;
     }
 
-    // Ensure the payment method is attached to the Stripe customer
     const { customerId } = await this.ensureStripeCustomer(consumerId);
 
     let paymentMethodAttached = paymentMethod.customer === customerId;
 
     try {
-      // Attach the payment method to the customer (this allows reuse)
       if (!paymentMethodAttached) {
         await this.stripe.paymentMethods.attach(paymentMethod.id, {
           customer: customerId,
@@ -829,10 +818,9 @@ export class StripeWebhookService {
       }
     } catch (error: unknown) {
       const err = error as { type?: string; message?: string } | null | undefined;
-      // Handle different types of attachment errors
       if (err?.type === `invalid_request_error` && err?.message?.includes(`previously used without being attached`)) {
         this.logger.debug({ message: `Payment method cannot be reused (used without customer), skipping storage` });
-        return; // Don't store this payment method since it can't be reused
+        return;
       } else if (err?.type === `invalid_request_error` && err?.message?.includes(`already attached`)) {
         this.logger.debug({ message: `Payment method already attached to customer, continuing` });
       } else {
@@ -852,7 +840,6 @@ export class StripeWebhookService {
       paymentMethod = refreshedPaymentMethod;
     }
 
-    // Check if this payment method is already stored for the consumer
     const existingPaymentMethod = await this.prisma.paymentMethodModel.findFirst({
       where: {
         consumerId,
@@ -862,11 +849,9 @@ export class StripeWebhookService {
     });
 
     if (existingPaymentMethod) {
-      // Payment method already exists, no need to create duplicate
       return;
     }
 
-    // Extract payment method details
     let billingDetails;
     if (paymentMethod.billing_details) {
       billingDetails = await this.prisma.billingDetailsModel.create({
@@ -878,7 +863,6 @@ export class StripeWebhookService {
       });
     }
 
-    // Determine payment method type and extract card details
     let type: $Enums.PaymentMethodType;
     let brand: string | undefined;
     let last4: string | undefined;
@@ -892,12 +876,10 @@ export class StripeWebhookService {
       expMonth = paymentMethod.card.exp_month ? String(paymentMethod.card.exp_month).padStart(2, `0`) : undefined;
       expYear = paymentMethod.card.exp_year ? String(paymentMethod.card.exp_year) : undefined;
     } else {
-      // For other payment method types, we might not have detailed info
       this.logger.debug({ message: `Unsupported payment method type for storage`, type: paymentMethod.type });
       return;
     }
 
-    // Check if consumer already has a default payment method
     const hasDefault = await this.prisma.paymentMethodModel.count({
       where: {
         consumerId,
@@ -907,13 +889,12 @@ export class StripeWebhookService {
       },
     });
 
-    // Create the payment method record
     await this.prisma.paymentMethodModel.create({
       data: {
         type,
         stripePaymentMethodId: paymentMethod.id,
         stripeFingerprint: paymentMethod.card?.fingerprint || null,
-        defaultSelected: hasDefault === 0, // Make this default if no other default exists
+        defaultSelected: hasDefault === 0,
         brand: brand || `card`,
         last4: last4 || ``,
         expMonth,
@@ -926,7 +907,6 @@ export class StripeWebhookService {
   }
 
   private async resolvePaymentRequestByPaymentIntent(paymentIntentId: string) {
-    // Look up by outcome.externalId (payment intent id) or legacy ledger_entry.stripe_id
     const byOutcome = await this.prisma.ledgerEntryOutcomeModel.findFirst({
       where: { externalId: paymentIntentId },
       orderBy: { createdAt: `desc` },
@@ -1107,8 +1087,7 @@ export class StripeWebhookService {
             SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
           `);
 
-          // REFUND follows Stripe external source of truth. Once Stripe confirms refund,
-          // internal reversal must be appended idempotently even if requester balance changed.
+          // Chargebacks still require requester balance; Stripe-confirmed refunds do not.
           if (kind === `CHARGEBACK`) {
             const requesterBalance = await this.balanceService.calculateInTransaction(tx, requesterId, currencyCode);
             if (requesterBalance < finalAmount) {
@@ -1297,8 +1276,7 @@ export class StripeWebhookService {
         : refund.status === `failed` || refund.status === `canceled`
           ? $Enums.TransactionStatus.DENIED
           : $Enums.TransactionStatus.PENDING;
-    // Keep refund outcome idempotency transition-scoped so state can progress
-    // (e.g. pending -> completed) under at-least-once webhook delivery.
+    // Scope idempotency to the refund status transition so repeated deliveries can still advance state.
     const transitionExternalId = `refund-update:${refund.id}:${status}`;
 
     await this.prisma.$transaction(async (tx) => {
@@ -1437,7 +1415,6 @@ export class StripeWebhookService {
       return;
     }
 
-    // Append-only: record dispute in ledger_entry_dispute (AGENTS 6.10)
     await createDisputeIfMissing(entry.id);
   }
 }

@@ -1,8 +1,3 @@
-/**
- * E2E tests for critical updates (fintech-safe changes).
- * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- * Covers: stripe_webhook_event dedup, ledger_entry_outcome append-only.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';

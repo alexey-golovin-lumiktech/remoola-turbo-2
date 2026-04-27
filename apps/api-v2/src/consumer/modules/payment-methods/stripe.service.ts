@@ -137,13 +137,10 @@ export class ConsumerStripeService {
   }
 
   private buildCheckoutSessionIdempotencyKey(paymentRequestId: string): string {
-    // One checkout-session side effect per payment request.
     return `checkout-session:${paymentRequestId}`;
   }
 
   private buildSavedMethodIdempotencyKey(paymentRequestId: string): string {
-    // Deliberately scoped to paymentRequestId (not payment method id) to enforce
-    // at-most-once external charge attempt per request across retries/replays.
     return `saved-method:${paymentRequestId}`;
   }
 
@@ -238,7 +235,7 @@ export class ConsumerStripeService {
             });
           } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-              // Another request created this entry (race); continue
+              // Another concurrent attempt already created the idempotent ledger entry.
             } else {
               throw err;
             }
@@ -265,7 +262,7 @@ export class ConsumerStripeService {
             });
           } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-              // Another request created this entry (race); continue
+              // Another concurrent attempt already created the idempotent ledger entry.
             } else {
               throw err;
             }
@@ -305,7 +302,6 @@ export class ConsumerStripeService {
     const digits = getCurrencyFractionDigits(pr.currencyCode);
     const amountMinor = Math.round(Number(pr.amount) * 10 ** digits);
 
-    // 1) Create Stripe Checkout session
     const session = await this.stripe.checkout.sessions.create(
       {
         payment_method_types: [`card`],
@@ -335,7 +331,6 @@ export class ConsumerStripeService {
 
     await this.ensureCardPaymentRail(this.prisma, pr.id, consumerId);
 
-    // 2) Append-only: record WAITING outcome; idempotent on retry (P2002 = already processed)
     const entries = await this.prisma.ledgerEntryModel.findMany({
       where: { paymentRequestId: pr.id },
       select: { id: true },
@@ -391,7 +386,6 @@ export class ConsumerStripeService {
     return { consumer, customerId: customer.id };
   }
 
-  // 1) Create SetupIntent for new card
   async createStripeSetupIntent(consumerId: string) {
     const { customerId } = await this.ensureStripeCustomer(consumerId);
 
@@ -408,7 +402,6 @@ export class ConsumerStripeService {
     return { clientSecret: intent.client_secret };
   }
 
-  // 2) Confirm SetupIntent -> persist card in DB
   async confirmStripeSetupIntent(consumerId: string, body: ConfirmStripeSetupIntent) {
     const { consumer } = await this.ensureStripeCustomer(consumerId);
 
@@ -450,7 +443,7 @@ export class ConsumerStripeService {
     const created = await this.prisma.paymentMethodModel.create({
       data: {
         type: $Enums.PaymentMethodType.CREDIT_CARD,
-        stripePaymentMethodId: pm.id, // Store the Stripe payment method ID for reuse
+        stripePaymentMethodId: pm.id,
         stripeFingerprint: pm.card?.fingerprint || null,
         defaultSelected: hasDefault === 0,
         brand: card.brand ?? `card`,
@@ -466,14 +459,12 @@ export class ConsumerStripeService {
     return created;
   }
 
-  // Pay with saved payment method
   async payWithSavedPaymentMethod(
     consumerId: string,
     paymentRequestId: string,
     body: PayWithSavedPaymentMethod,
     idempotencyKey: string,
   ) {
-    // 1) Validate payment method belongs to consumer
     const paymentMethod = await this.prisma.paymentMethodModel.findFirst({
       where: {
         id: body.paymentMethodId,
@@ -491,14 +482,11 @@ export class ConsumerStripeService {
       throw new BadRequestException(errorCodes.PAYMENT_METHOD_CANNOT_REUSE_NO_ID);
     }
 
-    // 2) Double-check that the payment method is attached to customer
     try {
       const { customerId } = await this.ensureStripeCustomer(consumerId);
       const stripePaymentMethod = await this.stripe.paymentMethods.retrieve(paymentMethod.stripePaymentMethodId);
 
-      // Check if payment method is attached to our customer
       if (stripePaymentMethod.customer !== customerId) {
-        // Try to attach it
         try {
           await this.stripe.paymentMethods.attach(paymentMethod.stripePaymentMethodId, {
             customer: customerId,
@@ -527,25 +515,22 @@ export class ConsumerStripeService {
       throw new InternalServerErrorException(`Payment could not be completed`);
     }
 
-    // 3) Get payment request details
     const pr = await this.getPaymentRequestForPayer(consumerId, paymentRequestId);
 
-    // 4) Ensure Stripe customer exists
     const { customerId } = await this.ensureStripeCustomer(consumerId);
 
     const digits = getCurrencyFractionDigits(pr.currencyCode);
     const amountMinor = Math.round(Number(pr.amount) * 10 ** digits);
 
     try {
-      // 5) Create and confirm payment intent with saved payment method
       const paymentIntent = await this.stripe.paymentIntents.create(
         {
           amount: amountMinor,
           currency: pr.currencyCode.toLowerCase(),
           customer: customerId,
           payment_method: paymentMethod.stripePaymentMethodId,
-          confirm: true, // Confirm immediately since payment method is saved
-          off_session: true, // This is an off-session payment
+          confirm: true,
+          off_session: true,
           metadata: {
             paymentRequestId: pr.id,
             consumerId,
@@ -557,7 +542,6 @@ export class ConsumerStripeService {
         { idempotencyKey: this.buildSavedMethodIdempotencyKey(paymentRequestId) },
       );
 
-      // 6) Append-only: record COMPLETED outcome; idempotent on retry (P2002 = already processed)
       if (paymentIntent.status === `succeeded`) {
         await this.prisma.$transaction(async (tx) => {
           await this.ensureCardPaymentRail(tx, pr.id, `stripe`);
@@ -607,7 +591,6 @@ export class ConsumerStripeService {
           status: paymentIntent.status,
         };
       } else {
-        // Handle cases where payment intent requires additional action
         return {
           success: false,
           paymentIntentId: paymentIntent.id,

@@ -1,7 +1,3 @@
-/**
- * E2E CSRF contract tests for consumer refresh/logout/logout-all endpoints.
- * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';

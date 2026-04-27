@@ -1,7 +1,3 @@
-/**
- * E2E health smoke test for the API bootstrap path.
- * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, it } from '@jest/globals';

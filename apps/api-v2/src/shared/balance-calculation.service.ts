@@ -4,33 +4,18 @@ import { Prisma, $Enums } from '@remoola/database-2';
 
 import { PrismaService } from './prisma.service';
 
-/**
- * Balance calculation modes for different use cases.
- */
 export enum BalanceCalculationMode {
-  /** Only COMPLETED transactions */
   COMPLETED = `COMPLETED`,
-  /** COMPLETED + PENDING transactions (for available balance with pending ops) */
   COMPLETED_AND_PENDING = `COMPLETED_AND_PENDING`,
 }
 
-/**
- * Options for balance calculation.
- */
 export interface BalanceCalculationOptions {
-  /** Calculation mode (default: COMPLETED) */
   mode?: BalanceCalculationMode;
-  /** Specific currency to calculate (default: all currencies) */
   currency?: $Enums.CurrencyCode;
-  /** Acquire advisory lock before calculation (default: false) */
   acquireLock?: boolean;
-  /** Lock suffix for operation-specific locking (e.g., ':withdraw', ':transfer') */
   lockSuffix?: string;
 }
 
-/**
- * Result of single currency balance calculation.
- */
 export interface BalanceResult {
   consumerId: string;
   currency: $Enums.CurrencyCode;
@@ -39,9 +24,6 @@ export interface BalanceResult {
   calculatedAt: Date;
 }
 
-/**
- * Result of multi-currency balance calculation.
- */
 export interface MultiCurrencyBalanceResult {
   consumerId: string;
   balances: Record<$Enums.CurrencyCode, number>;
@@ -49,12 +31,7 @@ export interface MultiCurrencyBalanceResult {
   calculatedAt: Date;
 }
 
-/**
- * External card-funded payer legs are not wallet spendable balance.
- * Keep requester-side effects in wallet, but exclude payer-side card debit,
- * the matching payer-side Stripe refund/chargeback credit, and pending external
- * funding credits that are not yet actually settled.
- */
+/** Exclude external card-funded legs and unsettled credits from wallet spendable balance. */
 export function buildWalletEligibilityCondition(): Prisma.Sql {
   const railSql = Prisma.sql`COALESCE(NULLIF(le.metadata->>'rail', ''), pr.payment_rail::text, '')`;
   return Prisma.sql`
@@ -90,53 +67,10 @@ export function buildWalletEligibilityCondition(): Prisma.Sql {
   `;
 }
 
-/**
- * Centralized balance calculation service.
- *
- * Provides consistent, fintech-safe balance calculations across the application.
- * All balance calculations use the same LATERAL join pattern to get the latest
- * outcome status for each ledger entry (append-only outcomes pattern).
- *
- * @remarks
- * - Uses append-only ledger outcomes for status determination
- * - Supports advisory locks for concurrent operation safety
- * - All calculations exclude soft-deleted entries (deleted_at IS NULL)
- * - Supports both single currency and multi-currency calculations
- *
- * @example
- * ```typescript
- * // Get all balances for a consumer
- * const balances = await balanceService.calculateMultiCurrency(consumerId);
- *
- * // Get balance with lock for withdraw operation
- * const balance = await balanceService.calculateSingle(
- *   consumerId,
- *   'USD',
- *   { acquireLock: true, lockSuffix: ':withdraw' }
- * );
- *
- * // Get balance including pending transactions
- * const balanceWithPending = await balanceService.calculateSingle(
- *   consumerId,
- *   'USD',
- *   { mode: BalanceCalculationMode.COMPLETED_AND_PENDING }
- * );
- * ```
- */
 @Injectable()
 export class BalanceCalculationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Calculate balance for a specific currency.
-   *
-   * @param consumerId - Consumer UUID
-   * @param currency - Currency code (optional, returns first currency if not specified)
-   * @param options - Calculation options
-   * @returns Balance result
-   *
-   * @throws Error if database query fails
-   */
   async calculateSingle(
     consumerId: string,
     currency?: $Enums.CurrencyCode,
@@ -146,7 +80,6 @@ export class BalanceCalculationService {
     const acquireLock = options?.acquireLock ?? false;
     const lockSuffix = options?.lockSuffix ?? ``;
 
-    // Acquire advisory lock if requested
     if (acquireLock) {
       const lockKey = `balance:${consumerId}${lockSuffix}`;
       await this.prisma.$executeRaw(Prisma.sql`
@@ -197,15 +130,6 @@ export class BalanceCalculationService {
     };
   }
 
-  /**
-   * Calculate balances for all currencies for a consumer.
-   *
-   * @param consumerId - Consumer UUID
-   * @param options - Calculation options
-   * @returns Multi-currency balance result
-   *
-   * @throws Error if database query fails
-   */
   async calculateMultiCurrency(
     consumerId: string,
     options?: BalanceCalculationOptions,
@@ -214,7 +138,6 @@ export class BalanceCalculationService {
     const acquireLock = options?.acquireLock ?? false;
     const lockSuffix = options?.lockSuffix ?? ``;
 
-    // Acquire advisory lock if requested
     if (acquireLock) {
       const lockKey = `balance:${consumerId}${lockSuffix}`;
       await this.prisma.$executeRaw(Prisma.sql`
@@ -256,19 +179,6 @@ export class BalanceCalculationService {
     };
   }
 
-  /**
-   * Calculate balance within a transaction.
-   * Convenience method that wraps calculateSingle with transaction handling.
-   *
-   * @param tx - Prisma transaction client
-   * @param consumerId - Consumer UUID
-   * @param currency - Currency code
-   * @param options - Calculation options, including optional advisory lock acquisition
-   * @returns Balance amount
-   *
-   * @remarks
-   * Advisory locks acquired inside transactions are held until transaction commit/rollback.
-   */
   async calculateInTransaction(
     tx: Prisma.TransactionClient,
     consumerId: string,
@@ -282,7 +192,6 @@ export class BalanceCalculationService {
     const mode = options?.mode ?? BalanceCalculationMode.COMPLETED;
     const lockSuffix = options?.lockSuffix ?? ``;
 
-    // Acquire advisory lock if requested (locks are transaction-scoped)
     if (options?.acquireLock) {
       const lockKey = `balance:${consumerId}${lockSuffix}`;
       await tx.$executeRaw(Prisma.sql`
@@ -315,18 +224,6 @@ export class BalanceCalculationService {
     return Number(rows[0]?.balance ?? 0);
   }
 
-  /**
-   * Check if balance is sufficient for an operation.
-   *
-   * @param tx - Prisma transaction client
-   * @param consumerId - Consumer UUID
-   * @param currency - Currency code
-   * @param requiredAmount - Required amount (positive number)
-   * @param options - Calculation options (without acquireLock)
-   * @returns True if balance is sufficient
-   *
-   * @throws Error if balance is insufficient
-   */
   async assertSufficientBalance(
     tx: Prisma.TransactionClient,
     consumerId: string,
@@ -352,10 +249,6 @@ export class BalanceCalculationService {
     return true;
   }
 
-  /**
-   * Build status condition SQL fragment for WHERE clause.
-   * COMPLETED_AND_PENDING uses IN ('COMPLETED','PENDING'); COMPLETED uses equality.
-   */
   private buildStatusCondition(mode: BalanceCalculationMode): Prisma.Sql {
     switch (mode) {
       case BalanceCalculationMode.COMPLETED_AND_PENDING:

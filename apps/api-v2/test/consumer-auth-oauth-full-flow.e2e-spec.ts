@@ -1,7 +1,3 @@
-/**
- * E2E OAuth full-flow tests for start -> callback -> complete -> me contracts.
- * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';

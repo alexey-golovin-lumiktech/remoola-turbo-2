@@ -16,9 +16,6 @@ function parseAccountType(raw: string | null | undefined): TAccountType | null {
 function parseContractorKind(raw: string | null | undefined): TContractorKind | null {
   return raw === CONTRACTOR_KIND.ENTITY || raw === CONTRACTOR_KIND.INDIVIDUAL ? raw : null;
 }
-
-// Explicit-state-first policy: user-chosen branch/enum fields start as null
-// and are never hidden behind mobile-style auto-defaults.
 export function createInitialSignupFormState(querySeed?: SignupQuerySeed): SignupFormState {
   const accountType = parseAccountType(querySeed?.accountTypeParam);
   const contractorKind = parseContractorKind(querySeed?.contractorKindParam);

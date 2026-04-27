@@ -34,13 +34,13 @@
   },
   "dependencies": {
     "@remoola/database-2": "^0.0.0",
-    "@testcontainers/postgresql": "^11.12.0"
+    "@testcontainers/postgresql": "^11.12.0",
+    "jest-environment-node": "^30.3.0"
   },
   "devDependencies": {
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",
     "@types/node": "^24.3.0",
-    "ts-loader": "^9.4.3",
     "ts-node": "^10.9.2",
     "typescript": "5.8.2"
   }

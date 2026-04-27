@@ -52,11 +52,7 @@ export function handleSessionExpired(): void {
   };
 
   fetch(CLEAR_COOKIES_URL, { method: `POST`, credentials: `include` })
-    .then((res) => {
-      if (!res.ok) {
-        // non-fatal: redirect anyway
-      }
-    })
+    .then(() => undefined)
     .catch(() => fetch(CLEAR_COOKIES_URL, { method: `POST`, credentials: `include` }))
     .finally(clearThenRedirect);
 }

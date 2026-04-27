@@ -41,7 +41,6 @@ export class GoogleOAuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ngrokIngress: NgrokIngressService,
-    // private readonly authService: AuthService, // <– if you want to issue tokens here
   ) {
     const clientId = envs.GOOGLE_CLIENT_ID;
     const clientSecret = envs.GOOGLE_CLIENT_SECRET;
@@ -64,18 +63,10 @@ export class GoogleOAuthService {
     });
   }
 
-  /**
-   * Main entry: sign in / sign up consumer with Google.
-   * If consumer doesn't exist → create with password=null.
-   * Always upsert GoogleProfileDetails.
-   */
-
   async loginWithPayload(email: string, payload: TokenPayload) {
-    // 1. Get or create consumer
     const consumer = await this.upsertConsumerFromGooglePayload(email, payload);
     await this.assertSafeGoogleLink(consumer.id, payload);
 
-    // 2. Upsert GoogleProfileDetails
     await this.upsertGoogleProfileDetails(consumer.id, payload);
 
     return consumer;
@@ -146,18 +137,6 @@ export class GoogleOAuthService {
     return oauthCrypto.generatePKCEChallenge(codeVerifier);
   }
 
-  /**
-   * Create or reuse a Consumer based on Google profile email.
-   *
-   * Business logic:
-   * - If user already exists: just return that consumer.
-   * - If not: create a new Consumer with:
-   *     - accountType: CONTRACTOR
-   *     - contractorKind: INDIVIDUAL
-   *     - password/salt: null
-   *
-   * You can later allow user to upgrade to BUSINESS or ENTITY etc.
-   */
   private async upsertConsumerFromGooglePayload(email: string, payload: TokenPayload) {
     const existing = await this.prisma.consumerModel.findFirst({
       where: { email, deletedAt: null },
@@ -169,15 +148,12 @@ export class GoogleOAuthService {
     if (existing) {
       const updateData: Prisma.ConsumerModelUpdateInput = {};
 
-      // Mark verified if Google says so
       if (!existing.verified && payload.email_verified) {
         updateData.verified = true;
       }
 
-      // PERSONAL DETAILS UPDATE LOGIC
       if (hasNameUpdate) {
         if (existing.personalDetails) {
-          // Update existing personalDetails row
           updateData.personalDetails = {
             update: {
               ...(payload.given_name ? { firstName: payload.given_name } : {}),
@@ -185,7 +161,6 @@ export class GoogleOAuthService {
             },
           };
         } else {
-          // Create new personalDetails row
           updateData.personalDetails = {
             create: {
               firstName: payload.given_name ?? null,
@@ -198,7 +173,6 @@ export class GoogleOAuthService {
         }
       }
 
-      // Nothing to update
       if (Object.keys(updateData).length === 0) {
         return existing;
       }
@@ -212,7 +186,6 @@ export class GoogleOAuthService {
       return updated;
     }
 
-    // CONSUMER DOES NOT EXIST → CREATE NEW
     try {
       const consumer = await this.prisma.consumerModel.create({
         data: {

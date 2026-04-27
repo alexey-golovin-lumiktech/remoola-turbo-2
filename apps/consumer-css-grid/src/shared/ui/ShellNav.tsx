@@ -16,8 +16,6 @@ import { LogoutIcon } from './icons/LogoutIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { UsersIcon } from './icons/UsersIcon';
 
-/* ── Sidebar nav items (9 items matching layout reference) ── */
-
 const sidebarItems = [
   { href: `/dashboard`, label: `Dashboard`, Icon: HomeIcon },
   { href: `/contracts`, label: `Contracts`, Icon: DocumentIcon },
@@ -29,8 +27,6 @@ const sidebarItems = [
   { href: `/exchange`, label: `Exchange`, Icon: ExchangeIcon },
   { href: `/settings`, label: `Settings`, Icon: SettingsIcon },
 ];
-
-/* ── Mobile bottom nav items (6 items, reference grid-cols-6) */
 
 const mobileNavItems = [
   { href: `/dashboard`, label: `Home`, Icon: HomeIcon },
@@ -87,8 +83,6 @@ function CommandPaletteTrigger({
   );
 }
 
-/* ── Sidebar ─────────────────────────────────────────────── */
-
 export function ShellSidebar({
   commandShortcutLabel,
   onOpenCommandPalette,
@@ -103,7 +97,6 @@ export function ShellSidebar({
       className="border-b border-[color:var(--app-border)] bg-[var(--app-shell)] backdrop-blur md:fixed md:left-0 md:top-0 md:h-screen md:w-[248px] md:overflow-hidden md:border-b-0 md:border-r"
       data-testid="consumer-css-grid-shell-sidebar"
     >
-      {/* Logo header */}
       <div className="flex items-center justify-between px-4 py-4 md:px-5">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-[60px] items-center overflow-hidden md:w-[136px]">
@@ -112,7 +105,6 @@ export function ShellSidebar({
           </div>
         </div>
 
-        {/* Mobile quick actions (visible on mobile only) */}
         <div className="flex items-center gap-3 md:hidden">
           <CommandPaletteTrigger
             compact
@@ -134,7 +126,6 @@ export function ShellSidebar({
         </div>
       </div>
 
-      {/* Desktop nav (hidden on mobile) */}
       <nav
         className="hidden px-3 pb-5 md:block md:h-[calc(100vh-80px)] md:overflow-y-auto"
         aria-label="Primary"
@@ -163,7 +154,6 @@ export function ShellSidebar({
           })}
         </ul>
 
-        {/* Logout at bottom of sidebar */}
         <div className="mt-4 space-y-4 border-t border-[color:var(--app-border)] pt-4">
           <ThemeQuickSwitch showLabel />
           <form method="post" action="/logout" className="contents">
@@ -181,8 +171,6 @@ export function ShellSidebar({
     </aside>
   );
 }
-
-/* ── Desktop top bar (hidden on mobile) ─────────────────── */
 
 export function ShellTopBar({
   commandShortcutLabel,
@@ -228,8 +216,6 @@ export function ShellTopBar({
   );
 }
 
-/* ── Mobile bottom nav (hidden on desktop) ───────────────── */
-
 export function ShellBottomNav() {
   const pathname = usePathname();
 
@@ -239,7 +225,6 @@ export function ShellBottomNav() {
       aria-label="Primary"
       data-testid="consumer-css-grid-shell-bottom-nav"
     >
-      {/* 6-column grid matching layout reference */}
       <div className="mx-auto grid max-w-md grid-cols-6 gap-1">
         {mobileNavItems.map((item) => {
           const active = isActive(pathname, item.href);

@@ -256,11 +256,7 @@ export class AdminAuthService {
     );
   }
 
-  /**
-   * Step-up / re-auth: verify the current admin's password for critical actions
-   * (refund, chargeback, admin delete, password reset).
-   * Throws if passwordConfirmation is missing or does not match stored credentials.
-   */
+  /** Re-authenticate the current admin before sensitive actions. */
   async verifyStepUp(adminId: string, passwordConfirmation: string): Promise<void> {
     const trimmed = typeof passwordConfirmation === `string` ? passwordConfirmation.trim() : ``;
     if (trimmed.length === 0) {
@@ -407,7 +403,7 @@ export class AdminAuthService {
         },
       });
     } catch {
-      // verification failure or DB error — silent no-op (matches existing logout best-effort semantics)
+      // Ignore invalid or already-unusable refresh tokens during logout cleanup.
     }
   }
 

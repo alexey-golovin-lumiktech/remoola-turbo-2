@@ -2,8 +2,6 @@ import 'server-only';
 
 import { fetchConsumerApi, type ConsumerApiRequestOptions } from '../consumer-api-fetch.server';
 import { type BalanceResponse, type PaymentMethodsResponse } from '../consumer-api.types';
-
-// Balance endpoints return major units; UI balance state stays in minor units.
 function majorBalanceToMinorUnits(amount: number): number {
   return Math.round(amount * 100);
 }

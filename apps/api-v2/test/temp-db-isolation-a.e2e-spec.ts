@@ -1,7 +1,3 @@
-/**
- * E2E guard test proving per-file temporary DB isolation (suite A).
- * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { PrismaClient } from '@remoola/database-2';

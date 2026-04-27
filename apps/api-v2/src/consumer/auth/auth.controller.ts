@@ -199,7 +199,7 @@ export class ConsumerAuthController {
         return normalized;
       }
     } catch {
-      // ignore invalid url
+      // Fall back to the default path when the provided next URL is invalid.
     }
 
     return `/dashboard`;
@@ -294,8 +294,6 @@ export class ConsumerAuthController {
     return url.toString();
   }
 
-  // Transport note: @PublicEndpoint() only bypasses AuthGuard.
-  // External-public vs BFF-only appScope rules are enforced separately in the consumer route policy.
   @PublicEndpoint()
   @TrackConsumerAction({ action: `consumer.auth.login`, resource: `auth` })
   @Post(`login`)

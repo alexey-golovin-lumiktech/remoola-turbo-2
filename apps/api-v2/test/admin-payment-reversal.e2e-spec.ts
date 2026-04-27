@@ -1,7 +1,3 @@
-/**
- * E2E success-path tests for admin refund/chargeback reversals.
- * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { randomUUID } from 'crypto';

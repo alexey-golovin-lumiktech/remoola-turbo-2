@@ -370,7 +370,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
     await authService.requestPasswordReset(consumerEmail, appScope);
 
-    // Backdate newest row so cooldown won't block the second issuing call (test setup only).
+    // Backdate the newest row so the next request bypasses the cooldown in this setup.
     const newest = await prisma.resetPasswordModel.findFirst({
       where: { consumerId },
       orderBy: { createdAt: `desc` },

@@ -1053,13 +1053,11 @@ export class ConsumerDocumentsService {
       throw new ForbiddenException(errorCodes.DOCUMENT_ACCESS_DENIED);
     }
 
-    // normalize tags
     const cleaned = tags
       .map((tag) => tag.trim())
       .filter(Boolean)
       .map((tag) => tag.toLowerCase());
 
-    // upsert tag records
     const documentTags = [];
     for (const name of cleaned) {
       const documentTag = await this.prisma.documentTagModel.upsert({
@@ -1070,12 +1068,10 @@ export class ConsumerDocumentsService {
       documentTags.push(documentTag);
     }
 
-    // remove old links
     await this.prisma.resourceTagModel.deleteMany({
       where: { resourceId },
     });
 
-    // add current links
     await this.prisma.resourceTagModel.createMany({
       data: documentTags.map((documentTag) => ({
         resourceId,

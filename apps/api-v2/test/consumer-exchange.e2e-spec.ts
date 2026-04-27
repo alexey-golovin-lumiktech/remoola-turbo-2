@@ -1,6 +1,3 @@
-/**
- * E2E + isolated-DB regression tests for consumer FX convert and scheduled execution paths.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { randomUUID } from 'crypto';

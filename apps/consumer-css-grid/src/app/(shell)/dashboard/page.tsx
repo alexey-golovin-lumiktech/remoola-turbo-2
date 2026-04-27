@@ -45,8 +45,6 @@ function hasNonZeroMinorBalance(amount: number | undefined) {
   return Math.abs(amount ?? 0) > 0;
 }
 
-/* ── Page ────────────────────────────────────────────────── */
-
 export default async function DashboardPage() {
   const [dashboardResult, settledBalances, availableBalances] = await Promise.all([
     getDashboardData({ redirectTo: `/dashboard` }),

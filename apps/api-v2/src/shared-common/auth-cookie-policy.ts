@@ -230,7 +230,6 @@ export function getApiConsumerDeviceCookieOptions(
 ): SharedHttpOnlyCookieOptions & { maxAge: number } {
   return {
     ...getConsumerDeviceCookieOptions(getApiConsumerCookieRuntime(req)),
-    // Express expects maxAge in milliseconds.
     maxAge: DEVICE_COOKIE_MAX_AGE_SECONDS * 1000,
   };
 }

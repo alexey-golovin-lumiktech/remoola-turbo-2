@@ -338,7 +338,6 @@ export class ConsumerExchangeService {
     let failedCount = 0;
 
     for (const conversion of due) {
-      // ✅ Atomic claim with optimistic locking (includes deletedAt for safety)
       const claimed = await this.prisma.scheduledFxConversionModel.updateMany({
         where: {
           id: conversion.id,
@@ -501,7 +500,6 @@ export class ConsumerExchangeService {
     let failedCount = 0;
 
     for (const rule of rules) {
-      // ✅ Atomic claim: update nextRunAt to prevent concurrent processing
       const claimed = await this.prisma.walletAutoConversionRuleModel.updateMany({
         where: {
           id: rule.id,
@@ -550,7 +548,6 @@ export class ConsumerExchangeService {
         const message = error instanceof Error ? error.message : `Unknown error`;
         this.logger.warn(`Auto conversion rule failed (${rule.id}): ${message}`);
 
-        // ✅ Reset nextRunAt on failure to allow retry sooner (5 minutes)
         await this.prisma.walletAutoConversionRuleModel.update({
           where: { id: rule.id },
           data: {
@@ -878,12 +875,10 @@ export class ConsumerExchangeService {
       const metadata = { from, to, rate: rate.rate, ...(options?.metadata ?? {}) };
 
       return this.prisma.$transaction(async (tx) => {
-        // 🔐 Lock with operation-specific key to prevent cross-operation collisions
         await tx.$executeRaw(Prisma.sql`
         SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':exchange')::text)::bigint)
       `);
 
-        // Balance check runs inside the same transaction after the exchange-specific advisory lock.
         const balanceInsideTx = await this.balanceService.calculateInTransaction(tx, consumerId, from, {
           mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
         });
@@ -891,7 +886,6 @@ export class ConsumerExchangeService {
           throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
         }
 
-        // 1️⃣ Source currency — money leaves
         await tx.ledgerEntryModel.create({
           data: {
             ledgerId,
@@ -907,7 +901,6 @@ export class ConsumerExchangeService {
           },
         });
 
-        // 2️⃣ Target currency — money enters
         const income = await tx.ledgerEntryModel.create({
           data: {
             ledgerId,
@@ -934,7 +927,6 @@ export class ConsumerExchangeService {
         };
       });
     } catch (error) {
-      // Skip logging expected client errors (validation / business rules)
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
       }

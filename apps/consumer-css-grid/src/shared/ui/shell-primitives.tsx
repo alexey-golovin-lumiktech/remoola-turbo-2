@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { type ReactNode } from 'react';
 
-/* ── PageHeader ──────────────────────────────────────────── */
-
 export function PageHeader({
   title,
   subtitle,
@@ -17,7 +15,6 @@ export function PageHeader({
   const sub = subtitle ?? `Mobile first workspace for finance operations`;
   return (
     <>
-      {/* Mobile: hero card */}
       <section className="mb-6 md:hidden">
         <div className="flex items-start gap-4 rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-card-gradient)] p-5 shadow-[var(--app-shadow)]">
           <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[26px] bg-[var(--app-primary)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]">
@@ -31,7 +28,6 @@ export function PageHeader({
         </div>
       </section>
 
-      {/* Desktop: plain h1 */}
       <section className="mb-6 hidden md:flex items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight text-[var(--app-text)]">{title}</h1>
@@ -44,8 +40,6 @@ export function PageHeader({
     </>
   );
 }
-
-/* ── Panel ───────────────────────────────────────────────── */
 
 export function Panel({
   title,
@@ -71,8 +65,6 @@ export function Panel({
     </section>
   );
 }
-
-/* ── MetricCard ──────────────────────────────────────────── */
 
 export function MetricCard({
   icon,
@@ -102,8 +94,6 @@ export function MetricCard({
     </article>
   );
 }
-
-/* ── ActionCard ──────────────────────────────────────────── */
 
 export function ActionCard({
   title,
@@ -154,8 +144,6 @@ export function ActionCard({
   );
 }
 
-/* ── ChecklistItem ───────────────────────────────────────── */
-
 export function ChecklistItem({ checked, children }: { checked?: boolean; children: ReactNode }) {
   return (
     <div className="flex items-center gap-3 text-[var(--app-text-soft)]">
@@ -172,8 +160,6 @@ export function ChecklistItem({ checked, children }: { checked?: boolean; childr
     </div>
   );
 }
-
-/* ── StatusPill ──────────────────────────────────────────── */
 
 type StatusPillStatus =
   | `Signed`
@@ -201,8 +187,6 @@ export function StatusPill({ status }: { status: StatusPillStatus }) {
   return <span className={`rounded-full border px-3 py-1 text-xs ${tone}`}>{status}</span>;
 }
 
-/* ── MetricLine ──────────────────────────────────────────── */
-
 export function MetricLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3">
@@ -211,8 +195,6 @@ export function MetricLine({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-/* ── ActionMini ──────────────────────────────────────────── */
 
 export function ActionMini({ label }: { label: string }) {
   return (
@@ -224,8 +206,6 @@ export function ActionMini({ label }: { label: string }) {
     </button>
   );
 }
-
-/* ── Field ───────────────────────────────────────────────── */
 
 export function Field({ label, value }: { label: string; value: string }) {
   return (

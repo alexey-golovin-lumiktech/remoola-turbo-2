@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         return response;
       }
     } catch {
-      // Fall back to local cookie cleanup when backend logout is unavailable.
+      // Ignore upstream logout failures and still clear local cookies below.
     }
   }
 

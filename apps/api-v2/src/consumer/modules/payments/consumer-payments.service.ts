@@ -122,11 +122,6 @@ export class ConsumerPaymentsService {
     return type;
   }
 
-  /** Ensures consumer has completed profile
-   * Legal Status
-   * Tax ID
-   * Passport/ID for individuals;
-   * Tax ID, Phone for entities). */
   private async ensureProfileComplete(consumerId: string) {
     const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },
@@ -141,10 +136,6 @@ export class ConsumerPaymentsService {
     }
   }
 
-  /**
-   * Asserts profile is complete before starting identity verification.
-   * Same rules as ensureProfileComplete; throws with PROFILE_INCOMPLETE_VERIFY for client mapping.
-   */
   async assertProfileCompleteForVerification(consumerId: string): Promise<void> {
     const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },
@@ -299,7 +290,6 @@ export class ConsumerPaymentsService {
             where: whereBase,
             include,
             orderBy,
-            // Test-only fallback when raw SQL is not mocked.
             take: 2000,
           })
         : await this.prisma.paymentRequestModel.findMany({
@@ -1132,7 +1122,6 @@ export class ConsumerPaymentsService {
 
     const isVerified = consumer ? isConsumerVerificationEffective(consumer) : false;
 
-    // You can tune these
     return {
       maxPerOperation: isVerified ? 10_000 : 1_000,
       dailyLimit: isVerified ? 50_000 : 5_000,
@@ -1202,7 +1191,6 @@ export class ConsumerPaymentsService {
     const key = idempotencyKey.trim();
     const withdrawCurrency = toCurrencyOrDefault(body.currencyCode ?? body.currency, $Enums.CurrencyCode.USD);
 
-    // ✅ EARLY IDEMPOTENCY CHECK: Before any business logic (limits, balance, etc.)
     const existing = await this.prisma.ledgerEntryModel.findFirst({
       where: {
         idempotencyKey: `withdraw:${key}`,
@@ -1233,14 +1221,12 @@ export class ConsumerPaymentsService {
       return await this.prisma.$transaction(async (tx) => {
         await this.lockConsumerOutgoing(tx, consumerId);
 
-        // 🔐 Lock with operation-specific key to prevent cross-operation collisions
         await tx.$executeRaw(Prisma.sql`
           SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':withdraw')::text)::bigint)
         `);
 
         await this.ensureLimits(consumerId, amount, tx);
 
-        // Balance check runs inside the same transaction after the outgoing and withdraw advisory locks.
         const balance = await this.balanceService.calculateInTransaction(tx, consumerId, withdrawCurrency, {
           mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
         });
@@ -1299,7 +1285,6 @@ export class ConsumerPaymentsService {
 
     const key = idempotencyKey.trim();
 
-    // ✅ EARLY IDEMPOTENCY CHECK: Before any business logic (limits, recipient lookup, etc.)
     const existing = await this.prisma.ledgerEntryModel.findFirst({
       where: {
         idempotencyKey: `transfer:${key}:sender`,
@@ -1332,7 +1317,6 @@ export class ConsumerPaymentsService {
 
         await this.lockConsumerOutgoing(tx, consumerId);
 
-        // 🔐 Lock both consumers with operation-specific keys (sorted to prevent deadlocks)
         await tx.$executeRaw(Prisma.sql`
           SELECT pg_advisory_xact_lock(hashtext((${firstId} || ':transfer')::text)::bigint)
         `);
@@ -1342,7 +1326,6 @@ export class ConsumerPaymentsService {
 
         await this.ensureLimits(consumerId, amount, tx);
 
-        // Balance check runs inside the same transaction after the outgoing and transfer advisory locks.
         const balance = await this.balanceService.calculateInTransaction(tx, consumerId, transferCurrency, {
           mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
         });

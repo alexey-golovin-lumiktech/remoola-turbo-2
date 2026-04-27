@@ -1,9 +1,3 @@
-/**
- * Client-safe configuration.
- * Only NEXT_PUBLIC_* env vars should be accessed here.
- * This file can be imported in both client and server components.
- */
-
 export const CLIENT_CONFIG = {
   API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || ``,
 } as const;

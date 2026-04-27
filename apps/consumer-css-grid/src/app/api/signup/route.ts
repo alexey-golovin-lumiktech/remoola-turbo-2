@@ -35,8 +35,7 @@ export async function POST(req: NextRequest) {
     try {
       const parsed = JSON.parse(data) as { consumer?: { id?: string }; next?: string };
       const consumerId = parsed.consumer?.id?.trim();
-      // Google signup establishes a session in api-v2 and returns `next`; only classic signup needs
-      // complete-profile-creation (verification email). Calling it for Google would duplicate follow-up email.
+      // Google signup already completes the handoff when `next` is returned.
       const needsEmailVerificationFollowUp = consumerId && typeof parsed.next !== `string`;
       if (needsEmailVerificationFollowUp) {
         const completionRes = await fetch(
@@ -53,7 +52,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch {
-      // Best-effort follow-up: signup already succeeded, so cookie passthrough remains the only required behavior.
+      // Ignore follow-up completion failures and return the primary signup response.
     }
   }
 

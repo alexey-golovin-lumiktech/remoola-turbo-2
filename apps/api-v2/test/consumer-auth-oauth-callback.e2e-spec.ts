@@ -1,7 +1,3 @@
-/**
- * E2E OAuth callback contract tests for missing/expired state behavior.
- * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { createHmac } from 'crypto';

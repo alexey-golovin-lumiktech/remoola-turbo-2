@@ -1,7 +1,3 @@
-/**
- * E2E coverage for authenticated consumer document downloads.
- * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { mkdir, rm, writeFile } from 'fs/promises';

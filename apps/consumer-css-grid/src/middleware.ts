@@ -26,8 +26,6 @@ interface RefreshAttemptTelemetry {
   latencyMs: number;
   statusCode?: number;
 }
-
-// TESTING
 interface RefreshResult {
   response: Response | null;
   telemetry: RefreshAttemptTelemetry;
@@ -244,8 +242,7 @@ export async function middleware(req: NextRequest) {
     return response;
   };
   const redirectToDashboard = () => NextResponse.redirect(new URL(`/dashboard`, req.url));
-  // Server actions cannot rely on middleware redirects alone; the action itself must surface
-  // SESSION_EXPIRED from the backend and let the client handle re-auth deterministically.
+  // Server actions must surface session expiry instead of relying on middleware redirects.
   const protectedActionFailure = (sessionExpired = false) =>
     isServerActionRequest ? NextResponse.next() : loginRedirect(sessionExpired);
   const continueWithHeaders = (headers?: Headers) =>

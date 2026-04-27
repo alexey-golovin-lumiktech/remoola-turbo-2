@@ -11,10 +11,6 @@ const UNAUTHORIZED_MESSAGE = `Invalid or expired token`;
 export class JwtAuthGuard extends AuthGuard(`jwt`) {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const result = await (super.canActivate(context) as Promise<boolean>);
-    // The global AuthGuard sets request[IDENTITY] with the full DB-backed context.
-    // Only fall back to the minimal JWT payload (request.user) if the global guard
-    // did not run (e.g. route is @PublicEndpoint but still carries @UseGuards(JwtAuthGuard)).
-    // We must include `type` so that admin.type authorization checks never see undefined.
     const request = context.switchToHttp().getRequest<Record<string | symbol, unknown>>();
     if (!request[IDENTITY] && request[`user`]) {
       const user = request[`user`] as { id?: string; email?: string };

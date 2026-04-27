@@ -52,8 +52,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, `jwt`) {
   }
 
   validate(payload: { sub: string; email?: string; typ?: string }): { id: string; email?: string } | null {
-    // Reject non-access tokens (e.g. refresh tokens with typ:'refresh') as a defence-in-depth measure.
-    // The app uses cookie-first auth end-to-end; JwtAuthGuard should never widen that boundary.
     if (payload.typ !== undefined && payload.typ !== `access`) return null;
     return { id: payload.sub, email: payload.email };
   }

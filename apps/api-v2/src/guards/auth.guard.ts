@@ -27,7 +27,6 @@ import { ensureAuthenticatedMutationCsrf } from '../shared-common/csrf-protectio
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
 
-/** User-facing and log-safe messages (no tokens or PII). */
 const GuardMessage = {
   INVALID_TOKEN: `Invalid or expired token`,
   NO_IDENTITY_RECORD: `Authentication record not found`,
@@ -103,7 +102,6 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 
-    // Reject refresh or other token types (consumer access and refresh share same secret).
     if (verified.typ !== undefined && verified.typ !== `access`) {
       this.logger.warn(`AuthGuard: token typ is not access`);
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
@@ -113,7 +111,6 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 
-    // Defense-in-depth scope check: reject cross-domain tokens early before DB lookups.
     if (verified.scope === `admin` && path.startsWith(CONSUMER_API_PATH_PREFIX)) {
       this.logger.warn(`AuthGuard: admin token used on consumer path`);
       throw new ForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);

@@ -1,8 +1,3 @@
-/**
- * E2E tests for admin step-up (re-auth) on protected endpoints.
- * Requires step-up password confirmation for: refund, chargeback, admin password change, admin delete.
- * Uses isolated DB via @remoola/test-db/environment.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';

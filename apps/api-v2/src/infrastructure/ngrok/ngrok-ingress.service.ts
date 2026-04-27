@@ -67,12 +67,12 @@ export class NgrokIngressService implements OnApplicationShutdown {
       if (this.listener) {
         const ngrok = await this.getNgrokClient();
         const url = this.listener.url();
-        await this.listener.close(); // ✅ shuts listener down
-        await ngrok.disconnect(url); // ✅ explicit (optional but nice)
+        await this.listener.close();
+        await ngrok.disconnect(url);
         this.listener = null;
       }
     } catch {
-      // best-effort
+      // Ignore shutdown errors so app termination can continue.
     }
   }
 }

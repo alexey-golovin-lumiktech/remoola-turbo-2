@@ -1,7 +1,3 @@
-/**
- * E2E HTTP contract tests for Stripe webhook verification and replay dedupe.
- * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';

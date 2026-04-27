@@ -1,9 +1,5 @@
 import z, { type ZodType } from 'zod';
 
-/**
- * Parse expiry string (e.g. '15m', '168h', '1d', '60s') to milliseconds.
- * Used for cookie maxAge and any ms-based TTL. Fintech-safe defaults: short access (15m), limited refresh (7d).
- */
 function parseExpiresToMs(value: string): number {
   const s = String(value).trim();
   const match = /^(\d+)(s|m|h|d)$/i.exec(s);
@@ -78,7 +74,6 @@ const database = {
 const nest = {
   PORT: z.coerce.number().optional().default(3000),
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
-  /** Public marketing / invoice branding website; override per deployment. */
   PUBLIC_BRAND_WEBSITE_URL: z.string().url().default(`https://remoola.app`),
   CONSUMER_CSS_GRID_APP_ORIGIN: z.string().default(`CONSUMER_CSS_GRID_APP_ORIGIN`),
   ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
@@ -156,7 +151,6 @@ const runtimePolicy = {
 };
 
 const common = {
-  // probably should be in consumer-exchange.service.ts but put here to avoid importing envs in service file
   EXCHANGE_RATE_MAX_AGE_HOURS: z.coerce.number().optional().default(24),
   ADMIN_V2_PAYOUT_HIGH_VALUE_THRESHOLDS: z.string().optional().default(``),
   CONSUMER_ACTION_LOG_RETENTION_DAYS: z.coerce.number().min(7).max(3650).default(30),
@@ -281,13 +275,9 @@ if (
 assertProductionLikePolicy(effective);
 process.env.DATABASE_URL = effective.DATABASE_URL;
 
-/** Cookie maxAge in ms. Derived from JWT_ACCESS_TOKEN_EXPIRES_IN (fintech-safe default: 15m). */
 const JWT_ACCESS_TOKEN_EXPIRES_IN = parseExpiresToMs(effective.JWT_ACCESS_TOKEN_EXPIRES_IN);
-/** Cookie maxAge in ms. Derived from JWT_REFRESH_TOKEN_EXPIRES_IN (default: 168h = 7d). */
 const JWT_REFRESH_TOKEN_EXPIRES_IN = parseExpiresToMs(effective.JWT_REFRESH_TOKEN_EXPIRES_IN);
-/** JWT sign expiresIn in seconds (number). */
 const JWT_ACCESS_TTL_SECONDS = Math.round(JWT_ACCESS_TOKEN_EXPIRES_IN / 1000);
-/** JWT sign expiresIn in seconds (number). */
 const JWT_REFRESH_TTL_SECONDS = Math.round(JWT_REFRESH_TOKEN_EXPIRES_IN / 1000);
 
 export const envs = {

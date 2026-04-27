@@ -51,7 +51,6 @@ export class MailingService {
     }
   }
 
-  /** Safe summary of error.cause for logging (code, errno, syscall only; no message/stack/URLs). */
   private safeCauseSummary(cause: unknown): Record<string, unknown> | undefined {
     if (cause == null || typeof cause !== `object`) return undefined;
     const obj = cause as Record<string, unknown>;

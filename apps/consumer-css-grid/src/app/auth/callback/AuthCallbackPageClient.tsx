@@ -81,7 +81,6 @@ export function AuthCallbackPageClient({
               if (error instanceof Error && error.message === TOO_MANY_LOGIN_ATTEMPTS_CODE) {
                 throw error;
               }
-              // Keep the retry path bounded; transient network errors should behave like a miss.
             }
 
             return false;

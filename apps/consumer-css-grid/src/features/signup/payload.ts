@@ -39,8 +39,7 @@ function buildEntityCompatibilityPersonalDetails(
 ): NonNullable<SignupPayload[`personalDetails`]> {
   const { entityDetails } = state;
 
-  // `api-v2` signup persists these fields on personalDetails for entity/business flows
-  // even though consumer-mobile currently reaches that path through a compatibility mapping.
+  // `api-v2` still reads these entity fields from `personalDetails`.
   return {
     firstName: null,
     lastName: null,

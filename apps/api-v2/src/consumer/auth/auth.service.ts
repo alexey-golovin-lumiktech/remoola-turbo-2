@@ -292,7 +292,7 @@ export class ConsumerAuthService {
         data: { revokedAt: new Date(), invalidatedReason: `logout`, lastUsedAt: new Date() },
       });
     } catch {
-      // ignore invalid token during logout
+      // Ignore invalid or already-unusable refresh tokens during logout cleanup.
     }
   }
 
@@ -379,9 +379,6 @@ export class ConsumerAuthService {
 
     const appScope = this.originResolver.validateConsumerAppScope(verified.appScope);
 
-    // Email verification links use the same secret as access tokens but are issued without `sid`
-    // (see `getAccessToken(identityId)`). Reject session-bound access tokens so a stolen browser
-    // session cannot drive this flow, and require consumer scope (not admin).
     if (!appScope || verified.typ !== `access` || verified.scope !== `consumer` || verified.sid) {
       redirectWith(`no`, verified.appScope);
       return;
@@ -703,9 +700,6 @@ export class ConsumerAuthService {
       throw new ConflictException(errorCodes.EMAIL_ALREADY_REGISTERED_SIGNUP);
     }
 
-    // Note: With soft-delete uniqueness including deletedAt,
-    // soft-deleted consumers can have their email re-used for new registrations
-
     let hash: string | null = null;
     let salt: string | null = null;
     if (!googleSignupPayload) {
@@ -783,17 +777,11 @@ export class ConsumerAuthService {
       return consumer;
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-        // unique constraint violation (email)
         throw new ConflictException(errorCodes.EMAIL_ALREADY_REGISTERED_PRISMA);
       }
       throw err;
     }
   }
-
-  /**
-   * Enforce combinations of accountType / contractorKind
-   * and required nested blocks.
-   */
   async requestPasswordReset(
     email: CONSUMER.ForgotPasswordBody[`email`],
     appScope: ConsumerAppScope,
@@ -877,11 +865,7 @@ export class ConsumerAuthService {
     res.redirect(confirmUrl.toString());
   }
 
-  /**
-   * Resets password using a single-use token (1h expiry).
-   * Token is stored as a SHA-256 hash at rest; lookup is by hash.
-   * Only one concurrent request can consume a token; after success all consumer sessions are revoked.
-   */
+  /** Consume a single-use reset token, rotate credentials, and revoke all active sessions. */
   async resetPasswordWithToken(token: string, newPassword: string): Promise<void> {
     const tokenHash = hashTokenToHex(token);
     const row = await this.prisma.resetPasswordModel.findFirst({
@@ -952,7 +936,6 @@ export class ConsumerAuthService {
       throw new BadRequestException(errorCodes.CONTRACTOR_KIND_NOT_FOR_BUSINESS);
     }
 
-    // CONTRACTOR + INDIVIDUAL → personal required
     if (
       dto.accountType === $Enums.AccountType.CONTRACTOR &&
       dto.contractorKind === $Enums.ContractorKind.INDIVIDUAL &&
@@ -961,7 +944,6 @@ export class ConsumerAuthService {
       throw new BadRequestException(errorCodes.PERSONAL_DETAILS_REQUIRED);
     }
 
-    // BUSINESS or CONTRACTOR + ENTITY → organization required
     if (
       (dto.accountType === $Enums.AccountType.BUSINESS ||
         (dto.accountType === $Enums.AccountType.CONTRACTOR && dto.contractorKind === $Enums.ContractorKind.ENTITY)) &&

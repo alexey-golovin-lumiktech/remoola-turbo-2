@@ -21,7 +21,6 @@ export class HealthService {
 
   async getHealthStatus() {
     try {
-      // Check database connectivity
       await this.prisma.$queryRaw`SELECT 1`;
 
       return {
@@ -39,7 +38,6 @@ export class HealthService {
         services: {
           database: `error`,
         },
-        // Do not expose internal error.message to clients (fintech audit)
         error: `Database check failed`,
       };
     }
