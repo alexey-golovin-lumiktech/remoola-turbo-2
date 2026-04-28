@@ -23,7 +23,7 @@ import {
   assertValidQueryPayload,
 } from './admin-v2-operational-alerts.dto';
 
-export type OperationalAlertRequestMeta = {
+type OperationalAlertRequestMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
   idempotencyKey?: string | null;
@@ -35,7 +35,7 @@ export type OperationalAlertActorContext = {
   type: string;
 };
 
-export type OperationalAlertSummary = AdminV2OperationalAlertSummary;
+type OperationalAlertSummary = AdminV2OperationalAlertSummary;
 
 const OPERATIONAL_ALERT_LIST_HARD_CAP = 200;
 

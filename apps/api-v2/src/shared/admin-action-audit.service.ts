@@ -4,7 +4,7 @@ import { Prisma } from '@remoola/database-2';
 
 import { PrismaService } from './prisma.service';
 
-export type AdminActionAuditParams = {
+type AdminActionAuditParams = {
   adminId: string;
   action: string;
   resource: string;

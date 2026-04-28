@@ -29,7 +29,7 @@ export const MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES = ADMIN_V2_MIN_OPERATIONAL_A
 export const MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES = ADMIN_V2_MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES;
 export const DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES = ADMIN_V2_DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES;
 
-export function isOperationalAlertWorkspace(value: string): value is OperationalAlertWorkspace {
+function isOperationalAlertWorkspace(value: string): value is OperationalAlertWorkspace {
   return isAdminV2OperationalAlertWorkspace(value);
 }
 
@@ -53,12 +53,6 @@ export function assertValidQueryPayload(value: unknown): asserts value is Record
   if (getAdminV2JsonPayloadBytes(value) > MAX_OPERATIONAL_ALERT_QUERY_PAYLOAD_BYTES) {
     throw new BadRequestException(`queryPayload exceeds ${MAX_OPERATIONAL_ALERT_QUERY_PAYLOAD_BYTES} bytes`);
   }
-}
-
-export class OperationalAlertListQueryDTO {
-  @Expose()
-  @IsString()
-  workspace!: string;
 }
 
 export class OperationalAlertCreateBodyDTO {

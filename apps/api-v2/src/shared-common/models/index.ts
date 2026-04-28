@@ -1,5 +1,3 @@
-import { type OneOfObjectValues } from '../types';
-
 export * from './base.model';
 export * from './admin.model';
 export * from './consumer.model';
@@ -18,24 +16,3 @@ export * from './transaction.model';
 export * from './access-refresh-token.model';
 export * from './exchange-rate.model';
 export * from './payment-method.model';
-
-export type TableNameValue = OneOfObjectValues<typeof TableName>;
-export const TableName = {
-  Admin: `admin`,
-  Consumer: `consumer`,
-  PersonalDetails: `personal_details`,
-  AddressDetails: `address_details`,
-  OrganizationDetails: `organization_details`,
-  GoogleProfileDetails: `google_profile_details`,
-  BillingDetails: `billing_details`,
-  PaymentRequest: `payment_request`,
-  ResetPassword: `reset_password`,
-  Contact: `contact`,
-  Resource: `resource`,
-  ConsumerResource: `consumer_resource`,
-  PaymentRequestAttachment: `payment_request_attachment`,
-  Transaction: `transaction`,
-  AccessRefreshToken: `access_refresh_token`,
-  ExchangeRate: `exchange_rate`,
-  PaymentMethod: `payment_method`,
-} as const;

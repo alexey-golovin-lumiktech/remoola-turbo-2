@@ -35,7 +35,7 @@ function normalizeConsumerRoutePath(path: string): string {
 
 // Public auth metadata only means "no auth token required".
 // Transport rules (external-public vs BFF-only with appScope header) are enforced separately here.
-export function getConsumerPublicRoutePolicy(method?: string, path?: string): ConsumerPublicRoutePolicy {
+function getConsumerPublicRoutePolicy(method?: string, path?: string): ConsumerPublicRoutePolicy {
   if (typeof method !== `string` || typeof path !== `string`) {
     return `not-public`;
   }

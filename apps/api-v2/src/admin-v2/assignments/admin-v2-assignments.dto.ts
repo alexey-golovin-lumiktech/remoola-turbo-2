@@ -16,7 +16,7 @@ export type AssignableResourceType = AdminV2AssignableResourceType;
 export const MIN_ASSIGNMENT_REASON_LENGTH = ADMIN_V2_MIN_ASSIGNMENT_REASON_LENGTH;
 export const MAX_ASSIGNMENT_REASON_LENGTH = ADMIN_V2_MAX_ASSIGNMENT_REASON_LENGTH;
 
-export function isAssignableResourceType(value: string): value is AssignableResourceType {
+function isAssignableResourceType(value: string): value is AssignableResourceType {
   return isAdminV2AssignableResourceType(value);
 }
 

@@ -15,7 +15,7 @@ import {
   assertValidPayload,
 } from './admin-v2-saved-views.dto';
 
-export type SavedViewRequestMeta = {
+type SavedViewRequestMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
   idempotencyKey?: string | null;
@@ -27,7 +27,7 @@ export type SavedViewActorContext = {
   type: string;
 };
 
-export type SavedViewSummary = AdminV2SavedViewSummary;
+type SavedViewSummary = AdminV2SavedViewSummary;
 
 const SAVED_VIEW_LIST_HARD_CAP = 200;
 

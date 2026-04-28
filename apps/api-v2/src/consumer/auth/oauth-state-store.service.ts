@@ -7,7 +7,7 @@ import { oauthCrypto } from '@remoola/security-utils';
 import { envs } from '../../envs';
 import { PrismaService } from '../../shared/prisma.service';
 
-export type OAuthStateRecord = {
+type OAuthStateRecord = {
   nonce: string;
   codeVerifier: string;
   nextPath: string;
@@ -18,13 +18,13 @@ export type OAuthStateRecord = {
   contractorKind?: string;
 };
 
-export type OAuthLoginHandoffRecord = {
+type OAuthLoginHandoffRecord = {
   identityId: string;
   nextPath: string;
   appScope: ConsumerAppScope;
 };
 
-export type OAuthSignupContextRecord = {
+type OAuthSignupContextRecord = {
   email: string;
   emailVerified: boolean;
   name: string | null;

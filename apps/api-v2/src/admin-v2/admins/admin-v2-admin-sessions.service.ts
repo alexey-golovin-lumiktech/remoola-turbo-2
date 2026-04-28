@@ -7,12 +7,12 @@ import { AdminAuthService, type AdminAuthSessionView } from '../../admin-auth/ad
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 
-export type CrossAdminRevokeContext = {
+type CrossAdminRevokeContext = {
   ipAddress?: string | null;
   userAgent?: string | null;
 };
 
-export type CrossAdminRevokeResult = {
+type CrossAdminRevokeResult = {
   ok: true;
   revokedSessionId: string;
   alreadyRevoked: boolean;

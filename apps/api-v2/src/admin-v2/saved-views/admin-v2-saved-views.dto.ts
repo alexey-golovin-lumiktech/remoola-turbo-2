@@ -7,13 +7,11 @@ import {
   ADMIN_V2_MAX_SAVED_VIEW_NAME_LENGTH,
   ADMIN_V2_MAX_SAVED_VIEW_PAYLOAD_BYTES,
   ADMIN_V2_MIN_SAVED_VIEW_NAME_LENGTH,
-  ADMIN_V2_SAVED_VIEW_WORKSPACES,
   getAdminV2JsonPayloadBytes,
   isAdminV2SavedViewWorkspace,
   type AdminV2SavedViewWorkspace,
 } from '@remoola/api-types';
 
-export const SAVED_VIEW_WORKSPACES = ADMIN_V2_SAVED_VIEW_WORKSPACES;
 export type SavedViewWorkspace = AdminV2SavedViewWorkspace;
 
 export const MIN_SAVED_VIEW_NAME_LENGTH = ADMIN_V2_MIN_SAVED_VIEW_NAME_LENGTH;
@@ -45,12 +43,6 @@ export function assertValidPayload(value: unknown): asserts value is Record<stri
   if (getAdminV2JsonPayloadBytes(value) > MAX_SAVED_VIEW_PAYLOAD_BYTES) {
     throw new BadRequestException(`queryPayload exceeds ${MAX_SAVED_VIEW_PAYLOAD_BYTES} bytes`);
   }
-}
-
-export class SavedViewListQueryDTO {
-  @Expose()
-  @IsString()
-  workspace!: string;
 }
 
 export class SavedViewCreateBodyDTO {

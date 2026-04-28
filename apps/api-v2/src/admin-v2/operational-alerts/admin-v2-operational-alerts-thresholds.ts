@@ -12,7 +12,7 @@ import {
 
 import { type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 
-export const SUPPORTED_THRESHOLD_TYPES = ADMIN_V2_SUPPORTED_THRESHOLD_TYPES;
+const SUPPORTED_THRESHOLD_TYPES = ADMIN_V2_SUPPORTED_THRESHOLD_TYPES;
 export type SupportedThresholdType = AdminV2SupportedThresholdType;
 
 export type CountGtThreshold = AdminV2CountGtThreshold;
@@ -55,10 +55,6 @@ export function assertValidThresholdPayload(
   }
   const _exhaustive: never = type as never;
   throw new BadRequestException(`Unhandled threshold type: ${String(_exhaustive)}`);
-}
-
-export function thresholdSummaryType(threshold: OperationalAlertThreshold): SupportedThresholdType {
-  return threshold.type;
 }
 
 export function getThresholdPayloadBytes(raw: unknown): number {

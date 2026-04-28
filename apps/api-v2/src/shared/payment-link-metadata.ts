@@ -1,7 +1,7 @@
 import { normalizeLegacyConsumerAppScope, type ConsumerAppScope } from '@remoola/api-types';
 import { type Prisma } from '@remoola/database-2';
 
-export const PAYMENT_LINK_CONSUMER_APP_SCOPE_KEY = `consumerAppScope` as const;
+const PAYMENT_LINK_CONSUMER_APP_SCOPE_KEY = `consumerAppScope` as const;
 
 type JsonRecord = Prisma.JsonObject;
 

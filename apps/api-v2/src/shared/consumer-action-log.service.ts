@@ -5,7 +5,7 @@ import { Prisma } from '@remoola/database-2';
 import { envs } from '../envs';
 import { PrismaService } from './prisma.service';
 
-export type ConsumerActionLogParams = {
+type ConsumerActionLogParams = {
   deviceId: string;
   consumerId?: string | null;
   action: string;

@@ -1,8 +1,4 @@
 export {
-  ADMIN_V2_QUICKSTART_IDS as QUICKSTART_IDS,
-  ADMIN_V2_QUICKSTART_OPERATOR_MODELS as QUICKSTART_OPERATOR_MODELS,
-  ADMIN_V2_QUICKSTART_SURFACES as QUICKSTART_SURFACES,
-  ADMIN_V2_QUICKSTART_TARGET_ROUTES as QUICKSTART_TARGET_ROUTES,
   isAdminV2QuickstartId as isQuickstartId,
   isAdminV2QuickstartSurface as isQuickstartSurface,
   type AdminV2AuditAdminActionsQuickstartFilters as AuditAdminActionsQuickstartFilters,

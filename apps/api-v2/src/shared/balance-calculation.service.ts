@@ -9,14 +9,14 @@ export enum BalanceCalculationMode {
   COMPLETED_AND_PENDING = `COMPLETED_AND_PENDING`,
 }
 
-export interface BalanceCalculationOptions {
+interface BalanceCalculationOptions {
   mode?: BalanceCalculationMode;
   currency?: $Enums.CurrencyCode;
   acquireLock?: boolean;
   lockSuffix?: string;
 }
 
-export interface BalanceResult {
+interface BalanceResult {
   consumerId: string;
   currency: $Enums.CurrencyCode;
   balance: number;
@@ -24,7 +24,7 @@ export interface BalanceResult {
   calculatedAt: Date;
 }
 
-export interface MultiCurrencyBalanceResult {
+interface MultiCurrencyBalanceResult {
   consumerId: string;
   balances: Record<$Enums.CurrencyCode, number>;
   mode: BalanceCalculationMode;

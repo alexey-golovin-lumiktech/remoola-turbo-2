@@ -17,7 +17,7 @@ import { OriginResolverService } from '../shared/origin-resolver.service';
 import { PrismaService } from '../shared/prisma.service';
 import { passwordUtils, secureCompare } from '../shared-common';
 
-export type AdminLoginContext = {
+type AdminLoginContext = {
   ipAddress?: string | null;
   userAgent?: string | null;
   reason?: AdminAuthSessionRevokeReason;

@@ -18,8 +18,8 @@ import { PrismaService } from '../../shared/prisma.service';
 export const EVALUATOR_TICK_MAX_ALERTS = 100;
 export const EVALUATOR_PER_ALERT_TIMEOUT_MS = 10_000;
 export const EVALUATOR_TICK_WALL_BUDGET_MS = 240_000;
-export const EVALUATOR_ERROR_MAX_LENGTH = 500;
-export const EVALUATOR_REASON_MAX_LENGTH = 500;
+const EVALUATOR_ERROR_MAX_LENGTH = 500;
+const EVALUATOR_REASON_MAX_LENGTH = 500;
 
 type DueAlertRow = {
   id: string;

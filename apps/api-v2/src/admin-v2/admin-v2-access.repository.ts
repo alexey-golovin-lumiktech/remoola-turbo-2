@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../shared/prisma.service';
 
-export type AdminV2SchemaAccessRecord = {
+type AdminV2SchemaAccessRecord = {
   roleKey: string | null;
   roleCapabilities: string[];
   permissionOverrides: Array<{

@@ -8,7 +8,7 @@ import { PrismaService } from './prisma.service';
 const IDENTITY_TYPE_CONSUMER = `consumer`;
 const IDENTITY_TYPE_ADMIN = `admin`;
 
-export type AuthIdentityType = typeof IDENTITY_TYPE_CONSUMER | typeof IDENTITY_TYPE_ADMIN;
+type AuthIdentityType = typeof IDENTITY_TYPE_CONSUMER | typeof IDENTITY_TYPE_ADMIN;
 
 export const AUTH_IDENTITY_TYPES = {
   consumer: IDENTITY_TYPE_CONSUMER,
@@ -26,9 +26,9 @@ export const AUTH_AUDIT_EVENTS = {
   password_change: `password_change`,
 } as const;
 
-export type AuthAuditEvent = (typeof AUTH_AUDIT_EVENTS)[keyof typeof AUTH_AUDIT_EVENTS];
+type AuthAuditEvent = (typeof AUTH_AUDIT_EVENTS)[keyof typeof AUTH_AUDIT_EVENTS];
 
-export type RecordAuditParams = {
+type RecordAuditParams = {
   identityType: AuthIdentityType;
   identityId?: string | null;
   email: string;

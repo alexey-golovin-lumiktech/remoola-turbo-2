@@ -24,7 +24,7 @@ function isProtectedApiPath(path: string): boolean {
   return isAdminApiPath(path) || path.startsWith(CONSUMER_API_PATH_PREFIX);
 }
 
-export function requiresAuthenticatedMutationCsrf(req: ExpressRequest): boolean {
+function requiresAuthenticatedMutationCsrf(req: ExpressRequest): boolean {
   const method = req.method?.toUpperCase();
   const path = req.path ?? req.url?.split(`?`)[0] ?? ``;
   return Boolean(method && MUTATION_METHODS.has(method) && isProtectedApiPath(path));

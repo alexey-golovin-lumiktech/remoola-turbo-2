@@ -36,8 +36,8 @@ import { PrismaService } from '../../shared/prisma.service';
 import { resolveEmailApiBaseUrl } from '../../shared/resolve-email-api-base-url';
 import { passwordUtils, secureCompare } from '../../shared-common';
 
-export type LoginContext = { ipAddress?: string | null; userAgent?: string | null };
-export type ForgotPasswordOutcome =
+type LoginContext = { ipAddress?: string | null; userAgent?: string | null };
+type ForgotPasswordOutcome =
   | `unknown_or_unsupported`
   | `password_reset_email_sent`
   | `provider_guidance_email_sent`

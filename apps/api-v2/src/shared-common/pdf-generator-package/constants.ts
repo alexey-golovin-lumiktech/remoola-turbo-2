@@ -22,15 +22,8 @@ const mustExcludePath = isVercel || isProduction || isStaging;
 
 export const pdfOptions = mustExcludePath ? commonPDFOptions : { ...commonPDFOptions, path: `out.pdf` };
 
-export const pdfPageWidthPx = 1240;
-export const pdfPageHeightPx = 1754;
-export const pdfPageDpi = 96;
-export const pdfPageWidthInch = pdfPageWidthPx / pdfPageDpi;
-export const pdfPageHeightInch = pdfPageHeightPx / pdfPageDpi;
-export const pdfPageWidthCm = +(pdfPageWidthInch * 2.54).toFixed(2);
-export const pdfPageHeightCm = +(pdfPageHeightInch * 2.54).toFixed(2);
-export const pfdPageViewport = { width: pdfPageWidthPx, height: pdfPageHeightPx };
-export const getPuppeteerLaunchOptions = async () => {
+export const pfdPageViewport = { width: 1240, height: 1754 };
+const getPuppeteerLaunchOptions = async () => {
   const executablePath = await chromium.executablePath();
   return { args: chromium.args, executablePath: executablePath, headless: true };
 };

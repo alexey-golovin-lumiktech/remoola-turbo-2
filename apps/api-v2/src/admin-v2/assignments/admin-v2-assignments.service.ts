@@ -8,12 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import {
-  type AdminV2AdminRef,
-  type AdminV2AssignmentContext,
-  type AdminV2AssignmentContextHistoryItem,
-  type AdminV2AssignmentContextSummary,
-} from '@remoola/api-types';
+import { type AdminV2AdminRef, type AdminV2AssignmentContext } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
@@ -28,7 +23,7 @@ import {
   assertResourceType,
 } from './admin-v2-assignments.dto';
 
-export type AssignmentRequestMeta = {
+type AssignmentRequestMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
   idempotencyKey?: string | null;
@@ -59,7 +54,7 @@ type AdminSummary = {
   email: string | null;
 };
 
-export type AssignmentSummaryRow = {
+type AssignmentSummaryRow = {
   id: string;
   resource_id: string;
   assigned_to: string;
@@ -76,16 +71,12 @@ export type AssignmentSummaryRow = {
 
 export type AdminRef = AdminV2AdminRef;
 
-export function mapAdminRef(id: string | null, email: string | null): AdminRef | null {
+function mapAdminRef(id: string | null, email: string | null): AdminRef | null {
   if (!id) return null;
   return { id, name: null, email };
 }
 
-export type AssignmentContextSummary = AdminV2AssignmentContextSummary;
-
-export type AssignmentContextHistoryItem = AdminV2AssignmentContextHistoryItem;
-
-export type AssignmentContext = AdminV2AssignmentContext;
+type AssignmentContext = AdminV2AssignmentContext;
 
 function trimReason(raw: string | null | undefined): string | null {
   if (raw == null) return null;

@@ -1,8 +1,7 @@
 /** Strict checks for JS undefined/null only. Do not treat string "null"/"undefined" as nil (fintech-safe). */
-export const isUndefined = (value: unknown): value is undefined => value === undefined;
-export const isNull = (value: unknown): value is null => value === null;
-export const isNill = (value: unknown): value is null | undefined => value == null;
-export const isDateObject = (value: unknown) => value instanceof Date;
+const isNull = (value: unknown): value is null => value === null;
+const isNill = (value: unknown): value is null | undefined => value == null;
+const isDateObject = (value: unknown) => value instanceof Date;
 
 /**
  * @DESCRIPTION to reduce data size through excluding `null` and `undefined` attributes

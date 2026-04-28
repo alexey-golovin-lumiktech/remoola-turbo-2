@@ -1,4 +1,4 @@
-export type AdminV2CursorPayload = {
+type AdminV2CursorPayload = {
   createdAt: string;
   id: string;
 };
