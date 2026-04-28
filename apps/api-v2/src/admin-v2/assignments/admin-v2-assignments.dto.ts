@@ -2,21 +2,22 @@ import { BadRequestException } from '@nestjs/common';
 import { Expose, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
-export const ASSIGNABLE_RESOURCE_TYPES = [
-  `verification`,
-  `ledger_entry`,
-  `payment_request`,
-  `payout`,
-  `document`,
-  `fx_conversion`,
-] as const;
-export type AssignableResourceType = (typeof ASSIGNABLE_RESOURCE_TYPES)[number];
+import {
+  ADMIN_V2_ASSIGNABLE_RESOURCE_TYPES,
+  ADMIN_V2_MAX_ASSIGNMENT_REASON_LENGTH,
+  ADMIN_V2_MIN_ASSIGNMENT_REASON_LENGTH,
+  isAdminV2AssignableResourceType,
+  type AdminV2AssignableResourceType,
+} from '@remoola/api-types';
 
-export const MIN_ASSIGNMENT_REASON_LENGTH = 10;
-export const MAX_ASSIGNMENT_REASON_LENGTH = 500;
+export const ASSIGNABLE_RESOURCE_TYPES = ADMIN_V2_ASSIGNABLE_RESOURCE_TYPES;
+export type AssignableResourceType = AdminV2AssignableResourceType;
+
+export const MIN_ASSIGNMENT_REASON_LENGTH = ADMIN_V2_MIN_ASSIGNMENT_REASON_LENGTH;
+export const MAX_ASSIGNMENT_REASON_LENGTH = ADMIN_V2_MAX_ASSIGNMENT_REASON_LENGTH;
 
 export function isAssignableResourceType(value: string): value is AssignableResourceType {
-  return (ASSIGNABLE_RESOURCE_TYPES as readonly string[]).includes(value);
+  return isAdminV2AssignableResourceType(value);
 }
 
 export function assertResourceType(value: string): asserts value is AssignableResourceType {

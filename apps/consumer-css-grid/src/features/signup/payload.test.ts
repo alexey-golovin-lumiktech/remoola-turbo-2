@@ -59,6 +59,12 @@ function createBaseState(): SignupFormState {
   };
 }
 
+const entityCompatibilityPersonalDetails = {
+  countryOfTaxResidence: `United States`,
+  taxId: `98-7654321`,
+  phoneNumber: `+12125550123`,
+};
+
 describe(`buildSignupPayload`, () => {
   it(`builds individual contractor payload`, () => {
     const payload = buildSignupPayload(createBaseState());
@@ -77,7 +83,7 @@ describe(`buildSignupPayload`, () => {
     expect(payload.organizationDetails).toBeUndefined();
   });
 
-  it(`builds business payload with explicit compatibility mapping`, () => {
+  it(`builds business payload with entity compatibility personal details`, () => {
     const state = createBaseState();
     state.signupDetails.accountType = ACCOUNT_TYPE.BUSINESS;
     state.signupDetails.contractorKind = null;
@@ -89,25 +95,33 @@ describe(`buildSignupPayload`, () => {
       size: ORGANIZATION_SIZE.SMALL,
       consumerRole: CONSUMER_ROLE.FOUNDER,
     });
-    expect(payload.personalDetails).toEqual({
-      firstName: null,
-      lastName: null,
-      citizenOf: `United States`,
-      legalStatus: null,
-      countryOfTaxResidence: `United States`,
-      taxId: `98-7654321`,
-      passportOrIdNumber: `98-7654321`,
-      phoneNumber: `+12125550123`,
-      dateOfBirth: `1970-01-01`,
+    expect(payload.personalDetails).toEqual(entityCompatibilityPersonalDetails);
+  });
+
+  it(`builds contractor entity payload with organization and compatibility personal details`, () => {
+    const state = createBaseState();
+    state.signupDetails.contractorKind = CONTRACTOR_KIND.ENTITY;
+
+    const payload = buildSignupPayload(state);
+
+    expect(payload.contractorKind).toBe(CONTRACTOR_KIND.ENTITY);
+    expect(payload.organizationDetails).toEqual({
+      name: `Remoola LLC`,
+      size: ORGANIZATION_SIZE.SMALL,
+      consumerRole: CONSUMER_ROLE.FOUNDER,
     });
+    expect(payload.personalDetails).toEqual(entityCompatibilityPersonalDetails);
   });
 
   it(`prefers google token over password for social signup`, () => {
     const state = createBaseState();
+    state.signupDetails.accountType = ACCOUNT_TYPE.BUSINESS;
+    state.signupDetails.contractorKind = null;
     state.googleSignupToken = `google-token`;
 
     const payload = buildSignupPayload(state);
 
     expect(payload.password).toBeUndefined();
+    expect(payload.personalDetails).toEqual(entityCompatibilityPersonalDetails);
   });
 });

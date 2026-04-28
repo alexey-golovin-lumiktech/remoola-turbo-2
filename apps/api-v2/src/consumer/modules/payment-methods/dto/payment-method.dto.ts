@@ -2,6 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, Length, Matches } from 'class-validator';
 
+import {
+  type ConsumerConfirmStripeSetupIntentPayload,
+  type ConsumerPayWithSavedPaymentMethodPayload,
+  type ConsumerStripeSetupIntentResponse,
+} from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 export class BillingDetails {
@@ -67,14 +72,14 @@ export class PaymentMethodsResponse {
 }
 
 // Stripe SetupIntent create -> response
-export class CreateStripeSetupIntentResponse {
+export class CreateStripeSetupIntentResponse implements ConsumerStripeSetupIntentResponse {
   @Expose()
   @ApiProperty()
   clientSecret: string;
 }
 
 // Stripe confirm payload
-export class ConfirmStripeSetupIntent {
+export class ConfirmStripeSetupIntent implements ConsumerConfirmStripeSetupIntentPayload {
   @Expose()
   @IsNotEmpty()
   @IsString()
@@ -176,7 +181,7 @@ export class UpdatePaymentMethod {
 }
 
 // DTO for paying with saved payment method
-export class PayWithSavedPaymentMethod {
+export class PayWithSavedPaymentMethod implements ConsumerPayWithSavedPaymentMethodPayload {
   @Expose()
   @IsNotEmpty()
   @IsString()

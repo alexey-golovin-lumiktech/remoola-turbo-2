@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { type AdminV2OperationalAlertSummary, type AdminV2OperationalAlertsListResponse } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
@@ -34,21 +35,7 @@ export type OperationalAlertActorContext = {
   type: string;
 };
 
-export type OperationalAlertSummary = {
-  id: string;
-  workspace: string;
-  name: string;
-  description: string | null;
-  queryPayload: unknown;
-  thresholdPayload: OperationalAlertThreshold;
-  evaluationIntervalMinutes: number;
-  lastEvaluatedAt: string | null;
-  lastEvaluationError: string | null;
-  lastFiredAt: string | null;
-  lastFireReason: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+export type OperationalAlertSummary = AdminV2OperationalAlertSummary;
 
 const OPERATIONAL_ALERT_LIST_HARD_CAP = 200;
 
@@ -73,7 +60,7 @@ type OperationalAlertRow = {
 function toSummary(row: OperationalAlertRow): OperationalAlertSummary {
   return {
     id: row.id,
-    workspace: row.workspace,
+    workspace: row.workspace as OperationalAlertWorkspace,
     name: row.name,
     description: row.description,
     queryPayload: row.queryPayload as unknown,
@@ -146,7 +133,7 @@ export class AdminV2OperationalAlertsService {
     private readonly adminActionAudit: AdminActionAuditService,
   ) {}
 
-  async list(actor: OperationalAlertActorContext, workspace: string): Promise<{ alerts: OperationalAlertSummary[] }> {
+  async list(actor: OperationalAlertActorContext, workspace: string): Promise<AdminV2OperationalAlertsListResponse> {
     assertOperationalAlertWorkspace(workspace);
     const rows = await this.prisma.operationalAlertModel.findMany({
       where: {

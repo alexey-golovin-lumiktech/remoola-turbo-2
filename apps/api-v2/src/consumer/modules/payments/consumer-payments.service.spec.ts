@@ -1812,9 +1812,20 @@ describe(`ConsumerPaymentsService.assertProfileCompleteForVerification`, () => {
       accountType: $Enums.AccountType.BUSINESS,
       contractorKind: null,
       personalDetails: {
-        legalStatus: $Enums.LegalStatus.INDIVIDUAL,
         taxId: `tax1`,
-        passportOrIdNumber: null,
+        phoneNumber: `+15551234567`,
+      },
+    });
+    await expect(service.assertProfileCompleteForVerification(consumerId)).resolves.toBeUndefined();
+  });
+
+  it(`does not throw when contractor entity profile complete`, async () => {
+    const { service } = makeService({
+      id: consumerId,
+      accountType: $Enums.AccountType.CONTRACTOR,
+      contractorKind: $Enums.ContractorKind.ENTITY,
+      personalDetails: {
+        taxId: `tax1`,
         phoneNumber: `+15551234567`,
       },
     });

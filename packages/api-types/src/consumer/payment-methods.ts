@@ -1,31 +1,14 @@
-/**
- * Consumer payment method API contract types. Shared by consumer app and API.
- */
-
+import {
+  type ConsumerBillingDetailsResponse,
+  type ConsumerPaymentMethodItem,
+  type ConsumerStripeSetupIntentResponse,
+} from './responses';
 import { type TPaymentMethod } from '../payments';
 
-export type TConsumerBillingDetails = {
-  id: string;
-  name: string | null;
-  email: string | null;
-  phone: string | null;
-};
+export type TConsumerBillingDetails = ConsumerBillingDetailsResponse;
 
-export type TConsumerPaymentMethodItem = {
-  id: string;
+export type TConsumerPaymentMethodItem = Omit<ConsumerPaymentMethodItem, `type`> & {
   type: TPaymentMethod;
-  defaultSelected: boolean;
-  brand: string;
-  last4: string;
-  expMonth?: string | null;
-  expYear?: string | null;
-  serviceFee: number;
-  billingDetails?: TConsumerBillingDetails | null;
-  billingDetailsId: string;
-  consumerId: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string | null;
 };
 
 export type CreatePaymentMethodPayload = {
@@ -48,6 +31,4 @@ export type UpdatePaymentMethodPayload = {
   defaultSelected?: boolean;
 };
 
-export type TStripeSetupIntentPayload = {
-  clientSecret: string;
-};
+export type TStripeSetupIntentPayload = ConsumerStripeSetupIntentResponse;

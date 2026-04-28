@@ -1,16 +1,24 @@
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 
+import {
+  type ConsumerGoogleSignupSessionResponse,
+  type ConsumerHandoffTokenRequest as ConsumerHandoffTokenRequestContract,
+  type ConsumerLoginResponse as ConsumerLoginResponseContract,
+  type ConsumerOAuthCompleteResponse as ConsumerOAuthCompleteResponseContract,
+  type ConsumerSignupResponse as ConsumerSignupResponseContract,
+} from '@remoola/api-types';
+
 import { ConsumerDTO } from './consumer.dto';
 import { fromBase64 } from '../../shared-common';
 
-export class LoginResponse {
+export class LoginResponse implements ConsumerLoginResponseContract {
   @Expose()
   @ApiProperty({ description: `Cookie-backed auth session was established successfully`, example: true })
   ok: true;
 }
 
-export class HandoffTokenRequest {
+export class HandoffTokenRequest implements ConsumerHandoffTokenRequestContract {
   @Expose()
   @ApiProperty({ description: `Single-use OAuth handoff token`, example: `handoff-token-string` })
   handoffToken: string;
@@ -32,7 +40,7 @@ export class ConsumerResponse extends PickType(ConsumerDTO, [
   `howDidHearAboutUs`,
 ] as const) {}
 
-export class SignupResponse {
+export class SignupResponse implements ConsumerSignupResponseContract {
   @Expose()
   @Type(() => ConsumerResponse)
   @ApiProperty({ type: () => ConsumerResponse })
@@ -46,7 +54,7 @@ export class SignupResponse {
   next?: string;
 }
 
-export class GoogleSignupSessionResponse {
+export class GoogleSignupSessionResponse implements ConsumerGoogleSignupSessionResponse {
   @Expose()
   @ApiProperty({ description: `Google account email captured during signup`, example: `new.user@example.com` })
   email: string;
@@ -96,7 +104,7 @@ export class GoogleSignupSessionResponse {
   signupEntryPath?: string | null;
 }
 
-export class OAuthCompleteResponse extends LoginResponse {
+export class OAuthCompleteResponse extends LoginResponse implements ConsumerOAuthCompleteResponseContract {
   @Expose()
   @ApiPropertyOptional({
     description: `Path to navigate to after the cookie session is established`,

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { AUTH_RATE_LIMIT_MESSAGE } from '@remoola/api-types';
+import { AUTH_RATE_LIMIT_MESSAGE, type ConsumerSignupResponse } from '@remoola/api-types';
 
 import { buildSignupPayload } from './payload';
 import { useSignupForm } from './SignupFormContext';
@@ -25,11 +25,9 @@ export function useSignupSubmit() {
         body: JSON.stringify(payload),
       });
 
-      const data = (await response.json().catch(() => ({}))) as {
+      const data = (await response.json().catch(() => ({}))) as ConsumerSignupResponse & {
         code?: string;
         message?: string;
-        consumer?: { id?: string };
-        next?: string;
       };
 
       if (!response.ok) {

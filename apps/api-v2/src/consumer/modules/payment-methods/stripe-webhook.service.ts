@@ -255,6 +255,11 @@ export class StripeWebhookService {
         }
 
         case STRIPE_EVENT.CHARGE_REFUNDED: {
+          this.logger.log({
+            message: `Idempotency-key audit`,
+            eventType: event.type,
+            idempotencyKey: event.request?.idempotency_key ?? null,
+          });
           this.logger.log({ message: `Webhook processing`, eventType: event.type });
           await this.handleChargeRefunded(event.data.object as Stripe.Charge);
           this.logger.log({ message: `Webhook processed`, eventType: event.type });
@@ -262,6 +267,11 @@ export class StripeWebhookService {
         }
 
         case STRIPE_EVENT.CHARGE_REFUND_UPDATED: {
+          this.logger.log({
+            message: `Idempotency-key audit`,
+            eventType: event.type,
+            idempotencyKey: event.request?.idempotency_key ?? null,
+          });
           await this.handleRefundUpdated(event.data.object as Stripe.Refund);
           break;
         }
@@ -269,6 +279,11 @@ export class StripeWebhookService {
         case STRIPE_EVENT.CHARGE_DISPUTE_CREATED:
         case STRIPE_EVENT.CHARGE_DISPUTE_UPDATED:
         case STRIPE_EVENT.CHARGE_DISPUTE_CLOSED: {
+          this.logger.log({
+            message: `Idempotency-key audit`,
+            eventType: event.type,
+            idempotencyKey: event.request?.idempotency_key ?? null,
+          });
           this.logger.log({ message: `Webhook processing`, eventType: event.type });
           await this.handleChargeDispute(event.data.object as Stripe.Dispute);
           this.logger.log({ message: `Webhook processed`, eventType: event.type });

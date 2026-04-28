@@ -2,11 +2,17 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsEnum, IsOptional, IsString, MinLength, ValidateIf, ValidateNested, IsISO8601 } from 'class-validator';
 
+import {
+  type ConsumerSignupAddressDetailsPayload,
+  type ConsumerSignupOrganizationDetailsPayload,
+  type ConsumerSignupPayload,
+  type ConsumerSignupPersonalDetailsPayload,
+} from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { IsValidEmail } from '../../../shared-common';
 
-export class AddressDetails {
+export class AddressDetails implements ConsumerSignupAddressDetailsPayload {
   @Expose()
   @ApiProperty()
   @IsString()
@@ -36,21 +42,24 @@ export class AddressDetails {
   street?: string;
 }
 
-export class PersonalDetails {
+export class PersonalDetails implements ConsumerSignupPersonalDetailsPayload {
   @Expose()
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  citizenOf: string;
+  citizenOf?: string;
 
   @Expose()
-  @ApiProperty({ example: `1979-07-25` })
+  @ApiPropertyOptional({ example: `1979-07-25` })
+  @IsOptional()
   @IsISO8601()
-  dateOfBirth: string;
+  dateOfBirth?: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  passportOrIdNumber: string;
+  passportOrIdNumber?: string;
 
   @Expose()
   @ApiPropertyOptional({ example: $Enums.LegalStatus.INDIVIDUAL })
@@ -90,7 +99,7 @@ export class PersonalDetails {
   lastName?: string;
 }
 
-export class OrganizationDetails {
+export class OrganizationDetails implements ConsumerSignupOrganizationDetailsPayload {
   @Expose()
   @ApiProperty()
   @IsString()
@@ -107,7 +116,7 @@ export class OrganizationDetails {
   size: $Enums.OrganizationSize;
 }
 
-export class ConsumerSignup {
+export class ConsumerSignup implements ConsumerSignupPayload {
   @Expose()
   @ApiProperty({ example: `email@email.com` })
   @IsValidEmail()

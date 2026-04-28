@@ -8,6 +8,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import {
+  type AdminV2AdminRef,
+  type AdminV2AssignmentContext,
+  type AdminV2AssignmentContextHistoryItem,
+  type AdminV2AssignmentContextSummary,
+} from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
@@ -68,31 +74,18 @@ export type AssignmentSummaryRow = {
   released_by_email: string | null;
 };
 
-export type AdminRef = { id: string; name: string | null; email: string | null };
+export type AdminRef = AdminV2AdminRef;
 
 export function mapAdminRef(id: string | null, email: string | null): AdminRef | null {
   if (!id) return null;
   return { id, name: null, email };
 }
 
-export type AssignmentContextSummary = {
-  id: string;
-  assignedTo: AdminRef;
-  assignedBy: AdminRef | null;
-  assignedAt: string;
-  reason: string | null;
-  expiresAt: string | null;
-};
+export type AssignmentContextSummary = AdminV2AssignmentContextSummary;
 
-export type AssignmentContextHistoryItem = AssignmentContextSummary & {
-  releasedAt: string | null;
-  releasedBy: AdminRef | null;
-};
+export type AssignmentContextHistoryItem = AdminV2AssignmentContextHistoryItem;
 
-export type AssignmentContext = {
-  current: AssignmentContextSummary | null;
-  history: AssignmentContextHistoryItem[];
-};
+export type AssignmentContext = AdminV2AssignmentContext;
 
 function trimReason(raw: string | null | undefined): string | null {
   if (raw == null) return null;

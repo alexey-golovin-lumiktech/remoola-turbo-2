@@ -1,59 +1,18 @@
-import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '@remoola/api-types';
+import { ACCOUNT_TYPE, CONTRACTOR_KIND, type ConsumerSignupPayload } from '@remoola/api-types';
 
 import { type SignupFormState } from './types';
 
-type SignupPayload = {
-  email: string;
-  password?: string;
-  accountType: string;
-  contractorKind?: string;
-  howDidHearAboutUs: string | null;
-  howDidHearAboutUsOther: string | null;
-  addressDetails: {
-    postalCode: string;
-    country: string;
-    state: string;
-    city: string;
-    street: string;
-  };
-  organizationDetails?: {
-    name: string;
-    size: string;
-    consumerRole: string;
-  };
-  personalDetails?: {
-    firstName?: string | null;
-    lastName?: string | null;
-    citizenOf?: string;
-    dateOfBirth?: string;
-    legalStatus?: string | null;
-    countryOfTaxResidence?: string;
-    taxId?: string;
-    passportOrIdNumber?: string;
-    phoneNumber?: string;
-  };
-};
-
-function buildEntityCompatibilityPersonalDetails(
-  state: SignupFormState,
-): NonNullable<SignupPayload[`personalDetails`]> {
+function buildEntityCompatibilityPersonalDetails(state: SignupFormState): ConsumerSignupPayload[`personalDetails`] {
   const { entityDetails } = state;
 
-  // `api-v2` still reads these entity fields from `personalDetails`.
   return {
-    firstName: null,
-    lastName: null,
-    citizenOf: entityDetails.countryOfTaxResidence,
-    legalStatus: null,
-    countryOfTaxResidence: entityDetails.countryOfTaxResidence,
-    taxId: entityDetails.taxId,
-    passportOrIdNumber: entityDetails.taxId,
-    phoneNumber: entityDetails.phoneNumber,
-    dateOfBirth: `1970-01-01`,
+    countryOfTaxResidence: entityDetails.countryOfTaxResidence.trim(),
+    taxId: entityDetails.taxId.trim(),
+    phoneNumber: entityDetails.phoneNumber.trim(),
   };
 }
 
-export function buildSignupPayload(state: SignupFormState): SignupPayload {
+export function buildSignupPayload(state: SignupFormState): ConsumerSignupPayload {
   const { signupDetails, individualDetails, organizationDetails, addressDetails, googleSignupToken } = state;
   const isGoogleSignup = Boolean(googleSignupToken);
   const isBusiness = signupDetails.accountType === ACCOUNT_TYPE.BUSINESS;
@@ -63,7 +22,7 @@ export function buildSignupPayload(state: SignupFormState): SignupPayload {
     signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR &&
     signupDetails.contractorKind === CONTRACTOR_KIND.INDIVIDUAL;
 
-  const payload: SignupPayload = {
+  const payload: ConsumerSignupPayload = {
     email: signupDetails.email.trim().toLowerCase(),
     ...(isGoogleSignup ? {} : { password: signupDetails.password }),
     accountType: signupDetails.accountType!,

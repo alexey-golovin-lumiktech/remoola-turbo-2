@@ -5,10 +5,21 @@ import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-import { sanitizeNextForRedirect } from '@remoola/api-types';
+import {
+  sanitizeNextForRedirect,
+  type ConsumerCreatePaymentRequestPayload,
+  type ConsumerCreatePaymentRequestResponse,
+  type ConsumerInvoiceGenerationResponse,
+  type ConsumerPayWithSavedMethodResponse,
+  type ConsumerPaymentsResponse,
+  type ConsumerStartPaymentPayload,
+  type ConsumerStartPaymentResponse,
+  type ConsumerStripeCheckoutSessionResponse,
+  type ConsumerTransferResponse,
+  type ConsumerVerificationSessionResponse,
+} from '@remoola/api-types';
 
 import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
-import { type PaymentsResponse } from '../consumer-api.server';
 import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
 import { isDateInputTodayOrLater, normalizeDateInput } from '../date-input';
 import { normalizeDocumentDownloadUrl } from '../document-download-url';
@@ -188,8 +199,8 @@ function revalidateContractPaths(context?: PaymentFlowMutationContext | null) {
 }
 
 export async function createPaymentRequestMutation(input: {
-  email: string;
-  amount: string;
+  email: ConsumerCreatePaymentRequestPayload[`email`];
+  amount: ConsumerCreatePaymentRequestPayload[`amount`];
   currencyCode: string;
   description?: string;
   dueDate?: string;
@@ -251,7 +262,7 @@ export async function createPaymentRequestMutation(input: {
     return { ok: false, error };
   }
 
-  const payload = (await response.json().catch(() => null)) as { paymentRequestId?: string } | null;
+  const payload = (await response.json().catch(() => null)) as ConsumerCreatePaymentRequestResponse | null;
   revalidatePath(`/payments`);
   revalidatePath(`/dashboard`);
   revalidateContractPaths(input);
@@ -263,11 +274,11 @@ export async function createPaymentRequestMutation(input: {
 }
 
 export async function startPaymentMutation(input: {
-  email: string;
-  amount: string;
+  email: ConsumerStartPaymentPayload[`email`];
+  amount: ConsumerStartPaymentPayload[`amount`];
   currencyCode: string;
   description?: string;
-  method: `CREDIT_CARD` | `BANK_ACCOUNT`;
+  method: ConsumerStartPaymentPayload[`method`];
   contractId?: string;
   returnTo?: string;
 }): Promise<StartPaymentResult> {
@@ -339,10 +350,7 @@ export async function startPaymentMutation(input: {
     return { ok: false, error };
   }
 
-  const payload = (await response.json().catch(() => null)) as {
-    paymentRequestId?: string;
-    ledgerId?: string;
-  } | null;
+  const payload = (await response.json().catch(() => null)) as ConsumerStartPaymentResponse | null;
   revalidatePath(`/payments`);
   revalidatePath(`/dashboard`);
   revalidateContractPaths(input);
@@ -474,7 +482,7 @@ export async function getDraftPaymentRequestsAction(input?: {
     };
   }
 
-  const payload = (await response.json().catch(() => null)) as PaymentsResponse | null;
+  const payload = (await response.json().catch(() => null)) as ConsumerPaymentsResponse | null;
   const items = Array.isArray(payload?.items) ? payload.items : [];
 
   return {
@@ -645,12 +653,7 @@ export async function payWithSavedMethodMutation(
     return { ok: false, error };
   }
 
-  const payload = (await response.json().catch(() => null)) as {
-    success?: boolean;
-    paymentIntentId?: string;
-    status?: string;
-    nextAction?: unknown;
-  } | null;
+  const payload = (await response.json().catch(() => null)) as ConsumerPayWithSavedMethodResponse | null;
 
   if (payload?.success) {
     revalidatePath(`/payments`);
@@ -713,7 +716,7 @@ export async function createPaymentCheckoutSessionMutation(
     return { ok: false, error };
   }
 
-  const payload = (await response.json().catch(() => null)) as { url?: string } | null;
+  const payload = (await response.json().catch(() => null)) as ConsumerStripeCheckoutSessionResponse | null;
   return {
     ok: true,
     data: {
@@ -756,11 +759,7 @@ export async function generateInvoiceMutation(
     return { ok: false, error };
   }
 
-  const payload = (await response.json().catch(() => null)) as {
-    invoiceNumber?: string;
-    resourceId?: string;
-    downloadUrl?: string;
-  } | null;
+  const payload = (await response.json().catch(() => null)) as ConsumerInvoiceGenerationResponse | null;
 
   revalidatePath(`/payments/${id}`);
   revalidatePath(`/payments`);
@@ -801,11 +800,7 @@ export async function startVerificationSessionMutation(): Promise<VerificationSe
     return { ok: false, error };
   }
 
-  const payload = (await response.json().catch(() => null)) as {
-    clientSecret?: string;
-    sessionId?: string;
-    url?: string;
-  } | null;
+  const payload = (await response.json().catch(() => null)) as ConsumerVerificationSessionResponse | null;
 
   revalidatePath(`/dashboard`);
   revalidatePath(`/settings`);
@@ -954,7 +949,7 @@ export async function submitTransferAction(input: {
       return { ok: false, error };
     }
 
-    const payload = (await response.json().catch(() => null)) as { ledgerId?: string } | null;
+    const payload = (await response.json().catch(() => null)) as ConsumerTransferResponse | null;
     revalidatePath(`/withdraw`);
     revalidatePath(`/payments`);
     revalidatePath(`/dashboard`);

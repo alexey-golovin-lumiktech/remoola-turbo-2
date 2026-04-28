@@ -1,19 +1,26 @@
 import { BadRequestException } from '@nestjs/common';
 
+import {
+  ADMIN_V2_MAX_COUNT_GT_VALUE,
+  ADMIN_V2_MIN_COUNT_GT_VALUE,
+  ADMIN_V2_SUPPORTED_THRESHOLD_TYPES,
+  getAdminV2JsonPayloadBytes,
+  type AdminV2CountGtThreshold,
+  type AdminV2OperationalAlertThreshold,
+  type AdminV2SupportedThresholdType,
+} from '@remoola/api-types';
+
 import { type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 
-export const SUPPORTED_THRESHOLD_TYPES = [`count_gt`] as const;
-export type SupportedThresholdType = (typeof SUPPORTED_THRESHOLD_TYPES)[number];
+export const SUPPORTED_THRESHOLD_TYPES = ADMIN_V2_SUPPORTED_THRESHOLD_TYPES;
+export type SupportedThresholdType = AdminV2SupportedThresholdType;
 
-export type CountGtThreshold = {
-  type: `count_gt`;
-  value: number;
-};
+export type CountGtThreshold = AdminV2CountGtThreshold;
 
-export type OperationalAlertThreshold = CountGtThreshold;
+export type OperationalAlertThreshold = AdminV2OperationalAlertThreshold;
 
-export const MIN_COUNT_GT_VALUE = 1;
-export const MAX_COUNT_GT_VALUE = 1_000_000;
+export const MIN_COUNT_GT_VALUE = ADMIN_V2_MIN_COUNT_GT_VALUE;
+export const MAX_COUNT_GT_VALUE = ADMIN_V2_MAX_COUNT_GT_VALUE;
 
 export function assertValidThresholdPayload(
   raw: unknown,
@@ -55,6 +62,5 @@ export function thresholdSummaryType(threshold: OperationalAlertThreshold): Supp
 }
 
 export function getThresholdPayloadBytes(raw: unknown): number {
-  const serialized = JSON.stringify(raw);
-  return serialized === undefined ? 0 : Buffer.byteLength(serialized, `utf8`);
+  return getAdminV2JsonPayloadBytes(raw);
 }

@@ -1,31 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
+import { type AdminV2SystemSummaryCard, type AdminV2SystemSummaryResponse } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { envs } from '../../envs';
 import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
 
-type SystemCardStatus = `healthy` | `watch` | `temporarily-unavailable`;
-
-type SystemSummaryFact = {
-  label: string;
-  value: string | number | null;
-};
-
-type SystemSummaryAction = {
-  label: string;
-  href: string;
-} | null;
-
-type SystemSummaryCard = {
-  label: string;
-  status: SystemCardStatus;
-  explanation: string;
-  facts: SystemSummaryFact[];
-  primaryAction: SystemSummaryAction;
-  escalationHint: string | null;
-};
+type SystemSummaryCard = AdminV2SystemSummaryCard;
 
 type BacklogSnapshot = {
   count: number;
@@ -43,16 +25,7 @@ type RateSnapshot = {
   oldestReferenceAt: Date | null;
 };
 
-type SystemSummaryResponse = {
-  computedAt: string;
-  cards: {
-    stripeWebhookHealth: SystemSummaryCard;
-    schedulerHealth: SystemSummaryCard;
-    ledgerAnomalies: SystemSummaryCard;
-    emailDeliveryIssuePatterns: SystemSummaryCard;
-    staleExchangeRateAlerts: SystemSummaryCard;
-  };
-};
+type SystemSummaryResponse = AdminV2SystemSummaryResponse;
 
 const EMAIL_WINDOW_DAYS = 7;
 

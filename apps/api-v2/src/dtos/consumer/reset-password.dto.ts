@@ -2,7 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsString, MaxLength, MinLength } from 'class-validator';
 
-export class ResetPasswordDto {
+import { type ConsumerResetPasswordBody } from '@remoola/api-types';
+
+export class ResetPasswordDto implements ConsumerResetPasswordBody {
   @Expose()
   @ApiProperty({ description: `Reset token from the forgot-password email link` })
   @IsString()

@@ -99,7 +99,8 @@ function selectConsumerCookieKey(
   return shouldUseLocalConsumerCookieFallback(runtime) ? localKey : secureKey;
 }
 
-function getConsumerScopeCookieKeys(_scope: ConsumerAppScopeInput): ConsumerScopeCookieKeys {
+function getConsumerScopeCookieKeys(scope: ConsumerAppScopeInput): ConsumerScopeCookieKeys {
+  void scope;
   return {
     accessToken: COOKIE_KEYS.API_V2_CONSUMER_ACCESS_TOKEN,
     localAccessToken: COOKIE_KEYS.LOCAL_API_V2_CONSUMER_ACCESS_TOKEN,
@@ -175,7 +176,10 @@ export function getScopedConsumerGoogleOAuthStateCookieKey(
   return selectConsumerCookieKey(runtime, keys.oauthState, keys.localOauthState);
 }
 
-export function getScopedConsumerDeviceCookieKey(scope: ConsumerAppScopeInput, runtime: ConsumerCookieRuntime): TCookieKey {
+export function getScopedConsumerDeviceCookieKey(
+  scope: ConsumerAppScopeInput,
+  runtime: ConsumerCookieRuntime,
+): TCookieKey {
   const keys = getConsumerScopeCookieKeys(scope);
   return selectConsumerCookieKey(runtime, keys.deviceId, keys.localDeviceId);
 }
@@ -203,7 +207,9 @@ export function getScopedConsumerCsrfTokenCookieKeysForRead(scope: ConsumerAppSc
   return [keys.csrfToken, keys.localCsrfToken];
 }
 
-export function getScopedConsumerGoogleOAuthStateCookieKeysForRead(scope: ConsumerAppScopeInput): readonly TCookieKey[] {
+export function getScopedConsumerGoogleOAuthStateCookieKeysForRead(
+  scope: ConsumerAppScopeInput,
+): readonly TCookieKey[] {
   const keys = getConsumerScopeCookieKeys(scope);
   return [keys.oauthState, keys.localOauthState];
 }
@@ -213,7 +219,9 @@ export function getScopedConsumerDeviceCookieKeysForRead(scope: ConsumerAppScope
   return [keys.deviceId, keys.localDeviceId];
 }
 
-export function getScopedConsumerGoogleSignupSessionCookieKeysForRead(scope: ConsumerAppScopeInput): readonly TCookieKey[] {
+export function getScopedConsumerGoogleSignupSessionCookieKeysForRead(
+  scope: ConsumerAppScopeInput,
+): readonly TCookieKey[] {
   const keys = getConsumerScopeCookieKeys(scope);
   return [keys.googleSignupSession, keys.localGoogleSignupSession];
 }

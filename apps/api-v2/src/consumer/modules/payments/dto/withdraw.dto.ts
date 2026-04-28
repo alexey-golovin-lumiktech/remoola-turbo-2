@@ -2,10 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEnum, IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-import { CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODES, type ConsumerWithdrawPayload, type TCurrencyCode } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
-export class WithdrawBody {
+export class WithdrawBody implements ConsumerWithdrawPayload {
   @Expose()
   @ApiProperty()
   @IsNumber()

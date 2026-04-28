@@ -2,16 +2,27 @@ import { BadRequestException } from '@nestjs/common';
 import { Expose, Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 
-export const SAVED_VIEW_WORKSPACES = [`ledger_anomalies`, `verification_queue`] as const;
-export type SavedViewWorkspace = (typeof SAVED_VIEW_WORKSPACES)[number];
+import {
+  ADMIN_V2_MAX_SAVED_VIEW_DESCRIPTION_LENGTH,
+  ADMIN_V2_MAX_SAVED_VIEW_NAME_LENGTH,
+  ADMIN_V2_MAX_SAVED_VIEW_PAYLOAD_BYTES,
+  ADMIN_V2_MIN_SAVED_VIEW_NAME_LENGTH,
+  ADMIN_V2_SAVED_VIEW_WORKSPACES,
+  getAdminV2JsonPayloadBytes,
+  isAdminV2SavedViewWorkspace,
+  type AdminV2SavedViewWorkspace,
+} from '@remoola/api-types';
 
-export const MIN_SAVED_VIEW_NAME_LENGTH = 1;
-export const MAX_SAVED_VIEW_NAME_LENGTH = 100;
-export const MAX_SAVED_VIEW_DESCRIPTION_LENGTH = 500;
-export const MAX_SAVED_VIEW_PAYLOAD_BYTES = 4096;
+export const SAVED_VIEW_WORKSPACES = ADMIN_V2_SAVED_VIEW_WORKSPACES;
+export type SavedViewWorkspace = AdminV2SavedViewWorkspace;
+
+export const MIN_SAVED_VIEW_NAME_LENGTH = ADMIN_V2_MIN_SAVED_VIEW_NAME_LENGTH;
+export const MAX_SAVED_VIEW_NAME_LENGTH = ADMIN_V2_MAX_SAVED_VIEW_NAME_LENGTH;
+export const MAX_SAVED_VIEW_DESCRIPTION_LENGTH = ADMIN_V2_MAX_SAVED_VIEW_DESCRIPTION_LENGTH;
+export const MAX_SAVED_VIEW_PAYLOAD_BYTES = ADMIN_V2_MAX_SAVED_VIEW_PAYLOAD_BYTES;
 
 export function isSavedViewWorkspace(value: string): value is SavedViewWorkspace {
-  return (SAVED_VIEW_WORKSPACES as readonly string[]).includes(value);
+  return isAdminV2SavedViewWorkspace(value);
 }
 
 export function assertSavedViewWorkspace(value: string): asserts value is SavedViewWorkspace {
@@ -31,7 +42,7 @@ export function assertValidPayload(value: unknown): asserts value is Record<stri
   if (serialized === undefined) {
     throw new BadRequestException(`queryPayload contains non-serializable value`);
   }
-  if (Buffer.byteLength(serialized, `utf8`) > MAX_SAVED_VIEW_PAYLOAD_BYTES) {
+  if (getAdminV2JsonPayloadBytes(value) > MAX_SAVED_VIEW_PAYLOAD_BYTES) {
     throw new BadRequestException(`queryPayload exceeds ${MAX_SAVED_VIEW_PAYLOAD_BYTES} bytes`);
   }
 }

@@ -1,34 +1,62 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import {
+  type AdminV2AdminIdentity as AdminIdentity,
+  type AdminV2LedgerAnomalyClass as LedgerAnomalyClass,
+  type AdminV2LedgerAnomalyListResponse as LedgerAnomalyListResponse,
+  type AdminV2LedgerAnomalySummaryResponse as LedgerAnomalySummaryResponse,
+  type AdminV2OperationalAlertSummary as OperationalAlertSummary,
+  type AdminV2OperationalAlertThreshold as OperationalAlertThreshold,
+  type AdminV2OperationalAlertWorkspace as OperationalAlertWorkspace,
+  type AdminV2OperationalAlertsListResponse as OperationalAlertsListResponse,
+  type AdminV2OverviewSignalSummary as OverviewSignalSummary,
+  type AdminV2OverviewSummaryResponse as OverviewSummaryResponse,
+  type AdminV2QuickstartCard as QuickstartCard,
+  type AdminV2QuickstartId as QuickstartId,
+  type AdminV2QuickstartOperatorModel as QuickstartOperatorModel,
+  type AdminV2QuickstartResolvedPreset as QuickstartResolvedPreset,
+  type AdminV2QuickstartSurface as QuickstartSurface,
+  type AdminV2QuickstartTargetRoute as QuickstartTargetRoute,
+  type AdminV2QuickstartsListResponse as QuickstartsListResponse,
+  type AdminV2SavedViewSummary as SavedViewSummary,
+  type AdminV2SavedViewWorkspace as SavedViewWorkspace,
+  type AdminV2SavedViewsListResponse as SavedViewsListResponse,
+  type AdminV2SignalAvailability as SignalAvailability,
+  type AdminV2SignalPhaseStatus as SignalPhaseStatus,
+  type AdminV2SystemSummaryCard as SystemSummaryCard,
+  type AdminV2SystemSummaryResponse as SystemSummaryResponse,
+} from '@remoola/api-types';
+
 import { getDefaultLookbackIsoRange } from './admin-format';
 import { getEnv } from './env.server';
 import { getRequestOrigin } from './request-origin';
 
-export type AdminIdentity = {
-  id: string;
-  email: string;
-  type: string;
-  role: string | null;
-  source?: string;
-  bootstrapReason?: string | null;
-  phase: string;
-  accessMode?: string;
-  featureMaturity?: string;
-  capabilities: string[];
-  workspaces: string[];
-};
-
-export type SignalPhaseStatus = `live-actionable` | `count-only` | `deferred`;
-export type SignalAvailability = `available` | `temporarily-unavailable`;
-export type OverviewSignalSummary = {
-  label: string;
-  phaseStatus: SignalPhaseStatus;
-  availability: SignalAvailability;
-  href: string | null;
-  count?: number | null;
-  slaBreachedCount?: number | null;
-  items?: Array<Record<string, unknown>>;
+export type {
+  AdminIdentity,
+  LedgerAnomalyClass,
+  LedgerAnomalyListResponse,
+  LedgerAnomalySummaryResponse,
+  OperationalAlertSummary,
+  OperationalAlertThreshold,
+  OperationalAlertWorkspace,
+  OperationalAlertsListResponse,
+  OverviewSignalSummary,
+  OverviewSummaryResponse,
+  QuickstartCard,
+  QuickstartId,
+  QuickstartOperatorModel,
+  QuickstartResolvedPreset,
+  QuickstartSurface,
+  QuickstartTargetRoute,
+  QuickstartsListResponse,
+  SavedViewSummary,
+  SavedViewWorkspace,
+  SavedViewsListResponse,
+  SignalAvailability,
+  SignalPhaseStatus,
+  SystemSummaryCard,
+  SystemSummaryResponse,
 };
 
 export type ConsumersListResponse = {
@@ -171,83 +199,6 @@ export type AuditListResponse = {
   total: number;
   page: number;
   pageSize: number;
-};
-
-export type OverviewSummaryResponse = {
-  computedAt: string;
-  signals: Record<string, OverviewSignalSummary>;
-};
-
-export type SystemSummaryCard = {
-  label: string;
-  status: `healthy` | `watch` | `temporarily-unavailable`;
-  explanation: string;
-  facts: Array<{
-    label: string;
-    value: string | number | null;
-  }>;
-  primaryAction: {
-    label: string;
-    href: string;
-  } | null;
-  escalationHint: string | null;
-};
-
-export type SystemSummaryResponse = {
-  computedAt: string;
-  cards: {
-    stripeWebhookHealth: SystemSummaryCard;
-    schedulerHealth: SystemSummaryCard;
-    ledgerAnomalies: SystemSummaryCard;
-    emailDeliveryIssuePatterns: SystemSummaryCard;
-    staleExchangeRateAlerts: SystemSummaryCard;
-  };
-};
-
-export type LedgerAnomalyClass =
-  | `stalePendingEntries`
-  | `inconsistentOutcomeChains`
-  | `largeValueOutliers`
-  | `orphanedEntries`
-  | `duplicateIdempotencyRisk`
-  | `impossibleTransitions`;
-
-export type LedgerAnomalySummaryResponse = {
-  computedAt: string;
-  classes: Record<
-    LedgerAnomalyClass,
-    {
-      label: string;
-      count: number | null;
-      phaseStatus: `live-actionable`;
-      availability: `available` | `temporarily-unavailable`;
-      href: string;
-    }
-  >;
-  totalCount: number | null;
-};
-
-export type LedgerAnomalyListResponse = {
-  class: LedgerAnomalyClass;
-  items: Array<{
-    id: string;
-    ledgerEntryId: string;
-    consumerId: string;
-    type: string;
-    amount: string;
-    currencyCode: string;
-    entryStatus: string;
-    outcomeStatus: string | null;
-    outcomeAt: string | null;
-    createdAt: string;
-    updatedAt: string;
-    signal: {
-      class: LedgerAnomalyClass;
-      detail: string;
-    };
-  }>;
-  nextCursor: string | null;
-  computedAt: string;
 };
 
 export type CursorPageInfo = {
@@ -1227,88 +1178,6 @@ export async function getLedgerAnomaliesSummary(): Promise<LedgerAnomalySummaryR
   return fetchAdminApi<LedgerAnomalySummaryResponse>(`/admin-v2/ledger/anomalies/summary`);
 }
 
-export type QuickstartId =
-  | `verification-missing-documents`
-  | `verification-missing-profile`
-  | `overdue-payments-sweep`
-  | `payment-operations-review`
-  | `ledger-anomalies-triage`
-  | `documents-intake-review`
-  | `exchange-scheduled-review`
-  | `admins-access-review`
-  | `force-logout-audit-trail`
-  | `system-alerts-console`;
-export type QuickstartSurface = `shell` | `overview` | `all`;
-export type QuickstartOperatorModel = `entry-only` | `saved-view-compatible` | `threshold-editor`;
-export type QuickstartTargetRoute =
-  | `/verification`
-  | `/payments`
-  | `/payments/operations`
-  | `/ledger/anomalies`
-  | `/documents`
-  | `/exchange/scheduled`
-  | `/admins`
-  | `/audit/admin-actions`
-  | `/system/alerts`;
-
-export type QuickstartCard = {
-  id: QuickstartId;
-  label: string;
-  description: string;
-  eyebrow: string;
-  operatorModel: QuickstartOperatorModel;
-  targetPath: QuickstartTargetRoute;
-  surfaces: Array<Exclude<QuickstartSurface, `all`>>;
-  requiredCapabilities?: string[];
-};
-
-export type QuickstartResolvedPreset =
-  | (QuickstartCard & {
-      targetPath: `/verification`;
-      filters: {
-        status?: string;
-        stripeIdentityStatus?: string;
-        country?: string;
-        contractorKind?: string;
-        missingProfileData?: true;
-        missingDocuments?: true;
-      };
-    })
-  | (QuickstartCard & {
-      targetPath: `/payments`;
-      filters: {
-        status?: string;
-        paymentRail?: string;
-        currencyCode?: string;
-        overdue?: true;
-      };
-    })
-  | (QuickstartCard & {
-      targetPath: `/audit/admin-actions`;
-      filters: {
-        action?: string;
-        adminId?: string;
-        email?: string;
-        resourceId?: string;
-        dateFrom?: string;
-        dateTo?: string;
-      };
-    })
-  | (QuickstartCard & {
-      targetPath:
-        | `/payments/operations`
-        | `/ledger/anomalies`
-        | `/documents`
-        | `/exchange/scheduled`
-        | `/admins`
-        | `/system/alerts`;
-      filters: Record<string, never>;
-    });
-
-type QuickstartsListResponse = {
-  items: QuickstartCard[];
-};
-
 export async function getQuickstarts(surface: QuickstartSurface = `all`): Promise<QuickstartCard[]> {
   const searchParams = new URLSearchParams();
   if (surface !== `all`) {
@@ -1326,51 +1195,10 @@ export async function getQuickstart(quickstartId: QuickstartId): Promise<Quickst
   return fetchAdminApi<QuickstartResolvedPreset>(`/admin-v2/quickstarts/${quickstartId}`);
 }
 
-export type SavedViewWorkspace = `ledger_anomalies` | `verification_queue`;
-
-export type SavedViewSummary = {
-  id: string;
-  workspace: string;
-  name: string;
-  description: string | null;
-  queryPayload: unknown;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type SavedViewsListResponse = {
-  views: SavedViewSummary[];
-};
-
 export async function getSavedViews(input: { workspace: SavedViewWorkspace }): Promise<SavedViewsListResponse | null> {
   const searchParams = new URLSearchParams({ workspace: input.workspace });
   return fetchAdminApi<SavedViewsListResponse>(`/admin-v2/saved-views?${searchParams.toString()}`);
 }
-
-export type OperationalAlertWorkspace = `ledger_anomalies` | `verification_queue` | `auth_refresh_reuse`;
-
-export type CountGtThreshold = { type: `count_gt`; value: number };
-export type OperationalAlertThreshold = CountGtThreshold;
-
-export type OperationalAlertSummary = {
-  id: string;
-  workspace: OperationalAlertWorkspace;
-  name: string;
-  description: string | null;
-  queryPayload: unknown;
-  thresholdPayload: OperationalAlertThreshold;
-  evaluationIntervalMinutes: number;
-  lastEvaluatedAt: string | null;
-  lastEvaluationError: string | null;
-  lastFiredAt: string | null;
-  lastFireReason: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type OperationalAlertsListResponse = {
-  alerts: OperationalAlertSummary[];
-};
 
 export async function getOperationalAlerts(input: {
   workspace: OperationalAlertWorkspace;

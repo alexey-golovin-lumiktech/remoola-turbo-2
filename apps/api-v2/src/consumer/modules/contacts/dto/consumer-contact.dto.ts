@@ -1,7 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-export class ConsumerContactAddress {
+import {
+  type ConsumerContactsResponse as ConsumerContactsResponseContract,
+  type ConsumerContactResponse as ConsumerContactResponseContract,
+  type ConsumerContactSearchItem as ConsumerContactSearchItemContract,
+  type ConsumerCreateContactPayload,
+  ConsumerUpdateContactPayload,
+} from '@remoola/api-types';
+
+export class ConsumerContactAddress implements NonNullable<ConsumerContactResponseContract[`address`]> {
   @Expose()
   @ApiProperty()
   postalCode: string;
@@ -23,7 +31,7 @@ export class ConsumerContactAddress {
   street: string;
 }
 
-export class ConsumerContact {
+export class ConsumerContact implements ConsumerContactResponseContract {
   @Expose()
   @ApiProperty()
   id: string;
@@ -41,7 +49,7 @@ export class ConsumerContact {
   address: ConsumerContactAddress;
 }
 
-export class ConsumerCreateContact {
+export class ConsumerCreateContact implements ConsumerCreateContactPayload {
   @Expose()
   @ApiProperty()
   email: string;
@@ -55,7 +63,7 @@ export class ConsumerCreateContact {
   address?: ConsumerContactAddress;
 }
 
-export class ConsumerUpdateContact {
+export class ConsumerUpdateContact implements ConsumerUpdateContactPayload {
   @Expose()
   @ApiProperty({ required: false })
   email?: string;
@@ -69,7 +77,7 @@ export class ConsumerUpdateContact {
   address?: ConsumerContactAddress;
 }
 
-export class ConsumerContactSearchItem {
+export class ConsumerContactSearchItem implements ConsumerContactSearchItemContract {
   @Expose()
   @ApiProperty()
   id: string;
@@ -83,7 +91,7 @@ export class ConsumerContactSearchItem {
   email: string;
 }
 
-export class ConsumerContactsResponse {
+export class ConsumerContactsResponse implements ConsumerContactsResponseContract {
   @Expose()
   @ApiProperty({ type: [ConsumerContact] })
   items: ConsumerContact[];

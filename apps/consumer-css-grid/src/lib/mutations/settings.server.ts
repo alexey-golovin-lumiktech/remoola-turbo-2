@@ -1,7 +1,11 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-import { type TTheme } from '@remoola/api-types';
+import {
+  type ConsumerChangePasswordPayload,
+  type ConsumerUpdateProfilePayload,
+  type ConsumerUpdateSettingsPayload,
+} from '@remoola/api-types';
 
 import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
 import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
@@ -66,22 +70,7 @@ function hasOwn<T extends object>(value: T, key: keyof T) {
   return Object.prototype.hasOwnProperty.call(value, key);
 }
 
-export async function updateProfileMutation(input: {
-  personalDetails?: {
-    firstName?: string;
-    lastName?: string;
-    phoneNumber?: string;
-  };
-  addressDetails?: {
-    country?: string;
-    city?: string;
-    street?: string;
-    postalCode?: string;
-  };
-  organizationDetails?: {
-    name?: string;
-  };
-}): Promise<MutationResult> {
+export async function updateProfileMutation(input: ConsumerUpdateProfilePayload): Promise<MutationResult> {
   const personalDetailsInput = input.personalDetails;
   const personalDetails = personalDetailsInput
     ? {
@@ -156,7 +145,7 @@ export async function updateProfileMutation(input: {
 }
 
 export async function updateSettingsMutation(input: {
-  theme?: TTheme;
+  theme?: ConsumerUpdateSettingsPayload[`theme`];
   preferredCurrency?: string;
 }): Promise<MutationResult> {
   const theme = input.theme?.trim().toUpperCase();
@@ -197,11 +186,9 @@ export async function updateSettingsMutation(input: {
   return { ok: true, message: `Preferences updated` };
 }
 
-export async function changePasswordMutation(input: {
-  currentPassword?: string;
-  password: string;
-  confirmPassword: string;
-}): Promise<MutationResult> {
+export async function changePasswordMutation(
+  input: ConsumerChangePasswordPayload & { confirmPassword: string },
+): Promise<MutationResult> {
   const currentPassword = input.currentPassword?.trim();
   const password = input.password;
   const confirmPassword = input.confirmPassword;

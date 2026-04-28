@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { type AdminV2OverviewSignalSummary, type AdminV2OverviewSummaryResponse } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { envs } from '../../envs';
@@ -28,7 +29,7 @@ export class AdminV2OverviewService {
     label: string;
     href: string;
     where: Prisma.PaymentRequestModelWhereInput;
-  }) {
+  }): Promise<AdminV2OverviewSignalSummary> {
     try {
       const count = await this.prisma.paymentRequestModel.count({
         where: params.where,
@@ -52,7 +53,7 @@ export class AdminV2OverviewService {
     }
   }
 
-  private async getOpenDisputesSignal() {
+  private async getOpenDisputesSignal(): Promise<AdminV2OverviewSignalSummary> {
     try {
       const [result] = await this.prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
         SELECT COUNT(*)::int AS count
@@ -88,7 +89,7 @@ export class AdminV2OverviewService {
     return new Date(now.getTime() - ageMs);
   }
 
-  private async getFailedScheduledConversionsSignal() {
+  private async getFailedScheduledConversionsSignal(): Promise<AdminV2OverviewSignalSummary> {
     try {
       const count = await this.prisma.scheduledFxConversionModel.count({
         where: {
@@ -115,7 +116,7 @@ export class AdminV2OverviewService {
     }
   }
 
-  private async getLedgerAnomaliesSignal() {
+  private async getLedgerAnomaliesSignal(): Promise<AdminV2OverviewSignalSummary> {
     try {
       const summary = await this.ledgerAnomalies.getSummary();
       return {
@@ -136,7 +137,7 @@ export class AdminV2OverviewService {
     }
   }
 
-  private async getStaleExchangeRatesSignal(now: Date) {
+  private async getStaleExchangeRatesSignal(now: Date): Promise<AdminV2OverviewSignalSummary> {
     const staleCutoff = this.getRateStaleCutoff(now);
     try {
       const [result] = await this.prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
@@ -167,7 +168,7 @@ export class AdminV2OverviewService {
     }
   }
 
-  async getSummary() {
+  async getSummary(): Promise<AdminV2OverviewSummaryResponse> {
     const now = new Date();
     const authWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [

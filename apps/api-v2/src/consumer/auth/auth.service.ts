@@ -49,6 +49,9 @@ export class ConsumerAuthService {
   private static readonly accessRole = `USER` as const;
   private static readonly accessPermissions = [`contacts.read`] as const;
   private static readonly forgotPasswordCooldownMs = 60_000;
+  private static readonly entitySignupDateOfBirthPlaceholder = new Date(0);
+  private static readonly entitySignupPassportPlaceholder = `ENTITY_SIGNUP_NOT_APPLICABLE`;
+  private static readonly entitySignupCitizenshipPlaceholder = `ENTITY_SIGNUP_NOT_APPLICABLE`;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -703,7 +706,8 @@ export class ConsumerAuthService {
     let hash: string | null = null;
     let salt: string | null = null;
     if (!googleSignupPayload) {
-      if (!dto.password || dto.password.length < 8) {
+      const trimmedPasswordLength = dto.password?.trim().length ?? 0;
+      if (trimmedPasswordLength < 8) {
         throw new BadRequestException(errorCodes.PASSWORD_REQUIREMENTS);
       }
       const hashed = await passwordUtils.hashPassword(dto.password);
@@ -712,22 +716,8 @@ export class ConsumerAuthService {
     }
 
     try {
-      let personalDetails;
-      if (dto.personalDetails) {
-        personalDetails = {
-          create: {
-            legalStatus: dto.personalDetails.legalStatus ?? null,
-            citizenOf: dto.personalDetails.citizenOf,
-            dateOfBirth: new Date(dto.personalDetails.dateOfBirth),
-            passportOrIdNumber: dto.personalDetails.passportOrIdNumber,
-            countryOfTaxResidence: dto.personalDetails.countryOfTaxResidence ?? null,
-            taxId: dto.personalDetails.taxId ?? null,
-            phoneNumber: dto.personalDetails.phoneNumber ?? null,
-            firstName: dto.personalDetails.firstName ?? null,
-            lastName: dto.personalDetails.lastName ?? null,
-          },
-        };
-      }
+      const personalDetailsCreate = this.buildSignupPersonalDetailsCreate(dto);
+      const personalDetails = personalDetailsCreate ? { create: personalDetailsCreate } : undefined;
 
       let organizationDetails;
       if (dto.organizationDetails) {
@@ -928,6 +918,9 @@ export class ConsumerAuthService {
   }
 
   private ensureBusinessRules(dto: ConsumerSignup) {
+    const isIndividualContractor =
+      dto.accountType === $Enums.AccountType.CONTRACTOR && dto.contractorKind === $Enums.ContractorKind.INDIVIDUAL;
+
     if (dto.accountType === $Enums.AccountType.CONTRACTOR && !dto.contractorKind) {
       throw new BadRequestException(errorCodes.CONTRACTOR_KIND_REQUIRED);
     }
@@ -936,10 +929,15 @@ export class ConsumerAuthService {
       throw new BadRequestException(errorCodes.CONTRACTOR_KIND_NOT_FOR_BUSINESS);
     }
 
+    if (isIndividualContractor && !dto.personalDetails) {
+      throw new BadRequestException(errorCodes.PERSONAL_DETAILS_REQUIRED);
+    }
+
     if (
-      dto.accountType === $Enums.AccountType.CONTRACTOR &&
-      dto.contractorKind === $Enums.ContractorKind.INDIVIDUAL &&
-      !dto.personalDetails
+      isIndividualContractor &&
+      (!dto.personalDetails?.citizenOf?.trim() ||
+        !dto.personalDetails?.dateOfBirth?.trim() ||
+        !dto.personalDetails?.passportOrIdNumber?.trim())
     ) {
       throw new BadRequestException(errorCodes.PERSONAL_DETAILS_REQUIRED);
     }
@@ -951,6 +949,46 @@ export class ConsumerAuthService {
     ) {
       throw new BadRequestException(errorCodes.ORGANIZATION_DETAILS_REQUIRED);
     }
+  }
+
+  private buildSignupPersonalDetailsCreate(dto: ConsumerSignup) {
+    if (!dto.personalDetails) return null;
+
+    const isIndividualContractor =
+      dto.accountType === $Enums.AccountType.CONTRACTOR && dto.contractorKind === $Enums.ContractorKind.INDIVIDUAL;
+
+    if (isIndividualContractor) {
+      return {
+        legalStatus: dto.personalDetails.legalStatus ?? null,
+        citizenOf: dto.personalDetails.citizenOf ?? null,
+        dateOfBirth: dto.personalDetails.dateOfBirth ? new Date(dto.personalDetails.dateOfBirth) : null,
+        passportOrIdNumber: dto.personalDetails.passportOrIdNumber ?? null,
+        countryOfTaxResidence: dto.personalDetails.countryOfTaxResidence ?? null,
+        taxId: dto.personalDetails.taxId ?? null,
+        phoneNumber: dto.personalDetails.phoneNumber ?? null,
+        firstName: dto.personalDetails.firstName ?? null,
+        lastName: dto.personalDetails.lastName ?? null,
+      };
+    }
+
+    return {
+      legalStatus: dto.personalDetails.legalStatus ?? null,
+      citizenOf:
+        dto.personalDetails.citizenOf?.trim() ||
+        dto.personalDetails.countryOfTaxResidence?.trim() ||
+        dto.addressDetails.country?.trim() ||
+        ConsumerAuthService.entitySignupCitizenshipPlaceholder,
+      dateOfBirth: dto.personalDetails.dateOfBirth
+        ? new Date(dto.personalDetails.dateOfBirth)
+        : new Date(ConsumerAuthService.entitySignupDateOfBirthPlaceholder.getTime()),
+      passportOrIdNumber:
+        dto.personalDetails.passportOrIdNumber?.trim() || ConsumerAuthService.entitySignupPassportPlaceholder,
+      countryOfTaxResidence: dto.personalDetails.countryOfTaxResidence ?? null,
+      taxId: dto.personalDetails.taxId ?? null,
+      phoneNumber: dto.personalDetails.phoneNumber ?? null,
+      firstName: dto.personalDetails.firstName ?? null,
+      lastName: dto.personalDetails.lastName ?? null,
+    };
   }
 
   private async upsertGoogleProfileDetailsFromSignup(consumerId: string, payload: GoogleSignupPayload) {

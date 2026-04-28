@@ -5,6 +5,31 @@ import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
+import {
+  adminV2ApproveRateBodySchema,
+  adminV2AssignmentClaimBodySchema,
+  adminV2AssignmentReassignBodySchema,
+  adminV2AssignmentReleaseBodySchema,
+  adminV2ChangeAdminPermissionsBodySchema,
+  adminV2ChangeAdminRoleBodySchema,
+  adminV2DeactivateAdminBodySchema,
+  adminV2DisablePaymentMethodBodySchema,
+  adminV2EscalatePayoutBodySchema,
+  adminV2ForceLogoutConsumerBodySchema,
+  adminV2InviteAdminBodySchema,
+  adminV2OperationalAlertCreateBodySchema,
+  adminV2OperationalAlertDeleteBodySchema,
+  adminV2OperationalAlertUpdateBodySchema,
+  adminV2RemoveDefaultPaymentMethodBodySchema,
+  adminV2ResendConsumerEmailBodySchema,
+  adminV2SavedViewCreateBodySchema,
+  adminV2SavedViewDeleteBodySchema,
+  adminV2SavedViewUpdateBodySchema,
+  adminV2SuspendConsumerBodySchema,
+  adminV2VerificationDecisionBodySchema,
+  adminV2VersionedMutationBodySchema,
+} from '@remoola/api-types';
+
 import { buildAdminMutationHeaders } from './admin-auth-headers.server';
 import { parseConfirmedFormValue } from './admin-confirmation';
 import { ADMIN_V2_PERMISSION_OVERRIDE_OPTIONS } from './admin-rbac';
@@ -110,9 +135,10 @@ export async function removeConsumerFlagAction(consumerId: string, flagId: strin
 
 export async function forceLogoutConsumerAction(consumerId: string, formData: FormData): Promise<void> {
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  const body = adminV2ForceLogoutConsumerBodySchema.parse({ confirmed });
   await postAdminMutation(
     `/admin-v2/consumers/${consumerId}/force-logout`,
-    { confirmed },
+    body,
     `Failed to force logout consumer sessions`,
   );
   revalidatePath(`/consumers/${consumerId}`);
@@ -122,11 +148,8 @@ export async function forceLogoutConsumerAction(consumerId: string, formData: Fo
 export async function suspendConsumerAction(consumerId: string, formData: FormData): Promise<void> {
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/consumers/${consumerId}/suspend`,
-    { confirmed, reason },
-    `Failed to suspend consumer`,
-  );
+  const body = adminV2SuspendConsumerBodySchema.parse({ confirmed, reason });
+  await postAdminMutation(`/admin-v2/consumers/${consumerId}/suspend`, body, `Failed to suspend consumer`);
   revalidatePath(`/consumers`);
   revalidatePath(`/consumers/${consumerId}`);
   revalidatePath(`/verification/${consumerId}`);
@@ -135,11 +158,8 @@ export async function suspendConsumerAction(consumerId: string, formData: FormDa
 export async function resendConsumerEmailAction(consumerId: string, formData: FormData): Promise<void> {
   const emailKind = String(formData.get(`emailKind`) ?? ``).trim();
   const appScope = String(formData.get(`appScope`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/consumers/${consumerId}/email-resend`,
-    { emailKind, appScope },
-    `Failed to resend consumer email`,
-  );
+  const body = adminV2ResendConsumerEmailBodySchema.parse({ emailKind, appScope });
+  await postAdminMutation(`/admin-v2/consumers/${consumerId}/email-resend`, body, `Failed to resend consumer email`);
   revalidatePath(`/consumers/${consumerId}`);
 }
 
@@ -219,9 +239,10 @@ export async function disablePaymentMethodAction(paymentMethodId: string, formDa
   const consumerId = parseOptionalConsumerId(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const reason = String(formData.get(`reason`) ?? ``).trim();
+  const body = adminV2DisablePaymentMethodBodySchema.parse({ version, confirmed, reason });
   await postAdminMutation(
     `/admin-v2/payment-methods/${paymentMethodId}/disable`,
-    { version, confirmed, reason },
+    body,
     `Failed to disable payment method`,
   );
   revalidatePaymentMethodPaths(paymentMethodId, consumerId);
@@ -230,9 +251,10 @@ export async function disablePaymentMethodAction(paymentMethodId: string, formDa
 export async function removeDefaultPaymentMethodAction(paymentMethodId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
+  const body = adminV2RemoveDefaultPaymentMethodBodySchema.parse({ version });
   await postAdminMutation(
     `/admin-v2/payment-methods/${paymentMethodId}/remove-default`,
-    { version },
+    body,
     `Failed to remove payment method default`,
   );
   revalidatePaymentMethodPaths(paymentMethodId, consumerId);
@@ -241,9 +263,10 @@ export async function removeDefaultPaymentMethodAction(paymentMethodId: string, 
 export async function escalateDuplicatePaymentMethodAction(paymentMethodId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
+  const body = adminV2VersionedMutationBodySchema.parse({ version });
   await postAdminMutation(
     `/admin-v2/payment-methods/${paymentMethodId}/duplicate-escalate`,
-    { version },
+    body,
     `Failed to escalate duplicate payment method`,
   );
   revalidatePaymentMethodPaths(paymentMethodId, consumerId);
@@ -254,15 +277,12 @@ export async function escalatePayoutAction(payoutId: string, formData: FormData)
   const consumerId = parseOptionalConsumerId(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/payouts/${payoutId}/escalate`,
-    {
-      version,
-      confirmed,
-      reason: reason || null,
-    },
-    `Failed to escalate payout`,
-  );
+  const body = adminV2EscalatePayoutBodySchema.parse({
+    version,
+    confirmed,
+    reason: reason || undefined,
+  });
+  await postAdminMutation(`/admin-v2/payouts/${payoutId}/escalate`, body, `Failed to escalate payout`);
   revalidatePayoutPaths(payoutId, consumerId);
 }
 
@@ -270,36 +290,32 @@ export async function approveExchangeRateAction(rateId: string, formData: FormDa
   const version = parseRequiredVersion(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/exchange/rates/${rateId}/approve`,
-    {
-      version,
-      confirmed,
-      reason,
-    },
-    `Failed to approve exchange rate`,
-  );
+  const body = adminV2ApproveRateBodySchema.parse({ version, confirmed, reason });
+  await postAdminMutation(`/admin-v2/exchange/rates/${rateId}/approve`, body, `Failed to approve exchange rate`);
   revalidateExchangeRatePaths(rateId);
 }
 
 export async function pauseExchangeRuleAction(ruleId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
-  await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/pause`, { version }, `Failed to pause exchange rule`);
+  const body = adminV2VersionedMutationBodySchema.parse({ version });
+  await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/pause`, body, `Failed to pause exchange rule`);
   revalidateExchangeRulePaths(ruleId, consumerId);
 }
 
 export async function resumeExchangeRuleAction(ruleId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
-  await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/resume`, { version }, `Failed to resume exchange rule`);
+  const body = adminV2VersionedMutationBodySchema.parse({ version });
+  await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/resume`, body, `Failed to resume exchange rule`);
   revalidateExchangeRulePaths(ruleId, consumerId);
 }
 
 export async function runExchangeRuleNowAction(ruleId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
-  await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/run-now`, { version }, `Failed to run exchange rule`);
+  const body = adminV2VersionedMutationBodySchema.parse({ version });
+  await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/run-now`, body, `Failed to run exchange rule`);
   revalidateExchangeRulePaths(ruleId, consumerId);
 }
 
@@ -307,9 +323,10 @@ export async function forceExecuteScheduledExchangeAction(conversionId: string, 
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  const body = adminV2ApproveRateBodySchema.pick({ version: true, confirmed: true }).parse({ version, confirmed });
   await postAdminMutation(
     `/admin-v2/exchange/scheduled/${conversionId}/force-execute`,
-    { version, confirmed },
+    body,
     `Failed to force execute scheduled conversion`,
   );
   revalidateExchangeScheduledPaths(conversionId, consumerId);
@@ -319,9 +336,10 @@ export async function cancelScheduledExchangeAction(conversionId: string, formDa
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  const body = adminV2ApproveRateBodySchema.pick({ version: true, confirmed: true }).parse({ version, confirmed });
   await postAdminMutation(
     `/admin-v2/exchange/scheduled/${conversionId}/cancel`,
-    { version, confirmed },
+    body,
     `Failed to cancel scheduled conversion`,
   );
   revalidateExchangeScheduledPaths(conversionId, consumerId);
@@ -394,11 +412,12 @@ async function applyVerificationDecision(
   const version = Number(formData.get(`version`) ?? 0);
   const reason = String(formData.get(`reason`) ?? ``).trim();
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
-  await postAdminMutation(
-    `/admin-v2/verification/${consumerId}/${decisionPath}`,
-    { version, reason: reason || null, confirmed },
-    fallbackMessage,
-  );
+  const body = adminV2VerificationDecisionBodySchema.parse({
+    version,
+    reason: reason || undefined,
+    confirmed,
+  });
+  await postAdminMutation(`/admin-v2/verification/${consumerId}/${decisionPath}`, body, fallbackMessage);
   revalidatePath(`/overview`);
   revalidatePath(`/verification`);
   revalidatePath(`/verification/${consumerId}`);
@@ -438,10 +457,8 @@ function buildAdminCapabilityOverrides(formData: FormData) {
 export async function inviteAdminAction(formData: FormData): Promise<void> {
   const email = String(formData.get(`email`) ?? ``).trim();
   const roleKey = String(formData.get(`roleKey`) ?? ``).trim();
-  if (!email || !roleKey) {
-    throw new Error(`Invite email and role are required`);
-  }
-  await postAdminMutation(`/admin-v2/admins/invite`, { email, roleKey }, `Failed to invite admin`);
+  const body = adminV2InviteAdminBodySchema.parse({ email, roleKey });
+  await postAdminMutation(`/admin-v2/admins/invite`, body, `Failed to invite admin`);
   revalidateAdminPaths();
 }
 
@@ -449,17 +466,15 @@ export async function deactivateAdminAction(adminId: string, formData: FormData)
   const version = parseRequiredVersion(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/admins/${adminId}/deactivate`,
-    { version, confirmed, reason: reason || null },
-    `Failed to deactivate admin`,
-  );
+  const body = adminV2DeactivateAdminBodySchema.parse({ version, confirmed, reason: reason || undefined });
+  await postAdminMutation(`/admin-v2/admins/${adminId}/deactivate`, body, `Failed to deactivate admin`);
   revalidateAdminPaths(adminId);
 }
 
 export async function restoreAdminAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
-  await postAdminMutation(`/admin-v2/admins/${adminId}/restore`, { version }, `Failed to restore admin`);
+  const body = adminV2VersionedMutationBodySchema.parse({ version });
+  await postAdminMutation(`/admin-v2/admins/${adminId}/restore`, body, `Failed to restore admin`);
   revalidateAdminPaths(adminId);
 }
 
@@ -467,24 +482,18 @@ export async function changeAdminRoleAction(adminId: string, formData: FormData)
   const version = parseRequiredVersion(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const roleKey = String(formData.get(`roleKey`) ?? ``).trim();
-  if (!roleKey) {
-    throw new Error(`Role is required`);
-  }
-  await postAdminMutation(
-    `/admin-v2/admins/${adminId}/role-change`,
-    { version, confirmed, roleKey },
-    `Failed to change admin role`,
-  );
+  const body = adminV2ChangeAdminRoleBodySchema.parse({ version, confirmed, roleKey });
+  await postAdminMutation(`/admin-v2/admins/${adminId}/role-change`, body, `Failed to change admin role`);
   revalidateAdminPaths(adminId);
 }
 
 export async function changeAdminPermissionsAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
-  await postAdminMutation(
-    `/admin-v2/admins/${adminId}/permissions-change`,
-    { version, capabilityOverrides: buildAdminCapabilityOverrides(formData) },
-    `Failed to change admin permissions`,
-  );
+  const body = adminV2ChangeAdminPermissionsBodySchema.parse({
+    version,
+    capabilityOverrides: buildAdminCapabilityOverrides(formData),
+  });
+  await postAdminMutation(`/admin-v2/admins/${adminId}/permissions-change`, body, `Failed to change admin permissions`);
   revalidateAdminPaths(adminId);
 }
 
@@ -493,16 +502,45 @@ function revalidateVerificationAssignmentPaths(consumerId: string) {
   revalidatePath(`/verification/${consumerId}`);
 }
 
+function buildAssignmentClaimBody(resourceType: string, resourceId: string, formData: FormData) {
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  return adminV2AssignmentClaimBodySchema.parse({
+    resourceType,
+    resourceId,
+    reason: reason || undefined,
+  });
+}
+
+function buildAssignmentReleaseBody(formData: FormData) {
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  return adminV2AssignmentReleaseBodySchema.parse({
+    assignmentId,
+    reason: reason || undefined,
+    expectedReleasedAtNull: 0,
+  });
+}
+
+function buildAssignmentReassignBody(formData: FormData) {
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  return adminV2AssignmentReassignBodySchema.parse({
+    assignmentId,
+    newAssigneeId,
+    reason,
+    confirmed,
+    expectedReleasedAtNull: 0,
+  });
+}
+
 export async function claimVerificationAssignmentAction(consumerId: string, formData: FormData): Promise<void> {
   if (!consumerId) {
     throw new Error(`consumerId is required`);
   }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/assignments/claim`,
-    { resourceType: `verification`, resourceId: consumerId, reason: reason || null },
-    `Failed to claim verification assignment`,
-  );
+  const body = buildAssignmentClaimBody(`verification`, consumerId, formData);
+  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim verification assignment`);
   revalidateVerificationAssignmentPaths(consumerId);
 }
 
@@ -510,16 +548,8 @@ export async function releaseVerificationAssignmentAction(consumerId: string, fo
   if (!consumerId) {
     throw new Error(`consumerId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/assignments/release`,
-    { assignmentId, reason: reason || null, expectedReleasedAtNull: 0 },
-    `Failed to release verification assignment`,
-  );
+  const body = buildAssignmentReleaseBody(formData);
+  await postAdminMutation(`/admin-v2/assignments/release`, body, `Failed to release verification assignment`);
   revalidateVerificationAssignmentPaths(consumerId);
 }
 
@@ -527,21 +557,8 @@ export async function reassignVerificationAssignmentAction(consumerId: string, f
   if (!consumerId) {
     throw new Error(`consumerId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  if (!newAssigneeId) {
-    throw new Error(`newAssigneeId is required`);
-  }
-  await postAdminMutation(
-    `/admin-v2/assignments/reassign`,
-    { assignmentId, newAssigneeId, reason, confirmed, expectedReleasedAtNull: 0 },
-    `Failed to reassign verification`,
-  );
+  const body = buildAssignmentReassignBody(formData);
+  await postAdminMutation(`/admin-v2/assignments/reassign`, body, `Failed to reassign verification`);
   revalidateVerificationAssignmentPaths(consumerId);
 }
 
@@ -555,12 +572,8 @@ export async function claimLedgerEntryAssignmentAction(ledgerEntryId: string, fo
   if (!ledgerEntryId) {
     throw new Error(`ledgerEntryId is required`);
   }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/assignments/claim`,
-    { resourceType: `ledger_entry`, resourceId: ledgerEntryId, reason: reason || null },
-    `Failed to claim ledger entry assignment`,
-  );
+  const body = buildAssignmentClaimBody(`ledger_entry`, ledgerEntryId, formData);
+  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim ledger entry assignment`);
   revalidateLedgerEntryAssignmentPaths(ledgerEntryId);
 }
 
@@ -568,16 +581,8 @@ export async function releaseLedgerEntryAssignmentAction(ledgerEntryId: string, 
   if (!ledgerEntryId) {
     throw new Error(`ledgerEntryId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/assignments/release`,
-    { assignmentId, reason: reason || null, expectedReleasedAtNull: 0 },
-    `Failed to release ledger entry assignment`,
-  );
+  const body = buildAssignmentReleaseBody(formData);
+  await postAdminMutation(`/admin-v2/assignments/release`, body, `Failed to release ledger entry assignment`);
   revalidateLedgerEntryAssignmentPaths(ledgerEntryId);
 }
 
@@ -585,21 +590,8 @@ export async function reassignLedgerEntryAssignmentAction(ledgerEntryId: string,
   if (!ledgerEntryId) {
     throw new Error(`ledgerEntryId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  if (!newAssigneeId) {
-    throw new Error(`newAssigneeId is required`);
-  }
-  await postAdminMutation(
-    `/admin-v2/assignments/reassign`,
-    { assignmentId, newAssigneeId, reason, confirmed, expectedReleasedAtNull: 0 },
-    `Failed to reassign ledger entry assignment`,
-  );
+  const body = buildAssignmentReassignBody(formData);
+  await postAdminMutation(`/admin-v2/assignments/reassign`, body, `Failed to reassign ledger entry assignment`);
   revalidateLedgerEntryAssignmentPaths(ledgerEntryId);
 }
 
@@ -613,12 +605,8 @@ export async function claimPaymentRequestAssignmentAction(paymentRequestId: stri
   if (!paymentRequestId) {
     throw new Error(`paymentRequestId is required`);
   }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/assignments/claim`,
-    { resourceType: `payment_request`, resourceId: paymentRequestId, reason: reason || null },
-    `Failed to claim payment request assignment`,
-  );
+  const body = buildAssignmentClaimBody(`payment_request`, paymentRequestId, formData);
+  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim payment request assignment`);
   revalidatePaymentRequestAssignmentPaths(paymentRequestId);
 }
 
@@ -629,16 +617,8 @@ export async function releasePaymentRequestAssignmentAction(
   if (!paymentRequestId) {
     throw new Error(`paymentRequestId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/assignments/release`,
-    { assignmentId, reason: reason || null, expectedReleasedAtNull: 0 },
-    `Failed to release payment request assignment`,
-  );
+  const body = buildAssignmentReleaseBody(formData);
+  await postAdminMutation(`/admin-v2/assignments/release`, body, `Failed to release payment request assignment`);
   revalidatePaymentRequestAssignmentPaths(paymentRequestId);
 }
 
@@ -649,21 +629,8 @@ export async function reassignPaymentRequestAssignmentAction(
   if (!paymentRequestId) {
     throw new Error(`paymentRequestId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  if (!newAssigneeId) {
-    throw new Error(`newAssigneeId is required`);
-  }
-  await postAdminMutation(
-    `/admin-v2/assignments/reassign`,
-    { assignmentId, newAssigneeId, reason, confirmed, expectedReleasedAtNull: 0 },
-    `Failed to reassign payment request assignment`,
-  );
+  const body = buildAssignmentReassignBody(formData);
+  await postAdminMutation(`/admin-v2/assignments/reassign`, body, `Failed to reassign payment request assignment`);
   revalidatePaymentRequestAssignmentPaths(paymentRequestId);
 }
 
@@ -790,12 +757,8 @@ export async function claimFxConversionAssignmentAction(conversionId: string, fo
   if (!conversionId) {
     throw new Error(`conversionId is required`);
   }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/assignments/claim`,
-    { resourceType: `fx_conversion`, resourceId: conversionId, reason: reason || null },
-    `Failed to claim scheduled FX conversion assignment`,
-  );
+  const body = buildAssignmentClaimBody(`fx_conversion`, conversionId, formData);
+  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim scheduled FX conversion assignment`);
   revalidateFxConversionAssignmentPaths(conversionId);
 }
 
@@ -803,14 +766,10 @@ export async function releaseFxConversionAssignmentAction(conversionId: string, 
   if (!conversionId) {
     throw new Error(`conversionId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
+  const body = buildAssignmentReleaseBody(formData);
   await postAdminMutation(
     `/admin-v2/assignments/release`,
-    { assignmentId, reason: reason || null, expectedReleasedAtNull: 0 },
+    body,
     `Failed to release scheduled FX conversion assignment`,
   );
   revalidateFxConversionAssignmentPaths(conversionId);
@@ -820,19 +779,10 @@ export async function reassignFxConversionAssignmentAction(conversionId: string,
   if (!conversionId) {
     throw new Error(`conversionId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  if (!newAssigneeId) {
-    throw new Error(`newAssigneeId is required`);
-  }
+  const body = buildAssignmentReassignBody(formData);
   await postAdminMutation(
     `/admin-v2/assignments/reassign`,
-    { assignmentId, newAssigneeId, reason, confirmed, expectedReleasedAtNull: 0 },
+    body,
     `Failed to reassign scheduled FX conversion assignment`,
   );
   revalidateFxConversionAssignmentPaths(conversionId);
@@ -896,17 +846,14 @@ export async function createSavedViewAction(formData: FormData): Promise<void> {
   }
   const description = String(formData.get(`description`) ?? ``).trim();
   const queryPayload = parseSavedViewPayload(String(formData.get(`queryPayload`) ?? ``));
+  const body = adminV2SavedViewCreateBodySchema.parse({
+    workspace,
+    name,
+    description: description || null,
+    queryPayload,
+  });
 
-  await postAdminMutation(
-    `/admin-v2/saved-views`,
-    {
-      workspace,
-      name,
-      description: description || null,
-      queryPayload,
-    },
-    `Failed to create saved view`,
-  );
+  await postAdminMutation(`/admin-v2/saved-views`, body, `Failed to create saved view`);
   revalidateSavedViewWorkspace(workspace);
 }
 
@@ -939,7 +886,8 @@ export async function updateSavedViewAction(savedViewId: string, formData: FormD
     body.queryPayload = parseSavedViewPayload(String(rawPayload));
   }
 
-  await patchAdminMutation(`/admin-v2/saved-views/${savedViewId}`, body, `Failed to update saved view`);
+  const parsedBody = adminV2SavedViewUpdateBodySchema.parse(body);
+  await patchAdminMutation(`/admin-v2/saved-views/${savedViewId}`, parsedBody, `Failed to update saved view`);
   const workspace = String(formData.get(`workspace`) ?? ``).trim();
   revalidateSavedViewWorkspace(workspace || `ledger_anomalies`);
 }
@@ -950,7 +898,7 @@ export async function deleteSavedViewAction(savedViewId: string, formData: FormD
   }
   await deleteAdminMutation(
     `/admin-v2/saved-views/${savedViewId}`,
-    { expectedDeletedAtNull: 0 },
+    adminV2SavedViewDeleteBodySchema.parse({ expectedDeletedAtNull: 0 }),
     `Failed to delete saved view`,
   );
   const workspace = String(formData.get(`workspace`) ?? ``).trim();
@@ -1086,8 +1034,9 @@ export async function createOperationalAlertAction(formData: FormData): Promise<
   if (evaluationIntervalMinutes !== undefined) {
     body.evaluationIntervalMinutes = evaluationIntervalMinutes;
   }
+  const parsedBody = adminV2OperationalAlertCreateBodySchema.parse(body);
 
-  await postAdminMutation(`/admin-v2/operational-alerts`, body, `Failed to create operational alert`);
+  await postAdminMutation(`/admin-v2/operational-alerts`, parsedBody, `Failed to create operational alert`);
   revalidateOperationalAlerts();
 }
 
@@ -1134,9 +1083,10 @@ export async function updateOperationalAlertAction(operationalAlertId: string, f
     body.evaluationIntervalMinutes = interval;
   }
 
+  const parsedBody = adminV2OperationalAlertUpdateBodySchema.parse(body);
   await patchAdminMutation(
     `/admin-v2/operational-alerts/${operationalAlertId}`,
-    body,
+    parsedBody,
     `Failed to update operational alert`,
   );
   revalidateOperationalAlerts();
@@ -1149,7 +1099,7 @@ export async function deleteOperationalAlertAction(operationalAlertId: string, f
   void formData;
   await deleteAdminMutation(
     `/admin-v2/operational-alerts/${operationalAlertId}`,
-    { expectedDeletedAtNull: 0 },
+    adminV2OperationalAlertDeleteBodySchema.parse({ expectedDeletedAtNull: 0 }),
     `Failed to delete operational alert`,
   );
   revalidateOperationalAlerts();

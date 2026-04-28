@@ -54,43 +54,53 @@ const validPhone = (value: string) => {
   }
 };
 
+const requiredTrimmedString = (message: string) => z.string().trim().min(1, message);
+
 export const addressDetailsSchema = z.object({
-  postalCode: z.string().min(1, `Postal code is required`),
-  country: z.string().min(1, `Country is required`),
-  state: z.string().min(1, `State / Region is required`),
-  city: z.string().min(1, `City is required`),
-  street: z.string().min(1, `Street is required`),
+  postalCode: requiredTrimmedString(`Postal code is required`),
+  country: requiredTrimmedString(`Country is required`),
+  state: requiredTrimmedString(`State / Region is required`),
+  city: requiredTrimmedString(`City is required`),
+  street: requiredTrimmedString(`Street is required`),
 });
 
 export const entityDetailsSchema = z.object({
-  countryOfTaxResidence: z.string().min(1, `Country of tax residence is required`),
+  countryOfTaxResidence: requiredTrimmedString(`Country of tax residence is required`),
   taxId: z
     .string()
+    .trim()
     .min(1, `Tax ID is required`)
     .refine(taxIdRefine, `Please enter a valid Tax ID (at least 4 characters)`),
-  phoneNumber: z.string().min(1, `Phone number is required`).refine(validPhone, `Please enter a valid phone number`),
-  legalAddress: z.string().min(1, `Legal address is required`),
+  phoneNumber: requiredTrimmedString(`Phone number is required`).refine(
+    validPhone,
+    `Please enter a valid phone number`,
+  ),
+  legalAddress: requiredTrimmedString(`Legal address is required`),
 });
 
 export const individualDetailsSchema = z.object({
-  firstName: z.string().min(1, `First name is required`),
-  lastName: z.string().min(1, `Last name is required`),
+  firstName: requiredTrimmedString(`First name is required`),
+  lastName: requiredTrimmedString(`Last name is required`),
   dateOfBirth: z
     .string()
+    .trim()
     .min(1, `Date of birth is required`)
     .refine(validDate, `Please enter a valid date (YYYY-MM-DD)`)
     .refine(isNotFutureDate, `Date of birth cannot be in the future`)
     .refine(isAtLeast18YearsOld, `You must be at least 18 years old`),
-  citizenOf: z.string().min(1, `Citizenship is required`),
-  countryOfTaxResidence: z.string().min(1, `Country of tax residence is required`),
+  citizenOf: requiredTrimmedString(`Citizenship is required`),
+  countryOfTaxResidence: requiredTrimmedString(`Country of tax residence is required`),
   legalStatus: z.nativeEnum(LEGAL_STATUS, { error: () => ({ message: `Legal status is required` }) }),
-  taxId: z.string().min(1, `Tax ID is required`).refine(taxIdRefine, `Please enter a valid Tax ID`),
-  passportOrIdNumber: z.string().min(1, `Passport or ID number is required`),
-  phoneNumber: z.string().min(1, `Phone number is required`).refine(validPhone, `Please enter a valid phone number`),
+  taxId: z.string().trim().min(1, `Tax ID is required`).refine(taxIdRefine, `Please enter a valid Tax ID`),
+  passportOrIdNumber: requiredTrimmedString(`Passport or ID number is required`),
+  phoneNumber: requiredTrimmedString(`Phone number is required`).refine(
+    validPhone,
+    `Please enter a valid phone number`,
+  ),
 });
 
 export const organizationDetailsSchema = z.object({
-  name: z.string().min(1, `Organization name is required`),
+  name: requiredTrimmedString(`Organization name is required`),
   consumerRole: z.nativeEnum(CONSUMER_ROLE, { error: () => ({ message: `Role in the organization is required` }) }),
   size: z.nativeEnum(ORGANIZATION_SIZE, { error: () => ({ message: `Organization size is required` }) }),
 });
@@ -108,8 +118,10 @@ const signupDetailsBaseSchema = z.object({
 export function createSignupDetailsSchema(hasGoogleToken: boolean) {
   const passwordSchema = hasGoogleToken
     ? z.string().optional()
-    : z.string().min(1, `Password is required`).min(8, `Password must be at least 8 characters`);
-  const confirmSchema = hasGoogleToken ? z.string().optional() : z.string().min(1, `Please confirm your password`);
+    : z.string().trim().min(1, `Password is required`).min(8, `Password must be at least 8 characters`);
+  const confirmSchema = hasGoogleToken
+    ? z.string().optional()
+    : z.string().trim().min(1, `Please confirm your password`);
 
   return signupDetailsBaseSchema
     .extend({ password: passwordSchema, confirmPassword: confirmSchema })

@@ -1,16 +1,170 @@
 {
+  "$schema": "https://unpkg.com/knip@5/schema.json",
   "ignoreFiles": [
     ".eslintrc.mjs",
     "**/eslint.config.mjs"
   ],
+  "ignoreBinaries": ["turbo", "rtk", "dotenv", "eslint"],
   "ignoreIssues": {
-    "apps/api-v2/src/**/dto/**/*.ts": [
-      "exports",
-      "types"
-    ],
-    "apps/api-v2/src/**/dtos/**/*.ts": [
-      "exports",
-      "types"
-    ]
+    "apps/api-v2/src/**/dto/**/*.ts": ["exports", "types"],
+    "apps/api-v2/src/**/dtos/**/*.ts": ["exports", "types"]
+  },
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.{js,mjs,ts}"],
+      "project": ["scripts/**/*.{js,mjs,ts}"]
+    },
+
+    "apps/api-v2": {
+      "entry": [
+        "src/main.ts",
+        "src/**/*.controller.ts",
+        "src/**/*.module.ts",
+        "src/**/*.spec.ts",
+        "test/**/*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.ts", "test/**/*.ts"],
+      "ignoreDependencies": [
+        "@nestjs/cli",
+        "ts-loader",
+        "@remoola/test-db"
+      ],
+      "jest": { "config": ["jest.config.ts"] }
+    },
+
+    "apps/admin-v2": {
+      "ignoreFiles": ["jest.config.ts"],
+      "entry": [
+        "src/app/**/{page,layout,template,error,loading,not-found,route,default,head,sitemap,robots,manifest,opengraph-image,twitter-image,icon,apple-icon}.{ts,tsx}",
+        "src/middleware.ts",
+        "src/instrumentation.ts",
+        "next.config.ts",
+        "src/test/**/*.{ts,tsx}",
+        "src/**/*.{spec,test}.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": [
+        "@jest/globals",
+        "jest-environment-jsdom",
+        "eslint-config-next",
+        "jest",
+        "tailwindcss",
+        "ts-jest",
+        "ts-node",
+        "server-only"
+      ],
+      "jest": false,
+      "next": {
+        "entry": [
+          "src/app/**/{page,layout,template,error,loading,not-found,route}.{ts,tsx}",
+          "src/middleware.ts",
+          "next.config.ts"
+        ]
+      }
+    },
+
+    "apps/consumer-css-grid": {
+      "ignoreFiles": ["jest.config.ts"],
+      "entry": [
+        "src/app/**/{page,layout,template,error,loading,not-found,route,default,head,sitemap,robots,manifest,opengraph-image,twitter-image,icon,apple-icon}.{ts,tsx}",
+        "src/middleware.ts",
+        "src/instrumentation.ts",
+        "next.config.ts",
+        "src/test/**/*.{ts,tsx}",
+        "src/**/*.{spec,test}.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": [
+        "@jest/globals",
+        "jest-environment-jsdom",
+        "eslint-config-next",
+        "jest",
+        "tailwindcss",
+        "ts-jest",
+        "ts-node",
+        "server-only"
+      ],
+      "jest": false,
+      "next": {
+        "entry": [
+          "src/app/**/{page,layout,template,error,loading,not-found,route}.{ts,tsx}",
+          "src/middleware.ts",
+          "next.config.ts"
+        ]
+      }
+    },
+
+    "packages/api-types": {
+      "entry": ["src/index.ts!", "src/**/*.test.ts", "scripts/**/*.js"],
+      "project": ["src/**/*.ts"],
+      "includeEntryExports": true
+    },
+
+    "packages/database-2": {
+      "ignoreFiles": ["prisma.config.ts"],
+      "entry": ["src/index.ts!", "prisma/seed.ts"],
+      "project": ["src/**/*.ts", "prisma/**/*.ts"],
+      "ignoreDependencies": ["dotenv"],
+      "prisma": false
+    },
+
+    "packages/db-fixtures": {
+      "entry": ["src/index.ts!", "src/cli.ts", "src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+
+    "packages/jest-config": {
+      "entry": [
+        "src/entry.ts!",
+        "src/base.ts!",
+        "src/nest.ts!",
+        "src/next.ts!"
+      ],
+      "project": ["src/**/*.ts"]
+    },
+
+    "packages/test-db": {
+      "entry": [
+        "src/entry.ts!",
+        "src/environment.ts!",
+        "src/jest.ts!"
+      ],
+      "project": ["src/**/*.ts"]
+    },
+
+    "packages/security-utils": {
+      "entry": ["src/index.ts!"],
+      "project": ["src/**/*.ts"]
+    },
+
+    "packages/shared-constants": {
+      "entry": ["src/index.ts!"],
+      "project": ["src/**/*.ts"]
+    },
+
+    "packages/ui": {
+      "entry": ["src/index.ts!", "src/**/*.test.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+
+    "packages/eslint-config": {
+      "entry": [
+        "base.js",
+        "library.js",
+        "next.js",
+        "nest.js",
+        "prettier-base.js",
+        "react-internal.js"
+      ],
+      "project": ["**/*.js"]
+    },
+
+    "packages/api-e2e": {
+      "ignore": ["**/*"]
+    },
+
+    "packages/typescript-config": {
+      "ignore": ["**/*"]
+    }
   }
 }

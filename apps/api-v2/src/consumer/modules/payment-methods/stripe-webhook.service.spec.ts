@@ -306,6 +306,189 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
     expect(stripeWebhookEventCreate).toHaveBeenCalledTimes(1);
     expect(secondRes.json).toHaveBeenCalledWith({ received: true });
   });
+
+  it(`dispatches charge.refunded events to handleChargeRefunded`, async () => {
+    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const prisma = {
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const handleChargeRefunded = jest.spyOn(service as any, `handleChargeRefunded`).mockResolvedValue(undefined);
+
+    const mockEvent = {
+      id: `evt_charge_refunded`,
+      type: `charge.refunded`,
+      request: { idempotency_key: `refund-key-1` },
+      data: { object: { id: `ch_1` } },
+    };
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue(mockEvent),
+      },
+    };
+
+    const envModule = jest.requireMock(`../../../envs`) as { envs: { STRIPE_WEBHOOK_SECRET: string } };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const req = {
+      rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      headers: { 'stripe-signature': `sig_test` },
+    } as any;
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+
+    await service.processStripeEvent(req, res);
+
+    expect(handleChargeRefunded).toHaveBeenCalledTimes(1);
+    expect(handleChargeRefunded).toHaveBeenCalledWith(mockEvent.data.object);
+    expect(stripeWebhookEventCreate).toHaveBeenCalledWith({ data: { eventId: `evt_charge_refunded` } });
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it(`dispatches charge.refund.updated events to handleRefundUpdated`, async () => {
+    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const prisma = {
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const handleRefundUpdated = jest.spyOn(service as any, `handleRefundUpdated`).mockResolvedValue(undefined);
+
+    const mockEvent = {
+      id: `evt_refund_updated`,
+      type: `charge.refund.updated`,
+      request: { idempotency_key: `refund-key-2` },
+      data: { object: { id: `re_1`, status: `pending` } },
+    };
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue(mockEvent),
+      },
+    };
+
+    const envModule = jest.requireMock(`../../../envs`) as { envs: { STRIPE_WEBHOOK_SECRET: string } };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const req = {
+      rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      headers: { 'stripe-signature': `sig_test` },
+    } as any;
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+
+    await service.processStripeEvent(req, res);
+
+    expect(handleRefundUpdated).toHaveBeenCalledTimes(1);
+    expect(handleRefundUpdated).toHaveBeenCalledWith(mockEvent.data.object);
+    expect(stripeWebhookEventCreate).toHaveBeenCalledWith({ data: { eventId: `evt_refund_updated` } });
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it(`dispatches charge.dispute.created events to handleChargeDispute`, async () => {
+    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const prisma = {
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const handleChargeDispute = jest.spyOn(service as any, `handleChargeDispute`).mockResolvedValue(undefined);
+
+    const mockEvent = {
+      id: `evt_dispute_created`,
+      type: `charge.dispute.created`,
+      request: { idempotency_key: `dispute-key-1` },
+      data: { object: { id: `dp_1`, payment_intent: `pi_1` } },
+    };
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue(mockEvent),
+      },
+    };
+
+    const envModule = jest.requireMock(`../../../envs`) as { envs: { STRIPE_WEBHOOK_SECRET: string } };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const req = {
+      rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      headers: { 'stripe-signature': `sig_test` },
+    } as any;
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+
+    await service.processStripeEvent(req, res);
+
+    expect(handleChargeDispute).toHaveBeenCalledTimes(1);
+    expect(handleChargeDispute).toHaveBeenCalledWith(mockEvent.data.object);
+    expect(stripeWebhookEventCreate).toHaveBeenCalledWith({ data: { eventId: `evt_dispute_created` } });
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  const duplicateRefundUpdatedEventDescription =
+    `returns success for duplicate refund.updated event after handler completes ` + `and marker already exists`;
+
+  it(duplicateRefundUpdatedEventDescription, async () => {
+    const stripeWebhookEventCreate = jest
+      .fn()
+      .mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError(`Unique constraint`, { code: `P2002`, clientVersion: `6.x` }),
+      );
+    const prisma = {
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const handleRefundUpdated = jest.spyOn(service as any, `handleRefundUpdated`).mockResolvedValue(undefined);
+
+    const mockEvent = {
+      id: `evt_refund_updated_duplicate`,
+      type: `charge.refund.updated`,
+      request: { idempotency_key: `refund-key-3` },
+      data: { object: { id: `re_dup`, status: `succeeded` } },
+    };
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue(mockEvent),
+      },
+    };
+
+    const envModule = jest.requireMock(`../../../envs`) as { envs: { STRIPE_WEBHOOK_SECRET: string } };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const req = {
+      rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      headers: { 'stripe-signature': `sig_test` },
+    } as any;
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+
+    await service.processStripeEvent(req, res);
+
+    expect(handleRefundUpdated).toHaveBeenCalledTimes(1);
+    expect(stripeWebhookEventCreate).toHaveBeenCalledWith({ data: { eventId: `evt_refund_updated_duplicate` } });
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
 });
 
 describe(`StripeWebhookService payment link scope`, () => {

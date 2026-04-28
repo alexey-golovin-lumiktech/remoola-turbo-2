@@ -1,57 +1,20 @@
-/**
- * Consumer contact API contract types. Shared by consumer app and API responses.
- */
-
 import { type TAddressDetails } from './address-details';
+import { type ConsumerCreateContactPayload } from './mutations';
+import {
+  type ConsumerContactAddressResponse,
+  type ConsumerContactDetailsResponse,
+  type ConsumerContactResponse,
+  type ConsumerContactsResponse,
+} from './responses';
 
-export type TConsumerContactAddress = {
-  postalCode: string;
-  country: string;
-  state: string;
-  city: string;
-  street: string;
-};
-
-export type TConsumerContact = {
-  id: string;
-  email: string;
-  name: string | null;
-  address: TConsumerContactAddress;
-};
-
-export type TConsumerContactDetailsPaymentRequest = {
-  id: string;
-  amount: string;
-  status: string;
-  createdAt: Date;
-};
-
-export type TConsumerContactDetailsDocument = {
-  id: string;
-  name: string;
-  url: string;
-  createdAt: Date;
-};
-
-export type TConsumerContactDetails = {
-  id: string;
-  email: string;
-  name: string;
-  address: TConsumerContactAddress;
-  paymentRequests: TConsumerContactDetailsPaymentRequest[];
-  documents: TConsumerContactDetailsDocument[];
-};
-
-export type TConsumerContactsResponse = {
-  items: TConsumerContact[];
-  total: number;
-  page: number;
-  pageSize: number;
-};
+export type TConsumerContactAddress = NonNullable<ConsumerContactAddressResponse>;
+export type TConsumerContact = ConsumerContactResponse;
+export type TConsumerContactDetailsPaymentRequest = ConsumerContactDetailsResponse[`paymentRequests`][number];
+export type TConsumerContactDetailsDocument = ConsumerContactDetailsResponse[`documents`][number];
+export type TConsumerContactDetails = ConsumerContactDetailsResponse;
+export type TConsumerContactsResponse = ConsumerContactsResponse;
 
 /** Create payload: address uses TAddressDetails for form-friendly nullables. */
-export type TConsumerCreateContactPayload = {
-  email: string | null;
-  name?: string | null;
+export type TConsumerCreateContactPayload = Omit<ConsumerCreateContactPayload, `address`> & {
   address?: TAddressDetails;
 };

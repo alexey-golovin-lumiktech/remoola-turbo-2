@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { type AdminV2SavedViewSummary, type AdminV2SavedViewsListResponse } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
@@ -26,15 +27,7 @@ export type SavedViewActorContext = {
   type: string;
 };
 
-export type SavedViewSummary = {
-  id: string;
-  workspace: string;
-  name: string;
-  description: string | null;
-  queryPayload: unknown;
-  createdAt: string;
-  updatedAt: string;
-};
+export type SavedViewSummary = AdminV2SavedViewSummary;
 
 const SAVED_VIEW_LIST_HARD_CAP = 200;
 
@@ -103,7 +96,7 @@ export class AdminV2SavedViewsService {
     private readonly adminActionAudit: AdminActionAuditService,
   ) {}
 
-  async list(actor: SavedViewActorContext, workspace: string): Promise<{ views: SavedViewSummary[] }> {
+  async list(actor: SavedViewActorContext, workspace: string): Promise<AdminV2SavedViewsListResponse> {
     assertSavedViewWorkspace(workspace);
     const rows = await this.prisma.savedViewModel.findMany({
       where: {

@@ -2,9 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEnum, IsOptional } from 'class-validator';
 
+import {
+  type ConsumerUpdateProfileAddressDetailsPayload,
+  type ConsumerUpdateProfileOrganizationDetailsPayload,
+  type ConsumerUpdateProfilePayload,
+  type ConsumerUpdateProfilePersonalDetailsPayload,
+} from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
-export class UpdateConsumerProfilePersonalDetails {
+export class UpdateConsumerProfilePersonalDetails implements ConsumerUpdateProfilePersonalDetailsPayload {
   @Expose()
   @ApiProperty({ required: false, isArray: false })
   firstName?: string | null;
@@ -44,7 +50,7 @@ export class UpdateConsumerProfilePersonalDetails {
   phoneNumber?: string | null;
 }
 
-export class UpdateConsumerProfileAddressDetails {
+export class UpdateConsumerProfileAddressDetails implements ConsumerUpdateProfileAddressDetailsPayload {
   @Expose()
   @ApiProperty({ required: false, isArray: false })
   postalCode?: string | null;
@@ -66,7 +72,7 @@ export class UpdateConsumerProfileAddressDetails {
   state?: string | null;
 }
 
-export class UpdateConsumerProfileOrganizationDetails {
+export class UpdateConsumerProfileOrganizationDetails implements ConsumerUpdateProfileOrganizationDetailsPayload {
   @Expose()
   @ApiProperty({ required: false, isArray: false })
   name?: string | null;
@@ -84,7 +90,7 @@ export class UpdateConsumerProfileOrganizationDetails {
   consumerRoleOther?: string | null;
 }
 
-export class UpdateConsumerProfileBody {
+export class UpdateConsumerProfileBody implements ConsumerUpdateProfilePayload {
   @Expose()
   @ApiProperty({ required: false, type: UpdateConsumerProfilePersonalDetails, isArray: false })
   @IsOptional()
