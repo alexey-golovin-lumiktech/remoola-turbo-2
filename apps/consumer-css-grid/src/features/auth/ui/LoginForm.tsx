@@ -15,9 +15,12 @@ import {
 } from '@remoola/api-types';
 import { GoogleIcon, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
 
+import { shouldFinalizeLoginLoading } from './login-loading-guard';
+import styles from './LoginForm.module.css';
 import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
 import { getDevCredentials } from '../../../lib/dev-credentials';
 import { resetSessionExpiredHandled } from '../../../lib/session-expired';
+import { AUTH_INPUT_CLASS } from '../../../shared/ui/authInputClass';
 import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
 import { EyeIcon } from '../../../shared/ui/icons/EyeIcon';
 import { EyeOffIcon } from '../../../shared/ui/icons/EyeOffIcon';
@@ -26,8 +29,6 @@ import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
 import { XCircleIcon } from '../../../shared/ui/icons/XCircleIcon';
 import { XIcon } from '../../../shared/ui/icons/XIcon';
 import { loginSchema } from '../schemas';
-import { shouldFinalizeLoginLoading } from './login-loading-guard';
-import styles from './LoginForm.module.css';
 
 const CLEAR_COOKIES_URL = `/api/consumer/auth/clear-cookies`;
 
@@ -219,7 +220,7 @@ export function LoginForm({
               <input
                 ref={emailInputRef}
                 id="login-email"
-                className={`input transition-colors ${fieldErrors.email ? styles.inputError : ``}`}
+                className={`${AUTH_INPUT_CLASS} ${fieldErrors.email ? styles.inputError : ``}`}
                 type="email"
                 inputMode="email"
                 autoComplete="email"
@@ -252,7 +253,7 @@ export function LoginForm({
               <div className={styles.passwordWrap}>
                 <input
                   id="login-password"
-                  className={`input pr-12 transition-colors ${fieldErrors.password ? styles.inputError : ``}`}
+                  className={`${AUTH_INPUT_CLASS} pr-12 ${fieldErrors.password ? styles.inputError : ``}`}
                   type={showPassword ? `text` : `password`}
                   autoComplete="current-password"
                   value={password}

@@ -8,6 +8,7 @@ import { AUTH_NOTICE_QUERY, AUTH_RATE_LIMIT_MESSAGE } from '@remoola/api-types';
 
 import { resetPasswordSchema } from '../../../../features/auth/schemas';
 import { getAuthErrorMessage } from '../../../../lib/auth-error-messages';
+import { AUTH_INPUT_CLASS } from '../../../../shared/ui/authInputClass';
 import { EyeIcon } from '../../../../shared/ui/icons/EyeIcon';
 import { EyeOffIcon } from '../../../../shared/ui/icons/EyeOffIcon';
 import { SpinnerIcon } from '../../../../shared/ui/icons/SpinnerIcon';
@@ -101,7 +102,7 @@ export function ResetPasswordConfirmPageClient({ token }: { token: string }) {
                       });
                     }
                   }}
-                  className={`input w-full pr-12 ${fieldErrors.password ? styles.inputError : ``}`}
+                  className={`${AUTH_INPUT_CLASS} pr-12 ${fieldErrors.password ? styles.inputError : ``}`}
                   placeholder="At least 8 characters"
                   aria-invalid={fieldErrors.password ? true : undefined}
                 />
@@ -140,7 +141,7 @@ export function ResetPasswordConfirmPageClient({ token }: { token: string }) {
                     });
                   }
                 }}
-                className={`input w-full ${fieldErrors.confirmPassword ? styles.inputError : ``}`}
+                className={`${AUTH_INPUT_CLASS} ${fieldErrors.confirmPassword ? styles.inputError : ``}`}
                 placeholder="Re-enter new password"
                 aria-invalid={fieldErrors.confirmPassword ? true : undefined}
               />

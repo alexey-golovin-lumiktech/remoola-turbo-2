@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { getForgotPasswordSuccessCopy, parseForgotPasswordResponse } from '../../../features/auth/recovery';
 import { forgotPasswordSchema } from '../../../features/auth/schemas';
+import { AUTH_INPUT_CLASS } from '../../../shared/ui/authInputClass';
 import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
 import styles from '../auth-pages.module.css';
 
@@ -108,7 +109,7 @@ export default function ForgotPasswordPage() {
                   setEmail(event.target.value);
                   if (fieldError) setFieldError(undefined);
                 }}
-                className={`input w-full ${fieldError ? styles.inputError : ``}`}
+                className={`${AUTH_INPUT_CLASS} ${fieldError ? styles.inputError : ``}`}
                 placeholder="you@example.com"
                 aria-invalid={fieldError ? true : undefined}
                 aria-describedby={fieldError ? `forgot-password-email-error` : undefined}

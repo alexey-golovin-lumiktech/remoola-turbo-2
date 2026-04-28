@@ -2,6 +2,8 @@
 
 import { type CSSProperties, useState } from 'react';
 
+import { cn } from './cn';
+
 interface PasswordInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -14,8 +16,6 @@ interface PasswordInputProps {
   inputClassName?: string;
   toggleAriaLabel?: string;
 }
-
-const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
 const WRAPPER_STYLE: CSSProperties = {
   position: `relative`,
@@ -65,18 +65,18 @@ export function PasswordInput({
       border
       px-3
       py-2
-      text-sm
+      text-base
       bg-white
       dark:bg-slate-800
-      text-gray-900
+      text-slate-900
       dark:text-white
-      border-gray-300
+      border-slate-300
       dark:border-slate-600
-      placeholder:text-gray-400
-      dark:placeholder:text-gray-500
+      placeholder:text-slate-400
+      dark:placeholder:text-slate-500
       focus:outline-hidden
       focus:ring-2
-      focus:ring-blue-500
+      focus:ring-primary-500
     `,
     toggleButton: `
       absolute
@@ -91,23 +91,23 @@ export function PasswordInput({
       justify-center
       text-xs
       leading-none
-      text-gray-500
-      dark:text-gray-400
-      hover:text-gray-700
-      dark:hover:text-gray-200
+      text-slate-400
+      dark:text-slate-500
+      hover:text-slate-600
+      dark:hover:text-slate-200
       cursor-pointer
       rounded-xs
       px-1
       py-1
       focus:outline-hidden
       focus:ring-2
-      focus:ring-blue-500
+      focus:ring-primary-500
     `,
   };
 
   return (
     <div
-      className={joinClasses(
+      className={cn(
         `
           relative
           w-full
@@ -127,7 +127,7 @@ export function PasswordInput({
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
         placeholder={placeholder}
-        className={joinClasses(styles.input, inputClassName, `pr-14`)}
+        className={cn(styles.input, inputClassName, `pr-14`)}
         style={{ paddingRight: `3.5rem` }}
       />
 
@@ -144,7 +144,7 @@ export function PasswordInput({
           e.stopPropagation();
           setShow((show) => !show);
         }}
-        className={styles.toggleButton}
+        className={cn(styles.toggleButton)}
         style={TOGGLE_BUTTON_STYLE}
       >
         {show ? `Hide` : `Show`}

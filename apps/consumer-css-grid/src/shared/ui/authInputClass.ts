@@ -1,0 +1,24 @@
+export const AUTH_INPUT_CLASS = `
+  min-h-12
+  w-full
+  rounded-xl
+  border
+  border-slate-300
+  bg-white
+  px-3
+  py-3
+  text-base
+  text-slate-900
+  shadow-xs
+  transition
+  placeholder:text-slate-400
+  focus:outline-hidden
+  focus:ring-2
+  focus:ring-primary-500
+  disabled:cursor-not-allowed
+  disabled:opacity-70
+  dark:border-slate-600
+  dark:bg-slate-800
+  dark:text-white
+  dark:placeholder:text-slate-500
+`.trim();
