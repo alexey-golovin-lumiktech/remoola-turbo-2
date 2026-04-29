@@ -3,7 +3,7 @@
   "tasks": [
     {
       "label": "Knip: Watch apps + packages",
-      "type": "shell",
+      "type": "process",
       "command": "./node_modules/.bin/knip",
       "args": [
         "--watch",
