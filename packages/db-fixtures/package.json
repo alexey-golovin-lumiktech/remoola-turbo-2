@@ -10,12 +10,13 @@
   ],
   "scripts": {
     "build": "node ../../scripts/ensure-local-development.js db-fixtures:build && yarn workspace @remoola/security-utils run build && tsc -b",
-    "clean": "rm -rf ./node_modules ./dist",
+    "build:test": "tsc -p tsconfig.test.json",
+    "clean": "rm -rf ./node_modules ./dist ./dist-test",
     "cleanup": "node ./dist/cli.js cleanup",
     "fill": "node ./dist/cli.js fill",
     "refresh": "node ./dist/cli.js refresh --confirm",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "TERM=dumb NO_COLOR=1 yarn build && node --test dist/*.test.js"
+    "test": "TERM=dumb NO_COLOR=1 yarn build && yarn build:test && node --test dist-test/*.test.js"
   },
   "dependencies": {
     "@remoola/database-2": "^0.0.0",

@@ -15,6 +15,12 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "dist-test",
+    "src/test/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }

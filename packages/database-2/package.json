@@ -4,6 +4,9 @@
   "license": "UNLICENSED",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "./dist/**"
+  ],
   "scripts": {
     "build": "yarn db:generate && tsc -p tsconfig.build.json",
     "clean": "rm -rf ./node_modules ./dist ./generated/**",

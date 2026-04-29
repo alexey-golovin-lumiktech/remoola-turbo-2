@@ -8,6 +8,11 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/test/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }

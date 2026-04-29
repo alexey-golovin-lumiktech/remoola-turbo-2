@@ -15,6 +15,13 @@
   ],
   "exclude": [
     "node_modules",
+    "test",
+    "src/test/**",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
     "./prisma.config.ts"
   ]
 }
