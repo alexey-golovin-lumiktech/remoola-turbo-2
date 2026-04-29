@@ -1,14 +1,18 @@
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { type ExecutionContext } from '@nestjs/common/interfaces/features/execution-context.interface';
-import { type Reflector } from '@nestjs/core';
+import { Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
+import { Test } from '@nestjs/testing';
 
 import { CONSUMER_APP_SCOPE_HEADER, COOKIE_KEYS } from '@remoola/api-types';
 import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { JwtPassportModule } from '../auth/jwt-passport.module';
 import { type IDENTITY } from '../common';
 import { AuthGuard } from './auth.guard';
+import { OriginResolverService } from '../shared/origin-resolver.service';
+import { PrismaService } from '../shared/prisma.service';
 import { getApiConsumerAccessTokenCookieKeysForRead, getApiConsumerCsrfTokenCookieKeysForRead } from '../shared-common';
 
 type MockRequest = {
@@ -74,6 +78,20 @@ describe(`AuthGuard`, () => {
       prisma as never,
       originResolver as never,
     );
+  });
+
+  it(`resolves JwtService for the app-level auth guard via JwtPassportModule`, async () => {
+    const module = await Test.createTestingModule({
+      imports: [JwtPassportModule],
+      providers: [
+        AuthGuard,
+        { provide: Reflector, useValue: reflector },
+        { provide: PrismaService, useValue: prisma },
+        { provide: OriginResolverService, useValue: originResolver },
+      ],
+    }).compile();
+
+    expect(module.get(AuthGuard)).toBeInstanceOf(AuthGuard);
   });
 
   it(`rejects an admin-scoped token on consumer routes`, async () => {
