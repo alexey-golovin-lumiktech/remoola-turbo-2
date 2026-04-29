@@ -105,7 +105,7 @@ export function isExactCommandRouteMatch(query: string, route: IndexedCommandRou
   return [route.label, route.href].some((candidate) => normalizeSearchValue(candidate) === normalizedQuery);
 }
 
-export function groupCommandRoutesByGroup(routes: IndexedCommandRoute[]): CommandSection[] {
+function groupCommandRoutesByGroup(routes: IndexedCommandRoute[]): CommandSection[] {
   const groups = new Map<CommandGroup, IndexedCommandRoute[]>();
 
   for (const route of routes) {

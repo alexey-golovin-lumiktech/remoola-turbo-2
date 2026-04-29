@@ -11,7 +11,7 @@ function getSingleValue(value: SearchValue) {
   return typeof value === `string` ? value : Array.isArray(value) ? (value[0] ?? ``) : ``;
 }
 
-export function sanitizePaymentReturnTo(raw: string | null | undefined): string {
+function sanitizePaymentReturnTo(raw: string | null | undefined): string {
   return sanitizeNextForRedirect(raw, ``);
 }
 

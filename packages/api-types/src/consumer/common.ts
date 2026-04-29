@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 export type ConsumerIsoDateTime = string;
 export type ConsumerDateOnly = string;
 export type ConsumerDecimalString = string;
@@ -44,13 +42,3 @@ export type ConsumerFailedMutationResult = {
   ok: false;
   error: ConsumerMutationError;
 };
-
-const consumerPageQuerySchema = z.object({
-  page: z.number().int().positive().optional(),
-  pageSize: z.number().int().positive().optional(),
-});
-
-const consumerOffsetQuerySchema = z.object({
-  limit: z.number().int().positive().optional(),
-  offset: z.number().int().min(0).optional(),
-});

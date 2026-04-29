@@ -33,7 +33,7 @@ type StartPaymentResult =
   | { ok: true; paymentRequestId?: string; ledgerId?: string; message?: string }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
 
-export type DraftPaymentRequestOption = {
+type DraftPaymentRequestOption = {
   id: string;
   amount: number;
   currencyCode: string;
@@ -42,7 +42,7 @@ export type DraftPaymentRequestOption = {
   counterpartyEmail: string | null;
 };
 
-export type DraftPaymentRequestsResult =
+type DraftPaymentRequestsResult =
   | {
       ok: true;
       items: DraftPaymentRequestOption[];

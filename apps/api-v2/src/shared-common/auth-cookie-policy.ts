@@ -233,9 +233,3 @@ export function getApiConsumerDeviceCookieOptions(
     maxAge: DEVICE_COOKIE_MAX_AGE_SECONDS * 1000,
   };
 }
-
-function getApiConsumerDeviceCookieClearOptions(
-  req?: express.Request,
-): Pick<SharedHttpOnlyCookieOptions, `httpOnly` | `path` | `sameSite` | `secure`> {
-  return getCookieClearOptions(getApiConsumerDeviceCookieOptions(req));
-}

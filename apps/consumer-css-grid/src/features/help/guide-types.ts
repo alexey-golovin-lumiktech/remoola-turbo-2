@@ -42,7 +42,7 @@ export const HELP_AUDIENCE_STATE = {
   BOTH: `both`,
 } as const;
 
-export type HelpAudienceState = (typeof HELP_AUDIENCE_STATE)[keyof typeof HELP_AUDIENCE_STATE];
+type HelpAudienceState = (typeof HELP_AUDIENCE_STATE)[keyof typeof HELP_AUDIENCE_STATE];
 
 export const HELP_GUIDE_SOURCE_REF_KIND = {
   FRONTEND_ROUTE: `frontend_route`,
@@ -52,7 +52,7 @@ export const HELP_GUIDE_SOURCE_REF_KIND = {
   PLANNING_DOC: `planning_doc`,
 } as const;
 
-export type HelpGuideSourceRefKind = (typeof HELP_GUIDE_SOURCE_REF_KIND)[keyof typeof HELP_GUIDE_SOURCE_REF_KIND];
+type HelpGuideSourceRefKind = (typeof HELP_GUIDE_SOURCE_REF_KIND)[keyof typeof HELP_GUIDE_SOURCE_REF_KIND];
 
 export type HelpRouteAffinity = `/${string}`;
 

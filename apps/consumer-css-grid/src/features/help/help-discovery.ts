@@ -20,24 +20,24 @@ interface HelpHubFeatureConfig {
   description: string;
 }
 
-export interface HelpHubCategorySection extends HelpHubCategoryConfig {
+interface HelpHubCategorySection extends HelpHubCategoryConfig {
   anchorId: string;
   guides: PublicHelpGuideRegistryEntry[];
 }
 
-export interface HelpHubFeatureSection extends HelpHubFeatureConfig {
+interface HelpHubFeatureSection extends HelpHubFeatureConfig {
   anchorId: string;
   guides: PublicHelpGuideRegistryEntry[];
 }
 
-export interface HelpGuideSearchEntry {
+interface HelpGuideSearchEntry {
   guide: PublicHelpGuideRegistryEntry;
   categoryLabel: string;
   featureLabel: string;
   searchableText: string;
 }
 
-export interface HelpGuideFamilyCoverage {
+interface HelpGuideFamilyCoverage {
   feature: HelpGuideFeature;
   label: string;
   guideCount: number;

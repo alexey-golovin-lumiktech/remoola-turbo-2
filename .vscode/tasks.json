@@ -3,17 +3,10 @@
   "tasks": [
     {
       "label": "Knip: Watch apps + packages",
-      "type": "process",
-      "command": "./node_modules/.bin/knip",
+      "type": "shell",
+      "command": "yarn",
       "args": [
-        "--watch",
-        "--no-exit-code",
-        "--reporter",
-        "compact",
-        "--workspace",
-        "./apps/*",
-        "--workspace",
-        "./packages/*"
+        "knip:watch"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

@@ -1464,11 +1464,6 @@ export async function getVerificationQueue(params?: {
   return fetchAdminApi<VerificationQueueResponse>(`/admin-v2/verification/queue?${searchParams.toString()}`);
 }
 
-export async function getVerificationCase(consumerId: string): Promise<VerificationCaseResponse | null> {
-  if (!consumerId.trim()) return null;
-  return fetchAdminApi<VerificationCaseResponse>(`/admin-v2/verification/${consumerId}`);
-}
-
 export async function getVerificationCaseResult(
   consumerId: string,
 ): Promise<AdminApiReadResult<VerificationCaseResponse>> {
@@ -1767,11 +1762,6 @@ export async function getAdmins(params?: {
   if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
   if (params?.status?.trim()) searchParams.set(`status`, params.status.trim());
   return fetchAdminApi<AdminsListResponse>(`/admin-v2/admins?${searchParams.toString()}`);
-}
-
-export async function getAdminCaseRecord(adminId: string): Promise<AdminCaseRecordResponse | null> {
-  if (!adminId.trim()) return null;
-  return fetchAdminApi<AdminCaseRecordResponse>(`/admin-v2/admins/${adminId}`);
 }
 
 export async function getAdminCaseRecordResult(adminId: string): Promise<AdminApiReadResult<AdminCaseRecordResponse>> {

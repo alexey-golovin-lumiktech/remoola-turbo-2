@@ -790,9 +790,9 @@ export const helpGuideSourceMap = [
   },
 ] as const satisfies readonly HelpGuideSourceMapEntry<HelpGuideSlug>[];
 
-export type HelpGuideSourceMapRecord = (typeof helpGuideSourceMap)[number];
+type HelpGuideSourceMapRecord = (typeof helpGuideSourceMap)[number];
 
-export const helpGuideSourceMapBySlug: Record<HelpGuideSlug, HelpGuideSourceMapRecord> = helpGuideSourceMap.reduce(
+const helpGuideSourceMapBySlug: Record<HelpGuideSlug, HelpGuideSourceMapRecord> = helpGuideSourceMap.reduce(
   (accumulator, entry) => {
     accumulator[entry.slug] = entry;
     return accumulator;

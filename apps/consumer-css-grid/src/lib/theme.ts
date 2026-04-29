@@ -29,7 +29,7 @@ function toApiTheme(theme: ThemePreference | null): TTheme | null {
   return theme.toUpperCase() as TTheme;
 }
 
-export { THEME_COOKIE_KEY, THEME_COOKIE_MAX_AGE_SECONDS, THEME_STORAGE_KEY, type ResolvedTheme };
+export { THEME_STORAGE_KEY, type ResolvedTheme };
 
 export function parseThemePreference(value: string | null | undefined): TTheme | null {
   return toApiTheme(parseStoredThemePreference(value));

@@ -9,8 +9,6 @@ export * from './billing-details.mode';
 export * from './payment-request.model';
 export * from './contact.model';
 export * from './resource.model';
-export * from './consumer-resource.model';
 export * from './transaction.model';
-export * from './access-refresh-token.model';
 export * from './exchange-rate.model';
 export * from './payment-method.model';

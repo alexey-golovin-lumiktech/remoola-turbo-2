@@ -1,18 +1,18 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignoreFiles": [
-    ".eslintrc.mjs",
-    "**/eslint.config.mjs"
-  ],
+  "ignoreFiles": [".eslintrc.mjs", "**/eslint.config.mjs"],
   "ignoreBinaries": ["turbo", "rtk", "dotenv", "eslint"],
   "ignoreIssues": {
+    "apps/consumer-css-grid/src/features/help/**/*.ts": ["types"],
     "apps/api-v2/src/**/dto/**/*.ts": ["exports", "types"],
-    "apps/api-v2/src/**/dtos/**/*.ts": ["exports", "types"]
+    "apps/api-v2/src/**/dtos/**/*.ts": ["exports", "types"],
+    "packages/api-types/src/**/*.ts": ["types"]
   },
   "workspaces": {
     ".": {
       "entry": ["scripts/**/*.{js,mjs,ts}"],
-      "project": ["scripts/**/*.{js,mjs,ts}"]
+      "project": ["scripts/**/*.{js,mjs,ts}"],
+      "ignoreDependencies": ["@remoola/database-2", "jest", "lint-staged", "prisma"]
     },
 
     "apps/api-v2": {
@@ -24,11 +24,7 @@
         "test/**/*.{ts,tsx}"
       ],
       "project": ["src/**/*.ts", "test/**/*.ts"],
-      "ignoreDependencies": [
-        "@nestjs/cli",
-        "ts-loader",
-        "@remoola/test-db"
-      ],
+      "ignoreDependencies": ["@nestjs/cli", "ts-loader", "@remoola/test-db", "@types/multer"],
       "jest": { "config": ["jest.config.ts"] }
     },
 
@@ -45,6 +41,7 @@
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": [
         "@jest/globals",
+        "@remoola/jest-config",
         "jest-environment-jsdom",
         "eslint-config-next",
         "jest",
@@ -76,6 +73,7 @@
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": [
         "@jest/globals",
+        "@remoola/jest-config",
         "jest-environment-jsdom",
         "eslint-config-next",
         "jest",
@@ -104,42 +102,38 @@
       "ignoreFiles": ["prisma.config.ts"],
       "entry": ["src/index.ts!", "prisma/seed.ts"],
       "project": ["src/**/*.ts", "prisma/**/*.ts"],
-      "ignoreDependencies": ["dotenv"],
+      "ignoreDependencies": ["@prisma/client", "dotenv"],
       "prisma": false
     },
 
     "packages/db-fixtures": {
       "entry": ["src/index.ts!", "src/cli.ts", "src/**/*.test.ts"],
-      "project": ["src/**/*.ts"]
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@remoola/eslint-config"]
     },
 
     "packages/jest-config": {
-      "entry": [
-        "src/entry.ts!",
-        "src/base.ts!",
-        "src/nest.ts!",
-        "src/next.ts!"
-      ],
-      "project": ["src/**/*.ts"]
+      "entry": ["src/entry.ts!", "src/base.ts!", "src/nest.ts!", "src/next.ts!"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["jest-environment-jsdom"]
     },
 
     "packages/test-db": {
-      "entry": [
-        "src/entry.ts!",
-        "src/environment.ts!",
-        "src/jest.ts!"
-      ],
-      "project": ["src/**/*.ts"]
+      "entry": ["src/entry.ts!", "src/environment.ts!"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@remoola/eslint-config"]
     },
 
     "packages/security-utils": {
       "entry": ["src/index.ts!"],
-      "project": ["src/**/*.ts"]
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@remoola/eslint-config"]
     },
 
     "packages/shared-constants": {
       "entry": ["src/index.ts!"],
-      "project": ["src/**/*.ts"]
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@remoola/eslint-config"]
     },
 
     "packages/ui": {
@@ -148,15 +142,9 @@
     },
 
     "packages/eslint-config": {
-      "entry": [
-        "base.js",
-        "library.js",
-        "next.js",
-        "nest.js",
-        "prettier-base.js",
-        "react-internal.js"
-      ],
-      "project": ["**/*.js"]
+      "entry": ["base.js", "library.js", "next.js", "nest.js", "prettier-base.js", "react-internal.js"],
+      "project": ["**/*.js"],
+      "ignoreDependencies": ["eslint-import-resolver-typescript"]
     },
 
     "packages/api-e2e": {
@@ -164,7 +152,8 @@
     },
 
     "packages/typescript-config": {
-      "ignore": ["**/*"]
+      "ignore": ["**/*"],
+      "ignoreUnresolved": ["next"]
     }
   }
 }

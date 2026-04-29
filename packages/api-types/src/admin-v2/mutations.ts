@@ -5,8 +5,15 @@ import {
   adminV2ConfirmedVersionedMutationBodySchema,
   adminV2VersionedMutationBodySchema,
 } from './common';
-import { PAYMENT_REVERSAL_KINDS } from '../admin/payment-reversal';
 import { CONSUMER_APP_SCOPES, type ConsumerAppScope } from '../http';
+
+export const PAYMENT_REVERSAL_KIND = {
+  REFUND: `REFUND`,
+  CHARGEBACK: `CHARGEBACK`,
+} as const;
+export type TPaymentReversalKind = (typeof PAYMENT_REVERSAL_KIND)[keyof typeof PAYMENT_REVERSAL_KIND];
+
+const PAYMENT_REVERSAL_KINDS = [PAYMENT_REVERSAL_KIND.REFUND, PAYMENT_REVERSAL_KIND.CHARGEBACK] as const;
 
 export type AdminV2LoginBody = {
   email: string;

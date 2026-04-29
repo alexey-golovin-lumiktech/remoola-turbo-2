@@ -278,12 +278,6 @@ export async function getExchangeCurrencies(options?: ConsumerApiRequestOptions)
   });
 }
 
-export async function getExchangeRate(from: string, to: string): Promise<ExchangeRate | null> {
-  const raw = await fetchConsumerApi<{ rate?: number }>(`/consumer/exchange/rates?from=${from}&to=${to}`);
-  if (typeof raw?.rate !== `number`) return null;
-  return { from, to, rate: raw.rate };
-}
-
 function normalizeExchangeRateBatchItem(
   pair: { from: string; to: string },
   item?: ExchangeRateBatchItem,

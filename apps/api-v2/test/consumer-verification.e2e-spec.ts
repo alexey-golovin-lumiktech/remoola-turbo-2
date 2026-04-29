@@ -17,7 +17,7 @@ import { hashPassword } from '@remoola/security-utils';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { StripeWebhookService } from '../src/consumer/modules/payment-methods/stripe-webhook.service';
-import { ConsumerPaymentsService } from '../src/consumer/modules/payments/consumer-payments.service';
+import { ConsumerPaymentsPoliciesService } from '../src/consumer/modules/payments/consumer-payments-policies.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
@@ -27,7 +27,7 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   let stripeWebhookService: StripeWebhookService;
-  let consumerPaymentsService: ConsumerPaymentsService;
+  let consumerPaymentsPoliciesService: ConsumerPaymentsPoliciesService;
   let consumerId = ``;
   const consumerOrigin = `http://127.0.0.1:3003`;
   const appScope = `consumer-css-grid` as const;
@@ -98,7 +98,7 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
     }).compile();
 
     stripeWebhookService = moduleFixture.get(StripeWebhookService);
-    consumerPaymentsService = moduleFixture.get(ConsumerPaymentsService);
+    consumerPaymentsPoliciesService = moduleFixture.get(ConsumerPaymentsPoliciesService);
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix(`api`);
@@ -139,7 +139,7 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
   });
 
   it(`starts verification, ignores stale webhooks, and preserves profile identity data on verify`, async () => {
-    jest.spyOn(consumerPaymentsService, `assertProfileCompleteForVerification`).mockResolvedValue(undefined);
+    jest.spyOn(consumerPaymentsPoliciesService, `assertProfileCompleteForVerification`).mockResolvedValue(undefined);
 
     const stripeClient = (stripeWebhookService as unknown as { stripe: Stripe }).stripe;
     jest.spyOn(stripeClient.identity.verificationSessions, `create`).mockResolvedValue({

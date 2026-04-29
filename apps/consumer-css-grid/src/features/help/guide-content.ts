@@ -3,7 +3,7 @@ import { type HelpCalloutVariant } from './ui/HelpCallout';
 import { type HelpFaqItem } from './ui/HelpFaq';
 import { type HelpStepItem } from './ui/HelpSteps';
 
-export interface HelpGuideCallout {
+interface HelpGuideCallout {
   variant: HelpCalloutVariant;
   title?: string;
   body: string;

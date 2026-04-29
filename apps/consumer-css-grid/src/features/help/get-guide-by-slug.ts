@@ -1,7 +1,7 @@
 import { type HelpGuideArticleContent, helpGuideContentBySlug } from './guide-content';
 import { publicHelpGuideRegistry, type PublicHelpGuideRegistryEntry } from './guide-registry';
 
-export interface HelpGuideDetail {
+interface HelpGuideDetail {
   guide: PublicHelpGuideRegistryEntry;
   content: HelpGuideArticleContent;
 }

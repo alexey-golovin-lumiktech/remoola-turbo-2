@@ -16,10 +16,6 @@
       "import": "./dist/entry.js",
       "require": "./dist/entry.js"
     },
-    "./jest": {
-      "import": "./dist/jest.js",
-      "require": "./dist/jest.js"
-    },
     "./environment": {
       "import": "./dist/environment.js",
       "require": "./dist/environment.js"
@@ -41,7 +37,6 @@
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",
     "@types/node": "^24.3.0",
-    "ts-node": "^10.9.2",
     "typescript": "5.8.2"
   }
 }

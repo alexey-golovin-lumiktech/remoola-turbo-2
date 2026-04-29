@@ -10,7 +10,6 @@ export * from './jwt-payload.dto';
 export * from './organization-details.dto';
 export * from './payment-request.dto';
 export * from './personal-details.dto';
-export * from './resource.dto';
 export * from './reset-password.dto';
 export * from './transaction.dto';
 export * from './exchange-rate.dto';

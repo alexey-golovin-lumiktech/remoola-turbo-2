@@ -17,7 +17,7 @@ type SettingsVerification = {
   lastErrorReason: string | null;
 };
 
-export function normalizeText(value: string) {
+function normalizeText(value: string) {
   return value.trim();
 }
 

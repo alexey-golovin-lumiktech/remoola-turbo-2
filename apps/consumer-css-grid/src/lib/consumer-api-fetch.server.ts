@@ -12,7 +12,7 @@ export interface ConsumerApiRequestOptions {
   redirectTo?: string;
 }
 
-export function buildSessionExpiredLoginUrl(redirectTo: string): string {
+function buildSessionExpiredLoginUrl(redirectTo: string): string {
   const safeNext = encodeURIComponent(sanitizeNextForRedirect(redirectTo, `/dashboard`));
   return `/login?${SESSION_EXPIRED_QUERY}=1&next=${safeNext}`;
 }

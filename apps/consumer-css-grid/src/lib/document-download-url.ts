@@ -1,6 +1,6 @@
 const DOCUMENT_DOWNLOAD_PROXY_PREFIX = `/api/documents`;
 
-export function buildDocumentDownloadProxyUrl(resourceId: string): string {
+function buildDocumentDownloadProxyUrl(resourceId: string): string {
   return `${DOCUMENT_DOWNLOAD_PROXY_PREFIX}/${encodeURIComponent(resourceId)}/download`;
 }
 
