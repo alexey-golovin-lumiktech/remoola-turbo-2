@@ -2,12 +2,13 @@ import {
   type CanActivate,
   type ExecutionContext,
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { type Reflector } from '@nestjs/core';
-import { type JwtService } from '@nestjs/jwt';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { type Request as TExpressRequest } from 'express';
 
 import { CONSUMER_APP_SCOPE_HEADER, isAdminApiPath, type ConsumerAppScope } from '@remoola/api-types';
@@ -18,7 +19,7 @@ import { IDENTITY, type IIdentity, type IIdentityContext, IS_PUBLIC } from '../c
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { envs } from '../envs';
 import { OriginResolverService } from '../shared/origin-resolver.service';
-import { type PrismaService } from '../shared/prisma.service';
+import { PrismaService } from '../shared/prisma.service';
 import {
   getApiAdminAccessTokenCookieKeysForRead,
   getApiConsumerAccessTokenCookieKeysForRead,
@@ -56,8 +57,11 @@ export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name);
 
   constructor(
+    @Inject(Reflector)
     private readonly reflector: Reflector,
+    @Inject(JwtService)
     private readonly jwtService: JwtService,
+    @Inject(PrismaService)
     private readonly prisma: PrismaService,
     private readonly originResolver: OriginResolverService = new OriginResolverService(),
   ) {}
