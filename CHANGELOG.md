@@ -2663,7 +2663,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-04-27</summary>
 
 - **2026-04-27:**
@@ -2710,6 +2710,33 @@
   - **No database migration introduced today.** The legacy `/api/admin/*` retirement, legacy app removal, admin-v2 password-recovery work, and bootstrap RBAC repair are runtime/contract changes only.
   - **Coordinated cutover risk:** Legacy `apps/api`, `apps/consumer`, `apps/consumer-mobile`, and `apps/admin` removal plus the `/api/admin/*` retirement must deploy together with the admin-v2 surface and the canonical single-scope consumer runtime so no client is left depending on the dropped routes or namespaces.
   - **UI alignment is presentation-only:** The shell, queue, detail, operator-form, and auth-surface refactors do not alter API calls, mutation handlers, route behavior, or queue/assignment semantics; existing auth, capability, session, payment, and ledger invariants are preserved.
+
+</details>
+
+<details open>
+<summary>2026-04-28</summary>
+
+- **2026-04-28:**
+
+  ### 🚀 Feature
+  - **Consumer signup hardening:** Tighten signup validation in `api-v2` and `consumer-css-grid` by trimming required values, rejecting whitespace-only password and personal-detail inputs, requiring personal details for individual contractors, and preserving entity-signup compatibility with safe server-side placeholder values where legacy personal-details paths still execute.
+  - **Auth form theme alignment:** Unify login, forgot-password, reset-password, and signup fields behind a shared auth input primitive and align dark-mode selectors so auth controls resolve consistently from the same `.dark` / `[data-theme="dark"]` source.
+
+  ### 🔐 Security / Production Safety
+  - **Stripe refund and dispute webhook auditing:** Log Stripe request idempotency keys when processing refund and dispute webhook events and keep those flows on the existing idempotent reversal / dispute-recording path so repeated deliveries do not widen payment-side side effects.
+  - **PDF runtime cleanup:** Ensure the PDF generator always closes its browser instance on both success and failure paths, reducing leak risk in production-like Chromium runtimes.
+
+  ### 🧪 Testing
+  - **Signup and contract regression coverage:** Add focused coverage for trimmed signup payloads, entity placeholder compatibility, shared admin-v2 contract schemas/endpoints, and the shared auth-input primitive used across consumer auth flows.
+  - **Webhook and PDF coverage:** Add explicit tests for Stripe `charge.refunded`, `charge.refund.updated`, and `charge.dispute.created` dispatch plus PDF success/failure cleanup behavior.
+  - **Admin auth session coverage:** Add targeted `AdminAuthService` specs for login, refresh rotation/reuse, and related session-safety invariants.
+
+  ### 🛠 DevEx
+  - **Shared API contract centralization:** Move admin-v2 mutation bodies, endpoints, response types, quickstarts, saved-view contracts, and consumer request/response shapes into `@remoola/api-types`, then update `api-v2`, `admin-v2`, and `consumer-css-grid` to consume the shared definitions instead of duplicating local types.
+  - **Dead-code and workspace tooling cleanup:** Remove unused api-v2 exports/helpers/templates, narrow local-only types, and add workspace-aware `knip` configuration so dead-code analysis can run across the maintained monorepo with less contract drift.
+
+  ### ⚠️ Notes
+  - **No database migration introduced:** The April 28 work is contract, validation, UI-theming, runtime-safety, test, and tooling focused; no Prisma schema or migration files changed.
 
 </details>
 
