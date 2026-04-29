@@ -45,12 +45,12 @@ export type ConsumerFailedMutationResult = {
   error: ConsumerMutationError;
 };
 
-export const consumerPageQuerySchema = z.object({
+const consumerPageQuerySchema = z.object({
   page: z.number().int().positive().optional(),
   pageSize: z.number().int().positive().optional(),
 });
 
-export const consumerOffsetQuerySchema = z.object({
+const consumerOffsetQuerySchema = z.object({
   limit: z.number().int().positive().optional(),
   offset: z.number().int().min(0).optional(),
 });

@@ -25,11 +25,11 @@ export function formatBytes(value: number | null | undefined): string {
   return `${(safeValue / MEBIBYTE).toFixed(1)} MB`;
 }
 
-export function toDateOnly(value: Date): string {
+function toDateOnly(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
 
-export function getDefaultLookbackRange(days = DEFAULT_LOOKBACK_DAYS): { dateFrom: Date; dateTo: Date } {
+function getDefaultLookbackRange(days = DEFAULT_LOOKBACK_DAYS): { dateFrom: Date; dateTo: Date } {
   const dateTo = new Date();
   const dateFrom = new Date(dateTo.getTime() - days * DAY_IN_MS);
   return { dateFrom, dateTo };

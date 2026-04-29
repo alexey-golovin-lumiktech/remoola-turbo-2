@@ -4,12 +4,12 @@ import { $Enums } from '@remoola/database-2';
 
 import { ADMIN_V2_SCHEMA_ROLES, OVERRIDABLE_ADMIN_V2_CAPABILITIES } from '../admin-v2-access';
 
-export const DEFAULT_PAGE = 1;
-export const DEFAULT_PAGE_SIZE = 20;
-export const MAX_PAGE_SIZE = 50;
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 50;
 export const INVITATION_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 export const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000;
-export const REASON_MAX_LENGTH = 500;
+const REASON_MAX_LENGTH = 500;
 export const RECENT_ACTIVITY_LIMIT = 20;
 export const ALLOWED_ROLE_KEYS = new Set<string>(ADMIN_V2_SCHEMA_ROLES);
 export const ADMIN_PERMISSION_OVERRIDE_CAPABILITIES = new Set<string>(OVERRIDABLE_ADMIN_V2_CAPABILITIES);

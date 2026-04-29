@@ -59,6 +59,6 @@ export const adminV2ExpectedDeletedAtNullBodySchema = z.object({
   expectedDeletedAtNull: z.literal(0),
 });
 
-export const adminV2OptionalReasonSchema = z.object({
+const adminV2OptionalReasonSchema = z.object({
   reason: z.string().trim().optional().nullable(),
 });

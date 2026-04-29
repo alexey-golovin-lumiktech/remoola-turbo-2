@@ -196,7 +196,7 @@ export type ConsumerSignupPayload = {
   personalDetails?: ConsumerSignupPersonalDetailsPayload;
 };
 
-export function consumerSignupRequiresOrganizationDetails(
+function consumerSignupRequiresOrganizationDetails(
   accountType: TAccountType,
   contractorKind?: TContractorKind | null,
 ): boolean {
@@ -206,7 +206,7 @@ export function consumerSignupRequiresOrganizationDetails(
   );
 }
 
-export function consumerSignupRequiresPersonalDetails(
+function consumerSignupRequiresPersonalDetails(
   accountType: TAccountType,
   contractorKind?: TContractorKind | null,
 ): boolean {

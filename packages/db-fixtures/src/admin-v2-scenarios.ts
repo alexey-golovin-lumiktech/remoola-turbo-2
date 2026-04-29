@@ -1,7 +1,7 @@
 import { $Enums, type Prisma } from '@remoola/database-2';
 
 export const FIXTURE_NAMESPACE = `fixture-admin-v2`;
-export const FIXTURE_SEED_VERSION = `2026-04-admin-v2-v1`;
+const FIXTURE_SEED_VERSION = `2026-04-admin-v2-v1`;
 
 type NamedAt = {
   createdAt: Date;

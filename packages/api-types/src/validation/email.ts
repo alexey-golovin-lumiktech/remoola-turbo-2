@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
 /** Max length for a single email address (RFC 5321). */
-export const EMAIL_MAX_LENGTH = 254;
+const EMAIL_MAX_LENGTH = 254;
 
 /**
  * Basic format: non-empty local part, @, domain with at least one dot.
  * Dots are allowed in the local part (e.g. some.email@asdasd.com).
  */
-export const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const DEFAULT_EMAIL_MESSAGE = `Enter a valid email address`;
 

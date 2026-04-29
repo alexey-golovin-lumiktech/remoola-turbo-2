@@ -99,11 +99,11 @@ export const CURRENCY_CODES = [
 
 export type TCurrencyCode = (typeof CURRENCY_CODE)[keyof typeof CURRENCY_CODE];
 
-export function isCurrencyCode(value: string): value is TCurrencyCode {
+function isCurrencyCode(value: string): value is TCurrencyCode {
   return CURRENCY_CODES.includes(value as TCurrencyCode);
 }
 
-export function isCurrencyDefinedAndValid(value: string | undefined | null): value is TCurrencyCode {
+function isCurrencyDefinedAndValid(value: string | undefined | null): value is TCurrencyCode {
   return !!value && isCurrencyCode(value);
 }
 
@@ -119,18 +119,18 @@ export function toCurrencyOrDefault(value: string | undefined | null, defaultVal
   return value && isCurrencyCode(value) ? value : defaultValue;
 }
 
-export function toCurrencyOrThrow(value: string | undefined | null): TCurrencyCode {
+function toCurrencyOrThrow(value: string | undefined | null): TCurrencyCode {
   if (value && isCurrencyCode(value)) return value;
   throw new Error(`Invalid currency code: ${value}`);
 }
 
-export function toCurrency(value: string): TCurrencyCode | never {
+function toCurrency(value: string): TCurrencyCode | never {
   if (isCurrencyCode(value)) return value;
   throw new Error(`Invalid currency code: ${value}`);
 }
 
 /** Returns the currency symbol for display (e.g. USD → $, EUR → €). Uses Intl; falls back to code. */
-export function getCurrencySymbol(currencyCode: TCurrencyCode): string {
+function getCurrencySymbol(currencyCode: TCurrencyCode): string {
   try {
     const parts = new Intl.NumberFormat(`en-US`, {
       style: `currency`,

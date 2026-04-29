@@ -3,9 +3,9 @@
  * Used for optional boolean flags in query strings.
  */
 
-export const BOOLEAN_QUERY_VALUE = {
+const BOOLEAN_QUERY_VALUE = {
   true: `true`,
   false: `false`,
 } as const;
 export type TBooleanQueryValue = (typeof BOOLEAN_QUERY_VALUE)[keyof typeof BOOLEAN_QUERY_VALUE];
-export const BOOLEAN_QUERY_VALUES = [BOOLEAN_QUERY_VALUE.true, BOOLEAN_QUERY_VALUE.false] as const;
+const BOOLEAN_QUERY_VALUES = [BOOLEAN_QUERY_VALUE.true, BOOLEAN_QUERY_VALUE.false] as const;

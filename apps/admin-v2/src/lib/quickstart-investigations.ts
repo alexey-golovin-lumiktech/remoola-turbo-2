@@ -5,8 +5,8 @@ import {
   type QuickstartTargetRoute,
 } from './admin-api.server';
 
-export type QuickstartInvestigation = QuickstartCard;
-export type QuickstartWorkspace =
+type QuickstartInvestigation = QuickstartCard;
+type QuickstartWorkspace =
   | `verification`
   | `payments`
   | `ledger`
@@ -46,7 +46,7 @@ export function buildQuickstartHref(targetPath: QuickstartTargetRoute, quickstar
   return `${targetPath}?${query.toString()}`;
 }
 
-export function getQuickstartWorkspace(targetPath: QuickstartTargetRoute): QuickstartWorkspace {
+function getQuickstartWorkspace(targetPath: QuickstartTargetRoute): QuickstartWorkspace {
   return QUICKSTART_TARGET_WORKSPACES[targetPath];
 }
 
@@ -84,7 +84,7 @@ export function describeQuickstartOperatorModel(operatorModel: QuickstartOperato
   return `Fast entry`;
 }
 
-export function isQuickstartId(value: string): value is QuickstartId {
+function isQuickstartId(value: string): value is QuickstartId {
   return (KNOWN_QUICKSTART_IDS as readonly string[]).includes(value);
 }
 

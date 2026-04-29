@@ -54,7 +54,7 @@ const LEGACY_CONSUMER_APP_SCOPE_ALIASES = [
 
 export const CONSUMER_APP_SCOPES = [CURRENT_CONSUMER_APP_SCOPE] as const satisfies readonly ConsumerAppScope[];
 
-export function isConsumerAppScope(value: string | null | undefined): value is ConsumerAppScope {
+function isConsumerAppScope(value: string | null | undefined): value is ConsumerAppScope {
   return value === CURRENT_CONSUMER_APP_SCOPE;
 }
 
@@ -226,43 +226,43 @@ export function getScopedConsumerGoogleSignupSessionCookieKeysForRead(
   return [keys.googleSignupSession, keys.localGoogleSignupSession];
 }
 
-export function getConsumerAccessTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerAccessTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerAccessTokenCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerMobileAccessTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerMobileAccessTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerAccessTokenCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerDeviceCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerDeviceCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerDeviceCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerMobileDeviceCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerMobileDeviceCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerDeviceCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerGoogleSignupSessionCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerGoogleSignupSessionCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerGoogleSignupSessionCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerMobileGoogleSignupSessionCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerMobileGoogleSignupSessionCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerGoogleSignupSessionCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerDeviceCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerDeviceCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerDeviceCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
-export function getConsumerMobileDeviceCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerMobileDeviceCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerDeviceCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
-export function getConsumerGoogleSignupSessionCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerGoogleSignupSessionCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerGoogleSignupSessionCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
-export function getConsumerMobileGoogleSignupSessionCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerMobileGoogleSignupSessionCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerGoogleSignupSessionCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
@@ -275,27 +275,27 @@ export function getConsumerDeviceCookieOptions(runtime: ConsumerCookieRuntime): 
   };
 }
 
-export function getConsumerRefreshTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerRefreshTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerRefreshTokenCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerMobileRefreshTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerMobileRefreshTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerRefreshTokenCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerAccessTokenCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerAccessTokenCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerAccessTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
-export function getConsumerMobileAccessTokenCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerMobileAccessTokenCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerAccessTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
-export function getConsumerRefreshTokenCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerRefreshTokenCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerRefreshTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
-export function getConsumerMobileRefreshTokenCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerMobileRefreshTokenCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerRefreshTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
@@ -307,11 +307,11 @@ export function getApiV2ConsumerRefreshTokenCookieKey(runtime: ConsumerCookieRun
   return getScopedConsumerRefreshTokenCookieKey(`consumer-css-grid`, runtime);
 }
 
-export function getApiV2ConsumerDeviceCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getApiV2ConsumerDeviceCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerDeviceCookieKey(`consumer-css-grid`, runtime);
 }
 
-export function getApiV2ConsumerGoogleSignupSessionCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getApiV2ConsumerGoogleSignupSessionCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerGoogleSignupSessionCookieKey(`consumer-css-grid`, runtime);
 }
 
@@ -331,19 +331,19 @@ export function getApiV2ConsumerGoogleSignupSessionCookieKeysForRead(): readonly
   return getScopedConsumerGoogleSignupSessionCookieKeysForRead(`consumer-css-grid`);
 }
 
-export function getConsumerCsrfTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerCsrfTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerCsrfTokenCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerMobileCsrfTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+function getConsumerMobileCsrfTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerCsrfTokenCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerCsrfTokenCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerCsrfTokenCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerCsrfTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
-export function getConsumerMobileCsrfTokenCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerMobileCsrfTokenCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerCsrfTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
@@ -362,19 +362,19 @@ export function getApiV2ConsumerCsrfTokenCookieKeysForRead(): readonly TCookieKe
   return getScopedConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`);
 }
 
-export function getGoogleOAuthStateCookieKey(runtime?: ConsumerCookieRuntime): TCookieKey {
+function getGoogleOAuthStateCookieKey(runtime?: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerGoogleOAuthStateCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getConsumerMobileGoogleOAuthStateCookieKey(runtime?: ConsumerCookieRuntime): TCookieKey {
+function getConsumerMobileGoogleOAuthStateCookieKey(runtime?: ConsumerCookieRuntime): TCookieKey {
   return getScopedConsumerGoogleOAuthStateCookieKey(CURRENT_CONSUMER_APP_SCOPE, runtime);
 }
 
-export function getGoogleOAuthStateCookieKeysForRead(): readonly TCookieKey[] {
+function getGoogleOAuthStateCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerGoogleOAuthStateCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
-export function getConsumerMobileGoogleOAuthStateCookieKeysForRead(): readonly TCookieKey[] {
+function getConsumerMobileGoogleOAuthStateCookieKeysForRead(): readonly TCookieKey[] {
   return getScopedConsumerGoogleOAuthStateCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
 }
 
@@ -446,7 +446,7 @@ export function getCookieClearOptions<T extends SharedCookieOptions & { httpOnly
   };
 }
 
-export function resolveAccessTokenCookieKeysForPath(
+function resolveAccessTokenCookieKeysForPath(
   path: string,
   consumerScope: ConsumerAppScope = CURRENT_CONSUMER_APP_SCOPE,
 ): readonly TCookieKey[] {

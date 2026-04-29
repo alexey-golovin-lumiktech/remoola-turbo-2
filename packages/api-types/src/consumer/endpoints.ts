@@ -1,4 +1,4 @@
-export const CONSUMER_ENDPOINTS = {
+const CONSUMER_ENDPOINTS = {
   dashboard: { method: `GET`, path: `/consumer/dashboard`, response: `ConsumerDashboardData` },
   paymentsList: {
     method: `GET`,

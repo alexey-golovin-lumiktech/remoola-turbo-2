@@ -53,8 +53,6 @@ export type {
   SavedViewSummary,
   SavedViewWorkspace,
   SavedViewsListResponse,
-  SignalAvailability,
-  SignalPhaseStatus,
   SystemSummaryCard,
   SystemSummaryResponse,
 };
@@ -1103,7 +1101,7 @@ function redirectToLogin() {
   redirect(`/login?sessionExpired=1`);
 }
 
-export type AdminApiReadResult<T> =
+type AdminApiReadResult<T> =
   | { status: `ready`; data: T }
   | { status: `forbidden` }
   | { status: `not_found` }
@@ -1257,7 +1255,7 @@ export async function getPayments(params?: {
   return fetchAdminApi<PaymentsListResponse>(`/admin-v2/payments?${searchParams.toString()}`);
 }
 
-export async function getPaymentCase(paymentRequestId: string): Promise<PaymentCaseResponse | null> {
+async function getPaymentCase(paymentRequestId: string): Promise<PaymentCaseResponse | null> {
   if (!paymentRequestId.trim()) return null;
   return fetchAdminApi<PaymentCaseResponse>(`/admin-v2/payments/${paymentRequestId}`);
 }
@@ -1302,7 +1300,7 @@ export async function getDocuments(params?: {
   return fetchAdminApi<DocumentsListResponse>(`/admin-v2/documents?${searchParams.toString()}`);
 }
 
-export async function getDocumentCase(documentId: string): Promise<DocumentCaseResponse | null> {
+async function getDocumentCase(documentId: string): Promise<DocumentCaseResponse | null> {
   if (!documentId.trim()) return null;
   return fetchAdminApi<DocumentCaseResponse>(`/admin-v2/documents/${documentId}`);
 }
@@ -1364,7 +1362,7 @@ export async function getExchangeRates(params?: {
   return fetchAdminApi<ExchangeRatesListResponse>(`/admin-v2/exchange/rates?${searchParams.toString()}`);
 }
 
-export async function getExchangeRateCase(rateId: string): Promise<ExchangeRateCaseResponse | null> {
+async function getExchangeRateCase(rateId: string): Promise<ExchangeRateCaseResponse | null> {
   if (!rateId.trim()) return null;
   return fetchAdminApi<ExchangeRateCaseResponse>(`/admin-v2/exchange/rates/${rateId}`);
 }
@@ -1393,7 +1391,7 @@ export async function getExchangeRules(params?: {
   return fetchAdminApi<ExchangeRulesListResponse>(`/admin-v2/exchange/rules?${searchParams.toString()}`);
 }
 
-export async function getExchangeRuleCase(ruleId: string): Promise<ExchangeRuleCaseResponse | null> {
+async function getExchangeRuleCase(ruleId: string): Promise<ExchangeRuleCaseResponse | null> {
   if (!ruleId.trim()) return null;
   return fetchAdminApi<ExchangeRuleCaseResponse>(`/admin-v2/exchange/rules/${ruleId}`);
 }
@@ -1418,7 +1416,7 @@ export async function getExchangeScheduledConversions(params?: {
   return fetchAdminApi<ExchangeScheduledListResponse>(`/admin-v2/exchange/scheduled?${searchParams.toString()}`);
 }
 
-export async function getExchangeScheduledCase(conversionId: string): Promise<ExchangeScheduledCaseResponse | null> {
+async function getExchangeScheduledCase(conversionId: string): Promise<ExchangeScheduledCaseResponse | null> {
   if (!conversionId.trim()) return null;
   return fetchAdminApi<ExchangeScheduledCaseResponse>(`/admin-v2/exchange/scheduled/${conversionId}`);
 }
@@ -1438,7 +1436,7 @@ export async function getPayouts(params?: { cursor?: string; limit?: number }): 
   return fetchAdminApi<PayoutsListResponse>(`/admin-v2/payouts?${searchParams.toString()}`);
 }
 
-export async function getPayoutCase(payoutId: string): Promise<PayoutCaseResponse | null> {
+async function getPayoutCase(payoutId: string): Promise<PayoutCaseResponse | null> {
   if (!payoutId.trim()) return null;
   return fetchAdminApi<PayoutCaseResponse>(`/admin-v2/payouts/${payoutId}`);
 }
@@ -1448,7 +1446,7 @@ export async function getPayoutCaseResult(payoutId: string): Promise<AdminApiRea
   return fetchAdminApiResult<PayoutCaseResponse>(`/admin-v2/payouts/${payoutId}`);
 }
 
-export async function getPaymentMethodCase(paymentMethodId: string): Promise<PaymentMethodCaseResponse | null> {
+async function getPaymentMethodCase(paymentMethodId: string): Promise<PaymentMethodCaseResponse | null> {
   if (!paymentMethodId.trim()) return null;
   return fetchAdminApi<PaymentMethodCaseResponse>(`/admin-v2/payment-methods/${paymentMethodId}`);
 }
@@ -1481,7 +1479,7 @@ export async function getConsumers(params?: {
   return fetchAdminApi<ConsumersListResponse>(`/admin-v2/consumers?${searchParams.toString()}`);
 }
 
-export async function getConsumerCase(consumerId: string): Promise<ConsumerCaseResponse | null> {
+async function getConsumerCase(consumerId: string): Promise<ConsumerCaseResponse | null> {
   if (!consumerId.trim()) return null;
   return fetchAdminApi<ConsumerCaseResponse>(`/admin-v2/consumers/${consumerId}`);
 }
@@ -1578,7 +1576,7 @@ export async function getLedgerEntries(params?: {
   return fetchAdminApi<LedgerEntriesListResponse>(`/admin-v2/ledger?${searchParams.toString()}`);
 }
 
-export async function getLedgerEntryCase(ledgerEntryId: string): Promise<LedgerEntryCaseResponse | null> {
+async function getLedgerEntryCase(ledgerEntryId: string): Promise<LedgerEntryCaseResponse | null> {
   if (!ledgerEntryId.trim()) return null;
   return fetchAdminApi<LedgerEntryCaseResponse>(`/admin-v2/ledger/${ledgerEntryId}`);
 }
@@ -1835,7 +1833,7 @@ export async function getAdminCaseRecordResult(adminId: string): Promise<AdminAp
   return fetchAdminApiResult<AdminCaseRecordResponse>(`/admin-v2/admins/${adminId}`);
 }
 
-export type AdminSessionInvalidatedReason =
+type AdminSessionInvalidatedReason =
   | `rotated`
   | `manual_revoke`
   | `cross_admin_revoked`
@@ -1858,7 +1856,7 @@ export type AdminSessionView = {
 
 export type ListAdminSessionsResponse = { sessions: AdminSessionView[] };
 
-export async function getMyAdminSessions(): Promise<ListAdminSessionsResponse | null> {
+async function getMyAdminSessions(): Promise<ListAdminSessionsResponse | null> {
   return fetchAdminApi<ListAdminSessionsResponse>(`/admin-v2/auth/me/sessions`);
 }
 
@@ -1866,7 +1864,7 @@ export async function getMyAdminSessionsResult(): Promise<AdminApiReadResult<Lis
   return fetchAdminApiResult<ListAdminSessionsResponse>(`/admin-v2/auth/me/sessions`);
 }
 
-export async function getAdminSessions(adminId: string): Promise<ListAdminSessionsResponse | null> {
+async function getAdminSessions(adminId: string): Promise<ListAdminSessionsResponse | null> {
   if (!adminId.trim()) return null;
   return fetchAdminApi<ListAdminSessionsResponse>(`/admin-v2/admins/${adminId}/sessions`);
 }

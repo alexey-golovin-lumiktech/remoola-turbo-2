@@ -37,7 +37,7 @@ import {
 
 import { envs } from '../envs';
 
-export const DEFAULT_API_V2_CONSUMER_SCOPE: ConsumerAppScope = CURRENT_CONSUMER_APP_SCOPE;
+const DEFAULT_API_V2_CONSUMER_SCOPE: ConsumerAppScope = CURRENT_CONSUMER_APP_SCOPE;
 type ConsumerAppScopeInput = ConsumerAppScope | `consumer` | `consumer-mobile`;
 
 function getApiAuthCookieRuntime(): AuthCookieRuntime {
@@ -55,7 +55,7 @@ function getApiConsumerCookieRuntime(req?: express.Request): ConsumerCookieRunti
   };
 }
 
-export function isSecureExpressRequest(req?: express.Request): boolean {
+function isSecureExpressRequest(req?: express.Request): boolean {
   const forwardedProto = req?.headers?.[`x-forwarded-proto`];
   return (
     req?.secure === true || (typeof forwardedProto === `string` && forwardedProto.split(`,`)[0]?.trim() === `https`)
@@ -234,7 +234,7 @@ export function getApiConsumerDeviceCookieOptions(
   };
 }
 
-export function getApiConsumerDeviceCookieClearOptions(
+function getApiConsumerDeviceCookieClearOptions(
   req?: express.Request,
 ): Pick<SharedHttpOnlyCookieOptions, `httpOnly` | `path` | `sameSite` | `secure`> {
   return getCookieClearOptions(getApiConsumerDeviceCookieOptions(req));

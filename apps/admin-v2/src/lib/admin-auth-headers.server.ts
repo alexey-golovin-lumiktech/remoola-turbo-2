@@ -11,7 +11,7 @@ function getCookieValue(cookieHeader: string, key: string): string | null {
   return match.split(`=`).slice(1).join(`=`);
 }
 
-export function getAdminCsrfTokenFromCookieHeader(cookieHeader: string): string | null {
+function getAdminCsrfTokenFromCookieHeader(cookieHeader: string): string | null {
   if (!cookieHeader) return null;
   for (const key of getAdminCsrfTokenCookieKeysForRead()) {
     const token = getCookieValue(cookieHeader, key);

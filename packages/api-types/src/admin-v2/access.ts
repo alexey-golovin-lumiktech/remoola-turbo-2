@@ -1,4 +1,4 @@
-export const ADMIN_V2_BRIDGE_ROLES = [`SUPER_ADMIN`, `OPS_ADMIN`] as const;
+const ADMIN_V2_BRIDGE_ROLES = [`SUPER_ADMIN`, `OPS_ADMIN`] as const;
 export const ADMIN_V2_SCHEMA_ROLES = [
   `SUPER_ADMIN`,
   `OPS_ADMIN`,
@@ -74,7 +74,7 @@ export type AdminV2AccessProfile = {
   bootstrapReason?: AdminV2BootstrapReason;
 };
 
-export const KNOWN_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
+const KNOWN_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
   `me.read`,
   `overview.read`,
   `verification.read`,
@@ -104,7 +104,7 @@ export const KNOWN_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
   `alerts.manage`,
 ] as const;
 
-export const ACTIVE_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
+const ACTIVE_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
   `me.read`,
   `overview.read`,
   `verification.read`,
@@ -130,7 +130,7 @@ export const OVERRIDABLE_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = K
 
 export const SUPER_ADMIN_CAPABILITIES: readonly AdminV2Capability[] = KNOWN_ADMIN_V2_CAPABILITIES;
 
-export const BRIDGE_ROLE_CAPABILITIES: Readonly<Record<AdminV2BridgeRole, readonly AdminV2Capability[]>> = {
+const BRIDGE_ROLE_CAPABILITIES: Readonly<Record<AdminV2BridgeRole, readonly AdminV2Capability[]>> = {
   SUPER_ADMIN: SUPER_ADMIN_CAPABILITIES,
   OPS_ADMIN: ACTIVE_ADMIN_V2_CAPABILITIES,
 };
@@ -139,7 +139,7 @@ export function isKnownAdminV2Role(roleKey: string): roleKey is AdminV2Role {
   return (ADMIN_V2_SCHEMA_ROLES as readonly string[]).includes(roleKey);
 }
 
-export function resolveAdminV2BridgeRole(type: string): AdminV2BridgeRole | null {
+function resolveAdminV2BridgeRole(type: string): AdminV2BridgeRole | null {
   if (type === `SUPER`) return `SUPER_ADMIN`;
   if (type === `ADMIN`) return `OPS_ADMIN`;
   return null;
@@ -178,7 +178,7 @@ export function hasValidAdminV2CapabilitySet(schemaCapabilities: readonly string
   return schemaCapabilities.every((capability) => knownSet.has(capability));
 }
 
-export function hasBridgeCapabilityCoverage(
+function hasBridgeCapabilityCoverage(
   schemaCapabilities: readonly string[],
   requiredBridgeCapabilities: readonly AdminV2Capability[],
 ) {

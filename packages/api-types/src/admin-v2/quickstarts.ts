@@ -11,9 +11,9 @@ export const ADMIN_V2_QUICKSTART_IDS = [
   `system-alerts-console`,
 ] as const;
 
-export const ADMIN_V2_QUICKSTART_SURFACES = [`shell`, `overview`, `all`] as const;
-export const ADMIN_V2_QUICKSTART_OPERATOR_MODELS = [`entry-only`, `saved-view-compatible`, `threshold-editor`] as const;
-export const ADMIN_V2_QUICKSTART_TARGET_ROUTES = [
+const ADMIN_V2_QUICKSTART_SURFACES = [`shell`, `overview`, `all`] as const;
+const ADMIN_V2_QUICKSTART_OPERATOR_MODELS = [`entry-only`, `saved-view-compatible`, `threshold-editor`] as const;
+const ADMIN_V2_QUICKSTART_TARGET_ROUTES = [
   `/verification`,
   `/payments`,
   `/payments/operations`,
