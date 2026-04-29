@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { CONSUMER_APP_SCOPE_HEADER, getApiV2ConsumerCsrfTokenCookieKeysForRead } from '@remoola/api-types';
 
 import { APP_SCOPE, getRequestOrigin } from './request-origin';

@@ -80,7 +80,7 @@ describe(`consumer-css-grid exchange route contextual help`, () => {
     );
 
     expect(markup).toContain(`Choose between quote, convert now, and automation`);
-    expect(markup).toContain(`Exchange client loaded`);
+    expect(markup).toContain(`Loading exchange workspace...`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.EXCHANGE_OVERVIEW}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.EXCHANGE_CONVERT_AND_AUTOMATE}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.EXCHANGE_COMMON_ISSUES}`);

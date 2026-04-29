@@ -71,7 +71,7 @@ describe(`consumer-css-grid exchange scheduled contextual help`, () => {
     );
 
     expect(markup).toContain(`Scheduled conversions`);
-    expect(markup).toContain(`Scheduled exchange section`);
+    expect(markup).toContain(`Loading scheduled conversions...`);
     expect(markup).toContain(`Plan future conversions without losing exchange context`);
     expect(markup).toContain(`href="/exchange"`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.EXCHANGE_OVERVIEW}`);

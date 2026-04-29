@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../../features/help/guide-registry';
@@ -8,6 +9,7 @@ import {
   getDocuments,
   getPaymentMethods,
   getPaymentView,
+  type PaymentViewResponse,
 } from '../../../../lib/consumer-api.server';
 import { CreditCardIcon } from '../../../../shared/ui/icons/CreditCardIcon';
 import { PageHeader, Panel } from '../../../../shared/ui/shell-primitives';
@@ -90,10 +92,6 @@ export default async function PaymentDetailPage({
   const paymentMethods =
     payment && payment.role === `PAYER` && payment.status === `PENDING`
       ? await getPaymentMethods({ redirectTo: detailPath })
-      : null;
-  const availableDocuments =
-    payment && payment.role === `REQUESTER` && payment.status === `DRAFT`
-      ? await getDocuments(attachmentPage, 20, { redirectTo: detailPath })
       : null;
 
   return (
@@ -260,22 +258,56 @@ export default async function PaymentDetailPage({
             </Panel>
 
             <Panel title="Attachments">
-              <PaymentAttachmentsClient
-                paymentRequestId={payment.id}
-                role={payment.role}
-                status={payment.status}
-                attachments={payment.attachments}
-                availableDocuments={availableDocuments?.items ?? []}
-                availableDocumentsTotal={availableDocuments?.total ?? 0}
-                availableDocumentsPage={availableDocuments?.page ?? attachmentPage}
-                availableDocumentsPageSize={availableDocuments?.pageSize ?? 20}
-                contractId={paymentFlowContext?.contractId}
-                returnTo={paymentFlowContext?.returnTo}
-              />
+              <Suspense
+                fallback={
+                  <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+                    Loading attachments...
+                  </div>
+                }
+              >
+                <PaymentAttachmentsServerSection
+                  attachmentPage={attachmentPage}
+                  detailPath={detailPath}
+                  payment={payment}
+                  paymentFlowContext={paymentFlowContext}
+                />
+              </Suspense>
             </Panel>
           </div>
         </section>
       )}
     </div>
+  );
+}
+
+async function PaymentAttachmentsServerSection({
+  attachmentPage,
+  detailPath,
+  payment,
+  paymentFlowContext,
+}: {
+  attachmentPage: number;
+  detailPath: string;
+  payment: PaymentViewResponse;
+  paymentFlowContext: ReturnType<typeof parsePaymentFlowContext>;
+}) {
+  const availableDocuments =
+    payment.role === `REQUESTER` && payment.status === `DRAFT`
+      ? await getDocuments(attachmentPage, 20, { redirectTo: detailPath })
+      : null;
+
+  return (
+    <PaymentAttachmentsClient
+      paymentRequestId={payment.id}
+      role={payment.role}
+      status={payment.status}
+      attachments={payment.attachments}
+      availableDocuments={availableDocuments?.items ?? []}
+      availableDocumentsTotal={availableDocuments?.total ?? 0}
+      availableDocumentsPage={availableDocuments?.page ?? attachmentPage}
+      availableDocumentsPageSize={availableDocuments?.pageSize ?? 20}
+      contractId={paymentFlowContext?.contractId}
+      returnTo={paymentFlowContext?.returnTo}
+    />
   );
 }

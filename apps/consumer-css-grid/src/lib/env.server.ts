@@ -1,4 +1,5 @@
-/** Server-only: import only from route handlers, server actions, or middleware. */
+import 'server-only';
+
 import { z } from 'zod';
 
 const envSchema = z.object({

@@ -5,20 +5,15 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
 
 import { AttachToPaymentModal } from './AttachToPaymentModal';
-import {
-  buildDocumentPaymentHref,
-  formatDate,
-  formatFileSize,
-  getDeleteBlockedMessage,
-  getHistoricalRecordLabel,
-  isDeleteBlocked,
-  type DocumentItem,
-} from './document-helpers';
+import { getDeleteBlockedMessage, isDeleteBlocked, type DocumentItem } from './document-helpers';
+import { buildDocumentUploadFormData, uploadDocuments } from './document-upload-helpers';
+import { DocumentList } from './DocumentList';
 import { DocumentPreviewPanel } from './DocumentPreviewPanel';
+import { DocumentSelectionToolbar } from './DocumentSelectionToolbar';
+import { DocumentUploadControl } from './DocumentUploadControl';
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides, HelpInlineGuides } from '../../../features/help/ui';
-import { SESSION_EXPIRED_ERROR_CODE } from '../../../lib/auth-failure';
 import {
   bulkDeleteDocumentsMutation,
   deleteDocumentMutation,
@@ -40,41 +35,6 @@ type Props = {
     draftPaymentRequestIds: string[];
   } | null;
 };
-
-async function uploadDocuments(formData: FormData) {
-  try {
-    const response = await fetch(`/api/documents/upload`, {
-      method: `POST`,
-      body: formData,
-      cache: `no-store`,
-      credentials: `include`,
-    });
-    const payload = (await response.json().catch(() => null)) as { code?: string; message?: string } | null;
-
-    if (!response.ok) {
-      return {
-        ok: false as const,
-        error: {
-          code: response.status === 401 ? SESSION_EXPIRED_ERROR_CODE : (payload?.code ?? `API_ERROR`),
-          message:
-            response.status === 401
-              ? `Your session has expired. Please sign in again.`
-              : (payload?.message ?? `Failed to upload document`),
-        },
-      };
-    }
-
-    return { ok: true as const };
-  } catch {
-    return {
-      ok: false as const,
-      error: {
-        code: `NETWORK_ERROR`,
-        message: `Document upload could not be completed because the network request failed. Please try again.`,
-      },
-    };
-  }
-}
 
 export function DocumentsClient({ documents, total, page, pageSize, contractContext = null }: Props) {
   const router = useRouter();
@@ -150,6 +110,87 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  const handleUpload = () => {
+    const formData = buildDocumentUploadFormData(inputRef.current?.files);
+    setMessage(null);
+    startTransition(async () => {
+      const result = await uploadDocuments(formData);
+      if (!result.ok) {
+        if (handleSessionExpiredError(result.error)) return;
+        setMessage({ type: `error`, text: result.error.message });
+        return;
+      }
+      if (inputRef.current) {
+        inputRef.current.value = ``;
+      }
+      setSelectedFiles([]);
+      setMessage({ type: `success`, text: `Documents uploaded` });
+      router.refresh();
+    });
+  };
+
+  const handleDeleteSelected = () => {
+    const blockedSelected = selectedDocumentIds.filter((id) => !deletableDocumentIdSet.has(id));
+    if (blockedSelected.length > 0) {
+      setMessage({
+        type: `error`,
+        text: getDeleteBlockedMessage(blockedSelected, filteredDocuments),
+      });
+      return;
+    }
+    setMessage(null);
+    startTransition(async () => {
+      const result = await bulkDeleteDocumentsMutation(selectedDocumentIds);
+      if (!result.ok) {
+        if (handleSessionExpiredError(result.error)) return;
+        setMessage({ type: `error`, text: result.error.message });
+        return;
+      }
+      setSelectedDocumentIds([]);
+      setMessage({ type: `success`, text: result.message ?? `Documents deleted` });
+      router.refresh();
+    });
+  };
+
+  const handleDeleteDocument = (document: DocumentItem) => {
+    if (isDeleteBlocked(document)) {
+      setMessage({
+        type: `error`,
+        text: getDeleteBlockedMessage([document.id], documents),
+      });
+      return;
+    }
+    setMessage(null);
+    setPendingDeleteId(document.id);
+    startTransition(async () => {
+      const result = await deleteDocumentMutation(document.id);
+      setPendingDeleteId(null);
+      if (!result.ok) {
+        if (handleSessionExpiredError(result.error)) return;
+        setMessage({ type: `error`, text: result.error.message });
+        return;
+      }
+      setSelectedDocumentIds((current) => current.filter((id) => id !== document.id));
+      setMessage({ type: `success`, text: result.message ?? `Document deleted` });
+      router.refresh();
+    });
+  };
+
+  const handleSaveTags = (document: DocumentItem) => {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await updateDocumentTagsMutation(document.id, tagsDraft[document.id] ?? document.tags.join(`, `));
+      if (!result.ok) {
+        if (handleSessionExpiredError(result.error)) return;
+        setMessage({ type: `error`, text: result.error.message });
+        return;
+      }
+      setEditingTagsId(null);
+      setMessage({ type: `success`, text: result.message ?? `Document tags updated` });
+      router.refresh();
+    });
+  };
+
   return (
     <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.3fr_0.7fr]">
       <div className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur">
@@ -182,19 +223,6 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
                 : `Upload new files or remove outdated ones. Page ${page} of ${totalPages} shows ${documents.length} of ${total} documents.`}
             </div>
           </div>
-          {isContractMode ? null : (
-            <input
-              ref={inputRef}
-              type="file"
-              name="files"
-              multiple
-              className="max-w-full text-sm text-white/70 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
-              onChange={(event) => {
-                setSelectedFiles(Array.from(event.target.files ?? []).map((file) => file.name));
-                setMessage(null);
-              }}
-            />
-          )}
         </div>
         <HelpContextualGuides
           guides={documentsHelpGuides}
@@ -213,11 +241,16 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
             contractor relationship.
           </div>
         ) : (
-          <div className="mb-4 text-sm text-white/45">
-            {selectedFiles.length === 0
-              ? `Choose one or more files before uploading.`
-              : `${selectedFiles.length} file${selectedFiles.length === 1 ? `` : `s`} selected: ${selectedFiles.join(`, `)}`}
-          </div>
+          <DocumentUploadControl
+            inputRef={inputRef}
+            isPending={isPending}
+            selectedFiles={selectedFiles}
+            onFilesSelected={(files) => {
+              setSelectedFiles(files);
+              setMessage(null);
+            }}
+            onUpload={handleUpload}
+          />
         )}
         {message ? (
           <div
@@ -230,39 +263,6 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
             {message.text}
           </div>
         ) : null}
-        {isContractMode ? null : (
-          <button
-            type="button"
-            disabled={isPending || selectedFiles.length === 0}
-            onClick={() => {
-              const files = inputRef.current?.files;
-              const formData = new FormData();
-              if (files) {
-                for (const file of Array.from(files)) {
-                  formData.append(`files`, file);
-                }
-              }
-              setMessage(null);
-              startTransition(async () => {
-                const result = await uploadDocuments(formData);
-                if (!result.ok) {
-                  if (handleSessionExpiredError(result.error)) return;
-                  setMessage({ type: `error`, text: result.error.message });
-                  return;
-                }
-                if (inputRef.current) {
-                  inputRef.current.value = ``;
-                }
-                setSelectedFiles([]);
-                setMessage({ type: `success`, text: `Documents uploaded` });
-                router.refresh();
-              });
-            }}
-            className="mb-5 rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isPending ? `Uploading...` : selectedFiles.length === 0 ? `Select files to upload` : `Upload documents`}
-          </button>
-        )}
         {documents.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
             <div>{contractContext ? `No files are linked to this contract yet.` : `No documents uploaded yet.`}</div>
@@ -305,319 +305,59 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
             </div>
             <div className="space-y-3">
               {filteredDocuments.length > 1 ? (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="space-y-1 text-sm text-white/55">
-                    {selectedDocumentIds.length === 0
-                      ? `Select documents to delete multiple items at once.`
-                      : `${selectedDocumentIds.length} document${selectedDocumentIds.length === 1 ? `` : `s`} selected`}
-                    {blockedDraftDeleteCount > 0 ? (
-                      <div className="text-xs text-amber-200/80">
-                        {blockedDraftDeleteCount === 1
-                          ? `1 document is attached only to a draft payment request and must be detached there before deletion.`
-                          : `${blockedDraftDeleteCount} documents are attached only to draft payment requests and must be detached there before deletion.`}
-                      </div>
-                    ) : null}
-                    {blockedNonDraftDeleteCount > 0 ? (
-                      <div className="text-xs text-rose-200/80">
-                        {blockedNonDraftDeleteCount === 1
-                          ? `1 document is attached to a payment that is no longer a draft, so it stays locked here as part of that payment record.`
-                          : `${blockedNonDraftDeleteCount} documents are attached to payments that are no longer drafts, so they stay locked here as part of those payment records.`}
-                      </div>
-                    ) : null}
-                    {blockedDraftDeleteCount > 0 || blockedNonDraftDeleteCount > 0 ? (
-                      <HelpInlineGuides
-                        guides={blockedStateHelpGuides}
-                        title="Need help understanding why delete is blocked?"
-                        className="mt-3"
-                      />
-                    ) : null}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => {
-                        setSelectedDocumentIds(allDeletableSelected ? [] : deletableDocumentIds);
-                      }}
-                      className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {allDeletableSelected ? `Clear selection` : `Select all deletable`}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isPending || selectedDocumentIds.length === 0}
-                      onClick={() => {
-                        const blockedSelected = selectedDocumentIds.filter((id) => !deletableDocumentIdSet.has(id));
-                        if (blockedSelected.length > 0) {
-                          setMessage({
-                            type: `error`,
-                            text: getDeleteBlockedMessage(blockedSelected, filteredDocuments),
-                          });
-                          return;
-                        }
-                        setMessage(null);
-                        startTransition(async () => {
-                          const result = await bulkDeleteDocumentsMutation(selectedDocumentIds);
-                          if (!result.ok) {
-                            if (handleSessionExpiredError(result.error)) return;
-                            setMessage({ type: `error`, text: result.error.message });
-                            return;
-                          }
-                          setSelectedDocumentIds([]);
-                          setMessage({ type: `success`, text: result.message ?? `Documents deleted` });
-                          router.refresh();
-                        });
-                      }}
-                      className="rounded-xl border border-rose-400/20 px-3 py-2 text-sm text-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isPending ? `Deleting...` : `Delete selected`}
-                    </button>
-                  </div>
-                </div>
+                <DocumentSelectionToolbar
+                  allDeletableSelected={allDeletableSelected}
+                  blockedDraftDeleteCount={blockedDraftDeleteCount}
+                  blockedNonDraftDeleteCount={blockedNonDraftDeleteCount}
+                  blockedStateHelpGuides={blockedStateHelpGuides}
+                  isPending={isPending}
+                  selectedDocumentCount={selectedDocumentIds.length}
+                  onDeleteSelected={handleDeleteSelected}
+                  onToggleAllDeletable={() => setSelectedDocumentIds(allDeletableSelected ? [] : deletableDocumentIds)}
+                />
               ) : null}
-              {filteredDocuments.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
-                  No documents match the selected filter.
-                </div>
-              ) : (
-                filteredDocuments.map((document) => (
-                  <div key={document.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedDocumentIds.includes(document.id)}
-                          onChange={(event) => {
-                            setSelectedDocumentIds((current) =>
-                              event.target.checked
-                                ? [...current, document.id]
-                                : current.filter((id) => id !== document.id),
-                            );
-                          }}
-                          disabled={isDeleteBlocked(document)}
-                          className="mt-1"
-                        />
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => setPreviewDoc(document)}
-                            className="text-left font-medium text-white/90 transition hover:text-white"
-                          >
-                            {document.name}
-                          </button>
-                          <div className="mt-1 text-sm text-white/45">
-                            {document.kind} · {formatFileSize(document.size)}
-                          </div>
-                          {document.isAttachedToDraftPaymentRequest ? (
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-xs text-amber-100">
-                                Attached to draft payment request
-                                {document.attachedDraftPaymentRequestIds.length > 1 ? `s` : ``}
-                              </span>
-                              {document.attachedDraftPaymentRequestIds.map((paymentRequestId, index) => (
-                                <Link
-                                  key={`${document.id}-${paymentRequestId}`}
-                                  href={buildDocumentPaymentHref(paymentRequestId, contractContext)}
-                                  className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/70 transition hover:border-white/20 hover:text-white"
-                                >
-                                  {document.attachedDraftPaymentRequestIds.length === 1
-                                    ? `Open draft`
-                                    : `Open draft ${index + 1}`}
-                                </Link>
-                              ))}
-                            </div>
-                          ) : null}
-                          {document.isAttachedToNonDraftPaymentRequest ? (
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2 py-1 text-xs text-rose-100">
-                                {getHistoricalRecordLabel(document.attachedNonDraftPaymentRequestIds.length)}
-                              </span>
-                              {document.attachedNonDraftPaymentRequestIds.map((paymentRequestId, index) => (
-                                <Link
-                                  key={`${document.id}-historical-${paymentRequestId}`}
-                                  href={buildDocumentPaymentHref(paymentRequestId, contractContext)}
-                                  className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/70 transition hover:border-white/20 hover:text-white"
-                                >
-                                  {document.attachedNonDraftPaymentRequestIds.length === 1
-                                    ? `Open payment`
-                                    : `Open payment ${index + 1}`}
-                                </Link>
-                              ))}
-                            </div>
-                          ) : null}
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {document.tags.length === 0 ? (
-                              <span className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/35">
-                                No tags
-                              </span>
-                            ) : (
-                              document.tags.map((tag) => (
-                                <span
-                                  key={`${document.id}-${tag}`}
-                                  className="rounded-full border border-blue-400/20 bg-blue-500/10 px-2 py-1 text-xs text-blue-100"
-                                >
-                                  {tag}
-                                </span>
-                              ))
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right text-sm text-white/45">{formatDate(document.createdAt)}</div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <a
-                        href={document.downloadUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75"
-                      >
-                        Open file
-                      </a>
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => {
-                          setAttachDocument({
-                            id: document.id,
-                            name: document.name,
-                            attachedDraftPaymentRequestIds: document.attachedDraftPaymentRequestIds,
-                          });
-                        }}
-                        className="rounded-xl border border-indigo-400/20 px-3 py-2 text-sm text-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Attach to payment
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => {
-                          setEditingTagsId((current) => (current === document.id ? null : document.id));
-                          setTagsDraft((current) => ({
-                            ...current,
-                            [document.id]: current[document.id] ?? document.tags.join(`, `),
-                          }));
-                        }}
-                        className="rounded-xl border border-blue-400/20 px-3 py-2 text-sm text-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {editingTagsId === document.id ? `Close tags` : `Edit tags`}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isPending || isDeleteBlocked(document)}
-                        onClick={() => {
-                          if (isDeleteBlocked(document)) {
-                            setMessage({
-                              type: `error`,
-                              text: getDeleteBlockedMessage([document.id], documents),
-                            });
-                            return;
-                          }
-                          setMessage(null);
-                          setPendingDeleteId(document.id);
-                          startTransition(async () => {
-                            const result = await deleteDocumentMutation(document.id);
-                            setPendingDeleteId(null);
-                            if (!result.ok) {
-                              if (handleSessionExpiredError(result.error)) return;
-                              setMessage({ type: `error`, text: result.error.message });
-                              return;
-                            }
-                            setSelectedDocumentIds((current) => current.filter((id) => id !== document.id));
-                            setMessage({ type: `success`, text: result.message ?? `Document deleted` });
-                            router.refresh();
-                          });
-                        }}
-                        className="rounded-xl border border-rose-400/20 px-3 py-2 text-sm text-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isDeleteBlocked(document)
-                          ? `Delete blocked`
-                          : pendingDeleteId === document.id
-                            ? `Deleting...`
-                            : `Delete`}
-                      </button>
-                    </div>
-                    {document.isAttachedToNonDraftPaymentRequest ? (
-                      <div className="mt-3 text-xs text-rose-200/80">
-                        Delete is disabled here because this file is already part of a sent or in-progress payment
-                        record.
-                      </div>
-                    ) : document.isAttachedToDraftPaymentRequest ? (
-                      <div className="mt-3 text-xs text-amber-200/80">
-                        Delete is disabled here while this file is still attached to a draft payment request.
-                      </div>
-                    ) : null}
-                    {isDeleteBlocked(document) ? (
-                      <HelpInlineGuides
-                        guides={deleteBlockedHelpGuides}
-                        title="Need help with this locked document?"
-                        className="mt-3"
-                      />
-                    ) : null}
-
-                    {editingTagsId === document.id ? (
-                      <div className="mt-4 rounded-2xl border border-white/10 bg-[#071225] p-4">
-                        <label className="mb-2 block text-sm text-white/55" htmlFor={`document-tags-${document.id}`}>
-                          Tags
-                        </label>
-                        <input
-                          id={`document-tags-${document.id}`}
-                          value={tagsDraft[document.id] ?? document.tags.join(`, `)}
-                          onChange={(event) =>
-                            setTagsDraft((current) => ({
-                              ...current,
-                              [document.id]: event.target.value,
-                            }))
-                          }
-                          placeholder="invoice, compliance, urgent"
-                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
-                        />
-                        <div className="mt-2 text-xs text-white/35">
-                          Separate tags with commas. They are normalized to lowercase.
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={() => {
-                              setMessage(null);
-                              startTransition(async () => {
-                                const result = await updateDocumentTagsMutation(
-                                  document.id,
-                                  tagsDraft[document.id] ?? document.tags.join(`, `),
-                                );
-                                if (!result.ok) {
-                                  if (handleSessionExpiredError(result.error)) return;
-                                  setMessage({ type: `error`, text: result.error.message });
-                                  return;
-                                }
-                                setEditingTagsId(null);
-                                setMessage({ type: `success`, text: result.message ?? `Document tags updated` });
-                                router.refresh();
-                              });
-                            }}
-                            className="rounded-xl bg-blue-500 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {isPending ? `Saving...` : `Save tags`}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={() => {
-                              setTagsDraft((current) => ({ ...current, [document.id]: document.tags.join(`, `) }));
-                              setEditingTagsId(null);
-                            }}
-                            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ))
-              )}
+              <DocumentList
+                contractContext={contractContext}
+                deleteBlockedHelpGuides={deleteBlockedHelpGuides}
+                documents={filteredDocuments}
+                editingTagsId={editingTagsId}
+                isPending={isPending}
+                pendingDeleteId={pendingDeleteId}
+                selectedDocumentIds={selectedDocumentIds}
+                tagsDraft={tagsDraft}
+                onAttach={(document) =>
+                  setAttachDocument({
+                    id: document.id,
+                    name: document.name,
+                    attachedDraftPaymentRequestIds: document.attachedDraftPaymentRequestIds,
+                  })
+                }
+                onDelete={handleDeleteDocument}
+                onPreview={setPreviewDoc}
+                onTagsCancel={(document) => {
+                  setTagsDraft((current) => ({ ...current, [document.id]: document.tags.join(`, `) }));
+                  setEditingTagsId(null);
+                }}
+                onTagsChange={(document, value) =>
+                  setTagsDraft((current) => ({
+                    ...current,
+                    [document.id]: value,
+                  }))
+                }
+                onTagsSave={handleSaveTags}
+                onToggleSelected={(document, selected) => {
+                  setSelectedDocumentIds((current) =>
+                    selected ? [...current, document.id] : current.filter((id) => id !== document.id),
+                  );
+                }}
+                onToggleTags={(document) => {
+                  setEditingTagsId((current) => (current === document.id ? null : document.id));
+                  setTagsDraft((current) => ({
+                    ...current,
+                    [document.id]: current[document.id] ?? document.tags.join(`, `),
+                  }));
+                }}
+              />
             </div>
           </div>
         )}

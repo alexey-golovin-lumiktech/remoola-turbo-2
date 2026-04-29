@@ -74,7 +74,7 @@ describe(`consumer-css-grid payment detail contextual help`, () => {
 
     expect(markup).toContain(`Need help with this payment state?`);
     expect(markup).toContain(`Payment detail actions`);
-    expect(markup).toContain(`Payment attachments`);
+    expect(markup).toContain(`Loading attachments...`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.PAYMENTS_STATUSES}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.PAYMENTS_COMMON_ISSUES}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.PAYMENTS_OVERVIEW}`);

@@ -60,7 +60,7 @@ describe(`consumer-css-grid contacts route contextual help`, () => {
     );
 
     expect(markup).toContain(`Use contacts without losing the next step`);
-    expect(markup).toContain(`Contacts client loaded`);
+    expect(markup).toContain(`Loading contacts...`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.CONTACTS_ADD_AND_USE}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.CONTACTS_OVERVIEW}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.CONTACTS_COMMON_ISSUES}`);

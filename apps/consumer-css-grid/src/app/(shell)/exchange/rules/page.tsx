@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../../features/help/guide-registry';
@@ -18,12 +19,6 @@ import { ExchangeRulesSection } from '../ExchangeRulesSection';
 export default async function ExchangeRulesPage({ searchParams }: { searchParams?: Promise<ExchangeSearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const { rulesPage, rulesPageSize } = parseExchangePaginationParams(resolvedSearchParams);
-  const [currencies, rulesResponse] = await Promise.all([
-    getExchangeCurrencies({ redirectTo: `/exchange/rules` }),
-    getExchangeRules(rulesPage, rulesPageSize, { redirectTo: `/exchange/rules` }),
-  ]);
-  const currencyCodes = (currencies ?? []).map((currency) => currency.code);
-  const [fromCurrency = `USD`, toCurrency = `EUR`] = pickTopCurrencies(currencyCodes);
   const exchangeRulesHelpGuides = getContextualHelpGuides({
     route: HELP_CONTEXT_ROUTE.EXCHANGE_RULES,
     preferredSlugs: [
@@ -52,18 +47,45 @@ export default async function ExchangeRulesPage({ searchParams }: { searchParams
         description="These guides explain how rule targets, execution cadence, and exchange recovery differ from one-off conversions on the main Exchange page."
         className="mb-5"
       />
-      <ExchangeRulesSection
-        rules={rulesResponse?.items ?? []}
-        currencies={currencies ?? []}
-        rulesTotal={rulesResponse?.total ?? 0}
-        rulesPage={rulesPage}
-        rulesPageSize={rulesPageSize}
-        initialFromCurrency={fromCurrency}
-        initialToCurrency={toCurrency}
-        onCreateRule={createExchangeRuleMutation}
-        onUpdateRule={updateExchangeRuleMutation}
-        onDeleteRule={deleteExchangeRuleMutation}
-      />
+      <Suspense
+        fallback={
+          <div className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 text-sm text-[var(--app-text-muted)] shadow-[var(--app-shadow)]">
+            Loading exchange rules...
+          </div>
+        }
+      >
+        <ExchangeRulesWorkspaceSection rulesPage={rulesPage} rulesPageSize={rulesPageSize} />
+      </Suspense>
     </div>
+  );
+}
+
+async function ExchangeRulesWorkspaceSection({
+  rulesPage,
+  rulesPageSize,
+}: {
+  rulesPage: number;
+  rulesPageSize: number;
+}) {
+  const [currencies, rulesResponse] = await Promise.all([
+    getExchangeCurrencies({ redirectTo: `/exchange/rules` }),
+    getExchangeRules(rulesPage, rulesPageSize, { redirectTo: `/exchange/rules` }),
+  ]);
+  const currencyCodes = (currencies ?? []).map((currency) => currency.code);
+  const [fromCurrency = `USD`, toCurrency = `EUR`] = pickTopCurrencies(currencyCodes);
+
+  return (
+    <ExchangeRulesSection
+      rules={rulesResponse?.items ?? []}
+      currencies={currencies ?? []}
+      rulesTotal={rulesResponse?.total ?? 0}
+      rulesPage={rulesPage}
+      rulesPageSize={rulesPageSize}
+      initialFromCurrency={fromCurrency}
+      initialToCurrency={toCurrency}
+      onCreateRule={createExchangeRuleMutation}
+      onUpdateRule={updateExchangeRuleMutation}
+      onDeleteRule={deleteExchangeRuleMutation}
+    />
   );
 }

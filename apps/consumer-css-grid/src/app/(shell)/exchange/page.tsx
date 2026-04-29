@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+
 import { type ExchangeSearchParams, parseExchangePaginationParams } from './exchange-search-params';
 import { buildInitialRatePairs, pickTopCurrencies } from './exchange-shared';
 import { ExchangeClient } from './ExchangeClient';
@@ -18,16 +20,6 @@ export default async function ExchangePage({ searchParams }: { searchParams?: Pr
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const { rulesPage, rulesPageSize, scheduledPage, scheduledPageSize } =
     parseExchangePaginationParams(resolvedSearchParams);
-  const [currencies, balances, rulesResponse, scheduledResponse] = await Promise.all([
-    getExchangeCurrencies({ redirectTo: `/exchange` }),
-    getAvailableBalances({ redirectTo: `/exchange` }),
-    getExchangeRules(rulesPage, rulesPageSize, { redirectTo: `/exchange` }),
-    getScheduledConversions(scheduledPage, scheduledPageSize, { redirectTo: `/exchange` }),
-  ]);
-  const currencyCodes = (currencies ?? []).map((currency) => currency.code);
-  const [fromCurrency = `USD`, toCurrency = `EUR`, thirdCurrency] = pickTopCurrencies(currencyCodes);
-  const initialRatePairs = buildInitialRatePairs(fromCurrency, toCurrency, thirdCurrency);
-  const exchangeRates = await getExchangeRatesBatch(initialRatePairs, { redirectTo: `/exchange` });
   const exchangeHelpGuides = getContextualHelpGuides({
     route: HELP_CONTEXT_ROUTE.EXCHANGE,
     preferredSlugs: [
@@ -48,23 +40,63 @@ export default async function ExchangePage({ searchParams }: { searchParams?: Pr
         description="These guides explain how the main Exchange page combines live-rate checks, immediate conversion, rules, and scheduled follow-up without leaving the broader currency workflow."
         className="mb-5"
       />
-      <ExchangeClient
-        currencies={currencies ?? []}
-        balances={balances}
-        rules={rulesResponse?.items ?? []}
-        rulesTotal={rulesResponse?.total ?? 0}
-        rulesPage={rulesPage}
-        rulesPageSize={rulesPageSize}
-        scheduled={scheduledResponse?.items ?? []}
-        scheduledTotal={scheduledResponse?.total ?? 0}
-        scheduledPage={scheduledPage}
-        scheduledPageSize={scheduledPageSize}
-        exchangeRates={exchangeRates.items}
-        exchangeRatesUnavailable={exchangeRates.unavailable}
-        initialRatePairs={initialRatePairs}
-        initialFromCurrency={fromCurrency}
-        initialToCurrency={toCurrency}
-      />
+      <Suspense
+        fallback={
+          <div className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 text-sm text-[var(--app-text-muted)] shadow-[var(--app-shadow)]">
+            Loading exchange workspace...
+          </div>
+        }
+      >
+        <ExchangeWorkspaceSection
+          rulesPage={rulesPage}
+          rulesPageSize={rulesPageSize}
+          scheduledPage={scheduledPage}
+          scheduledPageSize={scheduledPageSize}
+        />
+      </Suspense>
     </div>
+  );
+}
+
+async function ExchangeWorkspaceSection({
+  rulesPage,
+  rulesPageSize,
+  scheduledPage,
+  scheduledPageSize,
+}: {
+  rulesPage: number;
+  rulesPageSize: number;
+  scheduledPage: number;
+  scheduledPageSize: number;
+}) {
+  const [currencies, balances, rulesResponse, scheduledResponse] = await Promise.all([
+    getExchangeCurrencies({ redirectTo: `/exchange` }),
+    getAvailableBalances({ redirectTo: `/exchange` }),
+    getExchangeRules(rulesPage, rulesPageSize, { redirectTo: `/exchange` }),
+    getScheduledConversions(scheduledPage, scheduledPageSize, { redirectTo: `/exchange` }),
+  ]);
+  const currencyCodes = (currencies ?? []).map((currency) => currency.code);
+  const [fromCurrency = `USD`, toCurrency = `EUR`, thirdCurrency] = pickTopCurrencies(currencyCodes);
+  const initialRatePairs = buildInitialRatePairs(fromCurrency, toCurrency, thirdCurrency);
+  const exchangeRates = await getExchangeRatesBatch(initialRatePairs, { redirectTo: `/exchange` });
+
+  return (
+    <ExchangeClient
+      currencies={currencies ?? []}
+      balances={balances}
+      rules={rulesResponse?.items ?? []}
+      rulesTotal={rulesResponse?.total ?? 0}
+      rulesPage={rulesPage}
+      rulesPageSize={rulesPageSize}
+      scheduled={scheduledResponse?.items ?? []}
+      scheduledTotal={scheduledResponse?.total ?? 0}
+      scheduledPage={scheduledPage}
+      scheduledPageSize={scheduledPageSize}
+      exchangeRates={exchangeRates.items}
+      exchangeRatesUnavailable={exchangeRates.unavailable}
+      initialRatePairs={initialRatePairs}
+      initialFromCurrency={fromCurrency}
+      initialToCurrency={toCurrency}
+    />
   );
 }

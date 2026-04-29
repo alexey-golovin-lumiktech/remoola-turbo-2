@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../../features/help/guide-registry';
@@ -22,13 +23,6 @@ export default async function ExchangeScheduledPage({
 }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const { scheduledPage, scheduledPageSize } = parseExchangePaginationParams(resolvedSearchParams);
-  const [currencies, balances, scheduledResponse] = await Promise.all([
-    getExchangeCurrencies({ redirectTo: `/exchange/scheduled` }),
-    getAvailableBalances({ redirectTo: `/exchange/scheduled` }),
-    getScheduledConversions(scheduledPage, scheduledPageSize, { redirectTo: `/exchange/scheduled` }),
-  ]);
-  const currencyCodes = (currencies ?? []).map((currency) => currency.code);
-  const [fromCurrency = `USD`, toCurrency = `EUR`] = pickTopCurrencies(currencyCodes);
   const exchangeScheduledHelpGuides = getContextualHelpGuides({
     route: HELP_CONTEXT_ROUTE.EXCHANGE_SCHEDULED,
     preferredSlugs: [
@@ -57,18 +51,46 @@ export default async function ExchangeScheduledPage({
         description="These guides stay focused on scheduled conversions: when to use future execution, how automation differs from immediate exchange, and where to look when a pending conversion does not behave as expected."
         className="mb-5"
       />
-      <ExchangeScheduledSection
-        scheduled={scheduledResponse?.items ?? []}
-        currencies={currencies ?? []}
-        balances={balances}
-        scheduledTotal={scheduledResponse?.total ?? 0}
-        scheduledPage={scheduledPage}
-        scheduledPageSize={scheduledPageSize}
-        initialFromCurrency={fromCurrency}
-        initialToCurrency={toCurrency}
-        onSchedule={scheduleExchangeMutation}
-        onCancel={cancelScheduledExchangeMutation}
-      />
+      <Suspense
+        fallback={
+          <div className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 text-sm text-[var(--app-text-muted)] shadow-[var(--app-shadow)]">
+            Loading scheduled conversions...
+          </div>
+        }
+      >
+        <ExchangeScheduledWorkspaceSection scheduledPage={scheduledPage} scheduledPageSize={scheduledPageSize} />
+      </Suspense>
     </div>
+  );
+}
+
+async function ExchangeScheduledWorkspaceSection({
+  scheduledPage,
+  scheduledPageSize,
+}: {
+  scheduledPage: number;
+  scheduledPageSize: number;
+}) {
+  const [currencies, balances, scheduledResponse] = await Promise.all([
+    getExchangeCurrencies({ redirectTo: `/exchange/scheduled` }),
+    getAvailableBalances({ redirectTo: `/exchange/scheduled` }),
+    getScheduledConversions(scheduledPage, scheduledPageSize, { redirectTo: `/exchange/scheduled` }),
+  ]);
+  const currencyCodes = (currencies ?? []).map((currency) => currency.code);
+  const [fromCurrency = `USD`, toCurrency = `EUR`] = pickTopCurrencies(currencyCodes);
+
+  return (
+    <ExchangeScheduledSection
+      scheduled={scheduledResponse?.items ?? []}
+      currencies={currencies ?? []}
+      balances={balances}
+      scheduledTotal={scheduledResponse?.total ?? 0}
+      scheduledPage={scheduledPage}
+      scheduledPageSize={scheduledPageSize}
+      initialFromCurrency={fromCurrency}
+      initialToCurrency={toCurrency}
+      onSchedule={scheduleExchangeMutation}
+      onCancel={cancelScheduledExchangeMutation}
+    />
   );
 }

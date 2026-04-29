@@ -13,106 +13,38 @@ import {
 
 import { SearchIcon, cn } from '@remoola/ui';
 
-type CommandSectionTitle = `Pages` | `Actions` | `Recent` | `Suggested`;
-type CommandGroup = Extract<CommandSectionTitle, `Pages` | `Actions`>;
+import {
+  RECENT_ROUTES_STORAGE_KEY,
+  createRecentRouteHrefs,
+  parseRecentRouteHrefs,
+  serializeRecentRouteHrefs,
+} from './commandPaletteRecentRoutes';
+import {
+  EMPTY_STATE_SUGGESTIONS,
+  buildCommandSections,
+  getCommandRoutesByHrefs,
+  getHighlightedTextParts,
+  getQueryTokens,
+  getSuggestedCommandRoutes,
+  isExactCommandRouteMatch,
+  matchCommandRoutes,
+  normalizeSearchValue,
+} from './commandPaletteRoutes';
 
-interface CommandRoute {
-  label: string;
-  href: string;
-  keywords: string[];
-  group: CommandGroup;
-}
-
-interface IndexedCommandRoute extends CommandRoute {
-  index: number;
-}
-
-interface CommandSection {
-  title: CommandSectionTitle;
-  routes: IndexedCommandRoute[];
-}
-
-const ROUTES: CommandRoute[] = [
-  { label: `Dashboard`, href: `/dashboard`, keywords: [`home`, `overview`, `summary`], group: `Pages` },
-  { label: `Payments`, href: `/payments`, keywords: [`pay`, `transaction`, `invoice`], group: `Pages` },
-  { label: `Contracts`, href: `/contracts`, keywords: [`agreement`, `contract`, `contractor`], group: `Pages` },
-  { label: `Documents`, href: `/documents`, keywords: [`file`, `upload`, `doc`], group: `Pages` },
-  { label: `Contacts`, href: `/contacts`, keywords: [`people`, `recipient`, `client`], group: `Pages` },
-  {
-    label: `Bank & Cards`,
-    href: `/banking`,
-    keywords: [`bank`, `card`, `payment method`, `stripe`],
-    group: `Pages`,
-  },
-  { label: `Withdraw`, href: `/withdraw`, keywords: [`withdraw`, `transfer`, `send money`], group: `Pages` },
-  { label: `Exchange`, href: `/exchange`, keywords: [`fx`, `currency`, `convert`, `rate`], group: `Pages` },
-  {
-    label: `Exchange Rules`,
-    href: `/exchange/rules`,
-    keywords: [`rules`, `auto`, `conversion`],
-    group: `Pages`,
-  },
-  {
-    label: `Scheduled Conversions`,
-    href: `/exchange/scheduled`,
-    keywords: [`scheduled`, `planned`, `conversion`],
-    group: `Pages`,
-  },
-  { label: `Settings`, href: `/settings`, keywords: [`profile`, `account`, `password`, `theme`], group: `Pages` },
-  { label: `Start Payment`, href: `/payments/start`, keywords: [`new payment`, `pay now`, `start`], group: `Actions` },
-  {
-    label: `New Payment Request`,
-    href: `/payments/new-request`,
-    keywords: [`create request`, `invoice`, `request money`],
-    group: `Actions`,
-  },
-];
-
-const INDEXED_ROUTES: IndexedCommandRoute[] = ROUTES.map((route, index) => ({ ...route, index }));
-const INDEXED_ROUTE_BY_HREF = new Map(INDEXED_ROUTES.map((route) => [route.href, route]));
-const EMPTY_STATE_SUGGESTIONS = [`Dashboard`, `Payments`, `Exchange`, `Settings`] as const;
-const SUGGESTED_ROUTE_HREFS = [`/dashboard`, `/payments/start`, `/exchange`, `/settings`] as const;
-const RECENT_ROUTES_STORAGE_KEY = `consumer-css-grid-command-palette-recent`;
-const RECENT_ROUTES_LIMIT = 4;
-
-function normalizeSearchValue(value: string): string {
-  return value.trim().toLowerCase();
-}
-
-function getQueryTokens(query: string): string[] {
-  return normalizeSearchValue(query).split(/\s+/).filter(Boolean);
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, `\\$&`);
-}
-
-function highlightMatches(text: string, tokens: string[]): ReactNode {
-  if (tokens.length === 0) {
-    return text;
-  }
-
-  const uniqueTokens = Array.from(new Set(tokens)).sort((left, right) => right.length - left.length);
-  if (uniqueTokens.length === 0) {
-    return text;
-  }
-
-  const matcher = new RegExp(`(${uniqueTokens.map(escapeRegExp).join(`|`)})`, `gi`);
-  const parts = text.split(matcher);
-
-  return parts.map((part, index) => {
-    if (uniqueTokens.some((token) => token.toLowerCase() === part.toLowerCase())) {
+function renderHighlightedText(text: string, tokens: string[]): ReactNode {
+  return getHighlightedTextParts(text, tokens).map((part, index) => {
+    if (part.matched) {
       return (
         <mark
-          key={`${part}-${index}`}
+          key={`${part.text}-${index}`}
           className="rounded-md bg-[var(--app-primary-soft)] px-1 py-0.5 text-[var(--app-primary)]"
         >
-          {part}
+          {part.text}
         </mark>
       );
     }
 
-    return part;
+    return part.text;
   });
 }
 
@@ -123,90 +55,10 @@ function readRecentRouteHrefs(): string[] {
 
   try {
     const raw = window.localStorage.getItem(RECENT_ROUTES_STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .filter((href): href is string => typeof href === `string` && INDEXED_ROUTE_BY_HREF.has(href))
-      .slice(0, RECENT_ROUTES_LIMIT);
+    return parseRecentRouteHrefs(raw);
   } catch {
     return [];
   }
-}
-
-function isExactRouteMatch(query: string, route: IndexedCommandRoute): boolean {
-  const normalizedQuery = normalizeSearchValue(query);
-  if (!normalizedQuery) {
-    return false;
-  }
-
-  return [route.label, route.href].some((candidate) => normalizeSearchValue(candidate) === normalizedQuery);
-}
-
-function groupRoutesByGroup(routes: IndexedCommandRoute[]): CommandSection[] {
-  const groups = new Map<CommandGroup, IndexedCommandRoute[]>();
-
-  for (const route of routes) {
-    const existing = groups.get(route.group);
-    if (existing) {
-      existing.push(route);
-    } else {
-      groups.set(route.group, [route]);
-    }
-  }
-
-  return Array.from(groups.entries()).map(([title, groupedRoutes]) => ({ title, routes: groupedRoutes }));
-}
-
-function matchRoutes(query: string): IndexedCommandRoute[] {
-  const normalized = query.toLowerCase().trim();
-  if (!normalized) {
-    return INDEXED_ROUTES;
-  }
-
-  const tokens = getQueryTokens(normalized);
-
-  return INDEXED_ROUTES.map((route) => {
-    const label = route.label.toLowerCase();
-    const keywords = route.keywords.join(` `).toLowerCase();
-    const searchable = `${label} ${keywords} ${route.href.toLowerCase()}`;
-    let score = 0;
-
-    for (const token of tokens) {
-      if (label.startsWith(token)) {
-        score += 5;
-        continue;
-      }
-
-      if (label.includes(token)) {
-        score += 3;
-        continue;
-      }
-
-      if (keywords.includes(token)) {
-        score += 2;
-        continue;
-      }
-
-      if (searchable.includes(token)) {
-        score += 1;
-        continue;
-      }
-
-      return null;
-    }
-
-    return { route, score };
-  })
-    .filter((entry): entry is { route: IndexedCommandRoute; score: number } => entry !== null)
-    .sort((left, right) => right.score - left.score || left.route.index - right.route.index)
-    .map(({ route }) => route);
 }
 
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -219,46 +71,13 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   const queryTokens = useMemo(() => getQueryTokens(query), [query]);
   const normalizedQuery = useMemo(() => normalizeSearchValue(query), [query]);
-  const filteredRoutes = useMemo(() => matchRoutes(query), [query]);
-  const recentRoutes = useMemo(
-    () =>
-      recentRouteHrefs
-        .map((href) => INDEXED_ROUTE_BY_HREF.get(href))
-        .filter((route): route is IndexedCommandRoute => route != null),
-    [recentRouteHrefs],
+  const filteredRoutes = useMemo(() => matchCommandRoutes(query), [query]);
+  const recentRoutes = useMemo(() => getCommandRoutesByHrefs(recentRouteHrefs), [recentRouteHrefs]);
+  const suggestedRoutes = useMemo(() => getSuggestedCommandRoutes(recentRouteHrefs), [recentRouteHrefs]);
+  const displaySections = useMemo(
+    () => buildCommandSections({ filteredRoutes, queryTokens, recentRoutes, suggestedRoutes }),
+    [filteredRoutes, queryTokens, recentRoutes, suggestedRoutes],
   );
-  const suggestedRoutes = useMemo(
-    () =>
-      SUGGESTED_ROUTE_HREFS.map((href) => INDEXED_ROUTE_BY_HREF.get(href)).filter(
-        (route): route is IndexedCommandRoute => route != null && !recentRouteHrefs.includes(route.href),
-      ),
-    [recentRouteHrefs],
-  );
-  const displaySections = useMemo(() => {
-    if (queryTokens.length > 0) {
-      return groupRoutesByGroup(filteredRoutes);
-    }
-
-    const pinnedRouteHrefs = new Set<string>();
-    const sections: CommandSection[] = [];
-
-    if (recentRoutes.length > 0) {
-      sections.push({ title: `Recent`, routes: recentRoutes });
-      for (const route of recentRoutes) {
-        pinnedRouteHrefs.add(route.href);
-      }
-    }
-
-    if (suggestedRoutes.length > 0) {
-      sections.push({ title: `Suggested`, routes: suggestedRoutes });
-      for (const route of suggestedRoutes) {
-        pinnedRouteHrefs.add(route.href);
-      }
-    }
-
-    const remainingRoutes = filteredRoutes.filter((route) => !pinnedRouteHrefs.has(route.href));
-    return [...sections, ...groupRoutesByGroup(remainingRoutes)];
-  }, [filteredRoutes, queryTokens.length, recentRoutes, suggestedRoutes]);
   const displayedRoutes = useMemo(() => displaySections.flatMap((section) => section.routes), [displaySections]);
   const routePositions = useMemo(
     () => new Map(displayedRoutes.map((route, index) => [route.href, index])),
@@ -323,10 +142,10 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   const rememberRecentRoute = useCallback((href: string) => {
     setRecentRouteHrefs((current) => {
-      const next = [href, ...current.filter((existingHref) => existingHref !== href)].slice(0, RECENT_ROUTES_LIMIT);
+      const next = createRecentRouteHrefs(current, href);
 
       try {
-        window.localStorage.setItem(RECENT_ROUTES_STORAGE_KEY, JSON.stringify(next));
+        window.localStorage.setItem(RECENT_ROUTES_STORAGE_KEY, serializeRecentRouteHrefs(next));
       } catch {
         // Ignore localStorage write failures so the palette still works in restricted contexts.
       }
@@ -500,7 +319,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   {routes.map((route) => {
                     const routeIndex = routePositions.get(route.href) ?? 0;
                     const isActive = activeIndex === routeIndex;
-                    const exactMatch = isExactRouteMatch(normalizedQuery, route);
+                    const exactMatch = isExactCommandRouteMatch(normalizedQuery, route);
                     const showKeywords = queryTokens.length > 0 || title === `Recent` || title === `Suggested`;
                     const keywordsText = route.keywords.join(` · `);
 
@@ -525,14 +344,14 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                           tabIndex={-1}
                         >
                           <div className="min-w-0">
-                            <div className="text-sm font-medium">{highlightMatches(route.label, queryTokens)}</div>
+                            <div className="text-sm font-medium">{renderHighlightedText(route.label, queryTokens)}</div>
                             <div
                               className={cn(
                                 `mt-1 truncate text-xs`,
                                 isActive ? `text-[var(--app-primary)]` : `text-[var(--app-text-faint)]`,
                               )}
                             >
-                              {highlightMatches(route.href, queryTokens)}
+                              {renderHighlightedText(route.href, queryTokens)}
                             </div>
                             {showKeywords && keywordsText ? (
                               <div
@@ -541,7 +360,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                                   isActive ? `text-[var(--app-text-soft)]` : `text-[var(--app-text-muted)]`,
                                 )}
                               >
-                                {highlightMatches(keywordsText, queryTokens)}
+                                {renderHighlightedText(keywordsText, queryTokens)}
                               </div>
                             ) : null}
                           </div>

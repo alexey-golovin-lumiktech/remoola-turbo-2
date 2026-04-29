@@ -63,7 +63,7 @@ describe(`consumer-css-grid exchange rules contextual help`, () => {
     );
 
     expect(markup).toContain(`Understand rule thresholds before you automate conversions`);
-    expect(markup).toContain(`Exchange rules section`);
+    expect(markup).toContain(`Loading exchange rules...`);
     expect(markup).toContain(`href="/exchange"`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.EXCHANGE_CONVERT_AND_AUTOMATE}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.EXCHANGE_OVERVIEW}`);

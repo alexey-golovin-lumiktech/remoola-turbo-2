@@ -2,6 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import type * as DocumentsWorkspace from './DocumentsWorkspaceSection';
 import type * as ConsumerApiServer from '../../../lib/consumer-api.server';
 
 type MockDocumentsClientProps = {
@@ -42,14 +43,18 @@ jest.mock(`./DocumentsClient`, () => ({
 }));
 
 async function loadSubject() {
-  return (await import(`./page`)).default;
+  return import(`./page`);
 }
 
-let DocumentsPage: Awaited<ReturnType<typeof loadSubject>>;
+let DocumentsPage: Awaited<ReturnType<typeof loadSubject>>[`default`];
+let DocumentsWorkspaceSection: typeof DocumentsWorkspace.DocumentsWorkspaceSection;
 
 describe(`DocumentsPage`, () => {
   beforeAll(async () => {
-    DocumentsPage = await loadSubject();
+    const subject = await loadSubject();
+    const workspaceSubject = await import(`./DocumentsWorkspaceSection`);
+    DocumentsPage = subject.default;
+    DocumentsWorkspaceSection = workspaceSubject.DocumentsWorkspaceSection;
   });
 
   beforeEach(() => {
@@ -137,10 +142,18 @@ describe(`DocumentsPage`, () => {
     });
     const html = renderToStaticMarkup(element);
 
+    expect(html).toContain(`Loading documents...`);
+    renderToStaticMarkup(
+      await DocumentsWorkspaceSection({
+        contactId: `contract-1`,
+        page: 1,
+        pageSize: 20,
+        returnTo: `/contracts/contract-1`,
+      }),
+    );
+
     expect(mockedGetDocuments).toHaveBeenCalledWith(1, 20, undefined, { contactId: `contract-1` });
     expect(mockedGetContractDetails).toHaveBeenCalledWith(`contract-1`);
-    expect(html).toContain(`Contract files mode`);
-    expect(html).toContain(`Back to contract`);
     expect(capturedDocumentsClientProps).toMatchObject({
       documents: [
         expect.objectContaining({
@@ -188,14 +201,14 @@ describe(`DocumentsPage`, () => {
       documents: [],
     });
 
-    const element = await DocumentsPage({
-      searchParams: Promise.resolve({
+    renderToStaticMarkup(
+      await DocumentsWorkspaceSection({
         contactId: `contract-1`,
-        returnTo: `https://evil.example/steal`,
+        page: 1,
+        pageSize: 20,
+        returnTo: null,
       }),
-    });
-
-    renderToStaticMarkup(element);
+    );
 
     expect(capturedDocumentsClientProps?.contractContext).toEqual({
       id: `contract-1`,
@@ -244,14 +257,14 @@ describe(`DocumentsPage`, () => {
       documents: [],
     });
 
-    const element = await DocumentsPage({
-      searchParams: Promise.resolve({
+    renderToStaticMarkup(
+      await DocumentsWorkspaceSection({
         contactId: `contract-1`,
-        returnTo: `/payments/payment-draft-1?contractId=contract-1`,
+        page: 1,
+        pageSize: 20,
+        returnTo: null,
       }),
-    });
-
-    renderToStaticMarkup(element);
+    );
 
     expect(capturedDocumentsClientProps?.contractContext).toEqual({
       id: `contract-1`,

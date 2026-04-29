@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { cookies } from 'next/headers';
 
 import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';

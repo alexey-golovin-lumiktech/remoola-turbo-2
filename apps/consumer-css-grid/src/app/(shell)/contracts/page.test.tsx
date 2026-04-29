@@ -53,7 +53,7 @@ describe(`consumer-css-grid contracts route contextual help`, () => {
     );
 
     expect(markup).toContain(`Understand the contract workflow before drilling in`);
-    expect(markup).toContain(`Contracts client loaded`);
+    expect(markup).toContain(`Loading contracts...`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.CONTRACTS_RELATIONSHIPS_AND_NEXT_STEPS}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.CONTRACTS_OVERVIEW}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.CONTRACTS_COMMON_ISSUES}`);
