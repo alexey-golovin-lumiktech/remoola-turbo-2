@@ -18,5 +18,3 @@ export type InvoicePayment = PaymentRequestModel & {
 } & {
   ledgerEntries: LedgerEntryModel[];
 };
-
-export type InvoiceTemplateParams = { invoiceNumber: string; payment: InvoicePayment };

@@ -1,6 +1,6 @@
 import { type ReactElement, type ReactNode } from 'react';
 
-export type DenseTableProps = {
+type DenseTableProps = {
   headers: string[];
   children?: ReactNode;
   emptyMessage?: string;

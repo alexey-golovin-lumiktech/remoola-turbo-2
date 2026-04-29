@@ -15,9 +15,9 @@ type NavTupleItem = {
   queueSignalKey?: string;
 };
 
-export type SignalCount = { count: number; deferred: boolean };
+type SignalCount = { count: number; deferred: boolean };
 
-export type SidebarSectionProps = {
+type SidebarSectionProps = {
   title: string;
   description?: string;
   items: ReadonlyArray<NavTupleItem>;

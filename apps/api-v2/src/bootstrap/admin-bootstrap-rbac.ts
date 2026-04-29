@@ -4,7 +4,7 @@ import { $Enums, type PrismaClient } from '@remoola/database-2';
 
 import { passwordUtils } from '../shared-common';
 
-export type BootstrapAdminSeed = {
+type BootstrapAdminSeed = {
   type: $Enums.AdminType;
   email: string;
   password: string;
@@ -32,7 +32,7 @@ type BootstrapLogger = Pick<Logger, `log` | `warn`>;
 
 type BootstrapPrisma = Pick<PrismaClient, `adminModel` | `adminRoleModel`>;
 
-export type BootstrapAdminSyncSummary = {
+type BootstrapAdminSyncSummary = {
   createdCount: number;
   updatedCount: number;
   repairedRoleAssignments: string[];

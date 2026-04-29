@@ -1,4 +1,4 @@
-export type BankingMethodKindInput = {
+type BankingMethodKindInput = {
   type: string;
   reusableForPayerPayments: boolean;
 };

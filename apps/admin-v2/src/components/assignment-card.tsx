@@ -24,13 +24,13 @@ import { formatDateTime } from '../lib/admin-format';
 
 type ReassignCandidate = AdminsListResponse[`items`][number];
 
-export type AssignmentCardAction = (resourceId: string, formData: FormData) => Promise<void>;
+type AssignmentCardAction = (resourceId: string, formData: FormData) => Promise<void>;
 
-export type AssignmentCardCopy = {
+type AssignmentCardCopy = {
   claimReasonPlaceholder?: string;
 };
 
-export type AssignmentCardProps = {
+type AssignmentCardProps = {
   resourceId: string;
   assignment: {
     current: AssignmentSummary | null;

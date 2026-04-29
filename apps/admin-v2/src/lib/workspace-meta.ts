@@ -1,4 +1,4 @@
-export type WorkspaceMeta = {
+type WorkspaceMeta = {
   title: string;
   eyebrow: string;
   queueLabel: string;

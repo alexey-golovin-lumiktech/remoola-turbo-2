@@ -1,28 +1,28 @@
-export type CommandSectionTitle = `Pages` | `Actions` | `Recent` | `Suggested`;
-export type CommandGroup = Extract<CommandSectionTitle, `Pages` | `Actions`>;
+type CommandSectionTitle = `Pages` | `Actions` | `Recent` | `Suggested`;
+type CommandGroup = Extract<CommandSectionTitle, `Pages` | `Actions`>;
 
-export interface CommandRoute {
+interface CommandRoute {
   label: string;
   href: string;
   keywords: string[];
   group: CommandGroup;
 }
 
-export interface IndexedCommandRoute extends CommandRoute {
+interface IndexedCommandRoute extends CommandRoute {
   index: number;
 }
 
-export interface CommandSection {
+interface CommandSection {
   title: CommandSectionTitle;
   routes: IndexedCommandRoute[];
 }
 
-export interface HighlightedTextPart {
+interface HighlightedTextPart {
   text: string;
   matched: boolean;
 }
 
-export const COMMAND_ROUTES: CommandRoute[] = [
+const COMMAND_ROUTES: CommandRoute[] = [
   { label: `Dashboard`, href: `/dashboard`, keywords: [`home`, `overview`, `summary`], group: `Pages` },
   { label: `Payments`, href: `/payments`, keywords: [`pay`, `transaction`, `invoice`], group: `Pages` },
   { label: `Contracts`, href: `/contracts`, keywords: [`agreement`, `contract`, `contractor`], group: `Pages` },
@@ -58,7 +58,7 @@ export const COMMAND_ROUTES: CommandRoute[] = [
   },
 ];
 
-export const INDEXED_COMMAND_ROUTES: IndexedCommandRoute[] = COMMAND_ROUTES.map((route, index) => ({
+const INDEXED_COMMAND_ROUTES: IndexedCommandRoute[] = COMMAND_ROUTES.map((route, index) => ({
   ...route,
   index,
 }));
@@ -80,7 +80,7 @@ export function isCommandRouteHref(href: string): boolean {
   return COMMAND_ROUTE_BY_HREF.has(href);
 }
 
-export function getCommandRouteByHref(href: string): IndexedCommandRoute | undefined {
+function getCommandRouteByHref(href: string): IndexedCommandRoute | undefined {
   return COMMAND_ROUTE_BY_HREF.get(href);
 }
 

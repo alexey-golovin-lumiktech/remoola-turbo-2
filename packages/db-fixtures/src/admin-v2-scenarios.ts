@@ -8,20 +8,20 @@ type NamedAt = {
   updatedAt?: Date;
 };
 
-export type ScenarioAdmin = NamedAt & {
+type ScenarioAdmin = NamedAt & {
   key: string;
   email: string;
   password: string;
   type: $Enums.AdminType;
 };
 
-export type ScenarioContact = NamedAt & {
+type ScenarioContact = NamedAt & {
   email: string;
   name: string;
   address: Prisma.InputJsonValue;
 };
 
-export type ScenarioPaymentMethod = NamedAt & {
+type ScenarioPaymentMethod = NamedAt & {
   key: string;
   type: $Enums.PaymentMethodType;
   stripePaymentMethodId: string;
@@ -41,7 +41,7 @@ export type ScenarioPaymentMethod = NamedAt & {
   billingPhone?: string | null;
 };
 
-export type ScenarioResource = NamedAt & {
+type ScenarioResource = NamedAt & {
   key: string;
   originalName: string;
   access: $Enums.ResourceAccess;
@@ -54,13 +54,13 @@ export type ScenarioResource = NamedAt & {
   attachToPaymentRequestKeys: string[];
 };
 
-export type ScenarioNote = {
+type ScenarioNote = {
   adminKey: string;
   content: string;
   createdAt: Date;
 };
 
-export type ScenarioFlag = {
+type ScenarioFlag = {
   flag: string;
   reason?: string | null;
   adminKey: string;
@@ -70,7 +70,7 @@ export type ScenarioFlag = {
   removedByAdminKey?: string | null;
 };
 
-export type ScenarioAuthSession = {
+type ScenarioAuthSession = {
   appScope: string;
   sessionFamilyId: string;
   refreshTokenHash: string;
@@ -83,7 +83,7 @@ export type ScenarioAuthSession = {
   invalidatedReason?: string | null;
 };
 
-export type ScenarioAuthAudit = {
+type ScenarioAuthAudit = {
   identityType: string;
   email: string;
   event: string;
@@ -105,7 +105,7 @@ export type ScenarioConsumerAction = {
   updatedAt?: Date;
 };
 
-export type ScenarioConsumer = NamedAt & {
+type ScenarioConsumer = NamedAt & {
   key: string;
   email: string;
   accountType: $Enums.AccountType;
@@ -175,7 +175,7 @@ export type ScenarioConsumer = NamedAt & {
   consumerActions: ScenarioConsumerAction[];
 };
 
-export type ScenarioPaymentRequest = NamedAt & {
+type ScenarioPaymentRequest = NamedAt & {
   key: string;
   requesterKey?: string | null;
   requesterEmail?: string | null;
@@ -193,20 +193,20 @@ export type ScenarioPaymentRequest = NamedAt & {
   updatedByKey?: string | null;
 };
 
-export type ScenarioLedgerOutcome = {
+type ScenarioLedgerOutcome = {
   status: $Enums.TransactionStatus;
   source?: string | null;
   externalId?: string | null;
   createdAt: Date;
 };
 
-export type ScenarioLedgerDispute = {
+type ScenarioLedgerDispute = {
   stripeDisputeId: string;
   metadata: Prisma.InputJsonValue;
   createdAt: Date;
 };
 
-export type ScenarioLedgerEntry = NamedAt & {
+type ScenarioLedgerEntry = NamedAt & {
   key: string;
   ledgerKey: string;
   consumerKey: string;
@@ -226,7 +226,7 @@ export type ScenarioLedgerEntry = NamedAt & {
   disputes: ScenarioLedgerDispute[];
 };
 
-export type ScenarioExchangeRate = NamedAt & {
+type ScenarioExchangeRate = NamedAt & {
   key: string;
   fromCurrency: $Enums.CurrencyCode;
   toCurrency: $Enums.CurrencyCode;
@@ -245,7 +245,7 @@ export type ScenarioExchangeRate = NamedAt & {
   approvedAt?: Date | null;
 };
 
-export type ScenarioWalletRule = NamedAt & {
+type ScenarioWalletRule = NamedAt & {
   consumerKey: string;
   fromCurrency: $Enums.CurrencyCode;
   toCurrency: $Enums.CurrencyCode;
@@ -258,7 +258,7 @@ export type ScenarioWalletRule = NamedAt & {
   metadata?: Prisma.InputJsonValue;
 };
 
-export type ScenarioScheduledConversion = NamedAt & {
+type ScenarioScheduledConversion = NamedAt & {
   key: string;
   consumerKey: string;
   fromCurrency: $Enums.CurrencyCode;
@@ -286,7 +286,7 @@ export type ScenarioAdminActionAudit = {
   createdAt: Date;
 };
 
-export type ScenarioLockout = {
+type ScenarioLockout = {
   identityType: string;
   email: string;
   attemptCount: number;
@@ -295,7 +295,7 @@ export type ScenarioLockout = {
   updatedAt: Date;
 };
 
-export type AdminV2ScenarioPack = {
+type AdminV2ScenarioPack = {
   namespace: string;
   seedVersion: string;
   documentTags: Array<{ key: string; name: string }>;

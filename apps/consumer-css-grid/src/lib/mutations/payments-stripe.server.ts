@@ -23,7 +23,7 @@ import {
   type PaymentFlowMutationContext,
 } from './mutation-runtime.server';
 
-export type SavedMethodPaymentResult =
+type SavedMethodPaymentResult =
   | {
       ok: true;
       data: {
@@ -35,7 +35,7 @@ export type SavedMethodPaymentResult =
     }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
 
-export type CheckoutSessionResult =
+type CheckoutSessionResult =
   | {
       ok: true;
       data: {
@@ -44,7 +44,7 @@ export type CheckoutSessionResult =
     }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
 
-export type InvoiceGenerationResult =
+type InvoiceGenerationResult =
   | {
       ok: true;
       data: {
@@ -56,7 +56,7 @@ export type InvoiceGenerationResult =
     }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
 
-export type VerificationSessionResult =
+type VerificationSessionResult =
   | {
       ok: true;
       data: {

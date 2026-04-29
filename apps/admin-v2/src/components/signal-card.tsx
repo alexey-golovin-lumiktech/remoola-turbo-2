@@ -9,7 +9,7 @@ import { panelSurfaceClass } from './ui-classes';
 export type SignalCardAvailability = `available` | `temporarily-unavailable` | string;
 export type SignalCardPhaseStatus = `live-actionable` | `count-only` | `deferred` | string;
 
-export type SignalCardProps = {
+type SignalCardProps = {
   label: string;
   count: number | null;
   href: string | null;

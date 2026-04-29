@@ -2,7 +2,7 @@ import { HOW_DID_HEAR_ABOUT_US } from '@remoola/api-types';
 
 import { type SignupFormState } from './types';
 
-export interface GoogleSignupSessionPayload {
+interface GoogleSignupSessionPayload {
   email?: string;
   givenName?: string;
   familyName?: string;

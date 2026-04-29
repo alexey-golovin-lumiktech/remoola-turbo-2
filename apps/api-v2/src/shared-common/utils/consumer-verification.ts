@@ -12,7 +12,7 @@ export const STRIPE_IDENTITY_STATUS = {
   FLAGGED: `flagged`,
 } as const;
 
-export type StripeIdentityStatus = (typeof STRIPE_IDENTITY_STATUS)[keyof typeof STRIPE_IDENTITY_STATUS];
+type StripeIdentityStatus = (typeof STRIPE_IDENTITY_STATUS)[keyof typeof STRIPE_IDENTITY_STATUS];
 
 type PersonalDetailsLike = {
   legalStatus?: string | null;
@@ -21,7 +21,7 @@ type PersonalDetailsLike = {
   phoneNumber?: string | null;
 } | null;
 
-export type ConsumerVerificationProjection = {
+type ConsumerVerificationProjection = {
   accountType?: $Enums.AccountType | null;
   contractorKind?: $Enums.ContractorKind | null;
   legalVerified?: boolean | null;
@@ -36,7 +36,7 @@ export type ConsumerVerificationProjection = {
   personalDetails?: PersonalDetailsLike;
 };
 
-export type ConsumerVerificationState = {
+type ConsumerVerificationState = {
   status: StripeIdentityStatus;
   canStart: boolean;
   profileComplete: boolean;

@@ -6,7 +6,7 @@ import { pillBaseClass, toneClassByTone } from './ui-classes';
 
 export type StatusPillTone = `rose` | `amber` | `emerald` | `cyan` | `neutral`;
 
-export type StatusPillProps = {
+type StatusPillProps = {
   status: string | null | undefined;
   toneOverride?: StatusPillTone;
   className?: string;

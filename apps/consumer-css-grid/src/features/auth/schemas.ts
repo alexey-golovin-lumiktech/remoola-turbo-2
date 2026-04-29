@@ -21,8 +21,6 @@ export const resetPasswordSchema = z
     path: [`confirmPassword`],
   });
 
-export type LoginInput = z.infer<typeof loginSchema>;
-
 const DEFAULT_NEXT_PATH = `/dashboard`;
 
 const sanitizeNextPath = (rawNext: string | undefined): string => {

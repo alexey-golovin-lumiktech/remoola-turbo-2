@@ -4,7 +4,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_API_BASE_URL: z.string().url().optional(),
 });
 
-export type Env = z.infer<typeof envSchema>;
+type Env = z.infer<typeof envSchema>;
 
 let cached: Env | null = null;
 

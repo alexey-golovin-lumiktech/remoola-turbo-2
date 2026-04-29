@@ -13,7 +13,7 @@ import {
   panelSupportClass,
 } from './ui-classes';
 
-export type PanelProps = {
+type PanelProps = {
   eyebrow?: string;
   title?: string;
   description?: string;

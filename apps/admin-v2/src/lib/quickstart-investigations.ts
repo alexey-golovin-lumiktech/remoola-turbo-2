@@ -5,7 +5,6 @@ import {
   type QuickstartTargetRoute,
 } from './admin-api.server';
 
-type QuickstartInvestigation = QuickstartCard;
 type QuickstartWorkspace =
   | `verification`
   | `payments`

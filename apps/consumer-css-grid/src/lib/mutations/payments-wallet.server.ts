@@ -16,7 +16,7 @@ import {
   type MutationResult,
 } from './mutation-runtime.server';
 
-export type TransferResult =
+type TransferResult =
   | { ok: true; ledgerId?: string; message?: string }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
 

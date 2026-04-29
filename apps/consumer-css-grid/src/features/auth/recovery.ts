@@ -1,6 +1,6 @@
-export type ForgotPasswordRecoveryMode = `default` | `provider_aware`;
+type ForgotPasswordRecoveryMode = `default` | `provider_aware`;
 
-export interface ForgotPasswordResponsePayload {
+interface ForgotPasswordResponsePayload {
   message?: string;
   recoveryMode?: string;
 }

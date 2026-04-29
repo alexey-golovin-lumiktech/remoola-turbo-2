@@ -25,11 +25,11 @@ import {
   type PaymentFlowMutationContext,
 } from './mutation-runtime.server';
 
-export type PaymentRequestCreateResult =
+type PaymentRequestCreateResult =
   | { ok: true; paymentRequestId?: string; message?: string }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
 
-export type StartPaymentResult =
+type StartPaymentResult =
   | { ok: true; paymentRequestId?: string; ledgerId?: string; message?: string }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
 
@@ -52,7 +52,7 @@ export type DraftPaymentRequestsResult =
     }
   | { ok: false; error: { code: string; message: string } };
 
-export type AttachDocumentToDraftPaymentsResult =
+type AttachDocumentToDraftPaymentsResult =
   | {
       ok: true;
       attachedCount: number;

@@ -2,7 +2,7 @@ import { type ReactElement, type ReactNode } from 'react';
 
 import { cn } from '@remoola/ui';
 
-export type TabletRowProps = {
+type TabletRowProps = {
   eyebrow?: ReactNode;
   primary: ReactNode;
   badges?: ReactNode;

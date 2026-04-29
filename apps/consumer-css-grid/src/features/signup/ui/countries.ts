@@ -1,7 +1,7 @@
 import { getCountries } from 'react-phone-number-input/input';
 import labels from 'react-phone-number-input/locale/en.json';
 
-export type CountryOption = { value: string; label: string };
+type CountryOption = { value: string; label: string };
 
 const countryOptions: CountryOption[] = getCountries().map((code) => ({
   value: (labels as Record<string, string>)[code] ?? code,

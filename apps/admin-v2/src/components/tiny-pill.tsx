@@ -5,7 +5,7 @@ import { cn } from '@remoola/ui';
 import { type StatusPillTone } from './status-pill';
 import { pillBaseClass, pillDenseClass, toneClassByTone } from './ui-classes';
 
-export type TinyPillProps = {
+type TinyPillProps = {
   children: ReactNode;
   tone?: StatusPillTone;
   className?: string;

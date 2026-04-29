@@ -13,7 +13,7 @@ const PhoneInputWithCountry = dynamic(() => import(`react-phone-number-input`).t
   ssr: false,
 });
 
-export interface PhoneInputProps {
+interface PhoneInputProps {
   label: string;
   value: string;
   onChange: (value: string | undefined) => void;

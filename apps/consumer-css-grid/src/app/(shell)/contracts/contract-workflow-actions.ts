@@ -4,14 +4,14 @@ import {
   type PaymentFlowContext,
 } from '../payments/payment-flow-context';
 
-export type ContractWorkflowAction = {
+type ContractWorkflowAction = {
   label: string;
   href: string;
 };
 
-export type ContractWorkflowStatus = `draft` | `pending` | `waiting` | `completed` | `no_activity`;
+type ContractWorkflowStatus = `draft` | `pending` | `waiting` | `completed` | `no_activity`;
 
-export type ResolvedContractWorkflow = {
+type ResolvedContractWorkflow = {
   status: ContractWorkflowStatus;
   title: string;
   detail: string;
@@ -54,22 +54,14 @@ export function buildContractPaymentFlowContext(
   };
 }
 
-export function buildPaymentRequestHref(
-  email: string | null | undefined,
-  contractId: string,
-  returnToContractsHref?: string,
-) {
+function buildPaymentRequestHref(email: string | null | undefined, contractId: string, returnToContractsHref?: string) {
   return buildPaymentEntryHref(`/payments/new-request`, {
     email,
     ...buildContractPaymentFlowContext(contractId, returnToContractsHref),
   });
 }
 
-export function buildStartPaymentHref(
-  email: string | null | undefined,
-  contractId: string,
-  returnToContractsHref?: string,
-) {
+function buildStartPaymentHref(email: string | null | undefined, contractId: string, returnToContractsHref?: string) {
   return buildPaymentEntryHref(`/payments/start`, {
     email,
     ...buildContractPaymentFlowContext(contractId, returnToContractsHref),

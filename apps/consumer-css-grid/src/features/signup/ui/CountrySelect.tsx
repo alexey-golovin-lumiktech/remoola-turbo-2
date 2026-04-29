@@ -8,7 +8,7 @@ import { getCountryOptions } from './countries';
 import styles from './CountrySelect.module.css';
 import { FORM_ERROR_CLASS, FORM_LABEL_CLASS } from './form-classes';
 
-export interface CountrySelectProps {
+interface CountrySelectProps {
   label: string;
   value: string;
   onChange: (value: string) => void;

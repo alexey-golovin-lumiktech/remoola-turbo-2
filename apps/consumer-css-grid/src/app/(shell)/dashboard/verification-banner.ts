@@ -15,7 +15,7 @@ export type VerificationBannerState = {
   badgeClass: string;
 };
 
-export type VerificationBannerAction =
+type VerificationBannerAction =
   | {
       kind: `button`;
       label: string;

@@ -1,4 +1,4 @@
-export type ConsumerPublicRoutePolicy = `external-public` | `bff-only-public` | `not-public`;
+type ConsumerPublicRoutePolicy = `external-public` | `bff-only-public` | `not-public`;
 
 const COMPLETE_PROFILE_CREATION_ROUTE = `/api/consumer/auth/signup/:consumerId/complete-profile-creation`;
 const COMPLETE_PROFILE_CREATION_ROUTE_REGEX = /^\/api\/consumer\/auth\/signup\/[^/]+\/complete-profile-creation$/;

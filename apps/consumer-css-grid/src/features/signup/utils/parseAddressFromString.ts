@@ -6,7 +6,7 @@ export type ParsedAddress = {
   country: string;
 };
 
-export type ParseAddressOptions = {
+type ParseAddressOptions = {
   countryHint?: string | null;
 };
 

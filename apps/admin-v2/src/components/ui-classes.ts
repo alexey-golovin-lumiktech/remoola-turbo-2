@@ -16,14 +16,6 @@ export const buttonRowClass = `flex flex-wrap items-center gap-2`;
 export const actionGroupClass = `flex flex-wrap items-center gap-2`;
 export const actionGroupLabelClass = `text-[11px] font-medium uppercase tracking-[0.2em] text-white/35`;
 export const stackClass = `flex flex-col gap-4`;
-const sectionIntroClass = `flex flex-col gap-2`;
-const sectionEyebrowClass = `text-[11px] font-medium uppercase tracking-[0.22em] text-white/42`;
-const keyValueGridClass = `grid gap-3`;
-const keyValueCardClass = `rounded-card border border-white/8 bg-white/[0.02] px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]`;
-const keyValueLabelClass = `text-[11px] font-medium uppercase tracking-[0.18em] text-white/38`;
-const keyValueValueClass = `mt-1 text-sm leading-6 text-white/88`;
-const contextRailSectionClass = `flex flex-col gap-3`;
-const contextRailLinksClass = `flex flex-col gap-2`;
 export const rawDataClass = `mono overflow-x-auto rounded-card border border-white/8 bg-black/20 p-3 text-xs leading-6 text-white/68`;
 export const operatorFormClass = `flex flex-col gap-4`;
 export const operatorFormIntroClass = `flex flex-col gap-2`;
@@ -62,7 +54,6 @@ export const dangerButtonClass = [
   `hover:from-rose-500/25 hover:to-rose-400/16 hover:text-white focus-visible:outline-hidden`,
   `focus-visible:ring-2 focus-visible:ring-rose-400/25 disabled:pointer-events-none disabled:opacity-50`,
 ].join(` `);
-const softDangerPanelClass = `rounded-card border border-rose-400/18 bg-rose-500/[0.05] p-4 shadow-[0_12px_30px_rgba(76,5,25,0.08)]`;
 
 export const fieldClass = `grid gap-2`;
 export const fieldLabelClass = `text-sm font-medium text-text`;
