@@ -8,8 +8,6 @@ export {
   getDraftPaymentRequestsAction,
   sendPaymentRequestMutation,
   startPaymentMutation,
-  type DraftPaymentRequestOption,
-  type DraftPaymentRequestsResult,
 } from './payments-requests.server';
 export {
   createPaymentCheckoutSessionMutation,

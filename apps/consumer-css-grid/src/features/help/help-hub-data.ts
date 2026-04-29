@@ -6,8 +6,4 @@ export {
   helpGuideTypeLabels,
   helpHubData,
   searchHelpGuides,
-  type HelpGuideFamilyCoverage,
-  type HelpGuideSearchEntry,
-  type HelpHubCategorySection,
-  type HelpHubFeatureSection,
 } from './help-discovery';

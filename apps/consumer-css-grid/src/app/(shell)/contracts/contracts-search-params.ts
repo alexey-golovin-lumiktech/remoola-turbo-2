@@ -1,7 +1,6 @@
 export type ContractsSearchParams = Record<string, string | string[] | undefined>;
 export const CONTRACT_STATUS_FILTERS = [`all`, `draft`, `pending`, `waiting`, `completed`, `no_activity`] as const;
 export type ContractStatusFilter = (typeof CONTRACT_STATUS_FILTERS)[number];
-export type AppliedContractStatusFilter = Exclude<ContractStatusFilter, `all`>;
 export const CONTRACT_PRESENCE_FILTERS = [`all`, `yes`, `no`] as const;
 export type ContractPresenceFilter = (typeof CONTRACT_PRESENCE_FILTERS)[number];
 export const CONTRACT_SORT_OPTIONS = [`recent_activity`, `name`, `payments_count`] as const;

@@ -3,7 +3,7 @@ import { type $Enums } from '@remoola/database-2';
 import { type CreditCardExpMonth, type CreditCardExpYear } from '../types';
 import { type IBaseModel } from './base.model';
 
-export type IPaymentMethodCommon = {
+type IPaymentMethodCommon = {
   consumerId: string;
   brand: string;
   last4: string;
