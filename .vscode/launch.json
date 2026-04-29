@@ -4,171 +4,161 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug Nest Framework",
+      "name": "API v2: Debug server",
+      "cwd": "${workspaceFolder}",
       "runtimeExecutable": "yarn",
       "runtimeArgs": [
-        "start:debug",
-        "--",
-        "--inspect-brk"
+        "workspace",
+        "@remoola/api-v2",
+        "run",
+        "start:debug"
       ],
       "autoAttachChildProcesses": true,
-      "restart": true,
-      "sourceMaps": true,
-      "stopOnEntry": false,
-      "console": "integratedTerminal",
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Jest for CORE",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-      "args": [
-        "--config",
-        "${workspaceFolder}/test/jest-e2e.js",
-        "--runInBand",
-        "${workspaceFolder}", // Adjust to point to your specific project
-      ],
-      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "env": {
-        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.app.json" // Adjust if using a per-app tsconfig
-      },
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ] // Adjust to your app's dist directory
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Jest for Specific Project",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-      "args": [
-        "--runInBand",
-        "--watchAll=false",
-        "--rootDir",
-        "${workspaceFolder}/apps/your-app-name" // Adjust to point to your specific project
-      ],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "env": {
-        "TS_NODE_PROJECT": "${workspaceFolder}/apps/your-app-name/tsconfig.json" // Adjust if using a per-app tsconfig
-      },
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/dist/apps/your-app-name/**/*.js"
-      ] // Adjust to your app's dist directory
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Jest Tests (App CORE)",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-      "args": [
-        "--config",
-        "${workspaceFolder}/test/jest-e2e.js",
-        "--runInBand",
-        "--rootDir",
-        "${workspaceFolder}", // Replace with your app name
-        "--testPathPattern=${file}" // Focus on the currently opened test file
-      ],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "env": {
-        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.app.json" // Adjust if using per-app tsconfig
-      },
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
+      "skipFiles": [
+        "<node_internals>/**"
       ]
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug Jest Tests (Lib)",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-      "args": [
-        "--runInBand",
-        "--watchAll=false",
-        "--rootDir",
-        "${workspaceFolder}/libs/your-lib-name", // Replace with your library name
-        "--testPathPattern=${file}" // Focus on the currently opened test file
-      ],
+      "name": "API v2: Debug current src spec",
       "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "workspace",
+        "@remoola/api-v2",
+        "run",
+        "test:debug",
+        "--",
+        "--config",
+        "jest.config.ts",
+        "--runTestsByPath",
+        "${file}"
+      ],
+      "autoAttachChildProcesses": true,
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "env": {
-        "TS_NODE_PROJECT": "${workspaceFolder}/libs/your-lib-name/tsconfig.json" // Adjust if using per-lib tsconfig
-      },
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/dist/libs/your-lib-name/**/*.js"
+      "skipFiles": [
+        "<node_internals>/**"
       ]
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug All Jest Tests",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-      "args": [
-        "--config",
-        "${workspaceFolder}/test/configs/jest-e2e.js",
-      ],
+      "name": "API v2: Debug current e2e spec",
       "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "workspace",
+        "@remoola/api-v2",
+        "run",
+        "test:debug",
+        "--",
+        "--config",
+        "../../packages/api-e2e/jest-e2e.api-v2.json",
+        "--runTestsByPath",
+        "${file}"
+      ],
+      "autoAttachChildProcesses": true,
       "console": "integratedTerminal",
-      "internalConsoleOptions": "openOnSessionStart",
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
       ]
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Jest opened file(skip detectOpenHandles)",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-      "args": [
-        "--config",
-        "${workspaceFolder}/test/configs/jest-e2e.js",
-        "--no-cache",
-        "--watchAll=true",
-        "--testPathPattern=${file}",
-        "--watch"
+      "name": "Admin v2: Dev server",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "workspace",
+        "@remoola/admin-v2",
+        "run",
+        "dev"
       ],
+      "autoAttachChildProcesses": true,
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "env": {
-        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.app.json" // Adjust if using a per-app tsconfig
-      },
-      "sourceMaps": true,
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Jest opened file(detectOpenHandles)",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-      "args": [
-        "--config",
-        "${workspaceFolder}/test/configs/jest-e2e.js",
-        "--runInBand",
-        "--watchAll=false",
-        "--no-cache",
-        "--testPathPattern=${file}",
-        "--detectOpenHandles"
-      ],
+      "name": "Admin v2: Debug current test",
       "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "workspace",
+        "@remoola/admin-v2",
+        "run",
+        "test",
+        "--",
+        "--config",
+        "jest.config.ts",
+        "--runTestsByPath",
+        "${file}"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--inspect-brk"
+      },
+      "autoAttachChildProcesses": true,
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "env": {
-        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.app.json" // Adjust if using a per-app tsconfig
-      },
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
+      "skipFiles": [
+        "<node_internals>/**"
       ]
     },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Consumer CSS Grid: Dev server",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "workspace",
+        "@remoola/consumer-css-grid",
+        "run",
+        "dev"
+      ],
+      "autoAttachChildProcesses": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Consumer CSS Grid: Debug current test",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "workspace",
+        "@remoola/consumer-css-grid",
+        "run",
+        "test",
+        "--",
+        "--config",
+        "jest.config.ts",
+        "--runTestsByPath",
+        "${file}"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--inspect-brk"
+      },
+      "autoAttachChildProcesses": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    }
   ]
 }

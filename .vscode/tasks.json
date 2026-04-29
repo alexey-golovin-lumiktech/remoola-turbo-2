@@ -1,0 +1,116 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Knip: Watch apps + packages",
+      "type": "shell",
+      "command": "./node_modules/.bin/knip",
+      "args": [
+        "--watch",
+        "--no-exit-code",
+        "--reporter",
+        "compact",
+        "--workspace",
+        "./apps/*",
+        "--workspace",
+        "./packages/*"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Packages: Watch api-types",
+      "type": "shell",
+      "command": "yarn",
+      "args": [
+        "workspace",
+        "@remoola/api-types",
+        "run",
+        "dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Packages: Watch shared-constants",
+      "type": "shell",
+      "command": "yarn",
+      "args": [
+        "workspace",
+        "@remoola/shared-constants",
+        "run",
+        "dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Packages: Watch security-utils",
+      "type": "shell",
+      "command": "yarn",
+      "args": [
+        "workspace",
+        "@remoola/security-utils",
+        "run",
+        "dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Packages: Watch ui",
+      "type": "shell",
+      "command": "yarn",
+      "args": [
+        "workspace",
+        "@remoola/ui",
+        "run",
+        "build",
+        "--watch",
+        "--preserveWatchOutput"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    }
+  ]
+}
