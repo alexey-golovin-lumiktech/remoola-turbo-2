@@ -6,6 +6,11 @@ import { ConsumerActionLogPartitionMaintenanceScheduler, ConsumerActionLogRetent
 import { InfrastructureModule } from '../infrastructure/infrastructure.module';
 import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
+import { ConsumerAuthControllerSupportService } from './auth/consumer-auth-controller-support.service';
+import { ConsumerAuthRecoveryService } from './auth/consumer-auth-recovery.service';
+import { ConsumerAuthSessionService } from './auth/consumer-auth-session.service';
+import { ConsumerAuthSignupService } from './auth/consumer-auth-signup.service';
+import { ConsumerAuthVerificationService } from './auth/consumer-auth-verification.service';
 import { GoogleOAuthService } from './auth/google-oauth.service';
 import { OauthStateCleanupScheduler } from './auth/oauth-state-cleanup.scheduler';
 import { OAuthStateStoreService } from './auth/oauth-state-store.service';
@@ -43,6 +48,11 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
   controllers: [ConsumerAuthController],
   providers: [
     GoogleOAuthService,
+    ConsumerAuthControllerSupportService,
+    ConsumerAuthSessionService,
+    ConsumerAuthRecoveryService,
+    ConsumerAuthSignupService,
+    ConsumerAuthVerificationService,
     ConsumerAuthService,
     OAuthStateStoreService,
     OauthStateCleanupScheduler,

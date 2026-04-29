@@ -10,6 +10,7 @@ import {
 
 import { ConsumerAuthController } from './auth.controller';
 import { type ConsumerAuthService } from './auth.service';
+import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
 import { type GoogleOAuthService } from './google-oauth.service';
 import { type OAuthStateStoreService } from './oauth-state-store.service';
 import { envs } from '../../envs';
@@ -153,6 +154,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       googleOAuthService as GoogleOAuthService,
       oauthStateStore as OAuthStateStoreService,
       originResolver as OriginResolverService,
+      new ConsumerAuthControllerSupportService(originResolver as OriginResolverService),
     );
   });
 

@@ -2,12 +2,43 @@ import { BadRequestException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
+import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
+import { AdminV2AdminInvitationsService } from './admin-v2-admin-invitations.service';
+import { AdminV2AdminLinks } from './admin-v2-admin-links';
+import { AdminV2AdminMutationsService } from './admin-v2-admin-mutations.service';
+import { AdminV2AdminPasswordFlowsService } from './admin-v2-admin-password-flows.service';
+import { AdminV2AdminsQueriesService } from './admin-v2-admins-queries.service';
 import { AdminV2AdminsService } from './admin-v2-admins.service';
 
 function createIdempotency() {
   return {
     execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
   };
+}
+
+function createService(params: {
+  prisma: Record<string, unknown>;
+  accessService: Record<string, unknown>;
+  idempotency: Record<string, unknown>;
+  jwtService: Record<string, unknown>;
+  mailingService: Record<string, unknown>;
+  originResolver: Record<string, unknown>;
+}) {
+  const links = new AdminV2AdminLinks(params.originResolver as never);
+  const auditTrail = new AdminV2AdminAuditTrail(params.prisma as never, params.mailingService as never, links);
+
+  return new AdminV2AdminsService(
+    new AdminV2AdminsQueriesService(params.prisma as never, params.accessService as never),
+    new AdminV2AdminMutationsService(params.prisma as never, params.idempotency as never, auditTrail),
+    new AdminV2AdminInvitationsService(
+      params.prisma as never,
+      params.idempotency as never,
+      params.jwtService as never,
+      links,
+      auditTrail,
+    ),
+    new AdminV2AdminPasswordFlowsService(params.prisma as never, params.idempotency as never, auditTrail),
+  );
 }
 
 describe(`AdminV2AdminsService`, () => {
@@ -22,8 +53,8 @@ describe(`AdminV2AdminsService`, () => {
         workspaces: [`admins`],
       })),
     };
-    const service = new AdminV2AdminsService(
-      {
+    const service = createService({
+      prisma: {
         adminModel: {
           findMany: jest.fn(async () => [
             {
@@ -66,16 +97,19 @@ describe(`AdminV2AdminsService`, () => {
         adminActionAuditLogModel: {
           findMany: jest.fn(async () => [{ adminId: `admin-2`, createdAt: new Date(`2026-04-17T09:10:00.000Z`) }]),
         },
-      } as never,
-      accessService as never,
-      createIdempotency() as never,
-      {
+      },
+      accessService,
+      idempotency: createIdempotency(),
+      jwtService: {
         signAsync: jest.fn(),
         verify: jest.fn(),
-      } as never,
-      {} as never,
-      { normalizeOrigin: jest.fn((value: string) => value) } as never,
-    );
+      },
+      mailingService: {},
+      originResolver: {
+        normalizeOrigin: jest.fn((value: string) => value),
+        resolveConfiguredAdminOrigin: jest.fn(() => `https://admin.example.com`),
+      },
+    });
 
     try {
       await expect(service.listAdmins()).resolves.toEqual({
@@ -127,14 +161,14 @@ describe(`AdminV2AdminsService`, () => {
   });
 
   it(`rejects permissions-change requests that try to touch non-overridable capabilities`, async () => {
-    const service = new AdminV2AdminsService(
-      {} as never,
-      {} as never,
-      createIdempotency() as never,
-      {} as never,
-      {} as never,
-      {} as never,
-    );
+    const service = createService({
+      prisma: {},
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {},
+      mailingService: {},
+      originResolver: {},
+    });
 
     await expect(
       service.changeAdminPermissions(
@@ -147,6 +181,55 @@ describe(`AdminV2AdminsService`, () => {
         { idempotencyKey: `idem-1` },
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it(`returns alreadyApplied when permission overrides do not change the effective override set`, async () => {
+    const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
+    const service = createService({
+      prisma: {
+        adminModel: {
+          findUnique: jest.fn(async () => ({
+            id: `admin-2`,
+            email: `ops@example.com`,
+            updatedAt,
+            deletedAt: null,
+            permissionOverrides: [
+              {
+                id: `override-1`,
+                granted: true,
+                permissionId: `perm-1`,
+                permission: { capability: `admins.manage` },
+              },
+            ],
+          })),
+        },
+        adminPermissionModel: {
+          findMany: jest.fn(async () => [{ id: `perm-1`, capability: `admins.manage` }]),
+        },
+      },
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {},
+      mailingService: {},
+      originResolver: {},
+    });
+
+    await expect(
+      service.changeAdminPermissions(
+        `admin-2`,
+        `admin-1`,
+        {
+          version: updatedAt.getTime(),
+          capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
+        },
+        { idempotencyKey: `idem-noop` },
+      ),
+    ).resolves.toEqual({
+      adminId: `admin-2`,
+      version: updatedAt.getTime(),
+      overrides: [{ capability: `admins.manage`, mode: `grant` }],
+      alreadyApplied: true,
+    });
   });
 
   it(`accepts invitation tokens and creates admin rows with role-derived type`, async () => {
@@ -176,11 +259,11 @@ describe(`AdminV2AdminsService`, () => {
       ...tx,
       $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx as never)),
     };
-    const service = new AdminV2AdminsService(
-      prisma as never,
-      {} as never,
-      createIdempotency() as never,
-      {
+    const service = createService({
+      prisma,
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {
         signAsync: jest.fn(),
         verify: jest.fn(() => ({
           sub: `inv-1`,
@@ -189,10 +272,10 @@ describe(`AdminV2AdminsService`, () => {
           typ: `admin_invitation`,
           scope: `admin_v2`,
         })),
-      } as never,
-      {} as never,
-      {} as never,
-    );
+      },
+      mailingService: {},
+      originResolver: {},
+    });
 
     await expect(service.acceptInvitation({ token: `jwt`, password: `VerySecurePass1` })).resolves.toEqual({
       adminId: `admin-2`,
@@ -244,14 +327,14 @@ describe(`AdminV2AdminsService`, () => {
       },
       $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx as never)),
     };
-    const service = new AdminV2AdminsService(
-      prisma as never,
-      {} as never,
-      createIdempotency() as never,
-      {} as never,
-      {} as never,
-      {} as never,
-    );
+    const service = createService({
+      prisma,
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {},
+      mailingService: {},
+      originResolver: {},
+    });
 
     await expect(
       service.deactivateAdmin(
@@ -321,18 +404,18 @@ describe(`AdminV2AdminsService`, () => {
         throw new Error(`smtp down`);
       }),
     };
-    const service = new AdminV2AdminsService(
-      prisma as never,
-      {} as never,
-      createIdempotency() as never,
-      {
+    const service = createService({
+      prisma,
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {
         signAsync: jest.fn(async () => `invite-token`),
-      } as never,
-      mailingService as never,
-      { normalizeOrigin: jest.fn((value: string) => value) } as never,
-    );
-    Object.assign(service as object, {
-      resolveAdminV2Origin: () => `https://admin-v2.example.com`,
+      },
+      mailingService,
+      originResolver: {
+        normalizeOrigin: jest.fn((value: string) => value),
+        resolveConfiguredAdminOrigin: jest.fn(() => `https://admin.example.com`),
+      },
     });
 
     await expect(
@@ -395,16 +478,16 @@ describe(`AdminV2AdminsService`, () => {
         return false;
       }),
     };
-    const service = new AdminV2AdminsService(
-      prisma as never,
-      {} as never,
-      createIdempotency() as never,
-      {} as never,
-      mailingService as never,
-      { normalizeOrigin: jest.fn((value: string) => value) } as never,
-    );
-    Object.assign(service as object, {
-      resolveAdminV2Origin: () => `https://admin-v2.example.com`,
+    const service = createService({
+      prisma,
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {},
+      mailingService,
+      originResolver: {
+        normalizeOrigin: jest.fn((value: string) => value),
+        resolveConfiguredAdminOrigin: jest.fn(() => `https://admin.example.com`),
+      },
     });
 
     await expect(
@@ -462,16 +545,16 @@ describe(`AdminV2AdminsService`, () => {
         return true;
       }),
     };
-    const service = new AdminV2AdminsService(
-      prisma as never,
-      {} as never,
-      createIdempotency() as never,
-      {} as never,
-      mailingService as never,
-      { normalizeOrigin: jest.fn((value: string) => value) } as never,
-    );
-    Object.assign(service as object, {
-      resolveAdminV2Origin: () => `https://admin-v2.example.com`,
+    const service = createService({
+      prisma,
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {},
+      mailingService,
+      originResolver: {
+        normalizeOrigin: jest.fn((value: string) => value),
+        resolveConfiguredAdminOrigin: jest.fn(() => `https://admin.example.com`),
+      },
     });
 
     await expect(service.requestPasswordReset({ email: `ops@example.com` })).resolves.toBeUndefined();
@@ -491,7 +574,7 @@ describe(`AdminV2AdminsService`, () => {
     });
     expect(mailingService.sendAdminV2PasswordResetEmail).toHaveBeenCalledWith({
       email: `ops@example.com`,
-      forgotPasswordLink: expect.stringContaining(`https://admin-v2.example.com/reset-password?token=`),
+      forgotPasswordLink: expect.stringContaining(`https://admin.example.com/reset-password?token=`),
     });
     expect(events).toEqual([`invalidatePrevious`, `createReset`, `createAudit`, `commit`, `sendMail`, `updateAudit`]);
   });
@@ -505,14 +588,14 @@ describe(`AdminV2AdminsService`, () => {
     const mailingService = {
       sendAdminV2PasswordResetEmail: jest.fn(async () => true),
     };
-    const service = new AdminV2AdminsService(
-      prisma as never,
-      {} as never,
-      createIdempotency() as never,
-      {} as never,
-      mailingService as never,
-      {} as never,
-    );
+    const service = createService({
+      prisma,
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {},
+      mailingService,
+      originResolver: {},
+    });
 
     await expect(service.requestPasswordReset({ email: `missing@example.com` })).resolves.toBeUndefined();
     expect(mailingService.sendAdminV2PasswordResetEmail).not.toHaveBeenCalled();
@@ -545,14 +628,14 @@ describe(`AdminV2AdminsService`, () => {
       },
       $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx as never)),
     };
-    const service = new AdminV2AdminsService(
-      prisma as never,
-      {} as never,
-      createIdempotency() as never,
-      {} as never,
-      {} as never,
-      {} as never,
-    );
+    const service = createService({
+      prisma,
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {},
+      mailingService: {},
+      originResolver: {},
+    });
 
     await expect(
       service.resetPasswordWithToken({ token: `reset-token`, password: `VerySecurePass1` }),

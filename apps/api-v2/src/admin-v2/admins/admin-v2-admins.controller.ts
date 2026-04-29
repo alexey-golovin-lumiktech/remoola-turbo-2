@@ -47,6 +47,11 @@ class InviteAdminBodyDTO {
   @Expose()
   @IsString()
   roleKey!: string;
+
+  @Expose()
+  @IsString()
+  @MaxLength(256)
+  passwordConfirmation!: string;
 }
 
 class VersionedAdminMutationBodyDTO {
@@ -54,6 +59,11 @@ class VersionedAdminMutationBodyDTO {
   @Type(() => Number)
   @IsNumber()
   version!: number;
+
+  @Expose()
+  @IsString()
+  @MaxLength(256)
+  passwordConfirmation!: string;
 }
 
 class DeactivateAdminBodyDTO extends VersionedAdminMutationBodyDTO {
@@ -156,6 +166,7 @@ export class AdminV2AdminsController {
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.inviteAdmin(admin.id, body, requestMeta(req));
   }
 
@@ -167,6 +178,7 @@ export class AdminV2AdminsController {
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.deactivateAdmin(id, admin.id, body, requestMeta(req));
   }
 
@@ -178,6 +190,7 @@ export class AdminV2AdminsController {
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.restoreAdmin(id, admin.id, body, requestMeta(req));
   }
 
@@ -189,6 +202,7 @@ export class AdminV2AdminsController {
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.changeAdminRole(id, admin.id, body, requestMeta(req));
   }
 
@@ -200,6 +214,7 @@ export class AdminV2AdminsController {
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.changeAdminPermissions(id, admin.id, body, requestMeta(req));
   }
 
@@ -211,6 +226,7 @@ export class AdminV2AdminsController {
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.resetAdminPassword(id, admin.id, body, requestMeta(req));
   }
 

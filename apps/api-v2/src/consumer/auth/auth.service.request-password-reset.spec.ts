@@ -15,7 +15,7 @@ jest.mock(`../../shared/resolve-email-api-base-url`, () => ({
 
 import { hashTokenToHex, oauthCrypto } from '@remoola/security-utils';
 
-import { ConsumerAuthService } from './auth.service';
+import { ConsumerAuthService } from './auth.service.spec-wrapper';
 import { AuthAuditService } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';

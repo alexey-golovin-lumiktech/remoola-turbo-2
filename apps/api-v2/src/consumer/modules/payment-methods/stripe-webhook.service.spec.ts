@@ -1,10 +1,57 @@
 import { type default as express } from 'express';
+import Stripe from 'stripe';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
-import { StripeWebhookService } from './stripe-webhook.service';
+import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-methods.service';
+import { StripeWebhookPayoutsService } from './stripe-webhook-payouts.service';
+import { StripeWebhookReversalsService } from './stripe-webhook-reversals.service';
+import { StripeWebhookSettlementsService } from './stripe-webhook-settlements.service';
+import { StripeWebhookVerificationService } from './stripe-webhook-verification.service';
+import { StripeWebhookService as StripeWebhookServiceClass } from './stripe-webhook.service';
+import { envs } from '../../../envs';
 import { STRIPE_IDENTITY_STATUS } from '../../../shared-common';
+
+class StripeWebhookService extends StripeWebhookServiceClass {
+  constructor(prisma: any, mailingService: any, balanceService: any, consumerPaymentsPoliciesService: any) {
+    let stripe: any = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
+    const paymentMethodsService = new StripeWebhookPaymentMethodsService(prisma, stripe);
+    const payoutsService = new StripeWebhookPayoutsService(prisma);
+    const settlementsService = new StripeWebhookSettlementsService(prisma);
+    const verificationService = new StripeWebhookVerificationService(prisma, consumerPaymentsPoliciesService, stripe);
+    const reversalsService = new StripeWebhookReversalsService(prisma, mailingService, balanceService, stripe);
+
+    super(
+      prisma,
+      stripe,
+      paymentMethodsService,
+      payoutsService,
+      settlementsService,
+      verificationService,
+      reversalsService,
+    );
+
+    const logger = (this as any).logger;
+    (paymentMethodsService as any).logger = logger;
+    (payoutsService as any).logger = logger;
+    (settlementsService as any).logger = logger;
+    (verificationService as any).logger = logger;
+    (reversalsService as any).logger = logger;
+
+    Object.defineProperty(this, `stripe`, {
+      configurable: true,
+      enumerable: true,
+      get: () => stripe,
+      set: (value) => {
+        stripe = value;
+        (paymentMethodsService as any).stripe = value;
+        (verificationService as any).stripe = value;
+        (reversalsService as any).stripe = value;
+      },
+    });
+  }
+}
 
 jest.mock(`../../../envs`, () => ({
   envs: {
@@ -734,6 +781,12 @@ describe(`StripeWebhookService.finalizeCheckoutSessionSuccess`, () => {
             ]),
           },
           paymentRequestModel: {
+            findUnique: jest.fn().mockResolvedValue({
+              amount: 25,
+              currencyCode: $Enums.CurrencyCode.USD,
+              payerId: `consumer-1`,
+              payer: { stripeCustomerId: `cus_1` },
+            }),
             updateMany: paymentRequestUpdateMany,
           },
         }),
@@ -746,6 +799,10 @@ describe(`StripeWebhookService.finalizeCheckoutSessionSuccess`, () => {
       id: `cs_1`,
       metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` },
       payment_intent: `pi_1`,
+      payment_status: `paid`,
+      amount_total: 2500,
+      currency: `usd`,
+      customer: `cus_1`,
     });
 
     expect(paymentRequestUpdateMany).toHaveBeenCalledWith({
@@ -777,6 +834,96 @@ describe(`StripeWebhookService.finalizeCheckoutSessionSuccess`, () => {
       }),
       expect.anything(),
     );
+  });
+
+  it(`skips settlement when checkout amount does not match local payment request`, async () => {
+    const paymentRequestUpdateMany = jest.fn();
+    const ledgerFindMany = jest.fn();
+    const prisma = {
+      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback({
+          ledgerEntryModel: {
+            findMany: ledgerFindMany,
+          },
+          paymentRequestModel: {
+            findUnique: jest.fn().mockResolvedValue({
+              amount: 25,
+              currencyCode: $Enums.CurrencyCode.USD,
+              payerId: `consumer-1`,
+              payer: { stripeCustomerId: `cus_1` },
+            }),
+            updateMany: paymentRequestUpdateMany,
+          },
+        }),
+      ),
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    jest.spyOn(service as any, `collectPaymentMethodFromCheckout`).mockResolvedValue(undefined);
+
+    await (service as any).finalizeCheckoutSessionSuccess({
+      id: `cs_1`,
+      metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` },
+      payment_intent: `pi_1`,
+      payment_status: `paid`,
+      amount_total: 2600,
+      currency: `usd`,
+      customer: `cus_1`,
+    });
+
+    expect(ledgerFindMany).not.toHaveBeenCalled();
+    expect(paymentRequestUpdateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, () => {
+  it(`serializes duplicate checkout storage and skips create when method already exists`, async () => {
+    const tx = {
+      $executeRaw: jest.fn().mockResolvedValue(undefined),
+      billingDetailsModel: {
+        create: jest.fn(),
+      },
+      paymentMethodModel: {
+        count: jest.fn(),
+        create: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue({ id: `pm-local-1` }),
+      },
+    };
+    const prisma = {
+      $transaction: jest
+        .fn()
+        .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
+    } as any;
+    const stripe = {
+      paymentIntents: {
+        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
+      },
+      paymentMethods: {
+        attach: jest.fn(),
+        retrieve: jest.fn().mockResolvedValue({
+          id: `pm_1`,
+          type: `card`,
+          customer: `cus_1`,
+          billing_details: { email: `payer@example.com`, name: `Payer`, phone: null },
+          card: { brand: `visa`, exp_month: 12, exp_year: 2030, fingerprint: `fp_1`, last4: `4242` },
+        }),
+      },
+    } as any;
+    const service = new StripeWebhookPaymentMethodsService(prisma, stripe);
+
+    await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
+      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+    });
+
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(tx.paymentMethodModel.findFirst).toHaveBeenCalledWith({
+      where: {
+        consumerId: `consumer-1`,
+        stripePaymentMethodId: `pm_1`,
+        deletedAt: null,
+      },
+    });
+    expect(tx.billingDetailsModel.create).not.toHaveBeenCalled();
+    expect(tx.paymentMethodModel.create).not.toHaveBeenCalled();
   });
 });
 

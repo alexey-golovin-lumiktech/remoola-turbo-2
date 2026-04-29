@@ -5,7 +5,13 @@ import { AdminAuthModule } from '../../admin-auth/admin-auth.module';
 import { envs } from '../../envs';
 import { MailingModule } from '../../shared/mailing.module';
 import { AdminV2SharedModule } from '../admin-v2-shared.module';
+import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
+import { AdminV2AdminInvitationsService } from './admin-v2-admin-invitations.service';
+import { AdminV2AdminLinks } from './admin-v2-admin-links';
+import { AdminV2AdminMutationsService } from './admin-v2-admin-mutations.service';
+import { AdminV2AdminPasswordFlowsService } from './admin-v2-admin-password-flows.service';
 import { AdminV2AdminSessionsService } from './admin-v2-admin-sessions.service';
+import { AdminV2AdminsQueriesService } from './admin-v2-admins-queries.service';
 import { AdminV2AdminsController } from './admin-v2-admins.controller';
 import { AdminV2AdminsService } from './admin-v2-admins.service';
 
@@ -20,7 +26,16 @@ import { AdminV2AdminsService } from './admin-v2-admins.service';
     MailingModule,
   ],
   controllers: [AdminV2AdminsController],
-  providers: [AdminV2AdminsService, AdminV2AdminSessionsService],
+  providers: [
+    AdminV2AdminLinks,
+    AdminV2AdminAuditTrail,
+    AdminV2AdminsQueriesService,
+    AdminV2AdminMutationsService,
+    AdminV2AdminInvitationsService,
+    AdminV2AdminPasswordFlowsService,
+    AdminV2AdminsService,
+    AdminV2AdminSessionsService,
+  ],
   exports: [AdminV2AdminsService],
 })
 export class AdminV2AdminsModule {}

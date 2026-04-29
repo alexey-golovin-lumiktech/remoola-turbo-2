@@ -12,7 +12,7 @@ jest.mock(`@remoola/security-utils`, () => ({
 
 import { oauthCrypto } from '@remoola/security-utils';
 
-import { ConsumerAuthService } from './auth.service';
+import { ConsumerAuthService } from './auth.service.spec-wrapper';
 import { envs } from '../../envs';
 import { AuthAuditService } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';

@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
+import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.service';
+import { AdminV2ExchangeQueriesService } from './admin-v2-exchange-queries.service';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
 
 describe(`AdminV2ExchangeService`, () => {
@@ -73,7 +75,10 @@ describe(`AdminV2ExchangeService`, () => {
     } as any;
 
     return {
-      service: new AdminV2ExchangeService(prisma, idempotency, balanceService, domainEvents, assignmentsService),
+      service: new AdminV2ExchangeService(
+        new AdminV2ExchangeCommandsService(prisma, idempotency, balanceService, domainEvents),
+        new AdminV2ExchangeQueriesService(prisma, assignmentsService),
+      ),
       prisma,
       idempotency,
       balanceService,

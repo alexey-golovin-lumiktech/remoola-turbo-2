@@ -2,9 +2,10 @@ import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nest
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsString, MaxLength } from 'class-validator';
 import express from 'express';
 
+import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
@@ -48,7 +49,14 @@ class VersionBodyDTO {
   version!: number;
 }
 
-class ConfirmedVersionBodyDTO extends VersionBodyDTO {
+class StepUpVersionBodyDTO extends VersionBodyDTO {
+  @Expose()
+  @IsString()
+  @MaxLength(256)
+  passwordConfirmation!: string;
+}
+
+class ConfirmedVersionBodyDTO extends StepUpVersionBodyDTO {
   @Expose()
   @Transform(({ value }) => value === true || value === `true`)
   @IsBoolean()
@@ -70,6 +78,7 @@ export class AdminV2ExchangeController {
   constructor(
     private readonly service: AdminV2ExchangeService,
     private readonly accessService: AdminV2AccessService,
+    private readonly adminAuthService: AdminAuthService,
   ) {}
 
   @Get(`rates`)
@@ -100,6 +109,7 @@ export class AdminV2ExchangeController {
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.approveRate(id, admin.id, body, requestMeta(req));
   }
 
@@ -148,10 +158,11 @@ export class AdminV2ExchangeController {
   async runRuleNow(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: VersionBodyDTO,
+    @Body() body: StepUpVersionBodyDTO,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.runRuleNow(id, admin.id, body, requestMeta(req));
   }
 
@@ -183,6 +194,7 @@ export class AdminV2ExchangeController {
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.forceExecuteScheduledConversion(id, admin.id, body, requestMeta(req));
   }
 
@@ -194,6 +206,7 @@ export class AdminV2ExchangeController {
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.cancelScheduledConversion(id, admin.id, body, requestMeta(req));
   }
 }

@@ -19,7 +19,7 @@ jest.mock(`../../shared-common`, () => ({
 
 import { errorCodes } from '@remoola/shared-constants';
 
-import { ConsumerAuthService } from './auth.service';
+import { ConsumerAuthService } from './auth.service.spec-wrapper';
 import { envs } from '../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';

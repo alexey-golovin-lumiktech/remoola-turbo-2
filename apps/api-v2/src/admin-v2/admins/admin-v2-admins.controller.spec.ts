@@ -150,6 +150,96 @@ describe(`AdminV2AdminsController`, () => {
       expect(result).toEqual({ adminId: `admin-2` });
     });
 
+    it(`inviteAdmin: verifies step-up before inviting`, async () => {
+      const { controller, adminsService, verifyStepUp } = buildSessionsHarness();
+      adminsService.inviteAdmin.mockResolvedValue({ invitationId: `inv-1` });
+
+      await expect(
+        controller.inviteAdmin(
+          actor,
+          { email: `new-admin@example.com`, roleKey: `OPS_ADMIN`, passwordConfirmation: `Current1!@#abc` } as never,
+          buildReq(),
+        ),
+      ).resolves.toEqual({ invitationId: `inv-1` });
+
+      expect(verifyStepUp).toHaveBeenCalledWith(`admin-1`, `Current1!@#abc`);
+      expect(adminsService.inviteAdmin).toHaveBeenCalledWith(
+        `admin-1`,
+        expect.objectContaining({ email: `new-admin@example.com`, roleKey: `OPS_ADMIN` }),
+        expect.objectContaining({ idempotencyKey: `idem-7` }),
+      );
+    });
+
+    it.each([
+      [
+        `deactivateAdmin`,
+        (controller: AdminV2AdminsController) =>
+          controller.deactivateAdmin(
+            actor,
+            `admin-2`,
+            { version: 1, confirmed: true, passwordConfirmation: `Current1!@#abc` } as never,
+            buildReq(),
+          ),
+        `deactivateAdmin`,
+      ],
+      [
+        `restoreAdmin`,
+        (controller: AdminV2AdminsController) =>
+          controller.restoreAdmin(
+            actor,
+            `admin-2`,
+            { version: 1, passwordConfirmation: `Current1!@#abc` } as never,
+            buildReq(),
+          ),
+        `restoreAdmin`,
+      ],
+      [
+        `changeAdminRole`,
+        (controller: AdminV2AdminsController) =>
+          controller.changeAdminRole(
+            actor,
+            `admin-2`,
+            { version: 1, confirmed: true, roleKey: `OPS_ADMIN`, passwordConfirmation: `Current1!@#abc` } as never,
+            buildReq(),
+          ),
+        `changeAdminRole`,
+      ],
+      [
+        `changeAdminPermissions`,
+        (controller: AdminV2AdminsController) =>
+          controller.changeAdminPermissions(
+            actor,
+            `admin-2`,
+            {
+              version: 1,
+              capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
+              passwordConfirmation: `Current1!@#abc`,
+            } as never,
+            buildReq(),
+          ),
+        `changeAdminPermissions`,
+      ],
+      [
+        `resetAdminPassword`,
+        (controller: AdminV2AdminsController) =>
+          controller.resetAdminPassword(
+            actor,
+            `admin-2`,
+            { version: 1, passwordConfirmation: `Current1!@#abc` } as never,
+            buildReq(),
+          ),
+        `resetAdminPassword`,
+      ],
+    ])(`%s: verifies step-up before delegation`, async (_name, callEndpoint, serviceMethod) => {
+      const { controller, adminsService, verifyStepUp } = buildSessionsHarness();
+      adminsService[serviceMethod as keyof typeof adminsService].mockResolvedValue({ ok: true });
+
+      await expect(callEndpoint(controller)).resolves.toEqual({ ok: true });
+
+      expect(verifyStepUp).toHaveBeenCalledWith(`admin-1`, `Current1!@#abc`);
+      expect(adminsService[serviceMethod as keyof typeof adminsService]).toHaveBeenCalled();
+    });
+
     it(`updateAdminStatus: requires delete confirmation password`, async () => {
       const { controller, adminsService, verifyStepUp } = buildSessionsHarness();
 

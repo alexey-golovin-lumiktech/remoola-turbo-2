@@ -18,7 +18,8 @@ jest.mock(`../../shared-common`, () => ({
 
 import { $Enums } from '@remoola/database-2';
 
-import { ConsumerAuthService, type GoogleSignupPayload } from './auth.service';
+import { type GoogleSignupPayload } from './auth.service';
+import { ConsumerAuthService } from './auth.service.spec-wrapper';
 import { AuthAuditService } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';

@@ -8,9 +8,55 @@
 
 import { $Enums } from '@remoola/database-2';
 
-import { ConsumerPaymentsService } from './consumer-payments.service';
+import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
+import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
+import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
+import { ConsumerPaymentsService as ConsumerPaymentsServiceClass } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
+
+class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
+  private readonly testPoliciesService: ConsumerPaymentsPoliciesService;
+
+  constructor(prisma: any, mailingService: any, balanceService: any) {
+    const policiesService = new ConsumerPaymentsPoliciesService(prisma);
+    const commandPolicies: any = {
+      appendConsumerAppScopeMetadata: (...args: any[]) =>
+        (policiesService.appendConsumerAppScopeMetadata as any)(...args),
+    };
+
+    super(
+      policiesService,
+      new ConsumerPaymentsQueriesService(prisma, balanceService),
+      new ConsumerPaymentsCommandsService(prisma, mailingService, balanceService, commandPolicies),
+    );
+
+    this.testPoliciesService = policiesService;
+    commandPolicies.buildTransferRecipientWhere = (...args: any[]) => this.buildTransferRecipientWhere(...args);
+    commandPolicies.ensureLimits = (...args: any[]) => this.ensureLimits(...args);
+    commandPolicies.ensureProfileComplete = (...args: any[]) => this.ensureProfileComplete(...args);
+  }
+
+  buildTransferRecipientWhere(...args: any[]) {
+    return (this.testPoliciesService.buildTransferRecipientWhere as any)(...args);
+  }
+
+  ensureProfileComplete(...args: any[]) {
+    return (this.testPoliciesService.ensureProfileComplete as any)(...args);
+  }
+
+  getKycLimits(...args: any[]) {
+    return (this.testPoliciesService.getKycLimits as any)(...args);
+  }
+
+  getTodayOutgoingTotal(...args: any[]) {
+    return (this.testPoliciesService.getTodayOutgoingTotal as any)(...args);
+  }
+
+  ensureLimits(...args: any[]) {
+    return (this.testPoliciesService.ensureLimits as any)(...args);
+  }
+}
 
 describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
   const consumerId = `consumer-test-1`;

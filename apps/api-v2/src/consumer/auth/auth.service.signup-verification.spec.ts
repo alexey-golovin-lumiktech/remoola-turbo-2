@@ -4,7 +4,7 @@ import { type Response } from 'express';
 
 import { errorCodes } from '@remoola/shared-constants';
 
-import { ConsumerAuthService } from './auth.service';
+import { ConsumerAuthService } from './auth.service.spec-wrapper';
 import { AuthAuditService } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
