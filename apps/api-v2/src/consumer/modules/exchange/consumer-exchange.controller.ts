@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Query, Body, Param, Patch, Delete } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-
-import { type ConsumerModel } from '@remoola/database-2';
+import { Expose, Type } from 'class-transformer';
+import { IsNumber, IsOptional, Min } from 'class-validator';
 
 import { ConsumerExchangeService } from './consumer-exchange.service';
 import { ConvertCurrencyBody } from './dto/convert.dto';
@@ -10,7 +10,23 @@ import { ExchangeRateBatchBody } from './dto/rate-batch.dto';
 import { ExchangeRateQuery } from './dto/rate-query.dto';
 import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
 import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.dto';
-import { Identity, TrackConsumerAction } from '../../../common';
+import { Identity, TrackConsumerAction, type IIdentityContext } from '../../../common';
+
+class ConsumerExchangePaginationQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+}
 
 @ApiTags(`Consumer Exchange`)
 @ApiCookieAuth()
@@ -36,27 +52,23 @@ export class ConsumerExchangeController {
 
   @TrackConsumerAction({ action: `consumer.exchange.convert`, resource: `exchange` })
   @Post(`convert`)
-  convert(@Identity() consumer: ConsumerModel, @Body() body: ConvertCurrencyBody) {
+  convert(@Identity() consumer: IIdentityContext, @Body() body: ConvertCurrencyBody) {
     return this.service.convert(consumer.id, body);
   }
 
   @Get(`rules`)
-  listRules(@Identity() consumer: ConsumerModel, @Query(`page`) page?: string, @Query(`pageSize`) pageSize?: string) {
-    return this.service.listAutoConversionRules(
-      consumer.id,
-      page ? Number(page) : undefined,
-      pageSize ? Number(pageSize) : undefined,
-    );
+  listRules(@Identity() consumer: IIdentityContext, @Query() query: ConsumerExchangePaginationQuery) {
+    return this.service.listAutoConversionRules(consumer.id, query.page, query.pageSize);
   }
 
   @Post(`rules`)
-  createRule(@Identity() consumer: ConsumerModel, @Body() body: CreateAutoConversionRuleBody) {
+  createRule(@Identity() consumer: IIdentityContext, @Body() body: CreateAutoConversionRuleBody) {
     return this.service.createAutoConversionRule(consumer.id, body);
   }
 
   @Patch(`rules/:ruleId`)
   updateRule(
-    @Identity() consumer: ConsumerModel,
+    @Identity() consumer: IIdentityContext,
     @Param(`ruleId`) ruleId: string,
     @Body() body: UpdateAutoConversionRuleBody,
   ) {
@@ -64,30 +76,22 @@ export class ConsumerExchangeController {
   }
 
   @Delete(`rules/:ruleId`)
-  deleteRule(@Identity() consumer: ConsumerModel, @Param(`ruleId`) ruleId: string) {
+  deleteRule(@Identity() consumer: IIdentityContext, @Param(`ruleId`) ruleId: string) {
     return this.service.deleteAutoConversionRule(consumer.id, ruleId);
   }
 
   @Get(`scheduled`)
-  listScheduled(
-    @Identity() consumer: ConsumerModel,
-    @Query(`page`) page?: string,
-    @Query(`pageSize`) pageSize?: string,
-  ) {
-    return this.service.listScheduledConversions(
-      consumer.id,
-      page ? Number(page) : undefined,
-      pageSize ? Number(pageSize) : undefined,
-    );
+  listScheduled(@Identity() consumer: IIdentityContext, @Query() query: ConsumerExchangePaginationQuery) {
+    return this.service.listScheduledConversions(consumer.id, query.page, query.pageSize);
   }
 
   @Post(`scheduled`)
-  schedule(@Identity() consumer: ConsumerModel, @Body() body: ScheduleConversionBody) {
+  schedule(@Identity() consumer: IIdentityContext, @Body() body: ScheduleConversionBody) {
     return this.service.scheduleConversion(consumer.id, body);
   }
 
   @Post(`scheduled/:conversionId/cancel`)
-  cancelScheduled(@Identity() consumer: ConsumerModel, @Param(`conversionId`) conversionId: string) {
+  cancelScheduled(@Identity() consumer: IIdentityContext, @Param(`conversionId`) conversionId: string) {
     return this.service.cancelScheduledConversion(consumer.id, conversionId);
   }
 

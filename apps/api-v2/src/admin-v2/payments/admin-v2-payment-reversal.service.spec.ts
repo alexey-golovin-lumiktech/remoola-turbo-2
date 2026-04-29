@@ -20,7 +20,7 @@ describe(`AdminV2PaymentReversalService`, () => {
       sendPaymentChargebackEmail: jest.fn().mockResolvedValue(undefined),
     } as any;
 
-    const service = new AdminV2PaymentReversalService(prisma, mailingService, {} as any, {} as any);
+    const service = new AdminV2PaymentReversalService(prisma, mailingService, {} as any, {} as any, {} as any);
 
     await (service as any).sendReversalEmails({
       paymentRequestId: `pr-1`,
@@ -114,7 +114,7 @@ describe(`AdminV2PaymentReversalService`, () => {
     const adminActionAudit = {
       record: jest.fn().mockResolvedValue(undefined),
     } as any;
-    const service = new AdminV2PaymentReversalService(prisma, {} as any, balanceService, adminActionAudit);
+    const service = new AdminV2PaymentReversalService(prisma, {} as any, balanceService, adminActionAudit, {} as any);
     jest.spyOn(service as any, `sendReversalEmails`).mockResolvedValue(undefined);
 
     await expect(
@@ -175,7 +175,7 @@ describe(`AdminV2PaymentReversalService`, () => {
     const adminActionAudit = {
       record: jest.fn().mockResolvedValue(undefined),
     } as any;
-    const service = new AdminV2PaymentReversalService(prisma, {} as any, balanceService, adminActionAudit);
+    const service = new AdminV2PaymentReversalService(prisma, {} as any, balanceService, adminActionAudit, {} as any);
     jest.spyOn(service as any, `sendReversalEmails`).mockResolvedValue(undefined);
 
     await service.createReversal(`pr-reversal`, { kind: `CHARGEBACK`, amount: 25 }, `admin-1`);
@@ -256,10 +256,9 @@ describe(`AdminV2PaymentReversalService`, () => {
     const adminActionAudit = {
       record: jest.fn().mockResolvedValue(undefined),
     } as any;
-    const service = new AdminV2PaymentReversalService(prisma, {} as any, balanceService, adminActionAudit);
-    (service as unknown as { stripe: { refunds: { create: jest.Mock } } }).stripe = {
+    const service = new AdminV2PaymentReversalService(prisma, {} as any, balanceService, adminActionAudit, {
       refunds: { create: refundsCreate },
-    } as any;
+    } as any);
     jest.spyOn(service as any, `sendReversalEmails`).mockResolvedValue(undefined);
 
     await service.createReversal(`pr-refund`, { kind: `REFUND`, amount: 25 }, `admin-1`);

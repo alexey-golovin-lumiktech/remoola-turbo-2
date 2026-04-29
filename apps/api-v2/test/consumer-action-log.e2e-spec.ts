@@ -14,6 +14,7 @@ import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { ConsumerActionInterceptor, deviceIdMiddleware } from '../src/common';
 import { envs } from '../src/envs';
+import { AuthGuard } from '../src/guards/auth.guard';
 import { ConsumerActionLogService } from '../src/shared/consumer-action-log.service';
 
 describe(`Consumer action log integration (e2e, isolated DB)`, () => {
@@ -29,7 +30,10 @@ describe(`Consumer action log integration (e2e, isolated DB)`, () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix(`api`);
@@ -43,7 +47,9 @@ describe(`Consumer action log integration (e2e, isolated DB)`, () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`records oauth complete failure in consumer_action_log`, async () => {

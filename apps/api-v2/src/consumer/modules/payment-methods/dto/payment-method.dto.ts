@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
-import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, Length, Matches } from 'class-validator';
+import { Expose, Transform } from 'class-transformer';
+import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, Length, Matches } from 'class-validator';
 
 import {
   type ConsumerConfirmStripeSetupIntentPayload,
@@ -132,7 +132,7 @@ export class CreateManualPaymentMethod {
 
   @Expose()
   @IsOptional()
-  @IsString()
+  @IsEmail()
   @ApiProperty({ required: false })
   billingEmail?: string;
 
@@ -150,6 +150,7 @@ export class CreateManualPaymentMethod {
 
   @Expose()
   @IsOptional()
+  @Transform(({ obj }) => obj?.defaultSelected)
   @IsBoolean()
   @ApiProperty({ required: false })
   defaultSelected?: boolean;
@@ -158,6 +159,8 @@ export class CreateManualPaymentMethod {
 export class UpdatePaymentMethod {
   @Expose()
   @IsOptional()
+  @Transform(({ obj }) => obj?.defaultSelected)
+  @IsBoolean()
   @ApiProperty({ required: false })
   defaultSelected?: boolean;
 
@@ -169,7 +172,7 @@ export class UpdatePaymentMethod {
 
   @Expose()
   @IsOptional()
-  @IsString()
+  @IsEmail()
   @ApiProperty({ required: false })
   billingEmail?: string;
 

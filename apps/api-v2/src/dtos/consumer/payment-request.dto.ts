@@ -16,7 +16,7 @@ import {
   IsValidEmail,
 } from '../../shared-common';
 
-class PaymentRequestDTO extends BaseModel implements IPaymentRequestModel {
+class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @Expose()
   @ApiProperty({ description: `ID of the consumer who created the payment request` })
   @IsUUID(`all`)
@@ -100,7 +100,7 @@ class PaymentRequestDTO extends BaseModel implements IPaymentRequestModel {
 }
 
 export class PaymentRequestResponse
-  extends OmitType(PaymentRequestDTO, [`deletedAt`] as const)
+  extends OmitType(PaymentRequest, [`deletedAt`] as const)
   implements IPaymentRequestResponseExtended
 {
   @Expose()
@@ -146,7 +146,7 @@ export class PaymentRequestsListQuery {
   filter: ReqQueryFilter<IConsumerModel>;
 }
 
-export class PaymentRequestPayToContact extends PickType(PaymentRequestDTO, [
+export class PaymentRequestPayToContact extends PickType(PaymentRequest, [
   `description`,
   `amount`,
   `currencyCode`,

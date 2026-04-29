@@ -15,7 +15,7 @@ import {
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsNumber, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import express from 'express';
 
 import { JwtAuthGuard } from '../../auth/jwt.guard';
@@ -23,19 +23,6 @@ import { Identity, type IIdentityContext } from '../../common';
 import { resolveRequestBaseUrl } from '../../shared/request-base-url';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2DocumentsService } from './admin-v2-documents.service';
-
-function one(value: string | string[] | undefined): string | undefined {
-  return (typeof value === `string` ? value : value?.[0])?.trim() || undefined;
-}
-
-function toNumber(value: string | undefined): number | undefined {
-  if (value == null) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
 
 function requestMeta(req: express.Request) {
   const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
@@ -49,13 +36,13 @@ function requestMeta(req: express.Request) {
   };
 }
 
-class DocumentTagCreateBodyDTO {
+class DocumentTagCreateBody {
   @Expose()
   @IsString()
   name!: string;
 }
 
-class DocumentTagUpdateBodyDTO {
+class DocumentTagUpdateBody {
   @Expose()
   @IsString()
   name!: string;
@@ -66,7 +53,7 @@ class DocumentTagUpdateBodyDTO {
   version!: number;
 }
 
-class DocumentTagDeleteBodyDTO {
+class DocumentTagDeleteBody {
   @Expose()
   @Transform(({ value }) => value === true || value === `true`)
   @IsBoolean()
@@ -78,7 +65,7 @@ class DocumentTagDeleteBodyDTO {
   version!: number;
 }
 
-class DocumentRetagBodyDTO {
+class DocumentRetagBody {
   @Expose()
   @Type(() => Number)
   @IsNumber()
@@ -90,7 +77,7 @@ class DocumentRetagBodyDTO {
   tagIds!: string[];
 }
 
-class BulkTagResourceDTO {
+class BulkTagResource {
   @Expose()
   @IsString()
   resourceId!: string;
@@ -101,7 +88,7 @@ class BulkTagResourceDTO {
   version!: number;
 }
 
-class DocumentBulkTagBodyDTO {
+class DocumentBulkTagBody {
   @Expose()
   @IsArray()
   @IsString({ each: true })
@@ -110,8 +97,87 @@ class DocumentBulkTagBodyDTO {
   @Expose()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => BulkTagResourceDTO)
-  resources!: BulkTagResourceDTO[];
+  @Type(() => BulkTagResource)
+  resources!: BulkTagResource[];
+}
+
+class AdminDocumentsListQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  q?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  consumerId?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  access?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  mimetype?: string;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  sizeMin?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  sizeMax?: number;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  createdFrom?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  createdTo?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  paymentRequestId?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  tag?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  tagId?: string;
+
+  @Expose()
+  @Transform(({ value }) => value === true || value === `true`)
+  @IsBoolean()
+  @IsOptional()
+  includeDeleted?: boolean;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -128,25 +194,12 @@ export class AdminV2DocumentsController {
   @Get()
   async listDocuments(
     @Identity() admin: IIdentityContext,
-    @Query() query: Record<string, string | string[] | undefined>,
+    @Query() query: AdminDocumentsListQuery,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `documents.read`);
     return this.service.listDocuments({
-      page: toNumber(one(query.page)),
-      pageSize: toNumber(one(query.pageSize)),
-      q: one(query.q),
-      consumerId: one(query.consumerId),
-      access: one(query.access),
-      mimetype: one(query.mimetype),
-      sizeMin: toNumber(one(query.sizeMin)),
-      sizeMax: toNumber(one(query.sizeMax)),
-      createdFrom: one(query.createdFrom),
-      createdTo: one(query.createdTo),
-      paymentRequestId: one(query.paymentRequestId),
-      tag: one(query.tag),
-      tagId: one(query.tagId),
-      includeDeleted: one(query.includeDeleted) === `true`,
+      ...query,
       backendBaseUrl: resolveRequestBaseUrl(req),
     });
   }
@@ -188,7 +241,7 @@ export class AdminV2DocumentsController {
   @Post(`tags`)
   async createTag(
     @Identity() admin: IIdentityContext,
-    @Body() body: DocumentTagCreateBodyDTO,
+    @Body() body: DocumentTagCreateBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
@@ -199,7 +252,7 @@ export class AdminV2DocumentsController {
   async updateTag(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: DocumentTagUpdateBodyDTO,
+    @Body() body: DocumentTagUpdateBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
@@ -210,7 +263,7 @@ export class AdminV2DocumentsController {
   async deleteTag(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: DocumentTagDeleteBodyDTO,
+    @Body() body: DocumentTagDeleteBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
@@ -221,7 +274,7 @@ export class AdminV2DocumentsController {
   async retagDocument(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: DocumentRetagBodyDTO,
+    @Body() body: DocumentRetagBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
@@ -231,7 +284,7 @@ export class AdminV2DocumentsController {
   @Post(`bulk-tag`)
   async bulkTagDocuments(
     @Identity() admin: IIdentityContext,
-    @Body() body: DocumentBulkTagBodyDTO,
+    @Body() body: DocumentBulkTagBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);

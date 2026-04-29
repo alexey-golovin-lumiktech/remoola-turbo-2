@@ -21,7 +21,7 @@ export type IJwtTokenPayload = {
   exp?: number;
 };
 
-export class JwtTokenPayloadDTO implements IJwtTokenPayload {
+export class JwtTokenPayload implements IJwtTokenPayload {
   @Expose()
   @IsString()
   identityId?: string;

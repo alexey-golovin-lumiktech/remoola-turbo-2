@@ -1,8 +1,45 @@
-import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 
 import { AdminV2AuthController } from './admin-v2-auth.controller';
 
 type ControllerCtorArgs = ConstructorParameters<typeof AdminV2AuthController>;
+
+const validationPipe = new ValidationPipe({
+  whitelist: true,
+  forbidNonWhitelisted: true,
+  forbidUnknownValues: true,
+  stopAtFirstError: true,
+  transform: true,
+  transformOptions: {
+    excludeExtraneousValues: true,
+    exposeUnsetFields: false,
+    enableImplicitConversion: true,
+    exposeDefaultValues: false,
+  },
+});
+
+function getBodyMetatype(methodName: keyof AdminV2AuthController, parameterIndex: number) {
+  const paramTypes = Reflect.getMetadata(`design:paramtypes`, AdminV2AuthController.prototype, methodName) as
+    | Array<new (...args: never[]) => unknown>
+    | undefined;
+  const metatype = paramTypes?.[parameterIndex];
+  if (!metatype) {
+    throw new Error(`Missing body metatype for ${String(methodName)} at index ${String(parameterIndex)}`);
+  }
+  return metatype;
+}
+
+async function transformBody(
+  methodName: keyof AdminV2AuthController,
+  parameterIndex: number,
+  value: Record<string, unknown>,
+) {
+  return validationPipe.transform(value, {
+    type: `body`,
+    metatype: getBodyMetatype(methodName, parameterIndex),
+    data: undefined,
+  });
+}
 
 const buildRequest = () => ({
   ip: `203.0.113.5`,
@@ -19,8 +56,16 @@ const buildResponse = () => ({
   clearCookie: jest.fn(),
 });
 
-const buildOriginResolver = () => ({
-  resolveAdminRequestOrigin: jest.fn(() => `https://admin-v2.example.com`),
+const buildSupportService = () => ({
+  resolveAdminOrigin: jest.fn(() => `https://admin-v2.example.com`),
+  resolveRequestMeta: jest.fn((req: ReturnType<typeof buildRequest>) => ({
+    ipAddress: req.ip,
+    userAgent: req.headers[`user-agent`],
+  })),
+  setAuthCookies: jest.fn(),
+  clearAuthCookies: jest.fn(),
+  getRefreshTokenFromRequest: jest.fn(() => `refresh-token`),
+  ensureCsrf: jest.fn(),
 });
 
 const buildAdminsService = () => ({
@@ -46,15 +91,15 @@ const buildController = (overrides?: {
   authService?: ReturnType<typeof buildAuthService>;
   auditService?: ReturnType<typeof buildAuditService>;
   adminsService?: ReturnType<typeof buildAdminsService>;
-  originResolver?: ReturnType<typeof buildOriginResolver>;
+  supportService?: ReturnType<typeof buildSupportService>;
 }) => {
   const authService = overrides?.authService ?? buildAuthService();
   const auditService = overrides?.auditService ?? buildAuditService();
   const adminsService = overrides?.adminsService ?? buildAdminsService();
-  const originResolver = overrides?.originResolver ?? buildOriginResolver();
+  const supportService = overrides?.supportService ?? buildSupportService();
   const args: ControllerCtorArgs = [
     authService as never,
-    originResolver as never,
+    supportService as never,
     adminsService as never,
     auditService as never,
   ];
@@ -63,11 +108,53 @@ const buildController = (overrides?: {
     authService,
     auditService,
     adminsService,
-    originResolver,
+    supportService,
   };
 };
 
 describe(`AdminV2AuthController`, () => {
+  describe(`validation boundary`, () => {
+    it(`preserves invitation and recovery payload fields under excludeExtraneousValues`, async () => {
+      await expect(
+        transformBody(`acceptInvitation`, 0, {
+          token: `invite-token`,
+          password: `password123`,
+        }),
+      ).resolves.toMatchObject({
+        token: `invite-token`,
+        password: `password123`,
+      });
+
+      await expect(
+        transformBody(`requestPasswordReset`, 0, {
+          email: `admin@example.com`,
+        }),
+      ).resolves.toMatchObject({
+        email: `admin@example.com`,
+      });
+
+      await expect(
+        transformBody(`resetPassword`, 0, {
+          token: `reset-token`,
+          password: `password123`,
+        }),
+      ).resolves.toMatchObject({
+        token: `reset-token`,
+        password: `password123`,
+      });
+    });
+
+    it(`preserves revoke-session sessionId instead of stripping it`, async () => {
+      await expect(
+        transformBody(`revokeSession`, 3, {
+          sessionId: `123e4567-e89b-42d3-a456-426614174000`,
+        }),
+      ).resolves.toMatchObject({
+        sessionId: `123e4567-e89b-42d3-a456-426614174000`,
+      });
+    });
+  });
+
   describe(`requestPasswordReset`, () => {
     it(`returns a generic recovery response and delegates to admins service`, async () => {
       const { controller, adminsService } = buildController();

@@ -15,15 +15,48 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
+import { Expose, Type } from 'class-transformer';
+import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
-
-import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerDocumentsService } from './consumer-documents.service';
 import { AttachDocuments, BulkDeleteDocuments, SetTags } from './dto/document.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
-import { Identity } from '../../../common';
+import { Identity, type IIdentityContext } from '../../../common';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
+
+class ConsumerDocumentsListQuery {
+  @Expose()
+  @IsString()
+  @IsOptional()
+  kind?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  contactId?: string;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+}
+
+class UploadDocumentsBody {
+  @Expose()
+  @IsString()
+  @IsOptional()
+  paymentRequestId?: string;
+}
 
 @ApiTags(`Consumer: documents`)
 @Controller(`consumer/documents`)
@@ -33,26 +66,23 @@ export class ConsumerDocumentsController {
 
   @Get()
   list(
-    @Identity() consumer: ConsumerModel,
-    @Query(`kind`) kind?: string,
-    @Query(`contactId`) contactId?: string,
-    @Query(`page`) page?: string,
-    @Query(`pageSize`) pageSize?: string,
+    @Identity() consumer: IIdentityContext,
+    @Query() query: ConsumerDocumentsListQuery,
     @Req() req?: express.Request,
   ) {
     return this.documents.getDocuments(
       consumer.id,
-      kind,
-      page ? Number(page) : undefined,
-      pageSize ? Number(pageSize) : undefined,
+      query.kind,
+      query.page,
+      query.pageSize,
       req ? resolveRequestBaseUrl(req) : undefined,
-      contactId,
+      query.contactId,
     );
   }
 
   @Get(`:id/download`)
   async download(
-    @Identity() consumer: ConsumerModel,
+    @Identity() consumer: IIdentityContext,
     @Param(`id`) id: string,
     @Res({ passthrough: true }) res: express.Response,
   ) {
@@ -74,32 +104,32 @@ export class ConsumerDocumentsController {
   @Post(`upload`)
   @UseInterceptors(FilesInterceptor(`files`))
   upload(
-    @Identity() consumer: ConsumerModel,
+    @Identity() consumer: IIdentityContext,
     @UploadedFiles() files: Express.Multer.File[],
-    @Body(`paymentRequestId`) paymentRequestId: string | undefined,
+    @Body() body: UploadDocumentsBody,
     @Req() req: express.Request,
   ) {
-    return this.documents.uploadDocuments(consumer.id, files, resolveRequestBaseUrl(req), paymentRequestId);
+    return this.documents.uploadDocuments(consumer.id, files, resolveRequestBaseUrl(req), body.paymentRequestId);
   }
 
   @Post(`bulk-delete`)
-  bulkDelete(@Identity() consumer: ConsumerModel, @Body() body: BulkDeleteDocuments) {
+  bulkDelete(@Identity() consumer: IIdentityContext, @Body() body: BulkDeleteDocuments) {
     return this.documents.bulkDeleteDocuments(consumer.id, body.ids ?? body.documentIds ?? []);
   }
 
   @Delete(`:id`)
-  delete(@Identity() consumer: ConsumerModel, @Param(`id`) id: string) {
+  delete(@Identity() consumer: IIdentityContext, @Param(`id`) id: string) {
     return this.documents.deleteDocument(consumer.id, id);
   }
 
   @Post(`attach-to-payment`)
-  attachToPayment(@Identity() consumer: ConsumerModel, @Body() body: AttachDocuments) {
+  attachToPayment(@Identity() consumer: IIdentityContext, @Body() body: AttachDocuments) {
     return this.documents.attachToPayment(consumer.id, body.paymentRequestId, body.resourceIds);
   }
 
   @Delete(`payment-attachments/:paymentRequestId/:resourceId`)
   detachFromPayment(
-    @Identity() consumer: ConsumerModel,
+    @Identity() consumer: IIdentityContext,
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Param(`resourceId`) resourceId: string,
   ) {
@@ -107,7 +137,7 @@ export class ConsumerDocumentsController {
   }
 
   @Post(`:id/tags`)
-  setTags(@Identity() consumer: ConsumerModel, @Body() body: SetTags, @Param(`id`) resourceId: string) {
+  setTags(@Identity() consumer: IIdentityContext, @Body() body: SetTags, @Param(`id`) resourceId: string) {
     return this.documents.setTags(consumer.id, resourceId, body.tags);
   }
 }

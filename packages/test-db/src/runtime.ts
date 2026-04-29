@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { randomInt } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join } from 'node:path';
 
@@ -19,6 +19,11 @@ const TEST_DB_OWNER_PID_LABEL_KEY = `remoola.test-db.owner-pid` as const;
 const TEST_DB_CREATED_AT_LABEL_KEY = `remoola.test-db.created-at` as const;
 const TEST_DB_EXPIRES_AT_LABEL_KEY = `remoola.test-db.expires-at` as const;
 const DEFAULT_TEST_DB_TTL_MINUTES = 60;
+const FAST_TEST_DB_STATE_DIR = `.cache/test-db-fast` as const;
+const FAST_TEST_DB_LOCK_STALE_MS = 5 * 60 * 1000;
+const FAST_TEST_DB_LOCK_WAIT_MS = 120 * 1000;
+const FAST_TEST_DB_LOCK_POLL_MS = 250;
+const FAST_TEST_DB_METADATA_VERSION = 1 as const;
 
 type TemporaryDatabaseShutdownHandle = {
   databaseUrl: string;
@@ -47,6 +52,17 @@ type DockerComposeMetadata = {
   composePath: string;
 };
 
+type FastTemplateMetadata = {
+  version: typeof FAST_TEST_DB_METADATA_VERSION;
+  provider: TestDatabaseProvider;
+  projectName: string;
+  ownerPid: number;
+  createdAt: string;
+  expiresAt: string;
+  adminDatabaseUrl: string;
+  templateDatabaseName: string;
+};
+
 function getTestDbTtlMs(): number {
   const raw = process.env.TEST_DB_TTL_MINUTES;
   const parsed = Number.parseFloat(raw ?? ``);
@@ -54,17 +70,131 @@ function getTestDbTtlMs(): number {
   return Math.floor(parsed * 60 * 1000);
 }
 
+function useFastTemplateReuseMode(): boolean {
+  return process.env.TEST_DB_FAST_REUSE === `1`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isPidAlive(rawPid: number | string | undefined | null): boolean {
+  const pid = Number.parseInt(String(rawPid ?? ``), 10);
+  if (!Number.isFinite(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return Boolean(error && typeof error === `object` && `code` in error && error.code === `EPERM`);
+  }
+}
+
+function getFastTemplateOwnerPid(): number {
+  return process.ppid > 1 ? process.ppid : process.pid;
+}
+
+function getFastTemplateRunKey(): string {
+  return String(getFastTemplateOwnerPid());
+}
+
+function getFastTemplateStateDir(repoRoot: string): string {
+  return join(repoRoot, FAST_TEST_DB_STATE_DIR);
+}
+
+function getFastTemplateMetadataPath(repoRoot: string): string {
+  return join(getFastTemplateStateDir(repoRoot), `${getFastTemplateRunKey()}.json`);
+}
+
+function getFastTemplateLockPath(repoRoot: string): string {
+  return join(getFastTemplateStateDir(repoRoot), `${getFastTemplateRunKey()}.lock`);
+}
+
+function quoteIdentifier(identifier: string): string {
+  if (!PG_IDENTIFIER_PATTERN.test(identifier)) {
+    throw new Error(`Unsafe PostgreSQL identifier: ${identifier}`);
+  }
+  return `"${identifier}"`;
+}
+
+function buildDatabaseUrl(baseDatabaseUrl: string, databaseName: string): string {
+  if (!PG_IDENTIFIER_PATTERN.test(databaseName)) {
+    throw new Error(`Unsafe PostgreSQL database name: ${databaseName}`);
+  }
+  const parsed = new URL(baseDatabaseUrl);
+  parsed.pathname = `/${databaseName}`;
+  return parsed.toString();
+}
+
+function readFastTemplateMetadata(repoRoot: string): FastTemplateMetadata | null {
+  const metadataPath = getFastTemplateMetadataPath(repoRoot);
+  try {
+    const raw = readFileSync(metadataPath, `utf8`);
+    const parsed = JSON.parse(raw) as FastTemplateMetadata;
+    if (parsed.version !== FAST_TEST_DB_METADATA_VERSION) return null;
+    if (!parsed.adminDatabaseUrl || !parsed.templateDatabaseName) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeFastTemplateMetadata(repoRoot: string, metadata: FastTemplateMetadata): void {
+  const stateDir = getFastTemplateStateDir(repoRoot);
+  mkdirSync(stateDir, { recursive: true });
+  writeFileSync(getFastTemplateMetadataPath(repoRoot), JSON.stringify(metadata, null, 2) + `\n`, `utf8`);
+}
+
+async function acquireFastTemplateLock(repoRoot: string): Promise<() => void> {
+  const stateDir = getFastTemplateStateDir(repoRoot);
+  const lockPath = getFastTemplateLockPath(repoRoot);
+  mkdirSync(stateDir, { recursive: true });
+  const startedAt = Date.now();
+
+  while (true) {
+    try {
+      mkdirSync(lockPath);
+      writeFileSync(
+        join(lockPath, `owner.json`),
+        JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() }, null, 2) + `\n`,
+        `utf8`,
+      );
+      return () => {
+        rmSync(lockPath, { recursive: true, force: true });
+      };
+    } catch (error) {
+      const code = error && typeof error === `object` && `code` in error ? error.code : null;
+      if (code !== `EEXIST`) throw error;
+
+      try {
+        const stats = statSync(lockPath);
+        if (Date.now() - stats.mtimeMs > FAST_TEST_DB_LOCK_STALE_MS) {
+          rmSync(lockPath, { recursive: true, force: true });
+          continue;
+        }
+      } catch {
+        continue;
+      }
+
+      if (Date.now() - startedAt > FAST_TEST_DB_LOCK_WAIT_MS) {
+        throw new Error(`Timed out waiting for shared fast test-db lock`);
+      }
+      await sleep(FAST_TEST_DB_LOCK_POLL_MS);
+    }
+  }
+}
+
 function createLifecycleMetadata(
   repoRoot: string,
   provider: TestDatabaseProvider,
   projectName: string,
+  ownerPid = process.pid,
 ): TemporaryDatabaseLifecycleMetadata {
   const createdAt = new Date();
   return {
     repoRoot,
     provider,
     projectName,
-    ownerPid: process.pid,
+    ownerPid,
     createdAt: createdAt.toISOString(),
     expiresAt: new Date(createdAt.getTime() + getTestDbTtlMs()).toISOString(),
   };
@@ -283,6 +413,54 @@ async function prefillDatabase(databaseUrl: string): Promise<void> {
   throw new Error(`Failed to prefill temporary database using @remoola/db-fixtures.${output ? `\n${output}` : ``}`);
 }
 
+async function databaseExists(adminDatabaseUrl: string, databaseName: string): Promise<boolean> {
+  const prisma = new PrismaClient({ datasourceUrl: adminDatabaseUrl });
+  try {
+    const rows = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
+      `SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1) AS "exists"`,
+      databaseName,
+    );
+    return rows[0]?.exists ?? false;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+async function createDatabase(adminDatabaseUrl: string, databaseName: string, templateDatabaseName?: string): Promise<void> {
+  const prisma = new PrismaClient({ datasourceUrl: adminDatabaseUrl });
+  try {
+    const quotedDatabaseName = quoteIdentifier(databaseName);
+    if (templateDatabaseName) {
+      const quotedTemplateName = quoteIdentifier(templateDatabaseName);
+      await prisma.$executeRawUnsafe(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE ${quotedTemplateName}`);
+      return;
+    }
+    await prisma.$executeRawUnsafe(`CREATE DATABASE ${quotedDatabaseName}`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+async function dropDatabase(adminDatabaseUrl: string, databaseName: string): Promise<void> {
+  const prisma = new PrismaClient({ datasourceUrl: adminDatabaseUrl });
+  try {
+    await prisma.$queryRawUnsafe(
+      `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()`,
+      databaseName,
+    );
+    await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS ${quoteIdentifier(databaseName)}`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+async function createTemplateDatabase(repoRoot: string, adminDatabaseUrl: string, templateDatabaseName: string): Promise<void> {
+  await createDatabase(adminDatabaseUrl, templateDatabaseName);
+  const templateDatabaseUrl = buildDatabaseUrl(adminDatabaseUrl, templateDatabaseName);
+  runPrismaMigrations(repoRoot, templateDatabaseUrl);
+  await prefillDatabase(templateDatabaseUrl);
+}
+
 async function truncatePublicTables(databaseUrl: string): Promise<void> {
   const prisma = new PrismaClient({ datasourceUrl: databaseUrl });
   try {
@@ -406,6 +584,64 @@ async function createTemporaryDatabaseWithDockerCompose(repoRoot: string): Promi
   });
 }
 
+async function createFastTemplateMetadataWithDockerCompose(repoRoot: string): Promise<FastTemplateMetadata> {
+  const hostPort = await getAvailablePort();
+  const projectName = `remoola_test_fast_${createUniqueSuffix().replace(/[^a-zA-Z0-9_]/g, `_`)}`;
+  const lifecycleMetadata = createLifecycleMetadata(repoRoot, `docker-compose`, projectName, getFastTemplateOwnerPid());
+  const composePath = join(repoRoot, DEFAULT_DOCKER_COMPOSE_RELATIVE_PATH);
+  const adminDatabaseUrl = `postgresql://postgres:postgres@127.0.0.1:${hostPort}/postgres`;
+  const templateDatabaseName = `remoola_test_template_${createUniqueSuffix().replace(/[^a-zA-Z0-9_]/g, `_`)}`;
+
+  const composeEnv = {
+    ...process.env,
+    TEST_DB_NAME: `postgres`,
+    TEST_DB_USER: `postgres`,
+    TEST_DB_PASSWORD: `postgres`,
+    TEST_DB_HOST_PORT: String(hostPort),
+    TEST_DB_PROJECT: lifecycleMetadata.projectName,
+    TEST_DB_PROVIDER: lifecycleMetadata.provider,
+    TEST_DB_OWNER_PID: String(lifecycleMetadata.ownerPid),
+    TEST_DB_CREATED_AT: lifecycleMetadata.createdAt,
+    TEST_DB_EXPIRES_AT: lifecycleMetadata.expiresAt,
+  };
+
+  runDockerCompose(
+    [`-f`, composePath, `-p`, projectName, `up`, `-d`],
+    repoRoot,
+    composeEnv,
+    `Failed to start shared fast docker-compose database.`,
+  );
+
+  try {
+    await waitForDatabaseReady(adminDatabaseUrl);
+    await createTemplateDatabase(repoRoot, adminDatabaseUrl, templateDatabaseName);
+  } catch (error) {
+    try {
+      runDockerCompose(
+        [`-f`, composePath, `-p`, projectName, `down`, `--volumes`, `--remove-orphans`],
+        repoRoot,
+        composeEnv,
+        `Failed to cleanup shared fast docker-compose database after setup error.`,
+      );
+    } catch {
+      // swallow cleanup failure in error path
+    }
+    throw error;
+  }
+
+  spawnDetachedCleanupWatcher(lifecycleMetadata);
+  return {
+    version: FAST_TEST_DB_METADATA_VERSION,
+    provider: lifecycleMetadata.provider,
+    projectName: lifecycleMetadata.projectName,
+    ownerPid: lifecycleMetadata.ownerPid,
+    createdAt: lifecycleMetadata.createdAt,
+    expiresAt: lifecycleMetadata.expiresAt,
+    adminDatabaseUrl,
+    templateDatabaseName,
+  };
+}
+
 async function createTemporaryDatabaseWithTestcontainers(repoRoot: string): Promise<TemporaryDatabaseHandle> {
   const projectName = `remoola_test_${createUniqueSuffix().replace(/[^a-zA-Z0-9_]/g, `_`)}`;
   const lifecycleMetadata = createLifecycleMetadata(repoRoot, `testcontainers`, projectName);
@@ -439,6 +675,87 @@ async function createTemporaryDatabaseWithTestcontainers(repoRoot: string): Prom
   });
 }
 
+async function createFastTemplateMetadataWithTestcontainers(repoRoot: string): Promise<FastTemplateMetadata> {
+  const projectName = `remoola_test_fast_${createUniqueSuffix().replace(/[^a-zA-Z0-9_]/g, `_`)}`;
+  const lifecycleMetadata = createLifecycleMetadata(repoRoot, `testcontainers`, projectName, getFastTemplateOwnerPid());
+  const container: StartedPostgreSqlContainer = await new PostgreSqlContainer(`postgres:16-alpine`)
+    .withDatabase(`postgres`)
+    .withUsername(`postgres`)
+    .withPassword(`postgres`)
+    .withLabels(buildTestDbLabels(lifecycleMetadata))
+    .start();
+
+  const adminDatabaseUrl = container.getConnectionUri();
+  const templateDatabaseName = `remoola_test_template_${createUniqueSuffix().replace(/[^a-zA-Z0-9_]/g, `_`)}`;
+  try {
+    await waitForDatabaseReady(adminDatabaseUrl);
+    await createTemplateDatabase(repoRoot, adminDatabaseUrl, templateDatabaseName);
+  } catch (error) {
+    try {
+      await container.stop();
+    } catch {
+      // swallow cleanup failure in error path
+    }
+    throw error;
+  }
+
+  spawnDetachedCleanupWatcher(lifecycleMetadata);
+  return {
+    version: FAST_TEST_DB_METADATA_VERSION,
+    provider: lifecycleMetadata.provider,
+    projectName: lifecycleMetadata.projectName,
+    ownerPid: lifecycleMetadata.ownerPid,
+    createdAt: lifecycleMetadata.createdAt,
+    expiresAt: lifecycleMetadata.expiresAt,
+    adminDatabaseUrl,
+    templateDatabaseName,
+  };
+}
+
+async function createFastTemplateMetadata(repoRoot: string): Promise<FastTemplateMetadata> {
+  const provider = getProvider();
+  if (provider === `docker-compose`) {
+    try {
+      return await createFastTemplateMetadataWithDockerCompose(repoRoot);
+    } catch {
+      return createFastTemplateMetadataWithTestcontainers(repoRoot);
+    }
+  }
+  return createFastTemplateMetadataWithTestcontainers(repoRoot);
+}
+
+async function resolveFastTemplateMetadata(repoRoot: string): Promise<FastTemplateMetadata> {
+  const releaseLock = await acquireFastTemplateLock(repoRoot);
+  try {
+    const existing = readFastTemplateMetadata(repoRoot);
+    if (existing && existing.ownerPid === getFastTemplateOwnerPid() && isPidAlive(existing.ownerPid)) {
+      const templateReady = await databaseExists(existing.adminDatabaseUrl, existing.templateDatabaseName).catch(() => false);
+      if (templateReady) return existing;
+    }
+
+    const created = await createFastTemplateMetadata(repoRoot);
+    writeFastTemplateMetadata(repoRoot, created);
+    return created;
+  } finally {
+    releaseLock();
+  }
+}
+
+async function createFastWorkerTemporaryDatabase(repoRoot: string): Promise<TemporaryDatabaseHandle> {
+  const metadata = await resolveFastTemplateMetadata(repoRoot);
+  const workerDbName = `remoola_test_worker_${getFastTemplateRunKey()}_${process.pid}_${process.env.JEST_WORKER_ID ?? `0`}`;
+  await dropDatabase(metadata.adminDatabaseUrl, workerDbName);
+  await createDatabase(metadata.adminDatabaseUrl, workerDbName, metadata.templateDatabaseName);
+  const databaseUrl = buildDatabaseUrl(metadata.adminDatabaseUrl, workerDbName);
+
+  return registerTemporaryDatabaseHandle({
+    databaseUrl,
+    shutdown: async () => {
+      await dropDatabase(metadata.adminDatabaseUrl, workerDbName);
+    },
+  });
+}
+
 export type TemporaryDatabaseHandle = {
   databaseUrl: string;
   shutdown: () => Promise<void>;
@@ -446,6 +763,9 @@ export type TemporaryDatabaseHandle = {
 
 export async function createTemporaryDatabase(): Promise<TemporaryDatabaseHandle> {
   const repoRoot = resolveMonorepoRoot(process.cwd());
+  if (useFastTemplateReuseMode()) {
+    return createFastWorkerTemporaryDatabase(repoRoot);
+  }
   const provider = getProvider();
   if (provider === `docker-compose`) {
     try {

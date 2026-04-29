@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 
-import { UnauthorizedException } from '@nestjs/common';
-import { type Request, type Response, type NextFunction } from 'express';
+import { Injectable, UnauthorizedException, type NestMiddleware } from '@nestjs/common';
+import { type NextFunction, type Request, type Response } from 'express';
 
 import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 
@@ -14,7 +14,6 @@ import {
 } from '../../shared-common/auth-cookie-policy';
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer`;
-const originResolver = new OriginResolverService();
 
 export interface RequestWithDeviceId extends Request {
   deviceId?: string;
@@ -50,39 +49,54 @@ function shouldSkipScopedDeviceId(req: RequestWithDeviceId): boolean {
   return isExternalPublicConsumerRoute(req.method, path);
 }
 
-/**
- * Middleware: for consumer API paths only, ensure req.deviceId is set.
- * Reads device cookie; if missing/invalid, generates a UUID and sets the cookie.
- * Cookie write failures are ignored (request continues).
- */
-export function deviceIdMiddleware(req: RequestWithDeviceId, res: Response, next: NextFunction): void {
-  if (!isConsumerApiPath(req.path)) {
-    return next();
-  }
-  if (shouldSkipScopedDeviceId(req)) {
-    return next();
-  }
-
-  const consumerScope = originResolver.validateConsumerAppScopeHeader(req.headers?.[CONSUMER_APP_SCOPE_HEADER]);
-  if (!consumerScope) {
-    return next(new UnauthorizedException(`Invalid app scope`));
-  }
-  const keys = getApiConsumerDeviceCookieKeysForRead(consumerScope);
-  const existing = readFirstValidDeviceId(req, keys);
-  let deviceId: string;
-
-  if (existing.value) {
-    deviceId = existing.value;
-  } else {
-    deviceId = randomUUID();
-    try {
-      const options = getApiConsumerDeviceCookieOptions(req);
-      res.cookie(getApiConsumerDeviceCookieKey(req, consumerScope), deviceId, { ...options, signed: true });
-    } catch {
-      // Cookie set failed (e.g. headers sent); continue without throwing
+export function createDeviceIdMiddleware(
+  originResolver: Pick<OriginResolverService, `validateConsumerAppScopeHeader`>,
+): (req: RequestWithDeviceId, res: Response, next: NextFunction) => void {
+  return (req: RequestWithDeviceId, res: Response, next: NextFunction): void => {
+    if (!isConsumerApiPath(req.path)) {
+      return next();
     }
+    if (shouldSkipScopedDeviceId(req)) {
+      return next();
+    }
+
+    const consumerScope = originResolver.validateConsumerAppScopeHeader(req.headers?.[CONSUMER_APP_SCOPE_HEADER]);
+    if (!consumerScope) {
+      return next(new UnauthorizedException(`Invalid app scope`));
+    }
+    const keys = getApiConsumerDeviceCookieKeysForRead(consumerScope);
+    const existing = readFirstValidDeviceId(req, keys);
+    let deviceId: string;
+
+    if (existing.value) {
+      deviceId = existing.value;
+    } else {
+      deviceId = randomUUID();
+      try {
+        const options = getApiConsumerDeviceCookieOptions(req);
+        res.cookie(getApiConsumerDeviceCookieKey(req, consumerScope), deviceId, { ...options, signed: true });
+      } catch {
+        // Cookie set failed (e.g. headers sent); continue without throwing
+      }
+    }
+
+    req.deviceId = deviceId;
+    next();
+  };
+}
+
+// Preserve direct function usage in legacy tests while the app itself resolves middleware through Nest DI.
+export const deviceIdMiddleware = createDeviceIdMiddleware(new OriginResolverService());
+
+@Injectable()
+export class DeviceIdMiddleware implements NestMiddleware {
+  private readonly middleware: ReturnType<typeof createDeviceIdMiddleware>;
+
+  constructor(private readonly originResolver: OriginResolverService) {
+    this.middleware = createDeviceIdMiddleware(this.originResolver);
   }
 
-  req.deviceId = deviceId;
-  next();
+  use(req: RequestWithDeviceId, res: Response, next: NextFunction): void {
+    this.middleware(req, res, next);
+  }
 }

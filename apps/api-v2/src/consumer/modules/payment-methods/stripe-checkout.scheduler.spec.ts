@@ -49,12 +49,8 @@ describe(`StripeCheckoutScheduler`, () => {
     scheduler = new StripeCheckoutScheduler(
       prisma as unknown as PrismaService,
       { finalizeCheckoutSessionSuccess: finalizeCheckoutSessionSuccessMock } as any,
+      { checkout: { sessions: { retrieve: sessionsRetrieveMock } } } as any,
     );
-    (
-      scheduler as unknown as {
-        stripe: { checkout: { sessions: { retrieve: (id: string) => Promise<{ payment_status: string }> } } };
-      }
-    ).stripe = { checkout: { sessions: { retrieve: sessionsRetrieveMock } } };
     logSpy = jest
       .spyOn((scheduler as unknown as { logger: { log: (...args: unknown[]) => void } }).logger, `log`)
       .mockImplementation(() => undefined);

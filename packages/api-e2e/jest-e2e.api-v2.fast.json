@@ -13,7 +13,7 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "maxWorkers": 1,
+  "maxWorkers": 2,
   "forceExit": false,
   "detectOpenHandles": false,
   "errorOnDeprecated": true,

@@ -7,7 +7,7 @@ import { $Enums, type ConsumerModel } from '@remoola/database-2';
 import { constants, type IConsumerCreate, type IConsumerUpdate, IsValidEmail } from '../../shared-common';
 import { BaseModel } from '../common';
 
-export class ConsumerDTO extends BaseModel implements ConsumerModel {
+export class Consumer extends BaseModel implements ConsumerModel {
   @Expose()
   @ApiProperty({ description: `Consumer email address (used for authentication)`, required: true })
   @IsValidEmail({ message: constants.INVALID_EMAIL })
@@ -123,7 +123,7 @@ export class ConsumerDTO extends BaseModel implements ConsumerModel {
 }
 
 export class ConsumerCreate
-  extends PickType(ConsumerDTO, [
+  extends PickType(Consumer, [
     `email`,
     `verified`,
     `legalVerified`,

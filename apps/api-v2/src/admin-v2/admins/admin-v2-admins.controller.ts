@@ -2,7 +2,19 @@ import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, 
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import express from 'express';
 
 import { adminErrorCodes } from '@remoola/shared-constants';
@@ -14,18 +26,6 @@ import { constants } from '../../shared-common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2AdminSessionsService } from './admin-v2-admin-sessions.service';
 import { AdminV2AdminsService } from './admin-v2-admins.service';
-
-function one(value: string | string[] | undefined): string | undefined {
-  return (typeof value === `string` ? value : value?.[0])?.trim() || undefined;
-}
-
-function toNumber(value: string | undefined): number | undefined {
-  if (value == null) {
-    return undefined;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
 
 function requestMeta(req: express.Request) {
   const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
@@ -39,7 +39,7 @@ function requestMeta(req: express.Request) {
   };
 }
 
-class InviteAdminBodyDTO {
+class InviteAdminBody {
   @Expose()
   @IsEmail()
   email!: string;
@@ -54,7 +54,7 @@ class InviteAdminBodyDTO {
   passwordConfirmation!: string;
 }
 
-class VersionedAdminMutationBodyDTO {
+class VersionedAdminMutationBody {
   @Expose()
   @Type(() => Number)
   @IsNumber()
@@ -66,7 +66,7 @@ class VersionedAdminMutationBodyDTO {
   passwordConfirmation!: string;
 }
 
-class DeactivateAdminBodyDTO extends VersionedAdminMutationBodyDTO {
+class DeactivateAdminBody extends VersionedAdminMutationBody {
   @Expose()
   @IsBoolean()
   confirmed!: boolean;
@@ -77,7 +77,7 @@ class DeactivateAdminBodyDTO extends VersionedAdminMutationBodyDTO {
   reason?: string;
 }
 
-class ChangeAdminRoleBodyDTO extends VersionedAdminMutationBodyDTO {
+class ChangeAdminRoleBody extends VersionedAdminMutationBody {
   @Expose()
   @IsBoolean()
   confirmed!: boolean;
@@ -87,7 +87,7 @@ class ChangeAdminRoleBodyDTO extends VersionedAdminMutationBodyDTO {
   roleKey!: string;
 }
 
-class PermissionOverrideDTO {
+class PermissionOverride {
   @Expose()
   @IsString()
   capability!: string;
@@ -98,14 +98,41 @@ class PermissionOverrideDTO {
   mode!: `inherit` | `grant` | `deny`;
 }
 
-class ChangeAdminPermissionsBodyDTO extends VersionedAdminMutationBodyDTO {
+class ChangeAdminPermissionsBody extends VersionedAdminMutationBody {
   @Expose()
-  @Type(() => PermissionOverrideDTO)
+  @Type(() => PermissionOverride)
   @IsArray()
-  capabilityOverrides!: PermissionOverrideDTO[];
+  @ValidateNested({ each: true })
+  capabilityOverrides!: PermissionOverride[];
 }
 
-class AdminPasswordPatchBodyDTO {
+class ListAdminsQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  q?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  status?: string;
+}
+
+class AdminPasswordPatchBody {
   @Expose()
   @IsString()
   @Matches(constants.PASSWORD_RE, { message: constants.INVALID_PASSWORD })
@@ -117,7 +144,7 @@ class AdminPasswordPatchBodyDTO {
   passwordConfirmation!: string;
 }
 
-class LegacyAdminStatusBodyDTO {
+class LegacyAdminStatusBody {
   @Expose()
   @IsIn([`delete`, `restore`])
   action!: `delete` | `restore`;
@@ -143,14 +170,9 @@ export class AdminV2AdminsController {
   ) {}
 
   @Get()
-  async listAdmins(@Identity() admin: IIdentityContext, @Query() query: Record<string, string | string[] | undefined>) {
+  async listAdmins(@Identity() admin: IIdentityContext, @Query() query: ListAdminsQuery) {
     await this.accessService.assertCapability(admin, `admins.read`);
-    return this.service.listAdmins({
-      page: toNumber(one(query.page)),
-      pageSize: toNumber(one(query.pageSize)),
-      q: one(query.q),
-      status: one(query.status),
-    });
+    return this.service.listAdmins(query);
   }
 
   @Get(`:id`)
@@ -160,11 +182,7 @@ export class AdminV2AdminsController {
   }
 
   @Post(`invite`)
-  async inviteAdmin(
-    @Identity() admin: IIdentityContext,
-    @Body() body: InviteAdminBodyDTO,
-    @Req() req: express.Request,
-  ) {
+  async inviteAdmin(@Identity() admin: IIdentityContext, @Body() body: InviteAdminBody, @Req() req: express.Request) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.service.inviteAdmin(admin.id, body, requestMeta(req));
@@ -174,7 +192,7 @@ export class AdminV2AdminsController {
   async deactivateAdmin(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: DeactivateAdminBodyDTO,
+    @Body() body: DeactivateAdminBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
@@ -186,7 +204,7 @@ export class AdminV2AdminsController {
   async restoreAdmin(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: VersionedAdminMutationBodyDTO,
+    @Body() body: VersionedAdminMutationBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
@@ -198,7 +216,7 @@ export class AdminV2AdminsController {
   async changeAdminRole(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: ChangeAdminRoleBodyDTO,
+    @Body() body: ChangeAdminRoleBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
@@ -210,7 +228,7 @@ export class AdminV2AdminsController {
   async changeAdminPermissions(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: ChangeAdminPermissionsBodyDTO,
+    @Body() body: ChangeAdminPermissionsBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
@@ -222,7 +240,7 @@ export class AdminV2AdminsController {
   async resetAdminPassword(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: VersionedAdminMutationBodyDTO,
+    @Body() body: VersionedAdminMutationBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
@@ -234,7 +252,7 @@ export class AdminV2AdminsController {
   async patchAdminPassword(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: AdminPasswordPatchBodyDTO,
+    @Body() body: AdminPasswordPatchBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
@@ -249,7 +267,7 @@ export class AdminV2AdminsController {
   async updateAdminStatus(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: LegacyAdminStatusBodyDTO,
+    @Body() body: LegacyAdminStatusBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);

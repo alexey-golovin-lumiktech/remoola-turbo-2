@@ -26,7 +26,7 @@ function requestMeta(req: express.Request) {
   };
 }
 
-class VerificationDecisionBodyDTO {
+class VerificationDecisionBody {
   @Expose()
   @IsBoolean()
   confirmed!: boolean;
@@ -89,7 +89,7 @@ export class AdminV2VerificationController {
   async approve(
     @Identity() admin: IIdentityContext,
     @Param(`consumerId`) consumerId: string,
-    @Body() body: VerificationDecisionBodyDTO,
+    @Body() body: VerificationDecisionBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `verification.decide`);
@@ -100,7 +100,7 @@ export class AdminV2VerificationController {
   async reject(
     @Identity() admin: IIdentityContext,
     @Param(`consumerId`) consumerId: string,
-    @Body() body: VerificationDecisionBodyDTO,
+    @Body() body: VerificationDecisionBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `verification.decide`);
@@ -111,7 +111,7 @@ export class AdminV2VerificationController {
   async requestInfo(
     @Identity() admin: IIdentityContext,
     @Param(`consumerId`) consumerId: string,
-    @Body() body: VerificationDecisionBodyDTO,
+    @Body() body: VerificationDecisionBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `verification.decide`);
@@ -122,7 +122,7 @@ export class AdminV2VerificationController {
   async flag(
     @Identity() admin: IIdentityContext,
     @Param(`consumerId`) consumerId: string,
-    @Body() body: VerificationDecisionBodyDTO,
+    @Body() body: VerificationDecisionBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `verification.decide`);

@@ -153,7 +153,6 @@ async function bootstrap(): Promise<INestApplication> {
   logger.log(`BOOT TIME=${new Date().toISOString()}`);
 
   const isOnVercel = envs.VERCEL === 1;
-  const originResolver = new OriginResolverService();
 
   if (isOnVercel) {
     process.env.NO_COLOR = `true`;
@@ -163,6 +162,7 @@ async function bootstrap(): Promise<INestApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
+  const originResolver = app.get(OriginResolverService);
   configureApp(app, originResolver);
   const prisma = app.get(PrismaService);
 

@@ -62,7 +62,7 @@ export class ConsumerStripeController {
 
   @Post(`:paymentRequestId/stripe-session`)
   async createStripeSession(
-    @Identity() consumer: ConsumerModel, //
+    @Identity() consumer: ConsumerModel,
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Query(`appScope`) appScope: string | undefined,
     @Query(`contractId`) contractId: string | undefined,
@@ -85,10 +85,7 @@ export class ConsumerStripeController {
 
   @TrackConsumerAction({ action: `consumer.payments.confirm`, resource: `payments` })
   @Post(`confirm`)
-  async confirmStripeSetupIntent(
-    @Identity() consumer: ConsumerModel, //
-    @Body() body: ConfirmStripeSetupIntent,
-  ) {
+  async confirmStripeSetupIntent(@Identity() consumer: ConsumerModel, @Body() body: ConfirmStripeSetupIntent) {
     return this.service.confirmStripeSetupIntent(consumer.id, body);
   }
 

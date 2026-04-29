@@ -1,6 +1,8 @@
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
@@ -14,7 +16,9 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/configure-app';
 import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
 import { envs } from '../src/envs';
+import { AuthGuard } from '../src/guards/auth.guard';
 import { MailingService } from '../src/shared/mailing.service';
+import { PrismaService } from '../src/shared/prisma.service';
 import {
   getApiConsumerAccessTokenCookieKey,
   getApiConsumerCsrfTokenCookieKeysForRead,
@@ -126,10 +130,17 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleFixture.createNestApplication<NestExpressApplication>();
     configureApp(app);
+    const reflector = moduleFixture.get(Reflector);
+    const jwtService = moduleFixture.get(JwtService);
+    const prismaService = moduleFixture.get(PrismaService);
+    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService));
     await app.init();
     authService = app.get(ConsumerAuthService);
     mailingService = app.get(MailingService);
@@ -144,7 +155,9 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   afterAll(async () => {
     envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`password/reset rejects requests without app scope header`, async () => {

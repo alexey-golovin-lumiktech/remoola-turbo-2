@@ -8,26 +8,18 @@ import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.serv
 import { ConsumerPaymentsController } from './consumer-payments.controller';
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { MailingModule } from '../../../shared/mailing.module';
-import { FileStorageService } from '../files/file-storage.service';
+import { FilesModule } from '../files/files.module';
 
 @Module({
-  imports: [MailingModule],
+  imports: [MailingModule, FilesModule],
   controllers: [ConsumerPaymentsController, ConsumerPaymentRequestsController],
   providers: [
-    FileStorageService,
     ConsumerPaymentsPoliciesService,
     ConsumerPaymentsQueriesService,
     ConsumerPaymentsCommandsService,
     ConsumerPaymentsService,
     ConsumerInvoiceService,
   ],
-  exports: [
-    FileStorageService,
-    ConsumerPaymentsPoliciesService,
-    ConsumerPaymentsQueriesService,
-    ConsumerPaymentsCommandsService,
-    ConsumerPaymentsService,
-    ConsumerInvoiceService,
-  ],
+  exports: [ConsumerPaymentsPoliciesService],
 })
 export class ConsumerPaymentsModule {}

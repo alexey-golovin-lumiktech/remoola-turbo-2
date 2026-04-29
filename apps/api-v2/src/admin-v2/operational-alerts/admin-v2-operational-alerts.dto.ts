@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import { Expose, Type } from 'class-transformer';
-import { IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Expose, Transform, Type } from 'class-transformer';
+import { Allow, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 
 import {
   ADMIN_V2_DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES,
@@ -55,7 +55,7 @@ export function assertValidQueryPayload(value: unknown): asserts value is Record
   }
 }
 
-export class OperationalAlertCreateBodyDTO {
+export class OperationalAlertCreateBody {
   @Expose()
   @IsString()
   workspace!: string;
@@ -70,9 +70,13 @@ export class OperationalAlertCreateBodyDTO {
   description?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.queryPayload)
+  @Allow()
   queryPayload!: unknown;
 
   @Expose()
+  @Transform(({ obj }) => obj.thresholdPayload)
+  @Allow()
   thresholdPayload!: unknown;
 
   @Expose()
@@ -82,7 +86,7 @@ export class OperationalAlertCreateBodyDTO {
   evaluationIntervalMinutes?: number;
 }
 
-export class OperationalAlertUpdateBodyDTO {
+export class OperationalAlertUpdateBody {
   @Expose()
   @IsOptional()
   @IsString()
@@ -94,10 +98,12 @@ export class OperationalAlertUpdateBodyDTO {
   description?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.queryPayload)
   @IsOptional()
   queryPayload?: unknown;
 
   @Expose()
+  @Transform(({ obj }) => obj.thresholdPayload)
   @IsOptional()
   thresholdPayload?: unknown;
 
@@ -113,7 +119,7 @@ export class OperationalAlertUpdateBodyDTO {
   expectedDeletedAtNull!: number;
 }
 
-export class OperationalAlertDeleteBodyDTO {
+export class OperationalAlertDeleteBody {
   @Expose()
   @Type(() => Number)
   @IsNumber()

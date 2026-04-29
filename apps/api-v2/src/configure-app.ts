@@ -1,6 +1,5 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
@@ -14,7 +13,7 @@ import { AdminV2Module } from './admin-v2/admin-v2.module';
 import {
   ConsumerActionInterceptor,
   CorrelationIdMiddleware,
-  deviceIdMiddleware,
+  DeviceIdMiddleware,
   LoggingInterceptor,
   PrismaExceptionFilter,
 } from './common';
@@ -24,7 +23,6 @@ import { AuthGuard } from './guards';
 import { TransformResponseInterceptor } from './interceptors';
 import { ConsumerActionLogService } from './shared/consumer-action-log.service';
 import { OriginResolverService } from './shared/origin-resolver.service';
-import { PrismaService } from './shared/prisma.service';
 import {
   buildSwaggerCookieAuthDocumentConfig,
   buildSwaggerCookieAuthScript,
@@ -157,7 +155,7 @@ function registerScopedCors(app: NestExpressApplication, originResolver: OriginR
   });
 }
 
-export function configureApp(app: NestExpressApplication, originResolver = new OriginResolverService()): void {
+export function configureApp(app: NestExpressApplication, originResolver = app.get(OriginResolverService)): void {
   app.enableShutdownHooks();
   app.setGlobalPrefix(`api`);
   app.set(`trust proxy`, 1);
@@ -190,7 +188,8 @@ export function configureApp(app: NestExpressApplication, originResolver = new O
 
   app.use(express.urlencoded({ extended: true, limit: `10mb` }));
   app.use(cookieParser(envs.SECURE_SESSION_SECRET));
-  app.use(deviceIdMiddleware);
+  const deviceIdMiddleware = app.get(DeviceIdMiddleware);
+  app.use(deviceIdMiddleware.use.bind(deviceIdMiddleware));
 
   app.use((req, res, next) => {
     if (envs.SWAGGER_ENABLED && (req.path === `/` || req.path === `/api`)) {
@@ -206,9 +205,9 @@ export function configureApp(app: NestExpressApplication, originResolver = new O
 
   app.useGlobalPipes(
     new ValidationPipe({
-      skipMissingProperties: true,
-      skipNullProperties: true,
-      skipUndefinedProperties: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      forbidUnknownValues: true,
       stopAtFirstError: true,
       transform: true,
       transformOptions: {
@@ -221,11 +220,9 @@ export function configureApp(app: NestExpressApplication, originResolver = new O
   );
 
   const reflector = app.get(Reflector);
-  const jwtService = app.get(JwtService);
-  const prisma = app.get(PrismaService);
   const consumerActionLog = app.get(ConsumerActionLogService);
 
-  app.useGlobalGuards(new AuthGuard(reflector, jwtService, prisma));
+  app.useGlobalGuards(app.get(AuthGuard));
 
   app.useGlobalInterceptors(
     new TransformResponseInterceptor(reflector),

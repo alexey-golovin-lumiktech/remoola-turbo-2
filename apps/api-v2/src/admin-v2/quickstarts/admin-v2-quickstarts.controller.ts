@@ -5,7 +5,7 @@ import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
-import { isQuickstartId, isQuickstartSurface, type QuickstartSurface } from './admin-v2-quickstarts.dto';
+import { isQuickstartId, isQuickstartSurface, type IAdminV2QuickstartSurface } from './admin-v2-quickstarts.dto';
 import { AdminV2QuickstartsService } from './admin-v2-quickstarts.service';
 
 @UseGuards(JwtAuthGuard)
@@ -22,7 +22,7 @@ export class AdminV2QuickstartsController {
   @Get()
   async list(@Identity() admin: IIdentityContext, @Query(`surface`) surface?: string) {
     await this.accessService.assertCapability(admin, `me.read`);
-    let requestedSurface: QuickstartSurface = `all`;
+    let requestedSurface: IAdminV2QuickstartSurface = `all`;
     if (surface) {
       if (!isQuickstartSurface(surface)) {
         throw new BadRequestException(`Unknown quickstart surface`);

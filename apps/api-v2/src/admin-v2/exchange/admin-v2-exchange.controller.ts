@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nest
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import express from 'express';
 
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
@@ -10,25 +10,6 @@ import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
-
-function one(value: string | string[] | undefined): string | undefined {
-  return (typeof value === `string` ? value : value?.[0])?.trim() || undefined;
-}
-
-function toNumber(value: string | undefined): number | undefined {
-  if (value == null) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function toBoolean(value: string | undefined): boolean | undefined {
-  if (value === `true`) return true;
-  if (value === `false`) return false;
-  return undefined;
-}
 
 function requestMeta(req: express.Request) {
   const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
@@ -42,31 +23,140 @@ function requestMeta(req: express.Request) {
   };
 }
 
-class VersionBodyDTO {
+class VersionBody {
   @Expose()
   @Type(() => Number)
   @IsNumber()
   version!: number;
 }
 
-class StepUpVersionBodyDTO extends VersionBodyDTO {
+class StepUpVersionBody extends VersionBody {
   @Expose()
   @IsString()
   @MaxLength(256)
   passwordConfirmation!: string;
 }
 
-class ConfirmedVersionBodyDTO extends StepUpVersionBodyDTO {
+class ConfirmedVersionBody extends StepUpVersionBody {
   @Expose()
   @Transform(({ value }) => value === true || value === `true`)
   @IsBoolean()
   confirmed!: boolean;
 }
 
-class ApproveRateBodyDTO extends ConfirmedVersionBodyDTO {
+class ApproveRateBody extends ConfirmedVersionBody {
   @Expose()
   @IsString()
   reason!: string;
+}
+
+class ExchangeListRatesQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  fromCurrency?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  toCurrency?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  provider?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @Expose()
+  @Transform(({ value }) =>
+    value === true || value === `true` ? true : value === false || value === `false` ? false : undefined,
+  )
+  @IsBoolean()
+  @IsOptional()
+  stale?: boolean;
+}
+
+class ExchangeListRulesQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  q?: string;
+
+  @Expose()
+  @Transform(({ value }) =>
+    value === true || value === `true` ? true : value === false || value === `false` ? false : undefined,
+  )
+  @IsBoolean()
+  @IsOptional()
+  enabled?: boolean;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  fromCurrency?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  toCurrency?: string;
+}
+
+class ExchangeListScheduledConversionsQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  q?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  status?: string;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -82,17 +172,9 @@ export class AdminV2ExchangeController {
   ) {}
 
   @Get(`rates`)
-  async listRates(@Identity() admin: IIdentityContext, @Query() query: Record<string, string | string[] | undefined>) {
+  async listRates(@Identity() admin: IIdentityContext, @Query() query: ExchangeListRatesQuery) {
     await this.accessService.assertCapability(admin, `exchange.read`);
-    return this.service.listRates({
-      page: toNumber(one(query.page)),
-      pageSize: toNumber(one(query.pageSize)),
-      fromCurrency: one(query.fromCurrency),
-      toCurrency: one(query.toCurrency),
-      provider: one(query.provider),
-      status: one(query.status),
-      stale: toBoolean(one(query.stale)),
-    });
+    return this.service.listRates(query);
   }
 
   @Get(`rates/:id`)
@@ -105,7 +187,7 @@ export class AdminV2ExchangeController {
   async approveRate(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: ApproveRateBodyDTO,
+    @Body() body: ApproveRateBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
@@ -114,16 +196,9 @@ export class AdminV2ExchangeController {
   }
 
   @Get(`rules`)
-  async listRules(@Identity() admin: IIdentityContext, @Query() query: Record<string, string | string[] | undefined>) {
+  async listRules(@Identity() admin: IIdentityContext, @Query() query: ExchangeListRulesQuery) {
     await this.accessService.assertCapability(admin, `exchange.read`);
-    return this.service.listRules({
-      page: toNumber(one(query.page)),
-      pageSize: toNumber(one(query.pageSize)),
-      q: one(query.q),
-      enabled: toBoolean(one(query.enabled)),
-      fromCurrency: one(query.fromCurrency),
-      toCurrency: one(query.toCurrency),
-    });
+    return this.service.listRules(query);
   }
 
   @Get(`rules/:id`)
@@ -136,7 +211,7 @@ export class AdminV2ExchangeController {
   async pauseRule(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: VersionBodyDTO,
+    @Body() body: VersionBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
@@ -147,7 +222,7 @@ export class AdminV2ExchangeController {
   async resumeRule(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: VersionBodyDTO,
+    @Body() body: VersionBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
@@ -158,7 +233,7 @@ export class AdminV2ExchangeController {
   async runRuleNow(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: StepUpVersionBodyDTO,
+    @Body() body: StepUpVersionBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
@@ -169,15 +244,10 @@ export class AdminV2ExchangeController {
   @Get(`scheduled`)
   async listScheduledConversions(
     @Identity() admin: IIdentityContext,
-    @Query() query: Record<string, string | string[] | undefined>,
+    @Query() query: ExchangeListScheduledConversionsQuery,
   ) {
     await this.accessService.assertCapability(admin, `exchange.read`);
-    return this.service.listScheduledConversions({
-      page: toNumber(one(query.page)),
-      pageSize: toNumber(one(query.pageSize)),
-      q: one(query.q),
-      status: one(query.status),
-    });
+    return this.service.listScheduledConversions(query);
   }
 
   @Get(`scheduled/:id`)
@@ -190,7 +260,7 @@ export class AdminV2ExchangeController {
   async forceExecuteScheduledConversion(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: ConfirmedVersionBodyDTO,
+    @Body() body: ConfirmedVersionBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
@@ -202,7 +272,7 @@ export class AdminV2ExchangeController {
   async cancelScheduledConversion(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: ConfirmedVersionBodyDTO,
+    @Body() body: ConfirmedVersionBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);

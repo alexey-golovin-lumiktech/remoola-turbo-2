@@ -52,12 +52,12 @@ describe(`StripeReversalScheduler`, () => {
         return cb(tx);
       }),
     };
-    scheduler = new StripeReversalScheduler(prisma as unknown as PrismaService);
-    (
-      scheduler as unknown as {
-        stripe: { refunds: { retrieve: (id: string) => Promise<{ status: string }> } };
-      }
-    ).stripe = { refunds: { retrieve: refundsRetrieveMock } };
+    scheduler = new StripeReversalScheduler(
+      prisma as unknown as PrismaService,
+      {
+        refunds: { retrieve: refundsRetrieveMock },
+      } as any,
+    );
     logSpy = jest
       .spyOn((scheduler as unknown as { logger: { log: (...args: unknown[]) => void } }).logger, `log`)
       .mockImplementation(() => undefined);
@@ -146,12 +146,12 @@ describe(`StripeReversalScheduler`, () => {
       };
       return cb(tx);
     });
-    scheduler = new StripeReversalScheduler(prisma as unknown as PrismaService);
-    (
-      scheduler as unknown as {
-        stripe: { refunds: { retrieve: (id: string) => Promise<{ status: string }> } };
-      }
-    ).stripe = { refunds: { retrieve: refundsRetrieveMock } };
+    scheduler = new StripeReversalScheduler(
+      prisma as unknown as PrismaService,
+      {
+        refunds: { retrieve: refundsRetrieveMock },
+      } as any,
+    );
     logSpy = jest
       .spyOn((scheduler as unknown as { logger: { log: (...args: unknown[]) => void } }).logger, `log`)
       .mockImplementation(() => undefined);

@@ -95,7 +95,10 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     stripeWebhookService = moduleFixture.get(StripeWebhookService);
     consumerPaymentsPoliciesService = moduleFixture.get(ConsumerPaymentsPoliciesService);
@@ -135,7 +138,9 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`starts verification, ignores stale webhooks, and preserves profile identity data on verify`, async () => {

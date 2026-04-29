@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Expose } from 'class-transformer';
-import { IsBoolean, IsIn, IsString } from 'class-validator';
+import { Expose, Transform, Type } from 'class-transformer';
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
 import { CONSUMER_APP_SCOPES } from '@remoola/api-types';
@@ -11,16 +11,6 @@ import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
-
-function one(value: string | string[] | undefined): string | undefined {
-  return (typeof value === `string` ? value : value?.[0])?.trim() || undefined;
-}
-
-function parseDate(value: string | undefined): Date | undefined {
-  if (!value) return undefined;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
 
 function requestMeta(req: express.Request) {
   const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
@@ -34,13 +24,13 @@ function requestMeta(req: express.Request) {
   };
 }
 
-class ForceLogoutBodyDTO {
+class ForceLogoutBody {
   @Expose()
   @IsBoolean()
   confirmed!: boolean;
 }
 
-class SuspendConsumerBodyDTO {
+class SuspendConsumerBody {
   @Expose()
   @IsBoolean()
   confirmed!: boolean;
@@ -50,7 +40,7 @@ class SuspendConsumerBodyDTO {
   reason!: string;
 }
 
-class EmailResendBodyDTO {
+class EmailResendBody {
   @Expose()
   @IsIn([`signup_verification`, `password_recovery`])
   emailKind!: `signup_verification` | `password_recovery`;
@@ -58,6 +48,134 @@ class EmailResendBodyDTO {
   @Expose()
   @IsIn(CONSUMER_APP_SCOPES)
   appScope!: (typeof CONSUMER_APP_SCOPES)[number];
+}
+
+function transformDate(value: unknown): Date | undefined {
+  if (typeof value !== `string` || value.trim().length === 0) {
+    return undefined;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+class AdminConsumersListQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  q?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  accountType?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  contractorKind?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  verificationStatus?: string;
+
+  @Expose()
+  @Transform(({ value }) => value === true || value === `true`)
+  @IsBoolean()
+  @IsOptional()
+  includeDeleted?: boolean;
+}
+
+class AdminConsumerPaginationQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  q?: string;
+}
+
+class AdminConsumerDateRangeQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @Transform(({ value }) => transformDate(value))
+  @IsOptional()
+  dateFrom?: Date;
+
+  @Expose()
+  @Transform(({ value }) => transformDate(value))
+  @IsOptional()
+  dateTo?: Date;
+}
+
+class AdminConsumerActionLogQuery extends AdminConsumerDateRangeQuery {
+  @Expose()
+  @IsString()
+  @IsOptional()
+  action?: string;
+}
+
+class ConsumerNoteBody {
+  @Expose()
+  @IsString()
+  content!: string;
+}
+
+class ConsumerFlagBody {
+  @Expose()
+  @IsString()
+  flag!: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  reason?: string | null;
+}
+
+class ConsumerFlagRemoveBody {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  version!: number;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -72,22 +190,9 @@ export class AdminV2ConsumersController {
   ) {}
 
   @Get()
-  async listConsumers(
-    @Identity() admin: IIdentityContext,
-    @Query() query: Record<string, string | string[] | undefined>,
-  ) {
+  async listConsumers(@Identity() admin: IIdentityContext, @Query() query: AdminConsumersListQuery) {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    const pageRaw = one(query.page);
-    const pageSizeRaw = one(query.pageSize);
-    return this.service.listConsumers({
-      page: pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined,
-      pageSize: pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined,
-      q: one(query.q),
-      accountType: one(query.accountType),
-      contractorKind: one(query.contractorKind),
-      verificationStatus: one(query.verificationStatus),
-      includeDeleted: one(query.includeDeleted) === `true`,
-    });
+    return this.service.listConsumers(query);
   }
 
   @Get(`:id`)
@@ -100,16 +205,10 @@ export class AdminV2ConsumersController {
   async getConsumerContracts(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Query() query: Record<string, string | string[] | undefined>,
+    @Query() query: AdminConsumerPaginationQuery,
   ) {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    const pageRaw = one(query.page);
-    const pageSizeRaw = one(query.pageSize);
-    return this.service.getConsumerContracts(id, {
-      page: pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined,
-      pageSize: pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined,
-      q: one(query.q),
-    });
+    return this.service.getConsumerContracts(id, query);
   }
 
   @Get(`:id/ledger-summary`)
@@ -122,57 +221,42 @@ export class AdminV2ConsumersController {
   async getConsumerAuthHistory(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Query() query: Record<string, string | string[] | undefined>,
+    @Query() query: AdminConsumerDateRangeQuery,
   ) {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    const pageRaw = one(query.page);
-    const pageSizeRaw = one(query.pageSize);
-    return this.service.getConsumerAuthHistory(id, {
-      page: pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined,
-      pageSize: pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined,
-      dateFrom: parseDate(one(query.dateFrom)),
-      dateTo: parseDate(one(query.dateTo)),
-    });
+    return this.service.getConsumerAuthHistory(id, query);
   }
 
   @Get(`:id/action-log`)
   async getConsumerActionLog(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Query() query: Record<string, string | string[] | undefined>,
+    @Query() query: AdminConsumerActionLogQuery,
   ) {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    const pageRaw = one(query.page);
-    const pageSizeRaw = one(query.pageSize);
-    return this.service.getConsumerActionLog(id, {
-      page: pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined,
-      pageSize: pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined,
-      dateFrom: parseDate(one(query.dateFrom)),
-      dateTo: parseDate(one(query.dateTo)),
-      action: one(query.action),
-    });
+    return this.service.getConsumerActionLog(id, query);
   }
 
   @Post(`:id/notes`)
   async createNote(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: { content?: string },
+    @Body() body: ConsumerNoteBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `consumers.notes`);
-    return this.service.createNote(id, admin.id, body.content ?? ``, requestMeta(req));
+    return this.service.createNote(id, admin.id, body.content, requestMeta(req));
   }
 
   @Post(`:id/flags`)
   async addFlag(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: { flag?: string; reason?: string | null },
+    @Body() body: ConsumerFlagBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `consumers.flags`);
-    return this.service.addFlag(id, admin.id, body.flag ?? ``, body.reason, requestMeta(req));
+    return this.service.addFlag(id, admin.id, body.flag, body.reason, requestMeta(req));
   }
 
   @Patch(`:id/flags/:flagId/remove`)
@@ -180,19 +264,18 @@ export class AdminV2ConsumersController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Param(`flagId`) flagId: string,
-    @Body() body: { version?: number | string },
+    @Body() body: ConsumerFlagRemoveBody,
     @Req() req: express.Request,
   ) {
-    const version = typeof body.version === `string` ? Number(body.version) : Number(body.version);
     await this.accessService.assertCapability(admin, `consumers.flags`);
-    return this.service.removeFlag(id, flagId, admin.id, version, requestMeta(req));
+    return this.service.removeFlag(id, flagId, admin.id, body.version, requestMeta(req));
   }
 
   @Post(`:id/force-logout`)
   async forceLogout(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: ForceLogoutBodyDTO,
+    @Body() body: ForceLogoutBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `consumers.force_logout`);
@@ -203,7 +286,7 @@ export class AdminV2ConsumersController {
   async suspendConsumer(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: SuspendConsumerBodyDTO,
+    @Body() body: SuspendConsumerBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `consumers.suspend`);
@@ -214,7 +297,7 @@ export class AdminV2ConsumersController {
   async resendConsumerEmail(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: EmailResendBodyDTO,
+    @Body() body: EmailResendBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `consumers.email_resend`);

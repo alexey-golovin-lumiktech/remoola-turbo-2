@@ -12,7 +12,7 @@ import {
 } from '../../shared-common';
 import { BaseModel } from '../common';
 
-export class PaymentMethodDTO extends BaseModel implements IPaymentMethodModel {
+export class PaymentMethod extends BaseModel implements IPaymentMethodModel {
   @Expose()
   @IsUUID(`all`)
   @ApiProperty({ description: `ID of the consumer who owns this payment method` })
@@ -53,7 +53,7 @@ export class PaymentMethodDTO extends BaseModel implements IPaymentMethodModel {
 }
 
 export class PaymentMethodResponse
-  extends OmitType(PaymentMethodDTO, [`deletedAt`] as const)
+  extends OmitType(PaymentMethod, [`deletedAt`] as const)
   implements IPaymentMethodResponse {}
 
 export class PaymentMethodListResponse {
@@ -67,7 +67,7 @@ export class PaymentMethodListResponse {
   data: PaymentMethodResponse[];
 }
 
-export class PaymentMethodCreate extends PickType(PaymentMethodDTO, [
+export class PaymentMethodCreate extends PickType(PaymentMethod, [
   `type`,
   `brand`,
   `last4`,
@@ -75,5 +75,5 @@ export class PaymentMethodCreate extends PickType(PaymentMethodDTO, [
   `expYear`,
 ] as const) {}
 export class PaymentMethodUpdate extends PartialType(
-  PickType(PaymentMethodDTO, [`brand`, `last4`, `expMonth`, `expYear`] as const),
+  PickType(PaymentMethod, [`brand`, `last4`, `expMonth`, `expYear`] as const),
 ) {}

@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import {
+  Inject,
   BadRequestException,
   ForbiddenException,
   Injectable,
@@ -17,8 +18,8 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { ConfirmStripeSetupIntent, PayWithSavedPaymentMethod } from './dto/payment-method.dto';
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
-import { envs } from '../../../envs';
 import { PrismaService } from '../../../shared/prisma.service';
+import { STRIPE_CLIENT } from '../../../shared/stripe-client';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
 type PaymentRequestSettlementTransitionClient = Pick<Prisma.TransactionClient, `paymentRequestModel`>;
@@ -30,11 +31,11 @@ type StripeSessionRedirectContext = {
 @Injectable()
 export class ConsumerStripeService {
   private readonly logger = new Logger(ConsumerStripeService.name);
-  private stripe: Stripe;
 
-  constructor(private prisma: PrismaService) {
-    this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
-  }
+  constructor(
+    private prisma: PrismaService,
+    @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
+  ) {}
 
   private getEffectiveStatus(entry: {
     status: $Enums.TransactionStatus;

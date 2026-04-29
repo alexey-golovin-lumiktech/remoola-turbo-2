@@ -4,7 +4,7 @@ import { IsString, MaxLength, MinLength } from 'class-validator';
 
 import { type ConsumerResetPasswordBody } from '@remoola/api-types';
 
-export class ResetPasswordDto implements ConsumerResetPasswordBody {
+export class ResetPassword implements ConsumerResetPasswordBody {
   @Expose()
   @ApiProperty({ description: `Reset token from the forgot-password email link` })
   @IsString()

@@ -13,6 +13,7 @@ import { PrismaClient } from '@remoola/database-2';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
+import { AuthGuard } from '../src/guards/auth.guard';
 
 describe(`Stripe webhook HTTP contract (e2e, isolated DB)`, () => {
   let app: INestApplication;
@@ -25,7 +26,10 @@ describe(`Stripe webhook HTTP contract (e2e, isolated DB)`, () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix(`api`);
@@ -43,7 +47,9 @@ describe(`Stripe webhook HTTP contract (e2e, isolated DB)`, () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`returns 401 when webhook secret is not configured`, async () => {

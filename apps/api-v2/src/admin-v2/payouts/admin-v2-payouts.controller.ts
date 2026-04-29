@@ -35,7 +35,7 @@ function requestMeta(req: express.Request) {
   };
 }
 
-class EscalatePayoutBodyDTO {
+class EscalatePayoutBody {
   @Expose()
   @IsBoolean()
   confirmed!: boolean;
@@ -84,7 +84,7 @@ export class AdminV2PayoutsController {
   async escalatePayout(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: EscalatePayoutBodyDTO,
+    @Body() body: EscalatePayoutBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `payouts.escalate`);

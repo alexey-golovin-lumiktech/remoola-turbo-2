@@ -1,18 +1,18 @@
 import { createHash, randomUUID } from 'crypto';
 
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import Stripe from 'stripe';
 
 import { type ConsumerAppScope, type TPaymentReversalKind } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
-import { envs } from '../../envs';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { MailingService } from '../../shared/mailing.service';
 import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../shared/payment-link-scope-resolver';
 import { PrismaService } from '../../shared/prisma.service';
+import { STRIPE_CLIENT } from '../../shared/stripe-client';
 import { getCurrencyFractionDigits } from '../../shared-common';
 
 type PaymentReversalCreateInput = {
@@ -33,16 +33,14 @@ const PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES = [
 @Injectable()
 export class AdminV2PaymentReversalService {
   private readonly logger = new Logger(AdminV2PaymentReversalService.name);
-  private stripe: Stripe;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailingService: MailingService,
     private readonly balanceService: BalanceCalculationService,
     private readonly adminActionAudit: AdminActionAuditService,
-  ) {
-    this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
-  }
+    @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
+  ) {}
 
   private getEffectiveLedgerStatus(entry: {
     status: $Enums.TransactionStatus;

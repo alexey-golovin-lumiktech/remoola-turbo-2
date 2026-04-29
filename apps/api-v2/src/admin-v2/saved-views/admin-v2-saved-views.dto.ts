@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import { Expose, Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { Expose, Transform, Type } from 'class-transformer';
+import { Allow, IsNumber, IsOptional, IsString } from 'class-validator';
 
 import {
   ADMIN_V2_MAX_SAVED_VIEW_DESCRIPTION_LENGTH,
@@ -45,7 +45,7 @@ export function assertValidPayload(value: unknown): asserts value is Record<stri
   }
 }
 
-export class SavedViewCreateBodyDTO {
+export class SavedViewCreateBody {
   @Expose()
   @IsString()
   workspace!: string;
@@ -60,10 +60,12 @@ export class SavedViewCreateBodyDTO {
   description?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.queryPayload)
+  @Allow()
   queryPayload!: unknown;
 }
 
-export class SavedViewUpdateBodyDTO {
+export class SavedViewUpdateBody {
   @Expose()
   @IsOptional()
   @IsString()
@@ -75,6 +77,7 @@ export class SavedViewUpdateBodyDTO {
   description?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.queryPayload)
   @IsOptional()
   queryPayload?: unknown;
 
@@ -84,7 +87,7 @@ export class SavedViewUpdateBodyDTO {
   expectedDeletedAtNull!: number;
 }
 
-export class SavedViewDeleteBodyDTO {
+export class SavedViewDeleteBody {
   @Expose()
   @Type(() => Number)
   @IsNumber()

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class ConsumerDocument {
   @Expose()
@@ -38,24 +39,35 @@ export class ConsumerDocument {
 export class BulkDeleteDocuments {
   @Expose()
   @ApiProperty({ type: String, isArray: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   ids?: string[];
 
   @Expose()
   @ApiProperty({ type: String, isArray: true, required: false })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   documentIds?: string[];
 }
 
 export class AttachDocuments {
   @Expose()
   @ApiProperty({ type: String, isArray: false })
+  @IsString()
   paymentRequestId: string;
   @Expose()
   @ApiProperty({ type: String, isArray: true })
+  @IsArray()
+  @IsString({ each: true })
   resourceIds: string[];
 }
 
 export class SetTags {
   @Expose()
   @ApiProperty({ type: String, isArray: true })
+  @IsArray()
+  @IsString({ each: true })
   tags: string[];
 }

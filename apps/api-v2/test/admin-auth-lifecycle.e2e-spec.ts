@@ -52,7 +52,10 @@ describe(`Admin auth lifecycle (e2e, isolated DB)`, () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix(`api`);
@@ -82,7 +85,9 @@ describe(`Admin auth lifecycle (e2e, isolated DB)`, () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`GET /api/admin-v2/auth/me rejects when unauthenticated`, async () => {

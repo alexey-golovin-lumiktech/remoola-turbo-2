@@ -26,7 +26,7 @@ export function assertResourceType(value: string): asserts value is AssignableRe
   }
 }
 
-export class AssignmentClaimBodyDTO {
+export class AssignmentClaimBody {
   @Expose()
   @IsString()
   resourceType!: string;
@@ -41,7 +41,7 @@ export class AssignmentClaimBodyDTO {
   reason?: string;
 }
 
-export class AssignmentReleaseBodyDTO {
+export class AssignmentReleaseBody {
   @Expose()
   @IsUUID()
   assignmentId!: string;
@@ -57,7 +57,7 @@ export class AssignmentReleaseBodyDTO {
   expectedReleasedAtNull!: number;
 }
 
-export class AssignmentReassignBodyDTO {
+export class AssignmentReassignBody {
   @Expose()
   @IsUUID()
   assignmentId!: string;

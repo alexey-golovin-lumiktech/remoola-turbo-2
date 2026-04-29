@@ -106,7 +106,10 @@ describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`,
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     exchangeService = moduleFixture.get(ConsumerExchangeService);
     app = moduleFixture.createNestApplication();
@@ -137,7 +140,9 @@ describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`,
 
   afterAll(async () => {
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`POST /consumer/exchange/convert writes matched source and target ledger entries in the database`, async () => {

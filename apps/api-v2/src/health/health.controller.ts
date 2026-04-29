@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { PublicEndpoint } from '../common';
-import { SendTestEmailDto } from './dto/send-test-email.dto';
+import { SendTestEmail } from './dto/send-test-email.dto';
 import { HealthService } from './health.service';
 
 @ApiTags(`Health`)
@@ -30,7 +30,7 @@ export class HealthController {
 
   @PublicEndpoint()
   @Post(`test-email`)
-  async sendTestEmail(@Body() body?: SendTestEmailDto) {
+  async sendTestEmail(@Body() body?: SendTestEmail) {
     return this.healthService.sendTestEmail(body?.to);
   }
 }

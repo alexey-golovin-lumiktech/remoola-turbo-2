@@ -1,12 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import Stripe from 'stripe';
 
 import { $Enums } from '@remoola/database-2';
 
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
-import { envs } from '../../../envs';
 import { PrismaService } from '../../../shared/prisma.service';
+import { STRIPE_CLIENT } from '../../../shared/stripe-client';
 
 @Injectable()
 export class StripeReversalScheduler {
@@ -18,11 +18,11 @@ export class StripeReversalScheduler {
     $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL,
   ] as const;
   private readonly logger = new Logger(StripeReversalScheduler.name);
-  private stripe: Stripe;
 
-  constructor(private readonly prisma: PrismaService) {
-    this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
+  ) {}
 
   private getEffectiveStatus(entry: {
     status: $Enums.TransactionStatus;

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
+import { AdminAuthControllerSupportService } from './admin-auth-controller-support.service';
 import { AdminAuthService } from './admin-auth.service';
 import { envs } from '../envs';
 import { AuthAuditModule } from '../shared/auth-audit.module';
@@ -17,7 +18,7 @@ import { MailingModule } from '../shared/mailing.module';
       signOptions: { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
     }),
   ],
-  providers: [AdminAuthService],
-  exports: [AdminAuthService],
+  providers: [AdminAuthControllerSupportService, AdminAuthService],
+  exports: [AdminAuthControllerSupportService, AdminAuthService],
 })
 export class AdminAuthModule {}

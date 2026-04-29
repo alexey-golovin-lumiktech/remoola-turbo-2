@@ -158,7 +158,10 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     const adminPaymentRequestsService = moduleFixture.get(AdminV2PaymentReversalService) as unknown as {
       stripe: { refunds: { create: (...args: unknown[]) => Promise<{ id: string; status: string }> } };
@@ -205,7 +208,9 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     envs.BREVO_API_KEY = initialBrevoApiKey;
     envs.BREVO_DEFAULT_FROM_EMAIL = initialBrevoDefaultFromEmail;
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`refund creates reversal pair, records audit, and remains idempotent on replay`, async () => {

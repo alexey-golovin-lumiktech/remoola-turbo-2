@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import {
-  type QuickstartCardDTO,
-  type QuickstartId,
-  type QuickstartResolvedPresetDTO,
-  type QuickstartSurface,
+  type IAdminV2QuickstartCard,
+  type IAdminV2QuickstartId,
+  type IAdminV2QuickstartResolvedPreset,
+  type IAdminV2QuickstartSurface,
 } from './admin-v2-quickstarts.dto';
 
-type QuickstartCatalogEntry = QuickstartResolvedPresetDTO;
+type QuickstartCatalogEntry = IAdminV2QuickstartResolvedPreset;
 
 const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
   {
@@ -127,7 +127,7 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
 
 @Injectable()
 export class AdminV2QuickstartsService {
-  list(surface: QuickstartSurface = `all`): QuickstartCardDTO[] {
+  list(surface: IAdminV2QuickstartSurface = `all`): IAdminV2QuickstartCard[] {
     return QUICKSTART_CATALOG.filter((entry) => surface === `all` || entry.surfaces.includes(surface)).map((entry) => ({
       id: entry.id,
       label: entry.label,
@@ -140,7 +140,7 @@ export class AdminV2QuickstartsService {
     }));
   }
 
-  get(quickstartId: QuickstartId): QuickstartResolvedPresetDTO {
+  get(quickstartId: IAdminV2QuickstartId): IAdminV2QuickstartResolvedPreset {
     const match = QUICKSTART_CATALOG.find((entry) => entry.id === quickstartId);
     if (!match) {
       throw new NotFoundException(`Unknown admin-v2 quickstart`);
@@ -150,6 +150,6 @@ export class AdminV2QuickstartsService {
       filters: { ...match.filters },
       surfaces: [...match.surfaces],
       ...(match.requiredCapabilities ? { requiredCapabilities: [...match.requiredCapabilities] } : {}),
-    } as QuickstartResolvedPresetDTO;
+    } as IAdminV2QuickstartResolvedPreset;
   }
 }

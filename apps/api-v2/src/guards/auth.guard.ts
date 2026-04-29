@@ -2,6 +2,7 @@ import {
   type CanActivate,
   type ExecutionContext,
   ForbiddenException,
+  Injectable,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -50,6 +51,7 @@ function getAccessTokenCookieKeysForPath(
   return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
 }
 
+@Injectable()
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name);
 

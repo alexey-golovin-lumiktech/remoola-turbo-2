@@ -11,6 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Expose, Type } from 'class-transformer';
+import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
 import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
@@ -25,6 +27,42 @@ import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, TrackConsumerAction } from '../../../common';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
+
+class ConsumerPaymentsListQuery {
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  role?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  search?: string;
+}
 
 @ApiTags(`Consumer: Payments`)
 @Controller(`consumer/payments`)
@@ -55,23 +93,15 @@ export class ConsumerPaymentsController {
   }
 
   @Get()
-  async list(
-    @Identity() consumer: ConsumerModel,
-    @Query(`page`) page = 1,
-    @Query(`pageSize`) pageSize = 20,
-    @Query(`status`) status?: string,
-    @Query(`type`) type?: string,
-    @Query(`role`) role?: string,
-    @Query(`search`) search?: string,
-  ) {
+  async list(@Identity() consumer: ConsumerModel, @Query() query: ConsumerPaymentsListQuery) {
     return this.service.listPayments({
       consumerId: consumer.id,
-      page: Number(page),
-      pageSize: Number(pageSize),
-      status,
-      type,
-      role,
-      search,
+      page: query.page ?? 1,
+      pageSize: query.pageSize ?? 20,
+      status: query.status,
+      type: query.type,
+      role: query.role,
+      search: query.search,
     });
   }
 

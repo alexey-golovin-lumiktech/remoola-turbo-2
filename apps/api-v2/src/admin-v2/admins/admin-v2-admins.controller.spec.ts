@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 
 import { AdminV2AdminsController } from './admin-v2-admins.controller';
 
@@ -150,6 +150,22 @@ describe(`AdminV2AdminsController`, () => {
       expect(result).toEqual({ adminId: `admin-2` });
     });
 
+    it(`patchAdminPassword: bubbles up invalid password confirmation and skips delegation`, async () => {
+      const { controller, adminsService, verifyStepUp } = buildSessionsHarness();
+      verifyStepUp.mockRejectedValueOnce(new UnauthorizedException(`invalid`));
+
+      await expect(
+        controller.patchAdminPassword(
+          actor,
+          `admin-2`,
+          { password: `NewValid1!@#abc`, passwordConfirmation: `WrongPassword1!@#` } as never,
+          buildReq(),
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(adminsService.patchAdminPassword).not.toHaveBeenCalled();
+    });
+
     it(`inviteAdmin: verifies step-up before inviting`, async () => {
       const { controller, adminsService, verifyStepUp } = buildSessionsHarness();
       adminsService.inviteAdmin.mockResolvedValue({ invitationId: `inv-1` });
@@ -248,6 +264,44 @@ describe(`AdminV2AdminsController`, () => {
       ).rejects.toThrow(BadRequestException);
 
       expect(verifyStepUp).not.toHaveBeenCalled();
+      expect(adminsService.updateAdminStatus).not.toHaveBeenCalled();
+    });
+
+    it(`updateAdminStatus: trims delete confirmation before step-up verification`, async () => {
+      const { controller, adminsService, verifyStepUp } = buildSessionsHarness();
+      adminsService.updateAdminStatus.mockResolvedValue({ ok: true });
+
+      await expect(
+        controller.updateAdminStatus(
+          actor,
+          `admin-2`,
+          { action: `delete`, passwordConfirmation: `  Current1!@#abc  ` } as never,
+          buildReq(),
+        ),
+      ).resolves.toEqual({ ok: true });
+
+      expect(verifyStepUp).toHaveBeenCalledWith(`admin-1`, `Current1!@#abc`);
+      expect(adminsService.updateAdminStatus).toHaveBeenCalledWith(
+        `admin-2`,
+        `delete`,
+        `admin-1`,
+        expect.objectContaining({ idempotencyKey: `idem-7` }),
+      );
+    });
+
+    it(`updateAdminStatus: bubbles up invalid delete confirmation and skips delegation`, async () => {
+      const { controller, adminsService, verifyStepUp } = buildSessionsHarness();
+      verifyStepUp.mockRejectedValueOnce(new UnauthorizedException(`invalid`));
+
+      await expect(
+        controller.updateAdminStatus(
+          actor,
+          `admin-2`,
+          { action: `delete`, passwordConfirmation: `WrongPassword1!@#` } as never,
+          buildReq(),
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+
       expect(adminsService.updateAdminStatus).not.toHaveBeenCalled();
     });
   });

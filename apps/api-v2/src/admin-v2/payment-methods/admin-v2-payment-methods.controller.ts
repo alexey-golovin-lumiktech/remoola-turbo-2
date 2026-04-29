@@ -41,7 +41,7 @@ function requestMeta(req: express.Request) {
   };
 }
 
-class DisablePaymentMethodBodyDTO {
+class DisablePaymentMethodBody {
   @Expose()
   @IsBoolean()
   confirmed!: boolean;
@@ -56,14 +56,14 @@ class DisablePaymentMethodBodyDTO {
   version!: number;
 }
 
-class RemoveDefaultPaymentMethodBodyDTO {
+class RemoveDefaultPaymentMethodBody {
   @Expose()
   @Type(() => Number)
   @IsNumber()
   version!: number;
 }
 
-class DuplicateEscalatePaymentMethodBodyDTO {
+class DuplicateEscalatePaymentMethodBody {
   @Expose()
   @Type(() => Number)
   @IsNumber()
@@ -108,7 +108,7 @@ export class AdminV2PaymentMethodsController {
   async disablePaymentMethod(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: DisablePaymentMethodBodyDTO,
+    @Body() body: DisablePaymentMethodBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `payment_methods.manage`);
@@ -119,7 +119,7 @@ export class AdminV2PaymentMethodsController {
   async removeDefaultPaymentMethod(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: RemoveDefaultPaymentMethodBodyDTO,
+    @Body() body: RemoveDefaultPaymentMethodBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `payment_methods.manage`);
@@ -130,7 +130,7 @@ export class AdminV2PaymentMethodsController {
   async duplicateEscalatePaymentMethod(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: DuplicateEscalatePaymentMethodBodyDTO,
+    @Body() body: DuplicateEscalatePaymentMethodBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `payment_methods.manage`);

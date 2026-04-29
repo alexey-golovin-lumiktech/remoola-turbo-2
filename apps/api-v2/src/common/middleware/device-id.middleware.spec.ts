@@ -16,7 +16,8 @@ jest.mock(`../../shared/origin-resolver.service`, () => ({
   },
 }));
 
-import { deviceIdMiddleware, type RequestWithDeviceId } from './device-id.middleware';
+import { createDeviceIdMiddleware, type RequestWithDeviceId } from './device-id.middleware';
+import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { getApiConsumerDeviceCookieKeysForRead } from '../../shared-common/auth-cookie-policy';
 
 describe(`deviceIdMiddleware`, () => {
@@ -24,6 +25,7 @@ describe(`deviceIdMiddleware`, () => {
   const validNonV4Uuid = `a1b2c3d4-e5f6-1178-89ab-cdef01234567`;
   const [secureDeviceCookieKey, localDeviceCookieKey] = getApiConsumerDeviceCookieKeysForRead();
   const [, mobileLocalDeviceCookieKey] = getApiConsumerDeviceCookieKeysForRead(`consumer-mobile`);
+  const deviceIdMiddleware = createDeviceIdMiddleware(new OriginResolverService());
 
   function mockReq(overrides: Partial<RequestWithDeviceId> = {}): RequestWithDeviceId {
     return {

@@ -181,7 +181,6 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
       sharedHandleState.creating = null;
     }
     sharedHandleState.handle = created;
-    await resetTemporaryDatabase(created.databaseUrl);
     sharedHandleState.refs += 1;
     return created;
   }

@@ -13,18 +13,21 @@ jest.mock(`../shared/origin-resolver.service`, () => ({
 }));
 
 import { JwtStrategy } from './jwt.strategy';
+import { OriginResolverService } from '../shared/origin-resolver.service';
 import { getApiConsumerAccessTokenCookieKeysForRead } from '../shared-common';
 
 describe(`JwtStrategy`, () => {
+  const originResolver = new OriginResolverService();
+
   function extractToken(request: Record<string, unknown>): string | null {
-    const strategy = new JwtStrategy() as JwtStrategy & {
+    const strategy = new JwtStrategy(originResolver) as JwtStrategy & {
       _jwtFromRequest: (req: Record<string, unknown>) => string | null;
     };
     return strategy._jwtFromRequest(request);
   }
 
   function createStrategy(): JwtStrategy {
-    return new JwtStrategy();
+    return new JwtStrategy(originResolver);
   }
 
   it(`extracts the consumer cookie token for consumer API paths`, () => {

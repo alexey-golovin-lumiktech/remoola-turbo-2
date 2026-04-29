@@ -13,57 +13,51 @@ import {
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { Expose } from 'class-transformer';
 import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 import express from 'express';
 
-import { oauthCrypto } from '@remoola/security-utils';
-
+import { AdminAuthControllerSupportService } from '../../admin-auth/admin-auth-controller-support.service';
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
 import { BACKOFFICE } from '../../dtos';
 import { BackofficeCredentials } from '../../dtos/backoffice';
-import { envs } from '../../envs';
+import { TransformResponse } from '../../interceptors';
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
-import { OriginResolverService } from '../../shared/origin-resolver.service';
-import {
-  getApiAdminAccessTokenCookieKey,
-  getApiAdminAuthCookieClearOptions,
-  getApiAdminAuthCookieOptions,
-  getApiAdminCsrfCookieClearOptions,
-  getApiAdminCsrfCookieOptions,
-  getApiAdminCsrfTokenCookieKey,
-  getApiAdminCsrfTokenCookieKeysForRead,
-  getApiAdminRefreshTokenCookieKey,
-  getApiAdminRefreshTokenCookieKeysForRead,
-} from '../../shared-common';
 import { AdminV2AdminsService } from '../admins/admin-v2-admins.service';
 
-class RevokeAdminSessionBodyDTO {
+class RevokeAdminSessionBody {
+  @Expose()
   @IsOptional()
   @IsUUID()
   sessionId?: string;
 }
 
-class AcceptAdminInvitationBodyDTO {
+class AcceptAdminInvitationBody {
+  @Expose()
   @IsString()
   token!: string;
 
+  @Expose()
   @IsString()
   @MinLength(8)
   password!: string;
 }
 
-class ResetAdminV2PasswordBodyDTO {
+class ResetAdminV2PasswordBody {
+  @Expose()
   @IsString()
   token!: string;
 
+  @Expose()
   @IsString()
   @MinLength(8)
   password!: string;
 }
 
-class RequestAdminV2PasswordResetBodyDTO {
+class RequestAdminV2PasswordResetBody {
+  @Expose()
   @IsString()
   @IsEmail()
   email!: string;
@@ -74,54 +68,15 @@ class RequestAdminV2PasswordResetBodyDTO {
 export class AdminV2AuthController {
   constructor(
     private readonly service: AdminAuthService,
-    private readonly originResolver: OriginResolverService,
+    private readonly supportService: AdminAuthControllerSupportService,
     private readonly adminsService: AdminV2AdminsService,
     private readonly adminActionAudit: AdminActionAuditService,
   ) {}
 
-  private getRefreshTokenFromRequest(req: express.Request): string | undefined {
-    return getApiAdminRefreshTokenCookieKeysForRead()
-      .map((key) => req.cookies?.[key])
-      .find((value): value is string => typeof value === `string` && value.length > 0);
-  }
-
-  private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
-    const common = getApiAdminAuthCookieOptions();
-    res.cookie(getApiAdminAccessTokenCookieKey(), accessToken, { ...common, maxAge: envs.JWT_ACCESS_TOKEN_EXPIRES_IN });
-    res.cookie(getApiAdminRefreshTokenCookieKey(), refreshToken, {
-      ...common,
-      maxAge: envs.JWT_REFRESH_TOKEN_EXPIRES_IN,
-    });
-    res.cookie(getApiAdminCsrfTokenCookieKey(), oauthCrypto.generateOAuthState(), getApiAdminCsrfCookieOptions());
-  }
-
-  private clearAuthCookies(res: express.Response) {
-    const authCookieOptions = getApiAdminAuthCookieClearOptions();
-    const csrfCookieOptions = getApiAdminCsrfCookieClearOptions();
-    res.clearCookie(getApiAdminAccessTokenCookieKey(), authCookieOptions);
-    res.clearCookie(getApiAdminRefreshTokenCookieKey(), authCookieOptions);
-    res.clearCookie(getApiAdminCsrfTokenCookieKey(), csrfCookieOptions);
-  }
-
-  private ensureCsrf(req: express.Request) {
-    if (!this.originResolver.resolveAdminRequestOrigin(req.headers.origin, req.headers.referer)) {
-      throw new UnauthorizedException(`Invalid request origin`);
-    }
-    const csrfHeader = req.headers[`x-csrf-token`];
-    const csrfCookie = getApiAdminCsrfTokenCookieKeysForRead()
-      .map((key) => req.cookies?.[key])
-      .find((value): value is string => typeof value === `string` && value.length > 0);
-    const csrfHeaderValue =
-      typeof csrfHeader === `string` ? csrfHeader : Array.isArray(csrfHeader) ? csrfHeader[0] : undefined;
-    if (!csrfHeaderValue || !csrfCookie || csrfCookie !== csrfHeaderValue) {
-      throw new UnauthorizedException(`Invalid CSRF token`);
-    }
-  }
-
   @PublicEndpoint()
   @Post(`invitations/accept`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  async acceptInvitation(@Body() body: AcceptAdminInvitationBodyDTO) {
+  async acceptInvitation(@Body() body: AcceptAdminInvitationBody) {
     return this.adminsService.acceptInvitation(body);
   }
 
@@ -129,7 +84,7 @@ export class AdminV2AuthController {
   @Post(`forgot-password`)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async requestPasswordReset(@Body() body: RequestAdminV2PasswordResetBodyDTO) {
+  async requestPasswordReset(@Body() body: RequestAdminV2PasswordResetBody) {
     await this.adminsService.requestPasswordReset(body);
     return {
       message: `If an active admin account exists, we sent recovery instructions.`,
@@ -141,7 +96,7 @@ export class AdminV2AuthController {
   @Post(`password/reset`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() body: ResetAdminV2PasswordBodyDTO) {
+  async resetPassword(@Body() body: ResetAdminV2PasswordBody) {
     return this.adminsService.resetPasswordWithToken(body);
   }
 
@@ -150,18 +105,15 @@ export class AdminV2AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ operationId: `admin_v2_auth_login` })
   @ApiOkResponse({ type: BACKOFFICE.BackofficeAccess })
+  @TransformResponse(BACKOFFICE.BackofficeAccess)
   async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: BackofficeCredentials) {
-    const resolvedOrigin = this.originResolver.resolveAdminRequestOrigin(req.headers.origin, req.headers.referer);
-    if (!resolvedOrigin) {
-      throw new UnauthorizedException(`Invalid request origin`);
-    }
-    const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
-    const userAgent = req.headers[`user-agent`] ?? null;
+    this.supportService.resolveAdminOrigin(req);
+    const { ipAddress, userAgent } = this.supportService.resolveRequestMeta(req);
     const data = await this.service.login(body, {
-      ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
-      userAgent: typeof userAgent === `string` ? userAgent : null,
+      ipAddress,
+      userAgent,
     });
-    this.setAuthCookies(res, data.accessToken, data.refreshToken);
+    this.supportService.setAuthCookies(res, data.accessToken, data.refreshToken);
     return { ok: true as const };
   }
 
@@ -171,11 +123,12 @@ export class AdminV2AuthController {
   @ApiCookieAuth()
   @ApiOperation({ operationId: `admin_v2_refresh_access` })
   @ApiOkResponse({ type: BACKOFFICE.BackofficeAccess })
+  @TransformResponse(BACKOFFICE.BackofficeAccess)
   async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
-    this.ensureCsrf(req);
-    const refreshToken = this.getRefreshTokenFromRequest(req);
+    this.supportService.ensureCsrf(req);
+    const refreshToken = this.supportService.getRefreshTokenFromRequest(req);
     const data = await this.service.refreshAccess(refreshToken);
-    this.setAuthCookies(res, data.accessToken, data.refreshToken);
+    this.supportService.setAuthCookies(res, data.accessToken, data.refreshToken);
     return { ok: true as const };
   }
 
@@ -183,14 +136,11 @@ export class AdminV2AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiCookieAuth()
   async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
-    this.ensureCsrf(req);
-    const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
-    const userAgent = req.headers[`user-agent`] ?? null;
-    await this.service.revokeSessionByRefreshTokenAndAudit(this.getRefreshTokenFromRequest(req), {
-      ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
-      userAgent: typeof userAgent === `string` ? userAgent : null,
+    this.supportService.ensureCsrf(req);
+    await this.service.revokeSessionByRefreshTokenAndAudit(this.supportService.getRefreshTokenFromRequest(req), {
+      ...this.supportService.resolveRequestMeta(req),
     });
-    this.clearAuthCookies(res);
+    this.supportService.clearAuthCookies(res);
     return { ok: true };
   }
 
@@ -202,9 +152,9 @@ export class AdminV2AuthController {
     @Req() req: express.Request,
     @Identity() identity: IIdentityContext,
     @Res({ passthrough: true }) res: express.Response,
-    @Body() body: RevokeAdminSessionBodyDTO,
+    @Body() body: RevokeAdminSessionBody,
   ) {
-    this.ensureCsrf(req);
+    this.supportService.ensureCsrf(req);
     const targetSessionId = body.sessionId ?? identity.sessionId;
     if (!targetSessionId) {
       throw new UnauthorizedException(`Missing session identifier`);
@@ -215,13 +165,10 @@ export class AdminV2AuthController {
         throw new ForbiddenException(`Session does not belong to current admin`);
       }
     }
-    const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
-    const userAgent = req.headers[`user-agent`] ?? null;
-    const normalizedIp = typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null;
-    const normalizedUa = typeof userAgent === `string` ? userAgent : null;
+    const { ipAddress, userAgent } = this.supportService.resolveRequestMeta(req);
     const result = await this.service.revokeSessionByIdAndAudit(identity.id, targetSessionId, {
-      ipAddress: normalizedIp,
-      userAgent: normalizedUa,
+      ipAddress,
+      userAgent,
     });
     await this.adminActionAudit.record({
       adminId: identity.id,
@@ -232,11 +179,11 @@ export class AdminV2AuthController {
         isOwnSession: targetSessionId === identity.sessionId,
         alreadyRevoked: result.alreadyRevoked,
       },
-      ipAddress: normalizedIp,
-      userAgent: normalizedUa,
+      ipAddress,
+      userAgent,
     });
     if (targetSessionId === identity.sessionId) {
-      this.clearAuthCookies(res);
+      this.supportService.clearAuthCookies(res);
     }
     return { ok: true as const, ...result };
   }

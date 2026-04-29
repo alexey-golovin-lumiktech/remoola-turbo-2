@@ -1,12 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import Stripe from 'stripe';
 
 import { $Enums } from '@remoola/database-2';
 
 import { StripeWebhookService } from './stripe-webhook.service';
-import { envs } from '../../../envs';
 import { PrismaService } from '../../../shared/prisma.service';
+import { STRIPE_CLIENT } from '../../../shared/stripe-client';
 
 @Injectable()
 export class StripeCheckoutScheduler {
@@ -14,14 +14,12 @@ export class StripeCheckoutScheduler {
   private static readonly LOCK_TRANSACTION_TIMEOUT_MS = 120000;
   private static readonly MAX_SESSION_IDS_PER_RUN = 50;
   private readonly logger = new Logger(StripeCheckoutScheduler.name);
-  private stripe: Stripe;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly stripeWebhookService: StripeWebhookService,
-  ) {
-    this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
-  }
+    @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
+  ) {}
 
   private getEffectiveStatus(entry: {
     status: $Enums.TransactionStatus;

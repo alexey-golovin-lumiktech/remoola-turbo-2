@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 
 import { ConsumerDocumentsController } from './consumer-documents.controller';
 import { ConsumerDocumentsService } from './consumer-documents.service';
-import { FileStorageService } from '../files/file-storage.service';
+import { FilesModule } from '../files/files.module';
 
 @Module({
-  imports: [],
+  imports: [FilesModule],
   controllers: [ConsumerDocumentsController],
-  providers: [FileStorageService, ConsumerDocumentsService],
-  exports: [FileStorageService, ConsumerDocumentsService],
+  providers: [ConsumerDocumentsService],
+  exports: [ConsumerDocumentsService, FilesModule],
 })
 export class ConsumerDocumentsModule {}

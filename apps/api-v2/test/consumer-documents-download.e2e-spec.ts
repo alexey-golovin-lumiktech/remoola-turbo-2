@@ -144,7 +144,10 @@ describe(`Consumer document downloads (e2e, isolated DB)`, () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix(`api`);
@@ -175,7 +178,9 @@ describe(`Consumer document downloads (e2e, isolated DB)`, () => {
   afterAll(async () => {
     await rm(join(process.cwd(), `uploads`, `e2e-documents`), { recursive: true, force: true });
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`rejects anonymous requests before reaching the private file`, async () => {

@@ -565,7 +565,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` } });
 
     await expect(
-      controller.establishGoogleSignupSession(req, makeRes(), `handoff-token`, `consumer`),
+      controller.establishGoogleSignupSession(req, makeRes(), { handoffToken: `handoff-token` }, `consumer`),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
@@ -589,7 +589,12 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` } });
     const res = makeRes();
 
-    const result = await controller.establishGoogleSignupSession(req, res, `handoff-token`, `consumer`);
+    const result = await controller.establishGoogleSignupSession(
+      req,
+      res,
+      { handoffToken: `handoff-token` },
+      `consumer`,
+    );
 
     expect(oauthStateStore.consumeSignupHandoff).toHaveBeenCalledWith(`handoff-token`);
     expect(oauthStateStore.saveSignupSession).toHaveBeenCalledWith(
@@ -620,9 +625,9 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     });
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` } });
 
-    await expect(controller.oauthComplete(req, makeRes(), `handoff-token`, `consumer`)).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(
+      controller.oauthComplete(req, makeRes(), { handoffToken: `handoff-token` }, `consumer`),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(service.issueTokensForConsumer).not.toHaveBeenCalled();
   });
 

@@ -78,7 +78,10 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     const googleOAuthService = moduleFixture.get(GoogleOAuthService);
     jest.spyOn(googleOAuthService, `buildAuthorizationUrl`).mockImplementation((state) => {
@@ -133,7 +136,9 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   afterAll(async () => {
     envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`completes OAuth full flow for the canonical css-grid scope`, async () => {

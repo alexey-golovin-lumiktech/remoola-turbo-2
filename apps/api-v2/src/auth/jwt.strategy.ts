@@ -10,7 +10,6 @@ import { OriginResolverService } from '../shared/origin-resolver.service';
 import { getApiAdminAccessTokenCookieKeysForRead, getApiConsumerAccessTokenCookieKeysForRead } from '../shared-common';
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
-const originResolver = new OriginResolverService();
 
 function getAccessTokenCookieKeysForPath(
   path: string,
@@ -28,24 +27,28 @@ function getAccessTokenCookieKeysForPath(
   return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
 }
 
-function cookieExtractorByPath(req: express.Request): string | null {
-  const path = req?.path ?? req?.url?.split(`?`)[0] ?? ``;
-  const consumerScope = path.startsWith(CONSUMER_API_PATH_PREFIX)
-    ? originResolver.validateConsumerAppScopeHeader(req?.headers?.[CONSUMER_APP_SCOPE_HEADER])
-    : undefined;
-  const keys = getAccessTokenCookieKeysForPath(path, consumerScope);
-  for (const key of keys) {
-    const value = req?.cookies?.[key];
-    if (value) return value;
-  }
-  return null;
+export function buildCookieExtractor(
+  originResolver: Pick<OriginResolverService, `validateConsumerAppScopeHeader`>,
+): (req: express.Request) => string | null {
+  return (req: express.Request): string | null => {
+    const path = req?.path ?? req?.url?.split(`?`)[0] ?? ``;
+    const consumerScope = path.startsWith(CONSUMER_API_PATH_PREFIX)
+      ? originResolver.validateConsumerAppScopeHeader(req?.headers?.[CONSUMER_APP_SCOPE_HEADER])
+      : undefined;
+    const keys = getAccessTokenCookieKeysForPath(path, consumerScope);
+    for (const key of keys) {
+      const value = req?.cookies?.[key];
+      if (value) return value;
+    }
+    return null;
+  };
 }
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, `jwt`) {
-  constructor() {
+  constructor(originResolver: OriginResolverService) {
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractorByPath]),
+      jwtFromRequest: ExtractJwt.fromExtractors([buildCookieExtractor(originResolver)]),
       ignoreExpiration: false,
       secretOrKey: envs.JWT_ACCESS_SECRET,
     });

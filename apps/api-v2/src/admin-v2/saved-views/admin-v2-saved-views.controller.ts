@@ -18,7 +18,7 @@ import express from 'express';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
-import { SavedViewCreateBodyDTO, SavedViewDeleteBodyDTO, SavedViewUpdateBodyDTO } from './admin-v2-saved-views.dto';
+import { SavedViewCreateBody, SavedViewDeleteBody, SavedViewUpdateBody } from './admin-v2-saved-views.dto';
 import { AdminV2SavedViewsService } from './admin-v2-saved-views.service';
 
 function requestMeta(req: express.Request) {
@@ -54,7 +54,7 @@ export class AdminV2SavedViewsController {
   }
 
   @Post()
-  async create(@Identity() admin: IIdentityContext, @Body() body: SavedViewCreateBodyDTO, @Req() req: express.Request) {
+  async create(@Identity() admin: IIdentityContext, @Body() body: SavedViewCreateBody, @Req() req: express.Request) {
     await this.accessService.assertCapability(admin, `saved_views.manage`);
     return this.service.create(admin, body, requestMeta(req));
   }
@@ -63,7 +63,7 @@ export class AdminV2SavedViewsController {
   async update(
     @Identity() admin: IIdentityContext,
     @Param(`savedViewId`) savedViewId: string,
-    @Body() body: SavedViewUpdateBodyDTO,
+    @Body() body: SavedViewUpdateBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `saved_views.manage`);
@@ -74,7 +74,7 @@ export class AdminV2SavedViewsController {
   async delete(
     @Identity() admin: IIdentityContext,
     @Param(`savedViewId`) savedViewId: string,
-    @Body() body: SavedViewDeleteBodyDTO,
+    @Body() body: SavedViewDeleteBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `saved_views.manage`);

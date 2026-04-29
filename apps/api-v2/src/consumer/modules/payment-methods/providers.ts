@@ -1,5 +1,4 @@
 import { type Provider } from '@nestjs/common';
-import Stripe from 'stripe';
 
 import { ConsumerPaymentMethodsService } from './consumer-payment-methods.service';
 import { StripeCheckoutScheduler } from './stripe-checkout.scheduler';
@@ -12,12 +11,12 @@ import { StripeWebhookVerificationService } from './stripe-webhook-verification.
 import { StripeWebhookService } from './stripe-webhook.service';
 import { CONSUMER_STRIPE_WEBHOOK_CLIENT } from './stripe-webhook.tokens';
 import { ConsumerStripeService } from './stripe.service';
-import { envs } from '../../../envs';
+import { STRIPE_CLIENT } from '../../../shared/stripe-client';
 
 export const providers = [
   {
     provide: CONSUMER_STRIPE_WEBHOOK_CLIENT,
-    useFactory: () => new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` }),
+    useExisting: STRIPE_CLIENT,
   },
   StripeWebhookPaymentMethodsService,
   StripeWebhookPayoutsService,

@@ -19,9 +19,9 @@ import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import {
-  OperationalAlertCreateBodyDTO,
-  OperationalAlertDeleteBodyDTO,
-  OperationalAlertUpdateBodyDTO,
+  OperationalAlertCreateBody,
+  OperationalAlertDeleteBody,
+  OperationalAlertUpdateBody,
 } from './admin-v2-operational-alerts.dto';
 import { AdminV2OperationalAlertsService } from './admin-v2-operational-alerts.service';
 
@@ -60,7 +60,7 @@ export class AdminV2OperationalAlertsController {
   @Post()
   async create(
     @Identity() admin: IIdentityContext,
-    @Body() body: OperationalAlertCreateBodyDTO,
+    @Body() body: OperationalAlertCreateBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `alerts.manage`);
@@ -71,7 +71,7 @@ export class AdminV2OperationalAlertsController {
   async update(
     @Identity() admin: IIdentityContext,
     @Param(`operationalAlertId`) operationalAlertId: string,
-    @Body() body: OperationalAlertUpdateBodyDTO,
+    @Body() body: OperationalAlertUpdateBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `alerts.manage`);
@@ -82,7 +82,7 @@ export class AdminV2OperationalAlertsController {
   async delete(
     @Identity() admin: IIdentityContext,
     @Param(`operationalAlertId`) operationalAlertId: string,
-    @Body() body: OperationalAlertDeleteBodyDTO,
+    @Body() body: OperationalAlertDeleteBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `alerts.manage`);

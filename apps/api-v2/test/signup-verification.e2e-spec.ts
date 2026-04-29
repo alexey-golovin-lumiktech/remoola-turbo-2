@@ -14,6 +14,7 @@ import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/configure-app';
 import { envs } from '../src/envs';
+import { AuthGuard } from '../src/guards/auth.guard';
 import { MailingService } from '../src/shared/mailing.service';
 
 describe(`Signup verification cutover (e2e, isolated DB)`, () => {
@@ -52,7 +53,10 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleFixture.createNestApplication<NestExpressApplication>();
     configureApp(app);
@@ -74,7 +78,9 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
   afterAll(async () => {
     envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it(`complete-profile-creation rejects requests without app scope header`, async () => {

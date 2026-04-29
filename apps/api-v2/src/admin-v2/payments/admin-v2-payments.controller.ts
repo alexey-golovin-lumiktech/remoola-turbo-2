@@ -35,7 +35,7 @@ function parseDate(value: string | undefined): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
-class PaymentReversalBodyDTO {
+class PaymentReversalBody {
   @Expose()
   @IsOptional()
   @IsNumber()
@@ -103,11 +103,7 @@ export class AdminV2PaymentsController {
   }
 
   @Post(`:id/refund`)
-  async createRefund(
-    @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
-    @Body() body: PaymentReversalBodyDTO,
-  ) {
+  async createRefund(@Identity() admin: IIdentityContext, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.adminPaymentReversalService.createReversal(
       id,
@@ -120,7 +116,7 @@ export class AdminV2PaymentsController {
   async createChargeback(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: PaymentReversalBodyDTO,
+    @Body() body: PaymentReversalBody,
   ) {
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.adminPaymentReversalService.createReversal(

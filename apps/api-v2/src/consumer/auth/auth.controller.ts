@@ -30,6 +30,7 @@ import { OAuthStateStoreService } from './oauth-state-store.service';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { Identity, type IIdentityContext, PublicEndpoint, TrackConsumerAction } from '../../common';
 import { CONSUMER } from '../../dtos';
+import { ForgotPasswordBody, HandoffTokenRequest, ResetPassword } from '../../dtos/consumer';
 import { envs } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
@@ -444,10 +445,11 @@ export class ConsumerAuthController {
   async establishGoogleSignupSession(
     @Req() req: express.Request,
     @Res({ passthrough: true }) res,
-    @Body(`handoffToken`) handoffToken: string,
+    @Body() body: HandoffTokenRequest,
     @Query(`appScope`) appScope?: string,
   ) {
     const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
+    const handoffToken = body.handoffToken;
     if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
     const payload = await this.oauthStateStore.consumeSignupHandoff(handoffToken);
     if (!payload) throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
@@ -483,10 +485,11 @@ export class ConsumerAuthController {
   async oauthComplete(
     @Req() req: express.Request,
     @Res({ passthrough: true }) res,
-    @Body(`handoffToken`) handoffToken: string,
+    @Body() body: HandoffTokenRequest,
     @Query(`appScope`) appScope?: string,
   ) {
     const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
+    const handoffToken = body.handoffToken;
     if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_EXCHANGE_TOKEN);
     const decoded = await this.oauthStateStore.consumeLoginHandoff(handoffToken);
     if (!decoded) throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
@@ -639,7 +642,7 @@ export class ConsumerAuthController {
   @HttpCode(HttpStatus.OK)
   async forgotPassword(
     @Req() req: express.Request,
-    @Body() body: CONSUMER.ForgotPasswordBody,
+    @Body() body: ForgotPasswordBody,
     @Query(`appScope`) appScope?: string,
   ) {
     const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
@@ -654,7 +657,7 @@ export class ConsumerAuthController {
   @Post(`password/reset`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() body: CONSUMER.ResetPasswordDto) {
+  async resetPassword(@Body() body: ResetPassword) {
     await this.service.resetPasswordWithToken(body.token, body.password);
     return { success: true };
   }

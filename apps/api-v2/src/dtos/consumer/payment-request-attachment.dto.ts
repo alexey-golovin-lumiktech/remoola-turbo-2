@@ -12,7 +12,7 @@ import {
 } from '../../shared-common';
 import { BaseModel } from '../common';
 
-class PaymentRequestAttachmentDTO extends BaseModel implements PaymentRequestAttachmentModel {
+class PaymentRequestAttachment extends BaseModel implements PaymentRequestAttachmentModel {
   @Expose()
   @ApiProperty({ description: `ID of the user who requested the attachment` })
   requesterId: string;
@@ -31,7 +31,7 @@ type OptionalResourceFields = Partial<Omit<IResourceResponse, `downloadUrl` | `o
 type AttachmentFields = OptionalResourceFields & RequiredResourceFields;
 
 export class PaymentRequestAttachmentResponse
-  extends OmitType(PaymentRequestAttachmentDTO, [`deletedAt`] as const)
+  extends OmitType(PaymentRequestAttachment, [`deletedAt`] as const)
   implements IPaymentRequestAttachmentResponse, AttachmentFields {
   @Expose()
   @ApiProperty({ description: `Resource access level (PUBLIC, PRIVATE, AUTHENTICATED)` })
@@ -76,7 +76,7 @@ export class PaymentRequestAttachmentListResponse {
 }
 
 export class PaymentRequestAttachmentCreate
-  extends PickType(PaymentRequestAttachmentDTO, [
+  extends PickType(PaymentRequestAttachment, [
     `requesterId`, //
     `paymentRequestId`,
     `resourceId`,

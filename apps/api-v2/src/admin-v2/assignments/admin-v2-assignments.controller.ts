@@ -6,11 +6,7 @@ import express from 'express';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
-import {
-  AssignmentClaimBodyDTO,
-  AssignmentReassignBodyDTO,
-  AssignmentReleaseBodyDTO,
-} from './admin-v2-assignments.dto';
+import { AssignmentClaimBody, AssignmentReassignBody, AssignmentReleaseBody } from './admin-v2-assignments.dto';
 import { AdminV2AssignmentsService } from './admin-v2-assignments.service';
 
 function requestMeta(req: express.Request) {
@@ -37,17 +33,13 @@ export class AdminV2AssignmentsController {
   ) {}
 
   @Post(`claim`)
-  async claim(@Identity() admin: IIdentityContext, @Body() body: AssignmentClaimBodyDTO, @Req() req: express.Request) {
+  async claim(@Identity() admin: IIdentityContext, @Body() body: AssignmentClaimBody, @Req() req: express.Request) {
     await this.accessService.assertCapability(admin, `assignments.manage`);
     return this.service.claim(admin, body, requestMeta(req));
   }
 
   @Post(`release`)
-  async release(
-    @Identity() admin: IIdentityContext,
-    @Body() body: AssignmentReleaseBodyDTO,
-    @Req() req: express.Request,
-  ) {
+  async release(@Identity() admin: IIdentityContext, @Body() body: AssignmentReleaseBody, @Req() req: express.Request) {
     await this.accessService.assertCapability(admin, `assignments.manage`);
     return this.service.release(admin, body, requestMeta(req));
   }
@@ -55,7 +47,7 @@ export class AdminV2AssignmentsController {
   @Post(`reassign`)
   async reassign(
     @Identity() admin: IIdentityContext,
-    @Body() body: AssignmentReassignBodyDTO,
+    @Body() body: AssignmentReassignBody,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `assignments.manage`);

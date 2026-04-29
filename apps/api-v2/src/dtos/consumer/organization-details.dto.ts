@@ -11,7 +11,7 @@ import {
 } from '../../shared-common';
 import { BaseModel } from '../common';
 
-class OrganizationDetailsDTO extends BaseModel implements IOrganizationDetailsModel {
+class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {
   @Expose()
   @ApiProperty({ description: `Organization or company name` })
   name: string;
@@ -30,10 +30,10 @@ class OrganizationDetailsDTO extends BaseModel implements IOrganizationDetailsMo
   consumerRoleOther: null | string;
 }
 
-export class OrganizationDetailsResponse extends OmitType(OrganizationDetailsDTO, [`deletedAt`] as const) {}
+export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}
 
 export class OrganizationDetailsCreate
-  extends PickType(OrganizationDetailsDTO, [`name`, `size`, `consumerRole`, `consumerRoleOther`] as const)
+  extends PickType(OrganizationDetails, [`name`, `size`, `consumerRole`, `consumerRoleOther`] as const)
   implements IOrganizationDetailsCreate {}
 
 export class OrganizationDetailsUpdate

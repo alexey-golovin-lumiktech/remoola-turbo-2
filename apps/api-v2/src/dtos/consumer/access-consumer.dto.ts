@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
+import { IsString, MaxLength, MinLength } from 'class-validator';
 
 import {
   type ConsumerGoogleSignupSessionResponse,
@@ -9,7 +10,7 @@ import {
   type ConsumerSignupResponse as ConsumerSignupResponseContract,
 } from '@remoola/api-types';
 
-import { ConsumerDTO } from './consumer.dto';
+import { Consumer } from './consumer.dto';
 import { fromBase64 } from '../../shared-common';
 
 export class LoginResponse implements ConsumerLoginResponseContract {
@@ -21,17 +22,21 @@ export class LoginResponse implements ConsumerLoginResponseContract {
 export class HandoffTokenRequest implements ConsumerHandoffTokenRequestContract {
   @Expose()
   @ApiProperty({ description: `Single-use OAuth handoff token`, example: `handoff-token-string` })
+  @Transform(({ obj }) => obj?.handoffToken)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(512)
   handoffToken: string;
 }
 
-export class SignupRequest extends PickType(ConsumerDTO, [
+export class SignupRequest extends PickType(Consumer, [
   `email`, //
   `password`,
   `accountType`,
   `contractorKind`,
 ] as const) {}
 
-export class ConsumerResponse extends PickType(ConsumerDTO, [
+export class ConsumerResponse extends PickType(Consumer, [
   `id`,
   `email`,
   `verified`,

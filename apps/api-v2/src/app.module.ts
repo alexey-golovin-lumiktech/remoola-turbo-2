@@ -5,7 +5,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AdminV2Module } from './admin-v2/admin-v2.module';
 import { JwtPassportModule } from './auth/jwt-passport.module';
+import { DeviceIdMiddleware } from './common/middleware/device-id.middleware';
 import { ConsumerModule } from './consumer/consumer.module';
+import { AuthGuard } from './guards';
 import { HealthModule } from './health/health.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { AuthAuditModule } from './shared/auth-audit.module';
@@ -29,6 +31,8 @@ const botPatterns = [/googlebot/i, /bingbot/i, /slurp/i];
     ]),
   ],
   providers: [
+    AuthGuard,
+    DeviceIdMiddleware,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

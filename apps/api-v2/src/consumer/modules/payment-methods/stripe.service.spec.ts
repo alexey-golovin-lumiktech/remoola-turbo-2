@@ -23,6 +23,11 @@ describe(`ConsumerStripeService`, () => {
   let paymentIntentsCreate: jest.Mock;
   let paymentMethodsRetrieve: jest.Mock;
   let checkoutSessionsCreate: jest.Mock;
+  let stripeClient: {
+    paymentMethods: { retrieve: jest.Mock };
+    paymentIntents: { create: jest.Mock };
+    checkout: { sessions: { create: jest.Mock } };
+  };
 
   beforeEach(() => {
     txPaymentRequestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
@@ -52,23 +57,15 @@ describe(`ConsumerStripeService`, () => {
         return callback(tx);
       }),
     };
-    service = new ConsumerStripeService(prisma as unknown as PrismaService);
     paymentIntentsCreate = jest.fn();
     paymentMethodsRetrieve = jest.fn().mockResolvedValue({ customer: `cus_1` });
     checkoutSessionsCreate = jest.fn();
-    (
-      service as unknown as {
-        stripe: {
-          paymentMethods: { retrieve: jest.Mock };
-          paymentIntents: { create: jest.Mock };
-          checkout: { sessions: { create: jest.Mock } };
-        };
-      }
-    ).stripe = {
+    stripeClient = {
       paymentMethods: { retrieve: paymentMethodsRetrieve },
       paymentIntents: { create: paymentIntentsCreate },
       checkout: { sessions: { create: checkoutSessionsCreate } },
     };
+    service = new ConsumerStripeService(prisma as unknown as PrismaService, stripeClient as any);
     jest
       .spyOn(
         service as unknown as { ensureStripeCustomer: (...args: unknown[]) => Promise<unknown> },
@@ -286,14 +283,14 @@ describe(`ConsumerStripeService`, () => {
         }),
       ),
     } as any;
-    const serviceForClaim = new ConsumerStripeService(prismaForClaim as unknown as PrismaService);
-    (
-      serviceForClaim as unknown as {
-        stripe: { checkout: { sessions: { create: jest.Mock } } };
-      }
-    ).stripe = {
-      checkout: { sessions: { create: jest.fn().mockResolvedValue({ id: `cs_1`, url: `https://stripe.test/cs_1` }) } },
-    } as any;
+    const serviceForClaim = new ConsumerStripeService(
+      prismaForClaim as unknown as PrismaService,
+      {
+        checkout: {
+          sessions: { create: jest.fn().mockResolvedValue({ id: `cs_1`, url: `https://stripe.test/cs_1` }) },
+        },
+      } as any,
+    );
     jest
       .spyOn(
         serviceForClaim as unknown as { ensureStripeCustomer: (...args: unknown[]) => Promise<unknown> },
@@ -332,11 +329,10 @@ describe(`ConsumerStripeService`, () => {
         updateMany: jest.fn().mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 }),
       },
     } as unknown as PrismaService;
-    const serviceForCustomer = new ConsumerStripeService(prismaForCustomer);
     const customersCreate = jest.fn().mockResolvedValue({ id: `cus_new` });
-    (serviceForCustomer as unknown as { stripe: { customers: { create: jest.Mock } } }).stripe = {
+    const serviceForCustomer = new ConsumerStripeService(prismaForCustomer, {
       customers: { create: customersCreate },
-    };
+    } as any);
 
     await (
       serviceForCustomer as unknown as { ensureStripeCustomer: (consumerId: string) => Promise<unknown> }
