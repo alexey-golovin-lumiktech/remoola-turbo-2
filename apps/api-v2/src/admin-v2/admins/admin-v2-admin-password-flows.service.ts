@@ -4,6 +4,7 @@ import { oauthCrypto } from '@remoola/security-utils';
 
 import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin-auth/admin-auth-session-reasons';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
+import { AUTH_IDENTITY_TYPES, AuthAuditService } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils } from '../../shared-common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
@@ -22,6 +23,7 @@ export class AdminV2AdminPasswordFlowsService {
     private readonly prisma: PrismaService,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly auditTrail: AdminV2AdminAuditTrail,
+    private readonly authAudit: AuthAuditService,
   ) {}
 
   async requestPasswordReset(body: { email?: string | null }) {
@@ -269,6 +271,8 @@ export class AdminV2AdminPasswordFlowsService {
     if (!consumed) {
       throw new BadRequestException(`Reset token is invalid or expired`);
     }
+
+    await this.authAudit.clearLockout(AUTH_IDENTITY_TYPES.admin, consumed.email);
 
     return {
       success: true as const,

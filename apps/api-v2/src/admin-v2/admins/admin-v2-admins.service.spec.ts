@@ -9,6 +9,7 @@ import { AdminV2AdminMutationsService } from './admin-v2-admin-mutations.service
 import { AdminV2AdminPasswordFlowsService } from './admin-v2-admin-password-flows.service';
 import { AdminV2AdminsQueriesService } from './admin-v2-admins-queries.service';
 import { AdminV2AdminsService } from './admin-v2-admins.service';
+import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 
 function createIdempotency() {
   return {
@@ -23,6 +24,7 @@ function createService(params: {
   jwtService: Record<string, unknown>;
   mailingService: Record<string, unknown>;
   originResolver: Record<string, unknown>;
+  authAudit?: Record<string, unknown>;
 }) {
   const links = new AdminV2AdminLinks(params.originResolver as never);
   const auditTrail = new AdminV2AdminAuditTrail(params.prisma as never, params.mailingService as never, links);
@@ -37,7 +39,12 @@ function createService(params: {
       links,
       auditTrail,
     ),
-    new AdminV2AdminPasswordFlowsService(params.prisma as never, params.idempotency as never, auditTrail),
+    new AdminV2AdminPasswordFlowsService(
+      params.prisma as never,
+      params.idempotency as never,
+      auditTrail,
+      (params.authAudit ?? {}) as never,
+    ),
   );
 }
 
@@ -602,6 +609,9 @@ describe(`AdminV2AdminsService`, () => {
   });
 
   it(`resetPasswordWithToken revokes legacy access refresh records`, async () => {
+    const authAudit = {
+      clearLockout: jest.fn(async () => undefined),
+    };
     const tx = {
       resetPasswordModel: {
         updateMany: jest.fn(async () => ({ count: 1 })),
@@ -635,6 +645,7 @@ describe(`AdminV2AdminsService`, () => {
       jwtService: {},
       mailingService: {},
       originResolver: {},
+      authAudit,
     });
 
     await expect(
@@ -648,5 +659,6 @@ describe(`AdminV2AdminsService`, () => {
         identityId: `admin-2`,
       },
     });
+    expect(authAudit.clearLockout).toHaveBeenCalledWith(AUTH_IDENTITY_TYPES.admin, `invitee@example.com`);
   });
 });
