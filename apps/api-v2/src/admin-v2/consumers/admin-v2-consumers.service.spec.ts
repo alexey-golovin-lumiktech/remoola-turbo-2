@@ -1,5 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
 
 type NoteRow = {
@@ -642,7 +644,7 @@ describe(`AdminV2ConsumersService`, () => {
     const result = await service.resendConsumerEmail(
       `consumer-1`,
       `admin-1`,
-      { emailKind: `password_recovery`, appScope: `consumer-css-grid` },
+      { emailKind: `password_recovery`, appScope: CURRENT_CONSUMER_APP_SCOPE },
       { ipAddress: `127.0.0.1`, userAgent: `jest`, idempotencyKey: `email-idem-1` },
     );
 
@@ -654,7 +656,7 @@ describe(`AdminV2ConsumersService`, () => {
         payload: {
           consumerId: `consumer-1`,
           requestedEmailKind: `password_recovery`,
-          appScope: `consumer-css-grid`,
+          appScope: CURRENT_CONSUMER_APP_SCOPE,
         },
       }),
     );
@@ -664,7 +666,7 @@ describe(`AdminV2ConsumersService`, () => {
         metadata: expect.objectContaining({
           requestedEmailKind: `password_recovery`,
           dispatchedEmailKind: `password_reset`,
-          appScope: `consumer-css-grid`,
+          appScope: CURRENT_CONSUMER_APP_SCOPE,
         }),
       }),
     );

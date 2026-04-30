@@ -11,7 +11,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
@@ -29,7 +29,7 @@ describe(`Consumer WAITING status compatibility (e2e, isolated DB)`, () => {
   const counterpartyEmail = `waiting-counterparty@local.test`;
   const password = `WaitingPassword1!`;
   const consumerOrigin = `http://127.0.0.1:3003`;
-  const appScope = `consumer-css-grid` as const;
+  const appScope = CURRENT_CONSUMER_APP_SCOPE;
   let contactId = ``;
   let paymentRequestId = ``;
   let invoiceResourceId = ``;

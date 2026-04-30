@@ -17,6 +17,7 @@ jest.mock(`../../shared-common`, () => ({
   secureCompare: jest.fn((left: string, right: string) => left === right),
 }));
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service.spec-wrapper';
@@ -83,7 +84,7 @@ describe(`ConsumerAuthService.refreshAccess`, () => {
           provide: OriginResolverService,
           useValue: {
             validateConsumerAppScope: jest.fn((value?: string | null) =>
-              value === `consumer` || value === `consumer-mobile` || value === `consumer-css-grid` ? value : undefined,
+              value === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
             ),
             getAllowedOrigins: jest.fn().mockReturnValue(new Set()),
           },
@@ -99,13 +100,13 @@ describe(`ConsumerAuthService.refreshAccess`, () => {
       identityId: `consumer-1`,
       sid: `session-1`,
       typ: `refresh`,
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     prisma.authSessionModel.findFirst.mockResolvedValue({
       id: `session-1`,
       consumerId: `consumer-1`,
       sessionFamilyId: `family-1`,
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
       refreshTokenHash: `hash-current-refresh-token`,
       replacedById: `session-2`,
       revokedAt: null,
@@ -116,7 +117,7 @@ describe(`ConsumerAuthService.refreshAccess`, () => {
       email: `consumer@example.com`,
     });
 
-    const action = service.refreshAccess(`replayed-refresh-token`, `consumer-css-grid`);
+    const action = service.refreshAccess(`replayed-refresh-token`, CURRENT_CONSUMER_APP_SCOPE);
 
     await expect(action).rejects.toBeInstanceOf(UnauthorizedException);
     await expect(action).rejects.toMatchObject({
@@ -149,10 +150,10 @@ describe(`ConsumerAuthService.refreshAccess`, () => {
       identityId: `consumer-1`,
       sid: `session-1`,
       typ: `refresh`,
-      appScope: `consumer-mobile`,
+      appScope: `unknown-scope`,
     });
 
-    const action = service.refreshAccess(`refresh-token`, `consumer-css-grid`);
+    const action = service.refreshAccess(`refresh-token`, CURRENT_CONSUMER_APP_SCOPE);
 
     await expect(action).rejects.toBeInstanceOf(UnauthorizedException);
     await expect(action).rejects.toMatchObject({
@@ -168,16 +169,16 @@ describe(`ConsumerAuthService.refreshAccess`, () => {
       identityId: `consumer-1`,
       sid: `session-1`,
       typ: `refresh`,
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
-    await service.revokeSessionByRefreshToken(`current-refresh-token`, `consumer-css-grid`);
+    await service.revokeSessionByRefreshToken(`current-refresh-token`, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(prisma.authSessionModel.updateMany).toHaveBeenCalledWith({
       where: {
         id: `session-1`,
         consumerId: `consumer-1`,
-        appScope: `consumer-css-grid`,
+        appScope: CURRENT_CONSUMER_APP_SCOPE,
         refreshTokenHash: `hash-current-refresh-token`,
         revokedAt: null,
       },

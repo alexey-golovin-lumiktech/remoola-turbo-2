@@ -11,6 +11,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
@@ -96,7 +97,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
         stripeId: stripeId ?? undefined,
         createdBy: payer.id,
         updatedBy: payer.id,
-        metadata: { consumerAppScope: `consumer-css-grid` },
+        metadata: { consumerAppScope: CURRENT_CONSUMER_APP_SCOPE },
       },
     });
     await prisma.ledgerEntryModel.create({
@@ -110,7 +111,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
         amount: amount,
         createdBy: payer.id,
         updatedBy: payer.id,
-        metadata: { consumerAppScope: `consumer-css-grid` },
+        metadata: { consumerAppScope: CURRENT_CONSUMER_APP_SCOPE },
       },
     });
     for (let index = 0; index < newerScopeLessEntries; index += 1) {

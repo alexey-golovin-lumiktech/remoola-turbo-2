@@ -2,7 +2,7 @@ import 'server-only';
 
 import { cookies } from 'next/headers';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import {
   fetchConsumerApi,
@@ -37,7 +37,7 @@ import {
 import { buildConsumerMutationHeaders } from './consumer-auth-headers.server';
 import { normalizeDocumentDownloadUrl } from './document-download-url';
 import { getEnv } from './env.server';
-import { APP_SCOPE, getRequestOrigin } from './request-origin';
+import { getRequestOrigin } from './request-origin';
 
 interface ExchangeRateBatchItem {
   from?: string;
@@ -118,7 +118,7 @@ async function fetchConsumerApiResult<T>(
       headers: {
         Cookie: cookieStore.toString(),
         origin: getRequestOrigin(),
-        [CONSUMER_APP_SCOPE_HEADER]: APP_SCOPE,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       },
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),

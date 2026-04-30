@@ -1,6 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { type GoogleSignupPayload } from './auth.service';
@@ -36,7 +37,7 @@ describe(`ConsumerAuthService.signup (Google session)`, () => {
     nextPath: `/dashboard`,
     accountType: null,
     contractorKind: null,
-    appScope: `consumer-css-grid`,
+    appScope: CURRENT_CONSUMER_APP_SCOPE,
   });
 
   beforeEach(async () => {

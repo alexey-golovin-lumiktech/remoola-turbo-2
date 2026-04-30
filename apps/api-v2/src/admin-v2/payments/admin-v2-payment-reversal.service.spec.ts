@@ -1,3 +1,4 @@
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { AdminV2PaymentReversalService } from './admin-v2-payment-reversal.service';
@@ -6,7 +7,7 @@ describe(`AdminV2PaymentReversalService`, () => {
   it(`routes reversal emails with the stored consumer app scope`, async () => {
     const prisma = {
       ledgerEntryModel: {
-        findMany: jest.fn().mockResolvedValue([{ metadata: { consumerAppScope: `consumer-mobile` } }]),
+        findMany: jest.fn().mockResolvedValue([{ metadata: { consumerAppScope: CURRENT_CONSUMER_APP_SCOPE } }]),
       },
       consumerModel: {
         findMany: jest.fn().mockResolvedValue([
@@ -44,14 +45,60 @@ describe(`AdminV2PaymentReversalService`, () => {
       1,
       expect.objectContaining({
         recipientEmail: `payer@example.com`,
-        consumerAppScope: `consumer-css-grid`,
+        consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
       }),
     );
     expect(mailingService.sendPaymentRefundEmail).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         recipientEmail: `requester@example.com`,
-        consumerAppScope: `consumer-css-grid`,
+        consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
+      }),
+    );
+  });
+
+  it(`does not remap legacy payment-link metadata to the canonical consumer app scope`, async () => {
+    const prisma = {
+      ledgerEntryModel: {
+        findMany: jest.fn().mockResolvedValue([{ metadata: { consumerAppScope: `consumer-mobile` } }]),
+      },
+      consumerModel: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: `payer-1`, email: `payer@example.com` },
+          { id: `requester-1`, email: `requester@example.com` },
+        ]),
+      },
+    } as any;
+    const mailingService = {
+      sendPaymentRefundEmail: jest.fn().mockResolvedValue(undefined),
+      sendPaymentChargebackEmail: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
+    const service = new AdminV2PaymentReversalService(prisma, mailingService, {} as any, {} as any, {} as any);
+
+    await (service as any).sendReversalEmails({
+      paymentRequestId: `pr-1`,
+      payerId: `payer-1`,
+      requesterId: `requester-1`,
+      requesterEmail: `requester@example.com`,
+      amount: 7,
+      currencyCode: $Enums.CurrencyCode.USD,
+      kind: `REFUND`,
+      reason: `admin-reversal`,
+    });
+
+    expect(mailingService.sendPaymentRefundEmail).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        recipientEmail: `payer@example.com`,
+        consumerAppScope: undefined,
+      }),
+    );
+    expect(mailingService.sendPaymentRefundEmail).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        recipientEmail: `requester@example.com`,
+        consumerAppScope: undefined,
       }),
     );
   });

@@ -11,6 +11,7 @@ jest.mock(`@remoola/security-utils`, () => ({
 }));
 
 import { oauthCrypto } from '@remoola/security-utils';
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { ConsumerAuthService } from './auth.service.spec-wrapper';
 import { envs } from '../../envs';
@@ -75,7 +76,7 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
   });
 
   it(`stores both access and refresh token hashes on the created auth session`, async () => {
-    const result = await service.issueTokensForConsumer(`consumer-1`, `consumer-css-grid`);
+    const result = await service.issueTokensForConsumer(`consumer-1`, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(result).toEqual({
       accessToken: `access-token`,
@@ -86,7 +87,7 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
     expect(prisma.authSessionModel.create).toHaveBeenCalledWith({
       data: {
         consumerId: `consumer-1`,
-        appScope: `consumer-css-grid`,
+        appScope: CURRENT_CONSUMER_APP_SCOPE,
         sessionFamilyId: `consumer-1`,
         refreshTokenHash: expect.stringMatching(/^pending:/),
         expiresAt: expect.any(Date),

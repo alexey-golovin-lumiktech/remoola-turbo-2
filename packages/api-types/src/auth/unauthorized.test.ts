@@ -1,6 +1,6 @@
 /**
  * Tests for isUnauthorizedError (401/403 classification).
- * Cross-app: consumer, consumer-mobile, admin use same semantics.
+ * Cross-surface unauthorized classification should stay consistent.
  */
 
 import { isUnauthorizedError } from './unauthorized';
@@ -34,7 +34,7 @@ describe(`unauthorized (api-types)`, () => {
   });
 
   describe(`cross-app equivalence`, () => {
-    it(`same error shape produces same result for consumer, admin, consumer-mobile`, () => {
+    it(`same error shape produces the same result across surfaces`, () => {
       const err401 = Object.assign(new Error(`Unauthorized`), { status: 401 });
       const err403 = Object.assign(new Error(`Forbidden`), { status: 403 });
       const err500 = Object.assign(new Error(`Server error`), { status: 500 });

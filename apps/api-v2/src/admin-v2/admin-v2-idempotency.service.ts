@@ -2,6 +2,8 @@ import { createHash } from 'crypto';
 
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 
+import { Prisma } from '@remoola/database-2';
+
 import { PrismaService } from '../shared/prisma.service';
 
 type IdempotentExecutionParams<T> = {
@@ -120,7 +122,7 @@ export class AdminV2IdempotencyService {
             idempotencyKey: params.key,
             requestHash: params.requestHash,
             responseStatus: 0,
-            responseSnapshot: null,
+            responseSnapshot: Prisma.DbNull,
             expiresAt: new Date(Date.now() + ENTRY_TTL_MS),
           },
         });
@@ -165,7 +167,7 @@ export class AdminV2IdempotencyService {
           scope: params.scope,
           idempotencyKey: params.key,
           requestHash: params.requestHash,
-          responseSnapshot: null,
+          responseSnapshot: { equals: Prisma.DbNull },
         },
       });
       throw error;

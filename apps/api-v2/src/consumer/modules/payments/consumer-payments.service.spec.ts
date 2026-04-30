@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -234,7 +235,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
       method: $Enums.PaymentMethodType.CREDIT_CARD,
     };
 
-    const result = await service.startPayment(consumerId, body, `consumer-css-grid`);
+    const result = await service.startPayment(consumerId, body, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(result).toEqual({ paymentRequestId: `pr-1`, ledgerId: expect.any(String) });
     expect(prisma.consumerModel.findFirst).toHaveBeenCalledWith({
@@ -266,7 +267,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           metadata: expect.objectContaining({
             rail: $Enums.PaymentRail.CARD,
             counterpartyId: `recipient-1`,
-            consumerAppScope: `consumer-css-grid`,
+            consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
           }),
         }),
       }),
@@ -282,7 +283,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           metadata: expect.objectContaining({
             rail: $Enums.PaymentRail.CARD,
             counterpartyId: consumerId,
-            consumerAppScope: `consumer-css-grid`,
+            consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
           }),
         }),
       }),
@@ -487,7 +488,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
     tx.paymentRequestModel.update.mockResolvedValue({ id: `pr-1` });
     tx.ledgerEntryModel.create.mockResolvedValue({});
 
-    const result = await service.sendPaymentRequest(consumerId, `pr-1`, `consumer-css-grid`);
+    const result = await service.sendPaymentRequest(consumerId, `pr-1`, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(result).toEqual({ paymentRequestId: `pr-1` });
     expect(tx.ledgerEntryModel.create).toHaveBeenCalledTimes(2);
@@ -500,7 +501,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
           amount: -55.25,
           metadata: expect.objectContaining({
             counterpartyId: consumerId,
-            consumerAppScope: `consumer-css-grid`,
+            consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
           }),
         }),
       }),
@@ -514,7 +515,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
           amount: 55.25,
           metadata: expect.objectContaining({
             counterpartyId: `payer-1`,
-            consumerAppScope: `consumer-css-grid`,
+            consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
           }),
         }),
       }),
@@ -550,7 +551,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
     });
     tx.paymentRequestModel.update.mockResolvedValue({ id: `pr-2` });
 
-    const result = await service.sendPaymentRequest(consumerId, `pr-2`, `consumer-css-grid`);
+    const result = await service.sendPaymentRequest(consumerId, `pr-2`, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(result).toEqual({ paymentRequestId: `pr-2` });
     expect(tx.ledgerEntryModel.create).not.toHaveBeenCalled();
@@ -558,7 +559,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
       expect.objectContaining({
         payerEmail: `outside@example.com`,
         requesterEmail,
-        consumerAppScope: `consumer-css-grid`,
+        consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
       }),
     );
   });

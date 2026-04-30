@@ -1,3 +1,5 @@
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import { OAuthStateStoreService } from './oauth-state-store.service';
 
 describe(`OAuthStateStoreService`, () => {
@@ -18,7 +20,7 @@ describe(`OAuthStateStoreService`, () => {
       codeVerifier: `verifier`,
       nextPath: `/dashboard`,
       createdAt: Date.now(),
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
     prisma.oauthStateModel.create.mockResolvedValue(undefined);
@@ -31,7 +33,7 @@ describe(`OAuthStateStoreService`, () => {
         codeVerifier: `verifier`,
         nextPath: `/dashboard`,
         createdAt: Date.now(),
-        appScope: `consumer-css-grid`,
+        appScope: CURRENT_CONSUMER_APP_SCOPE,
       },
       10_000,
     );
@@ -56,7 +58,7 @@ describe(`OAuthStateStoreService`, () => {
         codeVerifier: `verifier`,
         nextPath: `/dashboard`,
         createdAt: Date.now(),
-        appScope: `consumer-css-grid`,
+        appScope: CURRENT_CONSUMER_APP_SCOPE,
       },
       1,
     );
@@ -81,7 +83,7 @@ describe(`OAuthStateStoreService`, () => {
           createdAt,
           signupEntryPath: `/signup`,
           accountType: `BUSINESS`,
-          appScope: `consumer-css-grid`,
+          appScope: CURRENT_CONSUMER_APP_SCOPE,
         }),
       },
     ]);
@@ -95,7 +97,7 @@ describe(`OAuthStateStoreService`, () => {
         createdAt,
         signupEntryPath: `/signup`,
         accountType: `BUSINESS`,
-        appScope: `consumer-css-grid`,
+        appScope: CURRENT_CONSUMER_APP_SCOPE,
       },
       10_000,
     );
@@ -110,7 +112,7 @@ describe(`OAuthStateStoreService`, () => {
       signupEntryPath: `/signup`,
       accountType: `BUSINESS`,
       contractorKind: undefined,
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
   });
 
@@ -124,7 +126,7 @@ describe(`OAuthStateStoreService`, () => {
         codeVerifier: `verifier`,
         nextPath: `/dashboard`,
         createdAt,
-        appScope: `consumer-css-grid`,
+        appScope: CURRENT_CONSUMER_APP_SCOPE,
       }),
       expiresAt: new Date(Date.now() + 10_000),
     });
@@ -139,9 +141,26 @@ describe(`OAuthStateStoreService`, () => {
       signupEntryPath: undefined,
       accountType: undefined,
       contractorKind: undefined,
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     expect(prisma.$queryRaw).not.toHaveBeenCalled();
+  });
+
+  it(`rejects persisted legacy consumer app scopes`, async () => {
+    const { store, prisma } = makeService();
+    const token = store.createStateToken();
+    prisma.oauthStateModel.findUnique.mockResolvedValue({
+      payload: JSON.stringify({
+        nonce: `nonce`,
+        codeVerifier: `verifier`,
+        nextPath: `/dashboard`,
+        createdAt: Date.now(),
+        appScope: `consumer`,
+      }),
+      expiresAt: new Date(Date.now() + 10_000),
+    });
+
+    await expect(store.read(token)).resolves.toBeNull();
   });
 
   it(`consumes login handoffs only once`, async () => {
@@ -154,14 +173,14 @@ describe(`OAuthStateStoreService`, () => {
           type: `oauth_login_handoff`,
           identityId: `consumer-id`,
           nextPath: `/dashboard`,
-          appScope: `consumer-css-grid`,
+          appScope: CURRENT_CONSUMER_APP_SCOPE,
         }),
       },
     ]);
 
     await store.saveLoginHandoff(
       token,
-      { identityId: `consumer-id`, nextPath: `/dashboard`, appScope: `consumer-css-grid` },
+      { identityId: `consumer-id`, nextPath: `/dashboard`, appScope: CURRENT_CONSUMER_APP_SCOPE },
       10_000,
     );
 
@@ -169,7 +188,7 @@ describe(`OAuthStateStoreService`, () => {
     prisma.$queryRaw.mockResolvedValueOnce([]);
     const second = await store.consumeLoginHandoff(token);
 
-    expect(first).toEqual({ identityId: `consumer-id`, nextPath: `/dashboard`, appScope: `consumer-css-grid` });
+    expect(first).toEqual({ identityId: `consumer-id`, nextPath: `/dashboard`, appScope: CURRENT_CONSUMER_APP_SCOPE });
     expect(second).toBeNull();
   });
 
@@ -191,7 +210,7 @@ describe(`OAuthStateStoreService`, () => {
         nextPath: `/dashboard`,
         accountType: `BUSINESS`,
         contractorKind: null,
-        appScope: `consumer`,
+        appScope: CURRENT_CONSUMER_APP_SCOPE,
       }),
       expiresAt: new Date(Date.now() + 10_000),
     });
@@ -211,7 +230,7 @@ describe(`OAuthStateStoreService`, () => {
       nextPath: `/dashboard`,
       accountType: `BUSINESS`,
       contractorKind: null,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
   });
 });

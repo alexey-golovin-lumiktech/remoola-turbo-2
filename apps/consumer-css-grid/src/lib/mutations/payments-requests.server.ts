@@ -8,11 +8,11 @@ import {
   type ConsumerPaymentsResponse,
   type ConsumerStartPaymentPayload,
   type ConsumerStartPaymentResponse,
+  CURRENT_CONSUMER_APP_SCOPE,
 } from '@remoola/api-types';
 
 import { isDateInputTodayOrLater, normalizeDateInput } from '../date-input';
 import {
-  APP_SCOPE,
   configuredBaseUrl,
   consumerMutationHeaders,
   fetch,
@@ -192,7 +192,7 @@ export async function startPaymentMutation(input: {
   }
 
   const startUrl = new URL(`${baseUrl}/consumer/payments/start`);
-  startUrl.searchParams.set(`appScope`, APP_SCOPE);
+  startUrl.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const response = await fetch(startUrl, {
     method: `POST`,
     headers: {
@@ -242,7 +242,7 @@ export async function sendPaymentRequestMutation(
   }
 
   const sendUrl = new URL(`${baseUrl}/consumer/payment-requests/${id}/send`);
-  sendUrl.searchParams.set(`appScope`, APP_SCOPE);
+  sendUrl.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const response = await fetch(sendUrl, {
     method: `POST`,
     headers: {

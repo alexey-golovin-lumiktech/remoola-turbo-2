@@ -1,5 +1,3 @@
-export const APP_SCOPE = `consumer-css-grid` as const;
-
 function normalizeOriginCandidate(candidate: string | undefined): string | null {
   if (!candidate) return null;
   const trimmed = candidate.trim();

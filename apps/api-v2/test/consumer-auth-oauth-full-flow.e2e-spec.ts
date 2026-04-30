@@ -9,7 +9,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
 
-import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE, type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword, oauthCrypto } from '@remoola/security-utils';
 
@@ -26,7 +26,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   let prisma: PrismaClient;
   const consumerEmail = `oauth-existing-consumer@local.test`;
   const consumerPassword = `OauthConsumer1!`;
-  const appScope: ConsumerAppScope = `consumer-css-grid`;
+  const appScope: ConsumerAppScope = CURRENT_CONSUMER_APP_SCOPE;
   const consumerOrigin = `http://127.0.0.1:3003`;
   let consumerId = ``;
   let initialConsumerCssGridOrigin: string;

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { CURRENT_CONSUMER_APP_SCOPE, type ConsumerAppScope } from '@remoola/api-types';
+import { type ConsumerAppScope } from '@remoola/api-types';
 
 import { generatePdf } from '../shared-common';
 import { BrevoMailService, type BrevoAttachment, type BrevoSendMailOptions } from './brevo-mail.service';
@@ -108,7 +108,10 @@ export class MailingService {
   }
 
   private resolveConsumerPaymentLinkOrigin(consumerAppScope?: ConsumerAppScope): string | null {
-    return this.originResolver.resolveConsumerOriginByScope(consumerAppScope ?? CURRENT_CONSUMER_APP_SCOPE) ?? null;
+    if (!consumerAppScope) {
+      return null;
+    }
+    return this.originResolver.resolveConsumerOriginByScope(consumerAppScope) ?? null;
   }
 
   async sendLogsEmail(data: unknown = null, email?: string) {

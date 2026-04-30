@@ -2,6 +2,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { type Response } from 'express';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service.spec-wrapper';
@@ -34,12 +35,11 @@ describe(`ConsumerAuthService.validateForgotPasswordTokenAndRedirect`, () => {
           provide: OriginResolverService,
           useValue: {
             validateConsumerAppScope: jest.fn((scope?: string | null) =>
-              scope === `consumer` || scope === `consumer-mobile` || scope === `consumer-css-grid` ? scope : undefined,
+              scope === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
             ),
             resolveConsumerOriginByScope: jest.fn((scope: string) => {
-              if (scope === `consumer-mobile`) return `https://mobile.example.com`;
-              if (scope === `consumer-css-grid`) return `https://grid.example.com`;
-              return `https://app.example.com`;
+              if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example.com`;
+              return null;
             }),
           },
         },
@@ -51,7 +51,7 @@ describe(`ConsumerAuthService.validateForgotPasswordTokenAndRedirect`, () => {
 
   it(`redirects valid tokens to the stored app scope confirm page with token only`, async () => {
     prisma.resetPasswordModel.findFirst.mockResolvedValue({
-      appScope: `consumer-mobile`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
       deletedAt: null,
       expiredAt: new Date(Date.now() + 60_000),
     });
@@ -59,12 +59,12 @@ describe(`ConsumerAuthService.validateForgotPasswordTokenAndRedirect`, () => {
 
     await service.validateForgotPasswordTokenAndRedirect(`reset-token`, res);
 
-    expect(res.redirect).toHaveBeenCalledWith(`https://mobile.example.com/forgot-password/confirm?token=reset-token`);
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/forgot-password/confirm?token=reset-token`);
   });
 
   it(`redirects expired tokens to the stored app scope without preserving token`, async () => {
     prisma.resetPasswordModel.findFirst.mockResolvedValue({
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
       deletedAt: null,
       expiredAt: new Date(Date.now() - 60_000),
     });

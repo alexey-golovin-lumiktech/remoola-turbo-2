@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 
-import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE, type ConsumerAppScope } from '@remoola/api-types';
 
 import type request from 'supertest';
 
@@ -26,7 +26,7 @@ export function nextIdempotencyKey(prefix: string): string {
 
 export function withConsumerAppScope<T extends request.Test>(
   req: T,
-  scope: ConsumerAppScope = `consumer-css-grid`,
+  scope: ConsumerAppScope = CURRENT_CONSUMER_APP_SCOPE,
   origin = DEFAULT_CONSUMER_ORIGIN,
 ): T {
   return req.set(`origin`, origin).set(CONSUMER_APP_SCOPE_HEADER, scope);

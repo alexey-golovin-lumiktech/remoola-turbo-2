@@ -18,8 +18,6 @@ export type PaymentFlowMutationContext = {
   returnTo?: string | null;
 };
 
-export const APP_SCOPE = `consumer-css-grid`;
-
 const NETWORK_ERROR_MESSAGE = `The request could not be completed because the network request failed. Please try again.`;
 
 export async function fetch(input: string | URL, init?: RequestInit): Promise<Response> {

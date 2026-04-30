@@ -1,3 +1,4 @@
+import { type ConsumerAppScope } from '../http';
 import { type TAccountType, type TContractorKind } from '../auth';
 import { type TCurrencyCode } from '../currency';
 import { type TPaymentDirection } from '../payments';
@@ -47,7 +48,7 @@ export type ConsumerExchangeRatesBatchQuery = {
 };
 
 export type ConsumerGoogleOAuthStartQuery = {
-  appScope?: string;
+  appScope?: ConsumerAppScope;
   next?: string;
   signupPath?: string;
   accountType?: TAccountType;
@@ -55,7 +56,7 @@ export type ConsumerGoogleOAuthStartQuery = {
 };
 
 export type ConsumerAppScopeQuery = {
-  appScope?: string;
+  appScope?: ConsumerAppScope;
 };
 
 export type ConsumerStripeCheckoutQuery = ConsumerAppScopeQuery & {

@@ -7,7 +7,7 @@ import { type NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 
@@ -56,7 +56,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   const settingsUpdatedPassword = `SettingsReset2!`;
   const googleOnlyCreatedPassword = `GoogleCreated1!`;
   const origin = `http://127.0.0.1:3003`;
-  const appScope = `consumer-css-grid` as const;
+  const appScope = CURRENT_CONSUMER_APP_SCOPE;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
     if (!Array.isArray(cookies)) return null;
@@ -285,7 +285,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
       .expect(200);
     const csrf = parseCookieValueForKeys(
       asCookieArray(loginRes.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+      getApiConsumerCsrfTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE),
     );
     expect(csrf).toBeTruthy();
 
@@ -322,9 +322,9 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     );
     const csrf = `csrf-passwordless-google`;
     const authCookies = [
-      `${getApiConsumerAccessTokenCookieKey(undefined, `consumer-css-grid`)}=${issued.accessToken}`,
-      `${getApiConsumerRefreshTokenCookieKey(undefined, `consumer-css-grid`)}=${issued.refreshToken}`,
-      `${getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`)[0]}=${csrf}`,
+      `${getApiConsumerAccessTokenCookieKey(undefined, CURRENT_CONSUMER_APP_SCOPE)}=${issued.accessToken}`,
+      `${getApiConsumerRefreshTokenCookieKey(undefined, CURRENT_CONSUMER_APP_SCOPE)}=${issued.refreshToken}`,
+      `${getApiConsumerCsrfTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE)[0]}=${csrf}`,
     ];
 
     const changeRes = await withConsumerAppScope(request(app.getHttpServer()).patch(`/api/consumer/profile/password`))
@@ -469,7 +469,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
       .expect(200);
     const csrf = parseCookieValueForKeys(
       asCookieArray(loginRes.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+      getApiConsumerCsrfTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE),
     );
     expect(csrf).toBeTruthy();
 

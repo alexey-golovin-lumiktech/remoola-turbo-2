@@ -6,6 +6,8 @@ jest.mock(`../../../../../../../lib/env.server`, () => ({
   getEnv: (...args: unknown[]) => mockGetEnv(...args),
 }));
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import { POST } from './route';
 import { getSetCookieValues } from '../../../../../../../lib/api-utils';
 
@@ -14,7 +16,7 @@ describe(`consumer-css-grid google signup-session establish route`, () => {
     jest.restoreAllMocks();
   });
 
-  it(`proxies establish to api-v2 with consumer-css-grid app scope`, async () => {
+  it(`proxies establish to api-v2 with the canonical app scope`, async () => {
     mockGetEnv.mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
     const fetchSpy = jest.spyOn(global, `fetch`).mockResolvedValueOnce(
       new Response(JSON.stringify({ email: `g@example.com`, givenName: `Ada` }), {
@@ -34,7 +36,7 @@ describe(`consumer-css-grid google signup-session establish route`, () => {
 
     expect(res.status).toBe(200);
     expect(forwardedUrl).toContain(`/consumer/auth/google/signup-session/establish`);
-    expect(forwardedUrl).toContain(`appScope=consumer-css-grid`);
+    expect(forwardedUrl).toContain(`appScope=${CURRENT_CONSUMER_APP_SCOPE}`);
     expect(getSetCookieValues(res.headers).some((c) => c.startsWith(`google_signup_session=`))).toBe(true);
   });
 });

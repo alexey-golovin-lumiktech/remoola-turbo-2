@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { CURRENT_CONSUMER_APP_SCOPE, normalizeLegacyConsumerAppScope, type ConsumerAppScope } from '@remoola/api-types';
+import { CURRENT_CONSUMER_APP_SCOPE, parseConsumerAppScope, type ConsumerAppScope } from '@remoola/api-types';
 
 import { envs } from '../envs';
 
@@ -126,7 +126,7 @@ export class OriginResolverService {
   }
 
   validateConsumerAppScope(appScope?: string | null): ConsumerAppScope | undefined {
-    return normalizeLegacyConsumerAppScope(appScope);
+    return parseConsumerAppScope(appScope);
   }
 
   validateConsumerAppScopeHeader(headerValue?: HeaderValue): ConsumerAppScope | undefined {

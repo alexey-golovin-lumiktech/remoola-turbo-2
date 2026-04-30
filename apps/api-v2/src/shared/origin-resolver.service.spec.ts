@@ -1,5 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import { OriginResolverService } from './origin-resolver.service';
 import { envs } from '../envs';
 
@@ -83,15 +85,15 @@ describe(`OriginResolverService`, () => {
   });
 
   describe(`validateConsumerAppScope`, () => {
-    it(`accepts every supported consumer app scope`, () => {
-      expect(service.validateConsumerAppScope(`consumer`)).toBe(`consumer-css-grid`);
-      expect(service.validateConsumerAppScope(`consumer-mobile`)).toBe(`consumer-css-grid`);
-      expect(service.validateConsumerAppScope(`consumer-css-grid`)).toBe(`consumer-css-grid`);
+    it(`accepts only the canonical consumer app scope`, () => {
+      expect(service.validateConsumerAppScope(CURRENT_CONSUMER_APP_SCOPE)).toBe(CURRENT_CONSUMER_APP_SCOPE);
     });
 
-    it(`rejects unknown or empty app scopes`, () => {
+    it(`rejects legacy, unknown, or empty app scopes`, () => {
       expect(service.validateConsumerAppScope(undefined)).toBeUndefined();
       expect(service.validateConsumerAppScope(null)).toBeUndefined();
+      expect(service.validateConsumerAppScope(`legacy-consumer`)).toBeUndefined();
+      expect(service.validateConsumerAppScope(`legacy-mobile-scope`)).toBeUndefined();
       expect(service.validateConsumerAppScope(`admin`)).toBeUndefined();
       expect(service.validateConsumerAppScope(``)).toBeUndefined();
     });
@@ -138,13 +140,13 @@ describe(`OriginResolverService`, () => {
 
   describe(`resolveConsumerOriginByScope`, () => {
     it(`returns the configured origin for each consumer scope`, () => {
-      expect(service.resolveConsumerOriginByScope(`consumer-css-grid`)).toBe(`https://grid.example.com`);
+      expect(service.resolveConsumerOriginByScope(CURRENT_CONSUMER_APP_SCOPE)).toBe(`https://grid.example.com`);
     });
 
     it(`returns null when a scope has no configured canonical origin`, () => {
       (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
 
-      expect(service.resolveConsumerOriginByScope(`consumer-css-grid`)).toBeNull();
+      expect(service.resolveConsumerOriginByScope(CURRENT_CONSUMER_APP_SCOPE)).toBeNull();
     });
   });
 

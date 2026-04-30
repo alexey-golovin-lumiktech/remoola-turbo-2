@@ -1,17 +1,15 @@
 import { type Response } from 'express';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE, type ConsumerAppScope } from '@remoola/api-types';
 
 jest.mock(`../../shared/origin-resolver.service`, () => ({
   OriginResolverService: class {
-    validateConsumerAppScopeHeader(
-      value?: string | string[],
-    ): `consumer` | `consumer-mobile` | `consumer-css-grid` | undefined {
+    validateConsumerAppScopeHeader(value?: string | string[]): ConsumerAppScope | undefined {
+      const { CURRENT_CONSUMER_APP_SCOPE: canonicalScope } = jest.requireActual(`@remoola/api-types`) as {
+        CURRENT_CONSUMER_APP_SCOPE: ConsumerAppScope;
+      };
       const headerValue = Array.isArray(value) ? value[0] : value;
-      if (headerValue === `consumer` || headerValue === `consumer-mobile` || headerValue === `consumer-css-grid`) {
-        return headerValue;
-      }
-      return undefined;
+      return headerValue === canonicalScope ? canonicalScope : undefined;
     }
   },
 }));
@@ -24,7 +22,6 @@ describe(`deviceIdMiddleware`, () => {
   const validUuid = `a1b2c3d4-e5f6-4178-89ab-cdef01234567`;
   const validNonV4Uuid = `a1b2c3d4-e5f6-1178-89ab-cdef01234567`;
   const [secureDeviceCookieKey, localDeviceCookieKey] = getApiConsumerDeviceCookieKeysForRead();
-  const [, mobileLocalDeviceCookieKey] = getApiConsumerDeviceCookieKeysForRead(`consumer-mobile`);
   const deviceIdMiddleware = createDeviceIdMiddleware(new OriginResolverService());
 
   function mockReq(overrides: Partial<RequestWithDeviceId> = {}): RequestWithDeviceId {
@@ -33,8 +30,8 @@ describe(`deviceIdMiddleware`, () => {
       cookies: {},
       signedCookies: {},
       headers: {
-        origin: `https://app.example.com`,
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        origin: `https://grid.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       } as any,
       ...overrides,
     } as RequestWithDeviceId;
@@ -320,12 +317,12 @@ describe(`deviceIdMiddleware`, () => {
     expect(revisitNext).toHaveBeenCalled();
   });
 
-  it(`uses the mobile device namespace selected by explicit app scope`, (done) => {
+  it(`uses the canonical device namespace selected by explicit app scope`, (done) => {
     const req = mockReq({
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer-mobile`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       } as any,
-      signedCookies: { [mobileLocalDeviceCookieKey]: validUuid },
+      signedCookies: { [localDeviceCookieKey]: validUuid },
     });
     const res = mockRes();
     const next = jest.fn(() => {
@@ -337,20 +334,20 @@ describe(`deviceIdMiddleware`, () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it(`rotates a mobile unsigned cookie into a new mobile signed cookie`, (done) => {
+  it(`rotates an unsigned cookie into a new signed cookie in the canonical namespace`, (done) => {
     const req = mockReq({
       headers: {
-        origin: `https://mobile.example.com`,
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer-mobile`,
+        origin: `https://grid.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       } as any,
-      cookies: { [mobileLocalDeviceCookieKey]: validUuid },
+      cookies: { [localDeviceCookieKey]: validUuid },
     });
     const res = mockRes();
     const next = jest.fn(() => {
       expect(req.deviceId).toBeDefined();
       expect(req.deviceId).not.toBe(validUuid);
       expect(res.cookie).toHaveBeenCalledWith(
-        mobileLocalDeviceCookieKey,
+        localDeviceCookieKey,
         expect.any(String),
         expect.objectContaining({ signed: true }),
       );

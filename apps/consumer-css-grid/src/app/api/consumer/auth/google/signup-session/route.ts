@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../../../../lib/api-utils';
 import { getEnv } from '../../../../../../lib/env.server';
-
-const APP_SCOPE = `consumer-css-grid`;
 
 export async function GET(req: NextRequest) {
   const env = getEnv();
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   }
 
   const url = new URL(`${baseUrl}/consumer/auth/google/signup-session`);
-  url.searchParams.set(`appScope`, APP_SCOPE);
+  url.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
 
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 

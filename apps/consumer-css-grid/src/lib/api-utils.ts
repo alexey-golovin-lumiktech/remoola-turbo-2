@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { getConsumerCsrfTokenFromCookieHeader } from './consumer-auth-headers.server';
-import { APP_SCOPE, getBypassHeaders, getRequestOrigin } from './request-origin';
+import { getBypassHeaders, getRequestOrigin } from './request-origin';
 
 const FORWARDED_HEADER_ALLOWLIST = new Set([
   `accept`,
@@ -61,7 +61,7 @@ export function buildForwardHeaders(sourceHeaders: Headers): Headers {
     }
   }
   headers.set(`origin`, getForwardedOrigin(sourceHeaders));
-  headers.set(CONSUMER_APP_SCOPE_HEADER, APP_SCOPE);
+  headers.set(CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE);
   for (const [k, v] of Object.entries(getBypassHeaders())) headers.set(k, v);
   return headers;
 }

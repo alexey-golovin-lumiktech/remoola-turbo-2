@@ -9,6 +9,8 @@ jest.mock(`../envs`, () => ({
   },
 }));
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import { MailingService } from './mailing.service';
 
 describe(`MailingService signup verification links`, () => {
@@ -18,7 +20,7 @@ describe(`MailingService signup verification links`, () => {
     };
     const originResolver = {
       resolveConsumerOriginByScope: jest.fn((scope?: string) => {
-        if (scope === `consumer-css-grid`) return `https://grid.example.com`;
+        if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example.com`;
         return null;
       }),
     };
@@ -56,10 +58,10 @@ describe(`MailingService signup verification links`, () => {
       amount: 10,
       currencyCode: `USD`,
       paymentRequestId: `pr-123`,
-      consumerAppScope: `consumer-css-grid`,
+      consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-css-grid`);
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(brevoMailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: `payer@example.com`,
@@ -78,10 +80,10 @@ describe(`MailingService signup verification links`, () => {
       currencyCode: `USD`,
       paymentRequestId: `pr-234`,
       role: `payer`,
-      consumerAppScope: `consumer-css-grid`,
+      consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-css-grid`);
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(brevoMailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: `payer@example.com`,
@@ -100,10 +102,10 @@ describe(`MailingService signup verification links`, () => {
       currencyCode: `USD`,
       paymentRequestId: `pr-345`,
       role: `requester`,
-      consumerAppScope: `consumer-css-grid`,
+      consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-css-grid`);
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(brevoMailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: `payer@example.com`,
@@ -124,7 +126,7 @@ describe(`MailingService signup verification links`, () => {
       role: `payer`,
     });
 
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-css-grid`);
-    expect(brevoMailService.sendMail).toHaveBeenCalled();
+    expect(originResolver.resolveConsumerOriginByScope).not.toHaveBeenCalled();
+    expect(brevoMailService.sendMail).not.toHaveBeenCalled();
   });
 });

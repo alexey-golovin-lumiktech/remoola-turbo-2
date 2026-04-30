@@ -6,7 +6,7 @@ jest.mock(`../../../../lib/env.server`, () => ({
   getEnv: (...args: unknown[]) => mockGetEnv(...args),
 }));
 
-import { getApiV2ConsumerCsrfTokenCookieKeyForRuntime } from '@remoola/api-types';
+import { CURRENT_CONSUMER_APP_SCOPE, getApiV2ConsumerCsrfTokenCookieKeyForRuntime } from '@remoola/api-types';
 
 import { POST } from './route';
 import { getSetCookieValues } from '../../../../lib/api-utils';
@@ -45,7 +45,9 @@ describe(`consumer-css-grid oauth complete route`, () => {
     const res = await POST(req);
     const forwardedHeaders = fetchSpy.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
-    expect(String(fetchSpy.mock.calls[0]?.[0])).toContain(`/consumer/auth/oauth/complete?appScope=consumer-css-grid`);
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toContain(
+      `/consumer/auth/oauth/complete?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
+    );
     expect(forwardedHeaders?.get(`origin`)).toBe(`https://grid.example.com`);
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf-cookie`);
     expect(getSetCookieValues(res.headers).some((cookie) => cookie.startsWith(`oauth_cookie=`))).toBe(true);

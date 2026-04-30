@@ -1,6 +1,7 @@
 /* eslint-disable import/order */
 import { Test, type TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 jest.mock(`@remoola/security-utils`, () => ({
@@ -68,12 +69,10 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
           provide: OriginResolverService,
           useValue: {
             validateConsumerAppScope: jest.fn((scope?: string | null) =>
-              scope === `consumer` || scope === `consumer-mobile` || scope === `consumer-css-grid` ? scope : undefined,
+              scope === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
             ),
             resolveConsumerOriginByScope: jest.fn((scope?: string) => {
-              if (scope === `consumer`) return `http://127.0.0.1:3003`;
-              if (scope === `consumer-mobile`) return `http://127.0.0.1:3002`;
-              if (scope === `consumer-css-grid`) return `http://127.0.0.1:3001`;
+              if (scope === CURRENT_CONSUMER_APP_SCOPE) return `http://127.0.0.1:3001`;
               return undefined;
             }),
             getAllowedOrigins: jest.fn(),
@@ -88,7 +87,7 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
   it(`returns unknown_or_unsupported for emails that do not match a consumer`, async () => {
     prisma.consumerModel.findFirst.mockResolvedValue(null);
 
-    await expect(service.requestPasswordReset(`missing@example.com`, `consumer-css-grid`)).resolves.toBe(
+    await expect(service.requestPasswordReset(`missing@example.com`, CURRENT_CONSUMER_APP_SCOPE)).resolves.toBe(
       `unknown_or_unsupported`,
     );
     expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalled();
@@ -96,7 +95,7 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
     expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
   });
 
-  it.each([[`consumer-css-grid`, `http://127.0.0.1:3001/login?auth_notice=google_signin_required`]] as const)(
+  it.each([[CURRENT_CONSUMER_APP_SCOPE, `http://127.0.0.1:3001/login?auth_notice=google_signin_required`]] as const)(
     `sends Google sign-in guidance for passwordless consumers in %s scope`,
     async (appScope, loginUrl) => {
       prisma.consumerModel.findFirst.mockResolvedValue({
@@ -118,7 +117,7 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
     },
   );
 
-  it.each([[`consumer-css-grid`]] as const)(
+  it.each([[CURRENT_CONSUMER_APP_SCOPE]] as const)(
     `creates a reset token and sends the standard email for password-backed consumers in %s scope`,
     async (appScope) => {
       prisma.consumerModel.findFirst.mockResolvedValue({
@@ -160,7 +159,9 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
     });
     prisma.resetPasswordModel.findFirst.mockResolvedValue({ id: `cooldown-hit` });
 
-    await expect(service.requestPasswordReset(`user@example.com`, `consumer-css-grid`)).resolves.toBe(`cooldown_noop`);
+    await expect(service.requestPasswordReset(`user@example.com`, CURRENT_CONSUMER_APP_SCOPE)).resolves.toBe(
+      `cooldown_noop`,
+    );
     expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
     expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalled();
     expect(mailingService.sendConsumerPasswordlessRecoveryEmail).not.toHaveBeenCalled();

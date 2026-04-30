@@ -27,7 +27,7 @@ function getAccessTokenCookieKeysForPath(
   return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
 }
 
-export function buildCookieExtractor(
+function buildCookieExtractor(
   originResolver: Pick<OriginResolverService, `validateConsumerAppScopeHeader`>,
 ): (req: express.Request) => string | null {
   return (req: express.Request): string | null => {

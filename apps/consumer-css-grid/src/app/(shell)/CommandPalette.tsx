@@ -227,13 +227,13 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
       <div
         className={cn(
-          `relative z-10 flex max-h-[min(82vh,720px)] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-[var(--app-shadow)] transition-all duration-200 sm:rounded-[28px]`,
+          `relative z-10 flex max-h-[min(82vh,720px)] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-(--app-border) bg-(--app-surface) text-(--app-text) shadow-(--app-shadow) transition-all duration-200 sm:rounded-[28px]`,
           open ? `translate-y-0 scale-100 opacity-100` : `translate-y-2 scale-[0.98] opacity-0`,
         )}
       >
-        <div className="border-b border-[color:var(--app-border)] px-3 py-3 sm:px-4 md:px-5">
+        <div className="border-b border-(--app-border) px-3 py-3 sm:px-4 md:px-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-(--app-primary-soft) text-(--app-primary)">
               <SearchIcon size={18} aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
@@ -244,18 +244,18 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={handleInputKeyDown}
                 placeholder="Search pages and actions..."
-                className="w-full bg-transparent text-sm font-medium text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-faint)]"
+                className="w-full bg-transparent text-sm font-medium text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
                 aria-label="Search pages and actions"
                 aria-activedescendant={displayedRoutes[activeIndex] ? `command-palette-item-${activeIndex}` : undefined}
                 autoComplete="off"
                 spellCheck={false}
                 tabIndex={open ? 0 : -1}
               />
-              <div className="mt-1 text-xs text-[var(--app-text-faint)]">
+              <div className="mt-1 text-xs text-(--app-text-faint)">
                 Jump to pages and quick actions without leaving the keyboard.
               </div>
             </div>
-            <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--app-text-faint)]">
+            <kbd className="rounded-md border border-(--app-border) bg-[var(--app-surface-muted)] px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-(--app-text-faint)">
               Esc
             </kbd>
           </div>

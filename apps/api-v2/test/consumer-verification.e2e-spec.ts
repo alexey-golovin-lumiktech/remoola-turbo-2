@@ -10,7 +10,7 @@ import express from 'express';
 import Stripe from 'stripe';
 import request from 'supertest';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
@@ -30,7 +30,7 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
   let consumerPaymentsPoliciesService: ConsumerPaymentsPoliciesService;
   let consumerId = ``;
   const consumerOrigin = `http://127.0.0.1:3003`;
-  const appScope = `consumer-css-grid` as const;
+  const appScope = CURRENT_CONSUMER_APP_SCOPE;
 
   function withConsumerAppScope<T extends request.Test>(req: T): T {
     return req.set(`origin`, consumerOrigin).set(CONSUMER_APP_SCOPE_HEADER, appScope);

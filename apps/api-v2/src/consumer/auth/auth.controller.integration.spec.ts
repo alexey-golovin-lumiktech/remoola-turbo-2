@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@je
 import { type INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { ConsumerAuthController } from './auth.controller';
 import { ConsumerAuthService } from './auth.service';
@@ -23,26 +23,18 @@ describe(`ConsumerAuthController integration`, () => {
 
   const originResolver = {
     validateConsumerAppScope: jest.fn((value?: string | null) =>
-      value === `consumer` || value === `consumer-mobile` || value === `consumer-css-grid` ? value : undefined,
+      value === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
     ),
     validateConsumerAppScopeHeader: jest.fn((value?: string | string[]) => {
       const headerValue = Array.isArray(value) ? value[0] : value;
-      return headerValue === `consumer` || headerValue === `consumer-mobile` || headerValue === `consumer-css-grid`
-        ? headerValue
-        : undefined;
+      return headerValue === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined;
     }),
     resolveConsumerOriginByScope: jest.fn((scope: string) => {
-      if (scope === `consumer-mobile`) return `https://mobile.example.com`;
-      if (scope === `consumer-css-grid`) return `https://grid.example.com`;
-      if (scope === `consumer`) return `https://app.example.com`;
+      if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example.com`;
       return null;
     }),
-    getAllowedOrigins: jest
-      .fn()
-      .mockReturnValue(new Set([`https://app.example.com`, `https://mobile.example.com`, `https://grid.example.com`])),
-    getConsumerAllowedOrigins: jest
-      .fn()
-      .mockReturnValue(new Set([`https://app.example.com`, `https://mobile.example.com`, `https://grid.example.com`])),
+    getAllowedOrigins: jest.fn().mockReturnValue(new Set([`https://grid.example.com`])),
+    getConsumerAllowedOrigins: jest.fn().mockReturnValue(new Set([`https://grid.example.com`])),
     normalizeOrigin: jest.fn((value: string) => value),
   };
 
@@ -96,8 +88,8 @@ describe(`ConsumerAuthController integration`, () => {
 
   it(`POST /api/consumer/auth/oauth/complete validates handoffToken as a string body field`, async () => {
     const res = await request(app.getHttpServer())
-      .post(`/api/consumer/auth/oauth/complete?appScope=consumer-css-grid`)
-      .set(CONSUMER_APP_SCOPE_HEADER, `consumer-css-grid`)
+      .post(`/api/consumer/auth/oauth/complete?appScope=${CURRENT_CONSUMER_APP_SCOPE}`)
+      .set(CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE)
       .send({
         handoffToken: 123,
       })

@@ -11,6 +11,7 @@ import { type PrismaClient } from '@remoola/database-2';
 import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 
 import {
+  CANONICAL_CONSUMER_APP_SCOPE,
   FIXTURE_NAMESPACE,
   getAdminV2ScenarioPack,
   type ScenarioAdminActionAudit,
@@ -966,7 +967,7 @@ export async function seedAllTables(prisma: PrismaClient, options: FixtureOption
     await prisma.resetPasswordModel.create({
       data: {
         consumerId,
-        appScope: `${FIXTURE_NAMESPACE}-consumer-web`,
+        appScope: CANONICAL_CONSUMER_APP_SCOPE,
         tokenHash: hashTokenToHex(`${FIXTURE_NAMESPACE}-reset-${key}`),
         expiredAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
       },

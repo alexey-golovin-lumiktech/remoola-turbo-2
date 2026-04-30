@@ -63,10 +63,10 @@ function CommandPaletteTrigger({
       type="button"
       onClick={onOpenCommandPalette}
       className={cn(
-        `border border-[color:var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow)] transition hover:bg-[var(--app-surface-strong)] hover:text-[var(--app-text)]`,
+        `border border-(--app-border) bg-(--app-surface) shadow-(--app-shadow) transition hover:bg-(--app-surface-strong) hover:text-(--app-text)`,
         compact
-          ? `rounded-xl px-3 py-2 text-sm text-[var(--app-text-soft)]`
-          : `flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm text-[var(--app-text-soft)]`,
+          ? `rounded-xl px-3 py-2 text-sm text-(--app-text-soft)`
+          : `flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm text-(--app-text-soft)`,
       )}
       aria-label={`Open quick search. ${shortcutHint}`}
       title={`${triggerLabel} (${commandShortcutLabel})`}
@@ -75,7 +75,7 @@ function CommandPaletteTrigger({
       <SearchIcon size={16} className="shrink-0" aria-hidden="true" />
       {compact ? null : <span className="whitespace-nowrap">Quick search</span>}
       {compact ? null : (
-        <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-2 py-1 text-[10px] font-medium text-[var(--app-text-faint)]">
+        <kbd className="rounded-md border border-(--app-border) bg-(--app-surface-strong) px-2 py-1 text-[10px] font-medium text-(--app-text-faint)">
           {commandShortcutLabel}
         </kbd>
       )}
@@ -94,7 +94,7 @@ export function ShellSidebar({
 
   return (
     <aside
-      className="border-b border-[color:var(--app-border)] bg-[var(--app-shell)] backdrop-blur md:fixed md:left-0 md:top-0 md:h-screen md:w-[248px] md:overflow-hidden md:border-b-0 md:border-r"
+      className="border-b border-(--app-border) bg-(--app-shell) backdrop-blur md:fixed md:left-0 md:top-0 md:h-screen md:w-[248px] md:overflow-hidden md:border-b-0 md:border-r"
       data-testid="consumer-css-grid-shell-sidebar"
     >
       <div className="flex items-center justify-between px-4 py-4 md:px-5">
@@ -116,7 +116,9 @@ export function ShellSidebar({
           <form method="post" action="/logout" className="contents">
             <button
               type="submit"
-              className="rounded-xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text-soft)] shadow-[var(--app-shadow)]"
+              className="rounded-xl border 
+              border-(--app-border) bg-(--app-surface) 
+              px-3 py-2 text-sm text-(--app-text-soft) shadow-(--app-shadow)"
               aria-label="Log out"
               data-testid="consumer-css-grid-shell-logout-mobile"
             >
@@ -141,8 +143,8 @@ export function ShellSidebar({
                   className={cn(
                     `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition`,
                     active
-                      ? `bg-[var(--app-primary-soft)] text-[var(--app-text)]`
-                      : `text-[var(--app-text-soft)] hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]`,
+                      ? `bg-(--app-primary-soft) text-(--app-text)`
+                      : `text-(--app-text-soft) hover:bg-(--app-surface) hover:text-(--app-text)`,
                   )}
                   data-testid={`consumer-css-grid-shell-nav-${item.href.replace(/^\//, ``) || `dashboard`}`}
                 >
@@ -154,12 +156,12 @@ export function ShellSidebar({
           })}
         </ul>
 
-        <div className="mt-4 space-y-4 border-t border-[color:var(--app-border)] pt-4">
+        <div className="mt-4 space-y-4 border-t border-(--app-border) pt-4">
           <ThemeQuickSwitch showLabel />
           <form method="post" action="/logout" className="contents">
             <button
               type="submit"
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--app-text-soft)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-(--app-text-soft) transition hover:bg-(--app-surface) hover:text-(--app-text)"
               data-testid="consumer-css-grid-shell-logout"
             >
               <LogoutIcon className="h-5 w-5 shrink-0" />
@@ -181,15 +183,15 @@ export function ShellTopBar({
 }) {
   return (
     <header
-      className="hidden items-center justify-between border-b border-[color:var(--app-border)] px-6 py-4 md:flex"
+      className="hidden items-center justify-between border-b border-(--app-border) px-6 py-4 md:flex"
       data-testid="consumer-css-grid-shell-topbar"
     >
-      <div className="w-full max-w-xl rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-sm text-[var(--app-text-faint)]">
+      <div className="w-full max-w-xl rounded-2xl border border-(--app-border) bg-(--app-surface) px-4 py-3 text-sm text-(--app-text-faint)">
         <div className="flex flex-wrap items-center gap-2">
           <span>Use quick search to jump between pages and actions.</span>
-          <span className="inline-flex items-center gap-2 text-[var(--app-text-muted)]">
+          <span className="inline-flex items-center gap-2 text-(--app-text-muted)">
             <span>You can also press</span>
-            <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-2 py-1 text-[10px] font-medium text-[var(--app-text-faint)]">
+            <kbd className="rounded-md border border-(--app-border) bg-(--app-surface-strong) px-2 py-1 text-[10px] font-medium text-(--app-text-faint)">
               {commandShortcutLabel}
             </kbd>
           </span>
@@ -205,7 +207,7 @@ export function ShellTopBar({
         <form method="post" action="/logout" className="contents">
           <button
             type="submit"
-            className="rounded-xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm text-[var(--app-text-soft)] transition hover:bg-[var(--app-surface-strong)] hover:text-[var(--app-text)]"
+            className="rounded-xl border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm text-(--app-text-soft) transition hover:bg-(--app-surface-strong) hover:text-(--app-text)"
             data-testid="consumer-css-grid-shell-logout-topbar"
           >
             Log out
@@ -221,7 +223,7 @@ export function ShellBottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-[color:var(--app-border)] bg-[var(--app-shell)] px-2 py-2 backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-(--app-border) bg-(--app-shell) px-2 py-2 backdrop-blur md:hidden"
       aria-label="Primary"
       data-testid="consumer-css-grid-shell-bottom-nav"
     >
@@ -234,7 +236,7 @@ export function ShellBottomNav() {
               href={item.href}
               className={cn(
                 `flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px]`,
-                active ? `bg-[var(--app-primary-soft)] text-[var(--app-primary)]` : `text-[var(--app-text-muted)]`,
+                active ? `bg-(--app-primary-soft) text-(--app-primary)` : `text-(--app-text-muted)`,
               )}
               data-testid={`consumer-css-grid-shell-bottom-nav-${item.href.replace(/^\//, ``) || `dashboard`}`}
             >

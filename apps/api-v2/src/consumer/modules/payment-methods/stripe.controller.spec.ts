@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -24,8 +24,8 @@ describe(`ConsumerStripeController`, () => {
   beforeEach(() => {
     service.createStripeSession.mockResolvedValue({ url: `https://checkout.stripe.test/session` });
     service.payWithSavedPaymentMethod.mockResolvedValue({ ok: true });
-    originResolver.validateConsumerAppScope.mockReturnValue(`consumer-css-grid`);
-    originResolver.validateConsumerAppScopeHeader.mockReturnValue(`consumer-css-grid`);
+    originResolver.validateConsumerAppScope.mockReturnValue(CURRENT_CONSUMER_APP_SCOPE);
+    originResolver.validateConsumerAppScopeHeader.mockReturnValue(CURRENT_CONSUMER_APP_SCOPE);
     originResolver.resolveConsumerOriginByScope.mockReturnValue(`https://grid.example.com`);
   });
 
@@ -38,15 +38,22 @@ describe(`ConsumerStripeController`, () => {
     const req = {
       path: `/api/consumer/stripe/${paymentRequestId}/stripe-session`,
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       },
     } as never;
 
-    await controller.createStripeSession(consumer, paymentRequestId, `consumer`, undefined, undefined, req);
+    await controller.createStripeSession(
+      consumer,
+      paymentRequestId,
+      CURRENT_CONSUMER_APP_SCOPE,
+      undefined,
+      undefined,
+      req,
+    );
 
-    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(`consumer`);
-    expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(`consumer`);
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-css-grid`);
+    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
+    expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(service.createStripeSession).toHaveBeenCalledWith(
       consumer.id,
       paymentRequestId,
@@ -60,14 +67,14 @@ describe(`ConsumerStripeController`, () => {
     const req = {
       path: `/api/consumer/stripe/${paymentRequestId}/stripe-session`,
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       },
     } as never;
 
     await controller.createStripeSession(
       consumer,
       paymentRequestId,
-      `consumer`,
+      CURRENT_CONSUMER_APP_SCOPE,
       `contract-1`,
       `/contracts/contract-1`,
       req,
@@ -96,15 +103,15 @@ describe(`ConsumerStripeController`, () => {
     expect(service.createStripeSession).not.toHaveBeenCalled();
   });
 
-  it(`accepts legacy claimed app scopes after normalization`, async () => {
+  it(`accepts the canonical claimed app scope for checkout`, async () => {
     const controller = new ConsumerStripeController(service as never, originResolver as never);
 
-    await controller.createStripeSession(consumer, paymentRequestId, `consumer-mobile`, undefined, undefined, {
+    await controller.createStripeSession(consumer, paymentRequestId, CURRENT_CONSUMER_APP_SCOPE, undefined, undefined, {
       path: `/api/consumer/stripe/${paymentRequestId}/stripe-session`,
       headers: {},
     } as never);
 
-    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(`consumer-mobile`);
+    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(service.createStripeSession).toHaveBeenCalled();
   });
 
@@ -114,14 +121,20 @@ describe(`ConsumerStripeController`, () => {
       get: jest.fn().mockReturnValue(`key-123`),
       path: `/api/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       },
     } as never;
 
-    await controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, `consumer`, req);
+    await controller.payWithSavedPaymentMethod(
+      consumer,
+      paymentRequestId,
+      body as never,
+      CURRENT_CONSUMER_APP_SCOPE,
+      req,
+    );
 
-    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(`consumer`);
-    expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(`consumer`);
+    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
+    expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(service.payWithSavedPaymentMethod).toHaveBeenCalledWith(consumer.id, paymentRequestId, body, `key-123`);
   });
 
@@ -131,12 +144,12 @@ describe(`ConsumerStripeController`, () => {
       get: jest.fn().mockReturnValue(undefined),
       path: `/api/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       },
     } as never;
 
     await expect(
-      controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, `consumer`, req),
+      controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, CURRENT_CONSUMER_APP_SCOPE, req),
     ).rejects.toThrow(new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_PAY_WITH_SAVED_METHOD));
   });
 
@@ -146,12 +159,12 @@ describe(`ConsumerStripeController`, () => {
       get: jest.fn().mockReturnValue(`bad key with spaces`),
       path: `/api/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       },
     } as never;
 
     await expect(
-      controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, `consumer`, req),
+      controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, CURRENT_CONSUMER_APP_SCOPE, req),
     ).rejects.toThrow(new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_PAY_WITH_SAVED_METHOD));
   });
 
@@ -169,16 +182,16 @@ describe(`ConsumerStripeController`, () => {
     expect(service.payWithSavedPaymentMethod).not.toHaveBeenCalled();
   });
 
-  it(`accepts legacy claimed app scopes for saved-method payments after normalization`, async () => {
+  it(`accepts the canonical claimed app scope for saved-method payments`, async () => {
     const controller = new ConsumerStripeController(service as never, originResolver as never);
 
-    await controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, `consumer-mobile`, {
+    await controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, CURRENT_CONSUMER_APP_SCOPE, {
       get: jest.fn().mockReturnValue(`key-123`),
       path: `/api/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
       headers: {},
     } as never);
 
-    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(`consumer-mobile`);
+    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(service.payWithSavedPaymentMethod).toHaveBeenCalledWith(consumer.id, paymentRequestId, body, `key-123`);
   });
 });

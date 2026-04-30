@@ -17,6 +17,7 @@ jest.mock(`../../shared-common`, () => ({
   secureCompare: jest.fn((a: string, b: string) => a === b),
 }));
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service.spec-wrapper';
@@ -44,7 +45,7 @@ describe(`ConsumerAuthService.login`, () => {
   };
 
   const body = { email: `user@example.com`, password: `secret-password` };
-  const appScope = `consumer-css-grid` as const;
+  const appScope = CURRENT_CONSUMER_APP_SCOPE;
   const identity = {
     id: `consumer-id`,
     email: `user@example.com`,

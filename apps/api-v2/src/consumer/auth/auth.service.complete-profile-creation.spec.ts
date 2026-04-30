@@ -1,6 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service.spec-wrapper';
@@ -37,7 +38,7 @@ describe(`ConsumerAuthService.completeProfileCreationAndSendVerificationEmail`, 
           provide: OriginResolverService,
           useValue: {
             validateConsumerAppScope: jest.fn((scope?: string | null) =>
-              scope === `consumer-css-grid` ? scope : undefined,
+              scope === CURRENT_CONSUMER_APP_SCOPE ? scope : undefined,
             ),
           },
         },
@@ -54,7 +55,7 @@ describe(`ConsumerAuthService.completeProfileCreationAndSendVerificationEmail`, 
       verified: false,
     });
 
-    await service.completeProfileCreationAndSendVerificationEmail(consumerId, `consumer-css-grid`);
+    await service.completeProfileCreationAndSendVerificationEmail(consumerId, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(jwtService.signAsync).toHaveBeenCalled();
     expect(mailingService.sendConsumerSignupVerificationEmail).toHaveBeenCalledWith({
@@ -70,7 +71,7 @@ describe(`ConsumerAuthService.completeProfileCreationAndSendVerificationEmail`, 
       verified: true,
     });
 
-    await service.completeProfileCreationAndSendVerificationEmail(consumerId, `consumer-css-grid`);
+    await service.completeProfileCreationAndSendVerificationEmail(consumerId, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(jwtService.signAsync).not.toHaveBeenCalled();
     expect(mailingService.sendConsumerSignupVerificationEmail).not.toHaveBeenCalled();
@@ -80,7 +81,7 @@ describe(`ConsumerAuthService.completeProfileCreationAndSendVerificationEmail`, 
     prisma.consumerModel.findFirst.mockResolvedValue(null);
 
     await expect(
-      service.completeProfileCreationAndSendVerificationEmail(consumerId, `consumer-css-grid`),
+      service.completeProfileCreationAndSendVerificationEmail(consumerId, CURRENT_CONSUMER_APP_SCOPE),
     ).rejects.toMatchObject({
       response: { message: errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE },
     });

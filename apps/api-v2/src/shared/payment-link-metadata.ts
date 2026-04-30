@@ -1,4 +1,4 @@
-import { normalizeLegacyConsumerAppScope, type ConsumerAppScope } from '@remoola/api-types';
+import { parseConsumerAppScope, type ConsumerAppScope } from '@remoola/api-types';
 import { type Prisma } from '@remoola/database-2';
 
 const PAYMENT_LINK_CONSUMER_APP_SCOPE_KEY = `consumerAppScope` as const;
@@ -31,5 +31,5 @@ export function extractConsumerAppScopeFromMetadata(
   }
 
   const rawScope = metadata[PAYMENT_LINK_CONSUMER_APP_SCOPE_KEY];
-  return typeof rawScope === `string` ? normalizeLegacyConsumerAppScope(rawScope) : undefined;
+  return typeof rawScope === `string` ? parseConsumerAppScope(rawScope) : undefined;
 }

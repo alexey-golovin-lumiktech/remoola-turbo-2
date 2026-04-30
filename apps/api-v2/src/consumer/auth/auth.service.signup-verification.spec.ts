@@ -2,6 +2,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { type Response } from 'express';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service.spec-wrapper';
@@ -33,12 +34,11 @@ describe(`ConsumerAuthService.signupVerification`, () => {
     };
     originResolver = {
       validateConsumerAppScope: jest.fn((scope?: string | null) =>
-        scope === `consumer` || scope === `consumer-mobile` || scope === `consumer-css-grid` ? scope : undefined,
+        scope === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
       ),
       resolveConsumerOriginByScope: jest.fn((scope: string) => {
-        if (scope === `consumer-mobile`) return `https://mobile.example`;
-        if (scope === `consumer-css-grid`) return `https://grid.example`;
-        return `https://consumer.example`;
+        if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example`;
+        return null;
       }),
     };
 
@@ -74,12 +74,12 @@ describe(`ConsumerAuthService.signupVerification`, () => {
     jwtService.verify.mockImplementation(() => {
       throw new Error(`expired`);
     });
-    jwtService.decode.mockReturnValue({ appScope: `consumer-mobile` });
+    jwtService.decode.mockReturnValue({ appScope: CURRENT_CONSUMER_APP_SCOPE });
     const res = { redirect: jest.fn() } as unknown as Response;
 
     await service.signupVerification(`expired.jwt`, res);
 
-    expect(res.redirect).toHaveBeenCalledWith(`https://mobile.example/signup/verification?verified=no`);
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example/signup/verification?verified=no`);
     expect(prisma.consumerModel.findFirst).not.toHaveBeenCalled();
   });
 
@@ -90,13 +90,13 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       typ: `access`,
       scope: `consumer`,
       sid: `session-row-id`,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     const res = { redirect: jest.fn() } as unknown as Response;
 
     await service.signupVerification(`tok`, res);
 
-    expect(res.redirect).toHaveBeenCalledWith(`https://consumer.example/signup/verification?verified=no`);
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example/signup/verification?verified=no`);
     expect(prisma.consumerModel.findFirst).not.toHaveBeenCalled();
   });
 
@@ -106,13 +106,13 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       identityId: consumerId,
       typ: `access`,
       scope: `admin`,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     const res = { redirect: jest.fn() } as unknown as Response;
 
     await service.signupVerification(`tok`, res);
 
-    expect(res.redirect).toHaveBeenCalledWith(`https://consumer.example/signup/verification?verified=no`);
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example/signup/verification?verified=no`);
     expect(prisma.consumerModel.findFirst).not.toHaveBeenCalled();
   });
 
@@ -155,7 +155,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       identityId: consumerId,
       typ: `access`,
       scope: `consumer`,
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     prisma.consumerModel.findFirst.mockResolvedValue({
       id: consumerId,

@@ -2,6 +2,7 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 
 import {
   CONSUMER_APP_SCOPE_HEADER,
+  CURRENT_CONSUMER_APP_SCOPE,
   getScopedConsumerCsrfTokenCookieKey,
   getScopedConsumerCsrfTokenCookieKeysForRead,
   getScopedConsumerGoogleOAuthStateCookieKey,
@@ -28,26 +29,18 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
   const originResolver = {
     validateConsumerAppScope: jest.fn((value?: string | null) =>
-      value === `consumer` || value === `consumer-mobile` || value === `consumer-css-grid` ? value : undefined,
+      value === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
     ),
     validateConsumerAppScopeHeader: jest.fn((value?: string | string[]) => {
       const headerValue = Array.isArray(value) ? value[0] : value;
-      return headerValue === `consumer` || headerValue === `consumer-mobile` || headerValue === `consumer-css-grid`
-        ? headerValue
-        : undefined;
+      return headerValue === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined;
     }),
     resolveConsumerOriginByScope: jest.fn((scope: string) => {
-      if (scope === `consumer-mobile`) return `https://mobile.example.com`;
-      if (scope === `consumer-css-grid`) return `https://grid.example.com`;
-      if (scope === `consumer`) return `https://app.example.com`;
+      if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example.com`;
       return null;
     }),
-    getAllowedOrigins: jest
-      .fn()
-      .mockReturnValue(new Set([`https://app.example.com`, `https://mobile.example.com`, `https://grid.example.com`])),
-    getConsumerAllowedOrigins: jest
-      .fn()
-      .mockReturnValue(new Set([`https://app.example.com`, `https://mobile.example.com`, `https://grid.example.com`])),
+    getAllowedOrigins: jest.fn().mockReturnValue(new Set([`https://grid.example.com`])),
+    getConsumerAllowedOrigins: jest.fn().mockReturnValue(new Set([`https://grid.example.com`])),
     normalizeOrigin: jest.fn((value: string) => value),
   } as unknown as OriginResolverService & Record<string, jest.Mock>;
 
@@ -194,7 +187,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   });
 
   it(`accepts logout with matching csrf token and explicit app scope header`, async () => {
-    const consumerCsrfCookieKey = getScopedConsumerCsrfTokenCookieKey(`consumer`, {
+    const consumerCsrfCookieKey = getScopedConsumerCsrfTokenCookieKey(CURRENT_CONSUMER_APP_SCOPE, {
       isProduction: false,
       isVercel: false,
       cookieSecure: false,
@@ -202,7 +195,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     });
     const req = makeReq({
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
         'x-csrf-token': `csrf-token`,
       },
       cookies: { [consumerCsrfCookieKey]: `csrf-token` },
@@ -210,17 +203,17 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     await controller.logout(req, makeRes());
 
-    expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(`consumer`);
+    expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(service.revokeSessionByRefreshTokenAndAudit).toHaveBeenCalled();
   });
 
-  it(`login rejects request scope mismatch for claimed app scope`, async () => {
-    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` } });
+  it(`login rejects invalid claimed app scope`, async () => {
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
     const res = makeRes();
 
     await expect(
-      controller.login(req, res, { email: `user@example.com`, password: `secret` } as any, `consumer-mobile`),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+      controller.login(req, res, { email: `user@example.com`, password: `secret` } as any, `unknown-scope` as never),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(service.login).not.toHaveBeenCalled();
   });
 
@@ -232,14 +225,14 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
     await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
 
     expect(oauthStateStore.read).toHaveBeenCalledWith(`state-token`);
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
-    expect(res.redirect).toHaveBeenCalledWith(`https://app.example.com/login?oauth=google&error=access_denied`);
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/login?oauth=google&error=access_denied`);
   });
 
   it(`google callback preserves app scope for access_denied`, async () => {
@@ -250,18 +243,18 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
     await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
 
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer`);
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
-    expect(res.redirect).toHaveBeenCalledWith(`https://app.example.com/login?oauth=google&error=access_denied`);
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/login?oauth=google&error=access_denied`);
   });
 
-  it(`google callback routes mobile callbacks by stored app scope`, async () => {
-    const mobileOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(`consumer-mobile`, {
+  it(`google callback routes callbacks by the canonical stored app scope`, async () => {
+    const cssGridOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(CURRENT_CONSUMER_APP_SCOPE, {
       isProduction: false,
       isVercel: false,
       cookieSecure: false,
@@ -270,7 +263,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({
       cookies: {
         [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `wrong-scope-state`,
-        [mobileOauthCookieKey]: `state-token`,
+        [cssGridOauthCookieKey]: `state-token`,
       },
     });
     const res = makeRes();
@@ -279,15 +272,15 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      appScope: `consumer-mobile`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
     await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
 
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
-    expect(res.clearCookie).toHaveBeenCalledWith(mobileOauthCookieKey, expect.any(Object));
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
+    expect(res.clearCookie).toHaveBeenCalledWith(cssGridOauthCookieKey, expect.any(Object));
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
-    expect(res.redirect).toHaveBeenCalledWith(`https://mobile.example.com/login?oauth=google&error=access_denied`);
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/login?oauth=google&error=access_denied`);
   });
 
   it(`google callback does not consume valid state when cookie does not match in production`, async () => {
@@ -299,7 +292,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
@@ -314,7 +307,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       accountType: null,
       contractorKind: null,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `test@example.com`,
@@ -344,7 +337,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       accountType: null,
       contractorKind: null,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `test@example.com`,
@@ -371,7 +364,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       expect.any(Number),
     );
     expect(res.redirect).toHaveBeenCalledWith(
-      `https://app.example.com/auth/callback?next=%2Fdashboard&oauthHandoff=handoff-token`,
+      `https://grid.example.com/auth/callback?next=%2Fdashboard&oauthHandoff=handoff-token`,
     );
   });
 
@@ -383,7 +376,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/signup?accountType=BUSINESS`,
       accountType: `BUSINESS`,
       contractorKind: null,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `test@example.com`,
@@ -403,7 +396,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(res.redirect).toHaveBeenCalledWith(
-      `https://app.example.com/auth/callback?next=%2Fdashboard&oauthHandoff=handoff-token`,
+      `https://grid.example.com/auth/callback?next=%2Fdashboard&oauthHandoff=handoff-token`,
     );
   });
 
@@ -415,7 +408,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/signup?accountType=CONTRACTOR&contractorKind=ENTITY`,
       accountType: `CONTRACTOR`,
       contractorKind: `ENTITY`,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `new-user@example.com`,
@@ -434,7 +427,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       expect.any(Number),
     );
     expect(res.redirect).toHaveBeenCalledWith(
-      `https://app.example.com/signup?googleSignupHandoff=handoff-token&accountType=CONTRACTOR&contractorKind=ENTITY`,
+      `https://grid.example.com/signup?googleSignupHandoff=handoff-token&accountType=CONTRACTOR&contractorKind=ENTITY`,
     );
   });
 
@@ -446,7 +439,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       accountType: `BUSINESS`,
       contractorKind: null,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `new-user@example.com`,
@@ -460,17 +453,13 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(res.redirect).toHaveBeenCalledWith(
-      `https://app.example.com/signup/start?googleSignupHandoff=handoff-token&accountType=BUSINESS`,
+      `https://grid.example.com/signup/start?googleSignupHandoff=handoff-token&accountType=BUSINESS`,
     );
   });
 
   it.each([
     [
-      `consumer-mobile`,
-      `https://mobile.example.com/signup/start?googleSignupHandoff=handoff-token&accountType=BUSINESS`,
-    ],
-    [
-      `consumer-css-grid`,
+      CURRENT_CONSUMER_APP_SCOPE,
       `https://grid.example.com/signup/start?googleSignupHandoff=handoff-token&accountType=BUSINESS`,
     ],
   ] as const)(`google callback preserves %s signup handoff routing`, async (appScope, expectedRedirect) => {
@@ -511,7 +500,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
     await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
@@ -529,7 +518,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
     await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
@@ -538,35 +527,42 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`error=invalid_state`));
   });
 
-  it(`google signup session rejects when stored app scope mismatches claimed scope`, async () => {
+  it(`google signup session rejects invalid claimed app scope`, async () => {
     (oauthStateStore.readSignupSession as jest.Mock).mockResolvedValueOnce({
       email: `new@example.com`,
       emailVerified: true,
       nextPath: `/dashboard`,
       signupEntryPath: `/signup/start`,
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     const req = makeReq({
-      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer-css-grid` },
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE },
       cookies: { consumer_css_grid_google_signup_session: `signup-session-token` },
     });
 
-    await expect(controller.googleSignupSession(req, `consumer-mobile`)).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(controller.googleSignupSession(req, `unknown-scope` as never)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
-  it(`google signup session establish rejects when stored app scope mismatches claimed scope`, async () => {
+  it(`google signup session establish rejects invalid claimed app scope`, async () => {
     (oauthStateStore.consumeSignupHandoff as jest.Mock).mockResolvedValueOnce({
       email: `new@example.com`,
       emailVerified: true,
       nextPath: `/dashboard`,
       signupEntryPath: `/signup/start`,
-      appScope: `consumer-mobile`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` } });
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
 
     await expect(
-      controller.establishGoogleSignupSession(req, makeRes(), { handoffToken: `handoff-token` }, `consumer`),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+      controller.establishGoogleSignupSession(
+        req,
+        makeRes(),
+        { handoffToken: `handoff-token` },
+        `unknown-scope` as never,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it(`establishGoogleSignupSession consumes handoff, persists signup session, and sets httpOnly cookie`, async () => {
@@ -583,51 +579,48 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       sub: `sub`,
       accountType: `BUSINESS`,
       contractorKind: null,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
     (oauthStateStore.createEphemeralToken as jest.Mock).mockReturnValueOnce(`signup-session-token`);
-    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` } });
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
     const res = makeRes();
 
     const result = await controller.establishGoogleSignupSession(
       req,
       res,
       { handoffToken: `handoff-token` },
-      `consumer`,
+      CURRENT_CONSUMER_APP_SCOPE,
     );
 
     expect(oauthStateStore.consumeSignupHandoff).toHaveBeenCalledWith(`handoff-token`);
     expect(oauthStateStore.saveSignupSession).toHaveBeenCalledWith(
       `signup-session-token`,
-      expect.objectContaining({ email: `new@example.com`, appScope: `consumer` }),
+      expect.objectContaining({ email: `new@example.com`, appScope: CURRENT_CONSUMER_APP_SCOPE }),
       expect.any(Number),
     );
     expect(res.cookie).toHaveBeenCalledWith(
-      getApiConsumerGoogleSignupSessionCookieKey(req, `consumer`),
+      getApiConsumerGoogleSignupSessionCookieKey(req, CURRENT_CONSUMER_APP_SCOPE),
       `signup-session-token`,
       expect.objectContaining({ httpOnly: true, maxAge: expect.any(Number) }),
     );
     expect(result).toMatchObject({
       email: `new@example.com`,
-      givenName: `Ada`,
-      familyName: `Lovelace`,
       nextPath: `/dashboard`,
       signupEntryPath: `/signup/start`,
-      accountType: `BUSINESS`,
     });
   });
 
-  it(`oauth complete rejects when stored app scope mismatches claimed scope`, async () => {
+  it(`oauth complete rejects invalid claimed app scope`, async () => {
     (oauthStateStore.consumeLoginHandoff as jest.Mock).mockResolvedValueOnce({
       identityId: `consumer-id`,
       nextPath: `/dashboard`,
-      appScope: `consumer-mobile`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` } });
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
 
     await expect(
-      controller.oauthComplete(req, makeRes(), { handoffToken: `handoff-token` }, `consumer`),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+      controller.oauthComplete(req, makeRes(), { handoffToken: `handoff-token` }, `unknown-scope` as never),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(service.issueTokensForConsumer).not.toHaveBeenCalled();
   });
 
@@ -635,19 +628,19 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq();
     const res = makeRes();
 
-    await controller.googleOAuthStart(req, res, `consumer`, undefined, undefined, undefined, undefined);
+    await controller.googleOAuthStart(req, res, CURRENT_CONSUMER_APP_SCOPE, undefined, undefined, undefined, undefined);
 
-    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(`consumer`);
+    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(oauthStateStore.save).toHaveBeenCalledWith(
       `state-token`,
-      expect.objectContaining({ appScope: `consumer` }),
+      expect.objectContaining({ appScope: CURRENT_CONSUMER_APP_SCOPE }),
       expect.any(Number),
     );
     expect(res.redirect).toHaveBeenCalledWith(`https://accounts.google.com/o/oauth2/v2/auth`);
   });
 
   it(`google start uses css-grid app scope for cookie and state`, async () => {
-    const cssGridOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(`consumer-css-grid`, {
+    const cssGridOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(CURRENT_CONSUMER_APP_SCOPE, {
       isProduction: false,
       isVercel: false,
       cookieSecure: false,
@@ -656,12 +649,20 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq();
     const res = makeRes();
 
-    await controller.googleOAuthStart(req, res, `consumer-css-grid`, `/dashboard`, undefined, undefined, undefined);
+    await controller.googleOAuthStart(
+      req,
+      res,
+      CURRENT_CONSUMER_APP_SCOPE,
+      `/dashboard`,
+      undefined,
+      undefined,
+      undefined,
+    );
 
-    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(`consumer-css-grid`);
+    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(oauthStateStore.save).toHaveBeenCalledWith(
       `state-token`,
-      expect.objectContaining({ appScope: `consumer-css-grid` }),
+      expect.objectContaining({ appScope: CURRENT_CONSUMER_APP_SCOPE }),
       expect.any(Number),
     );
     expect(res.cookie).toHaveBeenCalledWith(
@@ -671,8 +672,8 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     );
   });
 
-  it(`google start sets the mobile-scoped oauth state cookie for a mobile app scope`, async () => {
-    const mobileOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(`consumer-mobile`, {
+  it(`google start sets the canonical oauth state cookie for the canonical app scope`, async () => {
+    const mobileOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(CURRENT_CONSUMER_APP_SCOPE, {
       isProduction: false,
       isVercel: false,
       cookieSecure: false,
@@ -681,7 +682,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq();
     const res = makeRes();
 
-    await controller.googleOAuthStart(req, res, `consumer-mobile`, undefined, undefined, undefined, undefined);
+    await controller.googleOAuthStart(req, res, CURRENT_CONSUMER_APP_SCOPE, undefined, undefined, undefined, undefined);
 
     expect(res.cookie).toHaveBeenCalledWith(
       mobileOauthCookieKey,
@@ -690,12 +691,12 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     );
   });
 
-  it(`refresh reads mobile refresh/csrf cookies and rotates mobile auth cookies`, async () => {
-    const [mobileRefreshCookieKey] = getScopedConsumerRefreshTokenCookieKeysForRead(`consumer-mobile`);
-    const [mobileCsrfCookieKey] = getScopedConsumerCsrfTokenCookieKeysForRead(`consumer-mobile`);
+  it(`refresh reads canonical refresh/csrf cookies and rotates canonical auth cookies`, async () => {
+    const [mobileRefreshCookieKey] = getScopedConsumerRefreshTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
+    const [mobileCsrfCookieKey] = getScopedConsumerCsrfTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
     const req = makeReq({
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer-mobile`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
         'x-csrf-token': `csrf-token`,
       },
       cookies: {
@@ -707,7 +708,11 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     await controller.refreshAccess(req, res);
 
-    expect(service.refreshAccess).toHaveBeenCalledWith(`mobile-refresh-token`, `consumer-mobile`, expect.any(Object));
+    expect(service.refreshAccess).toHaveBeenCalledWith(
+      `mobile-refresh-token`,
+      CURRENT_CONSUMER_APP_SCOPE,
+      expect.any(Object),
+    );
     expect(res.cookie).toHaveBeenCalledWith(
       expect.stringMatching(/consumer_css_grid_access_token/),
       `a`,
@@ -731,7 +736,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     await controller.googleOAuthStart(
       req,
       res,
-      `consumer`,
+      CURRENT_CONSUMER_APP_SCOPE,
       `/signup?accountType=BUSINESS`,
       undefined,
       `BUSINESS`,
@@ -741,7 +746,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const savedRecord = (oauthStateStore.save as jest.Mock).mock.calls[0]?.[1] as Record<string, unknown>;
     expect(savedRecord).toMatchObject({
       nextPath: `/signup?accountType=BUSINESS`,
-      appScope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
       signupEntryPath: `/signup`,
       accountType: `BUSINESS`,
     });
@@ -751,20 +756,16 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq();
     const res = makeRes();
 
-    await controller.googleOAuthStart(req, res, `consumer-mobile`, undefined, undefined, undefined, undefined);
+    await controller.googleOAuthStart(req, res, CURRENT_CONSUMER_APP_SCOPE, undefined, undefined, undefined, undefined);
 
     expect(oauthStateStore.save).toHaveBeenCalledWith(
       `state-token`,
-      expect.objectContaining({ appScope: `consumer-mobile` }),
+      expect.objectContaining({ appScope: CURRENT_CONSUMER_APP_SCOPE }),
       expect.any(Number),
     );
   });
 
-  it.each([
-    [`consumer`, { [CONSUMER_APP_SCOPE_HEADER]: `consumer` }],
-    [`consumer-mobile`, { [CONSUMER_APP_SCOPE_HEADER]: `consumer-mobile` }],
-    [`consumer-css-grid`, { [CONSUMER_APP_SCOPE_HEADER]: `consumer-css-grid` }],
-  ] as const)(
+  it.each([[CURRENT_CONSUMER_APP_SCOPE, { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE }]] as const)(
     `forgot password accepts %s when header app scope matches claimed scope`,
     async (expectedScope, headers) => {
       const req = makeReq({ headers });
@@ -780,12 +781,12 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     },
   );
 
-  it(`forgot password rejects request scope mismatch for claimed app scope`, async () => {
-    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` } });
+  it(`forgot password rejects invalid claimed app scope`, async () => {
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
 
     await expect(
-      controller.forgotPassword(req, { email: `user@example.com` } as any, `consumer-mobile`),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+      controller.forgotPassword(req, { email: `user@example.com` } as any, `unknown-scope` as never),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(service.requestPasswordReset).not.toHaveBeenCalled();
   });
 
@@ -797,32 +798,32 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(service.validateForgotPasswordTokenAndRedirect).toHaveBeenCalledWith(`reset-token`, res);
   });
 
-  it(`completeProfileCreation sends verification using canonical mobile app scope`, async () => {
+  it(`completeProfileCreation sends verification using the canonical app scope`, async () => {
     const req = makeReq({
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer-mobile`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       },
     });
 
-    const result = controller.completeProfileCreation(req, `consumer-id`, `consumer-mobile`);
+    const result = controller.completeProfileCreation(req, `consumer-id`, CURRENT_CONSUMER_APP_SCOPE);
 
-    expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(`consumer-mobile`);
+    expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(service.completeProfileCreationAndSendVerificationEmail).toHaveBeenCalledWith(
       `consumer-id`,
-      `consumer-mobile`,
+      CURRENT_CONSUMER_APP_SCOPE,
     );
     expect(result).toBe(`success`);
   });
 
-  it(`completeProfileCreation rejects request scope mismatch for claimed app scope`, async () => {
+  it(`completeProfileCreation rejects invalid claimed app scope`, async () => {
     const req = makeReq({
       headers: {
-        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
       },
     });
 
-    expect(() => controller.completeProfileCreation(req, `consumer-id`, `consumer-mobile`)).toThrow(
-      UnauthorizedException,
+    expect(() => controller.completeProfileCreation(req, `consumer-id`, `unknown-scope` as never)).toThrow(
+      BadRequestException,
     );
     expect(service.completeProfileCreationAndSendVerificationEmail).not.toHaveBeenCalled();
   });
@@ -835,17 +836,17 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(service.signupVerification).toHaveBeenCalledWith(`signup-token`, res);
   });
 
-  it(`signup rejects when stored google signup session app scope mismatches claimed scope`, async () => {
+  it(`signup rejects invalid claimed app scope for stored google signup sessions`, async () => {
     (oauthStateStore.readSignupSession as jest.Mock | undefined)?.mockResolvedValue({
       nextPath: `/dashboard`,
       email: `new@example.com`,
       emailVerified: true,
       type: `google_signup`,
-      appScope: `consumer-css-grid`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
     const req = makeReq({
-      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer-css-grid` },
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE },
       cookies: { consumer_css_grid_google_signup_session: `signup-session-token` },
     });
 
@@ -858,9 +859,9 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
           accountType: `BUSINESS`,
           addressDetails: { postalCode: `1`, country: `US` } as any,
         } as any,
-        `consumer-mobile`,
+        `unknown-scope` as never,
       ),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(service.signup).not.toHaveBeenCalled();
   });
 

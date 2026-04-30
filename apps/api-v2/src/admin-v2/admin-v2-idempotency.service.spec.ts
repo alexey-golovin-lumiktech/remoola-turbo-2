@@ -1,5 +1,7 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 
+import { Prisma } from '@remoola/database-2';
+
 import { AdminV2IdempotencyService } from './admin-v2-idempotency.service';
 
 type StoredEntry = {
@@ -22,7 +24,10 @@ class FakeAdminActionIdempotencyModel {
       error.code = `P2002`;
       throw error;
     }
-    this.entries.set(key, { ...params.data });
+    this.entries.set(key, {
+      ...params.data,
+      responseSnapshot: this.normalizeStoredJsonNull(params.data.responseSnapshot),
+    });
     return params.data;
   }
 
@@ -60,7 +65,7 @@ class FakeAdminActionIdempotencyModel {
     this.entries.set(key, {
       ...entry,
       responseStatus: params.data.responseStatus,
-      responseSnapshot: params.data.responseSnapshot,
+      responseSnapshot: this.normalizeStoredJsonNull(params.data.responseSnapshot),
     });
     return this.entries.get(key);
   }
@@ -95,6 +100,10 @@ class FakeAdminActionIdempotencyModel {
 
   private composeKey(adminId: string, scope: string, idempotencyKey: string) {
     return `${adminId}:${scope}:${idempotencyKey}`;
+  }
+
+  private normalizeStoredJsonNull(value: unknown): unknown {
+    return value === Prisma.DbNull ? null : value;
   }
 }
 

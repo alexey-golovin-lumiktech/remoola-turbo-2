@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import { loginSchema } from '../../../features/auth/schemas';
 import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
-
-const APP_SCOPE = `consumer-css-grid`;
 
 export async function POST(req: Request) {
   const env = getEnv();
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   forwardHeaders.set(`content-type`, `application/json`);
 
   const url = new URL(`${baseUrl}/consumer/auth/login`);
-  url.searchParams.set(`appScope`, APP_SCOPE);
+  url.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const res = await fetch(url, {
     method: `POST`,
     headers: forwardHeaders,

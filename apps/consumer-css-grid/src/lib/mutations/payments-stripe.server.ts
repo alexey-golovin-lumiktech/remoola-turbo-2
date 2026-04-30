@@ -9,11 +9,11 @@ import {
   type ConsumerPayWithSavedMethodResponse,
   type ConsumerStripeCheckoutSessionResponse,
   type ConsumerVerificationSessionResponse,
+  CURRENT_CONSUMER_APP_SCOPE,
 } from '@remoola/api-types';
 
 import { normalizeDocumentDownloadUrl } from '../document-download-url';
 import {
-  APP_SCOPE,
   configuredBaseUrl,
   consumerMutationHeaders,
   fetch,
@@ -100,7 +100,7 @@ export async function payWithSavedMethodMutation(
   }
 
   const savedMethodUrl = new URL(`${baseUrl}/consumer/stripe/${id}/pay-with-saved-method`);
-  savedMethodUrl.searchParams.set(`appScope`, APP_SCOPE);
+  savedMethodUrl.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const response = await fetch(savedMethodUrl, {
     method: `POST`,
     headers: {
@@ -158,7 +158,7 @@ export async function createPaymentCheckoutSessionMutation(
   }
 
   const checkoutUrl = new URL(`${baseUrl}/consumer/stripe/${id}/stripe-session`);
-  checkoutUrl.searchParams.set(`appScope`, APP_SCOPE);
+  checkoutUrl.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const paymentFlowContext = normalizePaymentFlowMutationContext(context);
   if (paymentFlowContext?.contractId) {
     checkoutUrl.searchParams.set(`contractId`, paymentFlowContext.contractId);

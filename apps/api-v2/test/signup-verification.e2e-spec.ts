@@ -6,7 +6,7 @@ import { type NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
@@ -27,7 +27,7 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
   let initialConsumerCssGridOrigin: string;
 
   const consumerCssGridOrigin = `http://127.0.0.1:3003`;
-  const consumerAppScope = `consumer-css-grid` as const;
+  const consumerAppScope = CURRENT_CONSUMER_APP_SCOPE;
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
@@ -136,7 +136,7 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
         identityId: consumerId,
         typ: `access`,
         scope: `consumer`,
-        appScope: `consumer-css-grid`,
+        appScope: CURRENT_CONSUMER_APP_SCOPE,
       },
       { expiresIn: -1, secret: envs.JWT_ACCESS_SECRET },
     );

@@ -6,6 +6,8 @@ jest.mock(`../../../../../../lib/env.server`, () => ({
   getEnv: (...args: unknown[]) => mockGetEnv(...args),
 }));
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import { GET } from './route';
 
 describe(`consumer-css-grid google start route`, () => {
@@ -29,7 +31,7 @@ describe(`consumer-css-grid google start route`, () => {
 
     expect(response.status).toBe(307);
     expect(location).toContain(`/consumer/auth/google/start`);
-    expect(location).toContain(`appScope=consumer-css-grid`);
+    expect(location).toContain(`appScope=${CURRENT_CONSUMER_APP_SCOPE}`);
     expect(location).toContain(`next=%2Fsignup`);
     expect(location).toContain(`accountType=BUSINESS`);
     expect(location).not.toContain(`${legacyRedirectParam}=`);

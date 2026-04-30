@@ -12,7 +12,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
@@ -26,7 +26,7 @@ describe(`Consumer document downloads (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   const consumerOrigin = `http://127.0.0.1:3003`;
-  const appScope = `consumer-css-grid` as const;
+  const appScope = CURRENT_CONSUMER_APP_SCOPE;
   const ownerEmail = `documents-owner@local.test`;
   const otherEmail = `documents-other@local.test`;
   const password = `OwnerPassword1!`;

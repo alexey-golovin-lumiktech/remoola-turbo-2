@@ -1,6 +1,8 @@
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, type Prisma } from '@remoola/database-2';
 
 export const FIXTURE_NAMESPACE = `fixture-admin-v2`;
+export const CANONICAL_CONSUMER_APP_SCOPE = CURRENT_CONSUMER_APP_SCOPE;
 const FIXTURE_SEED_VERSION = `2026-04-admin-v2-v1`;
 
 type NamedAt = {
@@ -520,7 +522,7 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       ],
       authSessions: [
         {
-          appScope: `${FIXTURE_NAMESPACE}-consumer-web`,
+          appScope: CANONICAL_CONSUMER_APP_SCOPE,
           sessionFamilyId: `00000000-0000-4000-8000-000000000101`,
           refreshTokenHash: `${FIXTURE_NAMESPACE}-refresh-hash-healthy`,
           accessTokenHash: `${FIXTURE_NAMESPACE}-access-hash-healthy`,
@@ -1095,7 +1097,7 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       ],
       authSessions: [
         {
-          appScope: `${FIXTURE_NAMESPACE}-consumer-web`,
+          appScope: CANONICAL_CONSUMER_APP_SCOPE,
           sessionFamilyId: `00000000-0000-4000-8000-000000000102`,
           refreshTokenHash: `${FIXTURE_NAMESPACE}-refresh-hash-overdue`,
           accessTokenHash: `${FIXTURE_NAMESPACE}-access-hash-overdue`,
@@ -1296,7 +1298,7 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       ],
       authSessions: [
         {
-          appScope: `${FIXTURE_NAMESPACE}-consumer-web`,
+          appScope: CANONICAL_CONSUMER_APP_SCOPE,
           sessionFamilyId: `00000000-0000-4000-8000-000000000103`,
           refreshTokenHash: `${FIXTURE_NAMESPACE}-refresh-hash-payout`,
           accessTokenHash: `${FIXTURE_NAMESPACE}-access-hash-payout`,
@@ -1566,7 +1568,7 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       ],
       authSessions: [
         {
-          appScope: `${FIXTURE_NAMESPACE}-consumer-web`,
+          appScope: CANONICAL_CONSUMER_APP_SCOPE,
           sessionFamilyId: `00000000-0000-4000-8000-000000000104`,
           refreshTokenHash: `${FIXTURE_NAMESPACE}-refresh-hash-suspicious`,
           accessTokenHash: `${FIXTURE_NAMESPACE}-access-hash-suspicious`,
