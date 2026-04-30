@@ -71,14 +71,12 @@ export class PaymentMethodsResponse {
   items: PaymentMethodItem[];
 }
 
-// Stripe SetupIntent create -> response
 export class CreateStripeSetupIntentResponse implements ConsumerStripeSetupIntentResponse {
   @Expose()
   @ApiProperty()
   clientSecret: string;
 }
 
-// Stripe confirm payload
 export class ConfirmStripeSetupIntent implements ConsumerConfirmStripeSetupIntentPayload {
   @Expose()
   @IsNotEmpty()
@@ -87,18 +85,17 @@ export class ConfirmStripeSetupIntent implements ConsumerConfirmStripeSetupInten
   setupIntentId: string;
 }
 
-// Manual bank / card create DTO
 export class CreateManualPaymentMethod {
   @Expose()
   @IsEnum($Enums.PaymentMethodType)
   @ApiProperty({ enum: $Enums.PaymentMethodType })
-  type: $Enums.PaymentMethodType; // BANK_ACCOUNT or CREDIT_CARD
+  type: $Enums.PaymentMethodType;
 
   @Expose()
   @IsNotEmpty()
   @IsString()
   @ApiProperty()
-  brand: string; // "Chase", "Bank of America", etc
+  brand: string;
 
   @Expose()
   @IsNotEmpty()
@@ -183,7 +180,6 @@ export class UpdatePaymentMethod {
   billingPhone?: string;
 }
 
-// DTO for paying with saved payment method
 export class PayWithSavedPaymentMethod implements ConsumerPayWithSavedPaymentMethodPayload {
   @Expose()
   @IsNotEmpty()

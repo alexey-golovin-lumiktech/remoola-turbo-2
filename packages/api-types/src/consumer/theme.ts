@@ -1,8 +1,3 @@
-/**
- * Theme constants for consumer settings.
- * Used for theme preference (light/dark/system mode).
- */
-
 export const THEME = {
   LIGHT: `LIGHT`,
   DARK: `DARK`,

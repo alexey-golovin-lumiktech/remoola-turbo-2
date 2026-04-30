@@ -12,61 +12,49 @@ export function mapPrismaKnownError(error: Prisma.PrismaClientKnownRequestError)
   let details: string | string[] | undefined;
 
   switch (error.code) {
-    /* ---------------------------------------------------------------------- */
-    /*                         Constraint & Validation                        */
-    /* ---------------------------------------------------------------------- */
-
     case `P2000`:
-      // Value too long for column type
       status = HttpStatus.BAD_REQUEST;
       message = `Input value too long for column`;
       details = error.meta?.target as string[];
       break;
 
     case `P2001`:
-      // Record not found where expected
       status = HttpStatus.NOT_FOUND;
       message = `Record not found`;
       details = error.meta?.cause as string;
       break;
 
     case `P2002`:
-      // Unique constraint failed
       status = HttpStatus.CONFLICT;
       message = `Unique constraint failed`;
       details = error.meta?.target as string[];
       break;
 
     case `P2003`:
-      // Foreign key constraint failed
       status = HttpStatus.BAD_REQUEST;
       message = `Foreign key constraint failed`;
       details = error.meta?.field_name as string;
       break;
 
     case `P2004`:
-      // Constraint failed (check constraint)
       status = HttpStatus.BAD_REQUEST;
       message = `Database constraint violation`;
       details = error.meta?.constraint as string;
       break;
 
     case `P2005`:
-      // Invalid value for field type
       status = HttpStatus.BAD_REQUEST;
       message = `Invalid value for field type`;
       details = error.meta?.field_name as string;
       break;
 
     case `P2006`:
-      // Invalid value for field
       status = HttpStatus.BAD_REQUEST;
       message = `Invalid value for field`;
       details = error.meta?.field_name as string;
       break;
 
     case `P2007`:
-      // Data validation error (internal)
       status = HttpStatus.BAD_REQUEST;
       message = `Data validation error`;
       break;
@@ -86,10 +74,6 @@ export function mapPrismaKnownError(error: Prisma.PrismaClientKnownRequestError)
       message = `Raw query failed`;
       details = error.meta?.cause as string;
       break;
-
-    /* ---------------------------------------------------------------------- */
-    /*                          Record & Relation Errors                      */
-    /* ---------------------------------------------------------------------- */
 
     case `P2011`:
       status = HttpStatus.BAD_REQUEST;
@@ -183,10 +167,6 @@ export function mapPrismaKnownError(error: Prisma.PrismaClientKnownRequestError)
       details = error.meta?.feature as string;
       break;
 
-    /* ---------------------------------------------------------------------- */
-    /*                          Connection / Transaction                      */
-    /* ---------------------------------------------------------------------- */
-
     case `P2027`:
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = `Multiple database errors occurred`;
@@ -245,20 +225,14 @@ export function mapPrismaKnownError(error: Prisma.PrismaClientKnownRequestError)
       message = `Too many nested writes or reads`;
       break;
 
-    /* ---------------------------------------------------------------------- */
-    /*                                 Default                                */
-    /* ---------------------------------------------------------------------- */
-
     default:
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = `Unhandled Prisma error (${error.code})`;
-      // Do not expose raw Prisma message to client (internal/security)
       details = undefined;
       break;
   }
 
-  // We may parse details from Prisma meta above for internal mapping,
-  // but client responses must never expose schema/constraint information.
+  // Client responses must never expose raw Prisma schema or constraint details.
   details = undefined;
   return { status, message, details };
 }

@@ -19,8 +19,6 @@ export const MAX_COUNT_GT_VALUE = ADMIN_V2_MAX_COUNT_GT_VALUE;
 
 export function assertValidThresholdPayload(
   raw: unknown,
-  // workspace is reserved for future per-workspace threshold-type subset rules
-  // (e.g. `payments` workspace might not allow `count_gt`); see slice 3.3b §17.12.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   workspace: OperationalAlertWorkspace,
 ): asserts raw is OperationalAlertThreshold {

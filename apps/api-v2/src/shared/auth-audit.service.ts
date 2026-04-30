@@ -65,10 +65,6 @@ export class AuthAuditService {
     }
   }
 
-  /**
-   * Throws if account is locked (too many failed attempts) or per-email rate limit exceeded.
-   * Call before attempting password verification.
-   */
   async checkLockoutAndRateLimit(identityType: AuthIdentityType, email: string): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
     const now = new Date();
@@ -98,9 +94,6 @@ export class AuthAuditService {
     }
   }
 
-  /**
-   * Record a failed login attempt. If attempts >= max, set locked_until.
-   */
   async recordFailedAttempt(identityType: AuthIdentityType, email: string): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
     const now = new Date();
@@ -139,9 +132,6 @@ export class AuthAuditService {
     }
   }
 
-  /**
-   * Clear lockout and failure count after successful login.
-   */
   async clearLockout(identityType: AuthIdentityType, email: string): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
     try {
@@ -151,8 +141,6 @@ export class AuthAuditService {
           email: normalizedEmail,
         },
       });
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 }

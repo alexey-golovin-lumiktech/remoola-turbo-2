@@ -1,19 +1,10 @@
-/** Strict checks for JS undefined/null only. Do not treat string "null"/"undefined" as nil (fintech-safe). */
 const isNull = (value: unknown): value is null => value === null;
 const isNill = (value: unknown): value is null | undefined => value == null;
 const isDateObject = (value: unknown) => value instanceof Date;
 
 /**
- * @DESCRIPTION to reduce data size through excluding `null` and `undefined` attributes
- * @IMPORTANT Prefer use **only** for outgoing data (e.g. responses or any data you send out).
- * For incoming data: do not use where you need to distinguish "field omitted" vs "field set to null".
- * Exception: auth/signup request bodies where optional
- * fields are not explicitly set to null — use is acceptable to normalize before service layer.
- *
- * We distinguish three attribute states:
- * 1. `undefined` — the attribute was not provided; do not apply it in processing.
- * 2. `null`      — the attribute was explicitly set to null; update the value to null.
- * 3. `<value>`   — the attribute was explicitly set to a non-null value; update accordingly.
+ * Removes `null` and `undefined` recursively.
+ * Avoid using this on input payloads when omitted fields and explicit `null` must remain distinct.
  */
 export const removeNil = <T>(input: T): T => {
   if (Array.isArray(input)) {

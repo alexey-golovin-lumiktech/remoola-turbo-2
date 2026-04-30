@@ -147,7 +147,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       try {
         window.localStorage.setItem(RECENT_ROUTES_STORAGE_KEY, serializeRecentRouteHrefs(next));
       } catch {
-        // Ignore localStorage write failures so the palette still works in restricted contexts.
+        // localStorage is best-effort in restricted browser contexts.
       }
 
       return next;
@@ -159,9 +159,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
     try {
       window.localStorage.removeItem(RECENT_ROUTES_STORAGE_KEY);
-    } catch {
-      // Ignore localStorage cleanup failures so clearing recents stays best-effort.
-    }
+    } catch {}
   }, []);
 
   const navigate = useCallback(

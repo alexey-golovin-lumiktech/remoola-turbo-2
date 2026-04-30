@@ -29,20 +29,12 @@ type BrevoSendEmailRequest = {
 
 type BrevoHttpErrorContext = { status: number };
 
-/**
- * Request timeout for Brevo API calls.
- * Keeps requests bounded on serverless (Vercel, Lambda).
- * Worst-case total with 3 attempts + delays: (TIMEOUT * 3) + (RETRY_DELAY * 2).
- * At 18s: 18 + 1 + 18 + 1 + 18 = 56s — fits inside a 60s Vercel Pro function limit.
- * Ensure the Vercel function maxDuration for email-sending routes is set to 60s.
- */
+/** Keep Brevo retries bounded so email routes stay within serverless runtime limits. */
 const BREVO_REQUEST_TIMEOUT_MS = 18_000;
 
-/** Delay before retry on transient socket/network errors. */
 const BREVO_RETRY_DELAY_MS = 1_000;
 
 function isTransientSocketError(error: unknown): boolean {
-  // AbortSignal.timeout() throws a DOMException with name "TimeoutError"
   if (error instanceof DOMException && error.name === `TimeoutError`) return true;
   if (error instanceof Error && error.name === `TimeoutError`) return true;
 
@@ -114,7 +106,7 @@ export class BrevoMailService {
     );
   }
 
-  /** Error message omits response body to avoid logging sensitive Brevo payloads (governance §7/§8). */
+  /** Avoid logging Brevo response bodies because they can contain sensitive payload data. */
   private buildHttpErrorMessage(prefix: string, context: BrevoHttpErrorContext): Error {
     return new Error(`${prefix} (${context.status})`);
   }

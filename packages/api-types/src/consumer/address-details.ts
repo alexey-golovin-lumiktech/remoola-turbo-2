@@ -1,7 +1,4 @@
-/**
- * Address details shape for forms and API contract.
- * Form-friendly: fields can be null for partial input.
- */
+/** Fields can be null while the form is still partially filled. */
 
 export type TAddressDetails = {
   postalCode: string | null;

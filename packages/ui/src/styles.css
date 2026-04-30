@@ -14,7 +14,6 @@
   --radius-xl: 22px;
 }
 
-/* Cards */
 .rm-card {
   background: var(--card);
   border-radius: var(--radius-xl);
@@ -29,7 +28,6 @@
   padding: 20px;
 }
 
-/* Inputs */
 .rm-input {
   width: 100%;
   background: var(--card);
@@ -44,7 +42,6 @@
 .rm-input::placeholder { color: var(--muted); }
 .rm-input:focus { border-color: #bfdbfe; box-shadow: 0 0 0 4px var(--ring); }
 
-/* Buttons */
 .rm-btn {
   display: inline-flex; align-items: center; justify-content: center;
   padding: 10px 14px; font-weight: 600; font-size: 14px;
@@ -55,7 +52,6 @@
 .rm-btn--ghost { background: var(--card); color: var(--ink); border-color: var(--line); }
 .rm-btn--ghost:hover { background: var(--bg-0); }
 
-/* Pills / Chips / Badges */
 .rm-pill {
   display:inline-flex; align-items:center; gap:6px;
   padding: 6px 10px; border-radius: 999px; font-size: 12px;
@@ -70,11 +66,9 @@
 .rm-badge--red    { color:#b91c1c; background:#fee2e2; border-color:#ef444433; }
 .rm-badge--amber  { color:#92400e; background:#fef3c7; border-color:#f59e0b33; }
 
-/* Progress */
 .rm-progress { height: 8px; width: 100%; border-radius: 999px; background: var(--bg-1); overflow: hidden; }
 .rm-progress__bar { height: 100%; background: var(--blue-600); width: 0; transition: width .2s ease; }
 
-/* Table */
 .rm-tablewrap { overflow:auto; border-radius: 14px; border:1px solid var(--line); background: var(--card); }
 .rm-table { width: 100%; border-collapse: separate; border-spacing: 0; }
 .rm-table thead th {
@@ -84,7 +78,6 @@
 .rm-table tbody td { padding: 14px 12px; border-bottom:1px solid var(--line); }
 .rm-table tbody tr:hover td { background: var(--bg-1); }
 
-/* Sidebar link */
 .rm-sb-link {
   display:flex; align-items:center; gap:12px; border-radius: 12px;
   padding: 8px 12px; font-weight: 600; font-size: 14px;
@@ -93,11 +86,9 @@
 .rm-sb-link--active { background: rgba(255,255,255,.1); color: #fff; }
 .rm-sb-link:hover { background: rgba(255,255,255,.08); color: #fff; }
 
-/* Small helpers */
 .rm-stat { font-weight: 700; font-size: 22px; color: var(--ink); }
 .rm-muted { color: var(--muted); }
 
-/* SelectWithClear */
 .rm-select { position: relative; width: 100%; display: flex; flex-direction: column; gap: 8px; }
 .rm-select__label { font-size: 12px; font-weight: 500; color: var(--muted); display: block; }
 .rm-select__trigger {

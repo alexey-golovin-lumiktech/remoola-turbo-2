@@ -56,7 +56,7 @@ function getInitialTheme(initialTheme: TTheme): TTheme {
     const stored = parseThemePreference(window.localStorage.getItem(THEME_STORAGE_KEY));
     if (stored) return stored;
   } catch {
-    // Ignore storage failures in restricted browser contexts.
+    // localStorage can fail in restricted browser contexts.
   }
 
   return initialTheme;

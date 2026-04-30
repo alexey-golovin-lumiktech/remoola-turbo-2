@@ -5,11 +5,6 @@ import { Prisma } from '@remoola/database-2';
 
 import { extractPrismaValidationDetails, mapPrismaKnownError } from './utils';
 
-/**
- * Robustly extracts details from PrismaClientValidationError across versions.
- * Returns a concise human-readable sentence with best-effort structure.
- */
-
 @Catch(Prisma.PrismaClientKnownRequestError, Prisma.PrismaClientValidationError)
 export class PrismaExceptionFilter implements ExceptionFilter {
   catch(exception: Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientValidationError, host: ArgumentsHost) {

@@ -48,7 +48,6 @@ export class ConsumerPaymentMethodsService {
     return { items };
   }
 
-  // 3) Manual bank/card create
   async createManual(consumerId: string, body: CreateManualPaymentMethod) {
     return this.prisma.$transaction(async (tx) => {
       const billingDetails = await tx.billingDetailsModel.create({
@@ -88,7 +87,6 @@ export class ConsumerPaymentMethodsService {
     });
   }
 
-  // 4) Update (e.g. defaultSelected, billing details)
   async update(consumerId: string, id: string, body: UpdatePaymentMethod) {
     const pm = await this.prisma.paymentMethodModel.findFirst({
       where: { id, consumerId, deletedAt: null },
@@ -138,7 +136,6 @@ export class ConsumerPaymentMethodsService {
     });
   }
 
-  // 5) Delete (soft or hard)
   async delete(consumerId: string, id: string) {
     const pm = await this.prisma.paymentMethodModel.findFirst({
       where: { id, consumerId, deletedAt: null },

@@ -28,7 +28,6 @@ export function extractPrismaValidationDetails(error: Prisma.PrismaClientValidat
   };
 
   const detectors: ((m: string) => DetectorResult | null)[] = [
-    // Must not be null / undefined
     (m) => {
       const r = m.match(/Argument\s+`(.+?)`\s+must\s+not\s+be\s+(null|undefined)/i);
       if (!r) return null;
@@ -36,7 +35,6 @@ export function extractPrismaValidationDetails(error: Prisma.PrismaClientValidat
       return { field, issue: `must not be ${value}` };
     },
 
-    // Missing required argument
     (m) => {
       const r = m.match(/Argument\s+`(.+?)`\s+(?:is\s+missing|missing\s+required)/i);
       if (!r) return null;
@@ -44,7 +42,6 @@ export function extractPrismaValidationDetails(error: Prisma.PrismaClientValidat
       return { field, issue: `is required` };
     },
 
-    // Null for non-nullable field
     (m) => {
       const r = m.match(/Provided\s+null\s+for\s+non-nullable\s+field\s+`(.+?)`/i);
       if (!r) return null;
@@ -52,7 +49,6 @@ export function extractPrismaValidationDetails(error: Prisma.PrismaClientValidat
       return { field, issue: `cannot be null` };
     },
 
-    // Type mismatch
     (m) => {
       const r = m.match(
         /Argument\s+`(.+?)`.*?Expected\s+([A-Za-z0-9_\[\]\|\s]+).*?(?:but|got|received)\s+([A-Za-z0-9_\[\]\|\s]+)/i,
@@ -62,7 +58,6 @@ export function extractPrismaValidationDetails(error: Prisma.PrismaClientValidat
       return { field, issue: `type mismatch`, expected, received };
     },
 
-    // Invalid enum value
     (m) => {
       const r = m.match(/Invalid enum value.*?Expected one of:\s+([A-Z0-9_,\s]+).*?for\s+`(.+?)`/i);
       if (!r) return null;
@@ -70,7 +65,6 @@ export function extractPrismaValidationDetails(error: Prisma.PrismaClientValidat
       return { field, issue: `has invalid enum value`, expected };
     },
 
-    // Unknown argument
     (m) => {
       const r = m.match(/Unknown (?:arg|argument)\s+`(.+?)`\s+in\s+([^\s]+)\s+for\s+type\s+([A-Za-z0-9_]+)/i);
       if (!r) return null;
@@ -78,7 +72,6 @@ export function extractPrismaValidationDetails(error: Prisma.PrismaClientValidat
       return { field, issue: `is not allowed (in ${type})` };
     },
 
-    // Fallback: just say invalid
     (m) => {
       const r = m.match(/Argument\s+`(.+?)`/i);
       if (!r) return null;
