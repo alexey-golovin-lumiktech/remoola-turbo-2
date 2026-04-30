@@ -2770,20 +2770,25 @@
   ### 🚀 Feature
   - **Consumer document recovery:** Restore `consumer/documents` listing by fixing the raw-query path, falling back to the in-memory path when Prisma raw execution fails, and recovering empty-page pagination in `consumer-css-grid` instead of stranding users on a blank documents view.
   - **Admin document and resend-action alignment:** Route protected document downloads through an `admin-v2` same-origin BFF path, keep resend-email actions pinned to the canonical consumer app scope, and hide signup-verification resend once a consumer is already verified while preserving password-recovery resend.
+  - **Consumer contract and document schema alignment:** Return structured exchange currency items, tighten contact endpoint metadata and create-contact email requirements, expose consumer document list attachment fields through Swagger DTOs, and keep `consumer-css-grid` on shared settings and document response contracts.
 
   ### 🔐 Security / Production Safety
   - **Canonical consumer app-scope enforcement:** Hard-cut `api-v2`, `consumer-css-grid`, shared auth contracts, mail-link resolution, and payment-link metadata to the canonical `consumer-css-grid` scope so auth cookies, CSRF, OAuth state, and session validation stay fail-closed instead of accepting legacy scope aliases.
   - **Payment and reversal concurrency hardening:** Serialize admin and Stripe reversal flows on shared outgoing advisory locks, include pending outflows in balance checks, make refund idempotency deterministic across duplicate attempts, translate assignment races into stable `409` responses, dedupe checkout payment methods on persisted identifiers, and evaluate outgoing limits in the actual transaction currency.
   - **Protected frontend read-path alignment for Vercel:** Move consumer read requests onto shared header builders that carry the canonical app scope, origin, cookies, and Vercel protection-bypass headers consistently so protected server-side reads keep working behind deployment protection.
+  - **Admin secured-action and recovery hardening:** Align `admin-v2` secured mutation forms and shared API contracts with `api-v2` step-up password confirmation, clear stale admin lockout state after a successful password reset, and enforce the shared strong-password policy across invitation and reset flows.
+  - **Transactional email rendering hardening:** Validate outbound CTA and fallback URLs, escape dynamic invoice and payment fields, preserve payment-choice links and existing auth/payment processing semantics, and make invoice item rendering safer for mobile email clients.
 
   ### 🗄 Database & Migrations
   - **Participant-access indexes and partition-aware retention:** Add migration `20260430133000_payment_request_participant_access_indexes`, create composite and partial email-fallback indexes for `payment_request` participant access, align raw SQL UUID binding with schema-backed `@db.Uuid` columns, and delete `consumer_action_log` cutoff rows from the concrete partition instead of the partitioned parent.
 
   ### 🧪 Testing
   - **Regression coverage expansion:** Refresh auth, OAuth, origin, cookie, payment, webhook, and BFF tests around the canonical app-scope contract; add coverage for documents raw-query fallback and empty-page recovery, reversal and assignment concurrency, payment-method dedupe, partition-targeted retention deletes, admin-v2 protected downloads, and resend-email gating for verified consumers.
+  - **Admin, contract, and email coverage:** Add page-level coverage for secured `admin-v2` forms, shared admin mutation contract tests, backend/frontend coverage for structured exchange currencies, admin password-reset and password-policy assertions, and email template specs for safe links, layout wrapping, invoice totals, and invoice item rendering.
 
   ### 🛠 DevEx
   - **Shared request and raw-SQL helpers:** Centralize consumer read and mutation header construction plus shared Prisma raw-SQL UUID and participant-query helpers so BFF and `api-v2` hot paths stop duplicating low-level request and cast logic.
+  - **Transactional email template standardization:** Move auth, payment, and invoicing templates onto shared layout, fallback-link, and sanitization helpers with consistent light-shell styling while keeping token, payment, ledger, webhook, and session behavior unchanged.
 
   ### ⚠️ Notes
   - **Migration sequencing matters:** The participant-access migration is additive and requires no backfill, but it should land before expecting remote planner improvements on `payment_request` participant-access queries.
