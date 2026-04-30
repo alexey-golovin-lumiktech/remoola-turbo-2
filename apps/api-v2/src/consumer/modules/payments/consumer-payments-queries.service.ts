@@ -12,6 +12,7 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { type PaymentsHistoryQuery } from './dto';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
+import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 import { normalizeConsumerFacingTransactionStatus, buildConsumerStatusFilter } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
@@ -106,23 +107,13 @@ export class ConsumerPaymentsQueriesService {
     return [...payerConditions, ...requesterConditions];
   }
 
-  private buildPaymentRoleSql(consumerId: string, consumerEmail: string | null, role?: string): Prisma.Sql {
-    const payerSql = consumerEmail
-      ? Prisma.sql`(
-          pr.payer_id::text = ${consumerId}
-          OR (pr.payer_id IS NULL AND LOWER(COALESCE(pr.payer_email, '')) = ${consumerEmail})
-        )`
-      : Prisma.sql`(pr.payer_id::text = ${consumerId})`;
-    const requesterSql = consumerEmail
-      ? Prisma.sql`(
-          pr.requester_id::text = ${consumerId}
-          OR (pr.requester_id IS NULL AND LOWER(COALESCE(pr.requester_email, '')) = ${consumerEmail})
-        )`
-      : Prisma.sql`(pr.requester_id::text = ${consumerId})`;
-
-    if (role === `PAYER`) return payerSql;
-    if (role === `REQUESTER`) return requesterSql;
-    return Prisma.sql`(${payerSql} OR ${requesterSql})`;
+  private buildPaymentRoleIdsSql(consumerId: string, consumerEmail: string | null, role?: string): Prisma.Sql {
+    const normalizedRole = role === `PAYER` || role === `REQUESTER` ? role : undefined;
+    return buildPaymentRequestParticipantIdsSql({
+      consumerId,
+      consumerEmail: consumerEmail?.trim().toLowerCase() ?? null,
+      role: normalizedRole,
+    });
   }
 
   private mapHistoryEntry(row: {
@@ -217,7 +208,7 @@ export class ConsumerPaymentsQueriesService {
     let paymentRequests: PaymentRequestWithInclude[] = [];
 
     if (effectiveStatusFilter && typeof this.prisma.$queryRaw === `function`) {
-      const roleSql = this.buildPaymentRoleSql(consumerId, normalizedConsumerEmail, role);
+      const participantPaymentIdsSql = this.buildPaymentRoleIdsSql(consumerId, normalizedConsumerEmail, role);
       const searchTerm = search?.trim();
       const searchPattern = searchTerm ? `%${searchTerm}%` : null;
       const typeSql = type ? Prisma.sql`AND pr.type::text = ${type}` : Prisma.empty;
@@ -242,15 +233,19 @@ export class ConsumerPaymentsQueriesService {
           ? Prisma.sql`AND ${statusCoalesce} IN (${Prisma.join(effectiveStatusFilter.in)})`
           : Prisma.sql`AND ${statusCoalesce} = ${effectiveStatusFilter}`;
       const filteredPaymentIdsSql = Prisma.sql`
+        WITH participant_payment_ids AS (
+          ${participantPaymentIdsSql}
+        )
         SELECT pr.id, pr.created_at
-        FROM payment_request pr
+        FROM participant_payment_ids ppi
+        JOIN payment_request pr ON pr.id = ppi.id
         LEFT JOIN consumer requester ON requester.id = pr.requester_id
         LEFT JOIN consumer payer ON payer.id = pr.payer_id
         LEFT JOIN LATERAL (
           SELECT le.id, le.status
           FROM ledger_entry le
           WHERE le.payment_request_id = pr.id
-            AND le.consumer_id::text = ${consumerId}
+            AND le.consumer_id = ${sqlUuid(consumerId)}
             AND le.deleted_at IS NULL
           ORDER BY le.created_at DESC, le.id DESC
           LIMIT 1
@@ -262,7 +257,7 @@ export class ConsumerPaymentsQueriesService {
           ORDER BY leo.created_at DESC, leo.id DESC
           LIMIT 1
         ) latest_outcome ON true
-        WHERE ${roleSql}
+        WHERE 1 = 1
           ${typeSql}
           ${searchSql}
           ${listPaymentsStatusSql}
@@ -587,7 +582,7 @@ export class ConsumerPaymentsQueriesService {
             ORDER BY leo.created_at DESC, leo.id DESC
             LIMIT 1
           ) latest_outcome ON true
-          WHERE le.consumer_id::text = ${consumerId}
+          WHERE le.consumer_id = ${sqlUuid(consumerId)}
             AND le.deleted_at IS NULL
           ORDER BY le.ledger_id, le.created_at DESC, le.id DESC
         ),

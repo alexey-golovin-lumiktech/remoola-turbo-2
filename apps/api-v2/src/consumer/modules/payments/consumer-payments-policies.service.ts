@@ -7,6 +7,7 @@ import { errorCodes } from '@remoola/shared-constants';
 import { type TransferBody } from './dto';
 import { buildWalletEligibilityCondition } from '../../../shared/balance-calculation.service';
 import { appendConsumerAppScopeToMetadata } from '../../../shared/payment-link-metadata';
+import { sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 import { isConsumerProfileCompleteForVerification, isConsumerVerificationEffective } from '../../../shared-common';
 
@@ -108,7 +109,7 @@ export class ConsumerPaymentsPoliciesService {
         WHERE o.ledger_entry_id = le.id
         ORDER BY o.created_at DESC LIMIT 1
       ) latest ON true
-      WHERE le.consumer_id::text = ${consumerId}
+      WHERE le.consumer_id = ${sqlUuid(consumerId)}
         AND le.amount < 0
         AND le.currency_code::text = ${currencyCode}
         AND le.type::text IN (${Prisma.join(

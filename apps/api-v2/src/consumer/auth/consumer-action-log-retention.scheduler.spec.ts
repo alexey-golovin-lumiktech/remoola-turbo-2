@@ -29,20 +29,33 @@ describe(`ConsumerActionLogRetentionScheduler`, () => {
 
     expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
     expect(prisma.$executeRawUnsafe).toHaveBeenCalledWith(`DROP TABLE IF EXISTS "consumer_action_log_p202601"`);
-    expect(prisma.$executeRaw).toHaveBeenCalledWith(expect.anything());
+    expect(prisma.$executeRawUnsafe).toHaveBeenCalledWith(
+      expect.stringContaining(`DELETE FROM "consumer_action_log_p202602" AS target`),
+      expect.any(String),
+      expect.any(String),
+      5000,
+    );
+    expect(prisma.$executeRaw).not.toHaveBeenCalled();
   });
 
   it(`runs multiple boundary batches until less than batch size is deleted`, async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([]),
-      $executeRaw: jest.fn().mockResolvedValueOnce(5000).mockResolvedValueOnce(1000),
-      $executeRawUnsafe: jest.fn(),
+      $queryRaw: jest.fn().mockResolvedValue([{ partitionName: `consumer_action_log_p202602` }]),
+      $executeRaw: jest.fn(),
+      $executeRawUnsafe: jest.fn().mockResolvedValueOnce(5000).mockResolvedValueOnce(1000),
     } as unknown as PrismaService;
 
     const scheduler = new ConsumerActionLogRetentionScheduler(prisma);
     await scheduler.enforceRetention();
 
-    expect(prisma.$executeRaw).toHaveBeenCalledTimes(2);
+    expect(prisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
+    expect(prisma.$executeRawUnsafe).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining(`FROM "consumer_action_log_p202602"`),
+      expect.any(String),
+      expect.any(String),
+      5000,
+    );
   });
 
   it(`does not throw when retention run fails`, async () => {

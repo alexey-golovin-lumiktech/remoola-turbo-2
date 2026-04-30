@@ -4,6 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { buildConsumerDocumentDownloadUrl } from './document-download-url';
+import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 import { FileStorageService } from '../files/file-storage.service';
 
@@ -133,22 +134,11 @@ export class ConsumerDocumentsService {
     };
   }
 
-  private buildPaymentParticipantSql(consumerId: string, consumerEmail: string | null) {
-    return consumerEmail
-      ? Prisma.sql`
-          (
-            pr.requester_id::text = ${consumerId}
-            OR pr.payer_id::text = ${consumerId}
-            OR (pr.requester_id IS NULL AND LOWER(COALESCE(pr.requester_email, '')) = LOWER(${consumerEmail}))
-            OR (pr.payer_id IS NULL AND LOWER(COALESCE(pr.payer_email, '')) = LOWER(${consumerEmail}))
-          )
-        `
-      : Prisma.sql`
-          (
-            pr.requester_id::text = ${consumerId}
-            OR pr.payer_id::text = ${consumerId}
-          )
-        `;
+  private buildPaymentParticipantIdsSql(consumerId: string, consumerEmail: string | null) {
+    return buildPaymentRequestParticipantIdsSql({
+      consumerId,
+      consumerEmail: consumerEmail?.trim().toLowerCase() ?? null,
+    });
   }
 
   private buildDocumentKindSql(nameSql: Prisma.Sql) {
@@ -201,7 +191,7 @@ export class ConsumerDocumentsService {
   }): Promise<{ items: DocumentListItem[]; total: number; page: number; pageSize: number }> {
     const { consumerId, consumerEmail, safePage, safePageSize, kindFilter, backendBaseUrl, contractEmail } = params;
     const offset = (safePage - 1) * safePageSize;
-    const participantSql = this.buildPaymentParticipantSql(consumerId, consumerEmail);
+    const participantPaymentIdsSql = this.buildPaymentParticipantIdsSql(consumerId, consumerEmail);
 
     if (contractEmail) {
       if (kindFilter && kindFilter !== `PAYMENT`) {
@@ -209,16 +199,18 @@ export class ConsumerDocumentsService {
       }
 
       const rows = await this.prisma.$queryRaw<DocumentListRow[]>(Prisma.sql`
-        WITH scoped_payments AS (
+        WITH participant_payment_ids AS (
+          ${participantPaymentIdsSql}
+        ),
+        scoped_payments AS (
           SELECT
             pr.id,
             pr.status
           FROM payment_request pr
+          JOIN participant_payment_ids ppi ON ppi.id = pr.id
           LEFT JOIN consumer requester ON requester.id = pr.requester_id
           LEFT JOIN consumer payer ON payer.id = pr.payer_id
-          WHERE pr.deleted_at IS NULL
-            AND ${participantSql}
-            AND (
+          WHERE (
               LOWER(COALESCE(requester.email, pr.requester_email, '')) = LOWER(${contractEmail})
               OR LOWER(COALESCE(payer.email, pr.payer_email, '')) = LOWER(${contractEmail})
             )
@@ -282,14 +274,16 @@ export class ConsumerDocumentsService {
 
       if (rows.length === 0 && safePage > 1) {
         const countRows = await this.prisma.$queryRaw<Array<{ totalCount: number | bigint }>>(Prisma.sql`
-          WITH scoped_payments AS (
+          WITH participant_payment_ids AS (
+            ${participantPaymentIdsSql}
+          ),
+          scoped_payments AS (
             SELECT pr.id
             FROM payment_request pr
+            JOIN participant_payment_ids ppi ON ppi.id = pr.id
             LEFT JOIN consumer requester ON requester.id = pr.requester_id
             LEFT JOIN consumer payer ON payer.id = pr.payer_id
-            WHERE pr.deleted_at IS NULL
-              AND ${participantSql}
-              AND (
+            WHERE (
                 LOWER(COALESCE(requester.email, pr.requester_email, '')) = LOWER(${contractEmail})
                 OR LOWER(COALESCE(payer.email, pr.payer_email, '')) = LOWER(${contractEmail})
               )
@@ -323,13 +317,15 @@ export class ConsumerDocumentsService {
 
     const kindFilterSql = kindFilter ? Prisma.sql`WHERE doc.kind = ${kindFilter}` : Prisma.empty;
     const rows = await this.prisma.$queryRaw<DocumentListRow[]>(Prisma.sql`
-      WITH scoped_payments AS (
+      WITH participant_payment_ids AS (
+        ${participantPaymentIdsSql}
+      ),
+      scoped_payments AS (
         SELECT
           pr.id,
           pr.status
         FROM payment_request pr
-        WHERE pr.deleted_at IS NULL
-          AND ${participantSql}
+        JOIN participant_payment_ids ppi ON ppi.id = pr.id
       ),
       attachment_docs AS (
         SELECT
@@ -372,7 +368,7 @@ export class ConsumerDocumentsService {
         JOIN resource r
           ON r.id = cr.resource_id
          AND r.deleted_at IS NULL
-        WHERE cr.consumer_id::text = ${consumerId}
+        WHERE cr.consumer_id = ${sqlUuid(consumerId)}
           AND cr.deleted_at IS NULL
         GROUP BY r.id, r.original_name, r.size, r.created_at, r.mimetype
       ),
@@ -426,11 +422,13 @@ export class ConsumerDocumentsService {
 
     if (rows.length === 0 && safePage > 1) {
       const countRows = await this.prisma.$queryRaw<Array<{ totalCount: number | bigint }>>(Prisma.sql`
-        WITH scoped_payments AS (
+        WITH participant_payment_ids AS (
+          ${participantPaymentIdsSql}
+        ),
+        scoped_payments AS (
           SELECT pr.id, pr.status
           FROM payment_request pr
-          WHERE pr.deleted_at IS NULL
-            AND ${participantSql}
+          JOIN participant_payment_ids ppi ON ppi.id = pr.id
         ),
         attachment_docs AS (
           SELECT
@@ -453,7 +451,7 @@ export class ConsumerDocumentsService {
           JOIN resource r
             ON r.id = cr.resource_id
            AND r.deleted_at IS NULL
-          WHERE cr.consumer_id::text = ${consumerId}
+          WHERE cr.consumer_id = ${sqlUuid(consumerId)}
             AND cr.deleted_at IS NULL
           GROUP BY r.id, r.original_name
         ),

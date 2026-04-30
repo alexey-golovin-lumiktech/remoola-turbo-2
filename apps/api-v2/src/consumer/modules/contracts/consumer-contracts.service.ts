@@ -4,6 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerContractDetails, ConsumerContractItem } from './dto';
+import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
@@ -172,22 +173,11 @@ export class ConsumerContractsService {
     };
   }
 
-  private buildPaymentParticipantSql(consumerId: string, consumerEmail: string | null) {
-    return consumerEmail
-      ? Prisma.sql`
-          (
-            pr.requester_id::text = ${consumerId}
-            OR pr.payer_id::text = ${consumerId}
-            OR (pr.requester_id IS NULL AND LOWER(COALESCE(pr.requester_email, '')) = LOWER(${consumerEmail}))
-            OR (pr.payer_id IS NULL AND LOWER(COALESCE(pr.payer_email, '')) = LOWER(${consumerEmail}))
-          )
-        `
-      : Prisma.sql`
-          (
-            pr.requester_id::text = ${consumerId}
-            OR pr.payer_id::text = ${consumerId}
-          )
-        `;
+  private buildPaymentParticipantIdsSql(consumerId: string, consumerEmail: string | null) {
+    return buildPaymentRequestParticipantIdsSql({
+      consumerId,
+      consumerEmail: consumerEmail?.trim().toLowerCase() ?? null,
+    });
   }
 
   private async getContractsRaw(
@@ -211,7 +201,7 @@ export class ConsumerContractsService {
           )
         `
       : Prisma.empty;
-    const participantSql = this.buildPaymentParticipantSql(consumerId, consumerEmail);
+    const participantPaymentIdsSql = this.buildPaymentParticipantIdsSql(consumerId, consumerEmail);
     const statusFilterSql =
       normalizedStatusFilter == null
         ? Prisma.empty
@@ -249,14 +239,17 @@ export class ConsumerContractsService {
             `;
 
     const rows = await this.prisma.$queryRaw<ContractListRow[]>(Prisma.sql`
-      WITH filtered_contacts AS (
+      WITH participant_payment_ids AS (
+        ${participantPaymentIdsSql}
+      ),
+      filtered_contacts AS (
         SELECT
           c.id,
           COALESCE(c.name, c.email) AS name,
           c.email,
           c.updated_at
         FROM contact c
-        WHERE c.consumer_id::text = ${consumerId}
+        WHERE c.consumer_id = ${sqlUuid(consumerId)}
           AND c.deleted_at IS NULL
           ${searchSql}
       ),
@@ -283,15 +276,15 @@ export class ConsumerContractsService {
           ) AS effective_status
         FROM filtered_contacts fc
         JOIN payment_request pr
-          ON pr.deleted_at IS NULL
-         AND ${participantSql}
+          ON TRUE
+        JOIN participant_payment_ids ppi ON ppi.id = pr.id
         LEFT JOIN consumer requester ON requester.id = pr.requester_id
         LEFT JOIN consumer payer ON payer.id = pr.payer_id
         LEFT JOIN LATERAL (
           SELECT le.id, le.status
           FROM ledger_entry le
           WHERE le.payment_request_id = pr.id
-            AND le.consumer_id::text = ${consumerId}
+            AND le.consumer_id = ${sqlUuid(consumerId)}
             AND le.deleted_at IS NULL
           ORDER BY le.created_at DESC, le.id DESC
           LIMIT 1
@@ -396,14 +389,17 @@ export class ConsumerContractsService {
 
     if (rows.length === 0 && safePage > 1) {
       const countRows = await this.prisma.$queryRaw<Array<{ totalCount: number | bigint }>>(Prisma.sql`
-        WITH filtered_contacts AS (
+        WITH participant_payment_ids AS (
+          ${participantPaymentIdsSql}
+        ),
+        filtered_contacts AS (
           SELECT
             c.id,
             COALESCE(c.name, c.email) AS name,
             c.email,
             c.updated_at
           FROM contact c
-          WHERE c.consumer_id::text = ${consumerId}
+          WHERE c.consumer_id = ${sqlUuid(consumerId)}
             AND c.deleted_at IS NULL
             ${searchSql}
         ),
@@ -430,15 +426,15 @@ export class ConsumerContractsService {
             ) AS effective_status
           FROM filtered_contacts fc
           JOIN payment_request pr
-            ON pr.deleted_at IS NULL
-           AND ${participantSql}
+            ON TRUE
+          JOIN participant_payment_ids ppi ON ppi.id = pr.id
           LEFT JOIN consumer requester ON requester.id = pr.requester_id
           LEFT JOIN consumer payer ON payer.id = pr.payer_id
           LEFT JOIN LATERAL (
             SELECT le.id, le.status
             FROM ledger_entry le
             WHERE le.payment_request_id = pr.id
-              AND le.consumer_id::text = ${consumerId}
+              AND le.consumer_id = ${sqlUuid(consumerId)}
               AND le.deleted_at IS NULL
             ORDER BY le.created_at DESC, le.id DESC
             LIMIT 1

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { Prisma, $Enums } from '@remoola/database-2';
 
+import { sqlUuid } from './prisma-raw.utils';
 import { PrismaService } from './prisma.service';
 
 export enum BalanceCalculationMode {
@@ -101,7 +102,7 @@ export class BalanceCalculationService {
           WHERE o.ledger_entry_id = le.id
           ORDER BY o.created_at DESC LIMIT 1
         ) latest ON true
-        WHERE le.consumer_id::text = ${consumerId}
+        WHERE le.consumer_id = ${sqlUuid(consumerId)}
           ${statusCondition}
           AND le.deleted_at IS NULL
           ${walletEligibilityCondition}
@@ -158,7 +159,7 @@ export class BalanceCalculationService {
           WHERE o.ledger_entry_id = le.id
           ORDER BY o.created_at DESC LIMIT 1
         ) latest ON true
-        WHERE le.consumer_id::text = ${consumerId}
+        WHERE le.consumer_id = ${sqlUuid(consumerId)}
           ${statusCondition}
           AND le.deleted_at IS NULL
           ${walletEligibilityCondition}
@@ -213,7 +214,7 @@ export class BalanceCalculationService {
           WHERE o.ledger_entry_id = le.id
           ORDER BY o.created_at DESC LIMIT 1
         ) latest ON true
-        WHERE le.consumer_id::text = ${consumerId}
+        WHERE le.consumer_id = ${sqlUuid(consumerId)}
           ${statusCondition}
           AND le.deleted_at IS NULL
           ${walletEligibilityCondition}

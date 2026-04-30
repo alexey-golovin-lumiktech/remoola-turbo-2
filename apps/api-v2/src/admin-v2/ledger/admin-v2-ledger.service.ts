@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { sqlUuid } from '../../shared/prisma-raw.utils';
 import { PrismaService } from '../../shared/prisma.service';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
@@ -68,6 +69,19 @@ function buildCreatedAtCursorWhere(cursor: { createdAt: Date; id: string } | nul
       },
     ],
   };
+}
+
+function buildOptionalUuidFilter(columnSql: Prisma.Sql, value: string | undefined): Prisma.Sql {
+  if (!value?.trim()) {
+    return Prisma.empty;
+  }
+
+  const normalizedValue = value.trim();
+  if (!UUID_REGEX.test(normalizedValue)) {
+    return Prisma.sql`AND FALSE`;
+  }
+
+  return Prisma.sql`AND ${columnSql} = ${sqlUuid(normalizedValue)}`;
 }
 
 type LedgerListRow = {
@@ -200,12 +214,8 @@ export class AdminV2LedgerService {
       const deletedSql = Prisma.sql`AND le.deleted_at IS NULL`;
       const typeSql = type ? Prisma.sql`AND le.type::text = ${type}` : Prisma.empty;
       const currencySql = currencyCode ? Prisma.sql`AND le.currency_code::text = ${currencyCode}` : Prisma.empty;
-      const paymentRequestSql = params?.paymentRequestId
-        ? Prisma.sql`AND le.payment_request_id::text = ${params.paymentRequestId}`
-        : Prisma.empty;
-      const consumerSql = params?.consumerId
-        ? Prisma.sql`AND le.consumer_id::text = ${params.consumerId}`
-        : Prisma.empty;
+      const paymentRequestSql = buildOptionalUuidFilter(Prisma.sql`le.payment_request_id`, params?.paymentRequestId);
+      const consumerSql = buildOptionalUuidFilter(Prisma.sql`le.consumer_id`, params?.consumerId);
       const amountSignSql =
         amountSign === `positive`
           ? Prisma.sql`AND le.amount > 0`
