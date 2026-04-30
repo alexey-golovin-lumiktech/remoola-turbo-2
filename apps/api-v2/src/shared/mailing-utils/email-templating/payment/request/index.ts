@@ -1,41 +1,5 @@
-const html = `
-  <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;font-size:28px;">
-    <tbody>
-      <tr>
-        <td>
-          <div style="text-align:center; font-weight:bold;color:cyan;">You received a payment request on Wirebill.</div>
-          <div style="text-align:center; font-weight:bold;color:cyan;">Hello {{payerEmail}}.</div>
-          <br/>
-          <div style="color:cyan;">
-            {{requesterEmail}} requested {{amount}} {{currencyCode}} from you.
-            <div>{{descriptionLine}}</div>
-            <div>{{dueDateLine}}</div>
-            <div>
-              <a style="color:goldenrod" href="{{paymentRequestLink}}">View payment request</a>
-            </div>
-          </div>
-          <br/>
-          <div style="margin-left:200px;text-align:right;color:cyan">
-            If the email came to you by mistake, just ignore it.
-            <div style="color:cyan;">Best regards
-              <a style="color:goldenrod" href="mailto:support@wirebill.com">support@wirebill.com</a>.
-            </div>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-`;
-
-const ReplacementsRegExpMapping = {
-  payerEmail: new RegExp(`{{payerEmail}}`, `gi`),
-  requesterEmail: new RegExp(`{{requesterEmail}}`, `gi`),
-  amount: new RegExp(`{{amount}}`, `gi`),
-  currencyCode: new RegExp(`{{currencyCode}}`, `gi`),
-  descriptionLine: new RegExp(`{{descriptionLine}}`, `gi`),
-  dueDateLine: new RegExp(`{{dueDateLine}}`, `gi`),
-  paymentRequestLink: new RegExp(`{{paymentRequestLink}}`, `gi`),
-} as const;
+import { renderEmailLayout, renderKeyValueTable } from '../../shared/layout';
+import { escapeAttr, escapeHtml } from '../../shared/sanitize';
 
 export const processor = (params: {
   payerEmail: string;
@@ -56,12 +20,33 @@ export const processor = (params: {
     paymentRequestLink = ``,
   } = params;
 
-  return html
-    .replace(ReplacementsRegExpMapping.payerEmail, payerEmail)
-    .replace(ReplacementsRegExpMapping.requesterEmail, requesterEmail)
-    .replace(ReplacementsRegExpMapping.amount, amount)
-    .replace(ReplacementsRegExpMapping.currencyCode, currencyCode)
-    .replace(ReplacementsRegExpMapping.descriptionLine, descriptionLine)
-    .replace(ReplacementsRegExpMapping.dueDateLine, dueDateLine)
-    .replace(ReplacementsRegExpMapping.paymentRequestLink, paymentRequestLink);
+  const detailsTable = renderKeyValueTable(
+    [
+      { label: `From`, value: requesterEmail },
+      { label: `To`, value: payerEmail },
+      { label: `Amount`, value: `${amount} ${currencyCode}`.trim() },
+      descriptionLine ? { label: `Description`, value: descriptionLine } : null,
+      dueDateLine ? { label: `Due`, value: dueDateLine } : null,
+    ].filter((row): row is { label: string; value: string } => Boolean(row)),
+  );
+
+  const bodyHtml = `
+    <div>
+      <strong>${escapeHtml(requesterEmail)}</strong> requested
+      <strong>${escapeHtml(`${amount} ${currencyCode}`.trim())}</strong> from you.
+    </div>
+    ${detailsTable}
+    <div style="margin-top:10px;color:#9ca3af;">
+      If the button doesn’t work, use this link:
+      <a href="${escapeAttr(paymentRequestLink)}" style="color:#93c5fd;text-decoration:none;">View payment request</a>
+    </div>
+  `.trim();
+
+  return renderEmailLayout({
+    preheader: `Payment request from ${requesterEmail}`,
+    title: `Payment request`,
+    lead: `Review the details and respond.`,
+    bodyHtml,
+    cta: { href: paymentRequestLink, label: `View payment request` },
+  });
 };

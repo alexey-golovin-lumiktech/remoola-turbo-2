@@ -1,22 +1,22 @@
-/* eslint-disable max-len */
-const html = `
-  <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;font-size:28px;">
-    <tbody><tr><td>
-          <div style="text-align:center; font-weight:bold;color:cyan;">Welcome to Wirebill.</div>
-          <div>&nbsp;</div>
-          <div style="color:cyan;">You have initialized the password reset flow.<div>To&nbsp;continue&nbsp;<a style="color:goldenrod" href="{{forgotPasswordLink}}">Click here to continue</a></div></div>
-          <div>&nbsp;</div>
-          <div style="margin-left:200px;text-align:right;color:cyan">
-            If it was not you and the email came to you by mistake, just ignore it.
-            <div style="color:cyan;">Best&nbsp;regards&nbsp;<a style="color:goldenrod" href="mailto:support@wirebill.com">support@wirebill.com</a>.
-            </div>
-          </div>
-        </td></tr>
-    </tbody>
-  </table>
-`;
+import { renderEmailLayout } from '../../shared/layout';
+import { escapeAttr } from '../../shared/sanitize';
 
-const ReplacementsRegExpMapping = { forgotPasswordLink: new RegExp(`{{forgotPasswordLink}}`, `gi`) };
+export const processor = (forgotPasswordLink: string): string => {
+  const href = forgotPasswordLink;
 
-export const processor = (forgotPasswordLink: string) =>
-  html.replace(ReplacementsRegExpMapping.forgotPasswordLink, forgotPasswordLink);
+  const bodyHtml = `
+    <div>We received a request to reset your Wirebill password.</div>
+    <div style="margin-top:10px;color:#9ca3af;">
+      If the button doesn’t work, use this link:
+      <a href="${escapeAttr(href)}" style="color:#93c5fd;text-decoration:none;">Reset password</a>
+    </div>
+  `.trim();
+
+  return renderEmailLayout({
+    preheader: `Reset your password`,
+    title: `Reset your password`,
+    lead: `Use the button below to continue.`,
+    bodyHtml,
+    cta: { href, label: `Reset password` },
+  });
+};

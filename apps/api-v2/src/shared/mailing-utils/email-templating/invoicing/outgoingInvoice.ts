@@ -1,36 +1,10 @@
-/* eslint-disable max-len */
-
 import { CURRENCY_CODE } from '@remoola/api-types';
 
 import { type InvoiceForTemplate } from './invoice';
 import { formatCurrency } from '../../../../shared-common';
 import { resolveEmailApiBaseUrl } from '../../../resolve-email-api-base-url';
-
-const html = `
-  <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;">
-    <tbody><tr><td>
-          <div style="text-align:center; font-weight:bold;color:cyan;">New Invoice #{{invoiceId}}</div>
-          <div style="text-align:center; font-weight:bold;color:cyan;">From {{invoiceCreatorEmail}}</div>
-          <div style="text-align:center; font-weight:bold;color:cyan;">Amount due {{invoiceSubtotal}}</div>
-          <div>&nbsp;</div>
-          <div style="color:cyan;">You receive new invoice #{{invoiceId}}.<div style="color:cyan;">To&nbsp;see&nbsp;more&nbsp;details&nbsp;<a style="color:goldenrod" href="{{invoiceLink}}">Click here</a></div></div>
-          <div>&nbsp;</div>
-          <div style="margin-left:200px;text-align:right;color:cyan">
-            If it was not you and the email came to you by mistake, just ignore it.
-            <div style="color:cyan;">Best&nbsp;regards&nbsp;<a style="color:goldenrod" href="mailto:support@wirebill.com">support@wirebill.com</a>.
-            </div>
-          </div>
-        </td></tr>
-    </tbody>
-  </table>
-`;
-
-const ReplacementsRegExpMapping = {
-  InvoiceCreatorEmail: new RegExp(`{{invoiceCreatorEmail}}`, `gi`),
-  InvoiceId: new RegExp(`{{invoiceId}}`, `gi`),
-  InvoiceLink: new RegExp(`{{invoiceLink}}`, `gi`),
-  InvoiceSubtotal: new RegExp(`{{invoiceSubtotal}}`, `gi`),
-};
+import { renderEmailLayout, renderKeyValueTable } from '../shared/layout';
+import { escapeAttr, escapeHtml } from '../shared/sanitize';
 
 export const processor = (invoice: InvoiceForTemplate) => {
   const backendBaseURL = resolveEmailApiBaseUrl();
@@ -38,9 +12,32 @@ export const processor = (invoice: InvoiceForTemplate) => {
   invoiceLink.searchParams.append(`invoiceId`, invoice.id);
   invoiceLink.searchParams.append(`refererEmail`, invoice.referer);
 
-  return html
-    .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, invoice.creator)
-    .replace(ReplacementsRegExpMapping.InvoiceId, invoice.id)
-    .replace(ReplacementsRegExpMapping.InvoiceLink, invoiceLink.toString())
-    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, CURRENCY_CODE.USD));
+  const amountDue = formatCurrency(invoice.subtotal, CURRENCY_CODE.USD);
+  const href = invoiceLink.toString();
+
+  const detailsTable = renderKeyValueTable([
+    { label: `Invoice`, value: invoice.id },
+    { label: `From`, value: invoice.creator },
+    { label: `Amount due`, value: amountDue },
+  ]);
+
+  const bodyHtml = `
+    <div>Hello <strong>${escapeHtml(invoice.referer)}</strong>.</div>
+    <div style="margin-top:10px;">
+      You received a new invoice from <strong>${escapeHtml(invoice.creator)}</strong>.
+    </div>
+    ${detailsTable}
+    <div style="margin-top:10px;color:#9ca3af;">
+      If the button doesn’t work, use this link:
+      <a href="${escapeAttr(href)}" style="color:#93c5fd;text-decoration:none;">View invoice</a>
+    </div>
+  `.trim();
+
+  return renderEmailLayout({
+    preheader: `Invoice ${invoice.id} • Amount due ${amountDue}`,
+    title: `New invoice`,
+    lead: `Invoice ${invoice.id} • Amount due ${amountDue}`,
+    bodyHtml,
+    cta: { href, label: `View invoice` },
+  });
 };

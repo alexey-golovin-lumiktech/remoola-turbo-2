@@ -6,7 +6,7 @@ import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin-auth/admin-auth-s
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { AUTH_IDENTITY_TYPES, AuthAuditService } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
-import { passwordUtils } from '../../shared-common';
+import { constants, passwordUtils } from '../../shared-common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
 import {
@@ -201,8 +201,8 @@ export class AdminV2AdminPasswordFlowsService {
     if (!token) {
       throw new BadRequestException(`Reset token is required`);
     }
-    if (password.trim().length < 8) {
-      throw new BadRequestException(`Password must be at least 8 characters long`);
+    if (!constants.PASSWORD_RE.test(password)) {
+      throw new BadRequestException(constants.INVALID_PASSWORD);
     }
 
     const tokenHash = oauthCrypto.hashOAuthState(token);

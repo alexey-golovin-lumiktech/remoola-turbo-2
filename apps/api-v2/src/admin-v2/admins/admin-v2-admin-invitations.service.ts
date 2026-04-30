@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { envs } from '../../envs';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
-import { passwordUtils } from '../../shared-common';
+import { constants, passwordUtils } from '../../shared-common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
 import { AdminV2AdminLinks } from './admin-v2-admin-links';
@@ -231,8 +231,8 @@ export class AdminV2AdminInvitationsService {
     if (!token) {
       throw new BadRequestException(`Invitation token is required`);
     }
-    if (password.trim().length < 8) {
-      throw new BadRequestException(`Password must be at least 8 characters long`);
+    if (!constants.PASSWORD_RE.test(password)) {
+      throw new BadRequestException(constants.INVALID_PASSWORD);
     }
 
     const payload = await this.verifyInvitationToken(token);

@@ -118,11 +118,11 @@ describe(`AdminV2AuthController`, () => {
       await expect(
         transformBody(`acceptInvitation`, 0, {
           token: `invite-token`,
-          password: `password123`,
+          password: `AAvalid1!`,
         }),
       ).resolves.toMatchObject({
         token: `invite-token`,
-        password: `password123`,
+        password: `AAvalid1!`,
       });
 
       await expect(
@@ -136,12 +136,28 @@ describe(`AdminV2AuthController`, () => {
       await expect(
         transformBody(`resetPassword`, 0, {
           token: `reset-token`,
-          password: `password123`,
+          password: `AAvalid1!`,
         }),
       ).resolves.toMatchObject({
         token: `reset-token`,
-        password: `password123`,
+        password: `AAvalid1!`,
       });
+    });
+
+    it(`rejects weak passwords for invitation acceptance and reset`, async () => {
+      await expect(
+        transformBody(`acceptInvitation`, 0, {
+          token: `invite-token`,
+          password: `password`,
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      await expect(
+        transformBody(`resetPassword`, 0, {
+          token: `reset-token`,
+          password: `password`,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it(`preserves revoke-session sessionId instead of stripping it`, async () => {

@@ -14,7 +14,7 @@ import {
 import { ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 import express from 'express';
 
 import { AdminAuthControllerSupportService } from '../../admin-auth/admin-auth-controller-support.service';
@@ -25,6 +25,7 @@ import { BACKOFFICE } from '../../dtos';
 import { BackofficeCredentials } from '../../dtos/backoffice';
 import { TransformResponse } from '../../interceptors';
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
+import { constants } from '../../shared-common';
 import { AdminV2AdminsService } from '../admins/admin-v2-admins.service';
 
 class RevokeAdminSessionBody {
@@ -41,7 +42,7 @@ class AcceptAdminInvitationBody {
 
   @Expose()
   @IsString()
-  @MinLength(8)
+  @Matches(constants.PASSWORD_RE, { message: constants.INVALID_PASSWORD })
   password!: string;
 }
 
@@ -52,7 +53,7 @@ class ResetAdminV2PasswordBody {
 
   @Expose()
   @IsString()
-  @MinLength(8)
+  @Matches(constants.PASSWORD_RE, { message: constants.INVALID_PASSWORD })
   password!: string;
 }
 

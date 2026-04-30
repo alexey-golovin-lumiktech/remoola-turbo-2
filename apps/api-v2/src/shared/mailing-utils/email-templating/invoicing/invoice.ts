@@ -6,6 +6,8 @@ import { CURRENCY_CODE } from '@remoola/api-types';
 import * as invoiceItemToHtml from './invoiceItem';
 import { envs } from '../../../../envs';
 import { formatCurrency } from '../../../../shared-common';
+import { renderEmailLayout } from '../shared/layout';
+import { escapeHtml } from '../shared/sanitize';
 
 const CONSUMER_ORIGIN_PLACEHOLDER = `CONSUMER_CSS_GRID_APP_ORIGIN`;
 
@@ -42,17 +44,17 @@ function resolvePayOnlineLink(inv: InvoiceForTemplate): string {
 }
 
 const html = `
-  <table id="InvoiceDetails" style="white-space:nowrap;">
+  <table id="InvoiceDetails" role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;color:#e5e7eb;">
     <tbody>
       <tr>
         <td style="padding: 5px;">
-          <h4>Outgoing Invoice</h4>
+          <h4 style="margin:0 0 6px 0;font-size:16px;line-height:20px;">Outgoing Invoice</h4>
           <div>
-            <table style="white-space:nowrap;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
               <tbody>
-                <tr><td style="padding: 5px;">Invoice Number</td><td style="padding: 5px;">{{invoiceId}}</td></tr>
-                <tr><td style="padding: 5px;">Date of issue</td><td style="padding: 5px;">{{invoiceCreatedAt}}</td></tr>
-                <tr><td style="padding: 5px;">Date due</td><td style="padding: 5px;">{{invoiceDueDate}}</td></tr>
+                <tr><td style="padding:6px 5px;color:#9ca3af;">Invoice Number</td><td style="padding:6px 5px;text-align:right;white-space:nowrap;">{{invoiceId}}</td></tr>
+                <tr><td style="padding:6px 5px;color:#9ca3af;">Date of issue</td><td style="padding:6px 5px;text-align:right;white-space:nowrap;">{{invoiceCreatedAt}}</td></tr>
+                <tr><td style="padding:6px 5px;color:#9ca3af;">Date due</td><td style="padding:6px 5px;text-align:right;white-space:nowrap;">{{invoiceDueDate}}</td></tr>
               </tbody>
             </table>
           </div>
@@ -66,13 +68,17 @@ const html = `
       <tr>
         <td colspan="2" style="padding: 5px;">
           <div>
-            <table id="BillingInfo" style="white-space:nowrap;">
+            <table id="BillingInfo" role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
               <tbody>
-                <tr><td style="padding: 5px;">From</td><td>Bill to</td></tr>
-                <tr><td style="padding: 5px;"><h4>{{invoiceCreatorEmail}}</h4></td><td><h4>{{invoiceRefererEmail}}</h4></td></tr>
-                <tr><td style="padding: 5px;" colspan="2">
-                  <h3 style="margin-bottom: 5px;">{{invoiceTotal}}<small>&nbsp;{{invoiceDueDate}}</small></h3>
-                  <a href="{{toPayOnlineInvoiceLink}}">Pay online</a>
+                <tr><td style="padding:6px 5px;color:#9ca3af;">From</td><td style="padding:6px 5px;color:#9ca3af;">Bill to</td></tr>
+                <tr><td style="padding:6px 5px;"><h4 style="margin:0;font-size:14px;line-height:18px;">{{invoiceCreatorEmail}}</h4></td><td style="padding:6px 5px;"><h4 style="margin:0;font-size:14px;line-height:18px;">{{invoiceRefererEmail}}</h4></td></tr>
+                <tr><td style="padding: 8px 5px;" colspan="2">
+                  <div style="font-size:12px;line-height:16px;color:#9ca3af;">Amount due</div>
+                  <div style="margin-top:2px;font-size:22px;line-height:28px;font-weight:800;">{{invoiceTotal}}</div>
+                  <div style="margin-top:2px;font-size:12px;line-height:16px;color:#9ca3af;">Due {{invoiceDueDate}}</div>
+                  <div style="margin-top:10px;">
+                    <a href="{{toPayOnlineInvoiceLink}}" style="display:inline-block;padding:10px 14px;border-radius:10px;background:#f59e0b;color:#111827;font-weight:700;text-decoration:none;">Pay online</a>
+                  </div>
                 </td></tr>
               </tbody>
             </table>
@@ -82,13 +88,13 @@ const html = `
       <tr>
         <td colspan="2" style="padding: 5px;">
           <div>
-            <table id="InvoiceItems" style="width: 100%;white-space:nowrap;">
+            <table id="InvoiceItems" role="presentation" cellpadding="0" cellspacing="0" border="0" style="width: 100%;border-collapse:collapse;">
               <thead>
                 <tr>
-                  <th scope="col" style="border-bottom: 2px solid black; padding: 5px; text-align: left;">DESCRIPTION</th>
-                  <th scope="col" style="border-bottom: 2px solid black; padding: 5px; text-align: right;">AMOUNT</th>
-                  <th scope="col" style="border-bottom: 2px solid black; padding: 5px; text-align: right;">TAX (%)</th>
-                  <th scope="col" style="border-bottom: 2px solid black; padding: 5px; text-align: right;">SUBTOTAL</th>
+                  <th scope="col" style="border-bottom: 2px solid #374151; padding: 10px 8px; text-align: left; color:#9ca3af; font-size:12px; letter-spacing:0.6px;">DESCRIPTION</th>
+                  <th scope="col" style="border-bottom: 2px solid #374151; padding: 10px 8px; text-align: right; color:#9ca3af; font-size:12px; letter-spacing:0.6px; white-space:nowrap;">AMOUNT</th>
+                  <th scope="col" style="border-bottom: 2px solid #374151; padding: 10px 8px; text-align: right; color:#9ca3af; font-size:12px; letter-spacing:0.6px; white-space:nowrap;">TAX (%)</th>
+                  <th scope="col" style="border-bottom: 2px solid #374151; padding: 10px 8px; text-align: right; color:#9ca3af; font-size:12px; letter-spacing:0.6px; white-space:nowrap;">SUBTOTAL</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,12 +106,12 @@ const html = `
       </tr>
       <tr>
         <td colspan="2" style="padding: 5px;">
-          <div style="margin-top: 40px; width: 45%; margin-left: auto;">
-            <table id="InvoiceSummary" style="width:100%;white-space:nowrap;">
+          <div style="margin-top: 22px; width: 100%;">
+            <table id="InvoiceSummary" role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
               <tbody>
-                <tr><td style="padding: 5px;text-align: left;">Subtotal</td><td   style="padding: 5px;text-align: right;" >{{invoiceSubtotal}}</td></tr>
-                <tr><td style="padding: 5px;text-align: left;">Total</td><td      style="padding: 5px;text-align: right;" >{{invoiceTotal}}</td></tr>
-                <tr><td style="padding: 5px;text-align: left;">Amount Due</td><td style="padding: 5px;text-align: right;" >{{invoiceTotal}}</td></tr>
+                <tr><td style="padding: 6px 5px;text-align:left;color:#9ca3af;">Subtotal</td><td style="padding: 6px 5px;text-align:right;white-space:nowrap;">{{invoiceSubtotal}}</td></tr>
+                <tr><td style="padding: 6px 5px;text-align:left;color:#9ca3af;">Total</td><td style="padding: 6px 5px;text-align:right;white-space:nowrap;font-weight:800;">{{invoiceTotal}}</td></tr>
+                <tr><td style="padding: 6px 5px;text-align:left;color:#9ca3af;">Amount Due</td><td style="padding: 6px 5px;text-align:right;white-space:nowrap;font-weight:800;">{{invoiceTotal}}</td></tr>
               </tbody>
             </table>
           </div>
@@ -150,14 +156,22 @@ export const processor = (rawInvoice: InvoiceForTemplate) => {
   const itemsHtml = invoice.items.map((item) => invoiceItemToHtml.processor(item, invoice.tax)).join(`\n`);
   const payOnlineBeLink = resolvePayOnlineLink(invoice);
 
-  return html
+  const invoiceTableHtml = html
     .replace(ReplacementsRegExpMapping.InvoiceId, invoice.id)
     .replace(ReplacementsRegExpMapping.InvoiceCreatedAt, moment(invoice.createdAt).format(`ll`))
     .replace(ReplacementsRegExpMapping.InvoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
-    .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, invoice.creator)
-    .replace(ReplacementsRegExpMapping.InvoiceRefererEmail, invoice.referer)
+    .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, escapeHtml(invoice.creator))
+    .replace(ReplacementsRegExpMapping.InvoiceRefererEmail, escapeHtml(invoice.referer))
     .replace(ReplacementsRegExpMapping.InvoiceTotal, formatCurrency(invoice.total, CURRENCY_CODE.USD))
     .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, CURRENCY_CODE.USD))
     .replace(ReplacementsRegExpMapping.ToPayOnlineInvoiceLink, payOnlineBeLink)
     .replace(ReplacementsRegExpMapping.InvoiceItemsHtml, itemsHtml);
+
+  return renderEmailLayout({
+    preheader: `Invoice ${invoice.id} • Amount due ${formatCurrency(invoice.total, CURRENCY_CODE.USD)}`,
+    title: `Invoice ${invoice.id}`,
+    lead: `Amount due ${formatCurrency(invoice.total, CURRENCY_CODE.USD)}`,
+    bodyHtml: invoiceTableHtml,
+    footerNote: `This invoice is generated by Wirebill.`,
+  });
 };

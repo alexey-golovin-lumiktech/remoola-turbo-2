@@ -5,6 +5,9 @@ import { useState, type FormEvent } from 'react';
 
 import styles from './AuthForm.module.css';
 
+const PASSWORD_RE = /(?!.* )(?=(.*[A-Z]){2,})(?=.*?[a-z])(?=.*[1-9]{1,})(?=.*?[#?!@$%^&*-]).{8,}$/;
+const PASSWORD_REQUIREMENTS_MESSAGE = `Use at least 8 characters, 2 uppercase letters, 1 lowercase letter, 1 number, and 1 special character, with no spaces.`;
+
 type TokenPasswordFormProps = {
   token: string;
   submitPath: string;
@@ -36,8 +39,8 @@ export function TokenPasswordForm({
       setError(`The token is missing from this link.`);
       return;
     }
-    if (password.trim().length < 8) {
-      setError(`Password must be at least 8 characters long.`);
+    if (!PASSWORD_RE.test(password)) {
+      setError(PASSWORD_REQUIREMENTS_MESSAGE);
       return;
     }
     if (password !== confirmPassword) {
@@ -104,8 +107,8 @@ export function TokenPasswordForm({
         {pending ? `Working...` : submitLabel}
       </button>
       <p className={styles.supportCopy}>
-        Choose a password you do not reuse elsewhere. Access still depends on your Admin v2 role and workspace
-        permissions.
+        Choose a password you do not reuse elsewhere. {PASSWORD_REQUIREMENTS_MESSAGE} Access still depends on your Admin
+        v2 role and workspace permissions.
       </p>
     </form>
   );

@@ -284,7 +284,7 @@ describe(`AdminV2AdminsService`, () => {
       originResolver: {},
     });
 
-    await expect(service.acceptInvitation({ token: `jwt`, password: `VerySecurePass1` })).resolves.toEqual({
+    await expect(service.acceptInvitation({ token: `jwt`, password: `VerySecurePass1!` })).resolves.toEqual({
       adminId: `admin-2`,
       email: `invitee@example.com`,
       accepted: true,
@@ -297,6 +297,21 @@ describe(`AdminV2AdminsService`, () => {
           type: `ADMIN`,
         }),
       }),
+    );
+  });
+
+  it(`rejects weak passwords when accepting invitations`, async () => {
+    const service = createService({
+      prisma: {},
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {},
+      mailingService: {},
+      originResolver: {},
+    });
+
+    await expect(service.acceptInvitation({ token: `jwt`, password: `password` })).rejects.toBeInstanceOf(
+      BadRequestException,
     );
   });
 
@@ -649,7 +664,7 @@ describe(`AdminV2AdminsService`, () => {
     });
 
     await expect(
-      service.resetPasswordWithToken({ token: `reset-token`, password: `VerySecurePass1` }),
+      service.resetPasswordWithToken({ token: `reset-token`, password: `VerySecurePass1!` }),
     ).resolves.toMatchObject({
       success: true,
       adminId: `admin-2`,
@@ -660,5 +675,20 @@ describe(`AdminV2AdminsService`, () => {
       },
     });
     expect(authAudit.clearLockout).toHaveBeenCalledWith(AUTH_IDENTITY_TYPES.admin, `invitee@example.com`);
+  });
+
+  it(`rejects weak passwords when resetting with a token`, async () => {
+    const service = createService({
+      prisma: {},
+      accessService: {},
+      idempotency: createIdempotency(),
+      jwtService: {},
+      mailingService: {},
+      originResolver: {},
+    });
+
+    await expect(service.resetPasswordWithToken({ token: `reset-token`, password: `password` })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 });
