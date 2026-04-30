@@ -242,16 +242,16 @@ export class ConsumerDocumentsService {
             COALESCE(
               array_remove(
                 array_agg(DISTINCT CASE WHEN sp.status = 'DRAFT' THEN sp.id::text END),
-                NULL,
+                NULL
               ),
-              ARRAY[]::text[],
+              ARRAY[]::text[]
             ) AS "attachedDraftPaymentRequestIds",
             COALESCE(
               array_remove(
                 array_agg(DISTINCT CASE WHEN sp.status <> 'DRAFT' THEN sp.id::text END),
-                NULL,
+                NULL
               ),
-              ARRAY[]::text[],
+              ARRAY[]::text[]
             ) AS "attachedNonDraftPaymentRequestIds"
           FROM scoped_payments sp
           JOIN payment_request_attachment pra
@@ -341,16 +341,16 @@ export class ConsumerDocumentsService {
           COALESCE(
             array_remove(
               array_agg(DISTINCT CASE WHEN sp.status = 'DRAFT' THEN sp.id::text END),
-              NULL,
+              NULL
             ),
-            ARRAY[]::text[],
+            ARRAY[]::text[]
           ) AS "attachedDraftPaymentRequestIds",
           COALESCE(
             array_remove(
               array_agg(DISTINCT CASE WHEN sp.status <> 'DRAFT' THEN sp.id::text END),
-              NULL,
+              NULL
             ),
-            ARRAY[]::text[],
+            ARRAY[]::text[]
           ) AS "attachedNonDraftPaymentRequestIds"
         FROM scoped_payments sp
         JOIN payment_request_attachment pra
@@ -677,15 +677,25 @@ export class ConsumerDocumentsService {
     }
 
     if (typeof this.prisma.$queryRaw === `function`) {
-      return this.getDocumentsRaw({
-        consumerId,
-        consumerEmail,
-        safePage,
-        safePageSize,
-        kindFilter,
-        backendBaseUrl,
-        contractEmail: contractContact?.email,
-      });
+      try {
+        return await this.getDocumentsRaw({
+          consumerId,
+          consumerEmail,
+          safePage,
+          safePageSize,
+          kindFilter,
+          backendBaseUrl,
+          contractEmail: contractContact?.email,
+        });
+      } catch (error) {
+        // Fall back to the ORM path when Prisma raw execution rejects an otherwise valid list query.
+        if (
+          !(error instanceof Prisma.PrismaClientKnownRequestError) &&
+          !(error instanceof Prisma.PrismaClientValidationError)
+        ) {
+          throw error;
+        }
+      }
     }
 
     return this.getDocumentsInMemory(

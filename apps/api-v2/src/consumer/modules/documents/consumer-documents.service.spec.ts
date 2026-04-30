@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerDocumentsService } from './consumer-documents.service';
@@ -680,6 +680,70 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
       },
       orderBy: { createdAt: `desc` },
     });
+  });
+
+  it(`falls back to the ORM listing when Prisma raw queries fail`, async () => {
+    const createdAt = new Date(`2026-03-27T10:00:00.000Z`);
+    const prisma = {
+      $queryRaw: jest.fn().mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError(`Raw query failed`, {
+          code: `P2010`,
+          clientVersion: `6.x`,
+        }),
+      ),
+      consumerModel: {
+        findUnique: jest.fn().mockResolvedValue({ email: `owner@example.com` }),
+      },
+      contactModel: {
+        findFirst: jest.fn(),
+      },
+      consumerResourceModel: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            resource: {
+              id: `resource-1`,
+              originalName: `contract.pdf`,
+              size: 2048,
+              createdAt,
+              mimetype: `application/pdf`,
+              resourceTags: [],
+            },
+            createdAt,
+          },
+        ]),
+      },
+      paymentRequestAttachmentModel: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+    } as any;
+
+    const service = new ConsumerDocumentsService(prisma, {} as any);
+
+    await expect(service.getDocuments(consumerId, undefined, 1, 10, `http://localhost:3334`)).resolves.toEqual({
+      items: [
+        {
+          id: `resource-1`,
+          name: `contract.pdf`,
+          size: 2048,
+          createdAt: createdAt.toISOString(),
+          downloadUrl: `http://localhost:3334/api/consumer/documents/resource-1/download`,
+          mimetype: `application/pdf`,
+          kind: `CONTRACT`,
+          tags: [],
+          isAttachedToDraftPaymentRequest: false,
+          attachedDraftPaymentRequestIds: [],
+          isAttachedToNonDraftPaymentRequest: false,
+          attachedNonDraftPaymentRequestIds: [],
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 10,
+    });
+
+    expect(prisma.$queryRaw).toHaveBeenCalled();
+    expect(prisma.consumerResourceModel.findMany).toHaveBeenCalled();
+    expect(prisma.paymentRequestAttachmentModel.findMany).toHaveBeenCalled();
   });
 });
 

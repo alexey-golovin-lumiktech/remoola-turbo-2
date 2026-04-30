@@ -61,6 +61,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
   const paymentCount = documents.filter((doc) => doc.kind === `PAYMENT`).length;
   const generalCount = documents.filter((doc) => doc.kind === `GENERAL`).length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const hasDocumentsOnAnotherPage = documents.length === 0 && total > 0;
   const isContractMode = Boolean(contractContext);
   const filteredDocuments = useMemo(() => {
     if (filterKind === `all`) return documents;
@@ -110,6 +111,10 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  const returnToFirstPage = () => {
+    applyPage(1);
+  };
+
   const handleUpload = () => {
     const formData = buildDocumentUploadFormData(inputRef.current?.files);
     setMessage(null);
@@ -125,6 +130,10 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
       }
       setSelectedFiles([]);
       setMessage({ type: `success`, text: `Documents uploaded` });
+      if (page > 1) {
+        returnToFirstPage();
+        return;
+      }
       router.refresh();
     });
   };
@@ -265,13 +274,36 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
         ) : null}
         {documents.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
-            <div>{contractContext ? `No files are linked to this contract yet.` : `No documents uploaded yet.`}</div>
+            <div>
+              {hasDocumentsOnAnotherPage
+                ? contractContext
+                  ? `No files are visible on this page right now.`
+                  : `No documents are visible on this page right now.`
+                : contractContext
+                  ? `No files are linked to this contract yet.`
+                  : `No documents uploaded yet.`}
+            </div>
+            {hasDocumentsOnAnotherPage ? (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={returnToFirstPage}
+                  className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 transition hover:border-white/20 hover:text-white"
+                >
+                  Go to page 1
+                </button>
+              </div>
+            ) : null}
             <HelpInlineGuides
               guides={emptyStateHelpGuides}
               title={
-                contractContext
-                  ? `Need help understanding how files reach this contract view?`
-                  : `Need help uploading the first document or attaching it later?`
+                hasDocumentsOnAnotherPage
+                  ? contractContext
+                    ? `Need help getting back to the first contract files page?`
+                    : `Need help getting back to the first documents page?`
+                  : contractContext
+                    ? `Need help understanding how files reach this contract view?`
+                    : `Need help uploading the first document or attaching it later?`
               }
               className="mx-auto mt-4 max-w-3xl text-left"
             />

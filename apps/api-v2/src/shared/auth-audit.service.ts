@@ -141,6 +141,8 @@ export class AuthAuditService {
           email: normalizedEmail,
         },
       });
-    } catch {}
+    } catch {
+      // empty catch blocks marker
+    }
   }
 }

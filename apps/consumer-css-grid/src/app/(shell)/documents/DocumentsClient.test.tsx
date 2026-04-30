@@ -9,6 +9,7 @@ const mockedRefresh = jest.fn();
 const mockedBulkDeleteDocumentsMutation = jest.fn();
 const mockedDeleteDocumentMutation = jest.fn();
 const mockedUpdateDocumentTagsMutation = jest.fn();
+let mockedSearchParamsValue = `page=1&pageSize=20`;
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -24,7 +25,7 @@ jest.mock(`next/navigation`, () => ({
     refresh: mockedRefresh,
   }),
   usePathname: () => `/documents`,
-  useSearchParams: () => new URLSearchParams(`page=1&pageSize=20`),
+  useSearchParams: () => new URLSearchParams(mockedSearchParamsValue),
 }));
 
 jest.mock(`../../../lib/consumer-mutations.server`, () => ({
@@ -90,6 +91,7 @@ describe(`DocumentsClient`, () => {
     mockedBulkDeleteDocumentsMutation.mockReset();
     mockedDeleteDocumentMutation.mockReset();
     mockedUpdateDocumentTagsMutation.mockReset();
+    mockedSearchParamsValue = `page=1&pageSize=20`;
     document.body.innerHTML = ``;
   });
 
@@ -154,6 +156,26 @@ describe(`DocumentsClient`, () => {
     expect(getLink(view.container, `Open payment`).getAttribute(`href`)).toBe(
       `/payments/payment-closed-1?contractId=contract-1&returnTo=%2Fcontracts%2Fcontract-1%3FreturnTo%3D%2Fcontracts%3Fstatus%3Dwaiting%26page%3D2`,
     );
+
+    await view.unmount();
+  });
+
+  it(`offers a return to page 1 when the current page is empty but documents still exist`, async () => {
+    mockedSearchParamsValue = `page=2&pageSize=20`;
+
+    const view = await renderComponent(<DocumentsClient documents={[]} total={1} page={2} pageSize={20} />);
+
+    expect(normalizeText(view.container.textContent)).toContain(`No documents are visible on this page right now.`);
+    const button = Array.from(view.container.querySelectorAll(`button`)).find(
+      (candidate) => normalizeText(candidate.textContent) === `Go to page 1`,
+    );
+    expect(button).toBeTruthy();
+
+    await act(async () => {
+      button?.dispatchEvent(new MouseEvent(`click`, { bubbles: true }));
+    });
+
+    expect(mockedPush).toHaveBeenCalledWith(`/documents?page=1&pageSize=20`);
 
     await view.unmount();
   });
