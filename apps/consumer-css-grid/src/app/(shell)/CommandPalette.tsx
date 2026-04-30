@@ -159,7 +159,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
     try {
       window.localStorage.removeItem(RECENT_ROUTES_STORAGE_KEY);
-    } catch {}
+    } catch {
+      // localStorage is best-effort in restricted browser contexts.
+    }
   }, []);
 
   const navigate = useCallback(
