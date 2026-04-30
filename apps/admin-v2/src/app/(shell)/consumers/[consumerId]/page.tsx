@@ -168,6 +168,7 @@ export default async function ConsumerCasePage({
   const canForceLogout = identity?.capabilities.includes(`consumers.force_logout`) ?? false;
   const canSuspend = identity?.capabilities.includes(`consumers.suspend`) ?? false;
   const canResendEmail = identity?.capabilities.includes(`consumers.email_resend`) ?? false;
+  const canResendSignupVerification = canResendEmail && !consumer.verified;
   const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/consumers`);
   const totalPaymentRequests = consumer._count.asPayerPaymentRequests + consumer._count.asRequesterPaymentRequests;
 
@@ -459,13 +460,15 @@ export default async function ConsumerCasePage({
                     <p className="muted">Secondary communication actions stay separated from the destructive flow.</p>
                   </div>
                   <div className={operatorFormActionsClass}>
-                    <form action={resendConsumerEmailAction.bind(null, consumer.id)}>
-                      <input type="hidden" name="emailKind" value="signup_verification" />
-                      <input type="hidden" name="appScope" value={CURRENT_CONSUMER_APP_SCOPE} />
-                      <button className={`secondaryButton ${operatorFormFullWidthCtaClass}`} type="submit">
-                        Resend signup verification email
-                      </button>
-                    </form>
+                    {canResendSignupVerification ? (
+                      <form action={resendConsumerEmailAction.bind(null, consumer.id)}>
+                        <input type="hidden" name="emailKind" value="signup_verification" />
+                        <input type="hidden" name="appScope" value={CURRENT_CONSUMER_APP_SCOPE} />
+                        <button className={`secondaryButton ${operatorFormFullWidthCtaClass}`} type="submit">
+                          Resend signup verification email
+                        </button>
+                      </form>
+                    ) : null}
                     <form action={resendConsumerEmailAction.bind(null, consumer.id)}>
                       <input type="hidden" name="emailKind" value="password_recovery" />
                       <input type="hidden" name="appScope" value={CURRENT_CONSUMER_APP_SCOPE} />

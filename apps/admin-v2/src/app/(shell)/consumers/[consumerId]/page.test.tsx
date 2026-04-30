@@ -199,4 +199,29 @@ describe(`admin-v2 consumer case capability gating`, () => {
     expect(markup).toContain(`name="appScope" value="${CURRENT_CONSUMER_APP_SCOPE}"`);
     expect(markup).not.toContain(`name="appScope" value="consumer"`);
   });
+
+  it(`hides signup verification resend for verified consumers while keeping password recovery available`, async () => {
+    mockedGetAdminIdentity.mockResolvedValue({
+      id: `admin-4`,
+      email: `ops@example.com`,
+      type: `ADMIN`,
+      role: `OPS_ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`consumers.read`, `consumers.email_resend`],
+      workspaces: [`consumers`],
+    } as never);
+    mockedGetConsumerCaseResult.mockResolvedValue({
+      status: `ready`,
+      data: { ...buildConsumerCase(), verified: true },
+    });
+
+    const markup = renderToStaticMarkup(
+      await ConsumerCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
+    );
+
+    expect(markup).not.toContain(`name="emailKind" value="signup_verification"`);
+    expect(markup).not.toContain(`Resend signup verification email`);
+    expect(markup).toContain(`name="emailKind" value="password_recovery"`);
+    expect(markup).toContain(`name="appScope" value="${CURRENT_CONSUMER_APP_SCOPE}"`);
+  });
 });
