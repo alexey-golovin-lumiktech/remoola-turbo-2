@@ -1,5 +1,9 @@
+import { CURRENCY_CODE } from '@remoola/api-types';
+
 import { processor, type InvoiceForTemplate } from './invoice';
+import * as outgoingInvoiceToHtml from './outgoingInvoice';
 import { envs } from '../../../../envs';
+import { formatCurrency } from '../../../../shared-common';
 import { escapeHtml } from '../shared/sanitize';
 
 jest.mock(`../../../../envs`, () => ({
@@ -12,6 +16,8 @@ jest.mock(`../../../../envs`, () => ({
       TEST: `test`,
     },
     CONSUMER_CSS_GRID_APP_ORIGIN: `https://grid.example.com`,
+    NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+    PORT: 3334,
   },
 }));
 
@@ -44,6 +50,46 @@ describe(`invoice template pay-online origin`, () => {
 
     expect(html).toContain(`data-wirebill-email="root"`);
     expect(html).toContain(`max-width:600px`);
+  });
+
+  it(`escapes invoice item descriptions`, () => {
+    const html = processor({
+      ...baseInvoice,
+      items: [{ description: `<img src=x onerror=alert(1)>`, amount: 12000 }],
+    });
+
+    expect(html).toContain(`&lt;img src=x onerror=alert(1)&gt;`);
+    expect(html).not.toContain(`<img src=x onerror=alert(1)>`);
+  });
+
+  it(`renders mobile-friendly stacked invoice item labels`, () => {
+    const html = processor(baseInvoice);
+
+    expect(html).toContain(`ITEMS`);
+    expect(html).not.toContain(`DESCRIPTION`);
+    expect(html).not.toContain(`TAX (%)`);
+    expect(html).toContain(`Amount</td>`);
+    expect(html).toContain(`Tax</td>`);
+    expect(html).toContain(`Subtotal</td>`);
+  });
+
+  it(`uses invoice total for outgoing invoice amount due`, () => {
+    const html = outgoingInvoiceToHtml.processor(baseInvoice);
+    const total = formatCurrency(baseInvoice.total, CURRENCY_CODE.USD);
+    const subtotal = formatCurrency(baseInvoice.subtotal, CURRENCY_CODE.USD);
+
+    expect(html).toContain(`Invoice ${baseInvoice.id} • Amount due ${total}`);
+    expect(html).toContain(`Amount due`);
+    expect(html).toContain(total);
+    expect(html).not.toContain(`Invoice ${baseInvoice.id} • Amount due ${subtotal}`);
+  });
+
+  it(`builds outgoing invoice payment choices link`, () => {
+    const html = outgoingInvoiceToHtml.processor(baseInvoice);
+
+    expect(html).toContain(
+      `href="https://api.example.com/api/consumer/payment-choices?invoiceId=inv_123&amp;refererEmail=customer%40example.com"`,
+    );
   });
 
   it(`falls back to localhost in test when the canonical origin is still a placeholder`, () => {

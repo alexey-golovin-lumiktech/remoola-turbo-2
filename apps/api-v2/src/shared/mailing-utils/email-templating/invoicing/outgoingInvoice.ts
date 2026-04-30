@@ -4,15 +4,15 @@ import { type InvoiceForTemplate } from './invoice';
 import { formatCurrency } from '../../../../shared-common';
 import { resolveEmailApiBaseUrl } from '../../../resolve-email-api-base-url';
 import { renderEmailLayout, renderFallbackLinkLine, renderKeyValueTable } from '../shared/layout';
-import { escapeAttr, escapeHtml } from '../shared/sanitize';
+import { escapeHtml } from '../shared/sanitize';
 
 export const processor = (invoice: InvoiceForTemplate) => {
   const backendBaseURL = resolveEmailApiBaseUrl();
-  const invoiceLink = new URL(`consumer/payment-choices`, backendBaseURL);
+  const invoiceLink = new URL(`consumer/payment-choices`, `${backendBaseURL.replace(/\/$/, ``)}/`);
   invoiceLink.searchParams.append(`invoiceId`, invoice.id);
   invoiceLink.searchParams.append(`refererEmail`, invoice.referer);
 
-  const amountDue = formatCurrency(invoice.subtotal, CURRENCY_CODE.USD);
+  const amountDue = formatCurrency(invoice.total, CURRENCY_CODE.USD);
   const href = invoiceLink.toString();
 
   const detailsTable = renderKeyValueTable([

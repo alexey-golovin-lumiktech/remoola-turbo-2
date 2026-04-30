@@ -1,5 +1,4 @@
 import { renderEmailLayout, renderFallbackLinkLine } from '../../shared/layout';
-import { escapeAttr } from '../../shared/sanitize';
 
 export const processor = (forgotPasswordLink: string): string => {
   const href = forgotPasswordLink;

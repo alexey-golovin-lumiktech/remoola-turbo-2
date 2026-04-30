@@ -1,5 +1,5 @@
 import { renderEmailLayout, renderFallbackLinkLine, renderKeyValueTable } from '../../shared/layout';
-import { escapeAttr, escapeHtml } from '../../shared/sanitize';
+import { escapeHtml } from '../../shared/sanitize';
 
 export const processor = (params: { contactEmail: string; payerEmail: string; paymentDetailsLink: string }): string => {
   const { contactEmail = ``, payerEmail = ``, paymentDetailsLink = `` } = params;

@@ -17,6 +17,7 @@ export function escapeHtml(input: string): string {
  * Also normalizes control characters that can break markup.
  */
 export function escapeAttr(input: string): string {
+  // eslint-disable-next-line no-control-regex -- strips control chars before embedding user input in HTML attributes.
   const normalized = input.replace(/[\u0000-\u001F\u007F]+/g, ` `);
   return escapeHtml(normalized);
 }

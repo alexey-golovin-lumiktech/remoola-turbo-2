@@ -1,5 +1,5 @@
 import { renderEmailLayout, renderFallbackLinkLine } from '../../shared/layout';
-import { escapeAttr, escapeHtml } from '../../shared/sanitize';
+import { escapeHtml } from '../../shared/sanitize';
 
 export const processor = (params: { email: string; signupLink: string }): string => {
   const { email = ``, signupLink = `` } = params;

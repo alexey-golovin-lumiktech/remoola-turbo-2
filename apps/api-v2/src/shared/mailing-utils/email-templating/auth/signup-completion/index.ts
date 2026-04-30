@@ -1,5 +1,4 @@
 import { renderEmailLayout, renderFallbackLinkLine } from '../../shared/layout';
-import { escapeAttr } from '../../shared/sanitize';
 
 export const processor = (emailConfirmationLink: string): string => {
   const href = emailConfirmationLink;
