@@ -12,6 +12,7 @@ import { StripeWebhookSettlementsService } from './stripe-webhook-settlements.se
 import { StripeWebhookVerificationService } from './stripe-webhook-verification.service';
 import { StripeWebhookService as StripeWebhookServiceClass } from './stripe-webhook.service';
 import { envs } from '../../../envs';
+import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 import { STRIPE_IDENTITY_STATUS } from '../../../shared-common';
 
 class StripeWebhookService extends StripeWebhookServiceClass {
@@ -1237,6 +1238,10 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
     `creates requester deposit reversal for card-funded settlements`,
     `without mutating the original ledger type`,
   ].join(` `);
+  const sharedOutgoingChargebackLockCase = [
+    `serializes requester chargebacks with the shared outgoing balance lock`,
+    `and pending-aware balance mode`,
+  ].join(` `);
 
   it(cardSettlementReversalCase, async () => {
     const txExecuteRaw = jest.fn().mockResolvedValue(undefined);
@@ -1298,6 +1303,81 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
         }),
       }),
     );
+  });
+
+  it(sharedOutgoingChargebackLockCase, async () => {
+    const txExecuteRaw = jest.fn().mockResolvedValue(undefined);
+    const txLedgerFindMany = jest.fn().mockResolvedValue([]);
+    const txLedgerFindFirst = jest
+      .fn()
+      .mockResolvedValueOnce({
+        type: $Enums.LedgerEntryType.USER_DEPOSIT,
+        ledgerId: `settlement-ledger-1`,
+        paymentRequest: { paymentRail: $Enums.PaymentRail.CARD },
+      })
+      .mockResolvedValueOnce({ ledgerId: `payer-ledger-1` });
+    const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const prisma = {
+      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback({
+          $executeRaw: txExecuteRaw,
+          ledgerEntryModel: {
+            findMany: txLedgerFindMany,
+            findFirst: txLedgerFindFirst,
+            create: txLedgerCreate,
+          },
+        }),
+      ),
+      consumerModel: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: `payer-1`, email: `payer@example.com` },
+          { id: `requester-1`, email: `requester@example.com` },
+        ]),
+      },
+    } as any;
+    const balanceService = {
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, balanceService, {} as any);
+    jest.spyOn(service as any, `sendReversalEmails`).mockResolvedValue(undefined);
+
+    await (service as any).createStripeReversal({
+      paymentRequestId: `pr-chargeback`,
+      payerId: `payer-1`,
+      requesterId: `requester-1`,
+      requesterEmail: `requester@example.com`,
+      requestAmount: 25,
+      amount: 25,
+      currencyCode: $Enums.CurrencyCode.USD,
+      kind: `CHARGEBACK`,
+      stripeObjectId: `dp_1`,
+    });
+
+    expect(balanceService.calculateInTransaction).toHaveBeenCalledWith(
+      expect.any(Object),
+      `requester-1`,
+      $Enums.CurrencyCode.USD,
+      { mode: BalanceCalculationMode.COMPLETED_AND_PENDING },
+    );
+    expect(txExecuteRaw).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        values: [`pr-chargeback:stripe-reversal-pr`],
+      }),
+    );
+    expect(txExecuteRaw).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        values: [`requester-1:outgoing`],
+      }),
+    );
+    expect(txExecuteRaw).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        values: [`requester-1:stripe-reversal`],
+      }),
+    );
+    expect(txLedgerCreate).toHaveBeenCalledTimes(2);
   });
 
   it(`counts existing deposit reversals toward already-reversed amount`, async () => {

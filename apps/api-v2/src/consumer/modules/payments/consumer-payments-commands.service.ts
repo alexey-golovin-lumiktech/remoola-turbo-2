@@ -18,6 +18,11 @@ import { type CreatePaymentRequest, type TransferBody, type WithdrawBody } from 
 import { type StartPayment } from './dto/start-payment.dto';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
+import {
+  acquireTransactionAdvisoryLock,
+  buildConsumerOperationLockName,
+  buildConsumerOutgoingBalanceLockName,
+} from '../../../shared/prisma-advisory-locks';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
@@ -41,9 +46,7 @@ export class ConsumerPaymentsCommandsService {
     tx: Pick<Prisma.TransactionClient, `$executeRaw`>,
     consumerId: string,
   ): Promise<void> {
-    await tx.$executeRaw(Prisma.sql`
-      SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':outgoing')::text)::bigint)
-    `);
+    await acquireTransactionAdvisoryLock(tx, buildConsumerOutgoingBalanceLockName(consumerId));
   }
 
   private async getConsumerEmail(consumerId: string): Promise<string | null> {
@@ -385,9 +388,7 @@ export class ConsumerPaymentsCommandsService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         await this.lockConsumerOutgoing(tx, consumerId);
-        await tx.$executeRaw(Prisma.sql`
-          SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':withdraw')::text)::bigint)
-        `);
+        await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(consumerId, `withdraw`));
 
         await this.policiesService.ensureLimits(consumerId, amount, withdrawCurrency, tx);
 
@@ -474,12 +475,8 @@ export class ConsumerPaymentsCommandsService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         await this.lockConsumerOutgoing(tx, consumerId);
-        await tx.$executeRaw(Prisma.sql`
-          SELECT pg_advisory_xact_lock(hashtext((${firstId} || ':transfer')::text)::bigint)
-        `);
-        await tx.$executeRaw(Prisma.sql`
-          SELECT pg_advisory_xact_lock(hashtext((${secondId} || ':transfer')::text)::bigint)
-        `);
+        await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(firstId, `transfer`));
+        await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(secondId, `transfer`));
 
         await this.policiesService.ensureLimits(consumerId, amount, transferCurrency, tx);
 

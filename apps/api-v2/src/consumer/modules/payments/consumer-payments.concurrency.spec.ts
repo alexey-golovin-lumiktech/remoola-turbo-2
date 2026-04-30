@@ -71,9 +71,12 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
     const queryToString = (query: any): string => {
       if (typeof query === `string`) return query;
       if (query && typeof query === `object`) {
+        if (typeof query.sql === `string`) {
+          return `${query.sql} values=${JSON.stringify(query.values ?? [])}`;
+        }
         // Prisma.sql template object has 'strings' and 'values' properties
         if (query.strings && Array.isArray(query.strings)) {
-          return query.strings.join(`?`);
+          return `${query.strings.join(`?`)} values=${JSON.stringify(query.values ?? [])}`;
         }
         return JSON.stringify(query);
       }

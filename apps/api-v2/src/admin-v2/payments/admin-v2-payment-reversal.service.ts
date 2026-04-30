@@ -8,9 +8,15 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
-import { BalanceCalculationService } from '../../shared/balance-calculation.service';
+import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { MailingService } from '../../shared/mailing.service';
 import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../shared/payment-link-scope-resolver';
+import {
+  acquireTransactionAdvisoryLock,
+  buildConsumerOperationLockName,
+  buildConsumerOutgoingBalanceLockName,
+  buildPaymentRequestOperationLockName,
+} from '../../shared/prisma-advisory-locks';
 import { PrismaService } from '../../shared/prisma.service';
 import { STRIPE_CLIENT } from '../../shared/stripe-client';
 import { getCurrencyFractionDigits } from '../../shared-common';
@@ -300,17 +306,16 @@ export class AdminV2PaymentReversalService {
 
     const executeReversal = async () => {
       return this.prisma.$transaction(async (tx) => {
-        await tx.$executeRaw(
-          Prisma.sql`
-            SELECT pg_advisory_xact_lock(hashtext((${paymentRequestId} || ':payment-request-reversal')::text)::bigint)
-          `,
+        await acquireTransactionAdvisoryLock(
+          tx,
+          buildPaymentRequestOperationLockName(paymentRequestId, `payment-request-reversal`),
         );
 
         if (paymentRequest.requesterId) {
-          await tx.$executeRaw(
-            Prisma.sql`
-              SELECT pg_advisory_xact_lock(hashtext((${paymentRequest.requesterId} || ':reversal')::text)::bigint)
-            `,
+          await acquireTransactionAdvisoryLock(tx, buildConsumerOutgoingBalanceLockName(paymentRequest.requesterId));
+          await acquireTransactionAdvisoryLock(
+            tx,
+            buildConsumerOperationLockName(paymentRequest.requesterId, `reversal`),
           );
         }
 
@@ -406,6 +411,7 @@ export class AdminV2PaymentReversalService {
             tx,
             paymentRequest.requesterId,
             paymentRequest.currencyCode,
+            { mode: BalanceCalculationMode.COMPLETED_AND_PENDING },
           );
           if (requesterBalance < finalRequestedAmount) {
             throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);

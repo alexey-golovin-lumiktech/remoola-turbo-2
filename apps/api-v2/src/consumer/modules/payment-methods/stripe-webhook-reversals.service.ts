@@ -8,9 +8,15 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { CONSUMER_STRIPE_WEBHOOK_CLIENT } from './stripe-webhook.tokens';
-import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
+import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
 import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../../shared/payment-link-scope-resolver';
+import {
+  acquireTransactionAdvisoryLock,
+  buildConsumerOperationLockName,
+  buildConsumerOutgoingBalanceLockName,
+  buildPaymentRequestOperationLockName,
+} from '../../../shared/prisma-advisory-locks';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
@@ -165,9 +171,10 @@ export class StripeWebhookReversalsService {
     const { paymentIntentId, dispute } = params;
     const createDisputeIfMissing = async (ledgerEntryId: string) => {
       await this.prisma.$transaction(async (tx) => {
-        await tx.$executeRaw(Prisma.sql`
-          SELECT pg_advisory_xact_lock(hashtext((${ledgerEntryId} || ':' || ${dispute.id} || ':dispute')::text)::bigint)
-        `);
+        await acquireTransactionAdvisoryLock(
+          tx,
+          buildConsumerOperationLockName(ledgerEntryId, `${dispute.id}:dispute`),
+        );
         const existingDispute = await tx.ledgerEntryDisputeModel.findFirst({
           where: { ledgerEntryId, stripeDisputeId: dispute.id },
           select: { id: true },
@@ -279,9 +286,10 @@ export class StripeWebhookReversalsService {
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        await tx.$executeRaw(Prisma.sql`
-          SELECT pg_advisory_xact_lock(hashtext((${paymentRequestId} || ':stripe-reversal-pr')::text)::bigint)
-        `);
+        await acquireTransactionAdvisoryLock(
+          tx,
+          buildPaymentRequestOperationLockName(paymentRequestId, `stripe-reversal-pr`),
+        );
 
         const reversalEntries = await tx.ledgerEntryModel.findMany({
           where: {
@@ -360,12 +368,13 @@ export class StripeWebhookReversalsService {
         } as Prisma.InputJsonValue;
 
         if (requesterId) {
-          await tx.$executeRaw(Prisma.sql`
-            SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
-          `);
+          await acquireTransactionAdvisoryLock(tx, buildConsumerOutgoingBalanceLockName(requesterId));
+          await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(requesterId, `stripe-reversal`));
 
           if (kind === `CHARGEBACK`) {
-            const requesterBalance = await this.balanceService.calculateInTransaction(tx, requesterId, currencyCode);
+            const requesterBalance = await this.balanceService.calculateInTransaction(tx, requesterId, currencyCode, {
+              mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
+            });
             if (requesterBalance < finalAmount) {
               throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
             }

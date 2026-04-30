@@ -2,6 +2,7 @@ import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { AdminV2PaymentReversalService } from './admin-v2-payment-reversal.service';
+import { BalanceCalculationMode } from '../../shared/balance-calculation.service';
 
 describe(`AdminV2PaymentReversalService`, () => {
   it(`routes reversal emails with the stored consumer app scope`, async () => {
@@ -107,6 +108,7 @@ describe(`AdminV2PaymentReversalService`, () => {
       allows reversal when raw payment request status is stale
       but latest settlement outcome is completed
     `, async () => {
+    const txExecuteRaw = jest.fn().mockResolvedValue(undefined);
     const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
     const txLedgerFindMany = jest.fn().mockResolvedValue([]);
     const txLedgerFindFirst = jest.fn().mockResolvedValue(null);
@@ -150,7 +152,7 @@ describe(`AdminV2PaymentReversalService`, () => {
       },
       $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
         callback({
-          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          $executeRaw: txExecuteRaw,
           ledgerEntryModel: {
             findMany: txLedgerFindMany,
             findFirst: txLedgerFindFirst,
@@ -177,6 +179,24 @@ describe(`AdminV2PaymentReversalService`, () => {
       }),
     );
     expect(txLedgerCreate).toHaveBeenCalledTimes(2);
+    expect(balanceService.calculateInTransaction).toHaveBeenCalledWith(
+      expect.any(Object),
+      `requester-1`,
+      $Enums.CurrencyCode.USD,
+      { mode: BalanceCalculationMode.COMPLETED_AND_PENDING },
+    );
+    expect(txExecuteRaw).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        values: [`pr-stale-status:payment-request-reversal`],
+      }),
+    );
+    expect(txExecuteRaw).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        values: [`requester-1:outgoing`],
+      }),
+    );
   });
 
   it(`creates requester deposit reversal when original settlement was a deposit`, async () => {
@@ -333,7 +353,12 @@ describe(`AdminV2PaymentReversalService`, () => {
     );
   });
 
-  it(`reuses the same business idempotency key for duplicate refunds when admin changes but request shape stays the same`, async () => {
+  const duplicateRefundIdempotencyCase = [
+    `reuses the same business idempotency key for duplicate refunds`,
+    `when admin changes but request shape stays the same`,
+  ].join(` `);
+
+  it(duplicateRefundIdempotencyCase, async () => {
     const txExecuteRaw = jest.fn().mockResolvedValue(undefined);
     const txLedgerFindMany = jest.fn().mockResolvedValue([]);
     const txLedgerFindFirst = jest.fn().mockResolvedValue({ ledgerId: `existing-ledger`, amount: 25 });
@@ -395,7 +420,7 @@ describe(`AdminV2PaymentReversalService`, () => {
     expect(firstWhere.where.idempotencyKey).toBe(secondWhere.where.idempotencyKey);
     expect(txExecuteRaw).toHaveBeenCalledWith(
       expect.objectContaining({
-        values: expect.arrayContaining([`pr-duplicate`]),
+        values: expect.arrayContaining([`pr-duplicate:payment-request-reversal`]),
       }),
     );
     expect(adminActionAudit.record).not.toHaveBeenCalled();
