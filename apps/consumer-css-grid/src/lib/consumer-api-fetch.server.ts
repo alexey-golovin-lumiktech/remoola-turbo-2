@@ -3,15 +3,10 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import {
-  CONSUMER_APP_SCOPE_HEADER,
-  SESSION_EXPIRED_QUERY,
-  sanitizeNextForRedirect,
-  CURRENT_CONSUMER_APP_SCOPE,
-} from '@remoola/api-types';
+import { SESSION_EXPIRED_QUERY, sanitizeNextForRedirect } from '@remoola/api-types';
 
+import { buildConsumerReadHeaders } from './consumer-auth-headers.server';
 import { getEnv } from './env.server';
-import { getRequestOrigin } from './request-origin';
 
 export interface ConsumerApiRequestOptions {
   redirectTo?: string;
@@ -48,11 +43,7 @@ export async function fetchConsumerApi<T>(path: string, options?: ConsumerApiReq
     const cookieStore = await cookies();
     const response = await fetch(`${baseUrl}${path}`, {
       method: `GET`,
-      headers: {
-        Cookie: cookieStore.toString(),
-        origin: getRequestOrigin(),
-        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
-      },
+      headers: buildConsumerReadHeaders(cookieStore.toString()),
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),
     });

@@ -6,7 +6,7 @@ import {
   CURRENT_CONSUMER_APP_SCOPE,
 } from '@remoola/api-types';
 
-import { getRequestOrigin } from './request-origin';
+import { getBypassHeaders, getRequestOrigin } from './request-origin';
 
 function getCookieValue(cookieHeader: string, key: string): string | null {
   const match = cookieHeader
@@ -37,5 +37,15 @@ export function buildConsumerMutationHeaders(
     origin: getRequestOrigin(),
     [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
     ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+    ...getBypassHeaders(),
+  };
+}
+
+export function buildConsumerReadHeaders(cookieHeader: string): Record<string, string> {
+  return {
+    Cookie: cookieHeader,
+    origin: getRequestOrigin(),
+    [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
+    ...getBypassHeaders(),
   };
 }

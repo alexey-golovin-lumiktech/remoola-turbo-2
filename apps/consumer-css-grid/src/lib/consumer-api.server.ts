@@ -2,8 +2,6 @@ import 'server-only';
 
 import { cookies } from 'next/headers';
 
-import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
-
 import {
   fetchConsumerApi,
   isRedirectControlFlow,
@@ -34,10 +32,9 @@ import {
   type ScheduledConversion,
   type SettingsResponse,
 } from './consumer-api.types';
-import { buildConsumerMutationHeaders } from './consumer-auth-headers.server';
+import { buildConsumerMutationHeaders, buildConsumerReadHeaders } from './consumer-auth-headers.server';
 import { normalizeDocumentDownloadUrl } from './document-download-url';
 import { getEnv } from './env.server';
-import { getRequestOrigin } from './request-origin';
 
 interface ExchangeRateBatchItem {
   from?: string;
@@ -115,11 +112,7 @@ async function fetchConsumerApiResult<T>(
     const cookieStore = await cookies();
     const response = await fetch(`${baseUrl}${path}`, {
       method: `GET`,
-      headers: {
-        Cookie: cookieStore.toString(),
-        origin: getRequestOrigin(),
-        [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
-      },
+      headers: buildConsumerReadHeaders(cookieStore.toString()),
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),
     });

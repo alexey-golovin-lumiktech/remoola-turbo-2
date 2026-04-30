@@ -15,6 +15,7 @@ describe(`consumer-api exchange batch parsing`, () => {
   afterEach(() => {
     global.fetch = originalFetch;
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
     jest.clearAllMocks();
   });
 
@@ -32,6 +33,7 @@ describe(`consumer-api exchange batch parsing`, () => {
 
   it(`keeps successful rows and drops partial-success error rows from the batch response`, async () => {
     const { getExchangeRatesBatch } = await loadSubject();
+    process.env.VERCEL_AUTOMATION_BYPASS_SECRET = `bypass-secret`;
     mockFetch.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
@@ -66,8 +68,10 @@ describe(`consumer-api exchange batch parsing`, () => {
       headers: expect.objectContaining({
         Cookie: `consumer_session=test-cookie`,
         'content-type': `application/json`,
+        'x-vercel-protection-bypass': `bypass-secret`,
       }),
     });
+    delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
   });
 
   it(`returns an empty array without retrying singles when the batch response contains only error rows`, async () => {
@@ -156,6 +160,7 @@ describe(`consumer-api exact contact lookup`, () => {
   afterEach(() => {
     global.fetch = originalFetch;
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
     jest.clearAllMocks();
   });
 
@@ -206,6 +211,7 @@ describe(`consumer-api balance normalization`, () => {
   afterEach(() => {
     global.fetch = originalFetch;
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
     jest.clearAllMocks();
   });
 
@@ -276,6 +282,7 @@ describe(`consumer-api SSR unauthorized redirects`, () => {
   afterEach(() => {
     global.fetch = originalFetch;
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
     jest.clearAllMocks();
   });
 
@@ -345,6 +352,7 @@ describe(`consumer-api document download proxy normalization`, () => {
   afterEach(() => {
     global.fetch = originalFetch;
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
     jest.clearAllMocks();
   });
 
@@ -396,6 +404,7 @@ describe(`consumer-api document download proxy normalization`, () => {
 
   it(`passes contact filters to the documents endpoint`, async () => {
     const { getDocuments } = await loadSubject();
+    process.env.VERCEL_AUTOMATION_BYPASS_SECRET = `bypass-secret`;
     mockFetch.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
@@ -412,8 +421,14 @@ describe(`consumer-api document download proxy normalization`, () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining(`/consumer/documents?page=1&pageSize=20&contactId=contact-1`),
-      expect.anything(),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Cookie: `consumer_session=test-cookie`,
+          'x-vercel-protection-bypass': `bypass-secret`,
+        }),
+      }),
     );
+    delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
   });
 
   it(`rewrites payment attachment download links to the app proxy route`, async () => {
