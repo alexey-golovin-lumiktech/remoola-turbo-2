@@ -114,6 +114,28 @@ function assertExpectedReleasedAtNull(value: number) {
   }
 }
 
+function isOperationalAssignmentUniqueConflict(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+
+  if (error.code === `P2002`) {
+    return true;
+  }
+
+  if (error.code !== `P2010`) {
+    return false;
+  }
+
+  const meta = error.meta as { code?: unknown; message?: unknown } | undefined;
+  const databaseCode = typeof meta?.code === `string` ? meta.code : null;
+  const message = typeof meta?.message === `string` ? meta.message : ``;
+  return (
+    databaseCode === `23505` &&
+    (message.includes(`idx_operational_assignment_active_resource`) || message.includes(`operational_assignment`))
+  );
+}
+
 @Injectable()
 export class AdminV2AssignmentsService {
   constructor(
@@ -167,23 +189,31 @@ export class AdminV2AssignmentsService {
             throw new ConflictException(`Resource already assigned to another admin`);
           }
 
-          const inserted = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-            INSERT INTO "operational_assignment"
-              ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
-            SELECT ${resourceType},
-                   ${Prisma.sql`${resourceId}::uuid`},
-                   ${Prisma.sql`${adminId}::uuid`},
-                   ${Prisma.sql`${adminId}::uuid`},
-                   ${reason}
-            WHERE NOT EXISTS (
-              SELECT 1 FROM "operational_assignment"
-              WHERE "resource_type" = ${resourceType}
-                AND "resource_id" = ${Prisma.sql`${resourceId}::uuid`}
-                AND "released_at" IS NULL
-            )
-            RETURNING "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
-                      "assigned_at", "released_at", "released_by", "expires_at", "reason"
-          `);
+          let inserted: AssignmentRow[];
+          try {
+            inserted = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
+              INSERT INTO "operational_assignment"
+                ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
+              SELECT ${resourceType},
+                     ${Prisma.sql`${resourceId}::uuid`},
+                     ${Prisma.sql`${adminId}::uuid`},
+                     ${Prisma.sql`${adminId}::uuid`},
+                     ${reason}
+              WHERE NOT EXISTS (
+                SELECT 1 FROM "operational_assignment"
+                WHERE "resource_type" = ${resourceType}
+                  AND "resource_id" = ${Prisma.sql`${resourceId}::uuid`}
+                  AND "released_at" IS NULL
+              )
+              RETURNING "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
+                        "assigned_at", "released_at", "released_by", "expires_at", "reason"
+            `);
+          } catch (error) {
+            if (isOperationalAssignmentUniqueConflict(error)) {
+              throw new ConflictException(`Resource already assigned to another admin`);
+            }
+            throw error;
+          }
           if (inserted.length === 0) {
             throw new ConflictException(`Resource already assigned to another admin`);
           }
@@ -388,23 +418,31 @@ export class AdminV2AssignmentsService {
           }
           const closedRow = closed[0]!;
 
-          const inserted = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-            INSERT INTO "operational_assignment"
-              ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
-            SELECT ${closedRow.resource_type},
-                   ${Prisma.sql`${closedRow.resource_id}::uuid`},
-                   ${Prisma.sql`${newAssigneeId}::uuid`},
-                   ${Prisma.sql`${adminId}::uuid`},
-                   ${reason}
-            WHERE NOT EXISTS (
-              SELECT 1 FROM "operational_assignment"
-              WHERE "resource_type" = ${closedRow.resource_type}
-                AND "resource_id" = ${Prisma.sql`${closedRow.resource_id}::uuid`}
-                AND "released_at" IS NULL
-            )
-            RETURNING "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
-                      "assigned_at", "released_at", "released_by", "expires_at", "reason"
-          `);
+          let inserted: AssignmentRow[];
+          try {
+            inserted = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
+              INSERT INTO "operational_assignment"
+                ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
+              SELECT ${closedRow.resource_type},
+                     ${Prisma.sql`${closedRow.resource_id}::uuid`},
+                     ${Prisma.sql`${newAssigneeId}::uuid`},
+                     ${Prisma.sql`${adminId}::uuid`},
+                     ${reason}
+              WHERE NOT EXISTS (
+                SELECT 1 FROM "operational_assignment"
+                WHERE "resource_type" = ${closedRow.resource_type}
+                  AND "resource_id" = ${Prisma.sql`${closedRow.resource_id}::uuid`}
+                  AND "released_at" IS NULL
+              )
+              RETURNING "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
+                        "assigned_at", "released_at", "released_by", "expires_at", "reason"
+            `);
+          } catch (error) {
+            if (isOperationalAssignmentUniqueConflict(error)) {
+              throw new ConflictException(`Resource was re-claimed concurrently; reassign aborted`);
+            }
+            throw error;
+          }
           if (inserted.length === 0) {
             throw new ConflictException(`Resource was re-claimed concurrently; reassign aborted`);
           }

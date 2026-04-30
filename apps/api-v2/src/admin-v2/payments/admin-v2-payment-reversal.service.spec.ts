@@ -108,6 +108,8 @@ describe(`AdminV2PaymentReversalService`, () => {
       but latest settlement outcome is completed
     `, async () => {
     const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const txLedgerFindMany = jest.fn().mockResolvedValue([]);
+    const txLedgerFindFirst = jest.fn().mockResolvedValue(null);
     const prisma = {
       paymentRequestModel: {
         findUnique: jest.fn().mockResolvedValue({
@@ -150,6 +152,8 @@ describe(`AdminV2PaymentReversalService`, () => {
         callback({
           $executeRaw: jest.fn().mockResolvedValue(undefined),
           ledgerEntryModel: {
+            findMany: txLedgerFindMany,
+            findFirst: txLedgerFindFirst,
             create: txLedgerCreate,
           },
         }),
@@ -177,6 +181,8 @@ describe(`AdminV2PaymentReversalService`, () => {
 
   it(`creates requester deposit reversal when original settlement was a deposit`, async () => {
     const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const txLedgerFindMany = jest.fn().mockResolvedValue([]);
+    const txLedgerFindFirst = jest.fn().mockResolvedValue(null);
     const prisma = {
       paymentRequestModel: {
         findUnique: jest.fn().mockResolvedValue({
@@ -211,6 +217,8 @@ describe(`AdminV2PaymentReversalService`, () => {
         callback({
           $executeRaw: jest.fn().mockResolvedValue(undefined),
           ledgerEntryModel: {
+            findMany: txLedgerFindMany,
+            findFirst: txLedgerFindFirst,
             create: txLedgerCreate,
           },
         }),
@@ -258,6 +266,8 @@ describe(`AdminV2PaymentReversalService`, () => {
   it(`uses completed stripe outcome externalId as payment intent fallback for admin refunds`, async () => {
     const refundsCreate = jest.fn().mockResolvedValue({ id: `re_123`, status: `succeeded` });
     const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const txLedgerFindMany = jest.fn().mockResolvedValue([]);
+    const txLedgerFindFirst = jest.fn().mockResolvedValue(null);
     const prisma = {
       paymentRequestModel: {
         findUnique: jest.fn().mockResolvedValue({
@@ -292,6 +302,8 @@ describe(`AdminV2PaymentReversalService`, () => {
         callback({
           $executeRaw: jest.fn().mockResolvedValue(undefined),
           ledgerEntryModel: {
+            findMany: txLedgerFindMany,
+            findFirst: txLedgerFindFirst,
             create: txLedgerCreate,
           },
         }),
@@ -319,5 +331,73 @@ describe(`AdminV2PaymentReversalService`, () => {
         idempotencyKey: expect.stringContaining(`refund:`),
       }),
     );
+  });
+
+  it(`reuses the same business idempotency key for duplicate refunds even when adminId and reason differ`, async () => {
+    const txExecuteRaw = jest.fn().mockResolvedValue(undefined);
+    const txLedgerFindMany = jest.fn().mockResolvedValue([]);
+    const txLedgerFindFirst = jest.fn().mockResolvedValue({ ledgerId: `existing-ledger`, amount: 25 });
+    const prisma = {
+      paymentRequestModel: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: `pr-duplicate`,
+          amount: 25,
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.COMPLETED,
+          payerId: `payer-1`,
+          requesterId: `requester-1`,
+          requesterEmail: `requester@example.com`,
+          ledgerEntries: [
+            {
+              ledgerId: `payer-ledger`,
+              type: $Enums.LedgerEntryType.USER_PAYMENT,
+              status: $Enums.TransactionStatus.COMPLETED,
+              createdAt: new Date(`2026-03-26T12:00:00.000Z`),
+              outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+            },
+          ],
+        }),
+      },
+      ledgerEntryModel: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValueOnce({ stripeId: `pi_123` })
+          .mockResolvedValueOnce({ type: $Enums.LedgerEntryType.USER_DEPOSIT, ledgerId: `requester-ledger` }),
+      },
+      ledgerEntryOutcomeModel: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback({
+          $executeRaw: txExecuteRaw,
+          ledgerEntryModel: {
+            findMany: txLedgerFindMany,
+            findFirst: txLedgerFindFirst,
+            create: jest.fn(),
+          },
+        }),
+      ),
+    } as any;
+    const adminActionAudit = {
+      record: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    const service = new AdminV2PaymentReversalService(prisma, {} as any, {} as any, adminActionAudit, {
+      refunds: { create: jest.fn() },
+    } as any);
+    jest.spyOn(service as any, `sendReversalEmails`).mockResolvedValue(undefined);
+
+    await service.createReversal(`pr-duplicate`, { kind: `REFUND`, amount: 25, reason: `first` }, `admin-1`);
+    await service.createReversal(`pr-duplicate`, { kind: `REFUND`, amount: 25, reason: `second` }, `admin-2`);
+
+    const firstWhere = txLedgerFindFirst.mock.calls[0][0] as { where: { idempotencyKey: string } };
+    const secondWhere = txLedgerFindFirst.mock.calls[1][0] as { where: { idempotencyKey: string } };
+
+    expect(firstWhere.where.idempotencyKey).toBe(secondWhere.where.idempotencyKey);
+    expect(txExecuteRaw).toHaveBeenCalledWith(
+      expect.objectContaining({
+        values: expect.arrayContaining([`pr-duplicate`]),
+      }),
+    );
+    expect(adminActionAudit.record).not.toHaveBeenCalled();
   });
 });

@@ -202,59 +202,95 @@ export class StripeWebhookPaymentMethodsService {
       return;
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.$executeRaw(Prisma.sql`
-        SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':' || ${paymentMethod.id})::text)::bigint)
-      `);
-
-      const existingPaymentMethod = await tx.paymentMethodModel.findFirst({
-        where: {
+    const fingerprint = paymentMethod.card?.fingerprint ?? null;
+    const duplicateWhere: Prisma.PaymentMethodModelWhereInput = fingerprint
+      ? {
           consumerId,
-          stripePaymentMethodId: paymentMethod.id,
           deletedAt: null,
-        },
-      });
+          OR: [{ stripePaymentMethodId: paymentMethod.id }, { stripeFingerprint: fingerprint }],
+        }
+      : {
+          consumerId,
+          deletedAt: null,
+          stripePaymentMethodId: paymentMethod.id,
+        };
 
-      if (existingPaymentMethod) {
-        return;
-      }
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw(Prisma.sql`
+          SELECT pg_advisory_xact_lock(
+            hashtext((${consumerId} || ':' || ${type} || ':checkout-payment-method')::text)::bigint
+          )
+        `);
 
-      let billingDetails;
-      if (paymentMethod.billing_details) {
-        billingDetails = await tx.billingDetailsModel.create({
-          data: {
-            email: paymentMethod.billing_details.email || null,
-            name: paymentMethod.billing_details.name || null,
-            phone: paymentMethod.billing_details.phone || null,
+        const existingPaymentMethod = await tx.paymentMethodModel.findFirst({
+          where: duplicateWhere,
+        });
+
+        if (existingPaymentMethod) {
+          return;
+        }
+
+        let billingDetails;
+        if (paymentMethod.billing_details) {
+          billingDetails = await tx.billingDetailsModel.create({
+            data: {
+              email: paymentMethod.billing_details.email || null,
+              name: paymentMethod.billing_details.name || null,
+              phone: paymentMethod.billing_details.phone || null,
+            },
+          });
+        }
+
+        const hasDefault = await tx.paymentMethodModel.count({
+          where: {
+            consumerId,
+            deletedAt: null,
+            type,
+            defaultSelected: true,
           },
         });
+        const shouldBeDefault = hasDefault === 0;
+
+        if (shouldBeDefault) {
+          await tx.paymentMethodModel.updateMany({
+            where: {
+              consumerId,
+              deletedAt: null,
+              type,
+            },
+            data: { defaultSelected: false },
+          });
+        }
+
+        await tx.paymentMethodModel.create({
+          data: {
+            type,
+            stripePaymentMethodId: paymentMethod.id,
+            stripeFingerprint: fingerprint,
+            defaultSelected: shouldBeDefault,
+            brand: brand || `card`,
+            last4: last4 || ``,
+            expMonth,
+            expYear,
+            serviceFee: 0,
+            billingDetailsId: billingDetails?.id || null,
+            consumerId,
+          },
+        });
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === `P2002`) {
+        const existingPaymentMethod = await this.prisma.paymentMethodModel.findFirst({
+          where: duplicateWhere,
+          select: { id: true },
+        });
+        if (existingPaymentMethod) {
+          return;
+        }
       }
-
-      const hasDefault = await tx.paymentMethodModel.count({
-        where: {
-          consumerId,
-          deletedAt: null,
-          type,
-          defaultSelected: true,
-        },
-      });
-
-      await tx.paymentMethodModel.create({
-        data: {
-          type,
-          stripePaymentMethodId: paymentMethod.id,
-          stripeFingerprint: paymentMethod.card?.fingerprint || null,
-          defaultSelected: hasDefault === 0,
-          brand: brand || `card`,
-          last4: last4 || ``,
-          expMonth,
-          expYear,
-          serviceFee: 0,
-          billingDetailsId: billingDetails?.id || null,
-          consumerId,
-        },
-      });
-    });
+      throw error;
+    }
   }
 
   private buildEnsureCustomerIdempotencyKey(consumerId: string): string {

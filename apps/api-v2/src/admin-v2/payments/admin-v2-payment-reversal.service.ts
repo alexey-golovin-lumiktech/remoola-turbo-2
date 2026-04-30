@@ -81,7 +81,7 @@ export class AdminV2PaymentReversalService {
 
   private async findExistingReversal(
     idempotencyKeyBase: string,
-    remaining: number,
+    remainingBefore: number,
     kind: PaymentReversalCreateInput[`kind`],
   ) {
     const existingReversal = await this.prisma.ledgerEntryModel.findFirst({
@@ -94,7 +94,7 @@ export class AdminV2PaymentReversalService {
     return {
       ledgerId: existingReversal.ledgerId,
       amount: Number(existingReversal.amount),
-      remaining: Math.max(0, remaining - Number(existingReversal.amount)),
+      remaining: Math.max(0, remainingBefore - Number(existingReversal.amount)),
       kind,
     };
   }
@@ -131,13 +131,9 @@ export class AdminV2PaymentReversalService {
     paymentRequestId: string;
     kind: PaymentReversalCreateInput[`kind`];
     amount: number;
-    adminId: string;
-    reason?: string | null;
+    remainingBefore: number;
   }) {
-    const normalized = JSON.stringify({
-      ...payload,
-      reason: payload.reason?.trim() || null,
-    });
+    const normalized = JSON.stringify(payload);
     return createHash(`sha256`).update(normalized).digest(`hex`);
   }
 
@@ -299,143 +295,140 @@ export class AdminV2PaymentReversalService {
       paymentRail: requesterSettlementEntry?.paymentRequest?.paymentRail ?? null,
     });
 
-    const reversalEntries = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        paymentRequestId,
-        type: { in: [...PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES] },
-      },
-      select: {
-        amount: true,
-        status: true,
-        outcomes: {
-          orderBy: { createdAt: `desc` },
-          take: 1,
-          select: { status: true },
-        },
-      },
-    });
+    const executeReversal = async () => {
+      return this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw(
+          Prisma.sql`
+            SELECT pg_advisory_xact_lock(hashtext((${paymentRequestId} || ':payment-request-reversal')::text)::bigint)
+          `,
+        );
 
-    const alreadyReversed = reversalEntries.reduce((sum, entry) => {
-      const effectiveStatus = this.getEffectiveLedgerStatus(entry);
-      if (
-        effectiveStatus !== $Enums.TransactionStatus.COMPLETED &&
-        effectiveStatus !== $Enums.TransactionStatus.PENDING
-      ) {
-        return sum;
-      }
-      const amount = Number(entry.amount);
-      return amount > 0 ? sum + amount : sum;
-    }, 0);
-
-    const remaining = requestAmount - alreadyReversed;
-    if (remaining <= 0) {
-      throw new BadRequestException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_ALREADY_FULLY_REVERSED);
-    }
-
-    const finalRequestedAmount = requestedAmount ?? remaining;
-    if (finalRequestedAmount > remaining) {
-      throw new BadRequestException(adminErrorCodes.ADMIN_REVERSAL_AMOUNT_EXCEEDS_REMAINING_BALANCE);
-    }
-
-    const idempotencyKeyBase = this.buildReversalIdempotencyKey({
-      paymentRequestId,
-      kind: body.kind,
-      amount: finalRequestedAmount,
-      adminId,
-      reason: body.reason ?? null,
-    });
-
-    const existingEntry = await this.prisma.ledgerEntryModel.findFirst({
-      where: { idempotencyKey: `${idempotencyKeyBase}:payer` },
-      select: { ledgerId: true, amount: true },
-    });
-
-    if (existingEntry) {
-      return {
-        ledgerId: existingEntry.ledgerId,
-        amount: Number(existingEntry.amount),
-        remaining,
-        kind: body.kind,
-      };
-    }
-
-    const remainingAfter = remaining - finalRequestedAmount;
-
-    let stripeRefundId: string | null = null;
-    let reversalStatus: $Enums.TransactionStatus = $Enums.TransactionStatus.COMPLETED;
-
-    if (body.kind === `REFUND`) {
-      if (!stripePaymentIntentId) {
-        throw new BadRequestException(adminErrorCodes.ADMIN_STRIPE_PAYMENT_INTENT_NOT_FOUND_FOR_REFUND);
-      }
-
-      const digits = getCurrencyFractionDigits(paymentRequest.currencyCode);
-      const amountMinor = Math.round(finalRequestedAmount * 10 ** digits);
-
-      const refund = await this.stripe.refunds.create(
-        {
-          payment_intent: stripePaymentIntentId,
-          amount: amountMinor,
-          metadata: {
-            paymentRequestId,
-            adminId,
-            reversalKind: body.kind,
-            reason: body.reason ?? ``,
-          },
-        },
-        { idempotencyKey: `refund:${idempotencyKeyBase}` },
-      );
-
-      stripeRefundId = refund.id;
-      if (refund.status && refund.status !== `succeeded`) {
-        reversalStatus = $Enums.TransactionStatus.PENDING;
-      }
-    }
-
-    const ledgerId = randomUUID();
-    const rail = body.kind === `CHARGEBACK` ? $Enums.PaymentRail.STRIPE_CHARGEBACK : $Enums.PaymentRail.STRIPE_REFUND;
-
-    const baseMetadata = {
-      rail,
-      reversalKind: body.kind,
-      source: `admin`,
-      stripeObjectType: body.kind === `REFUND` ? `refund` : `manual_chargeback`,
-      reason: body.reason ?? null,
-      stripePaymentIntentId,
-      stripeRefundId,
-    } as const;
-    const payerMetadata = {
-      ...baseMetadata,
-      reversalOfLedgerId: originalLedgerId ?? null,
-    } as Prisma.InputJsonValue;
-    const requesterMetadata = {
-      ...baseMetadata,
-      reversalOfLedgerId: requesterSettlementEntry?.ledgerId ?? null,
-    } as Prisma.InputJsonValue;
-
-    const appendReversalEntries = async () => {
-      await this.prisma.$transaction(async (tx) => {
         if (paymentRequest.requesterId) {
           await tx.$executeRaw(
             Prisma.sql`
               SELECT pg_advisory_xact_lock(hashtext((${paymentRequest.requesterId} || ':reversal')::text)::bigint)
             `,
           );
+        }
 
-          // REFUND uses Stripe as external source of truth.
-          // Once refund succeeds, ledger reversal must be appended idempotently even if
-          // requester balance changed due to concurrent activity.
-          if (body.kind === `CHARGEBACK`) {
-            const requesterBalance = await this.balanceService.calculateInTransaction(
-              tx,
-              paymentRequest.requesterId,
-              paymentRequest.currencyCode,
-            );
-            if (requesterBalance < finalRequestedAmount) {
-              throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);
-            }
+        const reversalEntries = await tx.ledgerEntryModel.findMany({
+          where: {
+            paymentRequestId,
+            type: { in: [...PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES] },
+          },
+          select: {
+            amount: true,
+            status: true,
+            outcomes: {
+              orderBy: { createdAt: `desc` },
+              take: 1,
+              select: { status: true },
+            },
+          },
+        });
+
+        const alreadyReversed = reversalEntries.reduce((sum, entry) => {
+          const effectiveStatus = this.getEffectiveLedgerStatus(entry);
+          if (
+            effectiveStatus !== $Enums.TransactionStatus.COMPLETED &&
+            effectiveStatus !== $Enums.TransactionStatus.PENDING
+          ) {
+            return sum;
+          }
+          const amount = Number(entry.amount);
+          return amount > 0 ? sum + amount : sum;
+        }, 0);
+
+        const remainingBefore = requestAmount - alreadyReversed;
+        if (remainingBefore <= 0) {
+          throw new BadRequestException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_ALREADY_FULLY_REVERSED);
+        }
+
+        const finalRequestedAmount = requestedAmount ?? remainingBefore;
+        if (finalRequestedAmount > remainingBefore) {
+          throw new BadRequestException(adminErrorCodes.ADMIN_REVERSAL_AMOUNT_EXCEEDS_REMAINING_BALANCE);
+        }
+
+        const idempotencyKeyBase = this.buildReversalIdempotencyKey({
+          paymentRequestId,
+          kind: body.kind,
+          amount: finalRequestedAmount,
+          remainingBefore,
+        });
+
+        const existingReversal = await tx.ledgerEntryModel.findFirst({
+          where: { idempotencyKey: `${idempotencyKeyBase}:payer` },
+          select: { ledgerId: true, amount: true },
+        });
+
+        if (existingReversal) {
+          return {
+            ledgerId: existingReversal.ledgerId,
+            amount: Number(existingReversal.amount),
+            remaining: Math.max(0, remainingBefore - Number(existingReversal.amount)),
+            kind: body.kind,
+            alreadyExisted: true,
+          };
+        }
+
+        let stripeRefundId: string | null = null;
+        let reversalStatus: $Enums.TransactionStatus = $Enums.TransactionStatus.COMPLETED;
+        if (body.kind === `REFUND`) {
+          if (!stripePaymentIntentId) {
+            throw new BadRequestException(adminErrorCodes.ADMIN_STRIPE_PAYMENT_INTENT_NOT_FOUND_FOR_REFUND);
+          }
+
+          const digits = getCurrencyFractionDigits(paymentRequest.currencyCode);
+          const amountMinor = Math.round(finalRequestedAmount * 10 ** digits);
+          const refund = await this.stripe.refunds.create(
+            {
+              payment_intent: stripePaymentIntentId,
+              amount: amountMinor,
+              metadata: {
+                paymentRequestId,
+                adminId,
+                reversalKind: body.kind,
+                reason: body.reason ?? ``,
+              },
+            },
+            { idempotencyKey: `refund:${idempotencyKeyBase}` },
+          );
+
+          stripeRefundId = refund.id;
+          if (refund.status && refund.status !== `succeeded`) {
+            reversalStatus = $Enums.TransactionStatus.PENDING;
+          }
+        } else if (paymentRequest.requesterId) {
+          const requesterBalance = await this.balanceService.calculateInTransaction(
+            tx,
+            paymentRequest.requesterId,
+            paymentRequest.currencyCode,
+          );
+          if (requesterBalance < finalRequestedAmount) {
+            throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);
           }
         }
+
+        const ledgerId = randomUUID();
+        const rail =
+          body.kind === `CHARGEBACK` ? $Enums.PaymentRail.STRIPE_CHARGEBACK : $Enums.PaymentRail.STRIPE_REFUND;
+        const baseMetadata = {
+          rail,
+          reversalKind: body.kind,
+          source: `admin`,
+          stripeObjectType: body.kind === `REFUND` ? `refund` : `manual_chargeback`,
+          reason: body.reason ?? null,
+          stripePaymentIntentId,
+          stripeRefundId,
+        } as const;
+        const payerMetadata = {
+          ...baseMetadata,
+          reversalOfLedgerId: originalLedgerId ?? null,
+        } as Prisma.InputJsonValue;
+        const requesterMetadata = {
+          ...baseMetadata,
+          reversalOfLedgerId: requesterSettlementEntry?.ledgerId ?? null,
+        } as Prisma.InputJsonValue;
 
         await tx.ledgerEntryModel.create({
           data: {
@@ -472,38 +465,43 @@ export class AdminV2PaymentReversalService {
             },
           });
         }
+
+        return {
+          ledgerId,
+          amount: finalRequestedAmount,
+          remaining: remainingBefore - finalRequestedAmount,
+          kind: body.kind,
+          alreadyExisted: false,
+        };
       });
     };
 
+    let result: {
+      ledgerId: string;
+      amount: number;
+      remaining: number;
+      kind: PaymentReversalCreateInput[`kind`];
+      alreadyExisted: boolean;
+    };
+
     try {
-      await appendReversalEntries();
+      result = await executeReversal();
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-        const existingReversal = await this.findExistingReversal(idempotencyKeyBase, remaining, body.kind);
-        if (existingReversal) {
-          return existingReversal;
-        }
+        throw err;
       }
-      if (body.kind === `REFUND` && stripeRefundId) {
+      if (body.kind === `REFUND`) {
         this.logger.error({
           event: `admin_refund_ledger_append_failed_retrying`,
           paymentRequestId,
-          stripeRefundId,
           errorClass: err instanceof Error ? err.name : `UnknownError`,
         });
         try {
-          await appendReversalEntries();
+          result = await executeReversal();
         } catch (retryErr) {
-          if (retryErr instanceof Prisma.PrismaClientKnownRequestError && retryErr.code === `P2002`) {
-            const existingReversal = await this.findExistingReversal(idempotencyKeyBase, remaining, body.kind);
-            if (existingReversal) {
-              return existingReversal;
-            }
-          }
           this.logger.error({
             event: `admin_refund_ledger_append_failed_waiting_for_webhook_reconciliation`,
             paymentRequestId,
-            stripeRefundId,
             errorClass: retryErr instanceof Error ? retryErr.name : `UnknownError`,
           });
           throw retryErr;
@@ -513,37 +511,39 @@ export class AdminV2PaymentReversalService {
       }
     }
 
-    await this.adminActionAudit.record({
-      adminId,
-      action:
-        body.kind === `REFUND`
-          ? ADMIN_ACTION_AUDIT_ACTIONS.payment_refund
-          : ADMIN_ACTION_AUDIT_ACTIONS.payment_chargeback,
-      resource: `payment_request`,
-      resourceId: paymentRequestId,
-      metadata: {
-        amount: finalRequestedAmount,
-        currencyCode: paymentRequest.currencyCode,
-        ledgerId,
-      },
-    });
+    if (!result.alreadyExisted) {
+      await this.adminActionAudit.record({
+        adminId,
+        action:
+          body.kind === `REFUND`
+            ? ADMIN_ACTION_AUDIT_ACTIONS.payment_refund
+            : ADMIN_ACTION_AUDIT_ACTIONS.payment_chargeback,
+        resource: `payment_request`,
+        resourceId: paymentRequestId,
+        metadata: {
+          amount: result.amount,
+          currencyCode: paymentRequest.currencyCode,
+          ledgerId: result.ledgerId,
+        },
+      });
 
-    await this.sendReversalEmails({
-      paymentRequestId,
-      payerId: paymentRequest.payerId,
-      requesterId: paymentRequest.requesterId,
-      requesterEmail: paymentRequest.requesterEmail,
-      amount: finalRequestedAmount,
-      currencyCode: paymentRequest.currencyCode,
-      kind: body.kind,
-      reason: body.reason ?? null,
-    });
+      await this.sendReversalEmails({
+        paymentRequestId,
+        payerId: paymentRequest.payerId,
+        requesterId: paymentRequest.requesterId,
+        requesterEmail: paymentRequest.requesterEmail,
+        amount: result.amount,
+        currencyCode: paymentRequest.currencyCode,
+        kind: body.kind,
+        reason: body.reason ?? null,
+      });
+    }
 
     return {
-      ledgerId,
-      amount: finalRequestedAmount,
-      remaining: remainingAfter,
-      kind: body.kind,
+      ledgerId: result.ledgerId,
+      amount: result.amount,
+      remaining: result.remaining,
+      kind: result.kind,
     };
   }
 }

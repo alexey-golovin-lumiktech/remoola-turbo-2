@@ -1,5 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
+import { Prisma } from '@remoola/database-2';
+
 import { AdminV2AssignmentsService, type AssignmentActorContext } from './admin-v2-assignments.service';
 
 type AssignmentRow = {
@@ -160,6 +162,23 @@ describe(`AdminV2AssignmentsService`, () => {
       const { service, queryRaw } = buildService();
       queryRaw.mockResolvedValueOnce([]);
       queryRaw.mockResolvedValueOnce([]);
+
+      await expect(
+        service.claim(opsActor, { resourceType: `verification`, resourceId: RESOURCE_ID }, meta),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it(`returns 409 when the database unique index wins the race during claim`, async () => {
+      const { service, queryRaw } = buildService();
+      const duplicateError = Object.assign(Object.create(Prisma.PrismaClientKnownRequestError.prototype), {
+        code: `P2010`,
+        meta: {
+          code: `23505`,
+          message: `duplicate key value violates unique constraint "idx_operational_assignment_active_resource"`,
+        },
+      });
+      queryRaw.mockResolvedValueOnce([]);
+      queryRaw.mockRejectedValueOnce(duplicateError);
 
       await expect(
         service.claim(opsActor, { resourceType: `verification`, resourceId: RESOURCE_ID }, meta),
@@ -583,6 +602,23 @@ describe(`AdminV2AssignmentsService`, () => {
       queryRaw.mockResolvedValueOnce([activeRow()]);
       queryRaw.mockResolvedValueOnce([releasedRow()]);
       queryRaw.mockResolvedValueOnce([]);
+
+      await expect(service.reassign(superActor, validBody, meta)).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it(`returns 409 when the database unique index wins the race during reassign`, async () => {
+      const { service, adminModel, queryRaw } = buildService();
+      const duplicateError = Object.assign(Object.create(Prisma.PrismaClientKnownRequestError.prototype), {
+        code: `P2010`,
+        meta: {
+          code: `23505`,
+          message: `duplicate key value violates unique constraint "idx_operational_assignment_active_resource"`,
+        },
+      });
+      adminModel.findUnique.mockResolvedValueOnce({ id: OTHER_ADMIN_ID, deletedAt: null });
+      queryRaw.mockResolvedValueOnce([activeRow()]);
+      queryRaw.mockResolvedValueOnce([releasedRow()]);
+      queryRaw.mockRejectedValueOnce(duplicateError);
 
       await expect(service.reassign(superActor, validBody, meta)).rejects.toBeInstanceOf(ConflictException);
     });

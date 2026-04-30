@@ -2182,13 +2182,15 @@ describe(`ConsumerPaymentsService.getTodayOutgoingTotal`, () => {
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
-    await (service as any).getTodayOutgoingTotal(consumerId);
+    await (service as any).getTodayOutgoingTotal(consumerId, $Enums.CurrencyCode.USD);
 
     const query = prisma.$queryRaw.mock.calls[0][0] as { sql?: string; values?: unknown[] };
     expect(query.sql).toContain(`LEFT JOIN payment_request pr ON pr.id = le.payment_request_id`);
     expect(query.sql).toContain(`pr.payment_rail::text`);
+    expect(query.sql).toContain(`le.currency_code::text`);
     expect(query.values).toEqual(
       expect.arrayContaining([
+        $Enums.CurrencyCode.USD,
         $Enums.LedgerEntryType.USER_PAYMENT,
         $Enums.PaymentRail.CARD,
         $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
@@ -2209,10 +2211,11 @@ describe(`ConsumerPaymentsService.getTodayOutgoingTotal`, () => {
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
-    await (service as any).getTodayOutgoingTotal(consumerId);
+    await (service as any).getTodayOutgoingTotal(consumerId, $Enums.CurrencyCode.EUR);
 
     const query = prisma.$queryRaw.mock.calls[0][0] as { sql?: string; values?: unknown[] };
     expect(query.sql).toContain(`le.type::text IN`);
+    expect(query.values).toEqual(expect.arrayContaining([$Enums.CurrencyCode.EUR]));
     expect(query.values).toEqual(
       expect.arrayContaining([$Enums.LedgerEntryType.USER_PAYMENT, $Enums.LedgerEntryType.USER_PAYOUT]),
     );

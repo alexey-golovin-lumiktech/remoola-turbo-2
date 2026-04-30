@@ -964,12 +964,126 @@ describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, 
     expect(tx.paymentMethodModel.findFirst).toHaveBeenCalledWith({
       where: {
         consumerId: `consumer-1`,
-        stripePaymentMethodId: `pm_1`,
         deletedAt: null,
+        OR: [{ stripePaymentMethodId: `pm_1` }, { stripeFingerprint: `fp_1` }],
       },
     });
     expect(tx.billingDetailsModel.create).not.toHaveBeenCalled();
     expect(tx.paymentMethodModel.create).not.toHaveBeenCalled();
+  });
+
+  it(`clears previous defaults before creating the first checkout-backed default method`, async () => {
+    const tx = {
+      $executeRaw: jest.fn().mockResolvedValue(undefined),
+      billingDetailsModel: {
+        create: jest.fn().mockResolvedValue({ id: `bd-1` }),
+      },
+      paymentMethodModel: {
+        count: jest.fn().mockResolvedValue(0),
+        create: jest.fn().mockResolvedValue({ id: `pm-local-1` }),
+        findFirst: jest.fn().mockResolvedValue(null),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const prisma = {
+      $transaction: jest
+        .fn()
+        .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
+    } as any;
+    const stripe = {
+      paymentIntents: {
+        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
+      },
+      paymentMethods: {
+        attach: jest.fn(),
+        retrieve: jest.fn().mockResolvedValue({
+          id: `pm_1`,
+          type: `card`,
+          customer: `cus_1`,
+          billing_details: { email: `payer@example.com`, name: `Payer`, phone: null },
+          card: { brand: `visa`, exp_month: 12, exp_year: 2030, fingerprint: `fp_1`, last4: `4242` },
+        }),
+      },
+    } as any;
+    const service = new StripeWebhookPaymentMethodsService(prisma, stripe);
+
+    await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
+      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+    });
+
+    expect(tx.paymentMethodModel.updateMany).toHaveBeenCalledWith({
+      where: {
+        consumerId: `consumer-1`,
+        deletedAt: null,
+        type: $Enums.PaymentMethodType.CREDIT_CARD,
+      },
+      data: { defaultSelected: false },
+    });
+    expect(tx.paymentMethodModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          defaultSelected: true,
+          stripeFingerprint: `fp_1`,
+        }),
+      }),
+    );
+  });
+
+  it(`swallows duplicate-key races when the row becomes visible after P2002`, async () => {
+    const duplicateError = Object.assign(Object.create(Prisma.PrismaClientKnownRequestError.prototype), {
+      code: `P2002`,
+    });
+    const tx = {
+      $executeRaw: jest.fn().mockResolvedValue(undefined),
+      billingDetailsModel: {
+        create: jest.fn().mockResolvedValue({ id: `bd-1` }),
+      },
+      paymentMethodModel: {
+        count: jest.fn().mockResolvedValue(0),
+        create: jest.fn().mockRejectedValue(duplicateError),
+        findFirst: jest.fn().mockResolvedValue(null),
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
+    };
+    const prisma = {
+      $transaction: jest
+        .fn()
+        .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
+      paymentMethodModel: {
+        findFirst: jest.fn().mockResolvedValue({ id: `pm-visible-after-race` }),
+      },
+    } as any;
+    const stripe = {
+      paymentIntents: {
+        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
+      },
+      paymentMethods: {
+        attach: jest.fn(),
+        retrieve: jest.fn().mockResolvedValue({
+          id: `pm_1`,
+          type: `card`,
+          customer: `cus_1`,
+          billing_details: { email: `payer@example.com`, name: `Payer`, phone: null },
+          card: { brand: `visa`, exp_month: 12, exp_year: 2030, fingerprint: `fp_1`, last4: `4242` },
+        }),
+      },
+    } as any;
+    const service = new StripeWebhookPaymentMethodsService(prisma, stripe);
+
+    await expect(
+      service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
+        ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(prisma.paymentMethodModel.findFirst).toHaveBeenCalledWith({
+      where: {
+        consumerId: `consumer-1`,
+        deletedAt: null,
+        OR: [{ stripePaymentMethodId: `pm_1` }, { stripeFingerprint: `fp_1` }],
+      },
+      select: { id: true },
+    });
   });
 });
 

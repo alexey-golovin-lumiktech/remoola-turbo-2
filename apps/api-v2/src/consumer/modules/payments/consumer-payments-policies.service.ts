@@ -92,6 +92,7 @@ export class ConsumerPaymentsPoliciesService {
 
   async getTodayOutgoingTotal(
     consumerId: string,
+    currencyCode: $Enums.CurrencyCode,
     db: Pick<Prisma.TransactionClient, `$queryRaw`> | Pick<PrismaService, `$queryRaw`> = this.prisma,
   ) {
     const start = new Date();
@@ -109,6 +110,7 @@ export class ConsumerPaymentsPoliciesService {
       ) latest ON true
       WHERE le.consumer_id::text = ${consumerId}
         AND le.amount < 0
+        AND le.currency_code::text = ${currencyCode}
         AND le.type::text IN (${Prisma.join(
           [$Enums.LedgerEntryType.USER_PAYMENT, $Enums.LedgerEntryType.USER_PAYOUT],
           `, `,
@@ -125,6 +127,7 @@ export class ConsumerPaymentsPoliciesService {
   async ensureLimits(
     consumerId: string,
     amount: number,
+    currencyCode: $Enums.CurrencyCode,
     db:
       | Pick<Prisma.TransactionClient, `consumerModel` | `$queryRaw`>
       | Pick<PrismaService, `consumerModel` | `$queryRaw`> = this.prisma,
@@ -135,7 +138,7 @@ export class ConsumerPaymentsPoliciesService {
       throw new BadRequestException(errorCodes.AMOUNT_EXCEEDS_PER_OPERATION_LIMIT);
     }
 
-    const todayTotal = await this.getTodayOutgoingTotal(consumerId, db);
+    const todayTotal = await this.getTodayOutgoingTotal(consumerId, currencyCode, db);
     if (todayTotal + amount > dailyLimit) {
       throw new BadRequestException(errorCodes.AMOUNT_EXCEEDS_DAILY_LIMIT);
     }

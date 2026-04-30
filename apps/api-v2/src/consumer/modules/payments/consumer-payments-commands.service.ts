@@ -389,7 +389,7 @@ export class ConsumerPaymentsCommandsService {
           SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':withdraw')::text)::bigint)
         `);
 
-        await this.policiesService.ensureLimits(consumerId, amount, tx);
+        await this.policiesService.ensureLimits(consumerId, amount, withdrawCurrency, tx);
 
         const balance = await this.balanceService.calculateInTransaction(tx, consumerId, withdrawCurrency, {
           mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
@@ -481,7 +481,7 @@ export class ConsumerPaymentsCommandsService {
           SELECT pg_advisory_xact_lock(hashtext((${secondId} || ':transfer')::text)::bigint)
         `);
 
-        await this.policiesService.ensureLimits(consumerId, amount, tx);
+        await this.policiesService.ensureLimits(consumerId, amount, transferCurrency, tx);
 
         const balance = await this.balanceService.calculateInTransaction(tx, consumerId, transferCurrency, {
           mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
