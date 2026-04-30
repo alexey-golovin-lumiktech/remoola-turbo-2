@@ -2713,7 +2713,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-04-28</summary>
 
 - **2026-04-28:**
@@ -2737,6 +2737,56 @@
 
   ### ⚠️ Notes
   - **No database migration introduced:** The April 28 work is contract, validation, UI-theming, runtime-safety, test, and tooling focused; no Prisma schema or migration files changed.
+
+</details>
+
+<details>
+<summary>2026-04-29</summary>
+
+- **2026-04-29:**
+
+  ### 🔐 Security / Production Safety
+  - **Vercel auth/runtime wiring hardening:** Fix `api-v2` auth-guard dependency injection and register the shared JWT passport module with the access-secret and database wiring so protected reads keep resolving correctly in production-like builds; align Turbo env passthrough for origin and health-related vars instead of relying on incidental local configuration.
+
+  ### 🧪 Testing
+  - **Narrower backend verification with faster DB reuse:** Split validation-heavy `api-v2` e2e coverage into focused controller and integration tests, add shared `bootstrapApiTestApp` / Prisma / HTTP helpers, reuse prepared fast test databases in `@remoola/test-db`, and keep full end-to-end coverage centered on auth, OAuth, Stripe, documents, and other cross-system lifecycle flows.
+  - **Refactor-seam coverage refresh:** Realign controller and service specs around the extracted auth, payments, Stripe-webhook, admin, and exchange provider seams, and refresh `consumer-css-grid` route tests around the new Suspense and loading-state boundaries.
+
+  ### 🛠 DevEx
+  - **Consumer workspace decomposition:** Split large `consumer-css-grid` dashboard, settings, banking, documents, exchange, and payment modules into focused view, form, helper, and server-only mutation layers; add route-level loading states and keep cookie, CSRF, origin, and app-scope forwarding on the server boundary.
+  - **API provider decomposition:** Break large `api-v2` auth, payments, Stripe-webhook, admin-v2 admins, and admin-v2 exchange services into smaller NestJS providers while preserving existing controllers, modules, and runtime entrypoints.
+  - **Production-build hygiene and local workflow alignment:** Exclude test artifacts from app and package production outputs, add package `files` or test-build separation where needed, align VS Code launch and watch tasks with the monorepo root, and remove dead exports, legacy invoice templates, and other unused internal surfaces to reduce maintenance drift.
+
+  ### ⚠️ Notes
+  - **No database rollout changes:** The April 29 work was refactor, test-infrastructure, build, and tooling focused; no Prisma schema or migration landed.
+
+</details>
+
+<details open>
+<summary>2026-04-30</summary>
+
+- **2026-04-30:**
+
+  ### 🚀 Feature
+  - **Consumer document recovery:** Restore `consumer/documents` listing by fixing the raw-query path, falling back to the in-memory path when Prisma raw execution fails, and recovering empty-page pagination in `consumer-css-grid` instead of stranding users on a blank documents view.
+  - **Admin document and resend-action alignment:** Route protected document downloads through an `admin-v2` same-origin BFF path, keep resend-email actions pinned to the canonical consumer app scope, and hide signup-verification resend once a consumer is already verified while preserving password-recovery resend.
+
+  ### 🔐 Security / Production Safety
+  - **Canonical consumer app-scope enforcement:** Hard-cut `api-v2`, `consumer-css-grid`, shared auth contracts, mail-link resolution, and payment-link metadata to the canonical `consumer-css-grid` scope so auth cookies, CSRF, OAuth state, and session validation stay fail-closed instead of accepting legacy scope aliases.
+  - **Payment and reversal concurrency hardening:** Serialize admin and Stripe reversal flows on shared outgoing advisory locks, include pending outflows in balance checks, make refund idempotency deterministic across duplicate attempts, translate assignment races into stable `409` responses, dedupe checkout payment methods on persisted identifiers, and evaluate outgoing limits in the actual transaction currency.
+  - **Protected frontend read-path alignment for Vercel:** Move consumer read requests onto shared header builders that carry the canonical app scope, origin, cookies, and Vercel protection-bypass headers consistently so protected server-side reads keep working behind deployment protection.
+
+  ### 🗄 Database & Migrations
+  - **Participant-access indexes and partition-aware retention:** Add migration `20260430133000_payment_request_participant_access_indexes`, create composite and partial email-fallback indexes for `payment_request` participant access, align raw SQL UUID binding with schema-backed `@db.Uuid` columns, and delete `consumer_action_log` cutoff rows from the concrete partition instead of the partitioned parent.
+
+  ### 🧪 Testing
+  - **Regression coverage expansion:** Refresh auth, OAuth, origin, cookie, payment, webhook, and BFF tests around the canonical app-scope contract; add coverage for documents raw-query fallback and empty-page recovery, reversal and assignment concurrency, payment-method dedupe, partition-targeted retention deletes, admin-v2 protected downloads, and resend-email gating for verified consumers.
+
+  ### 🛠 DevEx
+  - **Shared request and raw-SQL helpers:** Centralize consumer read and mutation header construction plus shared Prisma raw-SQL UUID and participant-query helpers so BFF and `api-v2` hot paths stop duplicating low-level request and cast logic.
+
+  ### ⚠️ Notes
+  - **Migration sequencing matters:** The participant-access migration is additive and requires no backfill, but it should land before expecting remote planner improvements on `payment_request` participant-access queries.
 
 </details>
 
