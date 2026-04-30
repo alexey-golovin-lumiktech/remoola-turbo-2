@@ -121,4 +121,15 @@ describe(`admin-v2 exchange rate case`, () => {
     expect(markup).toContain(`Exchange rate unavailable`);
     expect(markup).toContain(`cannot access this exchange-rate surface`);
   });
+
+  it(`renders password confirmation for approval actions`, async () => {
+    const markup = renderToStaticMarkup(
+      await ExchangeRateCasePage({
+        params: Promise.resolve({ rateId: `rate-1` }),
+      }),
+    );
+
+    expect(markup).toContain(`Approve exchange rate`);
+    expect(markup).toContain(`name="passwordConfirmation"`);
+  });
 });

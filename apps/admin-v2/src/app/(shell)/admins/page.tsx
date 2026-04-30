@@ -213,6 +213,17 @@ export default async function AdminsPage({
                     ))}
                   </select>
                 </label>
+                <label className={fieldClass}>
+                  <span className={fieldLabelClass}>Current password</span>
+                  <input
+                    className={textInputClass}
+                    name="passwordConfirmation"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    placeholder="Confirm with your current password"
+                  />
+                </label>
                 <div className={buttonRowClass}>
                   <ActionGhost type="submit">Send invitation</ActionGhost>
                 </div>

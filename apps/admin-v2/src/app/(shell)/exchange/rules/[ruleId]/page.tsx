@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
+import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../components/ui-classes';
 import { getAdminIdentity, getExchangeRuleCaseResult } from '../../../../../lib/admin-api.server';
 import {
   pauseExchangeRuleAction,
@@ -129,6 +130,17 @@ export default async function ExchangeRuleCasePage({ params }: { params: Promise
                     Manual run is protected by a strong idempotency key, strict version checks and single active
                     execution lock.
                   </p>
+                  <label className={fieldClass}>
+                    <span className={fieldLabelClass}>Current password</span>
+                    <input
+                      className={textInputClass}
+                      name="passwordConfirmation"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      placeholder="Confirm with your current password"
+                    />
+                  </label>
                   <button className="secondaryButton" type="submit">
                     Run now
                   </button>

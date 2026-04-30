@@ -5,6 +5,8 @@ import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../c
 import { ContextStat } from '../../../../components/context-stat';
 import { Panel } from '../../../../components/panel';
 import {
+  fieldClass,
+  fieldLabelClass,
   operatorFormActionsClass,
   operatorFormClass,
   operatorFormConfirmClass,
@@ -13,6 +15,7 @@ import {
   operatorFormIntroClass,
   operatorFormSecondaryClass,
   operatorFormSectionClass,
+  textInputClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminCaseRecordResult, getAdminIdentity, getAdminSessionsResult } from '../../../../lib/admin-api.server';
@@ -38,6 +41,23 @@ function renderJson(value: Record<string, unknown> | null) {
   }
   return (
     <pre className="mono rounded-card border border-white/8 bg-black/20 p-3">{JSON.stringify(value, null, 2)}</pre>
+  );
+}
+
+function StepUpPasswordField({ disabled = false }: { disabled?: boolean }) {
+  return (
+    <label className={fieldClass}>
+      <span className={fieldLabelClass}>Current password</span>
+      <input
+        className={textInputClass}
+        name="passwordConfirmation"
+        type="password"
+        autoComplete="current-password"
+        required
+        placeholder="Confirm with your current password"
+        disabled={disabled}
+      />
+    </label>
   );
 }
 
@@ -223,6 +243,7 @@ export default async function AdminCasePage({
                           <span>Confirm</span>
                           <input type="checkbox" name="confirmed" value="true" required disabled={isSelf} />
                         </label>
+                        <StepUpPasswordField disabled={isSelf} />
                         {isSelf ? <p className="errorText mt-2">Self-deactivate is blocked.</p> : null}
                       </div>
                       <div className={operatorFormActionsClass}>
@@ -248,6 +269,9 @@ export default async function AdminCasePage({
                           Re-enables the admin record without changing current role configuration.
                         </p>
                       </div>
+                      <div className={operatorFormFieldsClass}>
+                        <StepUpPasswordField />
+                      </div>
                       <div className={operatorFormActionsClass}>
                         <button className={`primaryButton ${operatorFormFullWidthCtaClass}`} type="submit">
                           Restore admin
@@ -263,6 +287,9 @@ export default async function AdminCasePage({
                     <div className={operatorFormIntroClass}>
                       <p className="text-sm font-medium text-white/90">Password reset</p>
                       <p className="muted">Secondary recovery action for active admins only.</p>
+                    </div>
+                    <div className={operatorFormFieldsClass}>
+                      <StepUpPasswordField />
                     </div>
                     <div className={operatorFormActionsClass}>
                       <button
@@ -306,6 +333,7 @@ export default async function AdminCasePage({
                       <span>Confirm</span>
                       <input type="checkbox" name="confirmed" value="true" required />
                     </label>
+                    <StepUpPasswordField />
                   </div>
                   <div className={operatorFormActionsClass}>
                     <button
@@ -344,6 +372,7 @@ export default async function AdminCasePage({
                         </select>
                       </label>
                     ))}
+                    <StepUpPasswordField />
                   </div>
                   <div className={operatorFormActionsClass}>
                     <button className={`primaryButton ${operatorFormFullWidthCtaClass}`} type="submit">

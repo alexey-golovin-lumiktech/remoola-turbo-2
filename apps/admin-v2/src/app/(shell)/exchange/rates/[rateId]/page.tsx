@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
+import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../components/ui-classes';
 import { getAdminIdentity, getExchangeRateCaseResult } from '../../../../../lib/admin-api.server';
 import { approveExchangeRateAction } from '../../../../../lib/admin-mutations.server';
 
@@ -134,6 +135,17 @@ export default async function ExchangeRateCasePage({ params }: { params: Promise
               <label className="field">
                 <span>Confirmation</span>
                 <input type="checkbox" name="confirmed" value="true" required />
+              </label>
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Current password</span>
+                <input
+                  className={textInputClass}
+                  name="passwordConfirmation"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  placeholder="Confirm with your current password"
+                />
               </label>
               <button className="secondaryButton" type="submit" name="confirmedSubmit" value="true">
                 Approve exchange rate

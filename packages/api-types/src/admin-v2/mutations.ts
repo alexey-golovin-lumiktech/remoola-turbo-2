@@ -3,6 +3,10 @@ import { z } from 'zod';
 import {
   adminV2ConfirmedMutationBodySchema,
   adminV2ConfirmedVersionedMutationBodySchema,
+  type AdminV2StepUpConfirmedVersionedMutationBody,
+  type AdminV2StepUpVersionedMutationBody,
+  adminV2StepUpConfirmedVersionedMutationBodySchema,
+  adminV2StepUpVersionedMutationBodySchema,
   adminV2VersionedMutationBodySchema,
 } from './common';
 import { CONSUMER_APP_SCOPES, type ConsumerAppScope } from '../http';
@@ -92,9 +96,7 @@ export type AdminV2EscalatePayoutBody = {
   reason?: string;
 };
 
-export type AdminV2ApproveRateBody = {
-  confirmed: boolean;
-  version: number;
+export type AdminV2ApproveRateBody = AdminV2StepUpConfirmedVersionedMutationBody & {
   reason: string;
 };
 
@@ -130,16 +132,15 @@ export type AdminV2DocumentBulkTagBody = {
 export type AdminV2InviteAdminBody = {
   email: string;
   roleKey: string;
+  passwordConfirmation: string;
 };
 
-export type AdminV2DeactivateAdminBody = {
-  version: number;
+export type AdminV2DeactivateAdminBody = AdminV2StepUpVersionedMutationBody & {
   confirmed: boolean;
   reason?: string;
 };
 
-export type AdminV2ChangeAdminRoleBody = {
-  version: number;
+export type AdminV2ChangeAdminRoleBody = AdminV2StepUpVersionedMutationBody & {
   confirmed: boolean;
   roleKey: string;
 };
@@ -149,8 +150,7 @@ export type AdminV2PermissionOverride = {
   mode: `inherit` | `grant` | `deny`;
 };
 
-export type AdminV2ChangeAdminPermissionsBody = {
-  version: number;
+export type AdminV2ChangeAdminPermissionsBody = AdminV2StepUpVersionedMutationBody & {
   capabilityOverrides: AdminV2PermissionOverride[];
 };
 
@@ -229,7 +229,7 @@ export const adminV2EscalatePayoutBodySchema = adminV2ConfirmedVersionedMutation
   reason: z.string().trim().max(500).optional(),
 });
 
-export const adminV2ApproveRateBodySchema = adminV2ConfirmedVersionedMutationBodySchema.extend({
+export const adminV2ApproveRateBodySchema = adminV2StepUpConfirmedVersionedMutationBodySchema.extend({
   reason: z.string().trim().min(1).max(500),
 });
 
@@ -260,17 +260,20 @@ const adminV2DocumentBulkTagBodySchema = z.object({
 export const adminV2InviteAdminBodySchema = z.object({
   email: z.string().email(),
   roleKey: z.string().min(1),
+  passwordConfirmation: z.string().min(1).max(256),
 });
 
-export const adminV2DeactivateAdminBodySchema = adminV2ConfirmedVersionedMutationBodySchema.extend({
+export const adminV2DeactivateAdminBodySchema = adminV2StepUpVersionedMutationBodySchema.extend({
+  confirmed: z.boolean(),
   reason: z.string().trim().max(500).optional(),
 });
 
-export const adminV2ChangeAdminRoleBodySchema = adminV2ConfirmedVersionedMutationBodySchema.extend({
+export const adminV2ChangeAdminRoleBodySchema = adminV2StepUpVersionedMutationBodySchema.extend({
+  confirmed: z.boolean(),
   roleKey: z.string().min(1),
 });
 
-export const adminV2ChangeAdminPermissionsBodySchema = adminV2VersionedMutationBodySchema.extend({
+export const adminV2ChangeAdminPermissionsBodySchema = adminV2StepUpVersionedMutationBodySchema.extend({
   capabilityOverrides: z.array(
     z.object({
       capability: z.string().min(1),

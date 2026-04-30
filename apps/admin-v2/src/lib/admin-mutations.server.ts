@@ -25,6 +25,8 @@ import {
   adminV2SavedViewCreateBodySchema,
   adminV2SavedViewDeleteBodySchema,
   adminV2SavedViewUpdateBodySchema,
+  adminV2StepUpConfirmedVersionedMutationBodySchema,
+  adminV2StepUpVersionedMutationBodySchema,
   adminV2SuspendConsumerBodySchema,
   adminV2VerificationDecisionBodySchema,
   adminV2VersionedMutationBodySchema,
@@ -290,7 +292,8 @@ export async function approveExchangeRateAction(rateId: string, formData: FormDa
   const version = parseRequiredVersion(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const reason = String(formData.get(`reason`) ?? ``).trim();
-  const body = adminV2ApproveRateBodySchema.parse({ version, confirmed, reason });
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const body = adminV2ApproveRateBodySchema.parse({ version, confirmed, reason, passwordConfirmation });
   await postAdminMutation(`/admin-v2/exchange/rates/${rateId}/approve`, body, `Failed to approve exchange rate`);
   revalidateExchangeRatePaths(rateId);
 }
@@ -314,7 +317,8 @@ export async function resumeExchangeRuleAction(ruleId: string, formData: FormDat
 export async function runExchangeRuleNowAction(ruleId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
-  const body = adminV2VersionedMutationBodySchema.parse({ version });
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const body = adminV2StepUpVersionedMutationBodySchema.parse({ version, passwordConfirmation });
   await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/run-now`, body, `Failed to run exchange rule`);
   revalidateExchangeRulePaths(ruleId, consumerId);
 }
@@ -323,7 +327,8 @@ export async function forceExecuteScheduledExchangeAction(conversionId: string, 
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
-  const body = adminV2ApproveRateBodySchema.pick({ version: true, confirmed: true }).parse({ version, confirmed });
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const body = adminV2StepUpConfirmedVersionedMutationBodySchema.parse({ version, confirmed, passwordConfirmation });
   await postAdminMutation(
     `/admin-v2/exchange/scheduled/${conversionId}/force-execute`,
     body,
@@ -336,7 +341,8 @@ export async function cancelScheduledExchangeAction(conversionId: string, formDa
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
-  const body = adminV2ApproveRateBodySchema.pick({ version: true, confirmed: true }).parse({ version, confirmed });
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const body = adminV2StepUpConfirmedVersionedMutationBodySchema.parse({ version, confirmed, passwordConfirmation });
   await postAdminMutation(
     `/admin-v2/exchange/scheduled/${conversionId}/cancel`,
     body,
@@ -454,10 +460,15 @@ function buildAdminCapabilityOverrides(formData: FormData) {
   }));
 }
 
+function parsePasswordConfirmation(formData: FormData) {
+  return String(formData.get(`passwordConfirmation`) ?? ``).trim();
+}
+
 export async function inviteAdminAction(formData: FormData): Promise<void> {
   const email = String(formData.get(`email`) ?? ``).trim();
   const roleKey = String(formData.get(`roleKey`) ?? ``).trim();
-  const body = adminV2InviteAdminBodySchema.parse({ email, roleKey });
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const body = adminV2InviteAdminBodySchema.parse({ email, roleKey, passwordConfirmation });
   await postAdminMutation(`/admin-v2/admins/invite`, body, `Failed to invite admin`);
   revalidateAdminPaths();
 }
@@ -466,14 +477,21 @@ export async function deactivateAdminAction(adminId: string, formData: FormData)
   const version = parseRequiredVersion(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const reason = String(formData.get(`reason`) ?? ``).trim();
-  const body = adminV2DeactivateAdminBodySchema.parse({ version, confirmed, reason: reason || undefined });
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const body = adminV2DeactivateAdminBodySchema.parse({
+    version,
+    confirmed,
+    reason: reason || undefined,
+    passwordConfirmation,
+  });
   await postAdminMutation(`/admin-v2/admins/${adminId}/deactivate`, body, `Failed to deactivate admin`);
   revalidateAdminPaths(adminId);
 }
 
 export async function restoreAdminAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
-  const body = adminV2VersionedMutationBodySchema.parse({ version });
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const body = adminV2StepUpVersionedMutationBodySchema.parse({ version, passwordConfirmation });
   await postAdminMutation(`/admin-v2/admins/${adminId}/restore`, body, `Failed to restore admin`);
   revalidateAdminPaths(adminId);
 }
@@ -482,16 +500,19 @@ export async function changeAdminRoleAction(adminId: string, formData: FormData)
   const version = parseRequiredVersion(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const roleKey = String(formData.get(`roleKey`) ?? ``).trim();
-  const body = adminV2ChangeAdminRoleBodySchema.parse({ version, confirmed, roleKey });
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const body = adminV2ChangeAdminRoleBodySchema.parse({ version, confirmed, roleKey, passwordConfirmation });
   await postAdminMutation(`/admin-v2/admins/${adminId}/role-change`, body, `Failed to change admin role`);
   revalidateAdminPaths(adminId);
 }
 
 export async function changeAdminPermissionsAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
+  const passwordConfirmation = parsePasswordConfirmation(formData);
   const body = adminV2ChangeAdminPermissionsBodySchema.parse({
     version,
     capabilityOverrides: buildAdminCapabilityOverrides(formData),
+    passwordConfirmation,
   });
   await postAdminMutation(`/admin-v2/admins/${adminId}/permissions-change`, body, `Failed to change admin permissions`);
   revalidateAdminPaths(adminId);
@@ -790,11 +811,9 @@ export async function reassignFxConversionAssignmentAction(conversionId: string,
 
 export async function resetAdminPasswordAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
-  await postAdminMutation(
-    `/admin-v2/admins/${adminId}/password-reset`,
-    { version },
-    `Failed to send admin password reset`,
-  );
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const body = adminV2StepUpVersionedMutationBodySchema.parse({ version, passwordConfirmation });
+  await postAdminMutation(`/admin-v2/admins/${adminId}/password-reset`, body, `Failed to send admin password reset`);
   revalidateAdminPaths(adminId);
 }
 

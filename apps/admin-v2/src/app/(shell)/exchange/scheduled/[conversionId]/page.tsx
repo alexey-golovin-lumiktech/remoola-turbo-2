@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../../components/assignment-card';
+import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../components/ui-classes';
 import { getAdminIdentity, getAdmins, getExchangeScheduledCaseResult } from '../../../../../lib/admin-api.server';
 import {
   cancelScheduledExchangeAction,
@@ -158,6 +159,17 @@ export default async function ExchangeScheduledCasePage({ params }: { params: Pr
                     <span>Confirmation</span>
                     <input type="checkbox" name="confirmed" value="true" required />
                   </label>
+                  <label className={fieldClass}>
+                    <span className={fieldLabelClass}>Current password</span>
+                    <input
+                      className={textInputClass}
+                      name="passwordConfirmation"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      placeholder="Confirm with your current password"
+                    />
+                  </label>
                   <button className="secondaryButton" type="submit" name="confirmedSubmit" value="true">
                     Force execute scheduled conversion
                   </button>
@@ -173,6 +185,17 @@ export default async function ExchangeScheduledCasePage({ params }: { params: Pr
                   <label className="field">
                     <span>Confirmation</span>
                     <input type="checkbox" name="confirmed" value="true" required />
+                  </label>
+                  <label className={fieldClass}>
+                    <span className={fieldLabelClass}>Current password</span>
+                    <input
+                      className={textInputClass}
+                      name="passwordConfirmation"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      placeholder="Confirm with your current password"
+                    />
                   </label>
                   <button className="secondaryButton" type="submit" name="confirmedSubmit" value="true">
                     Cancel scheduled conversion

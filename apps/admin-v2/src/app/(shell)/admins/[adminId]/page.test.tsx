@@ -230,6 +230,7 @@ describe(`admin-v2 admin case`, () => {
     expect(mockedGetAdminSessionsResult).toHaveBeenCalledWith(`admin-1`);
     expect(markup).toContain(`Active sessions`);
     expect(markup).toContain(`session-active`);
+    expect(markup).toContain(`name="passwordConfirmation"`);
     expect(markup).not.toContain(`Revoke session`);
     expect(markup).toContain(`Use My sessions for self-revoke`);
   });

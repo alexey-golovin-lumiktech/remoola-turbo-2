@@ -29,11 +29,17 @@ export type AdminV2VersionedMutationBody = {
   version: number;
 };
 
+export type AdminV2StepUpVersionedMutationBody = AdminV2VersionedMutationBody & {
+  passwordConfirmation: string;
+};
+
 export type AdminV2ConfirmedMutationBody = {
   confirmed: boolean;
 };
 
 export type AdminV2ConfirmedVersionedMutationBody = AdminV2VersionedMutationBody & AdminV2ConfirmedMutationBody;
+export type AdminV2StepUpConfirmedVersionedMutationBody = AdminV2StepUpVersionedMutationBody &
+  AdminV2ConfirmedVersionedMutationBody;
 
 export type AdminV2ExpectedDeletedAtNullBody = {
   expectedDeletedAtNull: number;
@@ -47,11 +53,19 @@ export const adminV2VersionedMutationBodySchema = z.object({
   version: z.number().int().positive(),
 });
 
+export const adminV2StepUpVersionedMutationBodySchema = adminV2VersionedMutationBodySchema.extend({
+  passwordConfirmation: z.string().min(1).max(256),
+});
+
 export const adminV2ConfirmedMutationBodySchema = z.object({
   confirmed: z.boolean(),
 });
 
 export const adminV2ConfirmedVersionedMutationBodySchema = adminV2VersionedMutationBodySchema.extend({
+  confirmed: z.boolean(),
+});
+
+export const adminV2StepUpConfirmedVersionedMutationBodySchema = adminV2StepUpVersionedMutationBodySchema.extend({
   confirmed: z.boolean(),
 });
 

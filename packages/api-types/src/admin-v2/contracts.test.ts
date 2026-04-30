@@ -4,9 +4,14 @@ import {
   ADMIN_V2_QUICKSTART_IDS,
   ADMIN_V2_SAVED_VIEW_WORKSPACES,
   adminV2AdminPasswordPatchBodySchema,
+  adminV2ApproveRateBodySchema,
+  adminV2ChangeAdminPermissionsBodySchema,
+  adminV2ChangeAdminRoleBodySchema,
   adminV2AssignmentClaimBodySchema,
   adminV2AssignmentReassignBodySchema,
   adminV2AssignmentReleaseBodySchema,
+  adminV2DeactivateAdminBodySchema,
+  adminV2InviteAdminBodySchema,
   adminV2LegacyAdminStatusBodySchema,
   adminV2OperationalAlertThresholdSchema,
   adminV2PaymentReversalBodySchema,
@@ -86,6 +91,59 @@ describe(`admin-v2 shared contracts`, () => {
       adminV2LegacyAdminStatusBodySchema.safeParse({
         action: `delete`,
         reason: `legacy reason field`,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      adminV2InviteAdminBodySchema.safeParse({
+        email: `new-admin@example.com`,
+        roleKey: `OPS_ADMIN`,
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2InviteAdminBodySchema.safeParse({
+        email: `new-admin@example.com`,
+        roleKey: `OPS_ADMIN`,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      adminV2DeactivateAdminBodySchema.safeParse({
+        version: 1,
+        confirmed: true,
+        reason: `audit trail reason`,
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2ChangeAdminRoleBodySchema.safeParse({
+        version: 1,
+        confirmed: true,
+        roleKey: `RISK_ADMIN`,
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2ChangeAdminPermissionsBodySchema.safeParse({
+        version: 1,
+        capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2ApproveRateBodySchema.safeParse({
+        version: 1,
+        confirmed: true,
+        reason: `Fresh provider sample`,
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2ApproveRateBodySchema.safeParse({
+        version: 1,
+        confirmed: true,
+        reason: `Fresh provider sample`,
       }).success,
     ).toBe(false);
   });
