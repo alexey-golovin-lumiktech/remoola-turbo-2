@@ -159,4 +159,15 @@ describe(`admin-v2 document case`, () => {
     expect(markup).toContain(`Document case unavailable`);
     expect(markup).toContain(`cannot access this document surface`);
   });
+
+  it(`routes secure open through the admin bff`, async () => {
+    const markup = renderToStaticMarkup(
+      await DocumentCasePage({
+        params: Promise.resolve({ documentId: `doc-1` }),
+      }),
+    );
+
+    expect(markup).toContain(`/api/admin-v2/documents/doc-1/download`);
+    expect(markup).not.toContain(`https://api.example.com/api/admin-v2/documents/doc-1/download`);
+  });
 });

@@ -17,6 +17,7 @@ import {
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminIdentity, getAdmins, getDocumentCaseResult, getDocumentTags } from '../../../../lib/admin-api.server';
+import { getAdminDocumentDownloadHref } from '../../../../lib/admin-document-download';
 import { formatBytes, formatDateTime } from '../../../../lib/admin-format';
 import {
   claimDocumentAssignmentAction,
@@ -124,7 +125,7 @@ export default async function DocumentCasePage({
               <ActionGhost href="/documents/tags">Tags</ActionGhost>
               <a
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-input border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90"
-                href={documentCase.downloadUrl}
+                href={getAdminDocumentDownloadHref(documentCase.id)}
                 target="_blank"
                 rel="noreferrer"
               >
