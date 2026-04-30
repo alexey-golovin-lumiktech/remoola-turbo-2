@@ -1,22 +1,19 @@
-/* eslint-disable max-len */
-const html = `
-  <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;font-size:28px;">
-    <tbody><tr><td>
-          <div style="text-align:center; font-weight:bold;color:cyan;">Welcome to Wirebill.</div>
-          <div>&nbsp;</div>
-          <div style="color:cyan;">You have initialized the signup flow.<div>To&nbsp;continue&nbsp;<a style="color:goldenrod" href="{{emailConfirmationLink}}">Click here to confirm your email</a></div></div>
-          <div>&nbsp;</div>
-          <div style="margin-left:200px;text-align:right;color:cyan">
-            If it was not you and the email came to you by mistake, just ignore it.
-            <div style="color:cyan;">Best&nbsp;regards&nbsp;<a style="color:goldenrod" href="mailto:support@wirebill.com">support@wirebill.com</a>.
-            </div>
-          </div>
-        </td></tr>
-    </tbody>
-  </table>
-`;
+import { renderEmailLayout, renderFallbackLinkLine } from '../../shared/layout';
+import { escapeAttr } from '../../shared/sanitize';
 
-const ReplacementsRegExpMapping = { emailConfirmationLink: new RegExp(`{{emailConfirmationLink}}`, `gi`) };
+export const processor = (emailConfirmationLink: string): string => {
+  const href = emailConfirmationLink;
 
-export const processor = (emailConfirmationLink: string) =>
-  html.replace(ReplacementsRegExpMapping.emailConfirmationLink, emailConfirmationLink);
+  const bodyHtml = `
+    <div>Thanks for signing up. Please confirm your email to finish creating your account.</div>
+    ${renderFallbackLinkLine({ href, label: `Confirm email` })}
+  `.trim();
+
+  return renderEmailLayout({
+    preheader: `Confirm your email`,
+    title: `Confirm your email`,
+    lead: `One step left to activate your account.`,
+    bodyHtml,
+    cta: { href, label: `Confirm email` },
+  });
+};

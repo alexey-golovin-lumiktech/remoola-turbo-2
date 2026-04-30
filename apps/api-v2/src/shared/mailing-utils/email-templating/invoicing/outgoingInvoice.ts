@@ -3,7 +3,7 @@ import { CURRENCY_CODE } from '@remoola/api-types';
 import { type InvoiceForTemplate } from './invoice';
 import { formatCurrency } from '../../../../shared-common';
 import { resolveEmailApiBaseUrl } from '../../../resolve-email-api-base-url';
-import { renderEmailLayout, renderKeyValueTable } from '../shared/layout';
+import { renderEmailLayout, renderFallbackLinkLine, renderKeyValueTable } from '../shared/layout';
 import { escapeAttr, escapeHtml } from '../shared/sanitize';
 
 export const processor = (invoice: InvoiceForTemplate) => {
@@ -27,10 +27,7 @@ export const processor = (invoice: InvoiceForTemplate) => {
       You received a new invoice from <strong>${escapeHtml(invoice.creator)}</strong>.
     </div>
     ${detailsTable}
-    <div style="margin-top:10px;color:#9ca3af;">
-      If the button doesn’t work, use this link:
-      <a href="${escapeAttr(href)}" style="color:#93c5fd;text-decoration:none;">View invoice</a>
-    </div>
+    ${renderFallbackLinkLine({ href, label: `View invoice` })}
   `.trim();
 
   return renderEmailLayout({

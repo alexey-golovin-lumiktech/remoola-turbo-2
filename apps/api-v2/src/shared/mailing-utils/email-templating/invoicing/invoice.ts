@@ -44,7 +44,7 @@ function resolvePayOnlineLink(inv: InvoiceForTemplate): string {
 }
 
 const html = `
-  <table id="InvoiceDetails" role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;color:#e5e7eb;">
+  <table id="InvoiceDetails" role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;color:#f3f4f6;">
     <tbody>
       <tr>
         <td style="padding: 5px;">
@@ -52,9 +52,9 @@ const html = `
           <div>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
               <tbody>
-                <tr><td style="padding:6px 5px;color:#9ca3af;">Invoice Number</td><td style="padding:6px 5px;text-align:right;white-space:nowrap;">{{invoiceId}}</td></tr>
-                <tr><td style="padding:6px 5px;color:#9ca3af;">Date of issue</td><td style="padding:6px 5px;text-align:right;white-space:nowrap;">{{invoiceCreatedAt}}</td></tr>
-                <tr><td style="padding:6px 5px;color:#9ca3af;">Date due</td><td style="padding:6px 5px;text-align:right;white-space:nowrap;">{{invoiceDueDate}}</td></tr>
+                <tr><td style="padding:6px 5px;color:#cbd5e1;">Invoice Number</td><td style="padding:6px 5px;text-align:right;white-space:nowrap;">{{invoiceId}}</td></tr>
+                <tr><td style="padding:6px 5px;color:#cbd5e1;">Date of issue</td><td style="padding:6px 5px;text-align:right;white-space:nowrap;">{{invoiceCreatedAt}}</td></tr>
+                <tr><td style="padding:6px 5px;color:#cbd5e1;">Date due</td><td style="padding:6px 5px;text-align:right;white-space:nowrap;">{{invoiceDueDate}}</td></tr>
               </tbody>
             </table>
           </div>
@@ -70,12 +70,12 @@ const html = `
           <div>
             <table id="BillingInfo" role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
               <tbody>
-                <tr><td style="padding:6px 5px;color:#9ca3af;">From</td><td style="padding:6px 5px;color:#9ca3af;">Bill to</td></tr>
+                <tr><td style="padding:6px 5px;color:#cbd5e1;">From</td><td style="padding:6px 5px;color:#cbd5e1;">Bill to</td></tr>
                 <tr><td style="padding:6px 5px;"><h4 style="margin:0;font-size:14px;line-height:18px;">{{invoiceCreatorEmail}}</h4></td><td style="padding:6px 5px;"><h4 style="margin:0;font-size:14px;line-height:18px;">{{invoiceRefererEmail}}</h4></td></tr>
                 <tr><td style="padding: 8px 5px;" colspan="2">
-                  <div style="font-size:12px;line-height:16px;color:#9ca3af;">Amount due</div>
+                  <div style="font-size:12px;line-height:16px;color:#cbd5e1;">Amount due</div>
                   <div style="margin-top:2px;font-size:22px;line-height:28px;font-weight:800;">{{invoiceTotal}}</div>
-                  <div style="margin-top:2px;font-size:12px;line-height:16px;color:#9ca3af;">Due {{invoiceDueDate}}</div>
+                  <div style="margin-top:2px;font-size:12px;line-height:16px;color:#cbd5e1;">Due {{invoiceDueDate}}</div>
                   <div style="margin-top:10px;">
                     <a href="{{toPayOnlineInvoiceLink}}" style="display:inline-block;padding:10px 14px;border-radius:10px;background:#f59e0b;color:#111827;font-weight:700;text-decoration:none;">Pay online</a>
                   </div>
@@ -91,10 +91,10 @@ const html = `
             <table id="InvoiceItems" role="presentation" cellpadding="0" cellspacing="0" border="0" style="width: 100%;border-collapse:collapse;">
               <thead>
                 <tr>
-                  <th scope="col" style="border-bottom: 2px solid #374151; padding: 10px 8px; text-align: left; color:#9ca3af; font-size:12px; letter-spacing:0.6px;">DESCRIPTION</th>
-                  <th scope="col" style="border-bottom: 2px solid #374151; padding: 10px 8px; text-align: right; color:#9ca3af; font-size:12px; letter-spacing:0.6px; white-space:nowrap;">AMOUNT</th>
-                  <th scope="col" style="border-bottom: 2px solid #374151; padding: 10px 8px; text-align: right; color:#9ca3af; font-size:12px; letter-spacing:0.6px; white-space:nowrap;">TAX (%)</th>
-                  <th scope="col" style="border-bottom: 2px solid #374151; padding: 10px 8px; text-align: right; color:#9ca3af; font-size:12px; letter-spacing:0.6px; white-space:nowrap;">SUBTOTAL</th>
+                  <th scope="col" style="border-bottom: 2px solid #243047; padding: 10px 8px; text-align: left; color:#cbd5e1; font-size:12px; letter-spacing:0.6px;">DESCRIPTION</th>
+                  <th scope="col" style="border-bottom: 2px solid #243047; padding: 10px 8px; text-align: right; color:#cbd5e1; font-size:12px; letter-spacing:0.6px; white-space:nowrap;">AMOUNT</th>
+                  <th scope="col" style="border-bottom: 2px solid #243047; padding: 10px 8px; text-align: right; color:#cbd5e1; font-size:12px; letter-spacing:0.6px; white-space:nowrap;">TAX (%)</th>
+                  <th scope="col" style="border-bottom: 2px solid #243047; padding: 10px 8px; text-align: right; color:#cbd5e1; font-size:12px; letter-spacing:0.6px; white-space:nowrap;">SUBTOTAL</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,9 +109,9 @@ const html = `
           <div style="margin-top: 22px; width: 100%;">
             <table id="InvoiceSummary" role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
               <tbody>
-                <tr><td style="padding: 6px 5px;text-align:left;color:#9ca3af;">Subtotal</td><td style="padding: 6px 5px;text-align:right;white-space:nowrap;">{{invoiceSubtotal}}</td></tr>
-                <tr><td style="padding: 6px 5px;text-align:left;color:#9ca3af;">Total</td><td style="padding: 6px 5px;text-align:right;white-space:nowrap;font-weight:800;">{{invoiceTotal}}</td></tr>
-                <tr><td style="padding: 6px 5px;text-align:left;color:#9ca3af;">Amount Due</td><td style="padding: 6px 5px;text-align:right;white-space:nowrap;font-weight:800;">{{invoiceTotal}}</td></tr>
+                <tr><td style="padding: 6px 5px;text-align:left;color:#cbd5e1;">Subtotal</td><td style="padding: 6px 5px;text-align:right;white-space:nowrap;">{{invoiceSubtotal}}</td></tr>
+                <tr><td style="padding: 6px 5px;text-align:left;color:#cbd5e1;">Total</td><td style="padding: 6px 5px;text-align:right;white-space:nowrap;font-weight:800;">{{invoiceTotal}}</td></tr>
+                <tr><td style="padding: 6px 5px;text-align:left;color:#cbd5e1;">Amount Due</td><td style="padding: 6px 5px;text-align:right;white-space:nowrap;font-weight:800;">{{invoiceTotal}}</td></tr>
               </tbody>
             </table>
           </div>
@@ -157,7 +157,7 @@ export const processor = (rawInvoice: InvoiceForTemplate) => {
   const payOnlineBeLink = resolvePayOnlineLink(invoice);
 
   const invoiceTableHtml = html
-    .replace(ReplacementsRegExpMapping.InvoiceId, invoice.id)
+    .replace(ReplacementsRegExpMapping.InvoiceId, escapeHtml(invoice.id))
     .replace(ReplacementsRegExpMapping.InvoiceCreatedAt, moment(invoice.createdAt).format(`ll`))
     .replace(ReplacementsRegExpMapping.InvoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
     .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, escapeHtml(invoice.creator))

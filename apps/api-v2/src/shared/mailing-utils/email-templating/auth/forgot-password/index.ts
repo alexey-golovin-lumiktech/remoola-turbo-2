@@ -1,4 +1,4 @@
-import { renderEmailLayout } from '../../shared/layout';
+import { renderEmailLayout, renderFallbackLinkLine } from '../../shared/layout';
 import { escapeAttr } from '../../shared/sanitize';
 
 export const processor = (forgotPasswordLink: string): string => {
@@ -6,10 +6,7 @@ export const processor = (forgotPasswordLink: string): string => {
 
   const bodyHtml = `
     <div>We received a request to reset your Wirebill password.</div>
-    <div style="margin-top:10px;color:#9ca3af;">
-      If the button doesn’t work, use this link:
-      <a href="${escapeAttr(href)}" style="color:#93c5fd;text-decoration:none;">Reset password</a>
-    </div>
+    ${renderFallbackLinkLine({ href, label: `Reset password` })}
   `.trim();
 
   return renderEmailLayout({

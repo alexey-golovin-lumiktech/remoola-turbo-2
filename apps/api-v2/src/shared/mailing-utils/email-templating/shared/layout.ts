@@ -27,13 +27,13 @@ export type EmailLayoutParams = {
 };
 
 const COLORS = {
-  pageBg: `#0b1220`,
-  containerBg: `#111827`,
-  border: `#1f2937`,
-  text: `#e5e7eb`,
-  muted: `#9ca3af`,
+  pageBg: `transparent`,
+  containerBg: `#0f172a`,
+  border: `#243047`,
+  text: `#f3f4f6`,
+  muted: `#cbd5e1`,
   accent: `#f59e0b`,
-  link: `#93c5fd`,
+  link: `#60a5fa`,
 } as const;
 
 const FONT_STACK =
@@ -57,6 +57,21 @@ export function renderButtonLink(params: EmailCta): string {
         </tr>
       </tbody>
     </table>
+  `.trim();
+}
+
+export function renderTextLink(params: { href: string; label: string }): string {
+  const href = escapeAttr(params.href);
+  const label = escapeHtml(params.label);
+  return `<a href="${href}" style="color:${COLORS.link};text-decoration:underline;">${label}</a>`;
+}
+
+export function renderFallbackLinkLine(params: { href: string; label: string; prefix?: string }): string {
+  const prefix = escapeHtml(params.prefix ?? `If the button doesn’t work, use this link:`);
+  return `
+    <div style="margin-top:10px;color:${COLORS.muted};">
+      ${prefix} ${renderTextLink({ href: params.href, label: params.label })}
+    </div>
   `.trim();
 }
 
@@ -135,7 +150,7 @@ export function renderEmailLayout(params: EmailLayoutParams): string {
                       <div style="margin-top: 20px;padding-top: 14px;border-top:1px solid ${COLORS.border};color:${COLORS.muted};font-size:12px;line-height:18px;">
                         If this email reached you by mistake, you can safely ignore it.
                         <div style="margin-top:6px;">
-                          Need help? <a href="mailto:support@wirebill.com" style="color:${COLORS.link};text-decoration:none;">support@wirebill.com</a>
+                          Need help? <a href="mailto:support@wirebill.com" style="color:${COLORS.link};text-decoration:underline;">support@wirebill.com</a>
                         </div>
                         ${footerNoteHtml}
                       </div>

@@ -1,40 +1,5 @@
-const html = `
-  <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;font-size:28px;">
-    <tbody>
-      <tr>
-        <td>
-          <div style="text-align:center; font-weight:bold;color:cyan;">Wirebill payment refund</div>
-          <div style="text-align:center; font-weight:bold;color:cyan;">Hello {{recipientEmail}}.</div>
-          <br/>
-          <div style="color:cyan;">
-            {{summaryLine}}
-            <div>Amount: {{amount}} {{currencyCode}}</div>
-            <div>{{reasonLine}}</div>
-            <div>
-              <a style="color:goldenrod" href="{{paymentRequestLink}}">View payment request</a>
-            </div>
-          </div>
-          <br/>
-          <div style="margin-left:200px;text-align:right;color:cyan">
-            If the email came to you by mistake, just ignore it.
-            <div style="color:cyan;">Best regards
-              <a style="color:goldenrod" href="mailto:support@wirebill.com">support@wirebill.com</a>.
-            </div>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-`;
-
-const ReplacementsRegExpMapping = {
-  recipientEmail: new RegExp(`{{recipientEmail}}`, `gi`),
-  summaryLine: new RegExp(`{{summaryLine}}`, `gi`),
-  amount: new RegExp(`{{amount}}`, `gi`),
-  currencyCode: new RegExp(`{{currencyCode}}`, `gi`),
-  reasonLine: new RegExp(`{{reasonLine}}`, `gi`),
-  paymentRequestLink: new RegExp(`{{paymentRequestLink}}`, `gi`),
-} as const;
+import { renderEmailLayout, renderFallbackLinkLine, renderKeyValueTable } from '../../shared/layout';
+import { escapeAttr, escapeHtml } from '../../shared/sanitize';
 
 export const processor = (params: {
   recipientEmail: string;
@@ -53,11 +18,27 @@ export const processor = (params: {
     paymentRequestLink = ``,
   } = params;
 
-  return html
-    .replace(ReplacementsRegExpMapping.recipientEmail, recipientEmail)
-    .replace(ReplacementsRegExpMapping.summaryLine, summaryLine)
-    .replace(ReplacementsRegExpMapping.amount, amount)
-    .replace(ReplacementsRegExpMapping.currencyCode, currencyCode)
-    .replace(ReplacementsRegExpMapping.reasonLine, reasonLine)
-    .replace(ReplacementsRegExpMapping.paymentRequestLink, paymentRequestLink);
+  const amountLine = `${amount} ${currencyCode}`.trim();
+  const detailsTable = renderKeyValueTable(
+    [
+      { label: `Recipient`, value: recipientEmail },
+      amountLine ? { label: `Amount`, value: amountLine } : null,
+      reasonLine ? { label: `Reason`, value: reasonLine } : null,
+    ].filter((row): row is { label: string; value: string } => Boolean(row)),
+  );
+
+  const bodyHtml = `
+    <div>Hello <strong>${escapeHtml(recipientEmail)}</strong>.</div>
+    <div style="margin-top:10px;">${escapeHtml(summaryLine)}</div>
+    ${detailsTable}
+    ${renderFallbackLinkLine({ href: paymentRequestLink, label: `View payment request` })}
+  `.trim();
+
+  return renderEmailLayout({
+    preheader: `Payment refund`,
+    title: `Payment refund`,
+    lead: `A refund was processed.`,
+    bodyHtml,
+    cta: { href: paymentRequestLink, label: `View payment request` },
+  });
 };

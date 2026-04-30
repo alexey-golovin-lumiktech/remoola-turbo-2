@@ -1,4 +1,4 @@
-import { renderEmailLayout, renderKeyValueTable } from '../../shared/layout';
+import { renderEmailLayout, renderFallbackLinkLine, renderKeyValueTable } from '../../shared/layout';
 import { escapeAttr, escapeHtml } from '../../shared/sanitize';
 
 export const processor = (params: {
@@ -36,10 +36,7 @@ export const processor = (params: {
       <strong>${escapeHtml(`${amount} ${currencyCode}`.trim())}</strong> from you.
     </div>
     ${detailsTable}
-    <div style="margin-top:10px;color:#9ca3af;">
-      If the button doesn’t work, use this link:
-      <a href="${escapeAttr(paymentRequestLink)}" style="color:#93c5fd;text-decoration:none;">View payment request</a>
-    </div>
+    ${renderFallbackLinkLine({ href: paymentRequestLink, label: `View payment request` })}
   `.trim();
 
   return renderEmailLayout({

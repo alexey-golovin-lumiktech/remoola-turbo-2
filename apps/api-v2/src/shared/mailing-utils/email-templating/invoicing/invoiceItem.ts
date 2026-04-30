@@ -4,10 +4,10 @@ import { formatCurrency } from '../../../../shared-common';
 
 const html = `
   <tr>
-    <td style="padding:10px 8px;text-align:left;border-bottom:1px solid #1f2937;vertical-align:top;">{{itemDescription}}</td>
-    <td width="15%" style="padding:10px 8px;text-align:right;border-bottom:1px solid #1f2937;white-space:nowrap;vertical-align:top;">{{itemAmount}}</td>
-    <td width="15%" style="padding:10px 8px;text-align:right;border-bottom:1px solid #1f2937;white-space:nowrap;vertical-align:top;color:#9ca3af;">{{invoiceTax}}</td>
-    <td width="15%" style="padding:10px 8px;text-align:right;border-bottom:1px solid #1f2937;white-space:nowrap;vertical-align:top;font-weight:700;">{{calculatedItemSubtotal}}</td>
+    <td style="padding:10px 8px;text-align:left;border-bottom:1px solid #243047;vertical-align:top;">{{itemDescription}}</td>
+    <td width="15%" style="padding:10px 8px;text-align:right;border-bottom:1px solid #243047;white-space:nowrap;vertical-align:top;">{{itemAmount}}</td>
+    <td width="15%" style="padding:10px 8px;text-align:right;border-bottom:1px solid #243047;white-space:nowrap;vertical-align:top;color:#cbd5e1;">{{invoiceTax}}</td>
+    <td width="15%" style="padding:10px 8px;text-align:right;border-bottom:1px solid #243047;white-space:nowrap;vertical-align:top;font-weight:700;">{{calculatedItemSubtotal}}</td>
   </tr>
 `;
 

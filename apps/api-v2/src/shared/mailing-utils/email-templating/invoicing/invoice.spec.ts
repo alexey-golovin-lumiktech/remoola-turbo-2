@@ -1,5 +1,6 @@
 import { processor, type InvoiceForTemplate } from './invoice';
 import { envs } from '../../../../envs';
+import { escapeHtml } from '../shared/sanitize';
 
 jest.mock(`../../../../envs`, () => ({
   envs: {
@@ -38,6 +39,13 @@ describe(`invoice template pay-online origin`, () => {
     expect(html).toContain(`href="https://grid.example.com/dashboard"`);
   });
 
+  it(`wraps invoice into the common email layout`, () => {
+    const html = processor(baseInvoice);
+
+    expect(html).toContain(`data-wirebill-email="root"`);
+    expect(html).toContain(`max-width:600px`);
+  });
+
   it(`falls back to localhost in test when the canonical origin is still a placeholder`, () => {
     (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
 
@@ -53,5 +61,11 @@ describe(`invoice template pay-online origin`, () => {
     const html = processor(baseInvoice);
 
     expect(html).toContain(`href="#"`);
+  });
+});
+
+describe(`email templating escaping`, () => {
+  it(`escapes HTML metacharacters`, () => {
+    expect(escapeHtml(`<a&"'>`)).toBe(`&lt;a&amp;&quot;&#39;&gt;`);
   });
 });
