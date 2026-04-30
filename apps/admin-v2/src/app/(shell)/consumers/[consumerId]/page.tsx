@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import { ActionGhost } from '../../../../components/action-ghost';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { ContextStat } from '../../../../components/context-stat';
@@ -459,14 +461,14 @@ export default async function ConsumerCasePage({
                   <div className={operatorFormActionsClass}>
                     <form action={resendConsumerEmailAction.bind(null, consumer.id)}>
                       <input type="hidden" name="emailKind" value="signup_verification" />
-                      <input type="hidden" name="appScope" value="consumer" />
+                      <input type="hidden" name="appScope" value={CURRENT_CONSUMER_APP_SCOPE} />
                       <button className={`secondaryButton ${operatorFormFullWidthCtaClass}`} type="submit">
                         Resend signup verification email
                       </button>
                     </form>
                     <form action={resendConsumerEmailAction.bind(null, consumer.id)}>
                       <input type="hidden" name="emailKind" value="password_recovery" />
-                      <input type="hidden" name="appScope" value="consumer" />
+                      <input type="hidden" name="appScope" value={CURRENT_CONSUMER_APP_SCOPE} />
                       <button className={`secondaryButton ${operatorFormFullWidthCtaClass}`} type="submit">
                         Resend password recovery email
                       </button>

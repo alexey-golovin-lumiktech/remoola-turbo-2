@@ -2,6 +2,8 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
+
 import type * as AdminApi from '../../../../lib/admin-api.server';
 
 jest.mock(`next/link`, () => ({
@@ -175,5 +177,26 @@ describe(`admin-v2 consumer case capability gating`, () => {
     expect(markup).not.toContain(`Save note`);
     expect(markup).not.toContain(`name="flag"`);
     expect(markup).not.toContain(`>Remove<`);
+  });
+
+  it(`uses the canonical consumer app scope for resend email actions`, async () => {
+    mockedGetAdminIdentity.mockResolvedValue({
+      id: `admin-3`,
+      email: `ops@example.com`,
+      type: `ADMIN`,
+      role: `OPS_ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`consumers.read`, `consumers.email_resend`],
+      workspaces: [`consumers`],
+    } as never);
+
+    const markup = renderToStaticMarkup(
+      await ConsumerCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
+    );
+
+    expect(markup).toContain(`name="emailKind" value="signup_verification"`);
+    expect(markup).toContain(`name="emailKind" value="password_recovery"`);
+    expect(markup).toContain(`name="appScope" value="${CURRENT_CONSUMER_APP_SCOPE}"`);
+    expect(markup).not.toContain(`name="appScope" value="consumer"`);
   });
 });
