@@ -14,13 +14,13 @@ import {
   Req,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
 import { ConsumerDocumentsService } from './consumer-documents.service';
-import { AttachDocuments, BulkDeleteDocuments, SetTags } from './dto/document.dto';
+import { AttachDocuments, BulkDeleteDocuments, ConsumerDocumentsListResponse, SetTags } from './dto/document.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../../common';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
@@ -65,6 +65,7 @@ export class ConsumerDocumentsController {
   constructor(private readonly documents: ConsumerDocumentsService) {}
 
   @Get()
+  @ApiOkResponse({ type: ConsumerDocumentsListResponse })
   list(
     @Identity() consumer: IIdentityContext,
     @Query() query: ConsumerDocumentsListQuery,

@@ -45,9 +45,7 @@ export type PaymentsResponse = ConsumerPaymentsResponse;
 export type PaymentViewResponse = ConsumerPaymentViewResponse;
 export type ContractsResponse = ConsumerContractsResponse;
 export type ProfileResponse = ConsumerProfileResponse;
-export type SettingsResponse = Omit<ConsumerSettingsResponse, `preferredCurrency`> & {
-  preferredCurrency?: string | null;
-};
+export type SettingsResponse = ConsumerSettingsResponse;
 export type DocumentsResponse = ConsumerDocumentsResponse;
 export type ContactsResponse = ConsumerContactsResponse;
 export type ContactResponse = ConsumerContactResponse;

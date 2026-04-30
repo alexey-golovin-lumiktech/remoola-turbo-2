@@ -24,7 +24,7 @@ export class ConsumerDocument {
   downloadUrl: string;
 
   @Expose()
-  @ApiProperty({ type: String, isArray: false })
+  @ApiProperty({ type: String, isArray: false, nullable: true })
   mimetype: string | null;
 
   @Expose()
@@ -34,6 +34,42 @@ export class ConsumerDocument {
   @Expose()
   @ApiProperty({ type: String, isArray: true })
   tags: string[];
+}
+
+export class ConsumerDocumentsListItem extends ConsumerDocument {
+  @Expose()
+  @ApiProperty({ type: Boolean, isArray: false })
+  isAttachedToDraftPaymentRequest: boolean;
+
+  @Expose()
+  @ApiProperty({ type: String, isArray: true })
+  attachedDraftPaymentRequestIds: string[];
+
+  @Expose()
+  @ApiProperty({ type: Boolean, isArray: false })
+  isAttachedToNonDraftPaymentRequest: boolean;
+
+  @Expose()
+  @ApiProperty({ type: String, isArray: true })
+  attachedNonDraftPaymentRequestIds: string[];
+}
+
+export class ConsumerDocumentsListResponse {
+  @Expose()
+  @ApiProperty({ type: ConsumerDocumentsListItem, isArray: true })
+  items: ConsumerDocumentsListItem[];
+
+  @Expose()
+  @ApiProperty({ type: Number, isArray: false })
+  total: number;
+
+  @Expose()
+  @ApiProperty({ type: Number, isArray: false })
+  page: number;
+
+  @Expose()
+  @ApiProperty({ type: Number, isArray: false })
+  pageSize: number;
 }
 
 export class BulkDeleteDocuments {
