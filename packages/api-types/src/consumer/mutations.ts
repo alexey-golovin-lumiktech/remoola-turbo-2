@@ -68,7 +68,7 @@ export type ConsumerBulkDeleteDocumentsPayload = {
 };
 
 export type ConsumerCreateContactPayload = {
-  email: string | null;
+  email: string;
   name?: string | null;
   address?: {
     postalCode?: string | null;
@@ -92,8 +92,8 @@ export type ConsumerUpdateContactPayload = {
 };
 
 export type ConsumerCreateAutoConversionRulePayload = {
-  fromCurrency: TCurrencyCode;
-  toCurrency: TCurrencyCode;
+  from: TCurrencyCode;
+  to: TCurrencyCode;
   targetBalance: number;
   maxConvertAmount?: number | null;
   minIntervalMinutes?: number;
@@ -103,8 +103,8 @@ export type ConsumerCreateAutoConversionRulePayload = {
 export type ConsumerUpdateAutoConversionRulePayload = Partial<ConsumerCreateAutoConversionRulePayload>;
 
 export type ConsumerScheduleConversionPayload = {
-  fromCurrency: TCurrencyCode;
-  toCurrency: TCurrencyCode;
+  from: TCurrencyCode;
+  to: TCurrencyCode;
   amount: number;
   executeAt: ConsumerIsoDateTime;
 };

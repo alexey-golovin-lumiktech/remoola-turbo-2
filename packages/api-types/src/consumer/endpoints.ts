@@ -63,12 +63,12 @@ const CONSUMER_ENDPOINTS = {
     method: `GET`,
     path: `/consumer/contacts`,
     query: `ConsumerContactsListQuery`,
-    response: `ConsumerContactsResponse`,
+    response: `ConsumerContactsResponse | ConsumerContactSearchItem[]`,
   },
   contactsLookupByEmail: {
     method: `GET`,
     path: `/consumer/contacts/lookup/by-email`,
-    response: `ConsumerContactSearchItem`,
+    response: `ConsumerContactSearchItem | null`,
   },
   contactsGet: { method: `GET`, path: `/consumer/contacts/:id`, response: `ConsumerContactResponse` },
   contactsDetails: {

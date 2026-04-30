@@ -135,6 +135,21 @@ describe(`ConsumerExchangeService.getBalanceByCurrency`, () => {
   });
 });
 
+describe(`ConsumerExchangeService.getCurrencies`, () => {
+  it(`returns structured currency items for the consumer contract`, () => {
+    const prisma = {} as any;
+    const balanceService = {} as any;
+    const service = new ConsumerExchangeService(prisma, balanceService);
+
+    expect(service.getCurrencies()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: $Enums.CurrencyCode.USD, symbol: `$` }),
+        expect.objectContaining({ code: $Enums.CurrencyCode.EUR, symbol: `€` }),
+      ]),
+    );
+  });
+});
+
 describe(`ConsumerExchangeService.getRatesBatch`, () => {
   it(`returns all success rows when every pair has a live rate`, async () => {
     const { service } = createRateLookupService();

@@ -702,7 +702,23 @@ export class ConsumerExchangeService {
   }
 
   getCurrencies() {
-    return Object.values($Enums.CurrencyCode);
+    return Object.values($Enums.CurrencyCode).map((code) => ({
+      code,
+      symbol: this.getCurrencySymbol(code),
+    }));
+  }
+
+  private getCurrencySymbol(currencyCode: $Enums.CurrencyCode): string {
+    try {
+      const parts = new Intl.NumberFormat(`en-US`, {
+        style: `currency`,
+        currency: currencyCode,
+        currencyDisplay: `symbol`,
+      }).formatToParts(0);
+      return parts.find((part) => part.type === `currency`)?.value ?? currencyCode;
+    } catch {
+      return currencyCode;
+    }
   }
 
   private async loadExecutableAutoConversionRule(ruleId: string, options?: { requireEnabled?: boolean }) {

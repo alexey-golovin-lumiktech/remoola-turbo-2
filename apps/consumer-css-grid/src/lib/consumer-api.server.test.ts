@@ -268,6 +268,55 @@ describe(`consumer-api balance normalization`, () => {
   });
 });
 
+describe(`consumer-api exchange currencies`, () => {
+  const originalFetch = global.fetch;
+  let mockFetch: MockFetch;
+
+  beforeEach(() => {
+    mockFetch = jest.fn() as MockFetch;
+    global.fetch = mockFetch;
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    jest.clearAllMocks();
+  });
+
+  async function loadSubject() {
+    const mockCookies = jest.fn(async () => ({
+      toString: (): string => `consumer_session=test-cookie`,
+    }));
+
+    jest.doMock(`next/headers`, () => ({
+      cookies: mockCookies,
+    }));
+
+    return import(`./consumer-api.server`);
+  }
+
+  it(`accepts structured currency objects from the backend without local remapping`, async () => {
+    const { getExchangeCurrencies } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          { code: `USD`, symbol: `$`, name: `US Dollar` },
+          { code: `EUR`, symbol: `€`, name: `Euro` },
+        ]),
+        { status: 200 },
+      ),
+    );
+
+    await expect(getExchangeCurrencies()).resolves.toEqual([
+      { code: `USD`, symbol: `$`, name: `US Dollar` },
+      { code: `EUR`, symbol: `€`, name: `Euro` },
+    ]);
+  });
+});
+
 describe(`consumer-api SSR unauthorized redirects`, () => {
   const originalFetch = global.fetch;
   let mockFetch: MockFetch;

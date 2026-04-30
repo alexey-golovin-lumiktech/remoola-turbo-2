@@ -260,15 +260,7 @@ export async function getPaymentHistory(
 }
 
 export async function getExchangeCurrencies(options?: ConsumerApiRequestOptions): Promise<ExchangeCurrency[] | null> {
-  const raw = await fetchConsumerApi<unknown>(`/consumer/exchange/currencies`, options);
-  if (!Array.isArray(raw)) return null;
-  return raw.map((code) => {
-    const currencyCode = String(code);
-    return {
-      code: currencyCode,
-      symbol: currencyCode.slice(0, 1),
-    };
-  });
+  return fetchConsumerApi<ExchangeCurrency[]>(`/consumer/exchange/currencies`, options);
 }
 
 function normalizeExchangeRateBatchItem(
