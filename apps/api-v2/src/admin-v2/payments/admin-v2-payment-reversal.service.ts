@@ -131,9 +131,12 @@ export class AdminV2PaymentReversalService {
     paymentRequestId: string;
     kind: PaymentReversalCreateInput[`kind`];
     amount: number;
-    remainingBefore: number;
+    reason?: string | null;
   }) {
-    const normalized = JSON.stringify(payload);
+    const normalized = JSON.stringify({
+      ...payload,
+      reason: payload.reason?.trim() || null,
+    });
     return createHash(`sha256`).update(normalized).digest(`hex`);
   }
 
@@ -353,7 +356,7 @@ export class AdminV2PaymentReversalService {
           paymentRequestId,
           kind: body.kind,
           amount: finalRequestedAmount,
-          remainingBefore,
+          reason: body.reason ?? null,
         });
 
         const existingReversal = await tx.ledgerEntryModel.findFirst({

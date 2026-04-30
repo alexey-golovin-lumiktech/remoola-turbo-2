@@ -333,7 +333,7 @@ describe(`AdminV2PaymentReversalService`, () => {
     );
   });
 
-  it(`reuses the same business idempotency key for duplicate refunds even when adminId and reason differ`, async () => {
+  it(`reuses the same business idempotency key for duplicate refunds when admin changes but request shape stays the same`, async () => {
     const txExecuteRaw = jest.fn().mockResolvedValue(undefined);
     const txLedgerFindMany = jest.fn().mockResolvedValue([]);
     const txLedgerFindFirst = jest.fn().mockResolvedValue({ ledgerId: `existing-ledger`, amount: 25 });
@@ -386,8 +386,8 @@ describe(`AdminV2PaymentReversalService`, () => {
     } as any);
     jest.spyOn(service as any, `sendReversalEmails`).mockResolvedValue(undefined);
 
-    await service.createReversal(`pr-duplicate`, { kind: `REFUND`, amount: 25, reason: `first` }, `admin-1`);
-    await service.createReversal(`pr-duplicate`, { kind: `REFUND`, amount: 25, reason: `second` }, `admin-2`);
+    await service.createReversal(`pr-duplicate`, { kind: `REFUND`, amount: 25, reason: `same-reason` }, `admin-1`);
+    await service.createReversal(`pr-duplicate`, { kind: `REFUND`, amount: 25, reason: `same-reason` }, `admin-2`);
 
     const firstWhere = txLedgerFindFirst.mock.calls[0][0] as { where: { idempotencyKey: string } };
     const secondWhere = txLedgerFindFirst.mock.calls[1][0] as { where: { idempotencyKey: string } };
