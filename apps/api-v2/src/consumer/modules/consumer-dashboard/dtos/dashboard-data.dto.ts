@@ -4,7 +4,7 @@ export class DashboardSummary {
   availableBalanceCents: number;
   availableBalanceCurrencyCode: string;
   activeRequests: number;
-  lastPaymentAt: Date | string | null;
+  lastPaymentAt: string | null;
 }
 
 export class PendingRequest {
@@ -13,7 +13,7 @@ export class PendingRequest {
   amount: number;
   currencyCode: string;
   status: string;
-  lastActivityAt: Date | string | null;
+  lastActivityAt: string | null;
 }
 
 export class ActivityItem {

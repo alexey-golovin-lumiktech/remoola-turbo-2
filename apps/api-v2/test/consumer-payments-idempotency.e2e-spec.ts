@@ -183,7 +183,8 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
       .send({ amount: 11, method: `BANK_ACCOUNT`, currencyCode: `USD` })
       .expect(201);
 
-    expect(replay.body?.id).toBe(first.body?.id);
+    expect(first.body?.ledgerId).toBeTruthy();
+    expect(replay.body?.ledgerId).toBe(first.body?.ledgerId);
 
     const rows = await prisma.ledgerEntryModel.count({
       where: {

@@ -111,8 +111,9 @@ export type AdminV2LedgerDisputesQuery = AdminV2CursorQuery & {
 };
 
 export type AdminV2LedgerAnomaliesListQuery = AdminV2CursorQuery &
-  AdminV2DateRangeQuery & {
+  Omit<AdminV2DateRangeQuery, `dateFrom`> & {
     class: string;
+    dateFrom: string;
   };
 
 export type AdminV2TimelineQuery = AdminV2PageQuery &

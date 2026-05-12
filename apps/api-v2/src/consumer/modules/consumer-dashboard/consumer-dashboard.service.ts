@@ -559,7 +559,7 @@ export class ConsumerDashboardService {
       availableBalanceCurrencyCode: balanceCurrencyCode,
 
       activeRequests,
-      lastPaymentAt: lastPayment?.createdAt ?? null,
+      lastPaymentAt: lastPayment?.createdAt.toISOString() ?? null,
     };
   }
 
@@ -591,6 +591,7 @@ export class ConsumerDashboardService {
     return paymentRequests
       .map((paymentRequest) => {
         const effectiveStatus = this.getEffectivePaymentRequestStatus(paymentRequest) ?? paymentRequest.status;
+        const lastActivityAt = this.getPendingRequestLastActivityAt(paymentRequest);
         return {
           id: paymentRequest.id,
           counterpartyName: paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? ``,
@@ -598,20 +599,26 @@ export class ConsumerDashboardService {
           currencyCode: paymentRequest.currencyCode,
           effectiveStatus,
           status: this.formatDashboardStatus(effectiveStatus),
-          lastActivityAt: this.getPendingRequestLastActivityAt(paymentRequest),
+          lastActivityAt,
+          lastActivityTime: lastActivityAt?.getTime() ?? 0,
         };
       })
       .filter((paymentRequest) => paymentRequest.effectiveStatus !== $Enums.TransactionStatus.COMPLETED)
       .sort((left, right) => {
-        const leftTime = left.lastActivityAt?.getTime() ?? 0;
-        const rightTime = right.lastActivityAt?.getTime() ?? 0;
+        const leftTime = left.lastActivityTime;
+        const rightTime = right.lastActivityTime;
         if (rightTime !== leftTime) return rightTime - leftTime;
         return right.id.localeCompare(left.id);
       })
       .map((paymentRequest) => {
-        const nextPaymentRequest = { ...paymentRequest };
-        delete nextPaymentRequest.effectiveStatus;
-        return nextPaymentRequest;
+        return {
+          id: paymentRequest.id,
+          counterpartyName: paymentRequest.counterpartyName,
+          amount: paymentRequest.amount,
+          currencyCode: paymentRequest.currencyCode,
+          status: paymentRequest.status,
+          lastActivityAt: paymentRequest.lastActivityAt?.toISOString() ?? null,
+        };
       });
   }
 

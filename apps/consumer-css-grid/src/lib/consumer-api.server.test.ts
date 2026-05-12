@@ -527,7 +527,7 @@ describe(`consumer-api document download proxy normalization`, () => {
             {
               id: `resource-3`,
               name: `w9.pdf`,
-              url: `https://api.example.com/api/consumer/documents/resource-3/download`,
+              downloadUrl: `https://api.example.com/api/consumer/documents/resource-3/download`,
               createdAt: `2026-01-01T00:00:00.000Z`,
             },
           ],
@@ -538,7 +538,7 @@ describe(`consumer-api document download proxy normalization`, () => {
 
     const result = await getContactDetails(`contact-1`);
 
-    expect(result?.documents[0]?.url).toBe(`/api/documents/resource-3/download`);
+    expect(result?.documents[0]?.downloadUrl).toBe(`/api/documents/resource-3/download`);
   });
 
   it(`rewrites contract detail document links to the app proxy route`, async () => {

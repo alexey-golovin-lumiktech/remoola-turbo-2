@@ -63,8 +63,8 @@ export class ConsumerContact implements ConsumerContactResponseContract {
   name: string | null;
 
   @Expose()
-  @ApiProperty({ type: ConsumerContactAddress })
-  address: ConsumerContactAddress;
+  @ApiProperty({ type: ConsumerContactAddress, nullable: true })
+  address: ConsumerContactAddress | null;
 }
 
 export class ConsumerCreateContact implements ConsumerCreateContactPayload {

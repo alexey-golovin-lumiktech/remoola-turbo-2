@@ -367,7 +367,7 @@ export class ConsumerPaymentsCommandsService {
         deletedAt: null,
       },
     });
-    if (existing) return existing;
+    if (existing) return { ledgerId: existing.ledgerId };
 
     if (body.paymentMethodId?.trim()) {
       const payoutMethod = await this.prisma.paymentMethodModel.findFirst({
@@ -399,7 +399,7 @@ export class ConsumerPaymentsCommandsService {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
         }
 
-        return tx.ledgerEntryModel.create({
+        await tx.ledgerEntryModel.create({
           data: {
             ledgerId,
             consumerId,
@@ -418,6 +418,8 @@ export class ConsumerPaymentsCommandsService {
             },
           },
         });
+
+        return { ledgerId };
       });
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
@@ -430,7 +432,7 @@ export class ConsumerPaymentsCommandsService {
             deletedAt: null,
           },
         });
-        if (duplicate) return duplicate;
+        if (duplicate) return { ledgerId: duplicate.ledgerId };
       }
       this.logger.error(`Withdraw failed`, { consumerId });
       throw new InternalServerErrorException(`An unexpected error occurred`);

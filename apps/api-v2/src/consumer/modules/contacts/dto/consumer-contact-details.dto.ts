@@ -14,11 +14,11 @@ export class ConsumerDocument {
 
   @Expose()
   @ApiProperty()
-  url: string;
+  downloadUrl: string;
 
   @Expose()
   @ApiProperty()
-  createdAt: Date;
+  createdAt: string;
 }
 
 export class ConsumerPaymentRequest {
@@ -36,7 +36,7 @@ export class ConsumerPaymentRequest {
 
   @Expose()
   @ApiProperty()
-  createdAt: Date;
+  createdAt: string;
 }
 
 export class ConsumerContactDetails {
@@ -53,8 +53,8 @@ export class ConsumerContactDetails {
   name: string | null;
 
   @Expose()
-  @ApiProperty({ type: ConsumerContactAddress })
-  address: ConsumerContactAddress;
+  @ApiProperty({ type: ConsumerContactAddress, nullable: true })
+  address: ConsumerContactAddress | null;
 
   @Expose()
   @ApiProperty({ type: ConsumerPaymentRequest, isArray: true })

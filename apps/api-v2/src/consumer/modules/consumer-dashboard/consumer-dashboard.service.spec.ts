@@ -545,13 +545,13 @@ describe(`ConsumerDashboardService`, () => {
         id: `pr-waiting`,
         counterpartyName: `requester@example.com`,
         status: `Waiting for confirmation`,
-        lastActivityAt: olderByUpdateButNewerByOutcome.ledgerEntries[0].outcomes[0].createdAt,
+        lastActivityAt: olderByUpdateButNewerByOutcome.ledgerEntries[0].outcomes[0].createdAt.toISOString(),
       }),
       expect.objectContaining({
         id: `pr-pending`,
         counterpartyName: `known-start-payment@example.com`,
         status: `Pending`,
-        lastActivityAt: newerByUpdateOnly.ledgerEntries[0].outcomes[0].createdAt,
+        lastActivityAt: newerByUpdateOnly.ledgerEntries[0].outcomes[0].createdAt.toISOString(),
       }),
     ]);
   });
@@ -613,7 +613,7 @@ describe(`ConsumerDashboardService`, () => {
       expect.objectContaining({
         id: `pr-waiting-recipient-approval`,
         status: `Waiting for confirmation`,
-        lastActivityAt: paymentRequest.ledgerEntries[0].outcomes[0].createdAt,
+        lastActivityAt: paymentRequest.ledgerEntries[0].outcomes[0].createdAt.toISOString(),
       }),
     ]);
   });

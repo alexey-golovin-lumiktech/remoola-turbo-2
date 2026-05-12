@@ -731,18 +731,44 @@ export class ConsumerExchangeService {
     });
   }
 
-  private normalizeRule(rule: { targetBalance: unknown; maxConvertAmount: unknown }) {
+  private normalizeRule(rule: {
+    id: string;
+    fromCurrency: $Enums.CurrencyCode;
+    toCurrency: $Enums.CurrencyCode;
+    targetBalance: unknown;
+    maxConvertAmount: unknown;
+    minIntervalMinutes: number;
+    enabled: boolean;
+  }) {
     return {
-      ...rule,
+      id: rule.id,
+      fromCurrency: rule.fromCurrency,
+      toCurrency: rule.toCurrency,
       targetBalance: Number(rule.targetBalance),
       maxConvertAmount: rule.maxConvertAmount != null ? Number(rule.maxConvertAmount) : null,
+      minIntervalMinutes: rule.minIntervalMinutes,
+      enabled: rule.enabled,
     };
   }
 
-  private normalizeScheduledConversion(conversion: { amount: unknown }) {
+  private normalizeScheduledConversion(conversion: {
+    id: string;
+    fromCurrency: $Enums.CurrencyCode;
+    toCurrency: $Enums.CurrencyCode;
+    amount: unknown;
+    executeAt: Date | string;
+    status: $Enums.ScheduledFxConversionStatus;
+  }) {
     return {
-      ...conversion,
+      id: conversion.id,
+      fromCurrency: conversion.fromCurrency,
+      toCurrency: conversion.toCurrency,
       amount: Number(conversion.amount),
+      executeAt:
+        conversion.executeAt instanceof Date
+          ? conversion.executeAt.toISOString()
+          : new Date(conversion.executeAt).toISOString(),
+      status: conversion.status,
     };
   }
 

@@ -225,6 +225,7 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
     const result = await service.getList({
       className: `inconsistentOutcomeChains`,
       dateFrom: new Date(`2026-04-01T00:00:00.000Z`),
+      dateTo: new Date(`2026-04-20T00:00:00.000Z`),
     });
 
     expect(result.items[0].signal.detail).toContain(`Persisted status PENDING but latest outcome DENIED`);
@@ -254,6 +255,7 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
     const result = await service.getList({
       className: `largeValueOutliers`,
       dateFrom: new Date(`2026-04-01T00:00:00.000Z`),
+      dateTo: new Date(`2026-04-20T00:00:00.000Z`),
     });
 
     expect(result.items[0]).toEqual(
@@ -424,6 +426,7 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
     const { service } = makeService();
 
     await expect(
+      // @ts-expect-error intentionally exercises runtime validation for malformed HTTP-bound params.
       service.getList({
         className: `largeValueOutliers`,
       }),

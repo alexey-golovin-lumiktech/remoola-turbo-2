@@ -140,7 +140,7 @@ export class ConsumerPaymentsQueriesService {
       currencyCode: row.currencyCode,
       amount,
       direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
-      createdAt: row.createdAt,
+      createdAt: row.createdAt.toISOString(),
       rail: metadata.rail ?? row.paymentRequest?.paymentRail ?? null,
       paymentMethodId: metadata.paymentMethodId ?? null,
       paymentRequestId: row.paymentRequestId ?? null,
@@ -448,10 +448,10 @@ export class ConsumerPaymentsQueriesService {
         this.getEffectivePaymentRequestStatus(paymentRequest.status, consumerLedgerEntry),
       ),
       description: paymentRequest.description,
-      dueDate: paymentRequest.dueDate,
-      sentDate: paymentRequest.sentDate,
-      createdAt: paymentRequest.createdAt,
-      updatedAt: paymentRequest.updatedAt,
+      dueDate: paymentRequest.dueDate?.toISOString() ?? null,
+      sentDate: paymentRequest.sentDate?.toISOString() ?? null,
+      createdAt: paymentRequest.createdAt.toISOString(),
+      updatedAt: paymentRequest.updatedAt.toISOString(),
       role: isPayer ? `PAYER` : `REQUESTER`,
       payer: paymentRequest.payer ?? { id: null, email: paymentRequest.payerEmail ?? null },
       requester: paymentRequest.requester ?? { id: null, email: paymentRequest.requesterEmail ?? null },
@@ -469,7 +469,7 @@ export class ConsumerPaymentsQueriesService {
             direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
             status: normalizeConsumerFacingTransactionStatus(this.getEffectiveLedgerStatus(entry)!),
             type: this.normalizeProductLedgerType(entry.type, entry.paymentRequestId),
-            createdAt: entry.createdAt,
+            createdAt: entry.createdAt.toISOString(),
             rail: metadata.rail ?? paymentRequest.paymentRail ?? null,
             counterpartyId: metadata.counterpartyId ?? null,
           };
@@ -486,7 +486,7 @@ export class ConsumerPaymentsQueriesService {
           name: attachment.resource.originalName,
           downloadUrl: buildConsumerDocumentDownloadUrl(attachment.resource.id, backendBaseUrl),
           size: attachment.resource.size,
-          createdAt: attachment.resource.createdAt,
+          createdAt: attachment.resource.createdAt.toISOString(),
         })),
     };
   }
@@ -666,7 +666,7 @@ export class ConsumerPaymentsQueriesService {
         .filter((entry) => !status || entry.status === status)
         .filter((entry) => !type || entry.type === type)
         .sort((left, right) => {
-          const createdAtDiff = right.createdAt.getTime() - left.createdAt.getTime();
+          const createdAtDiff = Date.parse(right.createdAt) - Date.parse(left.createdAt);
           if (createdAtDiff !== 0) return createdAtDiff;
           return right.id.localeCompare(left.id);
         });

@@ -1254,7 +1254,7 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
     );
   });
 
-  it(`returns same entry when idempotency key is reused`, async () => {
+  it(`returns same ledgerId when idempotency key is reused`, async () => {
     const existingEntry = {
       id: `entry-1`,
       ledgerId: `ledger-1`,
@@ -1315,8 +1315,8 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
     const first = await service.withdraw(consumerId, body, `key-1`);
     const second = await service.withdraw(consumerId, body, `key-1`);
 
-    expect(first.id).toBe(`entry-1`);
-    expect(second.id).toBe(`entry-1`);
+    expect(first.ledgerId).toEqual(expect.any(String));
+    expect(second).toEqual({ ledgerId: `ledger-1` });
     expect(prisma.ledgerEntryModel.findFirst).toHaveBeenCalledWith({
       where: {
         idempotencyKey: `withdraw:key-1`,
@@ -1897,7 +1897,7 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
       amount: -index,
       status: $Enums.TransactionStatus.COMPLETED,
       currencyCode: $Enums.CurrencyCode.USD,
-      createdAt: new Date(`2026-03-01T12:${String(300 - index).padStart(2, `0`)}:00.000Z`),
+      createdAt: new Date(Date.UTC(2026, 2, 1, 12, 0, index)),
       metadata: {},
       paymentRequestId: null,
       paymentRequest: null,

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
@@ -29,6 +29,15 @@ function parseDate(value: string | undefined): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
+function parseRequiredDateParam(name: string, value: string | undefined): Date {
+  const parsed = parseDate(value);
+  if (!parsed) {
+    throw new BadRequestException(`${name} is required`);
+  }
+
+  return parsed;
+}
+
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Ledger anomalies`)
@@ -51,7 +60,7 @@ export class AdminV2LedgerAnomaliesController {
     await this.accessService.assertCapability(admin, `ledger.anomalies`);
     return this.service.getList({
       className: one(query.class) ?? ``,
-      dateFrom: parseDate(one(query.dateFrom)),
+      dateFrom: parseRequiredDateParam(`dateFrom`, one(query.dateFrom)),
       dateTo: parseDate(one(query.dateTo)),
       cursor: one(query.cursor),
       limit: toNumber(one(query.limit)),

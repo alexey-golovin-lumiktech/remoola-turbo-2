@@ -151,7 +151,7 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
   }
 
   describe(`Withdraw - Idempotency and Safety`, () => {
-    it(`should return existing entry for duplicate idempotency key`, async () => {
+    it(`should return existing ledgerId for duplicate idempotency key`, async () => {
       const prisma = createMockPrisma({ balance: 100 });
       const service = createService(prisma);
 
@@ -165,7 +165,7 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
       };
       const result = await service.withdraw(consumerId, withdrawBody, `duplicate-key`);
 
-      expect(result).toEqual(existingEntry);
+      expect(result).toEqual({ ledgerId: existingEntry.ledgerId });
       expect(prisma.ledgerEntryModel.findFirst).toHaveBeenCalledWith({
         where: {
           idempotencyKey: `withdraw:duplicate-key`,

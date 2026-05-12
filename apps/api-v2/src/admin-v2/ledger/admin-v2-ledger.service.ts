@@ -104,8 +104,8 @@ type LedgerListRow = {
   paymentRequest?: {
     paymentRail: $Enums.PaymentRail | null;
     status: $Enums.TransactionStatus;
-    payerId: string;
-    requesterId: string;
+    payerId: string | null;
+    requesterId: string | null;
   } | null;
   outcomes?: Array<{ status: $Enums.TransactionStatus }>;
   disputes?: Array<{ id: string }>;

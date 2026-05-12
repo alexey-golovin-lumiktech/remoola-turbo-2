@@ -128,7 +128,7 @@ const CONSUMER_ENDPOINTS = {
     method: `POST`,
     path: `/consumer/exchange/rates/batch`,
     body: `ConsumerExchangeRatesBatchQuery`,
-    response: `ConsumerExchangeRatesBatchResult`,
+    response: `ConsumerExchangeRatesBatchResponse`,
   },
   exchangeRules: {
     method: `GET`,

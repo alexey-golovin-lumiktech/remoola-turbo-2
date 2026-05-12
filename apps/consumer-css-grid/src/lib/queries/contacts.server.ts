@@ -46,7 +46,7 @@ export async function getContactDetails(contactId: string): Promise<ContactDetai
     ...contact,
     documents: contact.documents.map((document) => ({
       ...document,
-      url: normalizeDocumentDownloadUrl(document.url, document.id),
+      downloadUrl: normalizeDocumentDownloadUrl(document.downloadUrl, document.id),
     })),
   };
 }

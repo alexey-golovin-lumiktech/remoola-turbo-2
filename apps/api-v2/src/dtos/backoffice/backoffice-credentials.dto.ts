@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { Matches } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 import { type EmailPasswordCredentials, constants, IsValidEmail } from '../../shared-common';
 
@@ -11,7 +11,8 @@ export class BackofficeCredentials implements EmailPasswordCredentials {
   email: string;
 
   @Expose()
-  @Matches(constants.PASSWORD_RE, { message: constants.INVALID_PASSWORD })
+  @IsString({ message: constants.INVALID_PASSWORD })
+  @IsNotEmpty({ message: constants.INVALID_PASSWORD })
   @ApiProperty({ example: `RegularWirebill@Admin123!` })
   password: string;
 }

@@ -126,8 +126,8 @@ export class ConsumerContactsService {
       paymentRequest.attachments.map((paymentRequestAttachment) => ({
         id: paymentRequestAttachment.resource.id,
         name: paymentRequestAttachment.resource.originalName,
-        url: buildConsumerDocumentDownloadUrl(paymentRequestAttachment.resource.id, backendBaseUrl),
-        createdAt: paymentRequestAttachment.resource.createdAt,
+        downloadUrl: buildConsumerDocumentDownloadUrl(paymentRequestAttachment.resource.id, backendBaseUrl),
+        createdAt: paymentRequestAttachment.resource.createdAt.toISOString(),
       })),
     );
 
@@ -142,7 +142,7 @@ export class ConsumerContactsService {
         status: normalizeConsumerFacingTransactionStatus(
           this.getEffectiveLedgerStatus(paymentRequest.ledgerEntries[0]) ?? paymentRequest.status,
         ),
-        createdAt: paymentRequest.createdAt,
+        createdAt: paymentRequest.createdAt.toISOString(),
       })),
       documents,
     };

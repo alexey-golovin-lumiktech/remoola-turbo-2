@@ -356,8 +356,8 @@ type DocumentsListResponse = {
     id: string;
     originalName: string;
     access: string;
-    mimeType: string | null;
-    size: number | null;
+    mimeType: string;
+    size: number;
     consumerId: string | null;
     consumerEmail: string | null;
     createdAt: string;
@@ -910,9 +910,9 @@ type LedgerEntryCaseResponse = {
     currencyCode: string;
     status: string;
     paymentRail: string | null;
-    payerId: string;
+    payerId: string | null;
     payerEmail: string | null;
-    requesterId: string;
+    requesterId: string | null;
     requesterEmail: string | null;
   } | null;
   metadata: Record<string, unknown>;

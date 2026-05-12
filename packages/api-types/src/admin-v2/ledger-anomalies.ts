@@ -60,7 +60,7 @@ export type AdminV2LedgerAnomalyListResponse = {
 
 export type AdminV2LedgerAnomaliesListParams = {
   className: string;
-  dateFrom?: Date;
+  dateFrom: Date;
   dateTo?: Date;
   cursor?: string;
   limit?: number;

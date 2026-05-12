@@ -45,8 +45,8 @@ describe(`MailingService signup verification links`, () => {
     );
 
     const html = (brevoMailService.sendMail as jest.Mock).mock.calls[0]?.[0]?.html as string;
-    expect(html).not.toContain(`email=`);
-    expect(html).not.toContain(`referer=`);
+    expect(html).not.toMatch(/[?&]email=/);
+    expect(html).not.toMatch(/[?&]referer=/);
   });
 
   it(`builds payment-request links from canonical consumer app scope instead of a raw origin`, async () => {

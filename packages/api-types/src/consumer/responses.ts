@@ -248,7 +248,7 @@ export type ConsumerContactDetailsResponse = ConsumerContactResponse & {
   documents: Array<{
     id: ConsumerUuid;
     name: string;
-    url: string;
+    downloadUrl: string;
     createdAt: ConsumerIsoDateTime;
   }>;
 };
@@ -347,6 +347,21 @@ export type ConsumerExchangeRateCard = {
   to: TCurrencyCode | string;
   rate: number | null;
   status: `available` | `stale` | `unavailable`;
+};
+
+export type ConsumerExchangeRatesBatchResponse = {
+  data: Array<
+    | {
+        from: TCurrencyCode | string;
+        to: TCurrencyCode | string;
+        rate: number;
+      }
+    | {
+        from: TCurrencyCode | string;
+        to: TCurrencyCode | string;
+        code: string;
+      }
+  >;
 };
 
 export type ConsumerExchangeRatesBatchResult = {
