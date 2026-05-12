@@ -28,7 +28,12 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
     super(
       policiesService,
       new ConsumerPaymentsQueriesService(prisma, balanceService),
-      new ConsumerPaymentsCommandsService(prisma, mailingService, balanceService, commandPolicies),
+      new ConsumerPaymentsCommandsService(
+        prisma,
+        { sendPaymentRequest: mailingService.sendPaymentRequestEmail },
+        balanceService,
+        commandPolicies,
+      ),
     );
 
     this.testPoliciesService = policiesService;

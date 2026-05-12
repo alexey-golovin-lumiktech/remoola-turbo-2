@@ -248,14 +248,11 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
-  it(`returns 200 when the processed-event marker already exists after an idempotent rerun`, async () => {
-    const stripeWebhookEventCreate = jest
-      .fn()
-      .mockRejectedValue(
-        new Prisma.PrismaClientKnownRequestError(`Unique constraint`, { code: `P2002`, clientVersion: `6.x` }),
-      );
+  it(`returns 200 without dispatching when the processed-event marker already exists`, async () => {
+    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const stripeWebhookEventFindUnique = jest.fn().mockResolvedValue({ eventId: `evt_dup` });
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: stripeWebhookEventFindUnique },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
     const finalizeCheckoutSessionSuccess = jest
@@ -291,7 +288,12 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 
     await service.processStripeEvent(req, res);
 
-    expect(finalizeCheckoutSessionSuccess).toHaveBeenCalledTimes(1);
+    expect(stripeWebhookEventFindUnique).toHaveBeenCalledWith({
+      where: { eventId: `evt_dup` },
+      select: { eventId: true },
+    });
+    expect(finalizeCheckoutSessionSuccess).not.toHaveBeenCalled();
+    expect(stripeWebhookEventCreate).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
     expect(res.status).not.toHaveBeenCalled();
     expect(createOutcomeIdempotent).not.toHaveBeenCalled();
@@ -300,7 +302,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   it(`does not record the dedupe marker when a non-identity handler fails before completion`, async () => {
     const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: jest.fn().mockResolvedValue(null) },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
     const finalizeCheckoutSessionSuccess = jest
@@ -359,7 +361,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   it(`dispatches charge.refunded events to handleChargeRefunded`, async () => {
     const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: jest.fn().mockResolvedValue(null) },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
     const handleChargeRefunded = jest.spyOn(service as any, `handleChargeRefunded`).mockResolvedValue(undefined);
@@ -403,7 +405,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   it(`dispatches charge.refund.updated events to handleRefundUpdated`, async () => {
     const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: jest.fn().mockResolvedValue(null) },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
     const handleRefundUpdated = jest.spyOn(service as any, `handleRefundUpdated`).mockResolvedValue(undefined);
@@ -447,7 +449,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   it(`dispatches charge.dispute.created events to handleChargeDispute`, async () => {
     const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: jest.fn().mockResolvedValue(null) },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
     const handleChargeDispute = jest.spyOn(service as any, `handleChargeDispute`).mockResolvedValue(undefined);
@@ -489,16 +491,15 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   });
 
   const duplicateRefundUpdatedEventDescription =
-    `returns success for duplicate refund.updated event after handler completes ` + `and marker already exists`;
+    `returns success for duplicate refund.updated event before handler dispatch ` + `when marker already exists`;
 
   it(duplicateRefundUpdatedEventDescription, async () => {
-    const stripeWebhookEventCreate = jest
-      .fn()
-      .mockRejectedValue(
-        new Prisma.PrismaClientKnownRequestError(`Unique constraint`, { code: `P2002`, clientVersion: `6.x` }),
-      );
+    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+      stripeWebhookEventModel: {
+        create: stripeWebhookEventCreate,
+        findUnique: jest.fn().mockResolvedValue({ eventId: `evt_refund_updated_duplicate` }),
+      },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
     const handleRefundUpdated = jest.spyOn(service as any, `handleRefundUpdated`).mockResolvedValue(undefined);
@@ -533,8 +534,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 
     await service.processStripeEvent(req, res);
 
-    expect(handleRefundUpdated).toHaveBeenCalledTimes(1);
-    expect(stripeWebhookEventCreate).toHaveBeenCalledWith({ data: { eventId: `evt_refund_updated_duplicate` } });
+    expect(handleRefundUpdated).not.toHaveBeenCalled();
+    expect(stripeWebhookEventCreate).not.toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });

@@ -4,6 +4,7 @@ import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
 import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
@@ -25,7 +26,12 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
     super(
       policiesService,
       new ConsumerPaymentsQueriesService(prisma, balanceService),
-      new ConsumerPaymentsCommandsService(prisma, mailingService, balanceService, commandPolicies),
+      new ConsumerPaymentsCommandsService(
+        prisma,
+        new ConsumerPaymentRequestNotificationService(mailingService),
+        balanceService,
+        commandPolicies,
+      ),
     );
 
     this.testPoliciesService = policiesService;

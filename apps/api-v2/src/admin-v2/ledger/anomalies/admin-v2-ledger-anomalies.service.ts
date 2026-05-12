@@ -3,12 +3,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import {
-  DEFAULT_ANOMALY_LIMIT,
   DUPLICATE_RISK_WINDOW_DAYS,
   INCONSISTENT_CHAIN_GRACE_MINUTES,
   LARGE_VALUE_THRESHOLDS,
-  LEDGER_ANOMALY_CLASSES,
-  MAX_ANOMALY_LIMIT,
   MAX_ANOMALY_RANGE_DAYS,
   ORPHANED_ENTRY_GRACE_HOURS,
   STALE_PENDING_HOURS,
@@ -20,26 +17,17 @@ import {
   type LedgerAnomalyListResponse,
   type LedgerAnomalySummaryResponse,
 } from './admin-v2-ledger-anomalies.dto';
+import {
+  CLASS_HREFS,
+  CLASS_LABELS,
+  formatAbsoluteAmount,
+  formatAge,
+  formatNumber,
+  isLedgerAnomalyClass,
+  normalizeLimit,
+} from './admin-v2-ledger-anomaly-mappers';
 import { PrismaService } from '../../../shared/prisma.service';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../../admin-v2-cursor';
-
-const CLASS_LABELS: Record<LedgerAnomalyClass, string> = {
-  stalePendingEntries: `Stale pending entries`,
-  inconsistentOutcomeChains: `Inconsistent outcome chains`,
-  largeValueOutliers: `Large value outliers`,
-  orphanedEntries: `Orphaned entries`,
-  duplicateIdempotencyRisk: `Duplicate idempotency risk`,
-  impossibleTransitions: `Impossible transitions`,
-};
-
-const CLASS_HREFS: Record<LedgerAnomalyClass, string> = {
-  stalePendingEntries: `/ledger/anomalies?class=stalePendingEntries`,
-  inconsistentOutcomeChains: `/ledger/anomalies?class=inconsistentOutcomeChains`,
-  largeValueOutliers: `/ledger/anomalies?class=largeValueOutliers`,
-  orphanedEntries: `/ledger/anomalies?class=orphanedEntries`,
-  duplicateIdempotencyRisk: `/ledger/anomalies?class=duplicateIdempotencyRisk`,
-  impossibleTransitions: `/ledger/anomalies?class=impossibleTransitions`,
-};
 
 const PENDING_OUTCOME_STATUSES = [
   $Enums.TransactionStatus.WAITING,
@@ -71,40 +59,6 @@ type AnomalyRow = {
   prevStatus?: string | null;
   nextStatus?: string | null;
 };
-
-function isLedgerAnomalyClass(value: string): value is LedgerAnomalyClass {
-  return (LEDGER_ANOMALY_CLASSES as readonly string[]).includes(value);
-}
-
-function normalizeLimit(limit?: number) {
-  return Math.min(MAX_ANOMALY_LIMIT, Math.max(1, limit ?? DEFAULT_ANOMALY_LIMIT));
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat(`en-US`).format(value);
-}
-
-function formatAge(from: Date, now: Date) {
-  const diffMs = Math.max(0, now.getTime() - from.getTime());
-  const totalMinutes = Math.floor(diffMs / (60 * 1000));
-  if (totalMinutes < 60) {
-    return `${Math.max(1, totalMinutes)}m`;
-  }
-
-  const totalHours = Math.floor(totalMinutes / 60);
-  if (totalHours < 24) {
-    return `${totalHours}h`;
-  }
-
-  const days = Math.floor(totalHours / 24);
-  const hoursRemainder = totalHours % 24;
-  return hoursRemainder === 0 ? `${days}d` : `${days}d ${hoursRemainder}h`;
-}
-
-function formatAbsoluteAmount(amount: Prisma.Decimal) {
-  const raw = amount.toString();
-  return raw.startsWith(`-`) ? raw.slice(1) : raw;
-}
 
 @Injectable()
 export class AdminV2LedgerAnomaliesService {

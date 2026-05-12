@@ -13,11 +13,11 @@ import { type ConsumerAppScope, PAYMENT_METHOD, toCurrencyOrDefault } from '@rem
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { type CreatePaymentRequest, type TransferBody, type WithdrawBody } from './dto';
 import { type StartPayment } from './dto/start-payment.dto';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
-import { MailingService } from '../../../shared/mailing.service';
 import {
   acquireTransactionAdvisoryLock,
   buildConsumerOperationLockName,
@@ -31,7 +31,7 @@ export class ConsumerPaymentsCommandsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly mailingService: MailingService,
+    private readonly paymentRequestNotification: Pick<ConsumerPaymentRequestNotificationService, `sendPaymentRequest`>,
     private readonly balanceService: BalanceCalculationService,
     private readonly policiesService: ConsumerPaymentsPoliciesService,
   ) {}
@@ -337,12 +337,7 @@ export class ConsumerPaymentsCommandsService {
       };
     });
 
-    if (result.email.payerEmail) {
-      await this.mailingService.sendPaymentRequestEmail({
-        ...result.email,
-        consumerAppScope,
-      });
-    }
+    await this.paymentRequestNotification.sendPaymentRequest(result.email, consumerAppScope);
 
     return { paymentRequestId: result.paymentRequestId };
   }

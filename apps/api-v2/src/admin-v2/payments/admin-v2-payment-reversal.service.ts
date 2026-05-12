@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import Stripe from 'stripe';
@@ -7,6 +7,12 @@ import { type ConsumerAppScope, type TPaymentReversalKind } from '@remoola/api-t
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
+import {
+  buildPaymentReversalIdempotencyKey,
+  deriveEffectivePaymentRequestStatus,
+  getEffectiveLedgerStatus,
+  getRequesterReversalEntryType,
+} from './admin-v2-payment-reversal-policy';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { MailingService } from '../../shared/mailing.service';
@@ -48,63 +54,6 @@ export class AdminV2PaymentReversalService {
     @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
   ) {}
 
-  private getEffectiveLedgerStatus(entry: {
-    status: $Enums.TransactionStatus;
-    outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-  }): $Enums.TransactionStatus {
-    return entry.outcomes?.[0]?.status ?? entry.status;
-  }
-
-  private deriveEffectivePaymentRequestStatus(
-    paymentRequest:
-      | {
-          status: $Enums.TransactionStatus;
-          ledgerEntries?: Array<{
-            status: $Enums.TransactionStatus;
-            createdAt: Date;
-            outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-          }>;
-        }
-      | null
-      | undefined,
-  ): $Enums.TransactionStatus | null {
-    if (!paymentRequest) return null;
-    const latestEntry = [...(paymentRequest.ledgerEntries ?? [])].sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    )[0];
-    return latestEntry ? this.getEffectiveLedgerStatus(latestEntry) : paymentRequest.status;
-  }
-
-  private getRequesterReversalEntryType(params: {
-    settlementEntryType: $Enums.LedgerEntryType | null | undefined;
-    paymentRail?: $Enums.PaymentRail | null;
-  }): $Enums.LedgerEntryType {
-    return params.settlementEntryType === $Enums.LedgerEntryType.USER_DEPOSIT ||
-      params.paymentRail === $Enums.PaymentRail.CARD
-      ? $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL
-      : $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL;
-  }
-
-  private async findExistingReversal(
-    idempotencyKeyBase: string,
-    remainingBefore: number,
-    kind: PaymentReversalCreateInput[`kind`],
-  ) {
-    const existingReversal = await this.prisma.ledgerEntryModel.findFirst({
-      where: { idempotencyKey: `${idempotencyKeyBase}:payer` },
-      select: { ledgerId: true, amount: true },
-    });
-    if (!existingReversal) {
-      return null;
-    }
-    return {
-      ledgerId: existingReversal.ledgerId,
-      amount: Number(existingReversal.amount),
-      remaining: Math.max(0, remainingBefore - Number(existingReversal.amount)),
-      kind,
-    };
-  }
-
   private async resolveStripePaymentIntentId(paymentRequestId: string): Promise<string | null> {
     const stripePayment = await this.prisma.ledgerEntryModel.findFirst({
       where: {
@@ -131,19 +80,6 @@ export class AdminV2PaymentReversalService {
       select: { externalId: true },
     });
     return byOutcome?.externalId ?? null;
-  }
-
-  private buildReversalIdempotencyKey(payload: {
-    paymentRequestId: string;
-    kind: PaymentReversalCreateInput[`kind`];
-    amount: number;
-    reason?: string | null;
-  }) {
-    const normalized = JSON.stringify({
-      ...payload,
-      reason: payload.reason?.trim() || null,
-    });
-    return createHash(`sha256`).update(normalized).digest(`hex`);
   }
 
   private async sendReversalEmails(params: {
@@ -258,7 +194,7 @@ export class AdminV2PaymentReversalService {
       throw new BadRequestException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_NOT_FOUND);
     }
 
-    if (this.deriveEffectivePaymentRequestStatus(paymentRequest) !== $Enums.TransactionStatus.COMPLETED) {
+    if (deriveEffectivePaymentRequestStatus(paymentRequest) !== $Enums.TransactionStatus.COMPLETED) {
       throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_COMPLETED_CAN_BE_REVERSED);
     }
 
@@ -275,7 +211,7 @@ export class AdminV2PaymentReversalService {
     const originalLedgerId = paymentRequest.ledgerEntries.find(
       (entry) =>
         entry.type === $Enums.LedgerEntryType.USER_PAYMENT &&
-        this.getEffectiveLedgerStatus(entry) === $Enums.TransactionStatus.COMPLETED,
+        getEffectiveLedgerStatus(entry) === $Enums.TransactionStatus.COMPLETED,
     )?.ledgerId;
 
     const stripePaymentIntentId = await this.resolveStripePaymentIntentId(paymentRequestId);
@@ -299,7 +235,7 @@ export class AdminV2PaymentReversalService {
           orderBy: { createdAt: `desc` },
         })
       : null;
-    const requesterReversalType = this.getRequesterReversalEntryType({
+    const requesterReversalType = getRequesterReversalEntryType({
       settlementEntryType: requesterSettlementEntry?.type,
       paymentRail: requesterSettlementEntry?.paymentRequest?.paymentRail ?? null,
     });
@@ -336,7 +272,7 @@ export class AdminV2PaymentReversalService {
         });
 
         const alreadyReversed = reversalEntries.reduce((sum, entry) => {
-          const effectiveStatus = this.getEffectiveLedgerStatus(entry);
+          const effectiveStatus = getEffectiveLedgerStatus(entry);
           if (
             effectiveStatus !== $Enums.TransactionStatus.COMPLETED &&
             effectiveStatus !== $Enums.TransactionStatus.PENDING
@@ -357,7 +293,7 @@ export class AdminV2PaymentReversalService {
           throw new BadRequestException(adminErrorCodes.ADMIN_REVERSAL_AMOUNT_EXCEEDS_REMAINING_BALANCE);
         }
 
-        const idempotencyKeyBase = this.buildReversalIdempotencyKey({
+        const idempotencyKeyBase = buildPaymentReversalIdempotencyKey({
           paymentRequestId,
           kind: body.kind,
           amount: finalRequestedAmount,

@@ -3,6 +3,7 @@ import { type Provider } from '@nestjs/common';
 import { ConsumerPaymentMethodsService } from './consumer-payment-methods.service';
 import { StripeCheckoutScheduler } from './stripe-checkout.scheduler';
 import { StripeReversalScheduler } from './stripe-reversal.scheduler';
+import { StripeWebhookDeduplicationService } from './stripe-webhook-deduplication.service';
 import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-methods.service';
 import { StripeWebhookPayoutsService } from './stripe-webhook-payouts.service';
 import { StripeWebhookReversalsService } from './stripe-webhook-reversals.service';
@@ -19,6 +20,7 @@ export const providers = [
     useExisting: STRIPE_CLIENT,
   },
   StripeWebhookPaymentMethodsService,
+  StripeWebhookDeduplicationService,
   StripeWebhookPayoutsService,
   StripeWebhookSettlementsService,
   StripeWebhookVerificationService,

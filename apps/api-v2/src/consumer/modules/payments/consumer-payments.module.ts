@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ConsumerInvoiceService } from './consumer-invoice.service';
+import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
 import { ConsumerPaymentRequestsController } from './consumer-payment-requests.controller';
 import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
@@ -17,6 +18,7 @@ import { FilesModule } from '../files/files.module';
     ConsumerPaymentsPoliciesService,
     ConsumerPaymentsQueriesService,
     ConsumerPaymentsCommandsService,
+    ConsumerPaymentRequestNotificationService,
     ConsumerPaymentsService,
     ConsumerInvoiceService,
   ],

@@ -3,6 +3,14 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import {
+  ACCOUNT_TYPES,
+  buildCreatedAtFilter,
+  CONTRACTOR_KINDS,
+  normalizeFlag,
+  normalizePagination,
+  VERIFICATION_STATUSES,
+} from './admin-v2-consumer-query-helpers';
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer/consumer-status-compat';
 import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
@@ -13,14 +21,8 @@ import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
 const SEARCH_MAX_LEN = 200;
 const NOTE_MAX_LEN = 4000;
-const FLAG_MAX_LEN = 64;
 const REASON_MAX_LEN = 500;
-const MAX_PAGE_SIZE = 100;
-const DEFAULT_HISTORY_PAGE_SIZE = 10;
 const DEFAULT_CONSUMER_ACTION_RANGE_DAYS = 7;
-const ACCOUNT_TYPES = Object.values($Enums.AccountType) as string[];
-const VERIFICATION_STATUSES = Object.values($Enums.VerificationStatus) as string[];
-const CONTRACTOR_KINDS = Object.values($Enums.ContractorKind) as string[];
 
 type RequestMeta = {
   ipAddress?: string | null;
@@ -37,38 +39,6 @@ type ResendConsumerEmailBody = {
   emailKind: `signup_verification` | `password_recovery`;
   appScope: ConsumerAppScope;
 };
-
-function normalizeFlag(raw: string): string {
-  return raw
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, `_`)
-    .replace(/^_+|_+$/g, ``)
-    .slice(0, FLAG_MAX_LEN);
-}
-
-function normalizePagination(page?: number, pageSize?: number) {
-  const safePage = Math.max(1, page ?? 1);
-  const safePageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, pageSize ?? DEFAULT_HISTORY_PAGE_SIZE));
-  return {
-    page: safePage,
-    pageSize: safePageSize,
-    skip: (safePage - 1) * safePageSize,
-  };
-}
-
-function buildCreatedAtFilter(dateFrom?: Date, dateTo?: Date) {
-  if (dateFrom && dateTo) {
-    return { gte: dateFrom, lte: dateTo };
-  }
-  if (dateFrom) {
-    return { gte: dateFrom };
-  }
-  if (dateTo) {
-    return { lte: dateTo };
-  }
-  return undefined;
-}
 
 @Injectable()
 export class AdminV2ConsumersService {

@@ -18,39 +18,16 @@ import { errorCodes } from '@remoola/shared-constants';
 import { IDENTITY, type IIdentity, type IIdentityContext, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { envs } from '../envs';
+import {
+  CONSUMER_API_PATH_PREFIX,
+  getAccessTokenCookieKeysForPath,
+  getRequestPath,
+  GuardMessage,
+} from './auth-guard-boundary';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 import { PrismaService } from '../shared/prisma.service';
-import {
-  getApiAdminAccessTokenCookieKeysForRead,
-  getApiConsumerAccessTokenCookieKeysForRead,
-  secureCompare,
-} from '../shared-common';
+import { secureCompare } from '../shared-common';
 import { ensureAuthenticatedMutationCsrf } from '../shared-common/csrf-protection';
-
-const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
-
-const GuardMessage = {
-  INVALID_TOKEN: `Invalid or expired token`,
-  NO_IDENTITY_RECORD: `Authentication record not found`,
-  ONLY_FOR_ADMINS: `Access restricted to administrators`,
-  ONLY_FOR_CONSUMERS: `Access restricted to consumers`,
-} as const;
-
-function getAccessTokenCookieKeysForPath(
-  path: string,
-  consumerScope?: Parameters<typeof getApiConsumerAccessTokenCookieKeysForRead>[0],
-): readonly string[] {
-  if (path.startsWith(CONSUMER_API_PATH_PREFIX)) {
-    if (!consumerScope) {
-      return [];
-    }
-    return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
-  }
-  if (isAdminApiPath(path)) {
-    return getApiAdminAccessTokenCookieKeysForRead();
-  }
-  return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
-}
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -71,7 +48,7 @@ export class AuthGuard implements CanActivate {
     const isPublic = this.reflector.get<boolean>(IS_PUBLIC, context.getHandler());
     if (isPublic) return true;
 
-    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
+    const path = getRequestPath(request);
     const isConsumerPath = path.startsWith(CONSUMER_API_PATH_PREFIX);
     const consumerScope = isConsumerPath
       ? this.originResolver.validateConsumerAppScopeHeader(request.headers?.[CONSUMER_APP_SCOPE_HEADER])
@@ -100,7 +77,7 @@ export class AuthGuard implements CanActivate {
 
   private async processAccessToken(accessToken: string, request: TExpressRequest, requestAppScope?: ConsumerAppScope) {
     let verified: IJwtTokenPayload;
-    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
+    const path = getRequestPath(request);
     try {
       verified = this.jwtService.verify<IJwtTokenPayload>(accessToken, { secret: envs.JWT_ACCESS_SECRET });
     } catch {

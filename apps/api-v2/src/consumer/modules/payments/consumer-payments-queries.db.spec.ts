@@ -10,10 +10,13 @@ import { createPrismaTestContext } from '../../../../test/helpers/prisma-test-co
 describe(`ConsumerPaymentsQueriesService DB smoke`, () => {
   const prismaContext = createPrismaTestContext();
   const { prisma } = prismaContext;
-  const service = new ConsumerPaymentsQueriesService(prisma as any, {
-    calculateMultiCurrency: async () => ({ balances: {} }),
-    calculateSingle: async () => ({ balance: 0 }),
-  } as any);
+  const service = new ConsumerPaymentsQueriesService(
+    prisma as any,
+    {
+      calculateMultiCurrency: async () => ({ balances: {} }),
+      calculateSingle: async () => ({ balance: 0 }),
+    } as any,
+  );
 
   let listOwnerId = ``;
   let waitingOlderId = ``;

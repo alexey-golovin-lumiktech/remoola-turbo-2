@@ -6,6 +6,7 @@ import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { STRIPE_EVENT } from './events';
+import { StripeWebhookDeduplicationService } from './stripe-webhook-deduplication.service';
 import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-methods.service';
 import { StripeWebhookPayoutsService } from './stripe-webhook-payouts.service';
 import { StripeWebhookReversalsService } from './stripe-webhook-reversals.service';
@@ -36,6 +37,9 @@ export class StripeWebhookService {
     private readonly settlementsService: StripeWebhookSettlementsService,
     private readonly verificationService: StripeWebhookVerificationService,
     private readonly reversalsService: StripeWebhookReversalsService,
+    private readonly deduplicationService: StripeWebhookDeduplicationService = new StripeWebhookDeduplicationService(
+      prisma,
+    ),
   ) {}
 
   private getEffectiveStatus(entry: {
@@ -174,6 +178,16 @@ export class StripeWebhookService {
         return;
       }
 
+      if (await this.deduplicationService.hasProcessed(event.id)) {
+        this.logger.debug({
+          message: `Stripe webhook duplicate event, skipping`,
+          eventId: event.id,
+          eventType: event.type,
+        });
+        res.json({ received: true });
+        return;
+      }
+
       switch (event.type) {
         case STRIPE_EVENT.CHECKOUT_SESSION_COMPLETED: {
           this.logger.log({ message: `Webhook processing`, eventType: event.type });
@@ -232,18 +246,13 @@ export class StripeWebhookService {
         }
       }
 
-      try {
-        await this.recordWebhookEventProcessed(event.id);
-      } catch (dedupErr) {
-        if (dedupErr instanceof Prisma.PrismaClientKnownRequestError && dedupErr.code === `P2002`) {
-          this.logger.debug({
-            message: `Stripe webhook duplicate event, skipping`,
-            eventId: event.id,
-            eventType: event.type,
-          });
-        } else {
-          throw dedupErr;
-        }
+      const recordResult = await this.deduplicationService.recordProcessed(event.id);
+      if (recordResult === `duplicate`) {
+        this.logger.debug({
+          message: `Stripe webhook duplicate event, skipping`,
+          eventId: event.id,
+          eventType: event.type,
+        });
       }
 
       res.json({ received: true });
@@ -324,12 +333,6 @@ export class StripeWebhookService {
 
   private canReuseVerificationSession(status?: string | null) {
     return status === STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION || status === STRIPE_IDENTITY_STATUS.REQUIRES_INPUT;
-  }
-
-  private async recordWebhookEventProcessed(eventId: string) {
-    await this.prisma.stripeWebhookEventModel.create({
-      data: { eventId },
-    });
   }
 
   private isManagedVerificationEvent(eventType: string) {

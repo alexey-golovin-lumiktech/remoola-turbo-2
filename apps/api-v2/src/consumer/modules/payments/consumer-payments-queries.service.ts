@@ -570,7 +570,8 @@ export class ConsumerPaymentsQueriesService {
                 CASE
                   WHEN le.payment_request_id IS NOT NULL AND le.type::text = ${$Enums.LedgerEntryType.USER_DEPOSIT}
                     THEN ${$Enums.LedgerEntryType.USER_PAYMENT}::text
-                  WHEN le.payment_request_id IS NOT NULL AND le.type::text = ${$Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL}
+                  WHEN le.payment_request_id IS NOT NULL
+                    AND le.type::text = ${$Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL}
                     THEN ${$Enums.LedgerEntryType.USER_PAYMENT_REVERSAL}::text
                   ELSE le.type::text
                 END AS "normalizedType",
