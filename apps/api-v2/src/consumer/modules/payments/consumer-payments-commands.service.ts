@@ -31,7 +31,7 @@ export class ConsumerPaymentsCommandsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly paymentRequestNotification: Pick<ConsumerPaymentRequestNotificationService, `sendPaymentRequest`>,
+    private readonly paymentRequestNotification: ConsumerPaymentRequestNotificationService,
     private readonly balanceService: BalanceCalculationService,
     private readonly policiesService: ConsumerPaymentsPoliciesService,
   ) {}
