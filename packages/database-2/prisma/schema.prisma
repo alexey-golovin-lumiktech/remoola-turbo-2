@@ -212,6 +212,35 @@ model StripeWebhookEventModel {
   @@map("stripe_webhook_event")
 }
 
+/// Durable side-effect queue for effects that must survive retries after money movement commits.
+model NotificationOutboxModel {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventType String @map("event_type") @db.Text
+
+  aggregateType  String @map("aggregate_type") @db.Text
+  aggregateId    String @map("aggregate_id") @db.Uuid
+  idempotencyKey String @unique @map("idempotency_key") @db.Text
+
+  payload Json
+  status  String @default("PENDING") @db.Text
+
+  attemptCount        Int       @default(0) @map("attempt_count")
+  nextAttemptAt       DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  processingStartedAt DateTime? @map("processing_started_at") @db.Timestamptz(6)
+  claimToken          String?   @map("claim_token") @db.Text
+  sentAt              DateTime? @map("sent_at") @db.Timestamptz(6)
+  failedAt            DateTime? @map("failed_at") @db.Timestamptz(6)
+  lastErrorClass      String?   @map("last_error_class") @db.Text
+  lastErrorMessage    String?   @map("last_error_message") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([aggregateType, aggregateId])
+  @@map("notification_outbox")
+}
+
 model AddressDetailsModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 

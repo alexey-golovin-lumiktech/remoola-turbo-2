@@ -5,9 +5,15 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { detectConsumerDocumentKind } from './consumer-document-kind.util';
 import { DocumentListItem, DocumentListRow, formatConsumerDocumentRows } from './consumer-document-mapper';
+import {
+  buildConsumerDocumentContractRelationshipWhere,
+  buildConsumerDocumentKindSql,
+  buildConsumerDocumentPaymentParticipantIdsSql,
+  buildConsumerDocumentPaymentParticipantWhere,
+} from './consumer-document-query-helpers';
 import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
 import { buildConsumerDocumentDownloadUrl } from './document-download-url';
-import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
+import { sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 import { FileStorageService } from '../files/file-storage.service';
 
@@ -73,60 +79,6 @@ export class ConsumerDocumentsService {
     return consumer?.email?.trim().toLowerCase() ?? null;
   }
 
-  private buildPaymentParticipantWhere(consumerId: string, consumerEmail: string | null) {
-    return [
-      { requesterId: consumerId },
-      { payerId: consumerId },
-      ...(consumerEmail
-        ? [
-            {
-              requesterId: null,
-              requesterEmail: { equals: consumerEmail, mode: `insensitive` as const },
-            },
-            {
-              payerId: null,
-              payerEmail: { equals: consumerEmail, mode: `insensitive` as const },
-            },
-          ]
-        : []),
-    ];
-  }
-
-  private buildContractRelationshipWhere(consumerId: string, consumerEmail: string | null, contractEmail: string) {
-    return {
-      AND: [
-        { deletedAt: null },
-        { OR: this.buildPaymentParticipantWhere(consumerId, consumerEmail) },
-        {
-          OR: [
-            { payer: { email: { equals: contractEmail, mode: `insensitive` as const } } },
-            { requester: { email: { equals: contractEmail, mode: `insensitive` as const } } },
-            { payerEmail: { equals: contractEmail, mode: `insensitive` as const } },
-            { requesterEmail: { equals: contractEmail, mode: `insensitive` as const } },
-          ],
-        },
-      ],
-    };
-  }
-
-  private buildPaymentParticipantIdsSql(consumerId: string, consumerEmail: string | null) {
-    return buildPaymentRequestParticipantIdsSql({
-      consumerId,
-      consumerEmail: consumerEmail?.trim().toLowerCase() ?? null,
-    });
-  }
-
-  private buildDocumentKindSql(nameSql: Prisma.Sql) {
-    return Prisma.sql`
-      CASE
-        WHEN LOWER(${nameSql}) LIKE '%w9%' OR LOWER(${nameSql}) LIKE '%w-9%' THEN 'COMPLIANCE'
-        WHEN LOWER(${nameSql}) LIKE '%contract%' THEN 'CONTRACT'
-        WHEN LOWER(${nameSql}) LIKE '%invoice%' THEN 'PAYMENT'
-        ELSE 'GENERAL'
-      END
-    `;
-  }
-
   private async getDocumentsRaw(params: {
     consumerId: string;
     consumerEmail: string | null;
@@ -138,7 +90,7 @@ export class ConsumerDocumentsService {
   }): Promise<{ items: DocumentListItem[]; total: number; page: number; pageSize: number }> {
     const { consumerId, consumerEmail, safePage, safePageSize, kindFilter, backendBaseUrl, contractEmail } = params;
     const offset = (safePage - 1) * safePageSize;
-    const participantPaymentIdsSql = this.buildPaymentParticipantIdsSql(consumerId, consumerEmail);
+    const participantPaymentIdsSql = buildConsumerDocumentPaymentParticipantIdsSql(consumerId, consumerEmail);
 
     if (contractEmail) {
       if (kindFilter && kindFilter !== `PAYMENT`) {
@@ -335,7 +287,7 @@ export class ConsumerDocumentsService {
           COALESCE(cd.created_at, ad.created_at) AS created_at,
           COALESCE(cd.mimetype, ad.mimetype) AS mimetype,
           CASE
-            WHEN cd.id IS NOT NULL THEN ${this.buildDocumentKindSql(Prisma.sql`cd.original_name`)}
+            WHEN cd.id IS NOT NULL THEN ${buildConsumerDocumentKindSql(Prisma.sql`cd.original_name`)}
             ELSE 'PAYMENT'
           END AS kind,
           COALESCE(rt.tags, ARRAY[]::text[]) AS tags,
@@ -406,7 +358,7 @@ export class ConsumerDocumentsService {
           SELECT
             COALESCE(cd.id, ad.id) AS id,
             CASE
-              WHEN cd.id IS NOT NULL THEN ${this.buildDocumentKindSql(Prisma.sql`cd.original_name`)}
+              WHEN cd.id IS NOT NULL THEN ${buildConsumerDocumentKindSql(Prisma.sql`cd.original_name`)}
               ELSE 'PAYMENT'
             END AS kind
           FROM consumer_docs cd
@@ -468,12 +420,16 @@ export class ConsumerDocumentsService {
         },
         ...(contractContact
           ? {
-              paymentRequest: this.buildContractRelationshipWhere(consumerId, consumerEmail, contractContact.email),
+              paymentRequest: buildConsumerDocumentContractRelationshipWhere(
+                consumerId,
+                consumerEmail,
+                contractContact.email,
+              ),
             }
           : {
               paymentRequest: {
                 deletedAt: null,
-                OR: this.buildPaymentParticipantWhere(consumerId, consumerEmail),
+                OR: buildConsumerDocumentPaymentParticipantWhere(consumerId, consumerEmail),
               },
             }),
       },
@@ -742,7 +698,7 @@ export class ConsumerDocumentsService {
                     deletedAt: null,
                     paymentRequest: {
                       deletedAt: null,
-                      OR: this.buildPaymentParticipantWhere(consumerId, consumerEmail),
+                      OR: buildConsumerDocumentPaymentParticipantWhere(consumerId, consumerEmail),
                     },
                   },
                 },
@@ -881,7 +837,7 @@ export class ConsumerDocumentsService {
         resourceId: { in: resourceIds },
         paymentRequest: {
           deletedAt: null,
-          OR: this.buildPaymentParticipantWhere(consumerId, consumerEmail),
+          OR: buildConsumerDocumentPaymentParticipantWhere(consumerId, consumerEmail),
         },
       },
       select: { resourceId: true },
@@ -989,7 +945,7 @@ export class ConsumerDocumentsService {
           resourceId,
           paymentRequest: {
             deletedAt: null,
-            OR: this.buildPaymentParticipantWhere(consumerId, consumerEmail),
+            OR: buildConsumerDocumentPaymentParticipantWhere(consumerId, consumerEmail),
           },
         },
         select: { resourceId: true },

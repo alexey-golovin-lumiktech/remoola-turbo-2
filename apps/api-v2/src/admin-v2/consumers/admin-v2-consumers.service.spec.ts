@@ -2,12 +2,8 @@ import { BadRequestException } from '@nestjs/common';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import {
-  mapConsumerDisplayName,
-  mapPaymentMethodStatus,
-  normalizeOptionalReason,
-  validateConsumerSuspensionReason,
-} from './admin-v2-consumer-query-helpers';
+import { normalizeOptionalReason, validateConsumerSuspensionReason } from './admin-v2-consumer-action-policy';
+import { mapConsumerDisplayName, mapPaymentMethodStatus } from './admin-v2-consumer-query-helpers';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
 
 type NoteRow = {

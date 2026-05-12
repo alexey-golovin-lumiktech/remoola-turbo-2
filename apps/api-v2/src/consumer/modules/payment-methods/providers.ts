@@ -7,6 +7,9 @@ import { StripeWebhookDeduplicationService } from './stripe-webhook-deduplicatio
 import { StripeWebhookEventProcessorService } from './stripe-webhook-event-processor.service';
 import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-methods.service';
 import { StripeWebhookPayoutsService } from './stripe-webhook-payouts.service';
+import { StripeWebhookReversalNotificationOutboxScheduler } from './stripe-webhook-reversal-notification-outbox.scheduler'; // eslint-disable-line max-len
+import { StripeWebhookReversalNotificationOutboxService } from './stripe-webhook-reversal-notification-outbox.service'; // eslint-disable-line max-len
+import { StripeWebhookReversalNotificationService } from './stripe-webhook-reversal-notification.service';
 import { StripeWebhookReversalsService } from './stripe-webhook-reversals.service';
 import { StripeWebhookRouterService } from './stripe-webhook-router.service';
 import { StripeWebhookSettlementsService } from './stripe-webhook-settlements.service';
@@ -27,6 +30,8 @@ export const providers = [
   StripeWebhookPayoutsService,
   StripeWebhookSettlementsService,
   StripeWebhookVerificationService,
+  StripeWebhookReversalNotificationService,
+  StripeWebhookReversalNotificationOutboxService,
   StripeWebhookReversalsService,
   StripeWebhookRouterService,
   StripeWebhookService,
@@ -34,4 +39,5 @@ export const providers = [
   ConsumerPaymentMethodsService,
   StripeCheckoutScheduler,
   StripeReversalScheduler,
+  StripeWebhookReversalNotificationOutboxScheduler,
 ] satisfies Provider[];

@@ -2,15 +2,17 @@ import { randomUUID } from 'crypto';
 
 import { Inject, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
+import { StripeWebhookReversalNotificationService } from './stripe-webhook-reversal-notification.service';
+import {
+  STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE,
+  buildStripeReversalEmailOutboxRows,
+} from './stripe-webhook-reversal-outbox';
 import { CONSUMER_STRIPE_WEBHOOK_CLIENT } from './stripe-webhook.tokens';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
-import { MailingService } from '../../../shared/mailing.service';
-import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../../shared/payment-link-scope-resolver';
 import {
   buildStripeReversalLedgerIdempotencyKeys,
   calculateAlreadyReversedAmount,
@@ -44,7 +46,7 @@ export class StripeWebhookReversalsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly mailingService: MailingService,
+    private readonly reversalNotifications: StripeWebhookReversalNotificationService,
     private readonly balanceService: BalanceCalculationService,
     @Inject(CONSUMER_STRIPE_WEBHOOK_CLIENT) private readonly stripe: Stripe,
   ) {}
@@ -233,32 +235,18 @@ export class StripeWebhookReversalsService {
     await createDisputeIfMissing(entry.id);
   }
 
-  async createStripeReversal(
-    params: {
-      paymentRequestId: string;
-      payerId: string | null;
-      requesterId: string | null;
-      requesterEmail?: string | null;
-      currencyCode: $Enums.CurrencyCode;
-      requestAmount: number;
-      amount: number;
-      kind: `REFUND` | `CHARGEBACK`;
-      stripeObjectId?: string | null;
-      metadata?: Record<string, unknown>;
-    },
-    handlers?: {
-      sendReversalEmails?: (params: {
-        paymentRequestId: string;
-        payerId: string;
-        requesterId: string | null;
-        requesterEmail?: string;
-        amount: number;
-        currencyCode: $Enums.CurrencyCode;
-        kind: `REFUND` | `CHARGEBACK`;
-        reason?: string | null;
-      }) => Promise<unknown> | unknown;
-    },
-  ) {
+  async createStripeReversal(params: {
+    paymentRequestId: string;
+    payerId: string | null;
+    requesterId: string | null;
+    requesterEmail?: string | null;
+    currencyCode: $Enums.CurrencyCode;
+    requestAmount: number;
+    amount: number;
+    kind: `REFUND` | `CHARGEBACK`;
+    stripeObjectId?: string | null;
+    metadata?: Record<string, unknown>;
+  }) {
     const {
       paymentRequestId,
       payerId,
@@ -413,6 +401,25 @@ export class StripeWebhookReversalsService {
             },
           });
         }
+
+        const outboxRows = buildStripeReversalEmailOutboxRows({
+          aggregateId: ledgerId,
+          idempotencyKeyBase: idempotencyKeys.payer,
+          paymentRequestId,
+          payerId,
+          requesterId,
+          requesterEmail: requesterEmail ?? undefined,
+          amount: appendedAmount,
+          currencyCode,
+          kind,
+          reason: typeof metadata?.reason === `string` ? metadata.reason : null,
+        });
+        if (outboxRows.length > 0) {
+          await tx.notificationOutboxModel.createMany({
+            data: outboxRows,
+            skipDuplicates: true,
+          });
+        }
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
@@ -422,20 +429,11 @@ export class StripeWebhookReversalsService {
       throw err;
     }
 
-    if (appendedAmount <= 0) {
-      return;
-    }
-
-    const sendReversalEmails = handlers?.sendReversalEmails ?? ((sendParams) => this.sendReversalEmails(sendParams));
-    await sendReversalEmails({
+    this.logger.debug({
+      event: STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE,
       paymentRequestId,
-      payerId,
-      requesterId,
-      requesterEmail: requesterEmail ?? undefined,
-      amount: appendedAmount,
-      currencyCode,
       kind,
-      reason: typeof metadata?.reason === `string` ? metadata.reason : null,
+      outboxQueued: appendedAmount > 0,
     });
   }
 
@@ -449,72 +447,7 @@ export class StripeWebhookReversalsService {
     kind: `REFUND` | `CHARGEBACK`;
     reason?: string | null;
   }) {
-    const { paymentRequestId, payerId, requesterId, requesterEmail, amount, currencyCode, kind, reason } = params;
-    const consumerAppScope = await this.resolvePaymentLinkConsumerAppScope(paymentRequestId);
-    const consumerIds = [payerId, ...(requesterId ? [requesterId] : [])];
-    const consumers = await this.prisma.consumerModel.findMany({
-      where: { id: { in: consumerIds } },
-      select: { id: true, email: true },
-    });
-
-    const payer = consumers.find((consumer) => consumer.id === payerId);
-    const requester = requesterId ? consumers.find((consumer) => consumer.id === requesterId) : null;
-    const requesterEmailResolved = requester?.email ?? requesterEmail ?? ``;
-
-    if (!payer?.email) return;
-
-    if (kind === `REFUND`) {
-      await this.mailingService.sendPaymentRefundEmail({
-        recipientEmail: payer.email,
-        counterpartyEmail: requesterEmailResolved,
-        amount,
-        currencyCode,
-        reason,
-        paymentRequestId,
-        role: `payer`,
-        consumerAppScope,
-      });
-      if (requesterEmailResolved) {
-        await this.mailingService.sendPaymentRefundEmail({
-          recipientEmail: requesterEmailResolved,
-          counterpartyEmail: payer.email,
-          amount,
-          currencyCode,
-          reason,
-          paymentRequestId,
-          role: `requester`,
-          consumerAppScope,
-        });
-      }
-      return;
-    }
-
-    await this.mailingService.sendPaymentChargebackEmail({
-      recipientEmail: payer.email,
-      counterpartyEmail: requesterEmailResolved,
-      amount,
-      currencyCode,
-      reason,
-      paymentRequestId,
-      role: `payer`,
-      consumerAppScope,
-    });
-    if (requesterEmailResolved) {
-      await this.mailingService.sendPaymentChargebackEmail({
-        recipientEmail: requesterEmailResolved,
-        counterpartyEmail: payer.email,
-        amount,
-        currencyCode,
-        reason,
-        paymentRequestId,
-        role: `requester`,
-        consumerAppScope,
-      });
-    }
-  }
-
-  private async resolvePaymentLinkConsumerAppScope(paymentRequestId: string): Promise<ConsumerAppScope | undefined> {
-    return resolvePaymentLinkConsumerAppScopeFromLedgerHistory(this.prisma, paymentRequestId);
+    return this.reversalNotifications.sendReversalEmails(params);
   }
 
   private async resolvePaymentRequestByPaymentIntent(paymentIntentId: string) {

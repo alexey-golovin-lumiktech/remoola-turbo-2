@@ -11,6 +11,7 @@ jest.mock(`../envs`, () => ({
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
+import { type BrevoSendMailOptions } from './brevo-mail.service';
 import { MailingService } from './mailing.service';
 
 describe(`MailingService signup verification links`, () => {
@@ -24,9 +25,21 @@ describe(`MailingService signup verification links`, () => {
         return null;
       }),
     };
+    const mailTransportSender = {
+      trySendEmail: jest.fn(async (_context: string, options: BrevoSendMailOptions) => {
+        await brevoMailService.sendMail(options);
+        return true;
+      }),
+      sendEmailWithErrorHandling: jest.fn(async (_context: string, options: BrevoSendMailOptions) => {
+        await brevoMailService.sendMail(options);
+      }),
+      sendEmailOrThrow: jest.fn(async (_context: string, options: BrevoSendMailOptions) => {
+        await brevoMailService.sendMail(options);
+      }),
+    };
 
-    const service = new MailingService(brevoMailService as any, originResolver as any);
-    return { service, brevoMailService, originResolver };
+    const service = new MailingService(mailTransportSender as any, originResolver as any);
+    return { service, brevoMailService, mailTransportSender, originResolver };
   }
 
   it(`builds token-only signup verification links without email or referer query params`, async () => {
@@ -125,6 +138,24 @@ describe(`MailingService signup verification links`, () => {
       paymentRequestId: `pr-456`,
       role: `payer`,
     });
+
+    expect(originResolver.resolveConsumerOriginByScope).not.toHaveBeenCalled();
+    expect(brevoMailService.sendMail).not.toHaveBeenCalled();
+  });
+
+  it(`fails required refund emails when consumer scope is unavailable`, async () => {
+    const { service, brevoMailService, originResolver } = makeService();
+
+    await expect(
+      service.sendPaymentRefundEmailRequired({
+        recipientEmail: `payer@example.com`,
+        counterpartyEmail: `requester@example.com`,
+        amount: 5,
+        currencyCode: `USD`,
+        paymentRequestId: `pr-456`,
+        role: `payer`,
+      }),
+    ).rejects.toThrow(/CONSUMER_CSS_GRID_APP_ORIGIN is not configured/);
 
     expect(originResolver.resolveConsumerOriginByScope).not.toHaveBeenCalled();
     expect(brevoMailService.sendMail).not.toHaveBeenCalled();

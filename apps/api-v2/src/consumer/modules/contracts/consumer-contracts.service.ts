@@ -3,8 +3,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import {
+  buildConsumerContractPaymentParticipantIdsSql,
+  buildConsumerContractPaymentsWhere,
+} from './consumer-contract-query-helpers';
 import { ConsumerContractDetails, ConsumerContractItem } from './dto';
-import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
+import { sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
@@ -135,51 +139,6 @@ export class ConsumerContractsService {
     return orderedPayments[0] ?? null;
   }
 
-  private buildPaymentParticipantWhere(consumerId: string, consumerEmail: string | null) {
-    return [
-      { requesterId: consumerId },
-      { payerId: consumerId },
-      ...(consumerEmail
-        ? [
-            {
-              requesterId: null,
-              requesterEmail: { equals: consumerEmail, mode: `insensitive` as const },
-            },
-            {
-              payerId: null,
-              payerEmail: { equals: consumerEmail, mode: `insensitive` as const },
-            },
-          ]
-        : []),
-    ];
-  }
-
-  private buildContractCounterpartyWhere(emails: string[]) {
-    return emails.flatMap((email) => [
-      { payer: { email: { equals: email, mode: `insensitive` as const } } },
-      { requester: { email: { equals: email, mode: `insensitive` as const } } },
-      { payerEmail: { equals: email, mode: `insensitive` as const } },
-      { requesterEmail: { equals: email, mode: `insensitive` as const } },
-    ]);
-  }
-
-  private buildContractPaymentsWhere(consumerId: string, contractEmails: string[], consumerEmail: string | null) {
-    return {
-      AND: [
-        { deletedAt: null },
-        { OR: this.buildPaymentParticipantWhere(consumerId, consumerEmail) },
-        { OR: this.buildContractCounterpartyWhere(contractEmails) },
-      ],
-    };
-  }
-
-  private buildPaymentParticipantIdsSql(consumerId: string, consumerEmail: string | null) {
-    return buildPaymentRequestParticipantIdsSql({
-      consumerId,
-      consumerEmail: consumerEmail?.trim().toLowerCase() ?? null,
-    });
-  }
-
   private async getContractsRaw(
     consumerId: string,
     safePage: number,
@@ -201,7 +160,7 @@ export class ConsumerContractsService {
           )
         `
       : Prisma.empty;
-    const participantPaymentIdsSql = this.buildPaymentParticipantIdsSql(consumerId, consumerEmail);
+    const participantPaymentIdsSql = buildConsumerContractPaymentParticipantIdsSql(consumerId, consumerEmail);
     const statusFilterSql =
       normalizedStatusFilter == null
         ? Prisma.empty
@@ -558,7 +517,7 @@ export class ConsumerContractsService {
     const consumerEmail = await this.getConsumerEmail(consumerId);
 
     const paymentRequests = await this.prisma.paymentRequestModel.findMany({
-      where: this.buildContractPaymentsWhere(consumerId, emails, consumerEmail),
+      where: buildConsumerContractPaymentsWhere(consumerId, emails, consumerEmail),
       include: {
         payer: true,
         requester: true,
@@ -880,7 +839,7 @@ export class ConsumerContractsService {
     const consumerEmail = await this.getConsumerEmail(consumerId);
 
     const paymentRequests = await this.prisma.paymentRequestModel.findMany({
-      where: this.buildContractPaymentsWhere(consumerId, [this.normalizeEmail(contact.email)], consumerEmail),
+      where: buildConsumerContractPaymentsWhere(consumerId, [this.normalizeEmail(contact.email)], consumerEmail),
       include: {
         ledgerEntries: {
           where: { consumerId },

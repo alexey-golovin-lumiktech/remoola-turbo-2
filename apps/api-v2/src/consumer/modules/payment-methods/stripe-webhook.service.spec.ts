@@ -9,6 +9,7 @@ import { STRIPE_WEBHOOK_EVENT_STATUS, StripeWebhookDeduplicationService } from '
 import { StripeWebhookEventProcessorService } from './stripe-webhook-event-processor.service';
 import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-methods.service';
 import { StripeWebhookPayoutsService } from './stripe-webhook-payouts.service';
+import { StripeWebhookReversalNotificationService } from './stripe-webhook-reversal-notification.service';
 import { StripeWebhookReversalsService } from './stripe-webhook-reversals.service';
 import { StripeWebhookRouterService } from './stripe-webhook-router.service';
 import { StripeWebhookSettlementsService } from './stripe-webhook-settlements.service';
@@ -25,7 +26,8 @@ class StripeWebhookService extends StripeWebhookServiceClass {
     const payoutsService = new StripeWebhookPayoutsService(prisma);
     const settlementsService = new StripeWebhookSettlementsService(prisma);
     const verificationService = new StripeWebhookVerificationService(prisma, consumerPaymentsPoliciesService, stripe);
-    const reversalsService = new StripeWebhookReversalsService(prisma, mailingService, balanceService, stripe);
+    const reversalNotifications = new StripeWebhookReversalNotificationService(prisma, mailingService);
+    const reversalsService = new StripeWebhookReversalsService(prisma, reversalNotifications, balanceService, stripe);
     const router = new StripeWebhookRouterService(
       paymentMethodsService,
       payoutsService,
@@ -1567,6 +1569,7 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
       .mockResolvedValueOnce({ type: $Enums.LedgerEntryType.USER_DEPOSIT, ledgerId: `settlement-ledger-1` })
       .mockResolvedValueOnce({ ledgerId: `payer-ledger-1` });
     const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const txOutboxCreateMany = jest.fn().mockResolvedValue({ count: 2 });
     const prisma = {
       $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
         callback({
@@ -1575,6 +1578,9 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
             findMany: txLedgerFindMany,
             findFirst: txLedgerFindFirst,
             create: txLedgerCreate,
+          },
+          notificationOutboxModel: {
+            createMany: txOutboxCreateMany,
           },
         }),
       ),
@@ -1626,6 +1632,23 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
         }),
       }),
     );
+    expect(txOutboxCreateMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({
+          eventType: `stripe.reversal.email_requested`,
+          aggregateType: `ledger_reversal`,
+          idempotencyKey: `stripe.reversal.email_requested:reversal:refund:re_1:payer:payer`,
+          payload: expect.objectContaining({ role: `payer`, amount: 25 }),
+        }),
+        expect.objectContaining({
+          eventType: `stripe.reversal.email_requested`,
+          aggregateType: `ledger_reversal`,
+          idempotencyKey: `stripe.reversal.email_requested:reversal:refund:re_1:payer:requester`,
+          payload: expect.objectContaining({ role: `requester`, amount: 25 }),
+        }),
+      ]),
+      skipDuplicates: true,
+    });
   });
 
   const cardSettlementReversalCase = [
@@ -1651,6 +1674,7 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
       })
       .mockResolvedValueOnce({ ledgerId: `payer-ledger-1` });
     const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const txOutboxCreateMany = jest.fn().mockResolvedValue({ count: 2 });
     const prisma = {
       $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
         callback({
@@ -1659,6 +1683,9 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
             findMany: txLedgerFindMany,
             findFirst: txLedgerFindFirst,
             create: txLedgerCreate,
+          },
+          notificationOutboxModel: {
+            createMany: txOutboxCreateMany,
           },
         }),
       ),
@@ -1711,6 +1738,7 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
       })
       .mockResolvedValueOnce({ ledgerId: `payer-ledger-1` });
     const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const txOutboxCreateMany = jest.fn().mockResolvedValue({ count: 2 });
     const prisma = {
       $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
         callback({
@@ -1719,6 +1747,9 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
             findMany: txLedgerFindMany,
             findFirst: txLedgerFindFirst,
             create: txLedgerCreate,
+          },
+          notificationOutboxModel: {
+            createMany: txOutboxCreateMany,
           },
         }),
       ),
@@ -1792,6 +1823,9 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
             findFirst: jest.fn().mockResolvedValue({ type: $Enums.LedgerEntryType.USER_DEPOSIT }),
             create: txLedgerCreate,
           },
+          notificationOutboxModel: {
+            createMany: jest.fn().mockResolvedValue({ count: 2 }),
+          },
         }),
       ),
     } as any;
@@ -1853,6 +1887,7 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
       .mockResolvedValueOnce({ type: $Enums.LedgerEntryType.USER_DEPOSIT, ledgerId: `settlement-ledger-remaining` })
       .mockResolvedValueOnce({ ledgerId: `payer-ledger-remaining` });
     const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const txOutboxCreateMany = jest.fn().mockResolvedValue({ count: 2 });
     const prisma = {
       $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
         callback({
@@ -1861,6 +1896,9 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
             findMany: txLedgerFindMany,
             findFirst: txLedgerFindFirst,
             create: txLedgerCreate,
+          },
+          notificationOutboxModel: {
+            createMany: txOutboxCreateMany,
           },
         }),
       ),
@@ -1918,6 +1956,9 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
             ]),
             findFirst: jest.fn(),
             create: txLedgerCreate,
+          },
+          notificationOutboxModel: {
+            createMany: jest.fn().mockResolvedValue({ count: 0 }),
           },
         }),
       ),

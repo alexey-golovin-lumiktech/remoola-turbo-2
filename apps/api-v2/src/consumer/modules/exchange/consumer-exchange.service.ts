@@ -5,6 +5,14 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import {
+  getConsumerExchangeCurrencySymbol,
+  getConsumerExchangeRateBatchErrorCode,
+  mergeConsumerExchangeRuleExecutionMetadata,
+  normalizeConsumerExchangeRule,
+  normalizeConsumerScheduledConversion,
+  roundConsumerExchangeAmountToCurrency,
+} from './consumer-exchange-normalizers';
 import { ConvertCurrencyBody } from './dto/convert.dto';
 import { CreateAutoConversionRuleBody } from './dto/create-auto-conversion-rule.dto';
 import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
@@ -12,7 +20,6 @@ import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.
 import { envs } from '../../../envs';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { PrismaService } from '../../../shared/prisma.service';
-import { getCurrencyFractionDigits } from '../../../shared-common';
 
 @Injectable()
 export class ConsumerExchangeService {
@@ -87,7 +94,7 @@ export class ConsumerExchangeService {
 
   async quote(body: ConvertCurrencyBody) {
     const rate = await this.getRate(body.from, body.to);
-    const targetAmount = this.roundToCurrency(body.amount * rate.rate, body.to);
+    const targetAmount = roundConsumerExchangeAmountToCurrency(body.amount * rate.rate, body.to);
     return {
       from: body.from,
       to: body.to,
@@ -108,7 +115,7 @@ export class ConsumerExchangeService {
             return {
               from: pair.from,
               to: pair.to,
-              code: this.getExchangeRateBatchErrorCode(error),
+              code: getConsumerExchangeRateBatchErrorCode(error),
             };
           }
           throw error;
@@ -123,7 +130,7 @@ export class ConsumerExchangeService {
     page = 1,
     pageSize = 10,
   ): Promise<{
-    items: ReturnType<ConsumerExchangeService[`normalizeRule`]>[];
+    items: ReturnType<typeof normalizeConsumerExchangeRule>[];
     total: number;
     page: number;
     pageSize: number;
@@ -141,7 +148,7 @@ export class ConsumerExchangeService {
       }),
     ]);
 
-    const items = rules.map((rule) => this.normalizeRule(rule));
+    const items = rules.map((rule) => normalizeConsumerExchangeRule(rule));
     return { items, total, page: safePage, pageSize: safePageSize };
   }
 
@@ -174,7 +181,7 @@ export class ConsumerExchangeService {
         enabled: body.enabled ?? true,
       },
     });
-    return this.normalizeRule(rule);
+    return normalizeConsumerExchangeRule(rule);
   }
 
   async updateAutoConversionRule(consumerId: string, ruleId: string, body: UpdateAutoConversionRuleBody) {
@@ -219,7 +226,7 @@ export class ConsumerExchangeService {
         nextRunAt,
       },
     });
-    return this.normalizeRule(updated);
+    return normalizeConsumerExchangeRule(updated);
   }
 
   async deleteAutoConversionRule(consumerId: string, ruleId: string) {
@@ -244,7 +251,7 @@ export class ConsumerExchangeService {
     page = 1,
     pageSize = 10,
   ): Promise<{
-    items: ReturnType<ConsumerExchangeService[`normalizeScheduledConversion`]>[];
+    items: ReturnType<typeof normalizeConsumerScheduledConversion>[];
     total: number;
     page: number;
     pageSize: number;
@@ -262,7 +269,7 @@ export class ConsumerExchangeService {
       }),
     ]);
 
-    const items = conversions.map((conversion) => this.normalizeScheduledConversion(conversion));
+    const items = conversions.map((conversion) => normalizeConsumerScheduledConversion(conversion));
     return { items, total, page: safePage, pageSize: safePageSize };
   }
 
@@ -295,7 +302,7 @@ export class ConsumerExchangeService {
         executeAt,
       },
     });
-    return this.normalizeScheduledConversion(conversion);
+    return normalizeConsumerScheduledConversion(conversion);
   }
 
   async cancelScheduledConversion(consumerId: string, conversionId: string) {
@@ -534,7 +541,7 @@ export class ConsumerExchangeService {
         await this.prisma.walletAutoConversionRuleModel.update({
           where: { id: rule.id },
           data: {
-            metadata: this.mergeRuleExecutionMetadata(refreshedRule.metadata, {
+            metadata: mergeConsumerExchangeRuleExecutionMetadata(refreshedRule.metadata, {
               status: result.converted ? `executed` : `failed`,
               reason: result.converted ? `conversion_executed` : String(result.reason ?? `rule_run_failed`),
               executedAt: now.toISOString(),
@@ -552,7 +559,7 @@ export class ConsumerExchangeService {
           where: { id: rule.id },
           data: {
             nextRunAt: new Date(now.getTime() + 5 * 60 * 1000),
-            metadata: this.mergeRuleExecutionMetadata(rule.metadata, {
+            metadata: mergeConsumerExchangeRuleExecutionMetadata(rule.metadata, {
               status: `failed`,
               reason: message,
               executedAt: now.toISOString(),
@@ -608,7 +615,7 @@ export class ConsumerExchangeService {
       await this.prisma.walletAutoConversionRuleModel.update({
         where: { id: rule.id },
         data: {
-          metadata: this.mergeRuleExecutionMetadata(refreshedRule.metadata, {
+          metadata: mergeConsumerExchangeRuleExecutionMetadata(refreshedRule.metadata, {
             status: result.converted ? `executed` : `failed`,
             reason: result.converted ? `conversion_executed` : String(result.reason ?? `rule_run_failed`),
             executedAt: now.toISOString(),
@@ -625,7 +632,7 @@ export class ConsumerExchangeService {
         where: { id: rule.id },
         data: {
           nextRunAt: new Date(now.getTime() + 5 * 60 * 1000),
-          metadata: this.mergeRuleExecutionMetadata(refreshedRule.metadata, {
+          metadata: mergeConsumerExchangeRuleExecutionMetadata(refreshedRule.metadata, {
             status: `failed`,
             reason: error instanceof Error ? error.message : `Unknown error`,
             executedAt: now.toISOString(),
@@ -704,21 +711,8 @@ export class ConsumerExchangeService {
   getCurrencies() {
     return Object.values($Enums.CurrencyCode).map((code) => ({
       code,
-      symbol: this.getCurrencySymbol(code),
+      symbol: getConsumerExchangeCurrencySymbol(code),
     }));
-  }
-
-  private getCurrencySymbol(currencyCode: $Enums.CurrencyCode): string {
-    try {
-      const parts = new Intl.NumberFormat(`en-US`, {
-        style: `currency`,
-        currency: currencyCode,
-        currencyDisplay: `symbol`,
-      }).formatToParts(0);
-      return parts.find((part) => part.type === `currency`)?.value ?? currencyCode;
-    } catch {
-      return currencyCode;
-    }
   }
 
   private async loadExecutableAutoConversionRule(ruleId: string, options?: { requireEnabled?: boolean }) {
@@ -729,54 +723,6 @@ export class ConsumerExchangeService {
         ...(options?.requireEnabled ? { enabled: true } : {}),
       },
     });
-  }
-
-  private normalizeRule(rule: {
-    id: string;
-    fromCurrency: $Enums.CurrencyCode;
-    toCurrency: $Enums.CurrencyCode;
-    targetBalance: unknown;
-    maxConvertAmount: unknown;
-    minIntervalMinutes: number;
-    enabled: boolean;
-  }) {
-    return {
-      id: rule.id,
-      fromCurrency: rule.fromCurrency,
-      toCurrency: rule.toCurrency,
-      targetBalance: Number(rule.targetBalance),
-      maxConvertAmount: rule.maxConvertAmount != null ? Number(rule.maxConvertAmount) : null,
-      minIntervalMinutes: rule.minIntervalMinutes,
-      enabled: rule.enabled,
-    };
-  }
-
-  private normalizeScheduledConversion(conversion: {
-    id: string;
-    fromCurrency: $Enums.CurrencyCode;
-    toCurrency: $Enums.CurrencyCode;
-    amount: unknown;
-    executeAt: Date | string;
-    status: $Enums.ScheduledFxConversionStatus;
-  }) {
-    return {
-      id: conversion.id,
-      fromCurrency: conversion.fromCurrency,
-      toCurrency: conversion.toCurrency,
-      amount: Number(conversion.amount),
-      executeAt:
-        conversion.executeAt instanceof Date
-          ? conversion.executeAt.toISOString()
-          : new Date(conversion.executeAt).toISOString(),
-      status: conversion.status,
-    };
-  }
-
-  private mergeRuleExecutionMetadata(metadata: Prisma.JsonValue | null | undefined, execution: Prisma.InputJsonObject) {
-    return {
-      ...(metadata && typeof metadata === `object` && !Array.isArray(metadata) ? metadata : {}),
-      lastExecution: execution,
-    } as Prisma.InputJsonValue;
   }
 
   private async convertInternal(
@@ -799,7 +745,7 @@ export class ConsumerExchangeService {
       }
 
       const rate = await this.getRate(from, to);
-      const converted = this.roundToCurrency(amount * rate.rate, to);
+      const converted = roundConsumerExchangeAmountToCurrency(amount * rate.rate, to);
 
       const idempotencyKeyPrefix = options?.idempotencyKeyPrefix;
       const targetKey = idempotencyKeyPrefix ? `${idempotencyKeyPrefix}:target` : null;
@@ -862,7 +808,7 @@ export class ConsumerExchangeService {
               rate: rateFromMetadata,
             };
             const sourceAmount = Math.abs(Number(existingSource.amount));
-            const convertedAmount = this.roundToCurrency(sourceAmount * rateFromMetadata, to);
+            const convertedAmount = roundConsumerExchangeAmountToCurrency(sourceAmount * rateFromMetadata, to);
 
             try {
               const income = await tx.ledgerEntryModel.create({
@@ -979,32 +925,6 @@ export class ConsumerExchangeService {
       });
       throw error;
     }
-  }
-
-  private roundToCurrency(amount: number, currency: $Enums.CurrencyCode) {
-    const digits = getCurrencyFractionDigits(currency);
-    return Number(amount.toFixed(digits));
-  }
-
-  private getExchangeRateBatchErrorCode(error: BadRequestException | NotFoundException) {
-    const response = error.getResponse();
-    if (typeof response === `string`) {
-      return response;
-    }
-
-    const message =
-      response && typeof response === `object` && `message` in response
-        ? (response as { message?: unknown }).message
-        : undefined;
-    if (typeof message === `string`) {
-      return message;
-    }
-
-    if (Array.isArray(message) && typeof message[0] === `string`) {
-      return message[0];
-    }
-
-    return error.message;
   }
 
   private getMaxRateAgeMs() {

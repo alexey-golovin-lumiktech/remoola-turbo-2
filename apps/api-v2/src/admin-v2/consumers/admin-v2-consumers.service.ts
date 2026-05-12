@@ -4,15 +4,17 @@ import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import {
+  normalizeFlag,
+  normalizeOptionalReason,
+  validateConsumerSuspensionReason,
+} from './admin-v2-consumer-action-policy';
+import {
   ACCOUNT_TYPES,
   buildCreatedAtFilter,
   CONTRACTOR_KINDS,
   mapConsumerDisplayName,
   mapPaymentMethodStatus,
-  normalizeFlag,
-  normalizeOptionalReason,
   normalizePagination,
-  validateConsumerSuspensionReason,
   VERIFICATION_STATUSES,
 } from './admin-v2-consumer-query-helpers';
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';

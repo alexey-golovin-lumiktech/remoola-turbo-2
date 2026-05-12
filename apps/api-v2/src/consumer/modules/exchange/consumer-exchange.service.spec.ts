@@ -3,6 +3,11 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import {
+  normalizeConsumerExchangeRule,
+  normalizeConsumerScheduledConversion,
+  roundConsumerExchangeAmountToCurrency,
+} from './consumer-exchange-normalizers';
 import { ConsumerExchangeService } from './consumer-exchange.service';
 import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 
@@ -147,6 +152,55 @@ describe(`ConsumerExchangeService.getCurrencies`, () => {
         expect.objectContaining({ code: $Enums.CurrencyCode.EUR, symbol: `€` }),
       ]),
     );
+  });
+});
+
+describe(`consumer exchange pure normalizers`, () => {
+  it(`normalizes rule numbers without changing the public response shape`, () => {
+    expect(
+      normalizeConsumerExchangeRule({
+        id: `rule-1`,
+        fromCurrency: $Enums.CurrencyCode.USD,
+        toCurrency: $Enums.CurrencyCode.EUR,
+        targetBalance: `100.50`,
+        maxConvertAmount: null,
+        minIntervalMinutes: 60,
+        enabled: true,
+      }),
+    ).toEqual({
+      id: `rule-1`,
+      fromCurrency: $Enums.CurrencyCode.USD,
+      toCurrency: $Enums.CurrencyCode.EUR,
+      targetBalance: 100.5,
+      maxConvertAmount: null,
+      minIntervalMinutes: 60,
+      enabled: true,
+    });
+  });
+
+  it(`normalizes scheduled conversion dates to ISO strings`, () => {
+    expect(
+      normalizeConsumerScheduledConversion({
+        id: `conversion-1`,
+        fromCurrency: $Enums.CurrencyCode.USD,
+        toCurrency: $Enums.CurrencyCode.EUR,
+        amount: `12.34`,
+        executeAt: new Date(`2026-05-12T10:00:00.000Z`),
+        status: $Enums.ScheduledFxConversionStatus.PENDING,
+      }),
+    ).toEqual({
+      id: `conversion-1`,
+      fromCurrency: $Enums.CurrencyCode.USD,
+      toCurrency: $Enums.CurrencyCode.EUR,
+      amount: 12.34,
+      executeAt: `2026-05-12T10:00:00.000Z`,
+      status: $Enums.ScheduledFxConversionStatus.PENDING,
+    });
+  });
+
+  it(`rounds amounts using each currency's fraction digits`, () => {
+    expect(roundConsumerExchangeAmountToCurrency(12.345, $Enums.CurrencyCode.USD)).toBe(12.35);
+    expect(roundConsumerExchangeAmountToCurrency(12.345, $Enums.CurrencyCode.JPY)).toBe(12);
   });
 });
 

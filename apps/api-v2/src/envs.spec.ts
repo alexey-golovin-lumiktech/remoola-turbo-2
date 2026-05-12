@@ -7,6 +7,16 @@ describe(`envs`, () => {
     return await import(`./envs`);
   }
 
+  const configuredBrevoEnv = {
+    BREVO_API_KEY: `brevo-live-key`,
+    BREVO_DEFAULT_FROM_EMAIL: `noreply@example.com`,
+  };
+  const configuredProductionLikeEnv = {
+    CONSUMER_CSS_GRID_APP_ORIGIN: `https://app.example.com`,
+    CRON_SECRET: `cron-live-secret`,
+    ...configuredBrevoEnv,
+  };
+
   afterEach(() => {
     process.env = ORIGINAL_ENV;
     jest.resetModules();
@@ -58,6 +68,7 @@ describe(`envs`, () => {
         STRIPE_SECRET_KEY: `sk_live_test`,
         STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
         NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+        ...configuredProductionLikeEnv,
       }),
     ).rejects.toThrow(/non-placeholder, non-empty value/);
   });
@@ -73,6 +84,7 @@ describe(`envs`, () => {
         STRIPE_SECRET_KEY: `sk_live_test`,
         STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
         NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+        ...configuredProductionLikeEnv,
       }),
     ).rejects.toThrow(/must be distinct/);
   });
@@ -87,6 +99,7 @@ describe(`envs`, () => {
       STRIPE_SECRET_KEY: `sk_live_test`,
       STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
       NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+      ...configuredProductionLikeEnv,
     });
 
     expect(envs.SWAGGER_ENABLED).toBe(false);
@@ -94,6 +107,87 @@ describe(`envs`, () => {
     expect(envs.PUBLIC_MAIL_TRANSPORT_HEALTH_ENABLED).toBe(false);
     expect(envs.HEALTH_TEST_EMAIL_ENABLED).toBe(false);
     expect(envs.NGROK_ENABLED).toBe(false);
+  });
+
+  it(`fails closed in production-like environments when Brevo config is placeholder or invalid`, async () => {
+    await expect(
+      loadEnvModule({
+        NODE_ENV: `production`,
+        COOKIE_SECURE: `true`,
+        JWT_ACCESS_SECRET: `secret-access`,
+        JWT_REFRESH_SECRET: `secret-refresh`,
+        SECURE_SESSION_SECRET: `session-secret`,
+        STRIPE_SECRET_KEY: `sk_live_test`,
+        STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+        NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+        CONSUMER_CSS_GRID_APP_ORIGIN: `https://app.example.com`,
+        CRON_SECRET: `cron-live-secret`,
+        BREVO_API_KEY: `BREVO_API_KEY`,
+        BREVO_DEFAULT_FROM_EMAIL: `noreply@example.com`,
+      }),
+    ).rejects.toThrow(/BREVO_API_KEY must be configured/);
+
+    await expect(
+      loadEnvModule({
+        NODE_ENV: `staging`,
+        COOKIE_SECURE: `true`,
+        JWT_ACCESS_SECRET: `secret-access`,
+        JWT_REFRESH_SECRET: `secret-refresh`,
+        SECURE_SESSION_SECRET: `session-secret`,
+        STRIPE_SECRET_KEY: `sk_live_test`,
+        STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+        NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+        CONSUMER_CSS_GRID_APP_ORIGIN: `https://app.example.com`,
+        CRON_SECRET: `cron-live-secret`,
+        BREVO_API_KEY: `brevo-live-key`,
+        BREVO_DEFAULT_FROM_EMAIL: `not-an-email`,
+      }),
+    ).rejects.toThrow(/BREVO_DEFAULT_FROM_EMAIL must be a valid email address/);
+  });
+
+  it(`fails closed in production-like environments when consumer origin or cron secret is placeholder`, async () => {
+    await expect(
+      loadEnvModule({
+        NODE_ENV: `production`,
+        COOKIE_SECURE: `true`,
+        JWT_ACCESS_SECRET: `secret-access`,
+        JWT_REFRESH_SECRET: `secret-refresh`,
+        SECURE_SESSION_SECRET: `session-secret`,
+        STRIPE_SECRET_KEY: `sk_live_test`,
+        STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+        NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+        CONSUMER_CSS_GRID_APP_ORIGIN: `CONSUMER_CSS_GRID_APP_ORIGIN`,
+        CRON_SECRET: `cron-live-secret`,
+        ...configuredBrevoEnv,
+      }),
+    ).rejects.toThrow(/CONSUMER_CSS_GRID_APP_ORIGIN must be configured/);
+
+    await expect(
+      loadEnvModule({
+        NODE_ENV: `staging`,
+        COOKIE_SECURE: `true`,
+        JWT_ACCESS_SECRET: `secret-access`,
+        JWT_REFRESH_SECRET: `secret-refresh`,
+        SECURE_SESSION_SECRET: `session-secret`,
+        STRIPE_SECRET_KEY: `sk_live_test`,
+        STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+        NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+        CONSUMER_CSS_GRID_APP_ORIGIN: `https://app.example.com`,
+        CRON_SECRET: `CRON_SECRET`,
+        ...configuredBrevoEnv,
+      }),
+    ).rejects.toThrow(/CRON_SECRET must be configured/);
+  });
+
+  it(`allows placeholder Brevo config outside production-like environments`, async () => {
+    const { envs } = await loadEnvModule({
+      NODE_ENV: `development`,
+      BREVO_API_KEY: `BREVO_API_KEY`,
+      BREVO_DEFAULT_FROM_EMAIL: `BREVO_DEFAULT_FROM_EMAIL`,
+    });
+
+    expect(envs.BREVO_API_KEY).toBe(`BREVO_API_KEY`);
+    expect(envs.BREVO_DEFAULT_FROM_EMAIL).toBe(`BREVO_DEFAULT_FROM_EMAIL`);
   });
 
   it(`requires explicit non-placeholder ngrok credentials when NGROK_ENABLED=true`, async () => {

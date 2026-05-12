@@ -2,8 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
 
+import { envs } from '../envs';
 import { generatePdf } from '../shared-common';
-import { BrevoMailService, type BrevoAttachment, type BrevoSendMailOptions } from './brevo-mail.service';
+import { type BrevoAttachment, type BrevoSendMailOptions } from './brevo-mail.service';
+import { MailTransportSenderService } from './mail-transport-sender.service';
 import {
   forgotPassword,
   googleSignInRecovery,
@@ -17,7 +19,6 @@ import {
   signupCompletionToHtml,
   type InvoiceForTemplate,
 } from './mailing-utils';
-import { envs } from '../envs';
 import { OriginResolverService } from './origin-resolver.service';
 import { resolveEmailApiBaseUrl } from './resolve-email-api-base-url';
 
@@ -35,76 +36,20 @@ export class MailingService {
   private readonly logger = new Logger(MailingService.name);
 
   constructor(
-    private brevoMailService: BrevoMailService,
+    private mailTransportSender: MailTransportSenderService,
     private originResolver: OriginResolverService,
   ) {}
 
-  private formatUnknownError(error: unknown): string {
-    if (error instanceof Error) {
-      return `${error.name}: ${error.message}`;
-    }
-
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
-  }
-
-  private safeCauseSummary(cause: unknown): Record<string, unknown> | undefined {
-    if (cause == null || typeof cause !== `object`) return undefined;
-    const obj = cause as Record<string, unknown>;
-    const out: Record<string, unknown> = {};
-    if (typeof obj.code === `string`) out.code = obj.code;
-    if (typeof obj.errno === `number`) out.errno = obj.errno;
-    if (typeof obj.syscall === `string`) out.syscall = obj.syscall;
-    return Object.keys(out).length > 0 ? out : undefined;
-  }
-
-  private logEmailFailure(context: string, error: unknown): void {
-    if (error instanceof Error) {
-      const causeSummary = this.safeCauseSummary(error.cause);
-      const causeSuffix = causeSummary != null ? ` cause: ${JSON.stringify(causeSummary)}` : ``;
-      this.logger.error(`[${context}] Email operation failed: ${error.message}${causeSuffix}`, error.stack);
-      if (causeSummary?.code === `UND_ERR_SOCKET` || causeSummary?.code === `ECONNRESET`) {
-        this.logger.warn(
-          `[${context}] Socket/network error: check outbound connectivity
-          (e.g. Lambda VPC NAT, Vercel) and Brevo API reachability.`,
-        );
-      }
-      return;
-    }
-
-    this.logger.error(`[${context}] Email operation failed with non-Error value: ${this.formatUnknownError(error)}`);
-  }
-
-  private isEmailTransportConfigured(): boolean {
-    return (
-      envs.BREVO_API_KEY.trim().length > 0 &&
-      envs.BREVO_API_KEY !== `BREVO_API_KEY` &&
-      envs.BREVO_DEFAULT_FROM_EMAIL.trim().length > 0 &&
-      envs.BREVO_DEFAULT_FROM_EMAIL !== `BREVO_DEFAULT_FROM_EMAIL`
-    );
-  }
-
   private async trySendEmail(context: string, options: BrevoSendMailOptions): Promise<boolean> {
-    if (!this.isEmailTransportConfigured()) {
-      this.logger.warn(`[${context}] Email transport is not configured - skipping email send`);
-      return false;
-    }
-
-    try {
-      await this.brevoMailService.sendMail(options);
-      this.logger.verbose(`[${context}] Email sent successfully`);
-      return true;
-    } catch (error) {
-      this.logEmailFailure(context, error);
-      return false;
-    }
+    return this.mailTransportSender.trySendEmail(context, options);
   }
 
   private async sendEmailWithErrorHandling(context: string, options: BrevoSendMailOptions): Promise<void> {
-    await this.trySendEmail(context, options);
+    await this.mailTransportSender.sendEmailWithErrorHandling(context, options);
+  }
+
+  private async sendEmailOrThrow(context: string, options: BrevoSendMailOptions): Promise<void> {
+    await this.mailTransportSender.sendEmailOrThrow(context, options);
   }
 
   private resolveConsumerPaymentLinkOrigin(consumerAppScope?: ConsumerAppScope): string | null {
@@ -166,7 +111,12 @@ export class MailingService {
       const content = await generatePdf({ rawHtml: invoiceToHtml.processor(invoice) });
       attachments = [{ content, filename: `invoice-${invoice.id}.pdf` }];
     } catch (error) {
-      this.logEmailFailure(`sendOutgoingInvoiceEmail.generatePdf`, error);
+      this.logger.error(
+        `[sendOutgoingInvoiceEmail.generatePdf] PDF generation failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        error instanceof Error ? error.stack : undefined,
+      );
       return;
     }
 
@@ -272,6 +222,46 @@ export class MailingService {
     });
   }
 
+  async sendPaymentRefundEmailRequired(params: {
+    recipientEmail: string;
+    counterpartyEmail: string;
+    amount: number;
+    currencyCode: string;
+    reason?: string | null;
+    paymentRequestId: string;
+    role: `payer` | `requester`;
+    consumerAppScope?: ConsumerAppScope;
+  }) {
+    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
+
+    if (!origin) {
+      throw new Error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
+    }
+
+    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
+    const summaryLine =
+      params.role === `payer`
+        ? `Your payment to ${params.counterpartyEmail} was refunded.`
+        : `A payment from ${params.counterpartyEmail} was refunded.`;
+    const reasonLine = params.reason ? `Reason: ${params.reason}` : `Reason: —`;
+
+    const html = paymentRefund.processor({
+      recipientEmail: params.recipientEmail,
+      summaryLine,
+      amount: params.amount.toFixed(2),
+      currencyCode: params.currencyCode,
+      reasonLine,
+      paymentRequestLink,
+    });
+
+    const subject = `Wirebill. Payment refund`;
+    await this.sendEmailOrThrow(`sendPaymentRefundEmail`, {
+      to: params.recipientEmail,
+      subject,
+      html,
+    });
+  }
+
   async sendPaymentChargebackEmail(params: {
     recipientEmail: string;
     counterpartyEmail: string;
@@ -307,6 +297,46 @@ export class MailingService {
 
     const subject = `Wirebill. Chargeback update`;
     await this.sendEmailWithErrorHandling(`sendPaymentChargebackEmail`, {
+      to: params.recipientEmail,
+      subject,
+      html,
+    });
+  }
+
+  async sendPaymentChargebackEmailRequired(params: {
+    recipientEmail: string;
+    counterpartyEmail: string;
+    amount: number;
+    currencyCode: string;
+    reason?: string | null;
+    paymentRequestId: string;
+    role: `payer` | `requester`;
+    consumerAppScope?: ConsumerAppScope;
+  }) {
+    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
+
+    if (!origin) {
+      throw new Error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
+    }
+
+    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
+    const summaryLine =
+      params.role === `payer`
+        ? `A chargeback was recorded for your payment to ${params.counterpartyEmail}.`
+        : `A chargeback was recorded for a payment from ${params.counterpartyEmail}.`;
+    const reasonLine = params.reason ? `Reason: ${params.reason}` : `Reason: —`;
+
+    const html = paymentChargeback.processor({
+      recipientEmail: params.recipientEmail,
+      summaryLine,
+      amount: params.amount.toFixed(2),
+      currencyCode: params.currencyCode,
+      reasonLine,
+      paymentRequestLink,
+    });
+
+    const subject = `Wirebill. Chargeback update`;
+    await this.sendEmailOrThrow(`sendPaymentChargebackEmail`, {
       to: params.recipientEmail,
       subject,
       html,

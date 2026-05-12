@@ -370,9 +370,7 @@ export class StripeWebhookService {
     stripeObjectId?: string | null;
     metadata?: Record<string, unknown>;
   }) {
-    return this.reversalsService.createStripeReversal(params, {
-      sendReversalEmails: (sendParams) => this.sendReversalEmails(sendParams),
-    });
+    return this.reversalsService.createStripeReversal(params);
   }
 
   private async sendReversalEmails(params: {

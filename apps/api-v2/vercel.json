@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/jobs/stripe-reversal-notification-outbox",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

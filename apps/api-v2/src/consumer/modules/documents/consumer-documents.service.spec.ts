@@ -5,6 +5,7 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { detectConsumerDocumentKind } from './consumer-document-kind.util';
 import { formatConsumerDocumentRows } from './consumer-document-mapper';
+import { buildConsumerDocumentPaymentParticipantWhere } from './consumer-document-query-helpers';
 import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
 import { ConsumerDocumentsService } from './consumer-documents.service';
 
@@ -22,6 +23,19 @@ describe(`consumer document pure helpers`, () => {
       `finance`,
       `finance`,
       `vendor`,
+    ]);
+  });
+
+  it(`builds participant access conditions with email fallbacks`, () => {
+    expect(buildConsumerDocumentPaymentParticipantWhere(`consumer-1`, `owner@example.com`)).toEqual([
+      { requesterId: `consumer-1` },
+      { payerId: `consumer-1` },
+      { requesterId: null, requesterEmail: { equals: `owner@example.com`, mode: `insensitive` } },
+      { payerId: null, payerEmail: { equals: `owner@example.com`, mode: `insensitive` } },
+    ]);
+    expect(buildConsumerDocumentPaymentParticipantWhere(`consumer-1`, null)).toEqual([
+      { requesterId: `consumer-1` },
+      { payerId: `consumer-1` },
     ]);
   });
 

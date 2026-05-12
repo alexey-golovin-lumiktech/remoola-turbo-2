@@ -100,7 +100,7 @@ const authLockout = {
 
 const mail = {
   BREVO_API_KEY: z.string().default(`BREVO_API_KEY`),
-  BREVO_API_BASE_URL: z.string().default(`https://api.brevo.com/v3`),
+  BREVO_API_BASE_URL: z.string().url().default(`https://api.brevo.com/v3`),
   BREVO_DEFAULT_FROM_EMAIL: z.string().default(`BREVO_DEFAULT_FROM_EMAIL`),
   BREVO_DEFAULT_FROM_NAME: z.string().default(`Wirebill`),
   BREVO_VERIFY_ON_BOOT: zBoolean(true).optional().default(false),
@@ -120,6 +120,7 @@ const aws = {
 
 const app = {
   SECURE_SESSION_SECRET: z.string().optional().default(`SECURE_SESSION_SECRET`),
+  CRON_SECRET: z.string().default(`CRON_SECRET`),
   DEFAULT_ADMIN_EMAIL: z.string().default(`regular.admin@wirebill.com`),
   DEFAULT_ADMIN_PASSWORD: z.string().default(`RegularWirebill@Admin123!`),
   SUPER_ADMIN_EMAIL: z.string().default(`super.admin@wirebill.com`),
@@ -221,6 +222,10 @@ function assertProductionLikePolicy(
     [`STRIPE_SECRET_KEY`, `STRIPE_SECRET_KEY`],
     [`STRIPE_WEBHOOK_SECRET`, `STRIPE_WEBHOOK_SECRET`],
     [`NEST_APP_EXTERNAL_ORIGIN`, `NEST_APP_EXTERNAL_ORIGIN`],
+    [`CONSUMER_CSS_GRID_APP_ORIGIN`, `CONSUMER_CSS_GRID_APP_ORIGIN`],
+    [`CRON_SECRET`, `CRON_SECRET`],
+    [`BREVO_API_KEY`, `BREVO_API_KEY`],
+    [`BREVO_DEFAULT_FROM_EMAIL`, `BREVO_DEFAULT_FROM_EMAIL`],
   ] as const;
 
   for (const [key, placeholder] of placeholderLookup) {
@@ -246,6 +251,11 @@ function assertProductionLikePolicy(
   }
   if (data.NGROK_ENABLED) {
     throw new Error(`NGROK_ENABLED must be false when NODE_ENV=${data.NODE_ENV}`);
+  }
+
+  const brevoFromEmail = normalizeConfiguredValue(data.BREVO_DEFAULT_FROM_EMAIL);
+  if (!z.string().email().safeParse(brevoFromEmail).success) {
+    throw new Error(`BREVO_DEFAULT_FROM_EMAIL must be a valid email address when NODE_ENV=${data.NODE_ENV}`);
   }
 }
 

@@ -1,4 +1,31 @@
+import { buildConsumerContractPaymentsWhere } from './consumer-contract-query-helpers';
 import { ConsumerContractsService } from './consumer-contracts.service';
+
+describe(`consumer contract query helpers`, () => {
+  it(`builds participant and counterparty relationship filters`, () => {
+    expect(buildConsumerContractPaymentsWhere(`consumer-1`, [`vendor@example.com`], `owner@example.com`)).toEqual({
+      AND: [
+        { deletedAt: null },
+        {
+          OR: [
+            { requesterId: `consumer-1` },
+            { payerId: `consumer-1` },
+            { requesterId: null, requesterEmail: { equals: `owner@example.com`, mode: `insensitive` } },
+            { payerId: null, payerEmail: { equals: `owner@example.com`, mode: `insensitive` } },
+          ],
+        },
+        {
+          OR: [
+            { payer: { email: { equals: `vendor@example.com`, mode: `insensitive` } } },
+            { requester: { email: { equals: `vendor@example.com`, mode: `insensitive` } } },
+            { payerEmail: { equals: `vendor@example.com`, mode: `insensitive` } },
+            { requesterEmail: { equals: `vendor@example.com`, mode: `insensitive` } },
+          ],
+        },
+      ],
+    });
+  });
+});
 
 describe(`ConsumerContractsService`, () => {
   it(`includes email-only payment requests in contracts read model and normalizes status`, async () => {

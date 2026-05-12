@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConsumerPaymentMethodsController } from './consumer-payment-methods.controller';
 import { ConsumerVerificationController } from './consumer-verification.controller';
 import { providers } from './providers';
+import { StripeWebhookReversalNotificationOutboxController } from './stripe-webhook-reversal-notification-outbox.controller';
 import { StripeWebhookController } from './stripe-webhook.controller';
 import { ConsumerStripeController } from './stripe.controller';
 import { MailingModule } from '../../../shared/mailing.module';
@@ -15,6 +16,7 @@ import { ConsumerPaymentsModule } from '../payments/consumer-payments.module';
     ConsumerStripeController,
     ConsumerPaymentMethodsController,
     ConsumerVerificationController,
+    StripeWebhookReversalNotificationOutboxController,
   ],
   providers: [...providers],
 })
