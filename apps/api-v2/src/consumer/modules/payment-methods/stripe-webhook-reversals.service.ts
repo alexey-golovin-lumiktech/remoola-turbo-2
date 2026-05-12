@@ -12,6 +12,13 @@ import { BalanceCalculationMode, BalanceCalculationService } from '../../../shar
 import { MailingService } from '../../../shared/mailing.service';
 import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../../shared/payment-link-scope-resolver';
 import {
+  buildStripeReversalLedgerIdempotencyKeys,
+  calculateAlreadyReversedAmount,
+  capExternalReversalAmount,
+  getEffectiveLedgerStatus,
+  getRequesterReversalEntryType,
+} from '../../../shared/payment-reversal-calculator';
+import {
   acquireTransactionAdvisoryLock,
   buildConsumerOperationLockName,
   buildConsumerOutgoingBalanceLockName,
@@ -267,10 +274,7 @@ export class StripeWebhookReversalsService {
 
     if (!payerId) return;
 
-    const kindLower = kind.toLowerCase();
-    const idempotencyKeyPayer = stripeObjectId != null ? `reversal:${kindLower}:${stripeObjectId}:payer` : undefined;
-    const idempotencyKeyRequester =
-      stripeObjectId != null ? `reversal:${kindLower}:${stripeObjectId}:requester` : undefined;
+    const idempotencyKeys = buildStripeReversalLedgerIdempotencyKeys({ kind, stripeObjectId });
 
     const rail = kind === `CHARGEBACK` ? $Enums.PaymentRail.STRIPE_CHARGEBACK : $Enums.PaymentRail.STRIPE_REFUND;
     const baseMetadata = {
@@ -306,19 +310,12 @@ export class StripeWebhookReversalsService {
             },
           },
         });
-        const alreadyReversed = reversalEntries.reduce((sum, entry) => {
-          const effectiveStatus = this.getEffectiveStatus(entry);
-          if (
-            effectiveStatus !== $Enums.TransactionStatus.COMPLETED &&
-            effectiveStatus !== $Enums.TransactionStatus.PENDING
-          ) {
-            return sum;
-          }
-          const entryAmount = Number(entry.amount);
-          return entryAmount > 0 ? sum + entryAmount : sum;
-        }, 0);
-        const remaining = requestAmount - alreadyReversed;
-        const finalAmount = Math.min(amount, remaining);
+        const alreadyReversed = calculateAlreadyReversedAmount(reversalEntries);
+        const { finalAmount } = capExternalReversalAmount({
+          requestAmount,
+          alreadyReversed,
+          externalAmount: amount,
+        });
         if (finalAmount <= 0) {
           return;
         }
@@ -344,7 +341,7 @@ export class StripeWebhookReversalsService {
               },
             })
           : null;
-        const requesterReversalType = this.getRequesterReversalEntryType({
+        const requesterReversalType = getRequesterReversalEntryType({
           settlementEntryType: requesterSettlementEntry?.type,
           paymentRail: requesterSettlementEntry?.paymentRequest?.paymentRail ?? null,
         });
@@ -394,7 +391,7 @@ export class StripeWebhookReversalsService {
             updatedBy: `stripe`,
             metadata: payerMetadata,
             stripeId: stripeObjectId ?? undefined,
-            idempotencyKey: idempotencyKeyPayer ?? undefined,
+            idempotencyKey: idempotencyKeys.payer,
           },
         });
 
@@ -412,7 +409,7 @@ export class StripeWebhookReversalsService {
               updatedBy: `stripe`,
               metadata: requesterMetadata,
               stripeId: stripeObjectId ?? undefined,
-              idempotencyKey: idempotencyKeyRequester ?? undefined,
+              idempotencyKey: idempotencyKeys.requester,
             },
           });
         }
@@ -574,16 +571,6 @@ export class StripeWebhookReversalsService {
     status: $Enums.TransactionStatus;
     outcomes?: Array<{ status: $Enums.TransactionStatus }>;
   }): $Enums.TransactionStatus {
-    return entry.outcomes?.[0]?.status ?? entry.status;
-  }
-
-  private getRequesterReversalEntryType(params: {
-    settlementEntryType: $Enums.LedgerEntryType | null | undefined;
-    paymentRail?: $Enums.PaymentRail | null;
-  }): $Enums.LedgerEntryType {
-    return params.settlementEntryType === $Enums.LedgerEntryType.USER_DEPOSIT ||
-      params.paymentRail === $Enums.PaymentRail.CARD
-      ? $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL
-      : $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL;
+    return getEffectiveLedgerStatus(entry);
   }
 }

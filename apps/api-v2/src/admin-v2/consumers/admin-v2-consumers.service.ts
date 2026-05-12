@@ -7,8 +7,12 @@ import {
   ACCOUNT_TYPES,
   buildCreatedAtFilter,
   CONTRACTOR_KINDS,
+  mapConsumerDisplayName,
+  mapPaymentMethodStatus,
   normalizeFlag,
+  normalizeOptionalReason,
   normalizePagination,
+  validateConsumerSuspensionReason,
   VERIFICATION_STATUSES,
 } from './admin-v2-consumer-query-helpers';
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';
@@ -21,7 +25,6 @@ import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
 const SEARCH_MAX_LEN = 200;
 const NOTE_MAX_LEN = 4000;
-const REASON_MAX_LEN = 500;
 const DEFAULT_CONSUMER_ACTION_RANGE_DAYS = 7;
 
 type RequestMeta = {
@@ -166,10 +169,7 @@ export class AdminV2ConsumersService {
     return {
       items: items.map((item) => ({
         ...item,
-        displayName:
-          item.organizationDetails?.name ??
-          [item.personalDetails?.firstName, item.personalDetails?.lastName].filter(Boolean).join(` `) ??
-          null,
+        displayName: mapConsumerDisplayName(item),
         summary: {
           notesCount: item._count.adminNotes,
           activeFlagsCount: item._count.adminFlags,
@@ -529,7 +529,7 @@ export class AdminV2ConsumersService {
       ...consumer,
       paymentMethods: consumer.paymentMethods.map((paymentMethod) => ({
         ...paymentMethod,
-        status: paymentMethod.disabledAt ? `DISABLED` : `ACTIVE`,
+        status: mapPaymentMethodStatus(paymentMethod),
       })),
       recentPaymentRequests,
       ledgerSummary: ledgerSummary.summary,
@@ -593,7 +593,7 @@ export class AdminV2ConsumersService {
       throw new BadRequestException(`Flag is required`);
     }
 
-    const normalizedReason = reason?.trim() ? reason.trim().slice(0, REASON_MAX_LEN) : null;
+    const normalizedReason = normalizeOptionalReason(reason);
     const existing = await this.prisma.consumerFlagModel.findFirst({
       where: {
         consumerId,
@@ -752,13 +752,7 @@ export class AdminV2ConsumersService {
       throw new BadRequestException(`Confirmation is required for consumer suspension`);
     }
 
-    const reason = body.reason?.trim();
-    if (!reason) {
-      throw new BadRequestException(`Suspension reason is required`);
-    }
-    if (reason.length > REASON_MAX_LEN) {
-      throw new BadRequestException(`Suspension reason is too long`);
-    }
+    const reason = validateConsumerSuspensionReason(body.reason);
 
     const consumer = await this.requireConsumer(consumerId);
     return this.idempotency.execute({

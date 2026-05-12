@@ -3,7 +3,70 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { detectConsumerDocumentKind } from './consumer-document-kind.util';
+import { formatConsumerDocumentRows } from './consumer-document-mapper';
+import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
 import { ConsumerDocumentsService } from './consumer-documents.service';
+
+describe(`consumer document pure helpers`, () => {
+  it(`detects document kind using the existing filename heuristics`, () => {
+    expect(detectConsumerDocumentKind(`signed-w9.pdf`)).toBe(`COMPLIANCE`);
+    expect(detectConsumerDocumentKind(`vendor-W-9.pdf`)).toBe(`COMPLIANCE`);
+    expect(detectConsumerDocumentKind(`master-contract.pdf`)).toBe(`CONTRACT`);
+    expect(detectConsumerDocumentKind(`invoice-123.pdf`)).toBe(`PAYMENT`);
+    expect(detectConsumerDocumentKind(`notes.txt`)).toBe(`GENERAL`);
+  });
+
+  it(`normalizes tags by trimming blanks and lowercasing without deduping`, () => {
+    expect(normalizeConsumerDocumentTags([` Finance `, ``, ` finance`, `VENDOR`])).toEqual([
+      `finance`,
+      `finance`,
+      `vendor`,
+    ]);
+  });
+
+  it(`formats raw document rows into list items with attachment flags`, () => {
+    const createdAt = new Date(`2026-03-27T10:00:00.000Z`);
+
+    expect(
+      formatConsumerDocumentRows(
+        [
+          {
+            id: `resource-1`,
+            name: `invoice.pdf`,
+            size: BigInt(2048),
+            createdAt,
+            mimetype: `application/pdf`,
+            kind: `PAYMENT`,
+            tags: null,
+            attachedDraftPaymentRequestIds: [`payment-draft`],
+            attachedNonDraftPaymentRequestIds: null,
+            totalCount: BigInt(1),
+          },
+        ],
+        `http://localhost:3334`,
+      ),
+    ).toEqual({
+      items: [
+        {
+          id: `resource-1`,
+          name: `invoice.pdf`,
+          size: 2048,
+          createdAt: createdAt.toISOString(),
+          downloadUrl: `http://localhost:3334/api/consumer/documents/resource-1/download`,
+          mimetype: `application/pdf`,
+          kind: `PAYMENT`,
+          tags: [],
+          isAttachedToDraftPaymentRequest: true,
+          attachedDraftPaymentRequestIds: [`payment-draft`],
+          isAttachedToNonDraftPaymentRequest: false,
+          attachedNonDraftPaymentRequestIds: [],
+        },
+      ],
+      total: 1,
+    });
+  });
+});
 
 describe(`ConsumerDocumentsService.attachToPayment`, () => {
   const consumerId = `consumer-1`;

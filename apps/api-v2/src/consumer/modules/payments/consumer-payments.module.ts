@@ -6,6 +6,8 @@ import { ConsumerPaymentRequestsController } from './consumer-payment-requests.c
 import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
+import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
+import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsController } from './consumer-payments.controller';
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { MailingModule } from '../../../shared/mailing.module';
@@ -18,6 +20,8 @@ import { FilesModule } from '../files/files.module';
     ConsumerPaymentsPoliciesService,
     ConsumerPaymentsQueriesService,
     ConsumerPaymentsCommandsService,
+    ConsumerPaymentsReadService,
+    ConsumerPaymentsWriteService,
     ConsumerPaymentRequestNotificationService,
     ConsumerPaymentsService,
     ConsumerInvoiceService,

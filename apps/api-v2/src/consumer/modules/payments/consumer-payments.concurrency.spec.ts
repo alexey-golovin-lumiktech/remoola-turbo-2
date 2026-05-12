@@ -11,6 +11,8 @@ import { $Enums } from '@remoola/database-2';
 import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
+import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
+import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsService as ConsumerPaymentsServiceClass } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
@@ -27,12 +29,14 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
 
     super(
       policiesService,
-      new ConsumerPaymentsQueriesService(prisma, balanceService),
-      new ConsumerPaymentsCommandsService(
-        prisma,
-        { sendPaymentRequest: mailingService.sendPaymentRequestEmail },
-        balanceService,
-        commandPolicies,
+      new ConsumerPaymentsReadService(new ConsumerPaymentsQueriesService(prisma, balanceService)),
+      new ConsumerPaymentsWriteService(
+        new ConsumerPaymentsCommandsService(
+          prisma,
+          { sendPaymentRequest: mailingService.sendPaymentRequestEmail },
+          balanceService,
+          commandPolicies,
+        ),
       ),
     );
 

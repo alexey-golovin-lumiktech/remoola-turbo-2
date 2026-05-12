@@ -194,11 +194,21 @@ model OauthStateModel {
 
 /// Fintech-safe: at-most-once Stripe webhook processing by event id.
 model StripeWebhookEventModel {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  eventId   String   @unique @map("event_id") @db.Text
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId             String    @unique @map("event_id") @db.Text
+  eventType           String?   @map("event_type") @db.Text
+  status              String    @default("PROCESSED") @db.Text
+  claimToken          String?   @map("claim_token") @db.Text
+  processingStartedAt DateTime? @map("processing_started_at") @db.Timestamptz(6)
+  processedAt         DateTime? @map("processed_at") @db.Timestamptz(6)
+  failedAt            DateTime? @map("failed_at") @db.Timestamptz(6)
+  attemptCount        Int       @default(0) @map("attempt_count")
+  lastErrorClass      String?   @map("last_error_class") @db.Text
+  lastErrorMessage    String?   @map("last_error_message") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  @@index([status, processingStartedAt])
   @@map("stripe_webhook_event")
 }
 

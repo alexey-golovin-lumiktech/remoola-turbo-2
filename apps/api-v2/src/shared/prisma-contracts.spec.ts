@@ -26,8 +26,14 @@ describe(`Prisma database contracts`, () => {
         data: { eventId },
       });
 
-      const count = await prisma.stripeWebhookEventModel.count({ where: { eventId } });
-      expect(count).toBe(1);
+      const row = await prisma.stripeWebhookEventModel.findUnique({ where: { eventId } });
+      expect(row).toEqual(
+        expect.objectContaining({
+          eventId,
+          status: `PROCESSED`,
+          attemptCount: 0,
+        }),
+      );
     });
 
     it(`rejects a duplicate event_id with Prisma P2002`, async () => {
@@ -39,6 +45,43 @@ describe(`Prisma database contracts`, () => {
         code: `P2002`,
         meta: expect.objectContaining({ target: [`event_id`] }),
       });
+    });
+
+    it(`accepts processing lifecycle fields`, async () => {
+      const processingEventId = `evt_db_processing_${Date.now()}`;
+      const now = new Date();
+
+      const row = await prisma.stripeWebhookEventModel.create({
+        data: {
+          eventId: processingEventId,
+          eventType: `charge.refunded`,
+          status: `PROCESSING`,
+          claimToken: `claim-token-contract`,
+          processingStartedAt: now,
+          attemptCount: 1,
+        },
+      });
+
+      expect(row).toEqual(
+        expect.objectContaining({
+          eventId: processingEventId,
+          eventType: `charge.refunded`,
+          status: `PROCESSING`,
+          claimToken: `claim-token-contract`,
+          attemptCount: 1,
+        }),
+      );
+    });
+
+    it(`rejects unsupported webhook lifecycle status`, async () => {
+      await expect(
+        prisma.stripeWebhookEventModel.create({
+          data: {
+            eventId: `evt_db_bad_status_${Date.now()}`,
+            status: `RETRYING`,
+          },
+        }),
+      ).rejects.toThrow();
     });
   });
 

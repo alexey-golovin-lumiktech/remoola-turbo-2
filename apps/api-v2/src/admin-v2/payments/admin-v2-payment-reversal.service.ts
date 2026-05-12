@@ -7,16 +7,18 @@ import { type ConsumerAppScope, type TPaymentReversalKind } from '@remoola/api-t
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
-import {
-  buildPaymentReversalIdempotencyKey,
-  deriveEffectivePaymentRequestStatus,
-  getEffectiveLedgerStatus,
-  getRequesterReversalEntryType,
-} from './admin-v2-payment-reversal-policy';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { MailingService } from '../../shared/mailing.service';
 import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../shared/payment-link-scope-resolver';
+import {
+  buildAdminPaymentReversalIdempotencyKey,
+  calculateAlreadyReversedAmount,
+  deriveEffectivePaymentRequestStatus,
+  getEffectiveLedgerStatus,
+  getRequesterReversalEntryType,
+  resolveStrictReversalAmount,
+} from '../../shared/payment-reversal-calculator';
 import {
   acquireTransactionAdvisoryLock,
   buildConsumerOperationLockName,
@@ -271,29 +273,21 @@ export class AdminV2PaymentReversalService {
           },
         });
 
-        const alreadyReversed = reversalEntries.reduce((sum, entry) => {
-          const effectiveStatus = getEffectiveLedgerStatus(entry);
-          if (
-            effectiveStatus !== $Enums.TransactionStatus.COMPLETED &&
-            effectiveStatus !== $Enums.TransactionStatus.PENDING
-          ) {
-            return sum;
+        const alreadyReversed = calculateAlreadyReversedAmount(reversalEntries);
+        const amountResolution = resolveStrictReversalAmount({
+          requestAmount,
+          alreadyReversed,
+          requestedAmount,
+        });
+        if (amountResolution.ok === false) {
+          if (amountResolution.reason === `ALREADY_FULLY_REVERSED`) {
+            throw new BadRequestException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_ALREADY_FULLY_REVERSED);
           }
-          const amount = Number(entry.amount);
-          return amount > 0 ? sum + amount : sum;
-        }, 0);
-
-        const remainingBefore = requestAmount - alreadyReversed;
-        if (remainingBefore <= 0) {
-          throw new BadRequestException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_ALREADY_FULLY_REVERSED);
-        }
-
-        const finalRequestedAmount = requestedAmount ?? remainingBefore;
-        if (finalRequestedAmount > remainingBefore) {
           throw new BadRequestException(adminErrorCodes.ADMIN_REVERSAL_AMOUNT_EXCEEDS_REMAINING_BALANCE);
         }
+        const { finalAmount: finalRequestedAmount, remainingBefore } = amountResolution;
 
-        const idempotencyKeyBase = buildPaymentReversalIdempotencyKey({
+        const idempotencyKeyBase = buildAdminPaymentReversalIdempotencyKey({
           paymentRequestId,
           kind: body.kind,
           amount: finalRequestedAmount,

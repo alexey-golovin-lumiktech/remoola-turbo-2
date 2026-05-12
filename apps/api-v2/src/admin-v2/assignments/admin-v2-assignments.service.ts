@@ -16,12 +16,13 @@ import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import {
-  ASSIGNABLE_RESOURCE_TYPES,
-  AssignableResourceType,
-  MAX_ASSIGNMENT_REASON_LENGTH,
-  MIN_ASSIGNMENT_REASON_LENGTH,
-  assertResourceType,
-} from './admin-v2-assignments.dto';
+  assertCanReleaseAssignment,
+  assertExpectedReleasedAtNull,
+  mapAdminRef,
+  validateMandatoryAssignmentReason,
+  validateOptionalAssignmentReason,
+} from './admin-v2-assignment-policy';
+import { ASSIGNABLE_RESOURCE_TYPES, AssignableResourceType, assertResourceType } from './admin-v2-assignments.dto';
 
 type AssignmentRequestMeta = {
   ipAddress?: string | null;
@@ -71,48 +72,7 @@ type AssignmentSummaryRow = {
 
 export type AdminRef = AdminV2AdminRef;
 
-function mapAdminRef(id: string | null, email: string | null): AdminRef | null {
-  if (!id) return null;
-  return { id, name: null, email };
-}
-
 type AssignmentContext = AdminV2AssignmentContext;
-
-function trimReason(raw: string | null | undefined): string | null {
-  if (raw == null) return null;
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  return trimmed;
-}
-
-function validateOptionalReason(raw: string | null | undefined): string | null {
-  const normalized = trimReason(raw);
-  if (normalized == null) return null;
-  if (normalized.length > MAX_ASSIGNMENT_REASON_LENGTH) {
-    throw new BadRequestException(`Reason is too long (max ${MAX_ASSIGNMENT_REASON_LENGTH} characters)`);
-  }
-  return normalized;
-}
-
-function validateMandatoryReason(raw: string | null | undefined): string {
-  const normalized = trimReason(raw);
-  if (normalized == null) {
-    throw new BadRequestException(`Reason is required`);
-  }
-  if (normalized.length < MIN_ASSIGNMENT_REASON_LENGTH) {
-    throw new BadRequestException(`Reason is too short (min ${MIN_ASSIGNMENT_REASON_LENGTH} characters)`);
-  }
-  if (normalized.length > MAX_ASSIGNMENT_REASON_LENGTH) {
-    throw new BadRequestException(`Reason is too long (max ${MAX_ASSIGNMENT_REASON_LENGTH} characters)`);
-  }
-  return normalized;
-}
-
-function assertExpectedReleasedAtNull(value: number) {
-  if (value !== 0) {
-    throw new BadRequestException(`expectedReleasedAtNull must be 0`);
-  }
-}
 
 function isOperationalAssignmentUniqueConflict(error: unknown): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
@@ -157,7 +117,7 @@ export class AdminV2AssignmentsService {
     assertResourceType(body.resourceType);
     const resourceType: AssignableResourceType = body.resourceType;
     const resourceId = body.resourceId ?? ``;
-    const reason = validateOptionalReason(body.reason);
+    const reason = validateOptionalAssignmentReason(body.reason);
 
     return this.idempotency.execute({
       adminId,
@@ -260,7 +220,7 @@ export class AdminV2AssignmentsService {
       throw new BadRequestException(`assignmentId is required`);
     }
     assertExpectedReleasedAtNull(Number(body.expectedReleasedAtNull));
-    const reason = validateOptionalReason(body.reason);
+    const reason = validateOptionalAssignmentReason(body.reason);
     const assignmentId = body.assignmentId;
     const adminId = actor.id;
 
@@ -286,11 +246,7 @@ export class AdminV2AssignmentsService {
           if (locked.released_at) {
             throw new ConflictException(`Assignment is already released`);
           }
-          const isOwner = locked.assigned_to === adminId;
-          const isSuperAdmin = profile.role === `SUPER_ADMIN`;
-          if (!isOwner && !isSuperAdmin) {
-            throw new ForbiddenException(`Only the assigned owner or a super-admin can release this assignment`);
-          }
+          assertCanReleaseAssignment({ assignedTo: locked.assigned_to, adminId, profile });
 
           const updated = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
             UPDATE "operational_assignment"
@@ -352,7 +308,7 @@ export class AdminV2AssignmentsService {
       throw new BadRequestException(`Confirmation is required for reassign`);
     }
     assertExpectedReleasedAtNull(Number(body.expectedReleasedAtNull));
-    const reason = validateMandatoryReason(body.reason);
+    const reason = validateMandatoryAssignmentReason(body.reason);
 
     const adminId = actor.id;
     const profile = await this.accessService.getAccessProfile(actor);
@@ -536,12 +492,12 @@ export class AdminV2AssignmentsService {
     const current = currentRow
       ? {
           id: currentRow.id,
-          assignedTo: mapAdminRef(currentRow.assigned_to, currentRow.assigned_to_email) ?? {
+          assignedTo: mapAdminRef({ id: currentRow.assigned_to, email: currentRow.assigned_to_email }) ?? {
             id: currentRow.assigned_to,
             name: null,
             email: null,
           },
-          assignedBy: mapAdminRef(currentRow.assigned_by, currentRow.assigned_by_email),
+          assignedBy: mapAdminRef({ id: currentRow.assigned_by, email: currentRow.assigned_by_email }),
           assignedAt: currentRow.assigned_at.toISOString(),
           reason: currentRow.reason,
           expiresAt: currentRow.expires_at ? currentRow.expires_at.toISOString() : null,
@@ -549,15 +505,15 @@ export class AdminV2AssignmentsService {
       : null;
     const history = rows.map((row) => ({
       id: row.id,
-      assignedTo: mapAdminRef(row.assigned_to, row.assigned_to_email) ?? {
+      assignedTo: mapAdminRef({ id: row.assigned_to, email: row.assigned_to_email }) ?? {
         id: row.assigned_to,
         name: null,
         email: null,
       },
-      assignedBy: mapAdminRef(row.assigned_by, row.assigned_by_email),
+      assignedBy: mapAdminRef({ id: row.assigned_by, email: row.assigned_by_email }),
       assignedAt: row.assigned_at.toISOString(),
       releasedAt: row.released_at ? row.released_at.toISOString() : null,
-      releasedBy: mapAdminRef(row.released_by, row.released_by_email),
+      releasedBy: mapAdminRef({ id: row.released_by, email: row.released_by_email }),
       reason: row.reason,
       expiresAt: row.expires_at ? row.expires_at.toISOString() : null,
     }));

@@ -1,6 +1,9 @@
+import { BadRequestException } from '@nestjs/common';
+
 import { $Enums } from '@remoola/database-2';
 
 const FLAG_MAX_LEN = 64;
+const REASON_MAX_LEN = 500;
 const MAX_PAGE_SIZE = 100;
 const DEFAULT_HISTORY_PAGE_SIZE = 10;
 
@@ -15,6 +18,36 @@ export function normalizeFlag(raw: string): string {
     .replace(/[^a-z0-9]+/g, `_`)
     .replace(/^_+|_+$/g, ``)
     .slice(0, FLAG_MAX_LEN);
+}
+
+export function mapConsumerDisplayName(item: {
+  organizationDetails?: { name?: string | null } | null;
+  personalDetails?: { firstName?: string | null; lastName?: string | null } | null;
+}): string | null {
+  return (
+    item.organizationDetails?.name ??
+    [item.personalDetails?.firstName, item.personalDetails?.lastName].filter(Boolean).join(` `) ??
+    null
+  );
+}
+
+export function mapPaymentMethodStatus(paymentMethod: { disabledAt?: Date | null }): `ACTIVE` | `DISABLED` {
+  return paymentMethod.disabledAt ? `DISABLED` : `ACTIVE`;
+}
+
+export function normalizeOptionalReason(raw: string | null | undefined): string | null {
+  return raw?.trim() ? raw.trim().slice(0, REASON_MAX_LEN) : null;
+}
+
+export function validateConsumerSuspensionReason(raw: string | null | undefined): string {
+  const reason = raw?.trim();
+  if (!reason) {
+    throw new BadRequestException(`Suspension reason is required`);
+  }
+  if (reason.length > REASON_MAX_LEN) {
+    throw new BadRequestException(`Suspension reason is too long`);
+  }
+  return reason;
 }
 
 export function normalizePagination(page?: number, pageSize?: number) {

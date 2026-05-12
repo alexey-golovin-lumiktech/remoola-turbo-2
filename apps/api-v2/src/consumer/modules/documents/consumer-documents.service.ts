@@ -3,6 +3,9 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { detectConsumerDocumentKind } from './consumer-document-kind.util';
+import { DocumentListItem, DocumentListRow, formatConsumerDocumentRows } from './consumer-document-mapper';
+import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
 import { buildConsumerDocumentDownloadUrl } from './document-download-url';
 import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
@@ -19,34 +22,6 @@ const SINGLE_NON_DRAFT_ATTACHMENT_DELETE_BLOCK_MESSAGE =
 const MULTI_NON_DRAFT_ATTACHMENT_DELETE_BLOCK_MESSAGE =
   `One or more selected documents are attached to non-draft payment requests ` +
   `and cannot be deleted from Documents.`;
-
-type DocumentListItem = {
-  id: string;
-  name: string;
-  size: number;
-  createdAt: string;
-  downloadUrl: string;
-  mimetype: string | null;
-  kind: string;
-  tags: string[];
-  isAttachedToDraftPaymentRequest: boolean;
-  attachedDraftPaymentRequestIds: string[];
-  isAttachedToNonDraftPaymentRequest: boolean;
-  attachedNonDraftPaymentRequestIds: string[];
-};
-
-type DocumentListRow = {
-  id: string;
-  name: string;
-  size: number | bigint;
-  createdAt: Date;
-  mimetype: string | null;
-  kind: string;
-  tags: string[] | null;
-  attachedDraftPaymentRequestIds: string[] | null;
-  attachedNonDraftPaymentRequestIds: string[] | null;
-  totalCount: number | bigint;
-};
 
 @Injectable()
 export class ConsumerDocumentsService {
@@ -150,34 +125,6 @@ export class ConsumerDocumentsService {
         ELSE 'GENERAL'
       END
     `;
-  }
-
-  private formatDocumentRows(
-    rows: DocumentListRow[],
-    backendBaseUrl?: string,
-  ): { items: DocumentListItem[]; total: number } {
-    const total = rows.length > 0 ? Number(rows[0].totalCount) : 0;
-    return {
-      items: rows.map((row) => {
-        const attachedDraftPaymentRequestIds = row.attachedDraftPaymentRequestIds ?? [];
-        const attachedNonDraftPaymentRequestIds = row.attachedNonDraftPaymentRequestIds ?? [];
-        return {
-          id: row.id,
-          name: row.name,
-          size: Number(row.size),
-          createdAt: row.createdAt.toISOString(),
-          downloadUrl: buildConsumerDocumentDownloadUrl(row.id, backendBaseUrl),
-          mimetype: row.mimetype,
-          kind: row.kind,
-          tags: row.tags ?? [],
-          isAttachedToDraftPaymentRequest: attachedDraftPaymentRequestIds.length > 0,
-          attachedDraftPaymentRequestIds,
-          isAttachedToNonDraftPaymentRequest: attachedNonDraftPaymentRequestIds.length > 0,
-          attachedNonDraftPaymentRequestIds,
-        };
-      }),
-      total,
-    };
   }
 
   private async getDocumentsRaw(params: {
@@ -311,7 +258,7 @@ export class ConsumerDocumentsService {
         };
       }
 
-      const formatted = this.formatDocumentRows(rows, backendBaseUrl);
+      const formatted = formatConsumerDocumentRows(rows, backendBaseUrl);
       return { ...formatted, page: safePage, pageSize: safePageSize };
     }
 
@@ -478,7 +425,7 @@ export class ConsumerDocumentsService {
       };
     }
 
-    const formatted = this.formatDocumentRows(rows, backendBaseUrl);
+    const formatted = formatConsumerDocumentRows(rows, backendBaseUrl);
     return { ...formatted, page: safePage, pageSize: safePageSize };
   }
 
@@ -567,7 +514,7 @@ export class ConsumerDocumentsService {
         size: cr.resource.size,
         createdAt: cr.resource.createdAt ?? cr.createdAt,
         mimetype: cr.resource.mimetype,
-        kind: this.detectKind(cr.resource.originalName),
+        kind: detectConsumerDocumentKind(cr.resource.originalName),
         tags: cr.resource.resourceTags.map((rt) => rt.tag.name),
         attachedDraftPaymentRequestIds: Array.from(draftAttachmentIdsByResource.get(cr.resource.id) ?? []),
         attachedNonDraftPaymentRequestIds: Array.from(nonDraftAttachmentIdsByResource.get(cr.resource.id) ?? []),
@@ -705,14 +652,6 @@ export class ConsumerDocumentsService {
       kindFilter,
       contractContact,
     );
-  }
-
-  private detectKind(filename: string): string {
-    const lower = filename.toLowerCase();
-    if (lower.includes(`w9`) || lower.includes(`w-9`)) return `COMPLIANCE`;
-    if (lower.includes(`contract`)) return `CONTRACT`;
-    if (lower.includes(`invoice`)) return `PAYMENT`;
-    return `GENERAL`;
   }
 
   async uploadDocuments(
@@ -1061,10 +1000,7 @@ export class ConsumerDocumentsService {
       throw new ForbiddenException(errorCodes.DOCUMENT_ACCESS_DENIED);
     }
 
-    const cleaned = tags
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-      .map((tag) => tag.toLowerCase());
+    const cleaned = normalizeConsumerDocumentTags(tags);
 
     const documentTags = [];
     for (const name of cleaned) {

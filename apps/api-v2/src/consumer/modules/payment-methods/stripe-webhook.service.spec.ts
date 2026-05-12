@@ -5,9 +5,12 @@ import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
+import { STRIPE_WEBHOOK_EVENT_STATUS, StripeWebhookDeduplicationService } from './stripe-webhook-deduplication.service';
+import { StripeWebhookEventProcessorService } from './stripe-webhook-event-processor.service';
 import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-methods.service';
 import { StripeWebhookPayoutsService } from './stripe-webhook-payouts.service';
 import { StripeWebhookReversalsService } from './stripe-webhook-reversals.service';
+import { StripeWebhookRouterService } from './stripe-webhook-router.service';
 import { StripeWebhookSettlementsService } from './stripe-webhook-settlements.service';
 import { StripeWebhookVerificationService } from './stripe-webhook-verification.service';
 import { StripeWebhookService as StripeWebhookServiceClass } from './stripe-webhook.service';
@@ -23,15 +26,24 @@ class StripeWebhookService extends StripeWebhookServiceClass {
     const settlementsService = new StripeWebhookSettlementsService(prisma);
     const verificationService = new StripeWebhookVerificationService(prisma, consumerPaymentsPoliciesService, stripe);
     const reversalsService = new StripeWebhookReversalsService(prisma, mailingService, balanceService, stripe);
-
-    super(
-      prisma,
-      stripe,
+    const router = new StripeWebhookRouterService(
       paymentMethodsService,
       payoutsService,
       settlementsService,
       verificationService,
       reversalsService,
+    );
+    const eventProcessor = new StripeWebhookEventProcessorService(new StripeWebhookDeduplicationService(prisma));
+
+    super(
+      prisma,
+      stripe,
+      paymentMethodsService,
+      settlementsService,
+      verificationService,
+      reversalsService,
+      router,
+      eventProcessor,
     );
 
     const logger = (this as any).logger;
@@ -40,6 +52,7 @@ class StripeWebhookService extends StripeWebhookServiceClass {
     (settlementsService as any).logger = logger;
     (verificationService as any).logger = logger;
     (reversalsService as any).logger = logger;
+    (router as any).logger = logger;
 
     Object.defineProperty(this, `stripe`, {
       configurable: true,
@@ -53,6 +66,14 @@ class StripeWebhookService extends StripeWebhookServiceClass {
       },
     });
   }
+}
+
+function makeStripeWebhookDuplicateEventError() {
+  return new Prisma.PrismaClientKnownRequestError(`Unique constraint failed on the fields: (event_id)`, {
+    code: `P2002`,
+    clientVersion: `test`,
+    meta: { target: [`event_id`] },
+  });
 }
 
 jest.mock(`../../../envs`, () => ({
@@ -170,8 +191,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
         constructEvent: jest.fn().mockReturnValue(mockEvent),
       },
     };
-    jest
-      .spyOn(service as any, `handleVerified`)
+    (service as any).router.routeManagedVerificationEvent = jest
+      .fn()
       .mockRejectedValue(new Error(`column "stripe_identity_status" does not exist`));
 
     const envModule = jest.requireMock(`../../../envs`) as {
@@ -226,7 +247,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
         constructEvent,
       },
     };
-    (service as any).processManagedVerificationEvent = jest.fn().mockResolvedValue(undefined);
+    (service as any).router.routeManagedVerificationEvent = jest.fn().mockResolvedValue(undefined);
 
     const envModule = jest.requireMock(`../../../envs`) as {
       envs: { STRIPE_WEBHOOK_SECRET: string };
@@ -249,15 +270,21 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   });
 
   it(`returns 200 without dispatching when the processed-event marker already exists`, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
-    const stripeWebhookEventFindUnique = jest.fn().mockResolvedValue({ eventId: `evt_dup` });
+    const stripeWebhookEventCreate = jest.fn().mockRejectedValue(makeStripeWebhookDuplicateEventError());
+    const stripeWebhookEventFindUnique = jest.fn().mockResolvedValue({
+      eventId: `evt_dup`,
+      status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED,
+      processingStartedAt: null,
+    });
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: stripeWebhookEventFindUnique },
+      stripeWebhookEventModel: {
+        create: stripeWebhookEventCreate,
+        findUnique: stripeWebhookEventFindUnique,
+        updateMany: jest.fn(),
+      },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
-    const finalizeCheckoutSessionSuccess = jest
-      .spyOn(service as any, `finalizeCheckoutSessionSuccess`)
-      .mockResolvedValue(undefined);
+    const routeEvent = jest.spyOn((service as any).router, `routeEvent`).mockResolvedValue(`handled`);
 
     const mockEvent = {
       id: `evt_dup`,
@@ -290,25 +317,239 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 
     expect(stripeWebhookEventFindUnique).toHaveBeenCalledWith({
       where: { eventId: `evt_dup` },
-      select: { eventId: true },
+      select: { status: true, processingStartedAt: true },
     });
-    expect(finalizeCheckoutSessionSuccess).not.toHaveBeenCalled();
-    expect(stripeWebhookEventCreate).not.toHaveBeenCalled();
+    expect(routeEvent).not.toHaveBeenCalled();
+    expect(stripeWebhookEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          eventId: `evt_dup`,
+          eventType: `checkout.session.completed`,
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          claimToken: expect.any(String),
+        }),
+      }),
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
     expect(res.status).not.toHaveBeenCalled();
     expect(createOutcomeIdempotent).not.toHaveBeenCalled();
   });
 
-  it(`does not record the dedupe marker when a non-identity handler fails before completion`, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+  it(`returns 503 without dispatching when the event is already in fresh processing`, async () => {
+    const stripeWebhookEventCreate = jest.fn().mockRejectedValue(makeStripeWebhookDuplicateEventError());
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: jest.fn().mockResolvedValue(null) },
+      stripeWebhookEventModel: {
+        create: stripeWebhookEventCreate,
+        findUnique: jest.fn().mockResolvedValue({
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          processingStartedAt: new Date(),
+        }),
+        updateMany: jest.fn(),
+      },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
-    const finalizeCheckoutSessionSuccess = jest
-      .spyOn(service as any, `finalizeCheckoutSessionSuccess`)
+    const routeEvent = jest.spyOn((service as any).router, `routeEvent`).mockResolvedValue(`handled`);
+
+    const mockEvent = {
+      id: `evt_in_flight`,
+      type: `charge.refunded`,
+      data: { object: { id: `ch_in_flight` } },
+    };
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue(mockEvent),
+      },
+    };
+
+    const envModule = jest.requireMock(`../../../envs`) as { envs: { STRIPE_WEBHOOK_SECRET: string } };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const req = {
+      rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      headers: { 'stripe-signature': `sig_test` },
+    } as any;
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+
+    await service.processStripeEvent(req, res);
+
+    expect(routeEvent).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith({ received: false, error: `Webhook event already processing` });
+  });
+
+  it(`reclaims stale processing events and dispatches once`, async () => {
+    const stripeWebhookEventCreate = jest.fn().mockRejectedValue(makeStripeWebhookDuplicateEventError());
+    const stripeWebhookEventUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const prisma = {
+      stripeWebhookEventModel: {
+        create: stripeWebhookEventCreate,
+        findUnique: jest.fn().mockResolvedValue({
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          processingStartedAt: new Date(Date.now() - 20 * 60 * 1000),
+        }),
+        updateMany: stripeWebhookEventUpdateMany,
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const routeEvent = jest.spyOn((service as any).router, `routeEvent`).mockResolvedValue(`handled`);
+
+    const mockEvent = {
+      id: `evt_stale_processing`,
+      type: `charge.dispute.created`,
+      data: { object: { id: `dp_stale` } },
+    };
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue(mockEvent),
+      },
+    };
+
+    const envModule = jest.requireMock(`../../../envs`) as { envs: { STRIPE_WEBHOOK_SECRET: string } };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const req = {
+      rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      headers: { 'stripe-signature': `sig_test` },
+    } as any;
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+
+    await service.processStripeEvent(req, res);
+
+    expect(routeEvent).toHaveBeenCalledTimes(1);
+    expect(stripeWebhookEventUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          eventId: `evt_stale_processing`,
+          OR: expect.any(Array),
+        }),
+        data: expect.objectContaining({
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          claimToken: expect.any(String),
+          attemptCount: { increment: 1 },
+        }),
+      }),
+    );
+    expect(stripeWebhookEventUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          eventId: `evt_stale_processing`,
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          claimToken: expect.any(String),
+        },
+        data: expect.objectContaining({ status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED }),
+      }),
+    );
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it(`does not dispatch money handler twice for concurrent duplicate charge.refunded deliveries`, async () => {
+    let releaseHandler: (() => void) | undefined;
+    const handlerGate = new Promise<void>((resolve) => {
+      releaseHandler = resolve;
+    });
+    const stripeWebhookEventCreate = jest
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(makeStripeWebhookDuplicateEventError());
+    const prisma = {
+      stripeWebhookEventModel: {
+        create: stripeWebhookEventCreate,
+        findUnique: jest.fn().mockResolvedValue({
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          processingStartedAt: new Date(),
+        }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const handleChargeRefunded = jest
+      .spyOn((service as any).reversalsService, `handleChargeRefunded`)
+      .mockImplementation(async () => handlerGate);
+
+    const mockEvent = {
+      id: `evt_concurrent_refund`,
+      type: `charge.refunded`,
+      request: { idempotency_key: `refund-key-concurrent` },
+      data: { object: { id: `ch_concurrent` } },
+    };
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue(mockEvent),
+      },
+    };
+
+    const envModule = jest.requireMock(`../../../envs`) as { envs: { STRIPE_WEBHOOK_SECRET: string } };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const makeReq = () =>
+      ({
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+        headers: { 'stripe-signature': `sig_test` },
+      }) as any;
+    const makeRes = () =>
+      ({
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis(),
+      }) as unknown as express.Response;
+
+    const firstRes = makeRes();
+    const secondRes = makeRes();
+    const firstProcessing = service.processStripeEvent(makeReq(), firstRes);
+    await Promise.resolve();
+    const secondProcessing = service.processStripeEvent(makeReq(), secondRes);
+    await Promise.resolve();
+
+    expect(handleChargeRefunded).toHaveBeenCalledTimes(1);
+
+    releaseHandler?.();
+    await Promise.all([firstProcessing, secondProcessing]);
+
+    expect(handleChargeRefunded).toHaveBeenCalledTimes(1);
+    expect(firstRes.json).toHaveBeenCalledWith({ received: true });
+    expect(secondRes.status).toHaveBeenCalledWith(503);
+    expect(secondRes.json).toHaveBeenCalledWith({ received: false, error: `Webhook event already processing` });
+  });
+
+  it(`marks the dedupe claim failed when a non-identity handler fails before completion`, async () => {
+    const stripeWebhookEventCreate = jest
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(makeStripeWebhookDuplicateEventError());
+    const stripeWebhookEventFindUnique = jest.fn().mockResolvedValue({
+      status: STRIPE_WEBHOOK_EVENT_STATUS.FAILED,
+      processingStartedAt: null,
+    });
+    const stripeWebhookEventUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const prisma = {
+      stripeWebhookEventModel: {
+        create: stripeWebhookEventCreate,
+        findUnique: stripeWebhookEventFindUnique,
+        updateMany: stripeWebhookEventUpdateMany,
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const routeEvent = jest
+      .spyOn((service as any).router, `routeEvent`)
       .mockRejectedValueOnce(new Error(`temporary failure`))
-      .mockResolvedValueOnce(undefined);
+      .mockResolvedValueOnce(`handled`);
 
     const mockEvent = {
       id: `evt_retryable`,
@@ -340,7 +581,29 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
     await service.processStripeEvent(firstReq, firstRes);
 
     expect(firstRes.status).toHaveBeenCalledWith(500);
-    expect(stripeWebhookEventCreate).not.toHaveBeenCalled();
+    expect(stripeWebhookEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          eventId: `evt_retryable`,
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          claimToken: expect.any(String),
+        }),
+      }),
+    );
+    expect(stripeWebhookEventUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          eventId: `evt_retryable`,
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          claimToken: expect.any(String),
+        },
+        data: expect.objectContaining({
+          status: STRIPE_WEBHOOK_EVENT_STATUS.FAILED,
+          lastErrorClass: `Error`,
+          lastErrorMessage: `temporary failure`,
+        }),
+      }),
+    );
 
     const secondReq = {
       rawBody: Buffer.from(JSON.stringify(mockEvent)),
@@ -353,18 +616,28 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 
     await service.processStripeEvent(secondReq, secondRes);
 
-    expect(finalizeCheckoutSessionSuccess).toHaveBeenCalledTimes(2);
-    expect(stripeWebhookEventCreate).toHaveBeenCalledTimes(1);
+    expect(routeEvent).toHaveBeenCalledTimes(2);
+    expect(stripeWebhookEventCreate).toHaveBeenCalledTimes(2);
+    expect(stripeWebhookEventFindUnique).toHaveBeenCalledWith({
+      where: { eventId: `evt_retryable` },
+      select: { status: true, processingStartedAt: true },
+    });
     expect(secondRes.json).toHaveBeenCalledWith({ received: true });
   });
 
   it(`dispatches charge.refunded events to handleChargeRefunded`, async () => {
     const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: jest.fn().mockResolvedValue(null) },
+      stripeWebhookEventModel: {
+        create: stripeWebhookEventCreate,
+        findUnique: jest.fn().mockResolvedValue(null),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
-    const handleChargeRefunded = jest.spyOn(service as any, `handleChargeRefunded`).mockResolvedValue(undefined);
+    const handleChargeRefunded = jest
+      .spyOn((service as any).reversalsService, `handleChargeRefunded`)
+      .mockResolvedValue(undefined);
 
     const mockEvent = {
       id: `evt_charge_refunded`,
@@ -398,17 +671,32 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 
     expect(handleChargeRefunded).toHaveBeenCalledTimes(1);
     expect(handleChargeRefunded).toHaveBeenCalledWith(mockEvent.data.object);
-    expect(stripeWebhookEventCreate).toHaveBeenCalledWith({ data: { eventId: `evt_charge_refunded` } });
+    expect(stripeWebhookEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          eventId: `evt_charge_refunded`,
+          eventType: `charge.refunded`,
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          claimToken: expect.any(String),
+        }),
+      }),
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
   it(`dispatches charge.refund.updated events to handleRefundUpdated`, async () => {
     const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: jest.fn().mockResolvedValue(null) },
+      stripeWebhookEventModel: {
+        create: stripeWebhookEventCreate,
+        findUnique: jest.fn().mockResolvedValue(null),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
-    const handleRefundUpdated = jest.spyOn(service as any, `handleRefundUpdated`).mockResolvedValue(undefined);
+    const handleRefundUpdated = jest
+      .spyOn((service as any).reversalsService, `handleRefundUpdated`)
+      .mockResolvedValue(undefined);
 
     const mockEvent = {
       id: `evt_refund_updated`,
@@ -442,17 +730,32 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 
     expect(handleRefundUpdated).toHaveBeenCalledTimes(1);
     expect(handleRefundUpdated).toHaveBeenCalledWith(mockEvent.data.object);
-    expect(stripeWebhookEventCreate).toHaveBeenCalledWith({ data: { eventId: `evt_refund_updated` } });
+    expect(stripeWebhookEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          eventId: `evt_refund_updated`,
+          eventType: `charge.refund.updated`,
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          claimToken: expect.any(String),
+        }),
+      }),
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
   it(`dispatches charge.dispute.created events to handleChargeDispute`, async () => {
     const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
     const prisma = {
-      stripeWebhookEventModel: { create: stripeWebhookEventCreate, findUnique: jest.fn().mockResolvedValue(null) },
+      stripeWebhookEventModel: {
+        create: stripeWebhookEventCreate,
+        findUnique: jest.fn().mockResolvedValue(null),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
-    const handleChargeDispute = jest.spyOn(service as any, `handleChargeDispute`).mockResolvedValue(undefined);
+    const handleChargeDispute = jest
+      .spyOn((service as any).reversalsService, `handleChargeDispute`)
+      .mockResolvedValue(undefined);
 
     const mockEvent = {
       id: `evt_dispute_created`,
@@ -486,7 +789,16 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 
     expect(handleChargeDispute).toHaveBeenCalledTimes(1);
     expect(handleChargeDispute).toHaveBeenCalledWith(mockEvent.data.object);
-    expect(stripeWebhookEventCreate).toHaveBeenCalledWith({ data: { eventId: `evt_dispute_created` } });
+    expect(stripeWebhookEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          eventId: `evt_dispute_created`,
+          eventType: `charge.dispute.created`,
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+          claimToken: expect.any(String),
+        }),
+      }),
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -494,15 +806,22 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
     `returns success for duplicate refund.updated event before handler dispatch ` + `when marker already exists`;
 
   it(duplicateRefundUpdatedEventDescription, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const stripeWebhookEventCreate = jest.fn().mockRejectedValue(makeStripeWebhookDuplicateEventError());
     const prisma = {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
-        findUnique: jest.fn().mockResolvedValue({ eventId: `evt_refund_updated_duplicate` }),
+        findUnique: jest.fn().mockResolvedValue({
+          eventId: `evt_refund_updated_duplicate`,
+          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED,
+          processingStartedAt: null,
+        }),
+        updateMany: jest.fn(),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
-    const handleRefundUpdated = jest.spyOn(service as any, `handleRefundUpdated`).mockResolvedValue(undefined);
+    const handleRefundUpdated = jest
+      .spyOn((service as any).reversalsService, `handleRefundUpdated`)
+      .mockResolvedValue(undefined);
 
     const mockEvent = {
       id: `evt_refund_updated_duplicate`,
@@ -535,9 +854,83 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
     await service.processStripeEvent(req, res);
 
     expect(handleRefundUpdated).not.toHaveBeenCalled();
-    expect(stripeWebhookEventCreate).not.toHaveBeenCalled();
+    expect(stripeWebhookEventCreate).toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+});
+
+describe(`StripeWebhookRouterService`, () => {
+  function makeRouter() {
+    const paymentMethodsService = {
+      collectPaymentMethodFromCheckout: jest.fn().mockResolvedValue(undefined),
+    } as unknown as StripeWebhookPaymentMethodsService;
+    const payoutsService = {
+      handlePayoutPaid: jest.fn().mockResolvedValue(undefined),
+      handlePayoutFailed: jest.fn().mockResolvedValue(undefined),
+    } as unknown as StripeWebhookPayoutsService;
+    const settlementsService = {
+      finalizeCheckoutSessionSuccess: jest.fn().mockResolvedValue(undefined),
+    } as unknown as StripeWebhookSettlementsService;
+    const verificationService = {
+      isManagedVerificationEvent: jest.fn().mockReturnValue(false),
+      processManagedVerificationEvent: jest.fn().mockResolvedValue(undefined),
+    } as unknown as StripeWebhookVerificationService;
+    const reversalsService = {
+      handleChargeRefunded: jest.fn().mockResolvedValue(undefined),
+      handleRefundUpdated: jest.fn().mockResolvedValue(undefined),
+      handleChargeDispute: jest.fn().mockResolvedValue(undefined),
+    } as unknown as StripeWebhookReversalsService;
+    const router = new StripeWebhookRouterService(
+      paymentMethodsService,
+      payoutsService,
+      settlementsService,
+      verificationService,
+      reversalsService,
+    );
+
+    return { paymentMethodsService, payoutsService, settlementsService, verificationService, reversalsService, router };
+  }
+
+  it(`routes checkout.session.completed to checkout settlement handling`, async () => {
+    const { paymentMethodsService, settlementsService, router } = makeRouter();
+    const checkoutSession = { id: `cs_router`, metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` } };
+    const event = {
+      id: `evt_router_checkout`,
+      type: `checkout.session.completed`,
+      data: { object: checkoutSession },
+    } as unknown as Stripe.Event;
+
+    await expect(router.routeEvent(event)).resolves.toBe(`handled`);
+
+    expect(settlementsService.finalizeCheckoutSessionSuccess).toHaveBeenCalledWith(
+      checkoutSession,
+      expect.objectContaining({
+        collectPaymentMethodFromCheckout: expect.any(Function),
+      }),
+    );
+
+    const [, handlers] = (settlementsService.finalizeCheckoutSessionSuccess as jest.Mock).mock.calls[0];
+    await handlers.collectPaymentMethodFromCheckout(checkoutSession, `consumer-1`);
+    expect(paymentMethodsService.collectPaymentMethodFromCheckout).toHaveBeenCalledWith(checkoutSession, `consumer-1`);
+  });
+
+  it(`keeps unsupported webhook event types ignored`, async () => {
+    const { payoutsService, settlementsService, reversalsService, router } = makeRouter();
+    const event = {
+      id: `evt_router_ignored`,
+      type: `customer.updated`,
+      data: { object: { id: `cus_1` } },
+    } as Stripe.Event;
+
+    await expect(router.routeEvent(event)).resolves.toBe(`ignored`);
+
+    expect(settlementsService.finalizeCheckoutSessionSuccess).not.toHaveBeenCalled();
+    expect(reversalsService.handleChargeRefunded).not.toHaveBeenCalled();
+    expect(reversalsService.handleRefundUpdated).not.toHaveBeenCalled();
+    expect(reversalsService.handleChargeDispute).not.toHaveBeenCalled();
+    expect(payoutsService.handlePayoutPaid).not.toHaveBeenCalled();
+    expect(payoutsService.handlePayoutFailed).not.toHaveBeenCalled();
   });
 });
 
@@ -1436,6 +1829,117 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
     });
     expect(txLedgerCreate).not.toHaveBeenCalled();
   });
+
+  it(`caps external refund amount to remaining after completed and pending reversals`, async () => {
+    const txLedgerFindMany = jest.fn().mockResolvedValue([
+      {
+        amount: 20,
+        status: $Enums.TransactionStatus.COMPLETED,
+        outcomes: [],
+      },
+      {
+        amount: 3,
+        status: $Enums.TransactionStatus.DENIED,
+        outcomes: [{ status: $Enums.TransactionStatus.PENDING }],
+      },
+      {
+        amount: 99,
+        status: $Enums.TransactionStatus.DENIED,
+        outcomes: [],
+      },
+    ]);
+    const txLedgerFindFirst = jest
+      .fn()
+      .mockResolvedValueOnce({ type: $Enums.LedgerEntryType.USER_DEPOSIT, ledgerId: `settlement-ledger-remaining` })
+      .mockResolvedValueOnce({ ledgerId: `payer-ledger-remaining` });
+    const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const prisma = {
+      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback({
+          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          ledgerEntryModel: {
+            findMany: txLedgerFindMany,
+            findFirst: txLedgerFindFirst,
+            create: txLedgerCreate,
+          },
+        }),
+      ),
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    jest.spyOn(service as any, `sendReversalEmails`).mockResolvedValue(undefined);
+
+    await (service as any).createStripeReversal({
+      paymentRequestId: `pr-cap`,
+      payerId: `payer-1`,
+      requesterId: `requester-1`,
+      requesterEmail: `requester@example.com`,
+      requestAmount: 30,
+      amount: 25,
+      currencyCode: $Enums.CurrencyCode.USD,
+      kind: `REFUND`,
+      stripeObjectId: `re_cap`,
+    });
+
+    expect(txLedgerCreate).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          consumerId: `payer-1`,
+          amount: 7,
+          idempotencyKey: `reversal:refund:re_cap:payer`,
+        }),
+      }),
+    );
+    expect(txLedgerCreate).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          consumerId: `requester-1`,
+          amount: -7,
+          idempotencyKey: `reversal:refund:re_cap:requester`,
+        }),
+      }),
+    );
+  });
+
+  it(`skips fully reversed external events without appending entries or sending email`, async () => {
+    const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const prisma = {
+      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback({
+          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          ledgerEntryModel: {
+            findMany: jest.fn().mockResolvedValue([
+              {
+                amount: 30,
+                status: $Enums.TransactionStatus.COMPLETED,
+                outcomes: [],
+              },
+            ]),
+            findFirst: jest.fn(),
+            create: txLedgerCreate,
+          },
+        }),
+      ),
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const sendReversalEmails = jest.spyOn(service as any, `sendReversalEmails`).mockResolvedValue(undefined);
+
+    await (service as any).createStripeReversal({
+      paymentRequestId: `pr-fully-reversed`,
+      payerId: `payer-1`,
+      requesterId: `requester-1`,
+      requesterEmail: `requester@example.com`,
+      requestAmount: 30,
+      amount: 10,
+      currencyCode: $Enums.CurrencyCode.USD,
+      kind: `REFUND`,
+      stripeObjectId: `re_fully_reversed`,
+    });
+
+    expect(txLedgerCreate).not.toHaveBeenCalled();
+    expect(sendReversalEmails).not.toHaveBeenCalled();
+  });
 });
 
 describe(`StripeWebhookService verification lifecycle`, () => {
@@ -1903,7 +2407,7 @@ describe(`StripeWebhookService verification lifecycle`, () => {
     };
 
     const handleRequiresInput = jest
-      .spyOn(service as any, `handleRequiresInput`)
+      .spyOn((service as any).verificationService, `handleRequiresInput`)
       .mockRejectedValueOnce(new Error(`transient db failure`))
       .mockResolvedValueOnce(undefined);
 

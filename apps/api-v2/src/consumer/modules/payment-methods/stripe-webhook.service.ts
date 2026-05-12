@@ -5,11 +5,10 @@ import Stripe from 'stripe';
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { STRIPE_EVENT } from './events';
-import { StripeWebhookDeduplicationService } from './stripe-webhook-deduplication.service';
+import { StripeWebhookEventProcessorService } from './stripe-webhook-event-processor.service';
 import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-methods.service';
-import { StripeWebhookPayoutsService } from './stripe-webhook-payouts.service';
 import { StripeWebhookReversalsService } from './stripe-webhook-reversals.service';
+import { StripeWebhookRouterService } from './stripe-webhook-router.service';
 import { StripeWebhookSettlementsService } from './stripe-webhook-settlements.service';
 import { StripeWebhookVerificationService } from './stripe-webhook-verification.service';
 import { CONSUMER_STRIPE_WEBHOOK_CLIENT } from './stripe-webhook.tokens';
@@ -33,13 +32,11 @@ export class StripeWebhookService {
     private readonly prisma: PrismaService,
     @Inject(CONSUMER_STRIPE_WEBHOOK_CLIENT) private readonly stripe: Stripe,
     private readonly paymentMethodsService: StripeWebhookPaymentMethodsService,
-    private readonly payoutsService: StripeWebhookPayoutsService,
     private readonly settlementsService: StripeWebhookSettlementsService,
     private readonly verificationService: StripeWebhookVerificationService,
     private readonly reversalsService: StripeWebhookReversalsService,
-    private readonly deduplicationService: StripeWebhookDeduplicationService = new StripeWebhookDeduplicationService(
-      prisma,
-    ),
+    private readonly router: StripeWebhookRouterService,
+    private readonly eventProcessor: StripeWebhookEventProcessorService,
   ) {}
 
   private getEffectiveStatus(entry: {
@@ -157,9 +154,9 @@ export class StripeWebhookService {
     let failureStage: `managed_verification_processing_failed` | `webhook_processing_failed` =
       `webhook_processing_failed`;
     try {
-      if (this.verificationService.isManagedVerificationEvent(event.type)) {
+      if (this.router.isManagedVerificationEvent(event.type)) {
         try {
-          await this.processManagedVerificationEvent(event);
+          await this.router.routeManagedVerificationEvent(event);
         } catch (dedupErr) {
           if (dedupErr instanceof Prisma.PrismaClientKnownRequestError && dedupErr.code === `P2002`) {
             this.logger.debug({
@@ -178,81 +175,12 @@ export class StripeWebhookService {
         return;
       }
 
-      if (await this.deduplicationService.hasProcessed(event.id)) {
-        this.logger.debug({
-          message: `Stripe webhook duplicate event, skipping`,
-          eventId: event.id,
-          eventType: event.type,
-        });
-        res.json({ received: true });
+      const processResult = await this.eventProcessor.process(event, () =>
+        this.router.routeEvent(event).then(() => undefined),
+      );
+      if (processResult === `inFlight`) {
+        res.status(503).json({ received: false, error: `Webhook event already processing` });
         return;
-      }
-
-      switch (event.type) {
-        case STRIPE_EVENT.CHECKOUT_SESSION_COMPLETED: {
-          this.logger.log({ message: `Webhook processing`, eventType: event.type });
-          await this.finalizeCheckoutSessionSuccess(event.data.object);
-          this.logger.log({ message: `Webhook processed`, eventType: event.type });
-          break;
-        }
-
-        case STRIPE_EVENT.CHARGE_REFUNDED: {
-          this.logger.log({
-            message: `Idempotency-key audit`,
-            eventType: event.type,
-            idempotencyKey: event.request?.idempotency_key ?? null,
-          });
-          this.logger.log({ message: `Webhook processing`, eventType: event.type });
-          await this.handleChargeRefunded(event.data.object as Stripe.Charge);
-          this.logger.log({ message: `Webhook processed`, eventType: event.type });
-          break;
-        }
-
-        case STRIPE_EVENT.CHARGE_REFUND_UPDATED: {
-          this.logger.log({
-            message: `Idempotency-key audit`,
-            eventType: event.type,
-            idempotencyKey: event.request?.idempotency_key ?? null,
-          });
-          await this.handleRefundUpdated(event.data.object as Stripe.Refund);
-          break;
-        }
-
-        case STRIPE_EVENT.CHARGE_DISPUTE_CREATED:
-        case STRIPE_EVENT.CHARGE_DISPUTE_UPDATED:
-        case STRIPE_EVENT.CHARGE_DISPUTE_CLOSED: {
-          this.logger.log({
-            message: `Idempotency-key audit`,
-            eventType: event.type,
-            idempotencyKey: event.request?.idempotency_key ?? null,
-          });
-          this.logger.log({ message: `Webhook processing`, eventType: event.type });
-          await this.handleChargeDispute(event.data.object as Stripe.Dispute);
-          this.logger.log({ message: `Webhook processed`, eventType: event.type });
-          break;
-        }
-
-        case `payout.paid`:
-          await this.handlePayoutPaid(event);
-          break;
-        case `payout.failed`:
-        case `payout.canceled`:
-          await this.handlePayoutFailed(event);
-          break;
-
-        default: {
-          this.logger.debug({ message: `Webhook skipped`, eventType: event.type });
-          break;
-        }
-      }
-
-      const recordResult = await this.deduplicationService.recordProcessed(event.id);
-      if (recordResult === `duplicate`) {
-        this.logger.debug({
-          message: `Stripe webhook duplicate event, skipping`,
-          eventId: event.id,
-          eventType: event.type,
-        });
       }
 
       res.json({ received: true });
@@ -270,22 +198,6 @@ export class StripeWebhookService {
       res.status(500).json({ received: false, error: `Webhook processing failed` });
       return;
     }
-  }
-
-  private async handlePayoutPaid(event: Stripe.Event) {
-    const payout = event.data.object as Stripe.Payout;
-
-    if (!payout.metadata?.transactionId) return;
-
-    return this.payoutsService.handlePayoutPaid(payout.metadata.transactionId, payout.id);
-  }
-
-  private async handlePayoutFailed(event: Stripe.Event) {
-    const payout = event.data.object as Stripe.Payout;
-
-    if (!payout.metadata?.transactionId) return;
-
-    return this.payoutsService.handlePayoutFailed(payout.metadata.transactionId, payout.id);
   }
 
   private async handleVerified(session: Stripe.Identity.VerificationSession, db: VerificationConsumerDb = this.prisma) {
@@ -333,23 +245,6 @@ export class StripeWebhookService {
 
   private canReuseVerificationSession(status?: string | null) {
     return status === STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION || status === STRIPE_IDENTITY_STATUS.REQUIRES_INPUT;
-  }
-
-  private isManagedVerificationEvent(eventType: string) {
-    return (
-      eventType === STRIPE_EVENT.IDENTITY_VERIFICATION_SESSION_VERIFIED ||
-      eventType === STRIPE_EVENT.IDENTITY_VERIFICATION_SESSION_REQUIRES_INPUT ||
-      eventType === STRIPE_EVENT.IDENTITY_VERIFICATION_SESSION_CANCELED ||
-      eventType === STRIPE_EVENT.IDENTITY_VERIFICATION_SESSION_REDACTED
-    );
-  }
-
-  private async processManagedVerificationEvent(event: Stripe.Event) {
-    return this.verificationService.processManagedVerificationEvent(event, {
-      handleVerified: (session, db) => this.handleVerified(session, db),
-      handleRequiresInput: (session, db) => this.handleRequiresInput(session, db),
-      handleLifecycleUpdate: (session, eventType, db) => this.handleLifecycleUpdate(session, eventType, db),
-    });
   }
 
   private async findConsumerForVerificationSession(db: VerificationConsumerDb, consumerId: string, sessionId: string) {

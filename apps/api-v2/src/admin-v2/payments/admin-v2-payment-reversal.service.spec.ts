@@ -3,6 +3,125 @@ import { $Enums } from '@remoola/database-2';
 
 import { AdminV2PaymentReversalService } from './admin-v2-payment-reversal.service';
 import { BalanceCalculationMode } from '../../shared/balance-calculation.service';
+import {
+  buildAdminPaymentReversalIdempotencyKey,
+  buildStripeReversalLedgerIdempotencyKeys,
+  calculateAlreadyReversedAmount,
+  capExternalReversalAmount,
+  deriveEffectivePaymentRequestStatus,
+  resolveStrictReversalAmount,
+} from '../../shared/payment-reversal-calculator';
+
+describe(`PaymentReversalCalculator strict admin helpers`, () => {
+  it(`caps reversals to the remaining amount after completed and pending reversal entries`, () => {
+    const alreadyReversed = calculateAlreadyReversedAmount([
+      { amount: 10, status: $Enums.TransactionStatus.COMPLETED },
+      {
+        amount: 5,
+        status: $Enums.TransactionStatus.DENIED,
+        outcomes: [{ status: $Enums.TransactionStatus.PENDING }],
+      },
+      { amount: 99, status: $Enums.TransactionStatus.DENIED },
+      { amount: -4, status: $Enums.TransactionStatus.COMPLETED },
+    ]);
+
+    expect(alreadyReversed).toBe(15);
+    expect(resolveStrictReversalAmount({ requestAmount: 20, alreadyReversed })).toEqual({
+      ok: true,
+      finalAmount: 5,
+      remainingBefore: 5,
+    });
+    expect(resolveStrictReversalAmount({ requestAmount: 20, alreadyReversed, requestedAmount: 6 })).toEqual({
+      ok: false,
+      reason: `EXCEEDS_REMAINING_BALANCE`,
+      remainingBefore: 5,
+    });
+    expect(capExternalReversalAmount({ requestAmount: 20, alreadyReversed, externalAmount: 6 })).toEqual({
+      finalAmount: 5,
+      remainingBefore: 5,
+    });
+  });
+
+  it(`keeps reversal idempotency stable for semantically identical request shapes`, () => {
+    expect(
+      buildAdminPaymentReversalIdempotencyKey({
+        paymentRequestId: `pr-1`,
+        kind: `REFUND`,
+        amount: 12.34,
+        reason: ` admin reason `,
+      }),
+    ).toBe(
+      buildAdminPaymentReversalIdempotencyKey({
+        paymentRequestId: `pr-1`,
+        kind: `REFUND`,
+        amount: 12.34,
+        reason: `admin reason`,
+      }),
+    );
+    expect(
+      buildAdminPaymentReversalIdempotencyKey({
+        paymentRequestId: `pr-1`,
+        kind: `REFUND`,
+        amount: 12.34,
+        reason: ``,
+      }),
+    ).toBe(
+      buildAdminPaymentReversalIdempotencyKey({
+        paymentRequestId: `pr-1`,
+        kind: `REFUND`,
+        amount: 12.34,
+        reason: null,
+      }),
+    );
+    expect(
+      buildAdminPaymentReversalIdempotencyKey({
+        paymentRequestId: `pr-1`,
+        kind: `REFUND`,
+        amount: 12.34,
+      }),
+    ).not.toBe(
+      buildAdminPaymentReversalIdempotencyKey({
+        paymentRequestId: `pr-1`,
+        kind: `REFUND`,
+        amount: 12.35,
+      }),
+    );
+  });
+
+  it(`keeps Stripe object idempotency keys object-scoped and role-scoped`, () => {
+    expect(buildStripeReversalLedgerIdempotencyKeys({ kind: `REFUND`, stripeObjectId: `re_1` })).toEqual({
+      payer: `reversal:refund:re_1:payer`,
+      requester: `reversal:refund:re_1:requester`,
+    });
+    expect(buildStripeReversalLedgerIdempotencyKeys({ kind: `CHARGEBACK`, stripeObjectId: `dp_1` })).toEqual({
+      payer: `reversal:chargeback:dp_1:payer`,
+      requester: `reversal:chargeback:dp_1:requester`,
+    });
+    expect(buildStripeReversalLedgerIdempotencyKeys({ kind: `REFUND`, stripeObjectId: null })).toEqual({
+      payer: undefined,
+      requester: undefined,
+    });
+  });
+
+  it(`uses the latest settlement ledger outcome as the effective payment request status`, () => {
+    expect(
+      deriveEffectivePaymentRequestStatus({
+        status: $Enums.TransactionStatus.PENDING,
+        ledgerEntries: [
+          {
+            status: $Enums.TransactionStatus.COMPLETED,
+            createdAt: new Date(`2026-03-26T12:00:00.000Z`),
+          },
+          {
+            status: $Enums.TransactionStatus.PENDING,
+            createdAt: new Date(`2026-03-26T12:00:01.000Z`),
+            outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          },
+        ],
+      }),
+    ).toBe($Enums.TransactionStatus.COMPLETED);
+  });
+});
 
 describe(`AdminV2PaymentReversalService`, () => {
   it(`routes reversal emails with the stored consumer app scope`, async () => {

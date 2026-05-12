@@ -2,6 +2,12 @@ import { BadRequestException } from '@nestjs/common';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
+import {
+  mapConsumerDisplayName,
+  mapPaymentMethodStatus,
+  normalizeOptionalReason,
+  validateConsumerSuspensionReason,
+} from './admin-v2-consumer-query-helpers';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
 
 type NoteRow = {
@@ -93,6 +99,32 @@ function matchesFlag(
   }
   return true;
 }
+
+describe(`admin-v2 consumer pure helpers`, () => {
+  it(`maps consumer display name with existing fallback behavior`, () => {
+    expect(mapConsumerDisplayName({ organizationDetails: { name: `Acme Ltd` } })).toBe(`Acme Ltd`);
+    expect(
+      mapConsumerDisplayName({
+        personalDetails: { firstName: `Ada`, lastName: `Lovelace` },
+      }),
+    ).toBe(`Ada Lovelace`);
+    expect(mapConsumerDisplayName({ personalDetails: { firstName: null, lastName: null } })).toBe(``);
+  });
+
+  it(`maps payment method status from disabledAt only`, () => {
+    expect(mapPaymentMethodStatus({ disabledAt: null })).toBe(`ACTIVE`);
+    expect(mapPaymentMethodStatus({ disabledAt: new Date(`2026-04-20T10:00:00.000Z`) })).toBe(`DISABLED`);
+  });
+
+  it(`normalizes optional reasons and validates suspension reasons`, () => {
+    expect(normalizeOptionalReason(`  needs review  `)).toBe(`needs review`);
+    expect(normalizeOptionalReason(`   `)).toBeNull();
+    expect(normalizeOptionalReason(`x`.repeat(501))).toHaveLength(500);
+    expect(validateConsumerSuspensionReason(`  regulatory block  `)).toBe(`regulatory block`);
+    expect(() => validateConsumerSuspensionReason(`   `)).toThrow(BadRequestException);
+    expect(() => validateConsumerSuspensionReason(`x`.repeat(501))).toThrow(BadRequestException);
+  });
+});
 
 describe(`AdminV2ConsumersService`, () => {
   function buildService(initialState?: Partial<TestState> & { consumer?: Partial<TestConsumerState> }) {

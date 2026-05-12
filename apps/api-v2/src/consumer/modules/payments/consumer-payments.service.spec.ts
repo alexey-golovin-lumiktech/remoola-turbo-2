@@ -8,6 +8,8 @@ import { ConsumerPaymentRequestNotificationService } from './consumer-payment-re
 import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
+import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
+import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsService as ConsumerPaymentsServiceClass } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
 import { type StartPayment } from './dto/start-payment.dto';
@@ -25,12 +27,14 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
 
     super(
       policiesService,
-      new ConsumerPaymentsQueriesService(prisma, balanceService),
-      new ConsumerPaymentsCommandsService(
-        prisma,
-        new ConsumerPaymentRequestNotificationService(mailingService),
-        balanceService,
-        commandPolicies,
+      new ConsumerPaymentsReadService(new ConsumerPaymentsQueriesService(prisma, balanceService)),
+      new ConsumerPaymentsWriteService(
+        new ConsumerPaymentsCommandsService(
+          prisma,
+          new ConsumerPaymentRequestNotificationService(mailingService),
+          balanceService,
+          commandPolicies,
+        ),
       ),
     );
 
