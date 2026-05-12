@@ -539,23 +539,101 @@ export class ConsumerPaymentsQueriesService {
           ? Prisma.sql`AND latest."effectiveStatus" IN (${Prisma.join(effectiveStatusFilter.in)})`
           : Prisma.sql`AND latest."effectiveStatus" = ${effectiveStatusFilter}`;
       const typeSql = type ? Prisma.sql`AND latest."normalizedType" = ${type}` : Prisma.empty;
-      const rows = await this.prisma.$queryRaw<
-        Array<{
-          id: string;
-          ledgerId: string;
-          type: $Enums.LedgerEntryType;
-          effectiveStatus: $Enums.TransactionStatus;
-          amount: Prisma.Decimal | number | string;
-          currencyCode: $Enums.CurrencyCode;
-          createdAt: Date;
-          metadata: Prisma.JsonValue | null;
-          paymentRequestId: string | null;
-          paymentRail: $Enums.PaymentRail | null;
-          totalRows: number;
-        }>
-      >(Prisma.sql`
-        WITH latest_entries AS (
+      type HistoryRawRow = {
+        id: string;
+        ledgerId: string;
+        type: $Enums.LedgerEntryType;
+        effectiveStatus: $Enums.TransactionStatus;
+        amount: Prisma.Decimal | number | string;
+        currencyCode: $Enums.CurrencyCode;
+        createdAt: Date;
+        metadata: Prisma.JsonValue | null;
+        paymentRequestId: string | null;
+        paymentRail: $Enums.PaymentRail | null;
+        totalRows: number;
+      };
+      const rows = !effectiveStatusFilter
+        ? await this.prisma.$queryRaw<Array<HistoryRawRow>>(Prisma.sql`
+            WITH latest_entry_ids AS (
+              SELECT DISTINCT ON (le.ledger_id)
+                le.id
+              FROM ledger_entry le
+              WHERE le.consumer_id = ${sqlUuid(consumerId)}
+                AND le.deleted_at IS NULL
+              ORDER BY le.ledger_id, le.created_at DESC, le.id DESC
+            ),
+            latest_entries AS (
+              SELECT
+                le.id,
+                le.ledger_id AS "ledgerId",
+                le.type,
+                CASE
+                  WHEN le.payment_request_id IS NOT NULL AND le.type::text = ${$Enums.LedgerEntryType.USER_DEPOSIT}
+                    THEN ${$Enums.LedgerEntryType.USER_PAYMENT}::text
+                  WHEN le.payment_request_id IS NOT NULL AND le.type::text = ${$Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL}
+                    THEN ${$Enums.LedgerEntryType.USER_PAYMENT_REVERSAL}::text
+                  ELSE le.type::text
+                END AS "normalizedType",
+                le.status::text AS "baseStatus",
+                le.amount,
+                le.currency_code AS "currencyCode",
+                le.created_at AS "createdAt",
+                le.metadata,
+                le.payment_request_id AS "paymentRequestId",
+                pr.payment_rail AS "paymentRail"
+              FROM latest_entry_ids latest_ids
+              JOIN ledger_entry le ON le.id = latest_ids.id
+              LEFT JOIN payment_request pr ON pr.id = le.payment_request_id
+            ),
+            filtered AS (
+              SELECT *
+              FROM latest_entries latest
+              WHERE 1 = 1
+                ${directionSql}
+                ${typeSql}
+            ),
+            paged AS (
+              SELECT
+                latest.*,
+                COUNT(*) OVER()::int AS "totalRows"
+              FROM filtered latest
+              ORDER BY latest."createdAt" DESC, latest.id DESC
+              OFFSET ${offset}
+              LIMIT ${limit}
+            )
+            SELECT
+              latest.id,
+              latest."ledgerId",
+              latest.type,
+              COALESCE(latest_outcome.status::text, latest."baseStatus") AS "effectiveStatus",
+              latest.amount,
+              latest."currencyCode",
+              latest."createdAt",
+              latest.metadata,
+              latest."paymentRequestId",
+              latest."paymentRail",
+              latest."totalRows"
+            FROM paged latest
+            LEFT JOIN LATERAL (
+              SELECT leo.status
+              FROM ledger_entry_outcome leo
+              WHERE leo.ledger_entry_id = latest.id
+              ORDER BY leo.created_at DESC, leo.id DESC
+              LIMIT 1
+            ) latest_outcome ON true
+            ORDER BY latest."createdAt" DESC, latest.id DESC
+          `)
+        : await this.prisma.$queryRaw<Array<HistoryRawRow>>(Prisma.sql`
+        WITH latest_entry_ids AS (
           SELECT DISTINCT ON (le.ledger_id)
+            le.id
+          FROM ledger_entry le
+          WHERE le.consumer_id = ${sqlUuid(consumerId)}
+            AND le.deleted_at IS NULL
+          ORDER BY le.ledger_id, le.created_at DESC, le.id DESC
+        ),
+        latest_entries AS (
+          SELECT
             le.id,
             le.ledger_id AS "ledgerId",
             le.type,
@@ -573,7 +651,8 @@ export class ConsumerPaymentsQueriesService {
             le.metadata,
             le.payment_request_id AS "paymentRequestId",
             pr.payment_rail AS "paymentRail"
-          FROM ledger_entry le
+          FROM latest_entry_ids latest_ids
+          JOIN ledger_entry le ON le.id = latest_ids.id
           LEFT JOIN payment_request pr ON pr.id = le.payment_request_id
           LEFT JOIN LATERAL (
             SELECT leo.status
@@ -582,9 +661,6 @@ export class ConsumerPaymentsQueriesService {
             ORDER BY leo.created_at DESC, leo.id DESC
             LIMIT 1
           ) latest_outcome ON true
-          WHERE le.consumer_id = ${sqlUuid(consumerId)}
-            AND le.deleted_at IS NULL
-          ORDER BY le.ledger_id, le.created_at DESC, le.id DESC
         ),
         filtered AS (
           SELECT *

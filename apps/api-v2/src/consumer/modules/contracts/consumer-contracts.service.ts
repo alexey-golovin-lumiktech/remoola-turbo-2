@@ -237,25 +237,9 @@ export class ConsumerContractsService {
                 LOWER(rc.name) ASC,
                 rc.id ASC
             `;
-
-    const rows = await this.prisma.$queryRaw<ContractListRow[]>(Prisma.sql`
-      WITH participant_payment_ids AS (
-        ${participantPaymentIdsSql}
-      ),
-      filtered_contacts AS (
+    const matchedPaymentsSql = Prisma.sql`
+      participant_payments_base AS (
         SELECT
-          c.id,
-          COALESCE(c.name, c.email) AS name,
-          c.email,
-          c.updated_at
-        FROM contact c
-        WHERE c.consumer_id = ${sqlUuid(consumerId)}
-          AND c.deleted_at IS NULL
-          ${searchSql}
-      ),
-      matched_payments AS (
-        SELECT
-          fc.id AS contact_id,
           pr.id AS payment_id,
           pr.updated_at,
           pr.created_at,
@@ -273,11 +257,11 @@ export class ConsumerContractsService {
                 pr.status::text
               )
             END
-          ) AS effective_status
-        FROM filtered_contacts fc
-        JOIN payment_request pr
-          ON TRUE
-        JOIN participant_payment_ids ppi ON ppi.id = pr.id
+          ) AS effective_status,
+          LOWER(COALESCE(requester.email, pr.requester_email, '')) AS requester_email,
+          LOWER(COALESCE(payer.email, pr.payer_email, '')) AS payer_email
+        FROM participant_payment_ids ppi
+        JOIN payment_request pr ON pr.id = ppi.id
         LEFT JOIN consumer requester ON requester.id = pr.requester_id
         LEFT JOIN consumer payer ON payer.id = pr.payer_id
         LEFT JOIN LATERAL (
@@ -296,10 +280,54 @@ export class ConsumerContractsService {
           ORDER BY leo.created_at DESC, leo.id DESC
           LIMIT 1
         ) latest_outcome ON true
-        WHERE
-          LOWER(COALESCE(requester.email, pr.requester_email, '')) = LOWER(fc.email)
-          OR LOWER(COALESCE(payer.email, pr.payer_email, '')) = LOWER(fc.email)
       ),
+      payment_counterparties AS (
+        SELECT
+          payment_id,
+          updated_at,
+          created_at,
+          effective_status,
+          requester_email AS counterparty_email
+        FROM participant_payments_base
+        WHERE requester_email <> ''
+        UNION
+        SELECT
+          payment_id,
+          updated_at,
+          created_at,
+          effective_status,
+          payer_email AS counterparty_email
+        FROM participant_payments_base
+        WHERE payer_email <> ''
+      ),
+      matched_payments AS (
+        SELECT
+          fc.id AS contact_id,
+          pc.payment_id,
+          pc.updated_at,
+          pc.created_at,
+          pc.effective_status
+        FROM payment_counterparties pc
+        JOIN filtered_contacts fc ON pc.counterparty_email = LOWER(fc.email)
+      )
+    `;
+
+    const rows = await this.prisma.$queryRaw<ContractListRow[]>(Prisma.sql`
+      WITH participant_payment_ids AS (
+        ${participantPaymentIdsSql}
+      ),
+      filtered_contacts AS (
+        SELECT
+          c.id,
+          COALESCE(c.name, c.email) AS name,
+          c.email,
+          c.updated_at
+        FROM contact c
+        WHERE c.consumer_id = ${sqlUuid(consumerId)}
+          AND c.deleted_at IS NULL
+          ${searchSql}
+      ),
+      ${matchedPaymentsSql},
       docs_by_contact AS (
         SELECT
           mp.contact_id,
@@ -403,53 +431,7 @@ export class ConsumerContractsService {
             AND c.deleted_at IS NULL
             ${searchSql}
         ),
-        matched_payments AS (
-          SELECT
-            fc.id AS contact_id,
-            pr.id AS payment_id,
-            pr.updated_at,
-            pr.created_at,
-            LOWER(
-              CASE
-                WHEN COALESCE(
-                  latest_outcome.status::text,
-                  latest_le.status::text,
-                  pr.status::text,
-                ) = 'WAITING_RECIPIENT_APPROVAL'
-                  THEN 'WAITING'
-                ELSE COALESCE(
-                  latest_outcome.status::text,
-                  latest_le.status::text,
-                  pr.status::text,
-                )
-              END
-            ) AS effective_status
-          FROM filtered_contacts fc
-          JOIN payment_request pr
-            ON TRUE
-          JOIN participant_payment_ids ppi ON ppi.id = pr.id
-          LEFT JOIN consumer requester ON requester.id = pr.requester_id
-          LEFT JOIN consumer payer ON payer.id = pr.payer_id
-          LEFT JOIN LATERAL (
-            SELECT le.id, le.status
-            FROM ledger_entry le
-            WHERE le.payment_request_id = pr.id
-              AND le.consumer_id = ${sqlUuid(consumerId)}
-              AND le.deleted_at IS NULL
-            ORDER BY le.created_at DESC, le.id DESC
-            LIMIT 1
-          ) latest_le ON true
-          LEFT JOIN LATERAL (
-            SELECT leo.status
-            FROM ledger_entry_outcome leo
-            WHERE leo.ledger_entry_id = latest_le.id
-            ORDER BY leo.created_at DESC, leo.id DESC
-            LIMIT 1
-          ) latest_outcome ON true
-          WHERE
-            LOWER(COALESCE(requester.email, pr.requester_email, '')) = LOWER(fc.email)
-            OR LOWER(COALESCE(payer.email, pr.payer_email, '')) = LOWER(fc.email)
-        ),
+        ${matchedPaymentsSql},
         docs_by_contact AS (
           SELECT
             mp.contact_id,
