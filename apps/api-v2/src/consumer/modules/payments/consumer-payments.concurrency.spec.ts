@@ -8,6 +8,7 @@
 
 import { $Enums } from '@remoola/database-2';
 
+import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
 import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
@@ -33,7 +34,7 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
       new ConsumerPaymentsWriteService(
         new ConsumerPaymentsCommandsService(
           prisma,
-          { sendPaymentRequest: mailingService.sendPaymentRequestEmail },
+          new ConsumerPaymentRequestNotificationService(mailingService),
           balanceService,
           commandPolicies,
         ),

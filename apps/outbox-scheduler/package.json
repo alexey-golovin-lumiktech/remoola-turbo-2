@@ -1,0 +1,18 @@
+{
+  "name": "@remoola/outbox-scheduler",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types:wrangler": "wrangler types --check",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .wrangler"
+  },
+  "devDependencies": {
+    "@remoola/typescript-config": "^0.0.0",
+    "typescript": "5.8.2",
+    "wrangler": "^4.90.1"
+  }
+}

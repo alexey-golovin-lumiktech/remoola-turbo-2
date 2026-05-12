@@ -1,6 +1,6 @@
 # Changelog
 
-- [September 2025](#changelog-september-2025) · [October 2025](#changelog-october-2025) · [November 2025](#changelog-november-2025) · [December 2025](#changelog-december-2025) · [January 2026](#changelog-january-2026) · [February 2026](#changelog-february-2026) · [March 2026](#changelog-march-2026) · [April 2026](#changelog-april-2026)
+- [September 2025](#changelog-september-2025) · [October 2025](#changelog-october-2025) · [November 2025](#changelog-november-2025) · [December 2025](#changelog-december-2025) · [January 2026](#changelog-january-2026) · [February 2026](#changelog-february-2026) · [March 2026](#changelog-march-2026) · [April 2026](#changelog-april-2026) · [May 2026](#changelog-may-2026)
 
 ---
 
@@ -2206,7 +2206,7 @@
 
 ---
 
-<details open>
+<details>
 <summary><strong>Changelog (April 2026)</strong></summary>
 
 # Changelog (April 2026)
@@ -2762,7 +2762,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-04-30</summary>
 
 - **2026-04-30:**
@@ -2792,6 +2792,36 @@
 
   ### ⚠️ Notes
   - **Migration sequencing matters:** The participant-access migration is additive and requires no backfill, but it should land before expecting remote planner improvements on `payment_request` participant-access queries.
+
+</details>
+
+</details>
+
+<details open>
+<summary><strong>Changelog (May 2026)</strong></summary>
+
+# Changelog (May 2026)
+
+<details open>
+<summary>2026-05-12</summary>
+
+- **2026-05-12:**
+
+  ### 🚀 Feature
+  - **Stripe reversal notification scheduler:** Add a Cloudflare Worker cron app that drains the internal `/api/internal/jobs/stripe-reversal-notification-outbox` endpoint every minute with the same 25-row batch ceiling as the removed Nest in-process scheduler.
+
+  ### 🔐 Security / Production Safety
+  - **Outbox drain controls:** Send both bearer `CRON_SECRET` and the Vercel protection-bypass header from the Worker, remove the duplicate Nest cron provider, and keep the daily Vercel Cron path documented as a low-throughput emergency fallback.
+  - **Worker rollout guardrails:** Add a GitHub Actions deploy workflow with Wrangler type checks and a Cloudflare Worker secret preflight for `CRON_SECRET` and `VERCEL_AUTOMATION_BYPASS_SECRET`.
+
+  ### 🧪 Testing
+  - **Scheduler verification:** Cover internal drain endpoint authorization, bounded `limit` parsing, and touched payment service test wiring while keeping the outbox service tests green.
+
+  ### 🛠 DevEx
+  - **Scheduler package tooling:** Add the `@remoola/outbox-scheduler` workspace with Wrangler config, generated Worker binding types, local scheduled-event docs, and deploy/typecheck scripts.
+
+  ### ⚠️ Notes
+  - **Rollout verification:** Live Cloudflare secrets, deploy-token scope, Vercel protection-bypass behavior, and actual cron execution still require environment verification after deployment.
 
 </details>
 

@@ -1,0 +1,61 @@
+name: Deploy Outbox Scheduler
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - apps/outbox-scheduler/**
+      - packages/typescript-config/**
+      - package.json
+      - yarn.lock
+      - .github/workflows/deploy-outbox-scheduler.yml
+  workflow_dispatch:
+
+concurrency:
+  group: outbox-scheduler-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Cloudflare Worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Typecheck scheduler
+        run: yarn workspace @remoola/outbox-scheduler typecheck
+
+      - name: Verify Wrangler types
+        run: yarn workspace @remoola/outbox-scheduler types:wrangler
+
+      - name: Verify Worker secrets
+        run: |
+          secret_names="$(./node_modules/.bin/wrangler secret list --name remoola-outbox-scheduler --cwd apps/outbox-scheduler | node -e "let input=''; process.stdin.on('data', c => input += c); process.stdin.on('end', () => { const secrets = JSON.parse(input); console.log(secrets.map((secret) => secret.name).join('\n')); });")"
+          printf '%s\n' "$secret_names" | grep -Fx CRON_SECRET >/dev/null
+          printf '%s\n' "$secret_names" | grep -Fx VERCEL_AUTOMATION_BYPASS_SECRET >/dev/null
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy scheduler
+        run: yarn workspace @remoola/outbox-scheduler deploy
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

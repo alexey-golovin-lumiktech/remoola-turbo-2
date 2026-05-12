@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConsumerPaymentMethodsController } from './consumer-payment-methods.controller';
 import { ConsumerVerificationController } from './consumer-verification.controller';
 import { providers } from './providers';
-import { StripeWebhookReversalNotificationOutboxController } from './stripe-webhook-reversal-notification-outbox.controller';
+import { StripeWebhookReversalNotificationOutboxController } from './stripe-webhook-reversal-notification-outbox.controller'; // eslint-disable-line max-len
 import { StripeWebhookController } from './stripe-webhook.controller';
 import { ConsumerStripeController } from './stripe.controller';
 import { MailingModule } from '../../../shared/mailing.module';

@@ -1,0 +1,18 @@
+name = "remoola-outbox-scheduler"
+main = "src/index.ts"
+compatibility_date = "2026-05-12"
+workers_dev = false
+
+[triggers]
+crons = ["* * * * *"]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+invocation_logs = true
+
+[vars]
+OUTBOX_DRAIN_URL = "https://remoola-turbo-2-api-v2.vercel.app/api/internal/jobs/stripe-reversal-notification-outbox"
+OUTBOX_DRAIN_LIMIT = "25"

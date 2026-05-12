@@ -1,6 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 
-import { StripeWebhookReversalNotificationOutboxController } from './stripe-webhook-reversal-notification-outbox.controller';
+import { StripeWebhookReversalNotificationOutboxController } from './stripe-webhook-reversal-notification-outbox.controller'; // eslint-disable-line max-len
 import { envs } from '../../../envs';
 
 describe(`StripeWebhookReversalNotificationOutboxController`, () => {
@@ -23,5 +23,42 @@ describe(`StripeWebhookReversalNotificationOutboxController`, () => {
 
     await expect(controller.drain(`Bearer ${envs.CRON_SECRET}`)).resolves.toBe(result);
     expect(outbox.processDueRows).toHaveBeenCalledTimes(1);
+    expect(outbox.processDueRows).toHaveBeenCalledWith();
+  });
+
+  it(`passes bounded drain limit to the outbox service`, async () => {
+    const result = { claimed: 1, sent: 1, failed: 0 };
+    const outbox = {
+      processDueRows: jest.fn().mockResolvedValue(result),
+    };
+    const controller = new StripeWebhookReversalNotificationOutboxController(outbox as any);
+
+    await expect(controller.drain(`Bearer ${envs.CRON_SECRET}`, `5`)).resolves.toBe(result);
+    expect(outbox.processDueRows).toHaveBeenCalledWith(5);
+  });
+
+  it(`clamps drain limit to the supported range`, async () => {
+    const result = { claimed: 0, sent: 0, failed: 0 };
+    const outbox = {
+      processDueRows: jest.fn().mockResolvedValue(result),
+    };
+    const controller = new StripeWebhookReversalNotificationOutboxController(outbox as any);
+
+    await expect(controller.drain(`Bearer ${envs.CRON_SECRET}`, `100`)).resolves.toBe(result);
+    await expect(controller.drain(`Bearer ${envs.CRON_SECRET}`, `0`)).resolves.toBe(result);
+
+    expect(outbox.processDueRows).toHaveBeenNthCalledWith(1, 25);
+    expect(outbox.processDueRows).toHaveBeenNthCalledWith(2, 1);
+  });
+
+  it(`uses default outbox limit for invalid limit values`, async () => {
+    const result = { claimed: 0, sent: 0, failed: 0 };
+    const outbox = {
+      processDueRows: jest.fn().mockResolvedValue(result),
+    };
+    const controller = new StripeWebhookReversalNotificationOutboxController(outbox as any);
+
+    await expect(controller.drain(`Bearer ${envs.CRON_SECRET}`, `not-a-number`)).resolves.toBe(result);
+    expect(outbox.processDueRows).toHaveBeenCalledWith();
   });
 });
