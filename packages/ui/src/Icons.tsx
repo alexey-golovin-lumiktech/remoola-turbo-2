@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+
 import { type SVGAttributes } from 'react';
 
 import { cn } from './cn';

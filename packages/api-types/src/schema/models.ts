@@ -50,6 +50,8 @@ export type OauthStateModelWithRelations = Prisma.OauthStateModelGetPayload<{}>;
 
 export type StripeWebhookEventModelWithRelations = Prisma.StripeWebhookEventModelGetPayload<{}>;
 
+export type NotificationOutboxModelWithRelations = Prisma.NotificationOutboxModelGetPayload<{}>;
+
 export type AddressDetailsModelWithRelations = Prisma.AddressDetailsModelGetPayload<{
   include: {
     consumer: true;
