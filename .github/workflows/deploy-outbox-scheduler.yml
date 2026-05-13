@@ -47,7 +47,7 @@ jobs:
 
       - name: Verify Worker secrets
         run: |
-          secret_names="$(yarn --silent workspace @remoola/outbox-scheduler secrets:list | node -e "let input=''; process.stdin.on('data', c => input += c); process.stdin.on('end', () => { const secrets = JSON.parse(input); console.log(secrets.map((secret) => secret.name).join('\n')); });")"
+          secret_names="$(yarn --cwd apps/outbox-scheduler --silent wrangler secret list --name remoola-outbox-scheduler | node -e "let input=''; process.stdin.on('data', c => input += c); process.stdin.on('end', () => { const secrets = JSON.parse(input); console.log(secrets.map((secret) => secret.name).join('\n')); });")"
           printf '%s\n' "$secret_names" | grep -Fx CRON_SECRET >/dev/null
           printf '%s\n' "$secret_names" | grep -Fx VERCEL_AUTOMATION_BYPASS_SECRET >/dev/null
         env:
