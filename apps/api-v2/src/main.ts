@@ -43,7 +43,7 @@ async function waitForDatabase(prisma: PrismaClient): Promise<void> {
   }
 }
 
-export async function runDevBootstrapSeed(prisma: PrismaClient): Promise<void> {
+async function runDevBootstrapSeed(prisma: PrismaClient): Promise<void> {
   if (envs.isProductionLike) {
     return;
   }
