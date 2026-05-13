@@ -28,8 +28,8 @@ export class ConsumerDocumentsService {
   constructor(
     private prisma: PrismaService,
     private storage: FileStorageService,
-    private readonly documentAccessPolicy: ConsumerDocumentAccessPolicy = new ConsumerDocumentAccessPolicy(prisma),
-    private readonly documentListQuery: ConsumerDocumentListQuery = new ConsumerDocumentListQuery(prisma),
+    private readonly documentAccessPolicy: ConsumerDocumentAccessPolicy,
+    private readonly documentListQuery: ConsumerDocumentListQuery,
   ) {}
 
   private async assertDraftOwnedPaymentRequest(consumerId: string, paymentRequestId: string) {

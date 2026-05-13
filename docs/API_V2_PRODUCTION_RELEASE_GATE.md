@@ -26,6 +26,7 @@ Capture the effective production values for these controls without exposing secr
 - `STRIPE_WEBHOOK_SECRET` is set to a real non-empty secret and is not the placeholder default.
 - `COOKIE_SECURE=true`.
 - `ALLOW_PRODUCTION_BOOTSTRAP_SEED=false`.
+  Keep this false or unset in normal Vercel production/preview deployments. The only allowed production-like opt-in is a one-off `seed:bootstrap` run whose entrypoint is `bootstrap-seed.*` and whose bootstrap admin passwords are non-default break-glass values.
 - `SWAGGER_ENABLED=false` unless there is explicit internal-only exposure approval.
 - `PUBLIC_DETAILED_HEALTH_ENABLED=false`.
 - `PUBLIC_MAIL_TRANSPORT_HEALTH_ENABLED=false`.
@@ -80,7 +81,7 @@ consumer auth, CSRF, OAuth, or ancillary app-scope routing.
 3. Consumer logout and logout-all clear auth cookies correctly through the frontend BFF on canonical app domains.
 4. OAuth callback rejects invalid or missing state outside local debug environments on canonical app domains.
 5. A fresh consumer session row contains `access_token_hash` after login or refresh.
-6. Consumer API requests succeed with a fresh access token, fail after session revocation, and reject access tokens that are missing the explicit `scope` claim.
+6. Consumer API requests succeed with a fresh access token, reject legacy sessions where `access_token_hash IS NULL` to force reauth, fail after session revocation, and reject access tokens that are missing the explicit `scope` claim.
 7. Historical `ledger_entry` rows used by payment-link flows have `metadata.consumerAppScope` populated with no remaining null/invalid backlog before the hard cutover is declared complete.
 8. `/docs/*` is disabled or restricted as intended in the target environment.
 9. `/health/detailed`, `/health/mail-transport`, and `POST /health/test-email` are disabled or restricted as intended in the target environment.

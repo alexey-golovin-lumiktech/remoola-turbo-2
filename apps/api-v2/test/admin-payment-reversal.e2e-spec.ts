@@ -21,6 +21,7 @@ import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { BrevoMailService } from '../src/shared/brevo-mail.service';
+import { OriginResolverService } from '../src/shared/origin-resolver.service';
 import { PrismaService } from '../src/shared/prisma.service';
 import { getApiAdminCsrfTokenCookieKey } from '../src/shared-common';
 
@@ -150,7 +151,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
         email: adminEmail,
         password: hash,
         salt,
-        type: $Enums.AdminType.ADMIN,
+        type: $Enums.AdminType.SUPER,
       },
     });
 
@@ -196,7 +197,8 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     const reflector = moduleFixture.get(Reflector);
     const jwtService = moduleFixture.get(JwtService);
     const prismaService = moduleFixture.get(PrismaService);
-    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService));
+    const originResolver = moduleFixture.get(OriginResolverService);
+    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
     await app.init();
   });
 

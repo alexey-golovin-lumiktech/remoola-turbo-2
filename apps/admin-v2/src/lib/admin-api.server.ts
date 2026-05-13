@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 
 import {
   type AdminV2AdminIdentity as AdminIdentity,
+  type AdminV2LedgerDisputesQuery,
+  type AdminV2LedgerEntriesListQuery,
   type AdminV2LedgerAnomalyClass as LedgerAnomalyClass,
   type AdminV2LedgerAnomalyListResponse as LedgerAnomalyListResponse,
   type AdminV2LedgerAnomalySummaryResponse as LedgerAnomalySummaryResponse,
@@ -19,15 +21,20 @@ import {
   type AdminV2QuickstartSurface as QuickstartSurface,
   type AdminV2QuickstartTargetRoute as QuickstartTargetRoute,
   type AdminV2QuickstartsListResponse as QuickstartsListResponse,
+  type AdminV2PaymentMethodsListQuery,
+  type AdminV2PaymentsListQuery,
+  type AdminV2PayoutsListQuery,
   type AdminV2SavedViewSummary as SavedViewSummary,
   type AdminV2SavedViewWorkspace as SavedViewWorkspace,
   type AdminV2SavedViewsListResponse as SavedViewsListResponse,
   type AdminV2SystemSummaryCard as SystemSummaryCard,
   type AdminV2SystemSummaryResponse as SystemSummaryResponse,
+  type AdminV2VerificationQueueQuery,
 } from '@remoola/api-types';
 
 import { getDefaultLookbackIsoRange } from './admin-format';
 import { getEnv } from './env.server';
+import { dateSearchParam, pathSegment, withQuery } from './query-contract';
 import { getRequestOrigin } from './request-origin';
 
 export type {
@@ -1203,52 +1210,41 @@ export async function getLedgerAnomalies(params: {
   cursor?: string;
   limit?: number;
 }): Promise<LedgerAnomalyListResponse | null> {
-  const searchParams = new URLSearchParams({
-    class: params.className,
-    dateFrom: params.dateFrom,
-    limit: String(params.limit ?? 50),
-  });
-  if (params.dateTo?.trim()) searchParams.set(`dateTo`, params.dateTo.trim());
-  if (params.cursor?.trim()) searchParams.set(`cursor`, params.cursor.trim());
-  return fetchAdminApi<LedgerAnomalyListResponse>(`/admin-v2/ledger/anomalies?${searchParams.toString()}`);
+  return fetchAdminApi<LedgerAnomalyListResponse>(
+    withQuery(`/admin-v2/ledger/anomalies`, {
+      class: params.className,
+      dateFrom: dateSearchParam(params.dateFrom),
+      dateTo: dateSearchParam(params.dateTo),
+      cursor: params.cursor,
+      limit: params.limit ?? 50,
+    }),
+  );
 }
 
-export async function getPayments(params?: {
-  cursor?: string;
-  limit?: number;
-  q?: string;
-  status?: string;
-  paymentRail?: string;
-  currencyCode?: string;
-  amountMin?: number;
-  amountMax?: number;
-  dueDateFrom?: string;
-  dueDateTo?: string;
-  createdFrom?: string;
-  createdTo?: string;
-  overdue?: boolean;
-}): Promise<PaymentsListResponse | null> {
-  const searchParams = new URLSearchParams({
-    limit: String(params?.limit ?? 25),
-  });
-  if (params?.cursor?.trim()) searchParams.set(`cursor`, params.cursor.trim());
-  if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
-  if (params?.status?.trim()) searchParams.set(`status`, params.status.trim());
-  if (params?.paymentRail?.trim()) searchParams.set(`paymentRail`, params.paymentRail.trim());
-  if (params?.currencyCode?.trim()) searchParams.set(`currencyCode`, params.currencyCode.trim());
-  if (Number.isFinite(params?.amountMin)) searchParams.set(`amountMin`, String(params?.amountMin));
-  if (Number.isFinite(params?.amountMax)) searchParams.set(`amountMax`, String(params?.amountMax));
-  if (params?.dueDateFrom?.trim()) searchParams.set(`dueDateFrom`, params.dueDateFrom.trim());
-  if (params?.dueDateTo?.trim()) searchParams.set(`dueDateTo`, params.dueDateTo.trim());
-  if (params?.createdFrom?.trim()) searchParams.set(`createdFrom`, params.createdFrom.trim());
-  if (params?.createdTo?.trim()) searchParams.set(`createdTo`, params.createdTo.trim());
-  if (params?.overdue) searchParams.set(`overdue`, `true`);
-  return fetchAdminApi<PaymentsListResponse>(`/admin-v2/payments?${searchParams.toString()}`);
+export async function getPayments(params?: AdminV2PaymentsListQuery): Promise<PaymentsListResponse | null> {
+  return fetchAdminApi<PaymentsListResponse>(
+    withQuery(`/admin-v2/payments`, {
+      limit: params?.limit ?? 25,
+      cursor: params?.cursor,
+      q: params?.q,
+      status: params?.status,
+      paymentRail: params?.paymentRail,
+      currencyCode: params?.currencyCode,
+      amountMin: params?.amountMin,
+      amountMax: params?.amountMax,
+      dueDateFrom: dateSearchParam(params?.dueDateFrom),
+      dueDateTo: dateSearchParam(params?.dueDateTo),
+      createdFrom: dateSearchParam(params?.createdFrom),
+      createdTo: dateSearchParam(params?.createdTo),
+      overdue: params?.overdue === true ? true : undefined,
+    }),
+  );
 }
 
 export async function getPaymentCaseResult(paymentRequestId: string): Promise<AdminApiReadResult<PaymentCaseResponse>> {
-  if (!paymentRequestId.trim()) return { status: `not_found` };
-  return fetchAdminApiResult<PaymentCaseResponse>(`/admin-v2/payments/${paymentRequestId}`);
+  const id = pathSegment(paymentRequestId);
+  if (!id) return { status: `not_found` };
+  return fetchAdminApiResult<PaymentCaseResponse>(`/admin-v2/payments/${id}`);
 }
 
 export async function getDocuments(params?: {
@@ -1299,27 +1295,20 @@ export async function getPaymentOperationsQueue(): Promise<PaymentOperationsQueu
   return fetchAdminApi<PaymentOperationsQueueResponse>(`/admin-v2/payments/operations-queue`);
 }
 
-export async function getPaymentMethods(params?: {
-  page?: number;
-  pageSize?: number;
-  consumerId?: string;
-  type?: string;
-  defaultSelected?: boolean;
-  fingerprint?: string;
-  includeDeleted?: boolean;
-}): Promise<PaymentMethodsListResponse | null> {
-  const searchParams = new URLSearchParams({
-    page: String(params?.page ?? 1),
-    pageSize: String(params?.pageSize ?? 20),
-  });
-  if (params?.consumerId?.trim()) searchParams.set(`consumerId`, params.consumerId.trim());
-  if (params?.type?.trim()) searchParams.set(`type`, params.type.trim());
-  if (typeof params?.defaultSelected === `boolean`) {
-    searchParams.set(`defaultSelected`, String(params.defaultSelected));
-  }
-  if (params?.fingerprint?.trim()) searchParams.set(`fingerprint`, params.fingerprint.trim());
-  if (params?.includeDeleted) searchParams.set(`includeDeleted`, `true`);
-  return fetchAdminApi<PaymentMethodsListResponse>(`/admin-v2/payment-methods?${searchParams.toString()}`);
+export async function getPaymentMethods(
+  params?: AdminV2PaymentMethodsListQuery,
+): Promise<PaymentMethodsListResponse | null> {
+  return fetchAdminApi<PaymentMethodsListResponse>(
+    withQuery(`/admin-v2/payment-methods`, {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      consumerId: params?.consumerId,
+      type: params?.type,
+      defaultSelected: params?.defaultSelected,
+      fingerprint: params?.fingerprint,
+      includeDeleted: params?.includeDeleted === true ? true : undefined,
+    }),
+  );
 }
 
 export async function getExchangeRates(params?: {
@@ -1394,24 +1383,27 @@ export async function getExchangeScheduledCaseResult(
   return fetchAdminApiResult<ExchangeScheduledCaseResponse>(`/admin-v2/exchange/scheduled/${conversionId}`);
 }
 
-export async function getPayouts(params?: { cursor?: string; limit?: number }): Promise<PayoutsListResponse | null> {
-  const searchParams = new URLSearchParams({
-    limit: String(params?.limit ?? 25),
-  });
-  if (params?.cursor?.trim()) searchParams.set(`cursor`, params.cursor.trim());
-  return fetchAdminApi<PayoutsListResponse>(`/admin-v2/payouts?${searchParams.toString()}`);
+export async function getPayouts(params?: AdminV2PayoutsListQuery): Promise<PayoutsListResponse | null> {
+  return fetchAdminApi<PayoutsListResponse>(
+    withQuery(`/admin-v2/payouts`, {
+      limit: params?.limit ?? 25,
+      cursor: params?.cursor,
+    }),
+  );
 }
 
 export async function getPayoutCaseResult(payoutId: string): Promise<AdminApiReadResult<PayoutCaseResponse>> {
-  if (!payoutId.trim()) return { status: `not_found` };
-  return fetchAdminApiResult<PayoutCaseResponse>(`/admin-v2/payouts/${payoutId}`);
+  const id = pathSegment(payoutId);
+  if (!id) return { status: `not_found` };
+  return fetchAdminApiResult<PayoutCaseResponse>(`/admin-v2/payouts/${id}`);
 }
 
 export async function getPaymentMethodCaseResult(
   paymentMethodId: string,
 ): Promise<AdminApiReadResult<PaymentMethodCaseResponse>> {
-  if (!paymentMethodId.trim()) return { status: `not_found` };
-  return fetchAdminApiResult<PaymentMethodCaseResponse>(`/admin-v2/payment-methods/${paymentMethodId}`);
+  const id = pathSegment(paymentMethodId);
+  if (!id) return { status: `not_found` };
+  return fetchAdminApiResult<PaymentMethodCaseResponse>(`/admin-v2/payment-methods/${id}`);
 }
 
 export async function getConsumers(params?: {
@@ -1440,35 +1432,29 @@ export async function getConsumerCaseResult(consumerId: string): Promise<AdminAp
   return fetchAdminApiResult<ConsumerCaseResponse>(`/admin-v2/consumers/${consumerId}`);
 }
 
-export async function getVerificationQueue(params?: {
-  page?: number;
-  pageSize?: number;
-  status?: string;
-  stripeIdentityStatus?: string;
-  country?: string;
-  contractorKind?: string;
-  missingProfileData?: boolean;
-  missingDocuments?: boolean;
-}): Promise<VerificationQueueResponse | null> {
-  const searchParams = new URLSearchParams({
-    page: String(params?.page ?? 1),
-    pageSize: String(params?.pageSize ?? 20),
-  });
-  if (params?.status?.trim()) searchParams.set(`status`, params.status.trim());
-  if (params?.stripeIdentityStatus?.trim())
-    searchParams.set(`stripeIdentityStatus`, params.stripeIdentityStatus.trim());
-  if (params?.country?.trim()) searchParams.set(`country`, params.country.trim());
-  if (params?.contractorKind?.trim()) searchParams.set(`contractorKind`, params.contractorKind.trim());
-  if (params?.missingProfileData) searchParams.set(`missingProfileData`, `true`);
-  if (params?.missingDocuments) searchParams.set(`missingDocuments`, `true`);
-  return fetchAdminApi<VerificationQueueResponse>(`/admin-v2/verification/queue?${searchParams.toString()}`);
+export async function getVerificationQueue(
+  params?: AdminV2VerificationQueueQuery,
+): Promise<VerificationQueueResponse | null> {
+  return fetchAdminApi<VerificationQueueResponse>(
+    withQuery(`/admin-v2/verification/queue`, {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      status: params?.status,
+      stripeIdentityStatus: params?.stripeIdentityStatus,
+      country: params?.country,
+      contractorKind: params?.contractorKind,
+      missingProfileData: params?.missingProfileData === true ? true : undefined,
+      missingDocuments: params?.missingDocuments === true ? true : undefined,
+    }),
+  );
 }
 
 export async function getVerificationCaseResult(
   consumerId: string,
 ): Promise<AdminApiReadResult<VerificationCaseResponse>> {
-  if (!consumerId.trim()) return { status: `not_found` };
-  return fetchAdminApiResult<VerificationCaseResponse>(`/admin-v2/verification/${consumerId}`);
+  const id = pathSegment(consumerId);
+  if (!id) return { status: `not_found` };
+  return fetchAdminApiResult<VerificationCaseResponse>(`/admin-v2/verification/${id}`);
 }
 
 export async function getConsumerContracts(params: {
@@ -1493,61 +1479,46 @@ export async function getConsumerLedgerSummary(consumerId: string): Promise<Cons
   return fetchAdminApi<ConsumerLedgerSummaryResponse>(`/admin-v2/consumers/${consumerId}/ledger-summary`);
 }
 
-export async function getLedgerEntries(params?: {
-  cursor?: string;
-  limit?: number;
-  q?: string;
-  type?: string;
-  status?: string;
-  currencyCode?: string;
-  paymentRequestId?: string;
-  consumerId?: string;
-  amountSign?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}): Promise<LedgerEntriesListResponse | null> {
-  const searchParams = new URLSearchParams({
-    limit: String(params?.limit ?? 25),
-  });
-  if (params?.cursor?.trim()) searchParams.set(`cursor`, params.cursor.trim());
-  if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
-  if (params?.type?.trim()) searchParams.set(`type`, params.type.trim());
-  if (params?.status?.trim()) searchParams.set(`status`, params.status.trim());
-  if (params?.currencyCode?.trim()) searchParams.set(`currencyCode`, params.currencyCode.trim());
-  if (params?.paymentRequestId?.trim()) searchParams.set(`paymentRequestId`, params.paymentRequestId.trim());
-  if (params?.consumerId?.trim()) searchParams.set(`consumerId`, params.consumerId.trim());
-  if (params?.amountSign?.trim()) searchParams.set(`amountSign`, params.amountSign.trim());
-  if (params?.dateFrom?.trim()) searchParams.set(`dateFrom`, params.dateFrom.trim());
-  if (params?.dateTo?.trim()) searchParams.set(`dateTo`, params.dateTo.trim());
-  return fetchAdminApi<LedgerEntriesListResponse>(`/admin-v2/ledger?${searchParams.toString()}`);
+export async function getLedgerEntries(
+  params?: AdminV2LedgerEntriesListQuery,
+): Promise<LedgerEntriesListResponse | null> {
+  return fetchAdminApi<LedgerEntriesListResponse>(
+    withQuery(`/admin-v2/ledger`, {
+      limit: params?.limit ?? 25,
+      cursor: params?.cursor,
+      q: params?.q,
+      type: params?.type,
+      status: params?.status,
+      currencyCode: params?.currencyCode,
+      paymentRequestId: params?.paymentRequestId,
+      consumerId: params?.consumerId,
+      amountSign: params?.amountSign,
+      dateFrom: dateSearchParam(params?.dateFrom),
+      dateTo: dateSearchParam(params?.dateTo),
+    }),
+  );
 }
 
 export async function getLedgerEntryCaseResult(
   ledgerEntryId: string,
 ): Promise<AdminApiReadResult<LedgerEntryCaseResponse>> {
-  if (!ledgerEntryId.trim()) return { status: `not_found` };
-  return fetchAdminApiResult<LedgerEntryCaseResponse>(`/admin-v2/ledger/${ledgerEntryId}`);
+  const id = pathSegment(ledgerEntryId);
+  if (!id) return { status: `not_found` };
+  return fetchAdminApiResult<LedgerEntryCaseResponse>(`/admin-v2/ledger/${id}`);
 }
 
-export async function getLedgerDisputes(params?: {
-  cursor?: string;
-  limit?: number;
-  paymentRequestId?: string;
-  consumerId?: string;
-  q?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}): Promise<LedgerDisputesResponse | null> {
-  const searchParams = new URLSearchParams({
-    limit: String(params?.limit ?? 25),
-  });
-  if (params?.cursor?.trim()) searchParams.set(`cursor`, params.cursor.trim());
-  if (params?.paymentRequestId?.trim()) searchParams.set(`paymentRequestId`, params.paymentRequestId.trim());
-  if (params?.consumerId?.trim()) searchParams.set(`consumerId`, params.consumerId.trim());
-  if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
-  if (params?.dateFrom?.trim()) searchParams.set(`dateFrom`, params.dateFrom.trim());
-  if (params?.dateTo?.trim()) searchParams.set(`dateTo`, params.dateTo.trim());
-  return fetchAdminApi<LedgerDisputesResponse>(`/admin-v2/ledger/disputes?${searchParams.toString()}`);
+export async function getLedgerDisputes(params?: AdminV2LedgerDisputesQuery): Promise<LedgerDisputesResponse | null> {
+  return fetchAdminApi<LedgerDisputesResponse>(
+    withQuery(`/admin-v2/ledger/disputes`, {
+      limit: params?.limit ?? 25,
+      cursor: params?.cursor,
+      paymentRequestId: params?.paymentRequestId,
+      consumerId: params?.consumerId,
+      q: params?.q,
+      dateFrom: dateSearchParam(params?.dateFrom),
+      dateTo: dateSearchParam(params?.dateTo),
+    }),
+  );
 }
 
 export async function getConsumerAuthHistory(params: {

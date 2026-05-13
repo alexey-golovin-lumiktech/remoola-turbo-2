@@ -25,6 +25,7 @@ describe(`AdminV2AccessService`, () => {
   const superBridgeCapabilities = [
     ...opsBridgeCapabilities,
     `admins.read`,
+    `payments.reverse`,
     `exchange.manage`,
     `documents.manage`,
     `payment_methods.manage`,
@@ -132,6 +133,7 @@ describe(`AdminV2AccessService`, () => {
       expect.arrayContaining([
         `admins.read`,
         `admins.manage`,
+        `payments.reverse`,
         `verification.decide`,
         `exchange.manage`,
         `documents.manage`,

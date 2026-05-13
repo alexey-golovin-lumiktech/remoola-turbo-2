@@ -18,6 +18,7 @@ import { AppModule } from '../src/app.module';
 import { GoogleOAuthService } from '../src/consumer/auth/google-oauth.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
+import { OriginResolverService } from '../src/shared/origin-resolver.service';
 import { PrismaService } from '../src/shared/prisma.service';
 import { getApiOAuthStateCookieKeysForRead } from '../src/shared-common';
 
@@ -129,7 +130,8 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     const reflector = moduleFixture.get(Reflector);
     const jwtService = moduleFixture.get(JwtService);
     const prismaService = moduleFixture.get(PrismaService);
-    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService));
+    const originResolver = moduleFixture.get(OriginResolverService);
+    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
     await app.init();
   });
 

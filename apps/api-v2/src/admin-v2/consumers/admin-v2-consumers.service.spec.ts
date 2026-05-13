@@ -1,10 +1,18 @@
 import { BadRequestException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { normalizeOptionalReason, validateConsumerSuspensionReason } from './admin-v2-consumer-action-policy';
+import { ConsumerAdminCaseQuery } from './admin-v2-consumer-case.query';
 import { mapConsumerDisplayName, mapPaymentMethodStatus } from './admin-v2-consumer-query-helpers';
+import { AdminV2ConsumersModule } from './admin-v2-consumers.module';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
+import { ConsumerAuthService } from '../../consumer/auth/auth.service';
+import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
+import { AdminActionAuditService } from '../../shared/admin-action-audit.service';
+import { PrismaService } from '../../shared/prisma.service';
+import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
 type NoteRow = {
   id: string;
@@ -123,6 +131,28 @@ describe(`admin-v2 consumer pure helpers`, () => {
 });
 
 describe(`AdminV2ConsumersService`, () => {
+  it(`resolves the consumer case query dependency through Nest DI`, async () => {
+    const moduleProviders = Reflect.getMetadata(`providers`, AdminV2ConsumersModule) as unknown[] | undefined;
+    expect(moduleProviders).toContain(ConsumerAdminCaseQuery);
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        AdminV2ConsumersService,
+        ConsumerAdminCaseQuery,
+        { provide: PrismaService, useValue: {} },
+        { provide: ConsumerContractsService, useValue: {} },
+        { provide: AdminActionAuditService, useValue: {} },
+        { provide: ConsumerAuthService, useValue: {} },
+        { provide: AdminV2IdempotencyService, useValue: {} },
+      ],
+    }).compile();
+
+    expect(moduleRef.get(AdminV2ConsumersService)).toBeInstanceOf(AdminV2ConsumersService);
+    expect(moduleRef.get(ConsumerAdminCaseQuery)).toBeInstanceOf(ConsumerAdminCaseQuery);
+
+    await moduleRef.close();
+  });
+
   function buildService(initialState?: Partial<TestState> & { consumer?: Partial<TestConsumerState> }) {
     const consumerState = {
       id: `consumer-1`,
@@ -264,6 +294,7 @@ describe(`AdminV2ConsumersService`, () => {
         adminActionAudit as never,
         consumerAuthService as never,
         idempotency as never,
+        new ConsumerAdminCaseQuery(prisma as never),
       ),
       prisma,
       adminActionAudit,

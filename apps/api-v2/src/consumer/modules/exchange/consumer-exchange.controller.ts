@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Query, Body, Param, Patch, Delete } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsNumber, IsOptional, Min } from 'class-validator';
 
@@ -57,6 +57,9 @@ export class ConsumerExchangeController {
   }
 
   @Get(`rules`)
+  @ApiQuery({ name: `page`, required: false, type: Number })
+  @ApiQuery({ name: `pageSize`, required: false, type: Number })
+  @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
   listRules(@Identity() consumer: IIdentityContext, @Query() query: ConsumerExchangePaginationQuery) {
     return this.service.listAutoConversionRules(consumer.id, query.page, query.pageSize);
   }
@@ -67,20 +70,27 @@ export class ConsumerExchangeController {
   }
 
   @Patch(`rules/:ruleId`)
+  @ApiParam({ name: `ruleId`, format: `uuid`, description: `Auto-conversion rule id` })
+  @ApiBadRequestResponse({ description: `Invalid auto-conversion rule id.` })
   updateRule(
     @Identity() consumer: IIdentityContext,
-    @Param(`ruleId`) ruleId: string,
+    @Param(`ruleId`, ParseUUIDPipe) ruleId: string,
     @Body() body: UpdateAutoConversionRuleBody,
   ) {
     return this.service.updateAutoConversionRule(consumer.id, ruleId, body);
   }
 
   @Delete(`rules/:ruleId`)
-  deleteRule(@Identity() consumer: IIdentityContext, @Param(`ruleId`) ruleId: string) {
+  @ApiParam({ name: `ruleId`, format: `uuid`, description: `Auto-conversion rule id` })
+  @ApiBadRequestResponse({ description: `Invalid auto-conversion rule id.` })
+  deleteRule(@Identity() consumer: IIdentityContext, @Param(`ruleId`, ParseUUIDPipe) ruleId: string) {
     return this.service.deleteAutoConversionRule(consumer.id, ruleId);
   }
 
   @Get(`scheduled`)
+  @ApiQuery({ name: `page`, required: false, type: Number })
+  @ApiQuery({ name: `pageSize`, required: false, type: Number })
+  @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
   listScheduled(@Identity() consumer: IIdentityContext, @Query() query: ConsumerExchangePaginationQuery) {
     return this.service.listScheduledConversions(consumer.id, query.page, query.pageSize);
   }
@@ -91,7 +101,9 @@ export class ConsumerExchangeController {
   }
 
   @Post(`scheduled/:conversionId/cancel`)
-  cancelScheduled(@Identity() consumer: IIdentityContext, @Param(`conversionId`) conversionId: string) {
+  @ApiParam({ name: `conversionId`, format: `uuid`, description: `Scheduled conversion id` })
+  @ApiBadRequestResponse({ description: `Invalid scheduled conversion id.` })
+  cancelScheduled(@Identity() consumer: IIdentityContext, @Param(`conversionId`, ParseUUIDPipe) conversionId: string) {
     return this.service.cancelScheduledConversion(consumer.id, conversionId);
   }
 

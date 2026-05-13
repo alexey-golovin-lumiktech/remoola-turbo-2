@@ -1,27 +1,15 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Expose, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Expose, Transform, Type } from 'class-transformer';
+import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
-
-function one(value: string | string[] | undefined): string | undefined {
-  return (typeof value === `string` ? value : value?.[0])?.trim() || undefined;
-}
-
-function toNumber(value: string | undefined): number | undefined {
-  if (value == null) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
 
 function requestMeta(req: express.Request) {
   const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
@@ -33,6 +21,21 @@ function requestMeta(req: express.Request) {
     idempotencyKey:
       typeof idempotencyKey === `string` ? idempotencyKey : Array.isArray(idempotencyKey) ? idempotencyKey[0] : null,
   };
+}
+
+class PayoutsListQuery {
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  limit?: number;
 }
 
 class EscalatePayoutBody {
@@ -63,27 +66,31 @@ export class AdminV2PayoutsController {
   ) {}
 
   @Get()
-  async listPayouts(
-    @Identity() admin: IIdentityContext,
-    @Query() query: Record<string, string | string[] | undefined>,
-  ) {
+  @ApiQuery({ name: `cursor`, required: false })
+  @ApiQuery({ name: `limit`, required: false, type: Number })
+  @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
+  async listPayouts(@Identity() admin: IIdentityContext, @Query() query: PayoutsListQuery) {
     await this.accessService.assertCapability(admin, `ledger.read`);
     return this.service.listPayouts({
-      cursor: one(query.cursor),
-      limit: toNumber(one(query.limit)),
+      cursor: query.cursor,
+      limit: query.limit,
     });
   }
 
   @Get(`:id`)
-  async getPayoutCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+  @ApiParam({ name: `id`, format: `uuid`, description: `Payout id` })
+  @ApiBadRequestResponse({ description: `Invalid payout id.` })
+  async getPayoutCase(@Identity() admin: IIdentityContext, @Param(`id`, ParseUUIDPipe) id: string) {
     await this.accessService.assertCapability(admin, `ledger.read`);
     return this.service.getPayoutCase(id);
   }
 
   @Post(`:id/escalate`)
+  @ApiParam({ name: `id`, format: `uuid`, description: `Payout id` })
+  @ApiBadRequestResponse({ description: `Invalid payout id or escalation body.` })
   async escalatePayout(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @Param(`id`, ParseUUIDPipe) id: string,
     @Body() body: EscalatePayoutBody,
     @Req() req: express.Request,
   ) {

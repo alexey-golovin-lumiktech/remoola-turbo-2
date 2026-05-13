@@ -5,14 +5,14 @@ This migration is additive-only and adds nullable `access_token_hash` to `auth_s
 ## Safety expectations
 
 - Apply the migration before any `api-v2` runtime that reads `AuthSessionModel.accessTokenHash`.
-- Existing sessions are intentionally left with `NULL` in `access_token_hash`.
+- Existing sessions are intentionally left with `NULL` in `access_token_hash`; current production hardening rejects those legacy sessions and requires reauth after rollout.
 - New or rotated consumer sessions will populate `access_token_hash` on token issuance.
 
 ## Why nullable is intentional
 
 Historical consumer access tokens cannot be backfilled safely because the server does not retain the plaintext access token needed to derive the new hash.
 
-Using a nullable column preserves compatibility for already-issued sessions while allowing all new sessions to enforce exact access-token binding.
+Using a nullable column made the additive migration deployable without backfilling plaintext access tokens. The current runtime no longer treats `NULL` as compatible; sessions without a stored access-token hash must be rotated by login or refresh before consumer API access succeeds.
 
 ## Verification checklist
 
@@ -25,7 +25,7 @@ Run and capture outputs in CI/staging:
 Operational validation after migrate:
 
 - Confirm the new `auth_sessions.access_token_hash` column exists in the target database.
-- Confirm existing sessions without `access_token_hash` continue to authenticate during the transition window.
+- Confirm existing sessions without `access_token_hash` are rejected and force reauth during the hardening rollout.
 - Confirm a fresh login or refresh writes `access_token_hash` and consumer API requests succeed with the new guard check.
 
 ## Suggested schema evidence query

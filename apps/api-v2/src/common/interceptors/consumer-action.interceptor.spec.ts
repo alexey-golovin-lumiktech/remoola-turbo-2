@@ -1,4 +1,4 @@
-import { type ExecutionContext, type CallHandler } from '@nestjs/common';
+import { Logger, type ExecutionContext, type CallHandler } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { of, throwError } from 'rxjs';
 
@@ -213,6 +213,51 @@ describe(`ConsumerActionInterceptor`, () => {
           }),
         );
         done();
+      },
+    });
+  });
+
+  it(`logs sanitized action record failures without changing the successful request outcome`, (done) => {
+    const loggerWarn = jest.spyOn(Logger.prototype, `warn`).mockImplementation(() => undefined);
+    const databaseError = Object.assign(
+      new Error(`database unavailable for postgres://user:secret-token@db.internal/customer@example.com`),
+      {
+        code: `P1001`,
+      },
+    );
+    consumerActionLog.record.mockRejectedValueOnce(databaseError);
+
+    const context = mockContext(
+      { action: `consumer.payments.start`, resource: `payments` },
+      {
+        route: { path: `/api/consumer/payments/start` },
+      },
+    );
+    const next: CallHandler = { handle: () => of(`ok`) };
+
+    interceptor.intercept(context, next).subscribe({
+      next: (value) => {
+        expect(value).toBe(`ok`);
+      },
+      complete: () => {
+        setImmediate(() => {
+          expect(loggerWarn).toHaveBeenCalledWith(
+            expect.objectContaining({
+              event: `consumer_action_log_record_failed`,
+              action: `consumer.payments.start_success`,
+              path: `/api/consumer/payments/start`,
+              correlationId: `corr-456`,
+              errorName: `Error`,
+              errorCode: `P1001`,
+            }),
+          );
+          const loggedPayload = loggerWarn.mock.calls[0]?.[0];
+          expect(JSON.stringify(loggedPayload)).not.toContain(`database unavailable`);
+          expect(JSON.stringify(loggedPayload)).not.toContain(`secret-token`);
+          expect(JSON.stringify(loggedPayload)).not.toContain(`customer@example.com`);
+          loggerWarn.mockRestore();
+          done();
+        });
       },
     });
   });

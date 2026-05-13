@@ -3,11 +3,22 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerDocumentAccessPolicy } from './consumer-document-access-policy';
 import { detectConsumerDocumentKind } from './consumer-document-kind.util';
+import { ConsumerDocumentListQuery } from './consumer-document-list.query';
 import { formatConsumerDocumentRows } from './consumer-document-mapper';
 import { buildConsumerDocumentPaymentParticipantWhere } from './consumer-document-query-helpers';
 import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
 import { ConsumerDocumentsService } from './consumer-documents.service';
+
+function createConsumerDocumentsService(prisma: any, storage: any = {}): ConsumerDocumentsService {
+  return new ConsumerDocumentsService(
+    prisma,
+    storage,
+    new ConsumerDocumentAccessPolicy(prisma),
+    new ConsumerDocumentListQuery(prisma),
+  );
+}
 
 describe(`consumer document pure helpers`, () => {
   it(`detects document kind using the existing filename heuristics`, () => {
@@ -105,7 +116,7 @@ describe(`ConsumerDocumentsService.attachToPayment`, () => {
       },
     } as any;
 
-    const service = new ConsumerDocumentsService(prisma, {} as any);
+    const service = createConsumerDocumentsService(prisma);
     return { service, prisma };
   }
 
@@ -242,7 +253,7 @@ describe(`ConsumerDocumentsService.bulkDeleteDocuments`, () => {
       },
     } as any;
 
-    const service = new ConsumerDocumentsService(prisma, {} as any);
+    const service = createConsumerDocumentsService(prisma);
     return { service, prisma };
   }
 
@@ -365,7 +376,7 @@ describe(`ConsumerDocumentsService.detachFromPayment`, () => {
       },
     } as any;
 
-    const service = new ConsumerDocumentsService(prisma, {} as any);
+    const service = createConsumerDocumentsService(prisma);
     return { service, prisma };
   }
 
@@ -436,7 +447,7 @@ describe(`ConsumerDocumentsService.uploadDocuments`, () => {
       upload: jest.fn(),
     } as any;
 
-    const service = new ConsumerDocumentsService(prisma, storage);
+    const service = createConsumerDocumentsService(prisma, storage);
     return { service, prisma, storage };
   }
 
@@ -540,7 +551,7 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
       },
     } as any;
 
-    const service = new ConsumerDocumentsService(prisma, {} as any);
+    const service = createConsumerDocumentsService(prisma);
     return { service, prisma };
   }
 
@@ -794,7 +805,7 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
       },
     } as any;
 
-    const service = new ConsumerDocumentsService(prisma, {} as any);
+    const service = createConsumerDocumentsService(prisma);
 
     await expect(service.getDocuments(consumerId, undefined, 1, 10, `http://localhost:3334`)).resolves.toEqual({
       items: [
@@ -840,7 +851,7 @@ describe(`ConsumerDocumentsService.openDownload`, () => {
       openDownloadStream: jest.fn(),
     } as any;
 
-    const service = new ConsumerDocumentsService(prisma, storage);
+    const service = createConsumerDocumentsService(prisma, storage);
     return { service, prisma, storage };
   }
 

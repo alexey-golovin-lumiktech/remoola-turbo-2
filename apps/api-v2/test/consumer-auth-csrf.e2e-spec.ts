@@ -17,6 +17,7 @@ import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
+import { OriginResolverService } from '../src/shared/origin-resolver.service';
 import { PrismaService } from '../src/shared/prisma.service';
 import { getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
@@ -98,7 +99,8 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
     const reflector = moduleFixture.get(Reflector);
     const jwtService = moduleFixture.get(JwtService);
     const prismaService = moduleFixture.get(PrismaService);
-    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService));
+    const originResolver = moduleFixture.get(OriginResolverService);
+    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
     await app.init();
   });
 

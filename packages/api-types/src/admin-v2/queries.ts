@@ -99,13 +99,17 @@ export type AdminV2LedgerEntriesListQuery = AdminV2CursorQuery & {
   type?: string;
   status?: string;
   currencyCode?: string;
+  paymentRequestId?: string;
+  consumerId?: string;
   amountSign?: string;
   dateFrom?: string;
   dateTo?: string;
 };
 
 export type AdminV2LedgerDisputesQuery = AdminV2CursorQuery & {
-  status?: string;
+  paymentRequestId?: string;
+  consumerId?: string;
+  q?: string;
   dateFrom?: string;
   dateTo?: string;
 };

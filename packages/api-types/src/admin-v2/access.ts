@@ -28,6 +28,7 @@ export type AdminV2Capability =
   | `verification.read`
   | `consumers.read`
   | `payments.read`
+  | `payments.reverse`
   | `ledger.read`
   | `ledger.anomalies`
   | `exchange.read`
@@ -80,6 +81,7 @@ const KNOWN_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
   `verification.read`,
   `consumers.read`,
   `payments.read`,
+  `payments.reverse`,
   `ledger.read`,
   `ledger.anomalies`,
   `exchange.read`,

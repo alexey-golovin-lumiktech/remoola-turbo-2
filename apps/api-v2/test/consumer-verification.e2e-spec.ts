@@ -20,6 +20,7 @@ import { StripeWebhookService } from '../src/consumer/modules/payment-methods/st
 import { ConsumerPaymentsPoliciesService } from '../src/consumer/modules/payments/consumer-payments-policies.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
+import { OriginResolverService } from '../src/shared/origin-resolver.service';
 import { PrismaService } from '../src/shared/prisma.service';
 import { STRIPE_IDENTITY_STATUS, getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
@@ -65,6 +66,16 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
     const payload = JSON.stringify(event);
     const signature = Stripe.webhooks.generateTestHeaderString({ payload, secret });
     return { payload, signature };
+  }
+
+  async function withStripeWebhookSecret<T>(secret: string, run: () => Promise<T>): Promise<T> {
+    const originalSecret = envs.STRIPE_WEBHOOK_SECRET;
+    envs.STRIPE_WEBHOOK_SECRET = secret;
+    try {
+      return await run();
+    } finally {
+      envs.STRIPE_WEBHOOK_SECRET = originalSecret;
+    }
   }
 
   beforeAll(async () => {
@@ -132,7 +143,8 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
     const reflector = moduleFixture.get(Reflector);
     const jwtService = moduleFixture.get(JwtService);
     const prismaService = moduleFixture.get(PrismaService);
-    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService));
+    const originResolver = moduleFixture.get(OriginResolverService);
+    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
     await app.init();
   });
 
@@ -386,6 +398,96 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
       expect(afterReplay.stripeIdentityVerifiedAt).toBeTruthy();
     } finally {
       envs.STRIPE_WEBHOOK_SECRET = originalSecret;
+    }
+  });
+
+  it(`returns non-200 HTTP statuses for invalid webhook requests`, async () => {
+    await withStripeWebhookSecret(`whsec_consumer_verification_status_e2e`, async () => {
+      const event = {
+        id: `evt_invalid_status_e2e`,
+        object: `event`,
+        type: `identity.verification_session.verified`,
+        data: {
+          object: {
+            id: `vs_status_e2e`,
+            object: `identity.verification_session`,
+            metadata: { consumerId },
+          },
+        },
+      };
+      const { payload } = signedWebhookEvent(envs.STRIPE_WEBHOOK_SECRET, event);
+      const validSignature = Stripe.webhooks.generateTestHeaderString({
+        payload,
+        secret: envs.STRIPE_WEBHOOK_SECRET,
+      });
+      const invalidSignature = Stripe.webhooks.generateTestHeaderString({
+        payload,
+        secret: `whsec_wrong_consumer_verification_status_e2e`,
+      });
+
+      await request(app.getHttpServer())
+        .post(`/api/consumer/webhooks`)
+        .set(`content-type`, `application/json`)
+        .set(`stripe-signature`, invalidSignature)
+        .send(payload)
+        .expect(400)
+        .expect(({ body }) => {
+          expect(body).toEqual({ received: false, error: `Webhook processing failed` });
+        });
+
+      await request(app.getHttpServer())
+        .post(`/api/consumer/webhooks`)
+        .set(`content-type`, `application/json`)
+        .send(payload)
+        .expect(401)
+        .expect(({ body }) => {
+          expect(body).toEqual({ received: false, error: `Missing webhook signature` });
+        });
+
+      await request(app.getHttpServer())
+        .post(`/api/consumer/webhooks`)
+        .set(`content-type`, `text/plain`)
+        .set(`stripe-signature`, validSignature)
+        .send(payload)
+        .expect(400)
+        .expect(({ body }) => {
+          expect(body).toEqual({ received: false, error: `Missing raw body` });
+        });
+    });
+  });
+
+  it(`propagates non-200 webhook processing results through the controller`, async () => {
+    const processResultSpy = jest.spyOn(stripeWebhookService, `processStripeEventResult`);
+    try {
+      processResultSpy.mockResolvedValueOnce({
+        statusCode: 503,
+        body: { received: false, error: `Webhook event already processing` },
+      });
+
+      await request(app.getHttpServer())
+        .post(`/api/consumer/webhooks`)
+        .set(`content-type`, `application/json`)
+        .send({ id: `evt_in_flight_status_e2e` })
+        .expect(503)
+        .expect(({ body }) => {
+          expect(body).toEqual({ received: false, error: `Webhook event already processing` });
+        });
+
+      processResultSpy.mockResolvedValueOnce({
+        statusCode: 500,
+        body: { received: false, error: `Webhook processing failed` },
+      });
+
+      await request(app.getHttpServer())
+        .post(`/api/consumer/webhooks`)
+        .set(`content-type`, `application/json`)
+        .send({ id: `evt_processing_failed_status_e2e` })
+        .expect(500)
+        .expect(({ body }) => {
+          expect(body).toEqual({ received: false, error: `Webhook processing failed` });
+        });
+    } finally {
+      processResultSpy.mockRestore();
     }
   });
 });

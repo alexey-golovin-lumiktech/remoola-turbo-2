@@ -18,6 +18,7 @@ import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { MailingService } from '../src/shared/mailing.service';
+import { OriginResolverService } from '../src/shared/origin-resolver.service';
 import { PrismaService } from '../src/shared/prisma.service';
 import {
   getApiConsumerAccessTokenCookieKey,
@@ -140,7 +141,8 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     const reflector = moduleFixture.get(Reflector);
     const jwtService = moduleFixture.get(JwtService);
     const prismaService = moduleFixture.get(PrismaService);
-    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService));
+    const originResolver = moduleFixture.get(OriginResolverService);
+    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
     await app.init();
     authService = app.get(ConsumerAuthService);
     mailingService = app.get(MailingService);

@@ -18,6 +18,13 @@ import { PrismaService } from '../../../shared/prisma.service';
 import { STRIPE_IDENTITY_STATUS } from '../../../shared-common';
 
 type VerificationConsumerDb = Pick<PrismaService, `consumerModel`>;
+type StripeWebhookResult = {
+  statusCode: number;
+  body: {
+    received: boolean;
+    error?: string;
+  };
+};
 type VerificationSessionState = {
   stripeIdentityStatus: string | null;
   stripeIdentitySessionId: string | null;
@@ -118,23 +125,20 @@ export class StripeWebhookService {
     return this.verificationService.startVerifyMeStripeSession(consumerId);
   }
 
-  async processStripeEvent(req: RawBodyRequest<express.Request>, res: express.Response) {
+  async processStripeEventResult(req: RawBodyRequest<express.Request>): Promise<StripeWebhookResult> {
     if (!envs.STRIPE_WEBHOOK_SECRET || envs.STRIPE_WEBHOOK_SECRET === `STRIPE_WEBHOOK_SECRET`) {
       this.logger.debug(`Invalid STRIPE_WEBHOOK_SECRET value`);
-      res.status(401).json({ received: false, error: `Webhook secret not configured` });
-      return;
+      return { statusCode: 401, body: { received: false, error: `Webhook secret not configured` } };
     }
     const rawBody = Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.isBuffer(req.body) ? req.body : undefined;
     if (!rawBody) {
-      res.status(400).json({ received: false, error: `Missing raw body` });
-      return;
+      return { statusCode: 400, body: { received: false, error: `Missing raw body` } };
     }
 
     const signatureRaw = req.headers[`stripe-signature`];
     const signature = Array.isArray(signatureRaw) ? signatureRaw[0] : signatureRaw;
     if (!signature || typeof signature !== `string`) {
-      res.status(401).json({ received: false, error: `Missing webhook signature` });
-      return;
+      return { statusCode: 401, body: { received: false, error: `Missing webhook signature` } };
     }
 
     let event: Stripe.Event;
@@ -147,8 +151,7 @@ export class StripeWebhookService {
         hasRawBody: Boolean(rawBody),
         hasSignatureHeader: typeof signature === `string` && signature.length > 0,
       });
-      res.status(400).json({ received: false, error: `Webhook processing failed` });
-      return;
+      return { statusCode: 400, body: { received: false, error: `Webhook processing failed` } };
     }
 
     let failureStage: `managed_verification_processing_failed` | `webhook_processing_failed` =
@@ -164,27 +167,23 @@ export class StripeWebhookService {
               eventId: event.id,
               eventType: event.type,
             });
-            res.json({ received: true });
-            return;
+            return { statusCode: 200, body: { received: true } };
           }
           failureStage = `managed_verification_processing_failed`;
           throw dedupErr;
         }
 
-        res.json({ received: true });
-        return;
+        return { statusCode: 200, body: { received: true } };
       }
 
       const processResult = await this.eventProcessor.process(event, () =>
         this.router.routeEvent(event).then(() => undefined),
       );
       if (processResult === `inFlight`) {
-        res.status(503).json({ received: false, error: `Webhook event already processing` });
-        return;
+        return { statusCode: 503, body: { received: false, error: `Webhook event already processing` } };
       }
 
-      res.json({ received: true });
-      return;
+      return { statusCode: 200, body: { received: true } };
     } catch (error: unknown) {
       this.logWebhookFailure({
         stage: failureStage,
@@ -195,9 +194,13 @@ export class StripeWebhookService {
         eventType: event.type,
       });
 
-      res.status(500).json({ received: false, error: `Webhook processing failed` });
-      return;
+      return { statusCode: 500, body: { received: false, error: `Webhook processing failed` } };
     }
+  }
+
+  async processStripeEvent(req: RawBodyRequest<express.Request>, res: express.Response): Promise<void> {
+    const result = await this.processStripeEventResult(req);
+    res.status(result.statusCode).json(result.body);
   }
 
   private async handleVerified(session: Stripe.Identity.VerificationSession, db: VerificationConsumerDb = this.prisma) {

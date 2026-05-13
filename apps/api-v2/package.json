@@ -20,6 +20,7 @@
     "typecheck:watch": "tsc -p tsconfig.typecheck.json --watch --preserveWatchOutput",
     "clean": "rm -rf ./node_modules ./dist",
     "dev:envs": "dotenv -e ./.env.development -e ./.env --",
+    "seed:bootstrap": "yarn dev:envs ts-node -r tsconfig-paths/register src/bootstrap/bootstrap-seed.ts",
     "start:dev": "yarn dev:envs nest start --watch",
     "dev": "yarn start:dev"
   },

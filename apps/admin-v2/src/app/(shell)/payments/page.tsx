@@ -23,6 +23,13 @@ import {
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getPayments, getQuickstart, type PaymentsListResponse } from '../../../lib/admin-api.server';
 import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
+import {
+  booleanSearchParam,
+  dateSearchParam,
+  finiteNumberSearchParam,
+  type SearchParamValue,
+  trimmedSearchParam,
+} from '../../../lib/query-contract';
 import { parseQuickstartId } from '../../../lib/quickstart-investigations';
 
 function formatDate(value: string | null | undefined): string {
@@ -280,52 +287,41 @@ function PaymentsDesktopTable({ items, returnTo }: { items: PaymentItem[]; retur
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    quickstart?: string;
-    cursor?: string;
-    q?: string;
-    status?: string;
-    paymentRail?: string;
-    currencyCode?: string;
-    amountMin?: string;
-    amountMax?: string;
-    dueDateFrom?: string;
-    dueDateTo?: string;
-    createdFrom?: string;
-    createdTo?: string;
-    overdue?: string;
-  }>;
+  searchParams?: Promise<Record<string, SearchParamValue>>;
 }) {
   const params = await searchParams;
-  const requestedQuickstartId = parseQuickstartId(params?.quickstart);
+  const requestedQuickstartId = parseQuickstartId(trimmedSearchParam(params?.quickstart));
   const resolvedQuickstart = requestedQuickstartId ? await getQuickstart(requestedQuickstartId) : null;
   const appliedQuickstart = resolvedQuickstart?.targetPath === `/payments` ? resolvedQuickstart : null;
-  const q = params?.q?.trim() ?? ``;
-  const status = params?.status?.trim() || appliedQuickstart?.filters.status || ``;
-  const paymentRail = params?.paymentRail?.trim() || appliedQuickstart?.filters.paymentRail || ``;
-  const currencyCode = params?.currencyCode?.trim() || appliedQuickstart?.filters.currencyCode || ``;
-  const amountMin = params?.amountMin?.trim() ?? ``;
-  const amountMax = params?.amountMax?.trim() ?? ``;
-  const dueDateFrom = params?.dueDateFrom?.trim() ?? ``;
-  const dueDateTo = params?.dueDateTo?.trim() ?? ``;
-  const createdFrom = params?.createdFrom?.trim() ?? ``;
-  const createdTo = params?.createdTo?.trim() ?? ``;
+  const q = trimmedSearchParam(params?.q) ?? ``;
+  const status = trimmedSearchParam(params?.status) || appliedQuickstart?.filters.status || ``;
+  const paymentRail = trimmedSearchParam(params?.paymentRail) || appliedQuickstart?.filters.paymentRail || ``;
+  const currencyCode = trimmedSearchParam(params?.currencyCode) || appliedQuickstart?.filters.currencyCode || ``;
+  const amountMinValue = finiteNumberSearchParam(params?.amountMin);
+  const amountMaxValue = finiteNumberSearchParam(params?.amountMax);
+  const amountMin = amountMinValue === undefined ? `` : String(amountMinValue);
+  const amountMax = amountMaxValue === undefined ? `` : String(amountMaxValue);
+  const dueDateFrom = dateSearchParam(params?.dueDateFrom) ?? ``;
+  const dueDateTo = dateSearchParam(params?.dueDateTo) ?? ``;
+  const createdFrom = dateSearchParam(params?.createdFrom) ?? ``;
+  const createdTo = dateSearchParam(params?.createdTo) ?? ``;
   const overdue =
-    params?.overdue === `true` || (params?.overdue == null && appliedQuickstart?.filters.overdue === true);
-  const cursor = params?.cursor?.trim() ?? ``;
+    booleanSearchParam(params?.overdue) === true ||
+    (params?.overdue == null && appliedQuickstart?.filters.overdue === true);
+  const cursor = trimmedSearchParam(params?.cursor) ?? ``;
   const data = await getPayments({
     cursor: cursor || undefined,
     q,
     status,
     paymentRail,
     currencyCode,
-    amountMin: amountMin ? Number(amountMin) : undefined,
-    amountMax: amountMax ? Number(amountMax) : undefined,
+    amountMin: amountMinValue,
+    amountMax: amountMaxValue,
     dueDateFrom: dueDateFrom || undefined,
     dueDateTo: dueDateTo || undefined,
     createdFrom: createdFrom || undefined,
     createdTo: createdTo || undefined,
-    overdue,
+    overdue: overdue ? true : undefined,
   });
 
   function nextHref(nextCursor: string) {

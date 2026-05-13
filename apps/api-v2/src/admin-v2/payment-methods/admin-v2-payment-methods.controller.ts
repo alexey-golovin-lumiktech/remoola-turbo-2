@@ -1,33 +1,15 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Expose, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsString } from 'class-validator';
+import { Expose, Transform, Type } from 'class-transformer';
+import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
 import { AdminV2PaymentMethodsService } from './admin-v2-payment-methods.service';
-
-function one(value: string | string[] | undefined): string | undefined {
-  return (typeof value === `string` ? value : value?.[0])?.trim() || undefined;
-}
-
-function toNumber(value: string | undefined): number | undefined {
-  if (value == null) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function toBoolean(value: string | undefined): boolean | undefined {
-  if (value === `true`) return true;
-  if (value === `false`) return false;
-  return undefined;
-}
 
 function requestMeta(req: express.Request) {
   const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
@@ -39,6 +21,52 @@ function requestMeta(req: express.Request) {
     idempotencyKey:
       typeof idempotencyKey === `string` ? idempotencyKey : Array.isArray(idempotencyKey) ? idempotencyKey[0] : null,
   };
+}
+
+class PaymentMethodsListQuery {
+  @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  pageSize?: number;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsString()
+  @IsOptional()
+  consumerId?: string;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalBooleanQuery((obj as Record<string, unknown>)[key]))
+  @IsBoolean()
+  @IsOptional()
+  defaultSelected?: boolean;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsString()
+  @IsOptional()
+  fingerprint?: string;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalBooleanQuery((obj as Record<string, unknown>)[key]))
+  @IsBoolean()
+  @IsOptional()
+  includeDeleted?: boolean;
 }
 
 class DisablePaymentMethodBody {
@@ -82,32 +110,41 @@ export class AdminV2PaymentMethodsController {
   ) {}
 
   @Get()
-  async listPaymentMethods(
-    @Identity() admin: IIdentityContext,
-    @Query() query: Record<string, string | string[] | undefined>,
-  ) {
+  @ApiQuery({ name: `page`, required: false, type: Number })
+  @ApiQuery({ name: `pageSize`, required: false, type: Number })
+  @ApiQuery({ name: `consumerId`, required: false })
+  @ApiQuery({ name: `type`, required: false })
+  @ApiQuery({ name: `defaultSelected`, required: false, type: Boolean })
+  @ApiQuery({ name: `fingerprint`, required: false })
+  @ApiQuery({ name: `includeDeleted`, required: false, type: Boolean })
+  @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
+  async listPaymentMethods(@Identity() admin: IIdentityContext, @Query() query: PaymentMethodsListQuery) {
     await this.accessService.assertCapability(admin, `payment_methods.read`);
     return this.service.listPaymentMethods({
-      page: toNumber(one(query.page)),
-      pageSize: toNumber(one(query.pageSize)),
-      consumerId: one(query.consumerId),
-      type: one(query.type),
-      defaultSelected: toBoolean(one(query.defaultSelected)),
-      fingerprint: one(query.fingerprint),
-      includeDeleted: one(query.includeDeleted) === `true`,
+      page: query.page,
+      pageSize: query.pageSize,
+      consumerId: query.consumerId,
+      type: query.type,
+      defaultSelected: query.defaultSelected,
+      fingerprint: query.fingerprint,
+      includeDeleted: query.includeDeleted === true,
     });
   }
 
   @Get(`:id`)
-  async getPaymentMethodCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+  @ApiParam({ name: `id`, format: `uuid`, description: `Payment method id` })
+  @ApiBadRequestResponse({ description: `Invalid payment method id.` })
+  async getPaymentMethodCase(@Identity() admin: IIdentityContext, @Param(`id`, ParseUUIDPipe) id: string) {
     await this.accessService.assertCapability(admin, `payment_methods.read`);
     return this.service.getPaymentMethodCase(id);
   }
 
   @Post(`:id/disable`)
+  @ApiParam({ name: `id`, format: `uuid`, description: `Payment method id` })
+  @ApiBadRequestResponse({ description: `Invalid payment method id or disable body.` })
   async disablePaymentMethod(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @Param(`id`, ParseUUIDPipe) id: string,
     @Body() body: DisablePaymentMethodBody,
     @Req() req: express.Request,
   ) {
@@ -116,9 +153,11 @@ export class AdminV2PaymentMethodsController {
   }
 
   @Post(`:id/remove-default`)
+  @ApiParam({ name: `id`, format: `uuid`, description: `Payment method id` })
+  @ApiBadRequestResponse({ description: `Invalid payment method id or remove-default body.` })
   async removeDefaultPaymentMethod(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @Param(`id`, ParseUUIDPipe) id: string,
     @Body() body: RemoveDefaultPaymentMethodBody,
     @Req() req: express.Request,
   ) {
@@ -127,9 +166,11 @@ export class AdminV2PaymentMethodsController {
   }
 
   @Post(`:id/duplicate-escalate`)
+  @ApiParam({ name: `id`, format: `uuid`, description: `Payment method id` })
+  @ApiBadRequestResponse({ description: `Invalid payment method id or duplicate-escalate body.` })
   async duplicateEscalatePaymentMethod(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @Param(`id`, ParseUUIDPipe) id: string,
     @Body() body: DuplicateEscalatePaymentMethodBody,
     @Req() req: express.Request,
   ) {

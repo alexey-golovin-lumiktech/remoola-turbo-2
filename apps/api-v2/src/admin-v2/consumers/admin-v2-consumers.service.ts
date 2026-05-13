@@ -52,7 +52,7 @@ export class AdminV2ConsumersService {
     private readonly adminActionAudit: AdminActionAuditService,
     private readonly consumerAuthService: ConsumerAuthService,
     private readonly idempotency: AdminV2IdempotencyService,
-    private readonly consumerCaseQuery: ConsumerAdminCaseQuery = new ConsumerAdminCaseQuery(prisma),
+    private readonly consumerCaseQuery: ConsumerAdminCaseQuery,
   ) {}
 
   private async requireConsumer(consumerId: string) {

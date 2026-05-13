@@ -11,10 +11,11 @@ import {
   UploadedFiles,
   UseInterceptors,
   Param,
+  ParseUUIDPipe,
   Req,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
@@ -65,6 +66,11 @@ export class ConsumerDocumentsController {
   constructor(private readonly documents: ConsumerDocumentsService) {}
 
   @Get()
+  @ApiQuery({ name: `kind`, required: false })
+  @ApiQuery({ name: `contactId`, required: false })
+  @ApiQuery({ name: `page`, required: false, type: Number })
+  @ApiQuery({ name: `pageSize`, required: false, type: Number })
+  @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
   @ApiOkResponse({ type: ConsumerDocumentsListResponse })
   list(
     @Identity() consumer: IIdentityContext,
@@ -82,9 +88,11 @@ export class ConsumerDocumentsController {
   }
 
   @Get(`:id/download`)
+  @ApiParam({ name: `id`, format: `uuid`, description: `Document resource id` })
+  @ApiBadRequestResponse({ description: `Invalid document resource id.` })
   async download(
     @Identity() consumer: IIdentityContext,
-    @Param(`id`) id: string,
+    @Param(`id`, ParseUUIDPipe) id: string,
     @Res({ passthrough: true }) res: express.Response,
   ) {
     const file = await this.documents.openDownload(consumer.id, id);
@@ -119,7 +127,9 @@ export class ConsumerDocumentsController {
   }
 
   @Delete(`:id`)
-  delete(@Identity() consumer: IIdentityContext, @Param(`id`) id: string) {
+  @ApiParam({ name: `id`, format: `uuid`, description: `Document resource id` })
+  @ApiBadRequestResponse({ description: `Invalid document resource id.` })
+  delete(@Identity() consumer: IIdentityContext, @Param(`id`, ParseUUIDPipe) id: string) {
     return this.documents.deleteDocument(consumer.id, id);
   }
 
@@ -129,16 +139,25 @@ export class ConsumerDocumentsController {
   }
 
   @Delete(`payment-attachments/:paymentRequestId/:resourceId`)
+  @ApiParam({ name: `paymentRequestId`, format: `uuid`, description: `Payment request id` })
+  @ApiParam({ name: `resourceId`, format: `uuid`, description: `Document resource id` })
+  @ApiBadRequestResponse({ description: `Invalid payment request id or document resource id.` })
   detachFromPayment(
     @Identity() consumer: IIdentityContext,
-    @Param(`paymentRequestId`) paymentRequestId: string,
-    @Param(`resourceId`) resourceId: string,
+    @Param(`paymentRequestId`, ParseUUIDPipe) paymentRequestId: string,
+    @Param(`resourceId`, ParseUUIDPipe) resourceId: string,
   ) {
     return this.documents.detachFromPayment(consumer.id, paymentRequestId, resourceId);
   }
 
   @Post(`:id/tags`)
-  setTags(@Identity() consumer: IIdentityContext, @Body() body: SetTags, @Param(`id`) resourceId: string) {
+  @ApiParam({ name: `id`, format: `uuid`, description: `Document resource id` })
+  @ApiBadRequestResponse({ description: `Invalid document resource id.` })
+  setTags(
+    @Identity() consumer: IIdentityContext,
+    @Body() body: SetTags,
+    @Param(`id`, ParseUUIDPipe) resourceId: string,
+  ) {
     return this.documents.setTags(consumer.id, resourceId, body.tags);
   }
 }

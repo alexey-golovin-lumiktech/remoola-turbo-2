@@ -16,6 +16,7 @@ describe(`ConsumerDocumentsController integration`, () => {
     email: `consumer-boundary@local.test`,
     type: `CONSUMER`,
   };
+  const resourceId = `00000000-0000-4000-8000-000000000311`;
 
   const bulkDeleteDocuments = jest.fn(async () => ({ success: true }));
   const attachToPayment = jest.fn(async () => ({ success: true }));
@@ -79,15 +80,22 @@ describe(`ConsumerDocumentsController integration`, () => {
   });
 
   it(`POST /api/consumer/documents/:id/tags accepts string arrays for tags`, async () => {
-    await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/documents/resource-1/tags`))
+    await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/documents/${resourceId}/tags`))
       .send({
         tags: [`Urgent`, ` Client `],
       })
       .expect(201, { success: true });
 
-    expect(service.setTags as jest.Mock).toHaveBeenCalledWith(consumerIdentity.id, `resource-1`, [
-      `Urgent`,
-      ` Client `,
-    ]);
+    expect(service.setTags as jest.Mock).toHaveBeenCalledWith(consumerIdentity.id, resourceId, [`Urgent`, ` Client `]);
+  });
+
+  it(`rejects malformed document route ids before service dispatch`, async () => {
+    await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/documents/not-a-uuid/tags`))
+      .send({
+        tags: [`Urgent`],
+      })
+      .expect(400);
+
+    expect(service.setTags as jest.Mock).not.toHaveBeenCalled();
   });
 });

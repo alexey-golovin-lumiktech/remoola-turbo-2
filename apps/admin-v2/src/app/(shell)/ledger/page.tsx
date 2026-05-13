@@ -17,6 +17,7 @@ import {
   type LedgerDisputesResponse,
   type LedgerEntriesListResponse,
 } from '../../../lib/admin-api.server';
+import { dateSearchParam, type SearchParamValue, trimmedSearchParam } from '../../../lib/query-contract';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -361,32 +362,20 @@ function DisputesDesktopTable({ items }: { items: DisputeItem[] }) {
 export default async function LedgerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    view?: string;
-    cursor?: string;
-    q?: string;
-    type?: string;
-    status?: string;
-    currencyCode?: string;
-    paymentRequestId?: string;
-    consumerId?: string;
-    amountSign?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }>;
+  searchParams?: Promise<Record<string, SearchParamValue>>;
 }) {
   const params = await searchParams;
-  const view = params?.view === `disputes` ? `disputes` : `entries`;
-  const cursor = params?.cursor?.trim() ?? ``;
-  const q = params?.q?.trim() ?? ``;
-  const type = params?.type?.trim() ?? ``;
-  const status = params?.status?.trim() ?? ``;
-  const currencyCode = params?.currencyCode?.trim() ?? ``;
-  const paymentRequestId = params?.paymentRequestId?.trim() ?? ``;
-  const consumerId = params?.consumerId?.trim() ?? ``;
-  const amountSign = params?.amountSign?.trim() ?? ``;
-  const dateFrom = params?.dateFrom?.trim() ?? ``;
-  const dateTo = params?.dateTo?.trim() ?? ``;
+  const view = trimmedSearchParam(params?.view) === `disputes` ? `disputes` : `entries`;
+  const cursor = trimmedSearchParam(params?.cursor) ?? ``;
+  const q = trimmedSearchParam(params?.q) ?? ``;
+  const type = trimmedSearchParam(params?.type) ?? ``;
+  const status = trimmedSearchParam(params?.status) ?? ``;
+  const currencyCode = trimmedSearchParam(params?.currencyCode) ?? ``;
+  const paymentRequestId = trimmedSearchParam(params?.paymentRequestId) ?? ``;
+  const consumerId = trimmedSearchParam(params?.consumerId) ?? ``;
+  const amountSign = trimmedSearchParam(params?.amountSign) ?? ``;
+  const dateFrom = dateSearchParam(params?.dateFrom) ?? ``;
+  const dateTo = dateSearchParam(params?.dateTo) ?? ``;
 
   const [entries, disputes] = await Promise.all([
     view === `entries`

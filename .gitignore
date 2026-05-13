@@ -64,3 +64,4 @@ __pycache__/
 z-me*
 uploads
 .cursor/workspace/
+packages/db-fixtures/dist-test/

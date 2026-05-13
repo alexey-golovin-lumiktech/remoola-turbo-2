@@ -1,41 +1,44 @@
-import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiCookieAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { Expose, Transform } from 'class-transformer';
+import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 import { AdminV2LedgerAnomaliesService } from './admin-v2-ledger-anomalies.service';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../../common';
 import { AdminV2AccessService } from '../../admin-v2-access.service';
+import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../admin-v2-query-transforms';
 
-function one(value: string | string[] | undefined): string | undefined {
-  return (typeof value === `string` ? value : value?.[0])?.trim() || undefined;
-}
+class LedgerAnomaliesListQuery {
+  @Expose({ name: `class` })
+  @Transform(({ obj }) => optionalStringQuery((obj as Record<string, unknown>)[`class`]))
+  @IsString()
+  className!: string;
 
-function toNumber(value: string | undefined): number | undefined {
-  if (value == null) {
-    return undefined;
-  }
+  @Expose()
+  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
+  @IsDate()
+  dateFrom!: Date;
 
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
+  @Expose()
+  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
+  @IsDate()
+  @IsOptional()
+  dateTo?: Date;
 
-function parseDate(value: string | undefined): Date | undefined {
-  if (!value) {
-    return undefined;
-  }
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsString()
+  @IsOptional()
+  cursor?: string;
 
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-}
-
-function parseRequiredDateParam(name: string, value: string | undefined): Date {
-  const parsed = parseDate(value);
-  if (!parsed) {
-    throw new BadRequestException(`${name} is required`);
-  }
-
-  return parsed;
+  @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  limit?: number;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -56,14 +59,20 @@ export class AdminV2LedgerAnomaliesController {
   }
 
   @Get()
-  async getList(@Identity() admin: IIdentityContext, @Query() query: Record<string, string | string[] | undefined>) {
+  @ApiQuery({ name: `class`, required: true })
+  @ApiQuery({ name: `dateFrom`, required: true })
+  @ApiQuery({ name: `dateTo`, required: false })
+  @ApiQuery({ name: `cursor`, required: false })
+  @ApiQuery({ name: `limit`, required: false, type: Number })
+  @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
+  async getList(@Identity() admin: IIdentityContext, @Query() query: LedgerAnomaliesListQuery) {
     await this.accessService.assertCapability(admin, `ledger.anomalies`);
     return this.service.getList({
-      className: one(query.class) ?? ``,
-      dateFrom: parseRequiredDateParam(`dateFrom`, one(query.dateFrom)),
-      dateTo: parseDate(one(query.dateTo)),
-      cursor: one(query.cursor),
-      limit: toNumber(one(query.limit)),
+      className: query.className,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+      cursor: query.cursor,
+      limit: query.limit,
     });
   }
 }

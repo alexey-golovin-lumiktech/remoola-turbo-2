@@ -62,4 +62,24 @@ describe(`admin-v2 payments quickstarts`, () => {
       }),
     );
   });
+
+  it(`drops invalid numeric and date filters before loading payments`, async () => {
+    await PaymentsPage({
+      searchParams: Promise.resolve({
+        amountMin: `not-a-number`,
+        amountMax: `250`,
+        dueDateFrom: `not-a-date`,
+        createdFrom: `2026-04-01`,
+      }),
+    });
+
+    expect(mockedGetPayments).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountMin: undefined,
+        amountMax: 250,
+        dueDateFrom: undefined,
+        createdFrom: `2026-04-01`,
+      }),
+    );
+  });
 });

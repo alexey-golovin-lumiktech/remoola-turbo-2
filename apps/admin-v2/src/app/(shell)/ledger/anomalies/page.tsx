@@ -28,6 +28,7 @@ import {
   SHARED_DESCRIPTION_MAX_LENGTH,
   SHARED_NAME_MAX_LENGTH,
 } from '../../../../lib/admin-surface-meta';
+import { dateSearchParam, type SearchParamValue, trimmedSearchParam } from '../../../../lib/query-contract';
 
 const SAVED_VIEW_WORKSPACE = `ledger_anomalies` as const;
 
@@ -322,22 +323,17 @@ function SavedViewsSection({
 export default async function LedgerAnomaliesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    class?: string;
-    dateFrom?: string;
-    dateTo?: string;
-    cursor?: string;
-  }>;
+  searchParams?: Promise<Record<string, SearchParamValue>>;
 }) {
   const params = await searchParams;
   const identity = await getAdminIdentity();
   const canManageSavedViews = identity?.capabilities.includes(`saved_views.manage`) ?? false;
   const defaults = defaultDateRange();
-  const requestedClass = params?.class?.trim();
+  const requestedClass = trimmedSearchParam(params?.class);
   const className: LedgerAnomalyClass = isLedgerAnomalyClass(requestedClass) ? requestedClass : `stalePendingEntries`;
-  const dateFrom = params?.dateFrom?.trim() || defaults.dateFrom;
-  const dateTo = params?.dateTo?.trim() || defaults.dateTo;
-  const cursor = params?.cursor?.trim() || undefined;
+  const dateFrom = dateSearchParam(params?.dateFrom) || defaults.dateFrom;
+  const dateTo = dateSearchParam(params?.dateTo) || defaults.dateTo;
+  const cursor = trimmedSearchParam(params?.cursor);
 
   const [summary, list, savedViewsResponse] = await Promise.all([
     getLedgerAnomaliesSummary(),

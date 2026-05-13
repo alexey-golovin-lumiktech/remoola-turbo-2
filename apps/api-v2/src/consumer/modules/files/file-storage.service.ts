@@ -3,34 +3,23 @@ import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { type Readable } from 'stream';
 
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { GetObjectCommand, PutObjectCommand, type S3Client } from '@aws-sdk/client-s3';
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
 import { errorCodes } from '@remoola/shared-constants';
 
+import { S3_CLIENT } from './s3-client.provider';
 import { envs } from '../../../envs';
 
 @Injectable()
 export class FileStorageService {
   private readonly useS3 = !!envs.AWS_BUCKET; // auto-switch mode
 
-  private s3: S3Client | null = null;
-
-  constructor() {
+  constructor(@Inject(S3_CLIENT) private readonly s3: S3Client | null) {
     if (envs.VERCEL !== 0 && !envs.AWS_BUCKET) {
       throw new InternalServerErrorException(
         `AWS_BUCKET (S3) is required for file uploads on Vercel. Local filesystem is read-only.`,
       );
-    }
-    if (this.useS3) {
-      const configuration = {
-        region: envs.AWS_REGION,
-        credentials: {
-          accessKeyId: envs.AWS_ACCESS_KEY_ID!,
-          secretAccessKey: envs.AWS_SECRET_ACCESS_KEY!,
-        },
-      };
-      this.s3 = new S3Client(configuration);
     }
   }
 

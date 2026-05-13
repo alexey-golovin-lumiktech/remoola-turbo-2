@@ -1,5 +1,4 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
@@ -10,18 +9,9 @@ import helmet from 'helmet';
 import { isAdminApiPath, CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 
 import { AdminV2Module } from './admin-v2/admin-v2.module';
-import {
-  ConsumerActionInterceptor,
-  CorrelationIdMiddleware,
-  DeviceIdMiddleware,
-  LoggingInterceptor,
-  PrismaExceptionFilter,
-} from './common';
+import { CorrelationIdMiddleware, DeviceIdMiddleware } from './common';
 import { ConsumerModule } from './consumer/consumer.module';
 import { envs } from './envs';
-import { AuthGuard } from './guards';
-import { TransformResponseInterceptor } from './interceptors';
-import { ConsumerActionLogService } from './shared/consumer-action-log.service';
 import { OriginResolverService } from './shared/origin-resolver.service';
 import {
   buildSwaggerCookieAuthDocumentConfig,
@@ -173,7 +163,8 @@ export function configureApp(app: NestExpressApplication, originResolver = app.g
   });
 
   app.use(compression());
-  app.use(new CorrelationIdMiddleware().use);
+  const correlationIdMiddleware = app.get(CorrelationIdMiddleware);
+  app.use(correlationIdMiddleware.use.bind(correlationIdMiddleware));
 
   app.use(`/api/consumer/webhooks`, express.raw({ type: `application/json`, limit: `10mb` }));
   app.use(`/api/consumer/webhook`, express.raw({ type: `application/json`, limit: `10mb` }));
@@ -218,17 +209,4 @@ export function configureApp(app: NestExpressApplication, originResolver = app.g
       },
     }),
   );
-
-  const reflector = app.get(Reflector);
-  const consumerActionLog = app.get(ConsumerActionLogService);
-
-  app.useGlobalGuards(app.get(AuthGuard));
-
-  app.useGlobalInterceptors(
-    new TransformResponseInterceptor(reflector),
-    new LoggingInterceptor(),
-    new ConsumerActionInterceptor(consumerActionLog, reflector),
-  );
-
-  app.useGlobalFilters(new PrismaExceptionFilter());
 }

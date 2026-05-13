@@ -1,9 +1,11 @@
 describe(`envs`, () => {
   const ORIGINAL_ENV = process.env;
+  const ORIGINAL_ARGV = process.argv;
 
-  async function loadEnvModule(overrides: Record<string, string | undefined> = {}) {
+  async function loadEnvModule(overrides: Record<string, string | undefined> = {}, argv: string[] = ORIGINAL_ARGV) {
     jest.resetModules();
     process.env = { ...ORIGINAL_ENV, ...overrides };
+    process.argv = argv;
     return await import(`./envs`);
   }
 
@@ -13,12 +15,14 @@ describe(`envs`, () => {
   };
   const configuredProductionLikeEnv = {
     CONSUMER_CSS_GRID_APP_ORIGIN: `https://app.example.com`,
+    ADMIN_V2_APP_ORIGIN: `https://admin.example.com`,
     CRON_SECRET: `cron-live-secret`,
     ...configuredBrevoEnv,
   };
 
   afterEach(() => {
     process.env = ORIGINAL_ENV;
+    process.argv = ORIGINAL_ARGV;
     jest.resetModules();
   });
 
@@ -109,6 +113,67 @@ describe(`envs`, () => {
     expect(envs.NGROK_ENABLED).toBe(false);
   });
 
+  it(`rejects production bootstrap seed opt-in during production-like server boot`, async () => {
+    for (const nodeEnv of [`production`, `staging`]) {
+      await expect(
+        loadEnvModule({
+          NODE_ENV: nodeEnv,
+          COOKIE_SECURE: `true`,
+          JWT_ACCESS_SECRET: `secret-access`,
+          JWT_REFRESH_SECRET: `secret-refresh`,
+          SECURE_SESSION_SECRET: `session-secret`,
+          STRIPE_SECRET_KEY: `sk_live_test`,
+          STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+          NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+          ALLOW_PRODUCTION_BOOTSTRAP_SEED: `true`,
+          ...configuredProductionLikeEnv,
+        }),
+      ).rejects.toThrow(/ALLOW_PRODUCTION_BOOTSTRAP_SEED can only be true for the bootstrap seed script/);
+    }
+  });
+
+  it(`allows production bootstrap seed opt-in for the explicit seed entrypoint`, async () => {
+    const { envs } = await loadEnvModule(
+      {
+        NODE_ENV: `production`,
+        COOKIE_SECURE: `true`,
+        JWT_ACCESS_SECRET: `secret-access`,
+        JWT_REFRESH_SECRET: `secret-refresh`,
+        SECURE_SESSION_SECRET: `session-secret`,
+        STRIPE_SECRET_KEY: `sk_live_test`,
+        STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+        NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+        ALLOW_PRODUCTION_BOOTSTRAP_SEED: `true`,
+        DEFAULT_ADMIN_PASSWORD: `OneOffRegularAdminPassword!2026`,
+        SUPER_ADMIN_PASSWORD: `OneOffSuperAdminPassword!2026`,
+        ...configuredProductionLikeEnv,
+      },
+      [`node`, `src/bootstrap/bootstrap-seed.ts`],
+    );
+
+    expect(envs.ALLOW_PRODUCTION_BOOTSTRAP_SEED).toBe(true);
+  });
+
+  it(`rejects production bootstrap seed opt-in with default bootstrap credentials`, async () => {
+    await expect(
+      loadEnvModule(
+        {
+          NODE_ENV: `production`,
+          COOKIE_SECURE: `true`,
+          JWT_ACCESS_SECRET: `secret-access`,
+          JWT_REFRESH_SECRET: `secret-refresh`,
+          SECURE_SESSION_SECRET: `session-secret`,
+          STRIPE_SECRET_KEY: `sk_live_test`,
+          STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+          NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+          ALLOW_PRODUCTION_BOOTSTRAP_SEED: `true`,
+          ...configuredProductionLikeEnv,
+        },
+        [`node`, `src/bootstrap/bootstrap-seed.ts`],
+      ),
+    ).rejects.toThrow(/must be configured with a non-default, non-empty value/);
+  });
+
   it(`fails closed in production-like environments when Brevo config is placeholder or invalid`, async () => {
     await expect(
       loadEnvModule({
@@ -121,6 +186,7 @@ describe(`envs`, () => {
         STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
         NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
         CONSUMER_CSS_GRID_APP_ORIGIN: `https://app.example.com`,
+        ADMIN_V2_APP_ORIGIN: `https://admin.example.com`,
         CRON_SECRET: `cron-live-secret`,
         BREVO_API_KEY: `BREVO_API_KEY`,
         BREVO_DEFAULT_FROM_EMAIL: `noreply@example.com`,
@@ -138,6 +204,7 @@ describe(`envs`, () => {
         STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
         NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
         CONSUMER_CSS_GRID_APP_ORIGIN: `https://app.example.com`,
+        ADMIN_V2_APP_ORIGIN: `https://admin.example.com`,
         CRON_SECRET: `cron-live-secret`,
         BREVO_API_KEY: `brevo-live-key`,
         BREVO_DEFAULT_FROM_EMAIL: `not-an-email`,
@@ -173,6 +240,7 @@ describe(`envs`, () => {
         STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
         NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
         CONSUMER_CSS_GRID_APP_ORIGIN: `https://app.example.com`,
+        ADMIN_V2_APP_ORIGIN: `https://admin.example.com`,
         CRON_SECRET: `CRON_SECRET`,
         ...configuredBrevoEnv,
       }),

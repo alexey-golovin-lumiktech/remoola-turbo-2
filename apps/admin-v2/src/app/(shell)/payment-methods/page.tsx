@@ -16,6 +16,12 @@ import {
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { type PaymentMethodsListResponse, getPaymentMethods } from '../../../lib/admin-api.server';
+import {
+  booleanSearchParam,
+  positiveIntegerSearchParam,
+  type SearchParamValue,
+  trimmedSearchParam,
+} from '../../../lib/query-contract';
 
 type PaymentMethodItem = PaymentMethodsListResponse[`items`][number];
 
@@ -180,29 +186,23 @@ function PaymentMethodsDesktopTable({ items }: { items: PaymentMethodItem[] }) {
 export default async function PaymentMethodsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    page?: string;
-    consumerId?: string;
-    type?: string;
-    defaultSelected?: string;
-    fingerprint?: string;
-    includeDeleted?: string;
-  }>;
+  searchParams?: Promise<Record<string, SearchParamValue>>;
 }) {
   const params = await searchParams;
-  const page = params?.page ? Number(params.page) : 1;
-  const consumerId = params?.consumerId?.trim() ?? ``;
-  const type = params?.type?.trim() ?? ``;
-  const defaultSelected = params?.defaultSelected?.trim() ?? ``;
-  const fingerprint = params?.fingerprint?.trim() ?? ``;
-  const includeDeleted = params?.includeDeleted === `true`;
+  const page = positiveIntegerSearchParam(params?.page, 1) ?? 1;
+  const consumerId = trimmedSearchParam(params?.consumerId) ?? ``;
+  const type = trimmedSearchParam(params?.type) ?? ``;
+  const defaultSelectedValue = booleanSearchParam(params?.defaultSelected);
+  const defaultSelected = defaultSelectedValue === undefined ? `` : String(defaultSelectedValue);
+  const fingerprint = trimmedSearchParam(params?.fingerprint) ?? ``;
+  const includeDeleted = booleanSearchParam(params?.includeDeleted) === true;
   const data = await getPaymentMethods({
     page,
     consumerId,
     type,
-    defaultSelected: defaultSelected === `` ? undefined : defaultSelected === `true`,
+    defaultSelected: defaultSelectedValue,
     fingerprint,
-    includeDeleted,
+    includeDeleted: includeDeleted ? true : undefined,
   });
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 

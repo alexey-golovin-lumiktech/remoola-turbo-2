@@ -14,6 +14,22 @@ type AdminActionAuditParams = {
   userAgent?: string | null;
 };
 
+type AdminActionAuditWriter = {
+  adminActionAuditLogModel: {
+    create(args: {
+      data: {
+        adminId: string;
+        action: string;
+        resource: string;
+        resourceId: string | null;
+        metadata: Prisma.InputJsonValue | typeof Prisma.JsonNull;
+        ipAddress: string | null;
+        userAgent: string | null;
+      };
+    }): Promise<unknown>;
+  };
+};
+
 /** Action names for admin action audit (fintech compliance). */
 export const ADMIN_ACTION_AUDIT_ACTIONS = {
   consumer_note_create: `consumer_note_create`,
@@ -80,25 +96,38 @@ export class AdminActionAuditService {
    * Record a sensitive admin action. Append-only; never throws on failure so it does not break the main flow.
    */
   async record(params: AdminActionAuditParams): Promise<void> {
-    const { adminId, action, resource, resourceId, metadata, ipAddress, userAgent } = params;
     try {
-      await this.prisma.adminActionAuditLogModel.create({
-        data: {
-          adminId,
-          action,
-          resource,
-          resourceId: resourceId ?? null,
-          metadata: metadata ?? Prisma.JsonNull,
-          ipAddress: ipAddress ?? null,
-          userAgent: userAgent ?? null,
-        },
-      });
+      await this.recordRequired(params);
     } catch (err) {
-      this.logger.warn(`AdminActionAudit: failed to record`, {
-        action,
-        resource,
+      this.logger.warn({
+        event: `admin_action_audit_write_failed`,
+        action: params.action,
+        resource: params.resource,
         message: err instanceof Error ? err.message : `Unknown`,
       });
     }
+  }
+
+  /**
+   * Record a security/money-critical admin action. Callers use this when the main flow must not silently succeed
+   * without durable audit evidence.
+   */
+  async recordRequired(params: AdminActionAuditParams): Promise<void> {
+    await this.recordRequiredWithClient(this.prisma, params);
+  }
+
+  async recordRequiredWithClient(client: AdminActionAuditWriter, params: AdminActionAuditParams): Promise<void> {
+    const { adminId, action, resource, resourceId, metadata, ipAddress, userAgent } = params;
+    await client.adminActionAuditLogModel.create({
+      data: {
+        adminId,
+        action,
+        resource,
+        resourceId: resourceId ?? null,
+        metadata: metadata ?? Prisma.JsonNull,
+        ipAddress: ipAddress ?? null,
+        userAgent: userAgent ?? null,
+      },
+    });
   }
 }

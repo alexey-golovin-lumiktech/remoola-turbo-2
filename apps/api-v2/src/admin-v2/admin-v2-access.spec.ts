@@ -27,6 +27,7 @@ describe(`AdminV2Access`, () => {
     ]);
     expect(profile.capabilities).not.toContain(`verification.decide`);
     expect(profile.capabilities).not.toContain(`consumers.force_logout`);
+    expect(profile.capabilities).not.toContain(`payments.reverse`);
     expect(profile.capabilities).not.toContain(`admins.read`);
     expect(profile.capabilities).not.toContain(`admins.manage`);
     expect(profile.capabilities.map(String)).not.toContain(`payment_methods.manage`);
@@ -52,6 +53,7 @@ describe(`AdminV2Access`, () => {
     expect(profile.capabilities).toEqual(
       expect.arrayContaining([
         `admins.read`,
+        `payments.reverse`,
         `verification.decide`,
         `exchange.manage`,
         `documents.manage`,

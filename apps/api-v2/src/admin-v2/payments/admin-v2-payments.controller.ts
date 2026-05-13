@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Expose } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { Expose, Transform } from 'class-transformer';
+import { IsBoolean, IsDate, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 import { PAYMENT_REVERSAL_KIND } from '@remoola/api-types';
 
@@ -10,29 +10,94 @@ import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import {
+  optionalBooleanQuery,
+  optionalDateQuery,
+  optionalNumberQuery,
+  optionalStringQuery,
+} from '../admin-v2-query-transforms';
 import { AdminV2PaymentReversalService } from './admin-v2-payment-reversal.service';
 import { AdminV2PaymentsService } from './admin-v2-payments.service';
 
-function one(value: string | string[] | undefined): string | undefined {
-  return (typeof value === `string` ? value : value?.[0])?.trim() || undefined;
-}
+class PaymentRequestsQuery {
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsString()
+  cursor?: string;
 
-function toNumber(value: string | undefined): number | undefined {
-  if (value == null) {
-    return undefined;
-  }
+  @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  limit?: number;
 
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsString()
+  q?: string;
 
-function parseDate(value: string | undefined): Date | undefined {
-  if (!value) {
-    return undefined;
-  }
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsString()
+  status?: string;
 
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsString()
+  paymentRail?: string;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsString()
+  currencyCode?: string;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsNumber()
+  amountMin?: number;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsNumber()
+  amountMax?: number;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsDate()
+  dueDateFrom?: Date;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsDate()
+  dueDateTo?: Date;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsDate()
+  createdFrom?: Date;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsDate()
+  createdTo?: Date;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalBooleanQuery((obj as Record<string, unknown>)[key]))
+  @IsOptional()
+  @IsBoolean()
+  overdue?: boolean;
 }
 
 class PaymentReversalBody {
@@ -68,25 +133,36 @@ export class AdminV2PaymentsController {
   ) {}
 
   @Get()
-  async listPaymentRequests(
-    @Identity() admin: IIdentityContext,
-    @Query() query: Record<string, string | string[] | undefined>,
-  ) {
+  @ApiQuery({ name: `cursor`, required: false })
+  @ApiQuery({ name: `limit`, required: false, type: Number })
+  @ApiQuery({ name: `q`, required: false })
+  @ApiQuery({ name: `status`, required: false })
+  @ApiQuery({ name: `paymentRail`, required: false })
+  @ApiQuery({ name: `currencyCode`, required: false })
+  @ApiQuery({ name: `amountMin`, required: false, type: Number })
+  @ApiQuery({ name: `amountMax`, required: false, type: Number })
+  @ApiQuery({ name: `dueDateFrom`, required: false })
+  @ApiQuery({ name: `dueDateTo`, required: false })
+  @ApiQuery({ name: `createdFrom`, required: false })
+  @ApiQuery({ name: `createdTo`, required: false })
+  @ApiQuery({ name: `overdue`, required: false, type: Boolean })
+  @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
+  async listPaymentRequests(@Identity() admin: IIdentityContext, @Query() query: PaymentRequestsQuery) {
     await this.accessService.assertCapability(admin, `payments.read`);
     return this.service.listPaymentRequests({
-      cursor: one(query.cursor),
-      limit: toNumber(one(query.limit)),
-      q: one(query.q),
-      status: one(query.status),
-      paymentRail: one(query.paymentRail),
-      currencyCode: one(query.currencyCode),
-      amountMin: toNumber(one(query.amountMin)),
-      amountMax: toNumber(one(query.amountMax)),
-      dueDateFrom: parseDate(one(query.dueDateFrom)),
-      dueDateTo: parseDate(one(query.dueDateTo)),
-      createdFrom: parseDate(one(query.createdFrom)),
-      createdTo: parseDate(one(query.createdTo)),
-      overdue: one(query.overdue) === `true`,
+      cursor: query.cursor,
+      limit: query.limit,
+      q: query.q,
+      status: query.status,
+      paymentRail: query.paymentRail,
+      currencyCode: query.currencyCode,
+      amountMin: query.amountMin,
+      amountMax: query.amountMax,
+      dueDateFrom: query.dueDateFrom,
+      dueDateTo: query.dueDateTo,
+      createdFrom: query.createdFrom,
+      createdTo: query.createdTo,
+      overdue: query.overdue === true,
     });
   }
 
@@ -97,13 +173,22 @@ export class AdminV2PaymentsController {
   }
 
   @Get(`:id`)
-  async getPaymentRequestCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+  @ApiParam({ name: `id`, format: `uuid`, description: `Payment request id` })
+  @ApiBadRequestResponse({ description: `Invalid payment request id.` })
+  async getPaymentRequestCase(@Identity() admin: IIdentityContext, @Param(`id`, ParseUUIDPipe) id: string) {
     await this.accessService.assertCapability(admin, `payments.read`);
     return this.service.getPaymentRequestCase(id);
   }
 
   @Post(`:id/refund`)
-  async createRefund(@Identity() admin: IIdentityContext, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
+  @ApiParam({ name: `id`, format: `uuid`, description: `Payment request id` })
+  @ApiBadRequestResponse({ description: `Invalid payment request id or refund body.` })
+  async createRefund(
+    @Identity() admin: IIdentityContext,
+    @Param(`id`, ParseUUIDPipe) id: string,
+    @Body() body: PaymentReversalBody,
+  ) {
+    await this.accessService.assertCapability(admin, `payments.reverse`);
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.adminPaymentReversalService.createReversal(
       id,
@@ -113,11 +198,14 @@ export class AdminV2PaymentsController {
   }
 
   @Post(`:id/chargeback`)
+  @ApiParam({ name: `id`, format: `uuid`, description: `Payment request id` })
+  @ApiBadRequestResponse({ description: `Invalid payment request id or chargeback body.` })
   async createChargeback(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @Param(`id`, ParseUUIDPipe) id: string,
     @Body() body: PaymentReversalBody,
   ) {
+    await this.accessService.assertCapability(admin, `payments.reverse`);
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
     return this.adminPaymentReversalService.createReversal(
       id,

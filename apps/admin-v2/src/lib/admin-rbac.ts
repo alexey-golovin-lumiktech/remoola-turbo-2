@@ -18,6 +18,7 @@ export const ADMIN_V2_PERMISSION_OVERRIDE_OPTIONS = [
   { capability: `consumers.suspend`, label: `Consumer suspend` },
   { capability: `consumers.email_resend`, label: `Consumer email resend` },
   { capability: `payments.read`, label: `Payments read` },
+  { capability: `payments.reverse`, label: `Payments reverse` },
   { capability: `ledger.read`, label: `Ledger read` },
   { capability: `exchange.read`, label: `Exchange read` },
   { capability: `exchange.manage`, label: `Exchange manage` },

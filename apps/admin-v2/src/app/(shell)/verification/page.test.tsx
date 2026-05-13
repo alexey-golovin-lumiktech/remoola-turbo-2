@@ -132,7 +132,7 @@ describe(`admin-v2 verification quickstarts`, () => {
       stripeIdentityStatus: undefined,
       country: undefined,
       contractorKind: undefined,
-      missingProfileData: false,
+      missingProfileData: undefined,
       missingDocuments: true,
     });
   });
@@ -145,7 +145,27 @@ describe(`admin-v2 verification quickstarts`, () => {
     expect(mockedGetQuickstart).not.toHaveBeenCalled();
     expect(mockedGetVerificationQueue).toHaveBeenCalledWith(
       expect.objectContaining({
-        missingDocuments: false,
+        missingDocuments: undefined,
+      }),
+    );
+  });
+
+  it(`normalizes page and boolean query params before loading the queue`, async () => {
+    mockedGetQuickstart.mockResolvedValue(null);
+
+    await VerificationQueuePage({
+      searchParams: Promise.resolve({
+        page: `0`,
+        missingProfileData: `false`,
+        missingDocuments: [`true`, `false`],
+      }),
+    });
+
+    expect(mockedGetVerificationQueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page: 1,
+        missingProfileData: undefined,
+        missingDocuments: true,
       }),
     );
   });

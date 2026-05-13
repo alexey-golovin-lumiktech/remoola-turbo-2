@@ -333,7 +333,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }),
     );
     expect(res.json).toHaveBeenCalledWith({ received: true });
-    expect(res.status).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
     expect(createOutcomeIdempotent).not.toHaveBeenCalled();
   });
 
@@ -857,7 +857,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 
     expect(handleRefundUpdated).not.toHaveBeenCalled();
     expect(stripeWebhookEventCreate).toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 });

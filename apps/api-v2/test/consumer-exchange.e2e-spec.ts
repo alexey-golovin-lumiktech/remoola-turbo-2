@@ -20,6 +20,7 @@ import { AppModule } from '../src/app.module';
 import { ConsumerExchangeService } from '../src/consumer/modules/exchange/consumer-exchange.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
+import { OriginResolverService } from '../src/shared/origin-resolver.service';
 import { PrismaService } from '../src/shared/prisma.service';
 import { getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
@@ -134,7 +135,8 @@ describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`,
     const reflector = moduleFixture.get(Reflector);
     const jwtService = moduleFixture.get(JwtService);
     const prismaService = moduleFixture.get(PrismaService);
-    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService));
+    const originResolver = moduleFixture.get(OriginResolverService);
+    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
     await app.init();
   });
 

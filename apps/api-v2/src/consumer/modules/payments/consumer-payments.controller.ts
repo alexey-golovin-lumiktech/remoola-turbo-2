@@ -4,13 +4,14 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
@@ -93,6 +94,13 @@ export class ConsumerPaymentsController {
   }
 
   @Get()
+  @ApiQuery({ name: `page`, required: false, type: Number })
+  @ApiQuery({ name: `pageSize`, required: false, type: Number })
+  @ApiQuery({ name: `status`, required: false })
+  @ApiQuery({ name: `type`, required: false })
+  @ApiQuery({ name: `role`, required: false })
+  @ApiQuery({ name: `search`, required: false })
+  @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
   async list(@Identity() consumer: ConsumerModel, @Query() query: ConsumerPaymentsListQuery) {
     return this.service.listPayments({
       consumerId: consumer.id,
@@ -157,18 +165,22 @@ export class ConsumerPaymentsController {
   }
 
   @Get(`:paymentRequestId`)
+  @ApiParam({ name: `paymentRequestId`, format: `uuid`, description: `Payment request id` })
+  @ApiBadRequestResponse({ description: `Invalid payment request id.` })
   getPayment(
     @Identity() consumer: ConsumerModel,
-    @Param(`paymentRequestId`) paymentRequestId: string,
+    @Param(`paymentRequestId`, ParseUUIDPipe) paymentRequestId: string,
     @Req() req: express.Request,
   ) {
     return this.service.getPaymentView(consumer.id, paymentRequestId, resolveRequestBaseUrl(req));
   }
 
   @Post(`:paymentRequestId/generate-invoice`)
+  @ApiParam({ name: `paymentRequestId`, format: `uuid`, description: `Payment request id` })
+  @ApiBadRequestResponse({ description: `Invalid payment request id.` })
   async generate(
     @Identity() consumer: ConsumerModel,
-    @Param(`paymentRequestId`) paymentRequestId: string,
+    @Param(`paymentRequestId`, ParseUUIDPipe) paymentRequestId: string,
     @Req() req: express.Request,
   ) {
     return this.invoiceService.generateInvoice(paymentRequestId, consumer.id, resolveRequestBaseUrl(req));

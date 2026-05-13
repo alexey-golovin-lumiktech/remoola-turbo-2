@@ -85,9 +85,6 @@ export function createDeviceIdMiddleware(
   };
 }
 
-// Preserve direct function usage in legacy tests while the app itself resolves middleware through Nest DI.
-export const deviceIdMiddleware = createDeviceIdMiddleware(new OriginResolverService());
-
 @Injectable()
 export class DeviceIdMiddleware implements NestMiddleware {
   private readonly middleware: ReturnType<typeof createDeviceIdMiddleware>;

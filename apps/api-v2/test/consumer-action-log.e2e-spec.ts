@@ -12,10 +12,11 @@ import { PrismaClient } from '@remoola/database-2';
 
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
-import { ConsumerActionInterceptor, deviceIdMiddleware } from '../src/common';
+import { ConsumerActionInterceptor, createDeviceIdMiddleware } from '../src/common';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { ConsumerActionLogService } from '../src/shared/consumer-action-log.service';
+import { OriginResolverService } from '../src/shared/origin-resolver.service';
 
 describe(`Consumer action log integration (e2e, isolated DB)`, () => {
   let app: INestApplication;
@@ -38,6 +39,7 @@ describe(`Consumer action log integration (e2e, isolated DB)`, () => {
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix(`api`);
     app.use(cookieParser(envs.SECURE_SESSION_SECRET));
+    const deviceIdMiddleware = createDeviceIdMiddleware(moduleFixture.get(OriginResolverService));
     app.use(deviceIdMiddleware);
     app.useGlobalInterceptors(
       new ConsumerActionInterceptor(moduleFixture.get(ConsumerActionLogService), moduleFixture.get(Reflector)),

@@ -40,7 +40,7 @@ export class AuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
-    private readonly originResolver: OriginResolverService = new OriginResolverService(),
+    private readonly originResolver: OriginResolverService,
   ) {}
 
   async canActivate(context: ExecutionContext) {
@@ -131,7 +131,7 @@ export class AuthGuard implements CanActivate {
         this.logger.warn(`AuthGuard: consumer session app scope mismatch`);
         throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
       }
-      if (session.accessTokenHash && !secureCompare(session.accessTokenHash, oauthCrypto.hashOAuthState(accessToken))) {
+      if (!secureCompare(session.accessTokenHash, oauthCrypto.hashOAuthState(accessToken))) {
         this.logger.warn(`AuthGuard: consumer access token mismatch with stored value`);
         throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
       }

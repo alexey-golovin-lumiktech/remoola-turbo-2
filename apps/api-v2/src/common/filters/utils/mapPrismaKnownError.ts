@@ -206,7 +206,7 @@ export function mapPrismaKnownError(error: Prisma.PrismaClientKnownRequestError)
       break;
 
     case `P2035`:
-      status = HttpStatus.UNAUTHORIZED;
+      status = HttpStatus.SERVICE_UNAVAILABLE;
       message = `Insufficient database permissions`;
       break;
 

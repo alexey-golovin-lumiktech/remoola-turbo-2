@@ -44,6 +44,12 @@ import {
 } from '../../../lib/admin-mutations.server';
 import { SHARED_DESCRIPTION_MAX_LENGTH, SHARED_NAME_MAX_LENGTH } from '../../../lib/admin-surface-meta';
 import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
+import {
+  booleanSearchParam,
+  positiveIntegerSearchParam,
+  type SearchParamValue,
+  trimmedSearchParam,
+} from '../../../lib/query-contract';
 import { parseQuickstartId } from '../../../lib/quickstart-investigations';
 
 const SAVED_VIEW_WORKSPACE = `verification_queue` as const;
@@ -476,34 +482,26 @@ function SavedViewsSection({
 export default async function VerificationQueuePage({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    quickstart?: string;
-    page?: string;
-    status?: string;
-    stripeIdentityStatus?: string;
-    country?: string;
-    contractorKind?: string;
-    missingProfileData?: string;
-    missingDocuments?: string;
-  }>;
+  searchParams?: Promise<Record<string, SearchParamValue>>;
 }) {
   const params = await searchParams;
   const identity = await getAdminIdentity();
   const canManageSavedViews = identity?.capabilities.includes(`saved_views.manage`) ?? false;
-  const page = params?.page ? Number(params.page) : 1;
-  const requestedQuickstartId = parseQuickstartId(params?.quickstart);
+  const page = positiveIntegerSearchParam(params?.page, 1) ?? 1;
+  const requestedQuickstartId = parseQuickstartId(trimmedSearchParam(params?.quickstart));
   const resolvedQuickstart = requestedQuickstartId ? await getQuickstart(requestedQuickstartId) : null;
   const appliedQuickstart = resolvedQuickstart?.targetPath === `/verification` ? resolvedQuickstart : null;
-  const status = params?.status?.trim() || appliedQuickstart?.filters.status || undefined;
+  const status = trimmedSearchParam(params?.status) || appliedQuickstart?.filters.status || undefined;
   const stripeIdentityStatus =
-    params?.stripeIdentityStatus?.trim() || appliedQuickstart?.filters.stripeIdentityStatus || undefined;
-  const country = params?.country?.trim() || appliedQuickstart?.filters.country || undefined;
-  const contractorKind = params?.contractorKind?.trim() || appliedQuickstart?.filters.contractorKind || undefined;
+    trimmedSearchParam(params?.stripeIdentityStatus) || appliedQuickstart?.filters.stripeIdentityStatus || undefined;
+  const country = trimmedSearchParam(params?.country) || appliedQuickstart?.filters.country || undefined;
+  const contractorKind =
+    trimmedSearchParam(params?.contractorKind) || appliedQuickstart?.filters.contractorKind || undefined;
   const missingProfileData =
-    params?.missingProfileData === `true` ||
+    booleanSearchParam(params?.missingProfileData) ??
     (params?.missingProfileData == null && appliedQuickstart?.filters.missingProfileData === true);
   const missingDocuments =
-    params?.missingDocuments === `true` ||
+    booleanSearchParam(params?.missingDocuments) ??
     (params?.missingDocuments == null && appliedQuickstart?.filters.missingDocuments === true);
 
   const [queue, savedViewsResponse] = await Promise.all([
@@ -513,8 +511,8 @@ export default async function VerificationQueuePage({
       stripeIdentityStatus,
       country,
       contractorKind,
-      missingProfileData,
-      missingDocuments,
+      missingProfileData: missingProfileData ? true : undefined,
+      missingDocuments: missingDocuments ? true : undefined,
     }),
     canManageSavedViews ? getSavedViews({ workspace: SAVED_VIEW_WORKSPACE }) : Promise.resolve(null),
   ]);

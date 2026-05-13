@@ -214,6 +214,36 @@ describe(`AuthGuard`, () => {
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid or expired token`);
   });
 
+  it(`rejects consumer sessions without a stored access hash`, async () => {
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(CURRENT_CONSUMER_APP_SCOPE);
+    const request: MockRequest = {
+      path: `/api/consumer/profile`,
+      url: `/api/consumer/profile`,
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE },
+      cookies: {
+        [consumerAccessCookieKey]: `token`,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `consumer-1`,
+      sid: `session-1`,
+      typ: `access`,
+      scope: `consumer`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
+    });
+    prisma.authSessionModel.findFirst.mockResolvedValue({
+      id: `session-1`,
+      consumerId: `consumer-1`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+      accessTokenHash: null,
+    });
+
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid or expired token`);
+  });
+
   it(`still rejects missing token cookie`, async () => {
     const request: MockRequest = {
       path: `/api/consumer/auth/me`,
@@ -298,6 +328,7 @@ describe(`AuthGuard`, () => {
       appScope: CURRENT_CONSUMER_APP_SCOPE,
       revokedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
+      accessTokenHash: oauthCrypto.hashOAuthState(`token`),
     });
     prisma.adminModel.findFirst.mockResolvedValue(null);
     prisma.consumerModel.findFirst.mockResolvedValue({
@@ -336,6 +367,7 @@ describe(`AuthGuard`, () => {
       appScope: CURRENT_CONSUMER_APP_SCOPE,
       revokedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
+      accessTokenHash: oauthCrypto.hashOAuthState(`token`),
     });
     prisma.adminModel.findFirst.mockResolvedValue(null);
     prisma.consumerModel.findFirst.mockResolvedValue({
@@ -552,6 +584,7 @@ describe(`AuthGuard`, () => {
       appScope: CURRENT_CONSUMER_APP_SCOPE,
       revokedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
+      accessTokenHash: oauthCrypto.hashOAuthState(`token`),
     });
     prisma.adminModel.findFirst.mockResolvedValue(null);
     prisma.consumerModel.findFirst.mockResolvedValue({

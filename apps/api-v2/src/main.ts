@@ -2,10 +2,10 @@ import { Logger, type INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 
-import { $Enums, type PrismaClient } from '@remoola/database-2';
+import { type PrismaClient } from '@remoola/database-2';
 
 import { AppModule } from './app.module';
-import { syncBootstrapAdminSeedAccounts } from './bootstrap/admin-bootstrap-rbac';
+import { seedBootstrapData } from './bootstrap/bootstrap-seed';
 import { configureApp } from './configure-app';
 import { envs } from './envs';
 import { NgrokIngressService } from './infrastructure/ngrok/ngrok-ingress.service';
@@ -43,56 +43,14 @@ async function waitForDatabase(prisma: PrismaClient): Promise<void> {
   }
 }
 
-async function seed(prisma: PrismaClient): Promise<void> {
-  const admins = [
-    {
-      type: $Enums.AdminType.ADMIN,
-      email: envs.DEFAULT_ADMIN_EMAIL,
-      password: envs.DEFAULT_ADMIN_PASSWORD,
-    },
-    {
-      type: $Enums.AdminType.SUPER,
-      email: envs.SUPER_ADMIN_EMAIL,
-      password: envs.SUPER_ADMIN_PASSWORD,
-    },
-  ];
-
-  await syncBootstrapAdminSeedAccounts({
-    prisma,
-    admins,
-    logger,
-  });
-
-  const lookup = [
-    { fromCurrency: $Enums.CurrencyCode.USD, toCurrency: $Enums.CurrencyCode.EUR, rate: 0.95 },
-    { fromCurrency: $Enums.CurrencyCode.USD, toCurrency: $Enums.CurrencyCode.JPY, rate: 1.0576 },
-    { fromCurrency: $Enums.CurrencyCode.USD, toCurrency: $Enums.CurrencyCode.GBP, rate: 0.82 },
-    { fromCurrency: $Enums.CurrencyCode.USD, toCurrency: $Enums.CurrencyCode.AUD, rate: 1.58 },
-    { fromCurrency: $Enums.CurrencyCode.EUR, toCurrency: $Enums.CurrencyCode.USD, rate: 1.0576 },
-    { fromCurrency: $Enums.CurrencyCode.EUR, toCurrency: $Enums.CurrencyCode.JPY, rate: 0.8582 },
-    { fromCurrency: $Enums.CurrencyCode.EUR, toCurrency: $Enums.CurrencyCode.GBP, rate: 0.8427 },
-    { fromCurrency: $Enums.CurrencyCode.EUR, toCurrency: $Enums.CurrencyCode.AUD, rate: 0.9398 },
-    { fromCurrency: $Enums.CurrencyCode.JPY, toCurrency: $Enums.CurrencyCode.USD, rate: 0.0067 },
-    { fromCurrency: $Enums.CurrencyCode.JPY, toCurrency: $Enums.CurrencyCode.EUR, rate: 0.0063 },
-    { fromCurrency: $Enums.CurrencyCode.JPY, toCurrency: $Enums.CurrencyCode.GBP, rate: 0.4798 },
-    { fromCurrency: $Enums.CurrencyCode.JPY, toCurrency: $Enums.CurrencyCode.AUD, rate: 0.3871 },
-    { fromCurrency: $Enums.CurrencyCode.GBP, toCurrency: $Enums.CurrencyCode.USD, rate: 1.22 },
-    { fromCurrency: $Enums.CurrencyCode.GBP, toCurrency: $Enums.CurrencyCode.EUR, rate: 1.15 },
-    { fromCurrency: $Enums.CurrencyCode.GBP, toCurrency: $Enums.CurrencyCode.JPY, rate: 182.34 },
-    { fromCurrency: $Enums.CurrencyCode.GBP, toCurrency: $Enums.CurrencyCode.AUD, rate: 0.4087 },
-    { fromCurrency: $Enums.CurrencyCode.AUD, toCurrency: $Enums.CurrencyCode.USD, rate: 0.63 },
-    { fromCurrency: $Enums.CurrencyCode.AUD, toCurrency: $Enums.CurrencyCode.JPY, rate: 94.56 },
-    { fromCurrency: $Enums.CurrencyCode.AUD, toCurrency: $Enums.CurrencyCode.EUR, rate: 0.59 },
-    { fromCurrency: $Enums.CurrencyCode.AUD, toCurrency: $Enums.CurrencyCode.GBP, rate: 0.52 },
-  ];
-
-  const existingExchangeRates = await prisma.exchangeRateModel.count();
-  if (existingExchangeRates === 0) {
-    await prisma.exchangeRateModel.createMany({
-      data: lookup,
-      skipDuplicates: true,
-    });
+export async function runDevBootstrapSeed(prisma: PrismaClient): Promise<void> {
+  if (envs.isProductionLike) {
+    return;
   }
+
+  logger.log(`Running bootstrap seed`);
+  await seedBootstrapData(prisma, logger);
+  logger.log(`Bootstrap seed complete`);
 }
 
 function registerProcessHandlers(app: INestApplication): void {
@@ -167,14 +125,7 @@ async function bootstrap(): Promise<INestApplication> {
   const prisma = app.get(PrismaService);
 
   await waitForDatabase(prisma);
-
-  const shouldRunBootstrapSeed = !envs.isProductionLike || envs.ALLOW_PRODUCTION_BOOTSTRAP_SEED;
-
-  if (shouldRunBootstrapSeed) {
-    await seed(prisma);
-  } else {
-    logger.log(`Skipping bootstrap seed in production-like runtime (ALLOW_PRODUCTION_BOOTSTRAP_SEED=false)`);
-  }
+  await runDevBootstrapSeed(prisma);
 
   const port = envs.PORT || 3000;
   await app.listen(port);
@@ -202,7 +153,9 @@ async function bootstrap(): Promise<INestApplication> {
   return app;
 }
 
-void bootstrap().catch((error: unknown) => {
-  logger.error(`Bootstrap error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
-  process.exit(1);
-});
+if (require.main === module) {
+  void bootstrap().catch((error: unknown) => {
+    logger.error(`Bootstrap error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
+    process.exit(1);
+  });
+}

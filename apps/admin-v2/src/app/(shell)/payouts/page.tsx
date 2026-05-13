@@ -12,6 +12,7 @@ import { buttonRowClass, emptyPanelClass, mutedTextClass, stackClass } from '../
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getPayouts, type PayoutsListResponse } from '../../../lib/admin-api.server';
 import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
+import { type SearchParamValue, trimmedSearchParam } from '../../../lib/query-contract';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -424,12 +425,10 @@ function renderBucketDesktopTable(items: PayoutItem[], emptyMessage: string, ret
 export default async function PayoutsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    cursor?: string;
-  }>;
+  searchParams?: Promise<Record<string, SearchParamValue>>;
 }) {
   const params = await searchParams;
-  const cursor = params?.cursor?.trim() ?? ``;
+  const cursor = trimmedSearchParam(params?.cursor) ?? ``;
   const data = await getPayouts({
     cursor: cursor || undefined,
   });

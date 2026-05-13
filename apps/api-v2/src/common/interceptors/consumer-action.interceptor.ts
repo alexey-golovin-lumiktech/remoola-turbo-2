@@ -1,4 +1,4 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -6,7 +6,7 @@ import { tap } from 'rxjs/operators';
 import { ConsumerActionLogService } from '../../shared/consumer-action-log.service';
 import { IDENTITY, type IIdentityContext } from '../decorators/identity.decorator';
 import { TRACK_CONSUMER_ACTION, type TrackConsumerActionOptions } from '../decorators/track-consumer-action.decorator';
-import { RequestWithCorrelationId } from '../middleware/correlation-id.middleware';
+import { type RequestWithCorrelationId } from '../middleware/correlation-id.middleware';
 import { type RequestWithDeviceId } from '../middleware/device-id.middleware';
 
 type RequestWithConsumerContext = RequestWithCorrelationId &
@@ -16,6 +16,7 @@ type RequestWithConsumerContext = RequestWithCorrelationId &
   };
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer`;
+const ALLOWED_CONSUMER_ACTION_LOG_ERROR_CODES = new Set([`P1001`, `P1002`, `P2024`, `P2034`]);
 
 function isConsumerApiPath(path: string | undefined): boolean {
   if (!path) return false;
@@ -30,8 +31,21 @@ function normalizePathForMetadata(path: string | undefined): string {
   return collapsedSlashes.length > 0 ? collapsedSlashes : `/`;
 }
 
+function getAllowlistedErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== `object` || !(`code` in error)) return undefined;
+  const code = (error as { code?: unknown }).code;
+  if (typeof code !== `string` || !ALLOWED_CONSUMER_ACTION_LOG_ERROR_CODES.has(code)) return undefined;
+  return code;
+}
+
+function getErrorName(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
+}
+
 @Injectable()
 export class ConsumerActionInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(ConsumerActionInterceptor.name);
+
   constructor(
     private readonly consumerActionLog: ConsumerActionLogService,
     private readonly reflector: Reflector,
@@ -90,16 +104,27 @@ export class ConsumerActionInterceptor implements NestInterceptor {
     const routePath = typeof request.route?.path === `string` ? request.route.path : undefined;
     const path = routePath ? normalizePathForMetadata(routePath) : `/api/consumer/:unknown`;
 
-    void this.consumerActionLog.record({
-      deviceId,
-      consumerId: this.getConsumerId(request),
-      action,
-      resource: options.resource ?? null,
-      resourceId: null,
-      metadata: { method, path },
-      ipAddress,
-      userAgent,
-      correlationId,
-    });
+    void this.consumerActionLog
+      .record({
+        deviceId,
+        consumerId: this.getConsumerId(request),
+        action,
+        resource: options.resource ?? null,
+        resourceId: null,
+        metadata: { method, path },
+        ipAddress,
+        userAgent,
+        correlationId,
+      })
+      .catch((error: unknown) => {
+        this.logger.warn({
+          event: `consumer_action_log_record_failed`,
+          action,
+          path,
+          correlationId,
+          errorName: getErrorName(error),
+          errorCode: getAllowlistedErrorCode(error),
+        });
+      });
   }
 }
