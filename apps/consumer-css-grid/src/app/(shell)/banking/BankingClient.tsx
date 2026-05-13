@@ -51,12 +51,12 @@ function SelectorCard({
       onClick={onClick}
       className={`grid gap-2 rounded-[24px] border px-4 py-4 text-left transition ${
         active
-          ? `border-[var(--app-primary)]/30 bg-[var(--app-primary-soft)]`
-          : `border-[color:var(--app-border)] bg-[var(--app-surface-muted)] hover:border-[var(--app-primary)]/20`
+          ? `border-(--app-primary)/30 bg-(--app-primary-soft)`
+          : `border-(--app-border) bg-(--app-surface-muted) hover:border-(--app-primary)/20`
       }`}
     >
-      <div className="font-medium text-[var(--app-text)]">{title}</div>
-      <div className="text-sm leading-6 text-[var(--app-text-muted)]">{description}</div>
+      <div className="font-medium text-(--app-text)">{title}</div>
+      <div className="text-sm leading-6 text-(--app-text-muted)">{description}</div>
     </button>
   );
 }
@@ -169,8 +169,8 @@ export function BankingClient({ accounts }: Props) {
             <div
               className={
                 message.type === `error`
-                  ? `mb-4 rounded-2xl border border-transparent bg-[var(--app-danger-soft)] px-4 py-3 text-sm text-[var(--app-danger-text)]`
-                  : `mb-4 rounded-2xl border border-transparent bg-[var(--app-success-soft)] px-4 py-3 text-sm text-[var(--app-success-text)]`
+                  ? `mb-4 rounded-2xl border border-transparent bg-(--app-danger-soft) px-4 py-3 text-sm text-(--app-danger-text)`
+                  : `mb-4 rounded-2xl border border-transparent bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)`
               }
             >
               {message.text}

@@ -1,6 +1,6 @@
 export default function ExchangeLoading() {
   return (
-    <div className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 text-sm text-[var(--app-text-muted)] shadow-[var(--app-shadow)]">
+    <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface) p-5 text-sm text-(--app-text-muted) shadow-(--app-shadow)">
       Loading exchange...
     </div>
   );

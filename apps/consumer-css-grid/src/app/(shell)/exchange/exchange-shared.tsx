@@ -102,32 +102,32 @@ export function formatScheduleStatus(status: string) {
     case `PENDING`:
       return {
         label: `Pending`,
-        className: `text-[var(--app-warning-text)] border-transparent bg-[var(--app-warning-soft)]`,
+        className: `text-(--app-warning-text) border-transparent bg-(--app-warning-soft)`,
       };
     case `CANCELLED`:
       return {
         label: `Cancelled`,
-        className: `text-[var(--app-text-soft)] border-[color:var(--app-border)] bg-[var(--app-surface-muted)]`,
+        className: `text-(--app-text-soft) border-(--app-border) bg-(--app-surface-muted)`,
       };
     case `EXECUTED`:
       return {
         label: `Executed`,
-        className: `text-[var(--app-success-text)] border-transparent bg-[var(--app-success-soft)]`,
+        className: `text-(--app-success-text) border-transparent bg-(--app-success-soft)`,
       };
     case `FAILED`:
       return {
         label: `Failed`,
-        className: `text-[var(--app-danger-text)] border-transparent bg-[var(--app-danger-soft)]`,
+        className: `text-(--app-danger-text) border-transparent bg-(--app-danger-soft)`,
       };
     case `PROCESSING`:
       return {
         label: `Processing`,
-        className: `text-[var(--app-primary)] border-transparent bg-[var(--app-primary-soft)]`,
+        className: `text-(--app-primary) border-transparent bg-(--app-primary-soft)`,
       };
     default:
       return {
         label: status,
-        className: `text-[var(--app-text-soft)] border-[color:var(--app-border)] bg-[var(--app-surface-muted)]`,
+        className: `text-(--app-text-soft) border-(--app-border) bg-(--app-surface-muted)`,
       };
   }
 }
@@ -162,9 +162,7 @@ export function formatScheduledSecondaryStatus(status: string, executeAt: string
 
 export function FieldHint({ message, tone = `muted` }: { message: string; tone?: `muted` | `error` }) {
   return (
-    <div
-      className={`mt-2 text-xs ${tone === `error` ? `text-[var(--app-danger-text)]` : `text-[var(--app-text-faint)]`}`}
-    >
+    <div className={`mt-2 text-xs ${tone === `error` ? `text-(--app-danger-text)` : `text-(--app-text-faint)`}`}>
       {message}
     </div>
   );

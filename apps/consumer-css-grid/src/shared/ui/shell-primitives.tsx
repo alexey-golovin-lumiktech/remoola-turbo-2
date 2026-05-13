@@ -16,13 +16,13 @@ export function PageHeader({
   return (
     <>
       <section className="mb-6 md:hidden">
-        <div className="flex items-start gap-4 rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-card-gradient)] p-5 shadow-[var(--app-shadow)]">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[26px] bg-[var(--app-primary)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]">
+        <div className="flex items-start gap-4 rounded-[28px] border border-(--app-border) bg-(--app-card-gradient) p-5 shadow-(--app-shadow)">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[26px] bg-(--app-primary) text-(--app-primary-contrast) shadow-(--app-shadow)">
             {icon}
           </div>
           <div>
-            <h1 className="text-5xl font-semibold tracking-tight text-[var(--app-text)]">{title}</h1>
-            <p className="mt-2 text-lg text-[var(--app-text-muted)]">{sub}</p>
+            <h1 className="text-5xl font-semibold tracking-tight text-(--app-text)">{title}</h1>
+            <p className="mt-2 text-lg text-(--app-text-muted)">{sub}</p>
             {action ? <div className="mt-3">{action}</div> : null}
           </div>
         </div>
@@ -30,8 +30,8 @@ export function PageHeader({
 
       <section className="mb-6 hidden md:flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-[var(--app-text)]">{title}</h1>
-          <p className="mt-1 text-[var(--app-text-muted)]">
+          <h1 className="text-4xl font-semibold tracking-tight text-(--app-text)">{title}</h1>
+          <p className="mt-1 text-(--app-text-muted)">
             Manage balances, payments, documents, compliance, and account settings.
           </p>
         </div>
@@ -55,11 +55,11 @@ export function Panel({
   return (
     <section
       data-testid={dataTestId}
-      className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow)]"
+      className="rounded-[28px] border border-(--app-border) bg-(--app-surface) p-5 shadow-(--app-shadow)"
     >
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-[var(--app-text)]">{title}</h3>
-        {aside ? <div className="text-xs text-[var(--app-text-faint)]">{aside}</div> : null}
+        <h3 className="text-lg font-semibold text-(--app-text)">{title}</h3>
+        {aside ? <div className="text-xs text-(--app-text-faint)">{aside}</div> : null}
       </div>
       {children}
     </section>
@@ -71,7 +71,7 @@ export function MetricCard({
   label,
   value,
   sublabel,
-  accent = `text-[var(--app-text)]`,
+  accent = `text-(--app-text)`,
 }: {
   icon: ReactNode;
   label: string;
@@ -80,17 +80,17 @@ export function MetricCard({
   accent?: string;
 }) {
   return (
-    <article className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-card-gradient)] p-5 shadow-[var(--app-shadow)]">
+    <article className="rounded-[28px] border border-(--app-border) bg-(--app-card-gradient) p-5 shadow-(--app-shadow)">
       <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--app-primary)] text-xl text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-(--app-primary) text-xl text-(--app-primary-contrast) shadow-(--app-shadow)">
           {icon}
         </div>
-        <span className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-2 text-sm text-[var(--app-text-soft)]">
+        <span className="rounded-full border border-(--app-border) bg-(--app-surface-muted) px-4 py-2 text-sm text-(--app-text-soft)">
           {label}
         </span>
       </div>
       <div className={`text-5xl font-semibold tracking-tight ${accent}`}>{value}</div>
-      <div className="mt-3 text-base text-[var(--app-text-muted)]">{sublabel}</div>
+      <div className="mt-3 text-base text-(--app-text-muted)">{sublabel}</div>
     </article>
   );
 }
@@ -109,26 +109,24 @@ export function ActionCard({
   href?: string;
 }) {
   const ctaClassName = `rounded-full px-4 py-2 text-sm font-medium ${
-    highlight
-      ? `bg-[var(--app-success-soft)] text-[var(--app-success-text)]`
-      : `bg-[var(--app-primary)] text-[var(--app-primary-contrast)]`
+    highlight ? `bg-(--app-success-soft) text-(--app-success-text)` : `bg-(--app-primary) text-(--app-primary-contrast)`
   }`;
 
   return (
-    <article className="flex items-center justify-between gap-4 rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-4">
+    <article className="flex items-center justify-between gap-4 rounded-[24px] border border-(--app-border) bg-(--app-surface) p-4">
       <div className="flex items-start gap-3">
         <div
           className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${
             highlight
-              ? `bg-[var(--app-success-soft)] text-[var(--app-success-text)]`
-              : `bg-[var(--app-primary-soft)] text-[var(--app-primary)]`
+              ? `bg-(--app-success-soft) text-(--app-success-text)`
+              : `bg-(--app-primary-soft) text-(--app-primary)`
           }`}
         >
           ☐
         </div>
         <div>
-          <div className="font-medium text-[var(--app-text)]">{title}</div>
-          <div className="mt-1 text-sm text-[var(--app-text-muted)]">{text}</div>
+          <div className="font-medium text-(--app-text)">{title}</div>
+          <div className="mt-1 text-sm text-(--app-text-muted)">{text}</div>
         </div>
       </div>
       {href ? (
@@ -146,17 +144,17 @@ export function ActionCard({
 
 export function ChecklistItem({ checked, children }: { checked?: boolean; children: ReactNode }) {
   return (
-    <div className="flex items-center gap-3 text-[var(--app-text-soft)]">
+    <div className="flex items-center gap-3 text-(--app-text-soft)">
       <span
         className={`flex h-4 w-4 items-center justify-center rounded-[4px] border text-[10px] ${
           checked
-            ? `border-[color:var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-primary)]`
-            : `border-[color:var(--app-border)] text-transparent`
+            ? `border-(--app-primary) bg-(--app-primary-soft) text-(--app-primary)`
+            : `border-(--app-border) text-transparent`
         }`}
       >
         ✓
       </span>
-      <span className={checked ? `line-through text-[var(--app-text-faint)]` : ``}>{children}</span>
+      <span className={checked ? `line-through text-(--app-text-faint)` : ``}>{children}</span>
     </div>
   );
 }
@@ -179,19 +177,19 @@ export function StatusPill({ status }: { status: StatusPillStatus }) {
     status === `Connected` ||
     status === `Default` ||
     status === `Ready`
-      ? `border-transparent bg-[var(--app-success-soft)] text-[var(--app-success-text)]`
+      ? `border-transparent bg-(--app-success-soft) text-(--app-success-text)`
       : status === `Pending` || status === `Processing` || status === `Review`
-        ? `border-transparent bg-[var(--app-warning-soft)] text-[var(--app-warning-text)]`
-        : `border-[color:var(--app-border)] bg-[var(--app-surface-muted)] text-[var(--app-text-soft)]`;
+        ? `border-transparent bg-(--app-warning-soft) text-(--app-warning-text)`
+        : `border-(--app-border) bg-(--app-surface-muted) text-(--app-text-soft)`;
 
   return <span className={`rounded-full border px-3 py-1 text-xs ${tone}`}>{status}</span>;
 }
 
 export function MetricLine({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3">
-      <span className="text-sm text-[var(--app-text-muted)]">{label}</span>
-      <span className="font-medium text-[var(--app-text)]">{value}</span>
+    <div className="flex items-center justify-between rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3">
+      <span className="text-sm text-(--app-text-muted)">{label}</span>
+      <span className="font-medium text-(--app-text)">{value}</span>
     </div>
   );
 }
@@ -200,7 +198,7 @@ export function ActionMini({ label }: { label: string }) {
   return (
     <button
       type="button"
-      className="w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-left text-sm text-[var(--app-text-soft)]"
+      className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface) px-4 py-3 text-left text-sm text-(--app-text-soft)"
     >
       {label}
     </button>
@@ -210,8 +208,8 @@ export function ActionMini({ label }: { label: string }) {
 export function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="mb-2 text-sm text-[var(--app-text-muted)]">{label}</div>
-      <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-[var(--app-text)]">
+      <div className="mb-2 text-sm text-(--app-text-muted)">{label}</div>
+      <div className="rounded-2xl border border-(--app-border) bg-(--app-surface) px-4 py-3 text-(--app-text)">
         {value}
       </div>
     </div>

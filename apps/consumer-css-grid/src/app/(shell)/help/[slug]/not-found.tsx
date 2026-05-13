@@ -15,13 +15,13 @@ export default function HelpGuideNotFound() {
 
       <Panel title="Guide not found">
         <div className="space-y-4">
-          <p className="text-sm leading-7 text-[var(--app-text-soft)]">
+          <p className="text-sm leading-7 text-(--app-text-soft)">
             We could not find that help article. Go back to the Help Center to browse available guides or search for a
             related topic.
           </p>
           <Link
             href="/help"
-            className="inline-flex rounded-full bg-[var(--app-primary)] px-4 py-2 text-sm font-medium text-[var(--app-primary-contrast)]"
+            className="inline-flex rounded-full bg-(--app-primary) px-4 py-2 text-sm font-medium text-(--app-primary-contrast)"
           >
             Back to Help Center
           </Link>

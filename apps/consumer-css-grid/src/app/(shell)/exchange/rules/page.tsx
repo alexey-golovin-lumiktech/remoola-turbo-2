@@ -31,12 +31,9 @@ export default async function ExchangeRulesPage({ searchParams }: { searchParams
 
   return (
     <div>
-      <PageHeader
-        title="Exchange rules"
-        icon={<ExchangeIcon className="h-10 w-10 text-[var(--app-primary-contrast)]" />}
-      />
+      <PageHeader title="Exchange rules" icon={<ExchangeIcon className="h-10 w-10 text-(--app-primary-contrast)" />} />
       <div className="mb-4">
-        <Link href="/exchange" className="text-sm text-[var(--app-text-muted)] hover:underline">
+        <Link href="/exchange" className="text-sm text-(--app-text-muted) hover:underline">
           ← Back to Exchange
         </Link>
       </div>
@@ -49,7 +46,7 @@ export default async function ExchangeRulesPage({ searchParams }: { searchParams
       />
       <Suspense
         fallback={
-          <div className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 text-sm text-[var(--app-text-muted)] shadow-[var(--app-shadow)]">
+          <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface) p-5 text-sm text-(--app-text-muted) shadow-(--app-shadow)">
             Loading exchange rules...
           </div>
         }

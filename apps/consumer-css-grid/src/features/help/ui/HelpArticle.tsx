@@ -14,18 +14,16 @@ export function HelpArticle({ title, summary, eyebrow, children, className }: He
   return (
     <article
       className={cn(
-        `rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow)]`,
+        `rounded-[28px] border border-(--app-border) bg-(--app-surface) p-5 shadow-(--app-shadow)`,
         className,
       )}
     >
-      <header className="border-b border-[color:var(--app-border)] pb-5">
+      <header className="border-b border-(--app-border) pb-5">
         {eyebrow ? (
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-faint)]">
-            {eyebrow}
-          </p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-(--app-text-faint)">{eyebrow}</p>
         ) : null}
-        <h2 className="text-2xl font-semibold tracking-tight text-[var(--app-text)] md:text-3xl">{title}</h2>
-        {summary ? <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--app-text-soft)]">{summary}</p> : null}
+        <h2 className="text-2xl font-semibold tracking-tight text-(--app-text) md:text-3xl">{title}</h2>
+        {summary ? <p className="mt-3 max-w-3xl text-sm leading-7 text-(--app-text-soft)">{summary}</p> : null}
       </header>
 
       <div className="mt-6 space-y-6">{children}</div>

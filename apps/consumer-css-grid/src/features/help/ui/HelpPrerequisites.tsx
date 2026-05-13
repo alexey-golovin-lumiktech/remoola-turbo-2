@@ -25,12 +25,12 @@ export function HelpPrerequisites({
         {items.map((item) => (
           <li
             key={item}
-            className="flex gap-3 rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm leading-7 text-[var(--app-text-soft)]"
+            className="flex gap-3 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm leading-7 text-(--app-text-soft)"
           >
             <span
               aria-hidden="true"
               className={cn(
-                `mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--app-primary-soft)] text-xs font-semibold text-[var(--app-primary)]`,
+                `mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--app-primary-soft) text-xs font-semibold text-(--app-primary)`,
               )}
             >
               ✓

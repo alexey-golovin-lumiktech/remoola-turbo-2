@@ -34,21 +34,21 @@ function SearchResultCard({
   return (
     <Link
       href={href}
-      className="block rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-4 transition hover:border-[color:var(--app-primary)]"
+      className="block rounded-[24px] border border-(--app-border) bg-(--app-surface) p-4 transition hover:border-(--app-primary)"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-medium text-[var(--app-primary)]">
+        <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
           {guideTypeLabel}
         </span>
-        <span className="rounded-full border border-[color:var(--app-border)] px-3 py-1 text-xs text-[var(--app-text-soft)]">
+        <span className="rounded-full border border-(--app-border) px-3 py-1 text-xs text-(--app-text-soft)">
           {categoryLabel}
         </span>
-        <span className="rounded-full border border-[color:var(--app-border)] px-3 py-1 text-xs text-[var(--app-text-faint)]">
+        <span className="rounded-full border border-(--app-border) px-3 py-1 text-xs text-(--app-text-faint)">
           {featureLabel}
         </span>
       </div>
-      <h3 className="mt-3 text-base font-semibold text-[var(--app-text)]">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-[var(--app-text-soft)]">{summary}</p>
+      <h3 className="mt-3 text-base font-semibold text-(--app-text)">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-(--app-text-soft)">{summary}</p>
     </Link>
   );
 }
@@ -68,38 +68,38 @@ export function HelpHubBrowseClient() {
 
   return (
     <section className="mt-5">
-      <div className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-5">
+      <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface-muted) p-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--app-primary)]">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-(--app-primary)">
               Browse and search
             </div>
-            <h2 className="mt-2 text-lg font-semibold text-[var(--app-text)]">Find the right guide faster</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--app-text-soft)]">
+            <h2 className="mt-2 text-lg font-semibold text-(--app-text)">Find the right guide faster</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-(--app-text-soft)">
               Filter by topic or search by keyword to jump straight to the right guide without scanning the full help
               index.
             </p>
           </div>
-          <div className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm text-[var(--app-text-soft)]">
+          <div className="rounded-full border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm text-(--app-text-soft)">
             {matchingEntries.length} guide{matchingEntries.length === 1 ? `` : `s`} visible
           </div>
         </div>
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[1.2fr_1fr]">
           <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-faint)]">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-(--app-text-faint)">
               Search by keyword
             </span>
             <input
               value={query}
               onChange={(event) => setQuery(event.currentTarget.value)}
               placeholder="Try payments, upload, verification, settings..."
-              className="mt-2 w-full rounded-[20px] border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-sm text-[var(--app-text)] outline-none transition focus:border-[color:var(--app-primary)]"
+              className="mt-2 w-full rounded-[20px] border border-(--app-border) bg-(--app-surface) px-4 py-3 text-sm text-(--app-text) outline-none transition focus:border-(--app-primary)"
             />
           </label>
 
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-faint)]">
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-(--app-text-faint)">
               Browse by topic
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -109,8 +109,8 @@ export function HelpHubBrowseClient() {
                 className={cn(
                   `rounded-full border px-3 py-2 text-sm transition`,
                   selectedFeature === `all`
-                    ? `border-[color:var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-primary)]`
-                    : `border-[color:var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-soft)] hover:text-[var(--app-text)]`,
+                    ? `border-(--app-primary) bg-(--app-primary-soft) text-(--app-primary)`
+                    : `border-(--app-border) bg-(--app-surface) text-(--app-text-soft) hover:text-(--app-text)`,
                 )}
               >
                 All topics
@@ -123,8 +123,8 @@ export function HelpHubBrowseClient() {
                   className={cn(
                     `rounded-full border px-3 py-2 text-sm transition`,
                     selectedFeature === section.feature
-                      ? `border-[color:var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-primary)]`
-                      : `border-[color:var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-soft)] hover:text-[var(--app-text)]`,
+                      ? `border-(--app-primary) bg-(--app-primary-soft) text-(--app-primary)`
+                      : `border-(--app-border) bg-(--app-surface) text-(--app-text-soft) hover:text-(--app-text)`,
                   )}
                 >
                   {section.label}
@@ -138,7 +138,7 @@ export function HelpHubBrowseClient() {
           <div className="mt-5">
             {visibleEntries.length > 0 ? (
               <div className="space-y-4">
-                <div className="text-sm text-[var(--app-text-soft)]">
+                <div className="text-sm text-(--app-text-soft)">
                   Showing {visibleEntries.length} of {matchingEntries.length} matching guide
                   {matchingEntries.length === 1 ? `` : `s`}.
                 </div>
@@ -157,9 +157,9 @@ export function HelpHubBrowseClient() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-[24px] border border-dashed border-[color:var(--app-border)] bg-[var(--app-surface)] p-5">
-                <div className="text-base font-semibold text-[var(--app-text)]">No guides match this search</div>
-                <p className="mt-2 text-sm leading-6 text-[var(--app-text-soft)]">
+              <div className="rounded-[24px] border border-dashed border-(--app-border) bg-(--app-surface) p-5">
+                <div className="text-base font-semibold text-(--app-text)">No guides match this search</div>
+                <p className="mt-2 text-sm leading-6 text-(--app-text-soft)">
                   Try a broader keyword, clear the feature filter, or use the category browse below to keep exploring.
                 </p>
               </div>
@@ -171,14 +171,14 @@ export function HelpHubBrowseClient() {
               <article
                 key={section.feature}
                 id={section.anchorId}
-                className="rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-4"
+                className="rounded-[24px] border border-(--app-border) bg-(--app-surface) p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-base font-semibold text-[var(--app-text)]">{section.label}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[var(--app-text-soft)]">{section.description}</p>
+                    <h3 className="text-base font-semibold text-(--app-text)">{section.label}</h3>
+                    <p className="mt-2 text-sm leading-6 text-(--app-text-soft)">{section.description}</p>
                   </div>
-                  <span className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-3 py-1 text-xs text-[var(--app-text-soft)]">
+                  <span className="rounded-full border border-(--app-border) bg-(--app-surface-muted) px-3 py-1 text-xs text-(--app-text-soft)">
                     {section.guides.length}
                   </span>
                 </div>
@@ -187,18 +187,16 @@ export function HelpHubBrowseClient() {
                     <Link
                       key={guide.slug}
                       href={`/help/${guide.slug}`}
-                      className="block rounded-[20px] border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4 transition hover:border-[color:var(--app-primary)]"
+                      className="block rounded-[20px] border border-(--app-border) bg-(--app-surface-muted) p-4 transition hover:border-(--app-primary)"
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-medium text-[var(--app-primary)]">
+                        <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
                           {helpGuideTypeLabels[guide.guideType]}
                         </span>
-                        <span className="text-xs text-[var(--app-text-faint)]">
-                          {helpGuideFeatureLabels[guide.feature]}
-                        </span>
+                        <span className="text-xs text-(--app-text-faint)">{helpGuideFeatureLabels[guide.feature]}</span>
                       </div>
-                      <h4 className="mt-3 text-sm font-semibold text-[var(--app-text)]">{guide.title}</h4>
-                      <p className="mt-2 text-sm leading-6 text-[var(--app-text-soft)]">{guide.summary}</p>
+                      <h4 className="mt-3 text-sm font-semibold text-(--app-text)">{guide.title}</h4>
+                      <p className="mt-2 text-sm leading-6 text-(--app-text-soft)">{guide.summary}</p>
                     </Link>
                   ))}
                 </div>

@@ -4,16 +4,16 @@ import { cn } from '@remoola/ui';
 
 const CALLOUT_TONE = {
   info: {
-    container: `border-[color:var(--app-border)] bg-[var(--app-surface-muted)]`,
-    badge: `bg-[var(--app-primary-soft)] text-[var(--app-primary)]`,
+    container: `border-(--app-border) bg-(--app-surface-muted)`,
+    badge: `bg-(--app-primary-soft) text-(--app-primary)`,
   },
   warning: {
-    container: `border-transparent bg-[var(--app-warning-soft)]`,
-    badge: `bg-[var(--app-warning-text)]/10 text-[var(--app-warning-text)]`,
+    container: `border-transparent bg-(--app-warning-soft)`,
+    badge: `bg-(--app-warning-text)/10 text-(--app-warning-text)`,
   },
   success: {
-    container: `border-transparent bg-[var(--app-success-soft)]`,
-    badge: `bg-[var(--app-success-text)]/10 text-[var(--app-success-text)]`,
+    container: `border-transparent bg-(--app-success-soft)`,
+    badge: `bg-(--app-success-text)/10 text-(--app-success-text)`,
   },
 } as const;
 
@@ -42,8 +42,8 @@ export function HelpCallout({ variant = `info`, title, children, className }: He
           {variant}
         </span>
         <div className="min-w-0">
-          {title ? <p className="text-sm font-semibold text-[var(--app-text)]">{title}</p> : null}
-          <div className="mt-1 text-sm leading-7 text-[var(--app-text-soft)]">{children}</div>
+          {title ? <p className="text-sm font-semibold text-(--app-text)">{title}</p> : null}
+          <div className="mt-1 text-sm leading-7 text-(--app-text-soft)">{children}</div>
         </div>
       </div>
     </aside>

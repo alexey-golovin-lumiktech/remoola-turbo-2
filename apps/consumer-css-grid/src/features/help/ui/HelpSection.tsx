@@ -13,8 +13,8 @@ export function HelpSection({ title, description, children, className }: HelpSec
   return (
     <section className={cn(`space-y-4`, className)}>
       <header>
-        <h3 className="text-lg font-semibold text-[var(--app-text)] md:text-xl">{title}</h3>
-        {description ? <p className="mt-2 text-sm leading-7 text-[var(--app-text-soft)]">{description}</p> : null}
+        <h3 className="text-lg font-semibold text-(--app-text) md:text-xl">{title}</h3>
+        {description ? <p className="mt-2 text-sm leading-7 text-(--app-text-soft)">{description}</p> : null}
       </header>
 
       <div className="space-y-4">{children}</div>

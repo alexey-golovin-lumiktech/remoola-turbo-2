@@ -64,7 +64,7 @@ export function ShellClientWrapper({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] transition-[background-color,color] duration-200"
+      className="min-h-screen bg-(--app-bg) text-(--app-text) transition-[background-color,color] duration-200"
       data-testid="consumer-css-grid-shell"
     >
       <ShellSidebar commandShortcutLabel={commandShortcutLabel} onOpenCommandPalette={openPalette} />

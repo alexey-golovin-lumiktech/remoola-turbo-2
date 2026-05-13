@@ -30,7 +30,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams?: P
       <PageHeader title="Documents" icon={<DocumentIcon className="h-10 w-10 text-white" />} />
       <Suspense
         fallback={
-          <div className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 text-sm text-[var(--app-text-muted)] shadow-[var(--app-shadow)]">
+          <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface) p-5 text-sm text-(--app-text-muted) shadow-(--app-shadow)">
             Loading documents...
           </div>
         }

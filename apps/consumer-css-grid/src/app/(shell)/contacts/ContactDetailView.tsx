@@ -73,13 +73,10 @@ export function ContactDetailView({ contact, contactId }: Props) {
     return (
       <Panel title="Contact details">
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
             Contact details are unavailable for this record.
           </div>
-          <Link
-            href="/contacts"
-            className="inline-flex text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]"
-          >
+          <Link href="/contacts" className="inline-flex text-sm text-(--app-primary) hover:text-(--app-primary-strong)">
             Back to contacts
           </Link>
         </div>
@@ -90,40 +87,40 @@ export function ContactDetailView({ contact, contactId }: Props) {
   return (
     <div className="space-y-5">
       <div className="mb-1">
-        <Link href="/contacts" className="text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]">
+        <Link href="/contacts" className="text-sm text-(--app-primary) hover:text-(--app-primary-strong)">
           Back to contacts
         </Link>
       </div>
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-5">
-          <section className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-card-gradient)] p-5 shadow-[var(--app-shadow)]">
+          <section className="rounded-[28px] border border-(--app-border) bg-(--app-card-gradient) p-5 shadow-(--app-shadow)">
             <div className="grid grid-cols-[auto_1fr] gap-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-[var(--app-primary)] shadow-[var(--app-shadow)]">
-                <span className="text-2xl font-semibold text-[var(--app-primary-contrast)]">
+              <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-(--app-primary) shadow-(--app-shadow)">
+                <span className="text-2xl font-semibold text-(--app-primary-contrast)">
                   {getInitials(contact, contactId)}
                 </span>
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-3xl font-semibold tracking-tight text-[var(--app-text)]">
+                  <h2 className="text-3xl font-semibold tracking-tight text-(--app-text)">
                     {getContactTitle(contact, contactId)}
                   </h2>
                   <StatusPill status="Connected" />
                 </div>
-                <div className="mt-2 text-sm text-[var(--app-text-muted)]">
+                <div className="mt-2 text-sm text-(--app-text-muted)">
                   Read-only details from the current contacts contract plus matching payment records for this email.
                 </div>
                 <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3">
-                    <div className="text-xs uppercase tracking-[0.18em] text-[var(--app-text-faint)]">Email</div>
-                    <div className="mt-2 break-all text-sm text-[var(--app-primary)]">
+                  <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3">
+                    <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Email</div>
+                    <div className="mt-2 break-all text-sm text-(--app-primary)">
                       {contact.email || `No email available`}
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3">
-                    <div className="text-xs uppercase tracking-[0.18em] text-[var(--app-text-faint)]">Address</div>
-                    <div className="mt-2 text-sm text-[var(--app-text-soft)]">{formatAddress(contact)}</div>
+                  <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3">
+                    <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Address</div>
+                    <div className="mt-2 text-sm text-(--app-text-soft)">{formatAddress(contact)}</div>
                   </div>
                 </div>
               </div>

@@ -37,9 +37,9 @@ export function getVerificationBannerState(
       copy: `Reconnect to the live dashboard feed to refresh verification progress and next steps.`,
       badge: `Unavailable`,
       icon: `?`,
-      panelClass: `border-transparent bg-[var(--app-warning-soft)]`,
-      iconClass: `bg-[var(--app-warning-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-      badgeClass: `border-transparent bg-[var(--app-warning-soft)] text-[var(--app-warning-text)]`,
+      panelClass: `border-transparent bg-(--app-warning-soft)`,
+      iconClass: `bg-(--app-warning-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+      badgeClass: `border-transparent bg-(--app-warning-soft) text-(--app-warning-text)`,
     };
   }
 
@@ -49,9 +49,9 @@ export function getVerificationBannerState(
       copy: `Your verification is complete and higher account access is available.`,
       badge: `Verified`,
       icon: `✓`,
-      panelClass: `border-transparent bg-[var(--app-success-soft)]`,
-      iconClass: `bg-[var(--app-success-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-      badgeClass: `border-transparent bg-[var(--app-success-soft)] text-[var(--app-success-text)]`,
+      panelClass: `border-transparent bg-(--app-success-soft)`,
+      iconClass: `bg-(--app-success-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+      badgeClass: `border-transparent bg-(--app-success-soft) text-(--app-success-text)`,
     };
   }
 
@@ -62,9 +62,9 @@ export function getVerificationBannerState(
         copy: `Your verification needs additional information before higher account access can be enabled.`,
         badge: `Action required`,
         icon: `!`,
-        panelClass: `border-transparent bg-[var(--app-danger-soft)]`,
-        iconClass: `bg-[var(--app-danger-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-        badgeClass: `border-transparent bg-[var(--app-danger-soft)] text-[var(--app-danger-text)]`,
+        panelClass: `border-transparent bg-(--app-danger-soft)`,
+        iconClass: `bg-(--app-danger-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+        badgeClass: `border-transparent bg-(--app-danger-soft) text-(--app-danger-text)`,
       };
     case `more_info`:
       return {
@@ -72,9 +72,9 @@ export function getVerificationBannerState(
         copy: `More verification details are needed before higher account access can be enabled.`,
         badge: `More info required`,
         icon: `!`,
-        panelClass: `border-transparent bg-[var(--app-danger-soft)]`,
-        iconClass: `bg-[var(--app-danger-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-        badgeClass: `border-transparent bg-[var(--app-danger-soft)] text-[var(--app-danger-text)]`,
+        panelClass: `border-transparent bg-(--app-danger-soft)`,
+        iconClass: `bg-(--app-danger-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+        badgeClass: `border-transparent bg-(--app-danger-soft) text-(--app-danger-text)`,
       };
     case `rejected`:
       return {
@@ -82,9 +82,9 @@ export function getVerificationBannerState(
         copy: `Your last verification attempt was not approved yet. Review the requested details before trying again.`,
         badge: `Not approved`,
         icon: `!`,
-        panelClass: `border-transparent bg-[var(--app-danger-soft)]`,
-        iconClass: `bg-[var(--app-danger-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-        badgeClass: `border-transparent bg-[var(--app-danger-soft)] text-[var(--app-danger-text)]`,
+        panelClass: `border-transparent bg-(--app-danger-soft)`,
+        iconClass: `bg-(--app-danger-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+        badgeClass: `border-transparent bg-(--app-danger-soft) text-(--app-danger-text)`,
       };
     case `flagged`:
       return {
@@ -92,9 +92,9 @@ export function getVerificationBannerState(
         copy: `Your verification needs additional review before higher account access can be enabled.`,
         badge: `Review required`,
         icon: `!`,
-        panelClass: `border-transparent bg-[var(--app-danger-soft)]`,
-        iconClass: `bg-[var(--app-danger-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-        badgeClass: `border-transparent bg-[var(--app-danger-soft)] text-[var(--app-danger-text)]`,
+        panelClass: `border-transparent bg-(--app-danger-soft)`,
+        iconClass: `bg-(--app-danger-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+        badgeClass: `border-transparent bg-(--app-danger-soft) text-(--app-danger-text)`,
       };
     case `pending_submission`:
       return {
@@ -102,9 +102,9 @@ export function getVerificationBannerState(
         copy: `Your profile is ready. Finish the identity verification flow to submit it for review.`,
         badge: `In progress`,
         icon: `!`,
-        panelClass: `border-transparent bg-[var(--app-warning-soft)]`,
-        iconClass: `bg-[var(--app-warning-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-        badgeClass: `border-transparent bg-[var(--app-warning-soft)] text-[var(--app-warning-text)]`,
+        panelClass: `border-transparent bg-(--app-warning-soft)`,
+        iconClass: `bg-(--app-warning-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+        badgeClass: `border-transparent bg-(--app-warning-soft) text-(--app-warning-text)`,
       };
     case `canceled`:
     case `redacted`:
@@ -113,9 +113,9 @@ export function getVerificationBannerState(
         copy: `Your previous verification session is no longer active. Start verification again to unlock higher account access.`,
         badge: `Restart needed`,
         icon: `!`,
-        panelClass: `border-transparent bg-[var(--app-warning-soft)]`,
-        iconClass: `bg-[var(--app-warning-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-        badgeClass: `border-transparent bg-[var(--app-warning-soft)] text-[var(--app-warning-text)]`,
+        panelClass: `border-transparent bg-(--app-warning-soft)`,
+        iconClass: `bg-(--app-warning-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+        badgeClass: `border-transparent bg-(--app-warning-soft) text-(--app-warning-text)`,
       };
     case `not_started`:
     default:
@@ -125,9 +125,9 @@ export function getVerificationBannerState(
           copy: `Your profile is ready. Start identity verification to unlock higher account access.`,
           badge: `Not started`,
           icon: `!`,
-          panelClass: `border-transparent bg-[var(--app-warning-soft)]`,
-          iconClass: `bg-[var(--app-warning-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-          badgeClass: `border-transparent bg-[var(--app-warning-soft)] text-[var(--app-warning-text)]`,
+          panelClass: `border-transparent bg-(--app-warning-soft)`,
+          iconClass: `bg-(--app-warning-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+          badgeClass: `border-transparent bg-(--app-warning-soft) text-(--app-warning-text)`,
         };
       }
 
@@ -136,9 +136,9 @@ export function getVerificationBannerState(
         copy: `Complete the required profile details before starting identity verification.`,
         badge: `Profile incomplete`,
         icon: `!`,
-        panelClass: `border-transparent bg-[var(--app-warning-soft)]`,
-        iconClass: `bg-[var(--app-warning-text)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow)]`,
-        badgeClass: `border-transparent bg-[var(--app-warning-soft)] text-[var(--app-warning-text)]`,
+        panelClass: `border-transparent bg-(--app-warning-soft)`,
+        iconClass: `bg-(--app-warning-text) text-(--app-primary-contrast) shadow-(--app-shadow)`,
+        badgeClass: `border-transparent bg-(--app-warning-soft) text-(--app-warning-text)`,
       };
   }
 }

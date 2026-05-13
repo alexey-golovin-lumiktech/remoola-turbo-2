@@ -132,8 +132,8 @@ export function ExchangeRulesSection({
         <div
           className={
             message.type === `error`
-              ? `mb-4 rounded-2xl border border-transparent bg-[var(--app-danger-soft)] px-4 py-3 text-sm text-[var(--app-danger-text)]`
-              : `mb-4 rounded-2xl border border-transparent bg-[var(--app-success-soft)] px-4 py-3 text-sm text-[var(--app-success-text)]`
+              ? `mb-4 rounded-2xl border border-transparent bg-(--app-danger-soft) px-4 py-3 text-sm text-(--app-danger-text)`
+              : `mb-4 rounded-2xl border border-transparent bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)`
           }
         >
           {message.text}
@@ -146,7 +146,7 @@ export function ExchangeRulesSection({
             aria-label={`Source currency for auto-conversion rule`}
             value={ruleForm.from}
             onChange={(event) => updateRuleForm({ from: event.target.value })}
-            className="w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-[var(--app-text)] outline-none"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
           >
             {currencyOptions.map((currency) => (
               <option key={`rule-from-${currency.code}`} value={currency.code}>
@@ -158,7 +158,7 @@ export function ExchangeRulesSection({
             aria-label={`Target currency for auto-conversion rule`}
             value={ruleForm.to}
             onChange={(event) => updateRuleForm({ to: event.target.value })}
-            className="w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-[var(--app-text)] outline-none"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
           >
             {currencyOptions.map((currency) => (
               <option key={`rule-to-${currency.code}`} value={currency.code}>
@@ -181,7 +181,7 @@ export function ExchangeRulesSection({
               }}
               placeholder="Target balance"
               aria-invalid={targetBalanceShowError}
-              className="w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-faint)]"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
             />
             <FieldHint
               message={
@@ -203,7 +203,7 @@ export function ExchangeRulesSection({
               onChange={(event) => updateRuleForm({ maxConvertAmount: event.target.value })}
               placeholder="Max convert amount (optional)"
               aria-invalid={!maxConvertAmountValid}
-              className="w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-faint)]"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
             />
             {maxConvertAmountProvided ? (
               <FieldHint
@@ -221,7 +221,7 @@ export function ExchangeRulesSection({
               onChange={(event) => updateRuleForm({ minIntervalMinutes: event.target.value })}
               placeholder="Min interval minutes"
               aria-invalid={!minIntervalValid}
-              className="w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-faint)]"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
             />
             {minIntervalProvided ? (
               <FieldHint
@@ -238,7 +238,7 @@ export function ExchangeRulesSection({
               />
             )}
           </div>
-          <label className="flex items-center gap-3 rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+          <label className="flex items-center gap-3 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
             <input
               type="checkbox"
               checked={ruleForm.enabled}
@@ -266,7 +266,7 @@ export function ExchangeRulesSection({
               router.refresh();
             });
           }}
-          className="mb-3 w-full rounded-2xl bg-[var(--app-primary)] px-4 py-3 font-medium text-[var(--app-primary-contrast)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="mb-3 w-full rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-primary-contrast) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? `Saving...` : editingRuleId ? `Save rule changes` : `Create rule`}
         </button>
@@ -279,7 +279,7 @@ export function ExchangeRulesSection({
               resetRuleEditor();
               setMessage(null);
             }}
-            className="mb-5 w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 font-medium text-[var(--app-text)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="mb-5 w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel edit
           </button>
@@ -288,22 +288,19 @@ export function ExchangeRulesSection({
 
       <div data-testid={`exchange-rules-list`}>
         {rules.length === 0 ? (
-          <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
             No auto-rules configured yet.
           </div>
         ) : (
           <div className="space-y-3">
             {rules.map((rule) => (
-              <div
-                key={rule.id}
-                className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4"
-              >
+              <div key={rule.id} className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="font-medium text-[var(--app-text)]">
+                    <div className="font-medium text-(--app-text)">
                       {rule.fromCurrency} {`->`} {rule.toCurrency}
                     </div>
-                    <div className="mt-1 text-sm text-[var(--app-text-muted)]">
+                    <div className="mt-1 text-sm text-(--app-text-muted)">
                       {`Keep ${formatMajorCurrency(rule.targetBalance, rule.fromCurrency)}`}
                       {rule.maxConvertAmount != null
                         ? ` • cap ${formatMajorCurrency(rule.maxConvertAmount, rule.fromCurrency)}`
@@ -311,7 +308,7 @@ export function ExchangeRulesSection({
                       {` • every ${rule.minIntervalMinutes} min`}
                     </div>
                   </div>
-                  <div className="text-sm text-[var(--app-text-muted)]">{rule.enabled ? `Enabled` : `Paused`}</div>
+                  <div className="text-sm text-(--app-text-muted)">{rule.enabled ? `Enabled` : `Paused`}</div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
@@ -330,7 +327,7 @@ export function ExchangeRulesSection({
                       });
                       setMessage(null);
                     }}
-                    className="rounded-xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Edit
                   </button>
@@ -354,7 +351,7 @@ export function ExchangeRulesSection({
                         router.refresh();
                       });
                     }}
-                    className="rounded-xl border border-transparent bg-[var(--app-primary-soft)] px-3 py-2 text-sm text-[var(--app-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl border border-transparent bg-(--app-primary-soft) px-3 py-2 text-sm text-(--app-primary) disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {pendingActionId === `toggle-rule:${rule.id}` ? `Updating...` : rule.enabled ? `Pause` : `Enable`}
                   </button>
@@ -378,7 +375,7 @@ export function ExchangeRulesSection({
                         router.refresh();
                       });
                     }}
-                    className="rounded-xl border border-transparent bg-[var(--app-danger-soft)] px-3 py-2 text-sm text-[var(--app-danger-text)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl border border-transparent bg-(--app-danger-soft) px-3 py-2 text-sm text-(--app-danger-text) disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {pendingActionId === `delete-rule:${rule.id}` ? `Deleting...` : `Delete`}
                   </button>
@@ -394,7 +391,7 @@ export function ExchangeRulesSection({
           type="button"
           disabled={rulesPage <= 1}
           onClick={() => applyRulesPage(rulesPage - 1)}
-          className="rounded-xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
         </button>
@@ -402,7 +399,7 @@ export function ExchangeRulesSection({
           type="button"
           disabled={rulesPage >= rulesTotalPages}
           onClick={() => applyRulesPage(rulesPage + 1)}
-          className="rounded-xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
         </button>

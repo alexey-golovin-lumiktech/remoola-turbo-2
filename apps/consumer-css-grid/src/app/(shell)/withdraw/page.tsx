@@ -58,7 +58,7 @@ export default async function WithdrawPage() {
 
         <Panel title="Recent withdrawal requests">
           {withdrawalRows.length === 0 ? (
-            <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
               No withdrawal history yet.
             </div>
           ) : (
@@ -70,13 +70,13 @@ export default async function WithdrawPage() {
                 return (
                   <div
                     key={row.id}
-                    className="flex items-center justify-between rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4"
+                    className="flex items-center justify-between rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
                   >
                     <div>
-                      <div className="font-medium text-[var(--app-text)]">
+                      <div className="font-medium text-(--app-text)">
                         {formatMajorCurrency(Math.abs(row.amount), row.currencyCode)}
                       </div>
-                      <div className="mt-1 text-sm text-[var(--app-text-muted)]">{destination}</div>
+                      <div className="mt-1 text-sm text-(--app-text-muted)">{destination}</div>
                     </div>
                     <StatusPill status={row.status} />
                   </div>

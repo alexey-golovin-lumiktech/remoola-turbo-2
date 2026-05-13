@@ -20,7 +20,7 @@ const helpAudienceStateLabels = {
 
 function MetaChip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-3 py-1 text-xs text-[var(--app-text-soft)]">
+    <span className="rounded-full border border-(--app-border) bg-(--app-surface-muted) px-3 py-1 text-xs text-(--app-text-soft)">
       {children}
     </span>
   );
@@ -45,7 +45,7 @@ export default async function HelpGuideDetailPage({ params }: { params: Promise<
         action={
           <Link
             href="/help"
-            className="inline-flex rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm font-medium text-[var(--app-text)]"
+            className="inline-flex rounded-full border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm font-medium text-(--app-text)"
           >
             Back to all guides
           </Link>
@@ -53,7 +53,7 @@ export default async function HelpGuideDetailPage({ params }: { params: Promise<
       />
 
       <div className="mb-5">
-        <Link href="/help" className="text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]">
+        <Link href="/help" className="text-sm text-(--app-primary) hover:text-(--app-primary-strong)">
           Back to help hub
         </Link>
       </div>

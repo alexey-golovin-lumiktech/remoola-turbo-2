@@ -15,7 +15,7 @@ function HelpBulletList({ items }: { items: readonly string[] }) {
       {items.map((item) => (
         <li
           key={item}
-          className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm leading-7 text-[var(--app-text-soft)]"
+          className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm leading-7 text-(--app-text-soft)"
         >
           {item}
         </li>
@@ -39,7 +39,7 @@ export function HelpGuideDetailArticle({ guide, content }: HelpGuideDetailArticl
       }`}
     >
       <HelpSection title="What this feature does">
-        <div className="space-y-3 text-sm leading-7 text-[var(--app-text-soft)]">
+        <div className="space-y-3 text-sm leading-7 text-(--app-text-soft)">
           {content.whatThisFeatureDoes.map((paragraph) => (
             <p key={paragraph}>{paragraph}</p>
           ))}

@@ -20,30 +20,30 @@ function GuideCard({
   const remainingRouteCount = guide.routeAffinity.length - visibleRoutes.length;
 
   return (
-    <article className="rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+    <article className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-medium text-[var(--app-primary)]">
+        <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
           {helpGuideTypeLabels[guide.guideType]}
         </span>
-        <span className="rounded-full border border-[color:var(--app-border)] px-3 py-1 text-xs text-[var(--app-text-soft)]">
+        <span className="rounded-full border border-(--app-border) px-3 py-1 text-xs text-(--app-text-soft)">
           {categoryLabel}
         </span>
       </div>
 
-      <h3 className="mt-4 text-base font-semibold text-[var(--app-text)]">{guide.title}</h3>
-      <p className="mt-2 text-sm leading-6 text-[var(--app-text-soft)]">{guide.summary}</p>
+      <h3 className="mt-4 text-base font-semibold text-(--app-text)">{guide.title}</h3>
+      <p className="mt-2 text-sm leading-6 text-(--app-text-soft)">{guide.summary}</p>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {visibleRoutes.map((route) => (
           <span
             key={route}
-            className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-1 text-xs text-[var(--app-text-faint)]"
+            className="rounded-full border border-(--app-border) bg-(--app-surface) px-3 py-1 text-xs text-(--app-text-faint)"
           >
             {route}
           </span>
         ))}
         {remainingRouteCount > 0 ? (
-          <span className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-1 text-xs text-[var(--app-text-faint)]">
+          <span className="rounded-full border border-(--app-border) bg-(--app-surface) px-3 py-1 text-xs text-(--app-text-faint)">
             +{remainingRouteCount} more pages
           </span>
         ) : null}
@@ -51,7 +51,7 @@ function GuideCard({
 
       <Link
         href={href}
-        className="mt-4 inline-flex rounded-full bg-[var(--app-primary)] px-4 py-2 text-sm font-medium text-[var(--app-primary-contrast)]"
+        className="mt-4 inline-flex rounded-full bg-(--app-primary) px-4 py-2 text-sm font-medium text-(--app-primary-contrast)"
       >
         Read guide
       </Link>
@@ -71,7 +71,7 @@ export default function HelpPage() {
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1fr]">
         <Panel title="Start here" aside={`${helpHubData.startHereGuides.length} recommended guides`}>
           <div className="space-y-4">
-            <p className="text-sm leading-7 text-[var(--app-text-soft)]">
+            <p className="text-sm leading-7 text-(--app-text-soft)">
               Use these guides first if you are getting oriented, checking payments, or reviewing account status in the
               workspace.
             </p>
@@ -88,18 +88,18 @@ export default function HelpPage() {
                   <Link
                     key={guide.slug}
                     href={`/help/${guide.slug}`}
-                    className="block rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4 transition hover:border-[color:var(--app-primary)]"
+                    className="block rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4 transition hover:border-(--app-primary)"
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-medium text-[var(--app-primary)]">
+                      <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
                         {helpGuideTypeLabels[guide.guideType]}
                       </span>
-                      <span className="rounded-full border border-[color:var(--app-border)] px-3 py-1 text-xs text-[var(--app-text-soft)]">
+                      <span className="rounded-full border border-(--app-border) px-3 py-1 text-xs text-(--app-text-soft)">
                         {categorySection.label}
                       </span>
                     </div>
-                    <h3 className="mt-3 text-base font-semibold text-[var(--app-text)]">{guide.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[var(--app-text-soft)]">{guide.summary}</p>
+                    <h3 className="mt-3 text-base font-semibold text-(--app-text)">{guide.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-(--app-text-soft)">{guide.summary}</p>
                   </Link>
                 );
               })}
@@ -111,39 +111,39 @@ export default function HelpPage() {
           title="Help at a glance"
           aside={`${helpHubData.totalGuideCount} guides across ${helpHubData.coveredCategoryCount} topics`}
         >
-          <p className="text-sm leading-7 text-[var(--app-text-soft)]">
+          <p className="text-sm leading-7 text-(--app-text-soft)">
             Use this overview to see how the Help Center is organized and which parts of the workspace already have
             dedicated guidance.
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <div className="rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4">
-              <div className="text-2xl font-semibold text-[var(--app-text)]">{helpHubData.totalGuideCount}</div>
-              <div className="mt-1 text-sm text-[var(--app-text-soft)]">Available guides</div>
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-2xl font-semibold text-(--app-text)">{helpHubData.totalGuideCount}</div>
+              <div className="mt-1 text-sm text-(--app-text-soft)">Available guides</div>
             </div>
-            <div className="rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4">
-              <div className="text-2xl font-semibold text-[var(--app-text)]">{helpHubData.routeAffinityCount}</div>
-              <div className="mt-1 text-sm text-[var(--app-text-soft)]">Workspace pages linked</div>
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-2xl font-semibold text-(--app-text)">{helpHubData.routeAffinityCount}</div>
+              <div className="mt-1 text-sm text-(--app-text-soft)">Workspace pages linked</div>
             </div>
-            <div className="rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4">
-              <div className="text-2xl font-semibold text-[var(--app-text)]">{helpHubData.coveredCategoryCount}</div>
-              <div className="mt-1 text-sm text-[var(--app-text-soft)]">Topics to browse</div>
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-2xl font-semibold text-(--app-text)">{helpHubData.coveredCategoryCount}</div>
+              <div className="mt-1 text-sm text-(--app-text-soft)">Topics to browse</div>
             </div>
-            <div className="rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4">
-              <div className="text-2xl font-semibold text-[var(--app-text)]">{helpHubData.coveredFeatureCount}</div>
-              <div className="mt-1 text-sm text-[var(--app-text-soft)]">Task areas included</div>
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-2xl font-semibold text-(--app-text)">{helpHubData.coveredFeatureCount}</div>
+              <div className="mt-1 text-sm text-(--app-text-soft)">Task areas included</div>
             </div>
           </div>
 
           <div className="mt-4">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--app-text-faint)]">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-(--app-text-faint)">
               Topics covered here
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {helpHubData.featureLabels.map((featureLabel) => (
                 <span
                   key={featureLabel}
-                  className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-3 py-1 text-xs text-[var(--app-text-soft)]"
+                  className="rounded-full border border-(--app-border) bg-(--app-surface-muted) px-3 py-1 text-xs text-(--app-text-soft)"
                 >
                   {featureLabel}
                 </span>
@@ -185,14 +185,14 @@ export default function HelpPage() {
               <section
                 key={section.category}
                 id={section.anchorId}
-                className="rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4"
+                className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-lg font-semibold text-[var(--app-text)]">{section.label}</h2>
-                    <p className="mt-2 text-sm leading-6 text-[var(--app-text-soft)]">{section.description}</p>
+                    <h2 className="text-lg font-semibold text-(--app-text)">{section.label}</h2>
+                    <p className="mt-2 text-sm leading-6 text-(--app-text-soft)">{section.description}</p>
                   </div>
-                  <span className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-1 text-xs text-[var(--app-text-soft)]">
+                  <span className="rounded-full border border-(--app-border) bg-(--app-surface) px-3 py-1 text-xs text-(--app-text-soft)">
                     {section.guides.length} guides
                   </span>
                 </div>
@@ -202,23 +202,23 @@ export default function HelpPage() {
                     {section.guides.map((guide) => (
                       <article
                         key={guide.slug}
-                        className="rounded-[20px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-4"
+                        className="rounded-[20px] border border-(--app-border) bg-(--app-surface) p-4"
                       >
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-medium text-[var(--app-primary)]">
+                          <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
                             {helpGuideTypeLabels[guide.guideType]}
                           </span>
-                          <span className="rounded-full border border-[color:var(--app-border)] px-3 py-1 text-xs text-[var(--app-text-soft)]">
+                          <span className="rounded-full border border-(--app-border) px-3 py-1 text-xs text-(--app-text-soft)">
                             {helpGuideFeatureLabels[guide.feature]}
                           </span>
                         </div>
-                        <h3 className="mt-3 text-base font-semibold text-[var(--app-text)]">{guide.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-[var(--app-text-soft)]">{guide.summary}</p>
+                        <h3 className="mt-3 text-base font-semibold text-(--app-text)">{guide.title}</h3>
+                        <p className="mt-2 text-sm leading-6 text-(--app-text-soft)">{guide.summary}</p>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {guide.routeAffinity.map((route) => (
                             <span
                               key={route}
-                              className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-3 py-1 text-xs text-[var(--app-text-faint)]"
+                              className="rounded-full border border-(--app-border) bg-(--app-surface-muted) px-3 py-1 text-xs text-(--app-text-faint)"
                             >
                               {route}
                             </span>
@@ -226,7 +226,7 @@ export default function HelpPage() {
                         </div>
                         <Link
                           href={`/help/${guide.slug}`}
-                          className="mt-4 inline-flex rounded-full bg-[var(--app-primary)] px-4 py-2 text-sm font-medium text-[var(--app-primary-contrast)]"
+                          className="mt-4 inline-flex rounded-full bg-(--app-primary) px-4 py-2 text-sm font-medium text-(--app-primary-contrast)"
                         >
                           Read guide
                         </Link>
@@ -234,7 +234,7 @@ export default function HelpPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="mt-4 rounded-[20px] border border-dashed border-[color:var(--app-border)] bg-[var(--app-surface)] p-4 text-sm leading-6 text-[var(--app-text-soft)]">
+                  <div className="mt-4 rounded-[20px] border border-dashed border-(--app-border) bg-(--app-surface) p-4 text-sm leading-6 text-(--app-text-soft)">
                     There is not a dedicated guide in this section yet. Use search above or browse a related topic to
                     find the closest match for {section.label.toLowerCase()}.
                   </div>

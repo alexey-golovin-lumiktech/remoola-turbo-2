@@ -46,7 +46,7 @@ export default async function StartPaymentPage({ searchParams }: { searchParams?
         action={
           <Link
             href={getPaymentFlowBackHref(paymentFlowContext)}
-            className="text-sm text-[var(--app-primary)] hover:opacity-80"
+            className="text-sm text-(--app-primary) hover:opacity-80"
           >
             {paymentFlowContext?.contractId ? `Back to contract` : `Back to payments`}
           </Link>

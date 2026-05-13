@@ -152,8 +152,8 @@ function ReusableCardSetupForm({ onMessage }: Props) {
 
   return (
     <div className="grid gap-4">
-      <div className="rounded-3xl border border-[var(--app-primary)]/15 bg-[var(--app-primary-soft)] px-4 py-4 text-sm text-[var(--app-text-soft)]">
-        <div className="font-medium text-[var(--app-text)]">Reusable Stripe card</div>
+      <div className="rounded-3xl border border-(--app-primary)/15 bg-(--app-primary-soft) px-4 py-4 text-sm text-(--app-text-soft)">
+        <div className="font-medium text-(--app-text)">Reusable Stripe card</div>
         <div className="mt-2 leading-6">
           This card is saved with Stripe and can be used for one-click payer payments from payment detail. If you only
           need a Banking record for display or billing metadata, use{` `}
@@ -165,16 +165,16 @@ function ReusableCardSetupForm({ onMessage }: Props) {
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <label className="grid gap-2">
-          <span className="text-sm text-[var(--app-text-muted)]">Cardholder name</span>
+          <span className="text-sm text-(--app-text-muted)">Cardholder name</span>
           <input
             value={billingName}
             onChange={(event) => setBillingName(event.target.value)}
             placeholder="Cardholder name"
-            className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-faint)]"
+            className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
           />
         </label>
-        <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-muted)]">
-          <div className="font-medium text-[var(--app-text)]">Default behavior</div>
+        <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-muted)">
+          <div className="font-medium text-(--app-text)">Default behavior</div>
           <div className="mt-2 leading-6">
             This flow saves the reusable card first. If you want it to become the default card later, use the existing
             <span className="font-medium"> Set default</span> action after it appears in Banking.
@@ -184,34 +184,34 @@ function ReusableCardSetupForm({ onMessage }: Props) {
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <label className="grid gap-2">
-          <span className="text-sm text-[var(--app-text-muted)]">Billing email</span>
+          <span className="text-sm text-(--app-text-muted)">Billing email</span>
           <input
             type="email"
             value={billingEmail}
             onChange={(event) => setBillingEmail(normalizeEmail(event.target.value))}
             placeholder="Billing email"
             aria-invalid={!emailValid}
-            className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-faint)]"
+            className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
           />
           {billingEmail.length > 0 ? (
-            <div className={`text-xs ${emailValid ? `text-[var(--app-text-faint)]` : `text-[var(--app-danger-text)]`}`}>
+            <div className={`text-xs ${emailValid ? `text-(--app-text-faint)` : `text-(--app-danger-text)`}`}>
               {emailValid ? `Email will be saved in lowercase.` : `Enter a valid email address.`}
             </div>
           ) : null}
         </label>
 
         <label className="grid gap-2">
-          <span className="text-sm text-[var(--app-text-muted)]">Billing phone</span>
+          <span className="text-sm text-(--app-text-muted)">Billing phone</span>
           <input
             value={billingPhone}
             inputMode="tel"
             onChange={(event) => setBillingPhone(normalizePhone(event.target.value))}
             placeholder="Billing phone"
             aria-invalid={!phoneValid}
-            className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-faint)]"
+            className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
           />
           {billingPhone.length > 0 ? (
-            <div className={`text-xs ${phoneValid ? `text-[var(--app-text-faint)]` : `text-[var(--app-danger-text)]`}`}>
+            <div className={`text-xs ${phoneValid ? `text-(--app-text-faint)` : `text-(--app-danger-text)`}`}>
               {phoneValid ? `Phone is stored as digits with optional leading +.` : `Enter at least 7 digits.`}
             </div>
           ) : null}
@@ -219,14 +219,14 @@ function ReusableCardSetupForm({ onMessage }: Props) {
       </div>
 
       <div className="grid gap-2">
-        <span className="text-sm text-[var(--app-text-muted)]">Card details</span>
-        <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4">
+        <span className="text-sm text-(--app-text-muted)">Card details</span>
+        <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-4">
           <CardElement options={cardElementOptions} />
         </div>
       </div>
 
       {!stripePublishableKey ? (
-        <div className="rounded-2xl border border-transparent bg-[var(--app-danger-soft)] px-4 py-3 text-sm text-[var(--app-danger-text)]">
+        <div className="rounded-2xl border border-transparent bg-(--app-danger-soft) px-4 py-3 text-sm text-(--app-danger-text)">
           Add `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` to enable reusable card setup in Banking.
         </div>
       ) : null}
@@ -235,7 +235,7 @@ function ReusableCardSetupForm({ onMessage }: Props) {
         type="button"
         disabled={!formValid || isSubmitting}
         onClick={() => void handleSubmit()}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--app-primary)] px-4 py-3 font-medium text-[var(--app-primary-contrast)] disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-primary-contrast) disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? <SpinnerIcon size={18} className="animate-spin" /> : null}
         {isSubmitting ? `Saving reusable card...` : `Add reusable card`}

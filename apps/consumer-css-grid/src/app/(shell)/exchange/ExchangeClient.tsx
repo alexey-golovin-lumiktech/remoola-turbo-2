@@ -64,22 +64,22 @@ function getExchangeRateCardMeta(rate: ExchangeRate) {
       return {
         description: `Live backend rate`,
         value: rate.rate?.toFixed(4) ?? `Unavailable`,
-        className: `border-[color:var(--app-border)] bg-[var(--app-surface-muted)]`,
-        valueClassName: `text-lg font-semibold text-[var(--app-text)]`,
+        className: `border-(--app-border) bg-(--app-surface-muted)`,
+        valueClassName: `text-lg font-semibold text-(--app-text)`,
       };
     case `stale`:
       return {
         description: `Latest rate is stale right now. Refresh to try again.`,
         value: `Stale`,
-        className: `border-transparent bg-[var(--app-warning-soft)]`,
-        valueClassName: `text-sm font-medium text-[var(--app-warning-text)]`,
+        className: `border-transparent bg-(--app-warning-soft)`,
+        valueClassName: `text-sm font-medium text-(--app-warning-text)`,
       };
     default:
       return {
         description: `An exchange rate for this pair is not available right now.`,
         value: `Unavailable`,
-        className: `border-[color:var(--app-border)] bg-[var(--app-surface-muted)]`,
-        valueClassName: `text-sm font-medium text-[var(--app-text-muted)]`,
+        className: `border-(--app-border) bg-(--app-surface-muted)`,
+        valueClassName: `text-sm font-medium text-(--app-text-muted)`,
       };
   }
 }
@@ -146,8 +146,8 @@ export function ExchangeClient({
         <div
           className={
             message.type === `error`
-              ? `rounded-2xl border border-transparent bg-[var(--app-danger-soft)] px-4 py-3 text-sm text-[var(--app-danger-text)]`
-              : `rounded-2xl border border-transparent bg-[var(--app-success-soft)] px-4 py-3 text-sm text-[var(--app-success-text)]`
+              ? `rounded-2xl border border-transparent bg-(--app-danger-soft) px-4 py-3 text-sm text-(--app-danger-text)`
+              : `rounded-2xl border border-transparent bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)`
           }
         >
           {message.text}
@@ -161,7 +161,7 @@ export function ExchangeClient({
               <select
                 value={convertForm.from}
                 onChange={(event) => updateConvertForm({ from: event.target.value })}
-                className="w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-[var(--app-text)] outline-none"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
               >
                 {currencyOptions.map((currency) => (
                   <option key={`from-${currency.code}`} value={currency.code}>
@@ -172,7 +172,7 @@ export function ExchangeClient({
               <select
                 value={convertForm.to}
                 onChange={(event) => updateConvertForm({ to: event.target.value })}
-                className="w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-[var(--app-text)] outline-none"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
               >
                 {currencyOptions.map((currency) => (
                   <option key={`to-${currency.code}`} value={currency.code}>
@@ -187,7 +187,7 @@ export function ExchangeClient({
               onChange={(event) => updateConvertForm({ amount: event.target.value })}
               placeholder="Amount to convert"
               aria-invalid={convertAmountValue !== `` && !convertAmountValid}
-              className="w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-faint)]"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
             />
             {convertAmountValue === `` ? <FieldHint message="Enter an amount greater than zero." /> : null}
             {convertAmountValue !== `` && !convertAmountValid ? (
@@ -201,14 +201,14 @@ export function ExchangeClient({
               <FieldHint message="Amount exceeds the currently available balance." tone="error" />
             ) : null}
             {quote ? (
-              <div className="rounded-2xl border border-transparent bg-[var(--app-success-soft)] p-4">
-                <div className="text-sm text-[var(--app-text-muted)]">
+              <div className="rounded-2xl border border-transparent bg-(--app-success-soft) p-4">
+                <div className="text-sm text-(--app-text-muted)">
                   Quote: {quote.from} {`->`} {quote.to} at {quote.rate.toFixed(4)}
                 </div>
-                <div className="mt-2 text-lg font-semibold text-[var(--app-text)]">
+                <div className="mt-2 text-lg font-semibold text-(--app-text)">
                   {formatMajorCurrency(quote.targetAmount, quote.to)}
                 </div>
-                <div className="mt-1 text-sm text-[var(--app-text-muted)]">
+                <div className="mt-1 text-sm text-(--app-text-muted)">
                   From {formatMajorCurrency(quote.sourceAmount, quote.from)}
                 </div>
               </div>
@@ -230,7 +230,7 @@ export function ExchangeClient({
                     setQuote(result.data);
                   });
                 }}
-                className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 font-medium text-[var(--app-text)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isPending ? `Loading...` : `Get quote`}
               </button>
@@ -252,7 +252,7 @@ export function ExchangeClient({
                     router.refresh();
                   });
                 }}
-                className="rounded-2xl bg-[var(--app-primary)] px-4 py-3 font-medium text-[var(--app-primary-contrast)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-primary-contrast) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isPending
                   ? `Submitting...`
@@ -261,7 +261,7 @@ export function ExchangeClient({
                     : `Convert now`}
               </button>
             </div>
-            <div className="text-sm text-[var(--app-text-muted)]">
+            <div className="text-sm text-(--app-text-muted)">
               {rulesTotal} auto-rules, {scheduledTotal} scheduled conversions
             </div>
           </div>
@@ -269,10 +269,10 @@ export function ExchangeClient({
 
         <Panel title="Live rates" data-testid={`exchange-live-rates`}>
           <div className="space-y-3">
-            <div className="flex flex-col gap-3 rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="font-medium text-[var(--app-text)]">Refresh live rates</div>
-                <div className="mt-1 text-sm text-[var(--app-text-muted)]">
+                <div className="font-medium text-(--app-text)">Refresh live rates</div>
+                <div className="mt-1 text-sm text-(--app-text-muted)">
                   Retry the current rate cards without reloading balances, rules, or scheduled conversions.
                 </div>
               </div>
@@ -297,14 +297,14 @@ export function ExchangeClient({
                   setLiveRates(result.data.items);
                   setLiveRatesUnavailable(result.data.unavailable);
                 }}
-                className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm font-medium text-[var(--app-text)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isRefreshingRates ? `Refreshing...` : `Refresh rates`}
               </button>
             </div>
 
             {liveRatesUnavailable || liveRates.length === 0 ? (
-              <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
                 Exchange rates are currently unavailable.
               </div>
             ) : (
@@ -316,10 +316,10 @@ export function ExchangeClient({
                     className={`flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between ${meta.className}`}
                   >
                     <div>
-                      <div className="font-medium text-[var(--app-text)]">
+                      <div className="font-medium text-(--app-text)">
                         {rate.from} {`->`} {rate.to}
                       </div>
-                      <div className="mt-1 text-sm text-[var(--app-text-muted)]">{meta.description}</div>
+                      <div className="mt-1 text-sm text-(--app-text-muted)">{meta.description}</div>
                     </div>
                     <div className={meta.valueClassName}>{meta.value}</div>
                   </div>
@@ -343,7 +343,7 @@ export function ExchangeClient({
           onUpdateRule={handleUpdateRule}
           onDeleteRule={handleDeleteRule}
           headerAction={
-            <Link href="/exchange/rules" className="text-[var(--app-primary)] hover:underline">
+            <Link href="/exchange/rules" className="text-(--app-primary) hover:underline">
               View all →
             </Link>
           }
@@ -361,7 +361,7 @@ export function ExchangeClient({
           onSchedule={handleSchedule}
           onCancel={handleCancelScheduled}
           headerAction={
-            <Link href="/exchange/scheduled" className="text-[var(--app-primary)] hover:underline">
+            <Link href="/exchange/scheduled" className="text-(--app-primary) hover:underline">
               View all →
             </Link>
           }

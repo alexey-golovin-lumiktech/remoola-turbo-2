@@ -199,7 +199,7 @@ export function ContractsClient({
         aside={`Page ${page} of ${totalPages} · ${contracts.length} shown · ${total} total`}
       >
         {contracts.length === 0 ? (
-          <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
             {searchMode ? `No contracts match the current backend search.` : `No contractor relationships yet.`}
           </div>
         ) : (
@@ -254,12 +254,12 @@ export function ContractsClient({
                     setSort(`recent_activity`);
                     applyFilters(``, `all`, `all`, `all`, `recent_activity`);
                   }}
-                  className="rounded-2xl border border-[color:var(--app-border)] px-4 py-3 font-medium text-[var(--app-text-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-2xl border border-(--app-border) px-4 py-3 font-medium text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Clear
                 </button>
               </div>
-              <div className="mt-3 text-sm text-[var(--app-text-muted)]">
+              <div className="mt-3 text-sm text-(--app-text-muted)">
                 Search is executed on the backend contracts endpoint and stays in the URL for pagination and deep links.
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -274,8 +274,8 @@ export function ContractsClient({
                     }}
                     className={
                       filterStatus === status
-                        ? `rounded-full border border-[var(--app-primary)]/20 bg-[var(--app-primary-soft)] px-3 py-2 text-sm text-[var(--app-primary)]`
-                        : `rounded-full border border-[color:var(--app-border)] px-3 py-2 text-sm text-[var(--app-text-soft)] transition hover:bg-[var(--app-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50`
+                        ? `rounded-full border border-(--app-primary)/20 bg-(--app-primary-soft) px-3 py-2 text-sm text-(--app-primary)`
+                        : `rounded-full border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) transition hover:bg-(--app-surface-muted) disabled:cursor-not-allowed disabled:opacity-50`
                     }
                   >
                     {CONTRACT_STATUS_LABELS[filterStatus]}
@@ -283,7 +283,7 @@ export function ContractsClient({
                 ))}
               </div>
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                <label className="text-sm text-[var(--app-text-muted)]">
+                <label className="text-sm text-(--app-text-muted)">
                   <div className="mb-2">Has files</div>
                   <select
                     value={hasDocuments}
@@ -301,7 +301,7 @@ export function ContractsClient({
                     ))}
                   </select>
                 </label>
-                <label className="text-sm text-[var(--app-text-muted)]">
+                <label className="text-sm text-(--app-text-muted)">
                   <div className="mb-2">Has payments</div>
                   <select
                     value={hasPayments}
@@ -319,7 +319,7 @@ export function ContractsClient({
                     ))}
                   </select>
                 </label>
-                <label className="text-sm text-[var(--app-text-muted)]">
+                <label className="text-sm text-(--app-text-muted)">
                   <div className="mb-2">Sort</div>
                   <select
                     value={sort}
@@ -338,7 +338,7 @@ export function ContractsClient({
                   </select>
                 </label>
               </div>
-              <div className="mt-3 text-sm text-[var(--app-text-muted)]">
+              <div className="mt-3 text-sm text-(--app-text-muted)">
                 {describeSearchState(initialStatus, initialHasDocuments, initialHasPayments, initialSort)}
               </div>
             </div>
@@ -355,28 +355,28 @@ export function ContractsClient({
               return (
                 <div
                   key={contract.id}
-                  className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4"
+                  className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <Link
                         href={contractDetailHref}
-                        className="font-medium text-[var(--app-text)] transition hover:text-[var(--app-primary)]"
+                        className="font-medium text-(--app-text) transition hover:text-(--app-primary)"
                       >
                         {contract.name}
                       </Link>
-                      <div className="mt-1 break-all text-sm text-[var(--app-text-muted)]">{contract.email}</div>
-                      <div className="mt-1 text-sm text-[var(--app-text-muted)]">
+                      <div className="mt-1 break-all text-sm text-(--app-text-muted)">{contract.email}</div>
+                      <div className="mt-1 text-sm text-(--app-text-muted)">
                         Updated {formatDate(contract.lastActivity)}
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-[var(--app-text-faint)]">
-                        <span className="rounded-full border border-[color:var(--app-border)] px-3 py-1">
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-(--app-text-faint)">
+                        <span className="rounded-full border border-(--app-border) px-3 py-1">
                           {contract.docs} doc{contract.docs === 1 ? `` : `s`}
                         </span>
-                        <span className="rounded-full border border-[color:var(--app-border)] px-3 py-1">
+                        <span className="rounded-full border border-(--app-border) px-3 py-1">
                           {contract.paymentsCount} payment{contract.paymentsCount === 1 ? `` : `s`}
                         </span>
-                        <span className="rounded-full border border-[color:var(--app-border)] px-3 py-1">
+                        <span className="rounded-full border border-(--app-border) px-3 py-1">
                           {contract.completedPaymentsCount} completed
                         </span>
                       </div>
@@ -384,11 +384,11 @@ export function ContractsClient({
                     <StatusPill status={toDisplayStatus(contract.lastStatus)} />
                   </div>
 
-                  <div className="mt-4 text-sm text-[var(--app-text-muted)]">{workflowActions.title}</div>
+                  <div className="mt-4 text-sm text-(--app-text-muted)">{workflowActions.title}</div>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Link
                       href={workflowActions.primaryAction.href}
-                      className="rounded-xl border border-[var(--app-primary)]/20 bg-[var(--app-primary-soft)] px-3 py-2 text-sm text-[var(--app-primary)] transition hover:opacity-90"
+                      className="rounded-xl border border-(--app-primary)/20 bg-(--app-primary-soft) px-3 py-2 text-sm text-(--app-primary) transition hover:opacity-90"
                     >
                       {workflowActions.primaryAction.label}
                     </Link>
@@ -396,26 +396,26 @@ export function ContractsClient({
                       <Link
                         key={`${contract.id}-${action.label}`}
                         href={action.href}
-                        className="rounded-xl border border-[var(--app-primary)]/20 px-3 py-2 text-sm text-[var(--app-primary)] transition hover:bg-[var(--app-primary-soft)]"
+                        className="rounded-xl border border-(--app-primary)/20 px-3 py-2 text-sm text-(--app-primary) transition hover:bg-(--app-primary-soft)"
                       >
                         {action.label}
                       </Link>
                     ))}
                     <Link
                       href={contractDetailHref}
-                      className="rounded-xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] transition hover:bg-[var(--app-surface-strong)]"
+                      className="rounded-xl border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) transition hover:bg-(--app-surface-strong)"
                     >
                       View contract
                     </Link>
                     <Link
                       href={buildContractFilesWorkspaceHref(contract.id, listContextHref)}
-                      className="rounded-xl border border-[color:var(--app-border)] px-3 py-2 text-sm text-[var(--app-text-soft)] transition hover:bg-[var(--app-surface)]"
+                      className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) transition hover:bg-(--app-surface)"
                     >
                       Open contract files
                     </Link>
                     <Link
                       href={buildEditContactHref(contract.id, listContextHref)}
-                      className="rounded-xl border border-[color:var(--app-border)] px-3 py-2 text-sm text-[var(--app-text-soft)] transition hover:bg-[var(--app-surface)]"
+                      className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) transition hover:bg-(--app-surface)"
                     >
                       Edit contact
                     </Link>
@@ -431,7 +431,7 @@ export function ContractsClient({
             type="button"
             disabled={isSearchPending || page <= 1}
             onClick={() => applyPage(page - 1)}
-            className="rounded-xl border border-[color:var(--app-border)] px-3 py-2 text-sm text-[var(--app-text-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Previous
           </button>
@@ -439,7 +439,7 @@ export function ContractsClient({
             type="button"
             disabled={isSearchPending || page >= totalPages}
             onClick={() => applyPage(page + 1)}
-            className="rounded-xl border border-[color:var(--app-border)] px-3 py-2 text-sm text-[var(--app-text-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next
           </button>
@@ -447,7 +447,7 @@ export function ContractsClient({
       </Panel>
 
       <Panel title="Workspace summary">
-        <div className="space-y-3 text-sm text-[var(--app-text-soft)]">
+        <div className="space-y-3 text-sm text-(--app-text-soft)">
           <ChecklistItem checked={completedCount > 0}>At least one completed payment relationship</ChecklistItem>
           <ChecklistItem checked={withDocumentsCount > 0}>At least one document attached</ChecklistItem>
           <ChecklistItem checked={total > 0}>Contractor contact exists</ChecklistItem>

@@ -29,7 +29,7 @@ export function ThemeQuickSwitch({ compact = false, showLabel = false }: { compa
     <div className={compact ? `min-w-0` : `min-w-[170px]`}>
       {showLabel && (
         <label
-          className={`mb-1 block text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--app-text-faint)] ${
+          className={`mb-1 block text-[11px] font-medium uppercase tracking-[0.18em] text-(--app-text-faint) ${
             compact ? `sr-only` : ``
           }`}
           htmlFor={compact ? `theme-switch-mobile` : `theme-switch-desktop`}
@@ -59,7 +59,7 @@ export function ThemeQuickSwitch({ compact = false, showLabel = false }: { compa
             router.refresh();
           });
         }}
-        className={`w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-3 py-2.5 text-sm text-[var(--app-text)] shadow-[var(--app-shadow)] outline-none transition focus:border-[color:var(--app-primary)] focus:ring-4 focus:ring-[var(--app-focus)] disabled:cursor-not-allowed disabled:opacity-60 ${
+        className={`w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-3 py-2.5 text-sm text-(--app-text) shadow-(--app-shadow) outline-none transition focus:border-(--app-primary) focus:ring-4 focus:ring-(--app-focus) disabled:cursor-not-allowed disabled:opacity-60 ${
           compact ? `max-w-[140px] pr-8 text-xs` : `pr-10`
         }`}
       >
@@ -69,7 +69,7 @@ export function ThemeQuickSwitch({ compact = false, showLabel = false }: { compa
           </option>
         ))}
       </select>
-      {!compact && message ? <div className="mt-2 text-xs text-[var(--app-text-faint)]">{message}</div> : null}
+      {!compact && message ? <div className="mt-2 text-xs text-(--app-text-faint)">{message}</div> : null}
     </div>
   );
 }

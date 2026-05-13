@@ -27,30 +27,28 @@ export function HelpSteps({ items, title = `Step-by-step instructions`, descript
         {items.map((item, index) => (
           <li
             key={`${index + 1}-${item.title}`}
-            className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4"
+            className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
           >
             <div className="flex gap-4">
               <span
                 aria-hidden="true"
                 className={cn(
-                  `flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--app-primary)] text-sm font-semibold text-[var(--app-primary-contrast)]`,
+                  `flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--app-primary) text-sm font-semibold text-(--app-primary-contrast)`,
                 )}
               >
                 {index + 1}
               </span>
 
               <div className="min-w-0">
-                <h4 className="text-sm font-semibold text-[var(--app-text)]">{item.title}</h4>
-                {item.body ? <p className="mt-2 text-sm leading-7 text-[var(--app-text-soft)]">{item.body}</p> : null}
+                <h4 className="text-sm font-semibold text-(--app-text)">{item.title}</h4>
+                {item.body ? <p className="mt-2 text-sm leading-7 text-(--app-text-soft)">{item.body}</p> : null}
                 {item.outcome ? (
-                  <p className="mt-3 rounded-xl bg-[var(--app-surface)] px-3 py-2 text-sm leading-6 text-[var(--app-text-muted)]">
-                    <span className="font-medium text-[var(--app-text)]">Expected result:</span> {item.outcome}
+                  <p className="mt-3 rounded-xl bg-(--app-surface) px-3 py-2 text-sm leading-6 text-(--app-text-muted)">
+                    <span className="font-medium text-(--app-text)">Expected result:</span> {item.outcome}
                   </p>
                 ) : null}
                 {item.note ? (
-                  <p className="mt-3 text-xs uppercase tracking-[0.14em] text-[var(--app-text-faint)]">
-                    Note: {item.note}
-                  </p>
+                  <p className="mt-3 text-xs uppercase tracking-[0.14em] text-(--app-text-faint)">Note: {item.note}</p>
                 ) : null}
               </div>
             </div>

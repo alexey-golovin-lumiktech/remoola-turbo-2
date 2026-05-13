@@ -52,13 +52,13 @@ export default async function NewPaymentRequestPage({ searchParams }: { searchPa
     <div className="mx-auto max-w-2xl">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="text-sm uppercase tracking-[0.3em] text-[var(--app-primary)]">Payments</div>
+          <div className="text-sm uppercase tracking-[0.3em] text-(--app-primary)">Payments</div>
           <h1 className="mt-1 text-2xl font-bold text-white/90">New Payment Request</h1>
           <p className="mt-1 text-sm text-white/50">Create a new payment request and send it to a recipient.</p>
         </div>
         <Link
           href={getPaymentFlowBackHref(paymentFlowContext)}
-          className="text-sm text-[var(--app-primary)] hover:opacity-80"
+          className="text-sm text-(--app-primary) hover:opacity-80"
         >
           {paymentFlowContext?.contractId ? `Back to contract` : `Back to payments`}
         </Link>

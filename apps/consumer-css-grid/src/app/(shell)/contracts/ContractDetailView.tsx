@@ -229,12 +229,12 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
     return (
       <Panel title="Contract workspace">
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
             Contract details are unavailable for this relationship.
           </div>
           <Link
             href={returnToContractsHref}
-            className="inline-flex text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]"
+            className="inline-flex text-sm text-(--app-primary) hover:text-(--app-primary-strong)"
           >
             Back to contracts
           </Link>
@@ -246,46 +246,43 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
   return (
     <div className="space-y-5">
       <div className="mb-1">
-        <Link
-          href={returnToContractsHref}
-          className="text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]"
-        >
+        <Link href={returnToContractsHref} className="text-sm text-(--app-primary) hover:text-(--app-primary-strong)">
           Back to contracts
         </Link>
       </div>
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-5">
-          <section className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-card-gradient)] p-5 shadow-[var(--app-shadow)]">
+          <section className="rounded-[28px] border border-(--app-border) bg-(--app-card-gradient) p-5 shadow-(--app-shadow)">
             <div className="grid grid-cols-[auto_1fr] gap-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-[var(--app-primary)] shadow-[var(--app-shadow)]">
-                <span className="text-2xl font-semibold text-[var(--app-primary-contrast)]">
+              <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-(--app-primary) shadow-(--app-shadow)">
+                <span className="text-2xl font-semibold text-(--app-primary-contrast)">
                   {getInitials(contract, contractId)}
                 </span>
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-3xl font-semibold tracking-tight text-[var(--app-text)]">
+                  <h2 className="text-3xl font-semibold tracking-tight text-(--app-text)">
                     {getContractTitle(contract, contractId)}
                   </h2>
                   <StatusPill status={summaryStatus} />
                 </div>
-                <div className="mt-2 text-sm text-[var(--app-text-muted)]">
+                <div className="mt-2 text-sm text-(--app-text-muted)">
                   Dedicated contract workspace powered by a contract-scoped backend details model rather than the old
                   contact-centric details endpoint.
                 </div>
                 <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3">
-                    <div className="text-xs uppercase tracking-[0.18em] text-[var(--app-text-faint)]">Contractor</div>
-                    <div className="mt-2 break-all text-sm text-[var(--app-primary)]">
+                  <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3">
+                    <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Contractor</div>
+                    <div className="mt-2 break-all text-sm text-(--app-primary)">
                       {contract.email || `No email available`}
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3">
-                    <div className="text-xs uppercase tracking-[0.18em] text-[var(--app-text-faint)]">
+                  <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3">
+                    <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">
                       Relationship summary
                     </div>
-                    <div className="mt-2 text-sm text-[var(--app-text-soft)]">
+                    <div className="mt-2 text-sm text-(--app-text-soft)">
                       {contract.summary.lastActivity
                         ? `Latest relationship activity ${formatDateTime(contract.summary.lastActivity)}`
                         : `No payment activity yet`}
@@ -583,7 +580,7 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                 <div className="text-sm text-white/60">{activeWorkflow.detail}</div>
                 <Link
                   href={activeWorkflow.primaryAction.href}
-                  className="flex items-center gap-3 rounded-2xl border border-[var(--app-primary)]/20 bg-[var(--app-primary-soft)] px-4 py-3 text-sm text-[var(--app-primary)] transition hover:opacity-90"
+                  className="flex items-center gap-3 rounded-2xl border border-(--app-primary)/20 bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary) transition hover:opacity-90"
                 >
                   <DocumentIcon className="h-5 w-5 text-blue-300" />
                   {activeWorkflow.primaryAction.label}

@@ -35,12 +35,12 @@ type PasswordPanelCopy = {
   helperText: string;
 };
 
-const fieldLabelClass = `mb-2 block text-sm text-[var(--app-text-muted)]`;
-const fieldInputClass = `w-full rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-[var(--app-text)] shadow-[var(--app-shadow)] outline-none placeholder:text-[var(--app-text-faint)] focus:border-[color:var(--app-primary)] focus:ring-4 focus:ring-[var(--app-focus)]`;
-const fieldCardClass = `rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]`;
-const primaryButtonClass = `w-full rounded-2xl bg-[var(--app-primary)] px-4 py-3 font-medium text-[var(--app-primary-contrast)] disabled:cursor-not-allowed disabled:opacity-50`;
-const secondaryButtonClass = `flex w-full items-center justify-center rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-text)] shadow-[var(--app-shadow)] transition hover:bg-[var(--app-surface-strong)]`;
-const dangerButtonClass = `flex w-full items-center justify-center rounded-2xl border border-transparent bg-[var(--app-danger-soft)] px-4 py-3 text-sm font-medium text-[var(--app-danger-text)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60`;
+const fieldLabelClass = `mb-2 block text-sm text-(--app-text-muted)`;
+const fieldInputClass = `w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) shadow-(--app-shadow) outline-none placeholder:text-(--app-text-faint) focus:border-(--app-primary) focus:ring-4 focus:ring-(--app-focus)`;
+const fieldCardClass = `rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)`;
+const primaryButtonClass = `w-full rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-primary-contrast) disabled:cursor-not-allowed disabled:opacity-50`;
+const secondaryButtonClass = `flex w-full items-center justify-center rounded-2xl border border-(--app-border) bg-(--app-surface) px-4 py-3 text-sm font-medium text-(--app-text) shadow-(--app-shadow) transition hover:bg-(--app-surface-strong)`;
+const dangerButtonClass = `flex w-full items-center justify-center rounded-2xl border border-transparent bg-(--app-danger-soft) px-4 py-3 text-sm font-medium text-(--app-danger-text) transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60`;
 
 export function SettingsMessageBanner({ message }: { message: SettingsMessage | null }) {
   if (!message) return null;
@@ -49,8 +49,8 @@ export function SettingsMessageBanner({ message }: { message: SettingsMessage | 
     <div
       className={
         message.type === `error`
-          ? `rounded-2xl border border-transparent bg-[var(--app-danger-soft)] px-4 py-3 text-sm text-[var(--app-danger-text)]`
-          : `rounded-2xl border border-transparent bg-[var(--app-success-soft)] px-4 py-3 text-sm text-[var(--app-success-text)]`
+          ? `rounded-2xl border border-transparent bg-(--app-danger-soft) px-4 py-3 text-sm text-(--app-danger-text)`
+          : `rounded-2xl border border-transparent bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)`
       }
     >
       {message.text}
@@ -76,15 +76,15 @@ export function SettingsActionHub() {
         <Link
           href="/banking"
           aria-label={`Payment methods — manage cards and bank accounts`}
-          className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[var(--app-surface)]"
+          className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-4 transition hover:border-(--app-border-strong) hover:bg-(--app-surface)"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-(--app-primary-soft) text-(--app-primary)">
               <BankIcon className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-[var(--app-text)]">Payment methods</div>
-              <div className="mt-1 text-sm leading-6 text-[var(--app-text-muted)]">
+              <div className="text-sm font-semibold text-(--app-text)">Payment methods</div>
+              <div className="mt-1 text-sm leading-6 text-(--app-text-muted)">
                 Manage cards and bank accounts used across payouts and payment flows.
               </div>
             </div>
@@ -94,15 +94,15 @@ export function SettingsActionHub() {
         <Link
           href="/documents"
           aria-label={`Documents — view and manage uploaded files`}
-          className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[var(--app-surface)]"
+          className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-4 transition hover:border-(--app-border-strong) hover:bg-(--app-surface)"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-(--app-primary-soft) text-(--app-primary)">
               <DocumentIcon className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-[var(--app-text)]">Documents</div>
-              <div className="mt-1 text-sm leading-6 text-[var(--app-text-muted)]">
+              <div className="text-sm font-semibold text-(--app-text)">Documents</div>
+              <div className="mt-1 text-sm leading-6 text-(--app-text-muted)">
                 Open uploaded files, review generated docs, and keep compliance items moving.
               </div>
             </div>
@@ -127,9 +127,9 @@ export function SettingsVerificationPanel({
       <Panel title="Account verification" aside={verificationCardState.badge}>
         <div className="space-y-4">
           <div className={`rounded-2xl border px-4 py-4 ${verificationCardState.toneClassName}`}>
-            <div className="text-sm font-semibold text-[var(--app-text)]">{verificationCardState.title}</div>
-            <p className="mt-2 text-sm leading-6 text-[var(--app-text-muted)]">{verificationCardState.description}</p>
-            <div className="mt-3 text-xs text-[var(--app-text-faint)]">
+            <div className="text-sm font-semibold text-(--app-text)">{verificationCardState.title}</div>
+            <p className="mt-2 text-sm leading-6 text-(--app-text-muted)">{verificationCardState.description}</p>
+            <div className="mt-3 text-xs text-(--app-text-faint)">
               Current status: {humanizeStatus(profile?.verification?.status, `Unknown`)}
             </div>
           </div>
@@ -178,7 +178,7 @@ export function SettingsSummaryCards({
           <div className={fieldCardClass}>
             Profile completeness: {profile?.verification?.profileComplete ? `Complete` : `Incomplete`}
           </div>
-          <div className="rounded-2xl border border-transparent bg-[var(--app-warning-soft)] px-4 py-3 text-sm text-[var(--app-warning-text)]">
+          <div className="rounded-2xl border border-transparent bg-(--app-warning-soft) px-4 py-3 text-sm text-(--app-warning-text)">
             Changing the password signs out the current session and requires a fresh login.
           </div>
         </div>
@@ -253,7 +253,7 @@ export function SettingsProfileForm({
               placeholder="Phone number"
               className={fieldInputClass}
             />
-            <div className="mt-2 text-xs text-[var(--app-text-faint)]">Stored as digits with optional leading +.</div>
+            <div className="mt-2 text-xs text-(--app-text-faint)">Stored as digits with optional leading +.</div>
           </div>
           <div>
             <label className={fieldLabelClass} htmlFor="settings-company-name">
@@ -370,23 +370,19 @@ export function SettingsPreferencesPanel({
                     onClick={() => onThemeChange(themeOption)}
                     className={`rounded-[24px] border px-4 py-4 text-left transition ${
                       active
-                        ? `border-[color:var(--app-primary)] bg-[var(--app-primary-soft)] shadow-[var(--app-shadow)]`
-                        : `border-[color:var(--app-border)] bg-[var(--app-surface)] hover:bg-[var(--app-surface-strong)]`
+                        ? `border-(--app-primary) bg-(--app-primary-soft) shadow-(--app-shadow)`
+                        : `border-(--app-border) bg-(--app-surface) hover:bg-(--app-surface-strong)`
                     } disabled:cursor-not-allowed disabled:opacity-70`}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold text-[var(--app-text)]">
-                        {THEME_OPTION_LABELS[themeOption]}
-                      </div>
+                      <div className="text-sm font-semibold text-(--app-text)">{THEME_OPTION_LABELS[themeOption]}</div>
                       <div
                         className={`h-3 w-3 rounded-full ${
-                          active
-                            ? `bg-[var(--app-primary)]`
-                            : `border border-[color:var(--app-border-strong)] bg-transparent`
+                          active ? `bg-(--app-primary)` : `border border-(--app-border-strong) bg-transparent`
                         }`}
                       />
                     </div>
-                    <div className="mt-2 text-sm leading-6 text-[var(--app-text-muted)]">
+                    <div className="mt-2 text-sm leading-6 text-(--app-text-muted)">
                       {themeDescription(themeOption)}
                     </div>
                   </button>
@@ -398,7 +394,7 @@ export function SettingsPreferencesPanel({
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.15fr_0.85fr]">
             <div className={fieldCardClass}>
               Current shell preview follows{` `}
-              <strong className="text-[var(--app-text)]">{THEME_OPTION_LABELS[preferencesForm.theme]}</strong>.
+              <strong className="text-(--app-text)">{THEME_OPTION_LABELS[preferencesForm.theme]}</strong>.
             </div>
             <div className={fieldCardClass}>
               `System` stays in sync with your device appearance and still persists as your account default.
@@ -449,8 +445,8 @@ export function SettingsPreferencesPanel({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {THEMES.map((themeOption) => (
             <div key={themeOption} className={fieldCardClass}>
-              <div className="font-medium text-[var(--app-text)]">{THEME_OPTION_LABELS[themeOption]}</div>
-              <div className="mt-2 text-sm leading-6 text-[var(--app-text-muted)]">{themeDescription(themeOption)}</div>
+              <div className="font-medium text-(--app-text)">{THEME_OPTION_LABELS[themeOption]}</div>
+              <div className="mt-2 text-sm leading-6 text-(--app-text-muted)">{themeDescription(themeOption)}</div>
             </div>
           ))}
         </div>
@@ -515,8 +511,8 @@ export function SettingsPasswordFormPanel({
               <div
                 className={`mt-2 text-xs ${
                   passwordValidity.minLengthValid && passwordValidity.differsFromCurrent
-                    ? `text-[var(--app-text-faint)]`
-                    : `text-[var(--app-danger-text)]`
+                    ? `text-(--app-text-faint)`
+                    : `text-(--app-danger-text)`
                 }`}
               >
                 {!passwordValidity.minLengthValid
@@ -544,7 +540,7 @@ export function SettingsPasswordFormPanel({
             {passwordForm.confirmPassword.length > 0 ? (
               <div
                 className={`mt-2 text-xs ${
-                  passwordValidity.matches ? `text-[var(--app-text-faint)]` : `text-[var(--app-danger-text)]`
+                  passwordValidity.matches ? `text-(--app-text-faint)` : `text-(--app-danger-text)`
                 }`}
               >
                 {passwordValidity.matches ? `Passwords match.` : `Passwords must match exactly.`}
@@ -602,7 +598,7 @@ export function SettingsSessionManagementPanel({
             {isSigningOutAll ? `Signing out all devices...` : `Sign out all devices`}
           </button>
         </div>
-        <div className="rounded-2xl border border-transparent bg-[var(--app-warning-soft)] px-4 py-3 text-sm text-[var(--app-warning-text)]">
+        <div className="rounded-2xl border border-transparent bg-(--app-warning-soft) px-4 py-3 text-sm text-(--app-warning-text)">
           Password changes already revoke all sessions and redirect through the existing logout notice flow.
         </div>
         <div className={fieldCardClass}>{passwordPanelCopy.helperText}</div>
@@ -631,18 +627,15 @@ export function SettingsSignOutAllModal({
         aria-modal="true"
         aria-labelledby="settings-sign-out-all-title"
         aria-describedby="settings-sign-out-all-description"
-        className="w-full max-w-xl rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-shell)] p-5 shadow-2xl"
+        className="w-full max-w-xl rounded-[28px] border border-(--app-border) bg-(--app-shell) p-5 shadow-2xl"
       >
-        <div className="inline-flex rounded-full border border-transparent bg-[var(--app-danger-soft)] px-3 py-1 text-xs font-medium text-[var(--app-danger-text)]">
+        <div className="inline-flex rounded-full border border-transparent bg-(--app-danger-soft) px-3 py-1 text-xs font-medium text-(--app-danger-text)">
           Session security
         </div>
-        <h2
-          id="settings-sign-out-all-title"
-          className="mt-4 text-2xl font-semibold tracking-tight text-[var(--app-text)]"
-        >
+        <h2 id="settings-sign-out-all-title" className="mt-4 text-2xl font-semibold tracking-tight text-(--app-text)">
           Sign out all devices?
         </h2>
-        <p id="settings-sign-out-all-description" className="mt-3 text-sm leading-7 text-[var(--app-text-muted)]">
+        <p id="settings-sign-out-all-description" className="mt-3 text-sm leading-7 text-(--app-text-muted)">
           This will revoke every active consumer session across phones, tablets, and browsers, including this device.
           You will need to sign in again everywhere.
         </p>
@@ -651,7 +644,7 @@ export function SettingsSignOutAllModal({
           <div className={fieldCardClass}>
             Use this if you think another device is still signed in or you want to reset all active sessions at once.
           </div>
-          <div className="rounded-2xl border border-transparent bg-[var(--app-warning-soft)] px-4 py-3 text-sm text-[var(--app-warning-text)]">
+          <div className="rounded-2xl border border-transparent bg-(--app-warning-soft) px-4 py-3 text-sm text-(--app-warning-text)">
             Your current session will end immediately after confirmation.
           </div>
         </div>

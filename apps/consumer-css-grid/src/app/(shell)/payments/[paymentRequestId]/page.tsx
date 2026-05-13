@@ -99,7 +99,7 @@ export default async function PaymentDetailPage({
       <PageHeader title="Payment details" icon={<CreditCardIcon className="h-10 w-10 text-white" />} />
 
       {checkoutSuccess ? (
-        <div className="mb-5 rounded-2xl border border-transparent bg-[var(--app-success-soft)] px-4 py-3 text-sm text-[var(--app-success-text)]">
+        <div className="mb-5 rounded-2xl border border-transparent bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)">
           <div>
             Checkout returned successfully. Refreshing payment status may take a moment while Stripe confirms the
             charge.
@@ -113,11 +113,11 @@ export default async function PaymentDetailPage({
         </div>
       ) : null}
       {checkoutCanceled ? (
-        <div className="mb-5 rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+        <div className="mb-5 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
           <div>Checkout was canceled before the payment completed.</div>
           <Link
             href={`/help/${HELP_GUIDE_SLUG.PAYMENTS_COMMON_ISSUES}`}
-            className="mt-3 inline-flex text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]"
+            className="mt-3 inline-flex text-sm text-(--app-primary) hover:text-(--app-primary-strong)"
           >
             Open the payment troubleshooting guide
           </Link>
@@ -127,7 +127,7 @@ export default async function PaymentDetailPage({
       <div className="mb-5">
         <Link
           href={getPaymentFlowBackHref(paymentFlowContext)}
-          className="text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]"
+          className="text-sm text-(--app-primary) hover:text-(--app-primary-strong)"
         >
           {paymentFlowContext?.contractId ? `Back to contract` : `Back to payments`}
         </Link>
@@ -143,7 +143,7 @@ export default async function PaymentDetailPage({
       {!payment ? (
         <Panel title="Payment details">
           <div className="space-y-4">
-            <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
               Payment details are unavailable for this request.
             </div>
             <HelpContextualGuides
@@ -159,16 +159,16 @@ export default async function PaymentDetailPage({
           <div className="space-y-5">
             <Panel title="Overview">
               <div className="space-y-3">
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Amount: {formatMajorCurrency(payment.amount, payment.currencyCode)}
                 </div>
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Status: {payment.status}
                 </div>
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Role: {payment.role}
                 </div>
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Description: {payment.description?.trim() ? payment.description : `No description`}
                 </div>
               </div>
@@ -176,10 +176,10 @@ export default async function PaymentDetailPage({
 
             <Panel title="Parties">
               <div className="space-y-3">
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Payer: {payment.payer?.email ?? `Unknown`}
                 </div>
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Requester: {payment.requester?.email ?? `Unknown`}
                 </div>
               </div>
@@ -189,16 +189,16 @@ export default async function PaymentDetailPage({
           <div className="space-y-5">
             <Panel title="Timeline">
               <div className="space-y-3">
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Created: {formatDateTime(payment.createdAt)}
                 </div>
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Updated: {formatDateTime(payment.updatedAt)}
                 </div>
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Due date: {formatDateOnly(payment.dueDate)}
                 </div>
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                   Sent date: {formatDateTime(payment.sentDate)}
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default async function PaymentDetailPage({
 
             <Panel title="Ledger entries">
               {payment.ledgerEntries.length === 0 ? (
-                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
                   No ledger entries yet.
                 </div>
               ) : (
@@ -230,25 +230,23 @@ export default async function PaymentDetailPage({
                   {payment.ledgerEntries.map((entry) => (
                     <div
                       key={entry.id}
-                      className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] p-4"
+                      className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <div className="font-medium text-[var(--app-text)]">
+                          <div className="font-medium text-(--app-text)">
                             {entry.type} · {entry.direction}
                           </div>
-                          <div className="mt-1 text-sm text-[var(--app-text-muted)]">
-                            {formatDateTime(entry.createdAt)}
-                          </div>
-                          <div className="mt-1 text-xs text-[var(--app-text-faint)]">
+                          <div className="mt-1 text-sm text-(--app-text-muted)">{formatDateTime(entry.createdAt)}</div>
+                          <div className="mt-1 text-xs text-(--app-text-faint)">
                             {entry.rail ?? `No rail`} · {entry.ledgerId}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium text-[var(--app-text)]">
+                          <div className="font-medium text-(--app-text)">
                             {formatMajorCurrency(entry.amount, entry.currencyCode)}
                           </div>
-                          <div className="mt-1 text-sm text-[var(--app-text-muted)]">{entry.status}</div>
+                          <div className="mt-1 text-sm text-(--app-text-muted)">{entry.status}</div>
                         </div>
                       </div>
                     </div>
@@ -260,7 +258,7 @@ export default async function PaymentDetailPage({
             <Panel title="Attachments">
               <Suspense
                 fallback={
-                  <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+                  <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
                     Loading attachments...
                   </div>
                 }

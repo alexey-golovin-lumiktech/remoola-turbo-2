@@ -116,7 +116,7 @@ export function DashboardVerificationAction({ verification, dashboardUnavailable
       {action.kind === `link` ? (
         <Link
           href={action.href}
-          className="inline-flex w-full items-center justify-center rounded-full bg-[var(--app-primary)] px-4 py-2.5 text-sm font-medium text-[var(--app-primary-contrast)] transition hover:opacity-90 md:w-auto"
+          className="inline-flex w-full items-center justify-center rounded-full bg-(--app-primary) px-4 py-2.5 text-sm font-medium text-(--app-primary-contrast) transition hover:opacity-90 md:w-auto"
         >
           {action.label}
         </Link>
@@ -125,7 +125,7 @@ export function DashboardVerificationAction({ verification, dashboardUnavailable
           type="button"
           onClick={handleStartVerification}
           disabled={isLoading}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-4 py-2.5 text-sm font-medium text-[var(--app-primary-contrast)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-(--app-primary) px-4 py-2.5 text-sm font-medium text-(--app-primary-contrast) transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
         >
           {isLoading ? <SpinnerIcon size={16} className="animate-spin" /> : null}
           {isLoading ? `Opening verification...` : action.label}
@@ -136,8 +136,8 @@ export function DashboardVerificationAction({ verification, dashboardUnavailable
         <div
           className={`rounded-2xl border px-4 py-3 text-sm leading-6 ${
             message.type === `error`
-              ? `border-transparent bg-[var(--app-danger-soft)] text-[var(--app-danger-text)]`
-              : `border-transparent bg-[var(--app-success-soft)] text-[var(--app-success-text)]`
+              ? `border-transparent bg-(--app-danger-soft) text-(--app-danger-text)`
+              : `border-transparent bg-(--app-success-soft) text-(--app-success-text)`
           }`}
         >
           {message.text}

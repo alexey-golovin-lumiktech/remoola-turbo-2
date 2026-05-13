@@ -63,7 +63,7 @@ export function getMethodKind(method: BankingMethodKindInput) {
   if (method.type === `BANK_ACCOUNT`) {
     return {
       label: `Bank account`,
-      tone: `border-transparent bg-[var(--app-primary-soft)] text-[var(--app-primary)]`,
+      tone: `border-transparent bg-(--app-primary-soft) text-(--app-primary)`,
       detail: `Used for payout destinations and Banking records.`,
     };
   }
@@ -71,14 +71,14 @@ export function getMethodKind(method: BankingMethodKindInput) {
   if (method.reusableForPayerPayments) {
     return {
       label: `Reusable payer card`,
-      tone: `border-transparent bg-[var(--app-success-soft)] text-[var(--app-success-text)]`,
+      tone: `border-transparent bg-(--app-success-soft) text-(--app-success-text)`,
       detail: `Can be used for one-click payer payments and still appears in Banking.`,
     };
   }
 
   return {
     label: `Manual card record`,
-    tone: `border-[color:var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-soft)]`,
+    tone: `border-(--app-border) bg-(--app-surface) text-(--app-text-soft)`,
     detail: `Display and billing metadata only. Not used for one-click payer payments.`,
   };
 }

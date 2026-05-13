@@ -49,7 +49,7 @@ export function getSettingsVerificationCardState(
       badge: `Unavailable`,
       title: `Verification status unavailable`,
       description: `We couldn't load your verification state right now. Refresh the page to try again.`,
-      toneClassName: `border-[color:var(--app-border)] bg-[var(--app-surface-muted)]`,
+      toneClassName: `border-(--app-border) bg-(--app-surface-muted)`,
       showAction: false,
     };
   }
@@ -61,7 +61,7 @@ export function getSettingsVerificationCardState(
       badge: `Verified`,
       title: `Account verified`,
       description: `Your identity check is complete and full account functionality is available.`,
-      toneClassName: `border-transparent bg-[var(--app-success-soft)]`,
+      toneClassName: `border-transparent bg-(--app-success-soft)`,
       showAction: false,
     };
   }
@@ -71,7 +71,7 @@ export function getSettingsVerificationCardState(
       badge: `In review`,
       title: `Verification in review`,
       description: `Your submitted details are being reviewed. We'll update your status as soon as processing finishes.`,
-      toneClassName: `border-transparent bg-[var(--app-warning-soft)]`,
+      toneClassName: `border-transparent bg-(--app-warning-soft)`,
       showAction: false,
     };
   }
@@ -81,7 +81,7 @@ export function getSettingsVerificationCardState(
       badge: `Profile incomplete`,
       title: `Complete your profile first`,
       description: `Add the missing profile details below before starting identity verification.`,
-      toneClassName: `border-transparent bg-[var(--app-warning-soft)]`,
+      toneClassName: `border-transparent bg-(--app-warning-soft)`,
       showAction: false,
     };
   }
@@ -96,7 +96,7 @@ export function getSettingsVerificationCardState(
           description:
             verification.lastErrorReason ??
             `Additional verification details are required before higher account access can be enabled.`,
-          toneClassName: `border-transparent bg-[var(--app-danger-soft)]`,
+          toneClassName: `border-transparent bg-(--app-danger-soft)`,
           showAction: true,
         };
       case `pending_submission`:
@@ -104,7 +104,7 @@ export function getSettingsVerificationCardState(
           badge: `In progress`,
           title: `Continue your verification`,
           description: `Your profile is ready. Resume the verification flow and submit the remaining details.`,
-          toneClassName: `border-transparent bg-[var(--app-warning-soft)]`,
+          toneClassName: `border-transparent bg-(--app-warning-soft)`,
           showAction: true,
         };
       case `rejected`:
@@ -114,7 +114,7 @@ export function getSettingsVerificationCardState(
           title: `Verification needs to be retried`,
           description:
             verification.lastErrorReason ?? `Review the requested details and retry verification to continue.`,
-          toneClassName: `border-transparent bg-[var(--app-danger-soft)]`,
+          toneClassName: `border-transparent bg-(--app-danger-soft)`,
           showAction: true,
         };
       default:
@@ -122,7 +122,7 @@ export function getSettingsVerificationCardState(
           badge: humanizeStatus(verification.status, `Not started`),
           title: `Start account verification`,
           description: `Verify your identity to unlock the full set of payment and account capabilities.`,
-          toneClassName: `border-transparent bg-[var(--app-warning-soft)]`,
+          toneClassName: `border-transparent bg-(--app-warning-soft)`,
           showAction: true,
         };
     }
@@ -132,7 +132,7 @@ export function getSettingsVerificationCardState(
     badge: humanizeStatus(verification.status, `Unknown`),
     title: `Verification status: ${humanizeStatus(verification.status, `Unknown`)}`,
     description: `We'll show your next verification step here as soon as it becomes available.`,
-    toneClassName: `border-[color:var(--app-border)] bg-[var(--app-surface-muted)]`,
+    toneClassName: `border-(--app-border) bg-(--app-surface-muted)`,
     showAction: false,
   };
 }

@@ -37,7 +37,7 @@ function renderHighlightedText(text: string, tokens: string[]): ReactNode {
       return (
         <mark
           key={`${part.text}-${index}`}
-          className="rounded-md bg-[var(--app-primary-soft)] px-1 py-0.5 text-[var(--app-primary)]"
+          className="rounded-md bg-(--app-primary-soft) px-1 py-0.5 text-(--app-primary)"
         >
           {part.text}
         </mark>
@@ -255,17 +255,17 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 Jump to pages and quick actions without leaving the keyboard.
               </div>
             </div>
-            <kbd className="rounded-md border border-(--app-border) bg-[var(--app-surface-muted)] px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-(--app-text-faint)">
+            <kbd className="rounded-md border border-(--app-border) bg-(--app-surface-muted) px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-(--app-text-faint)">
               Esc
             </kbd>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--app-border)] px-3 py-2 text-xs sm:px-4 md:px-5">
-          <span className="text-[var(--app-text-faint)]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-(--app-border) px-3 py-2 text-xs sm:px-4 md:px-5">
+          <span className="text-(--app-text-faint)">
             {query ? `Results for “${query}”` : `Popular destinations and actions`}
           </span>
-          <span className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-2.5 py-1 font-medium text-[var(--app-text-soft)]">
+          <span className="rounded-full border border-(--app-border) bg-(--app-surface-muted) px-2.5 py-1 font-medium text-(--app-text-soft)">
             {resultsLabel}
           </span>
         </div>
@@ -277,21 +277,19 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           aria-label="Search results"
         >
           {displayedRoutes.length === 0 ? (
-            <li className="rounded-[24px] border border-dashed border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-6 text-center sm:px-5">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+            <li className="rounded-[24px] border border-dashed border-(--app-border) bg-(--app-surface-muted) px-4 py-6 text-center sm:px-5">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-(--app-primary-soft) text-(--app-primary)">
                 <SearchIcon size={18} aria-hidden="true" />
               </div>
-              <div className="mt-4 text-sm font-medium text-[var(--app-text)]">
-                Nothing found for &ldquo;{query}&rdquo;.
-              </div>
-              <div className="mt-2 text-sm text-[var(--app-text-muted)]">
+              <div className="mt-4 text-sm font-medium text-(--app-text)">Nothing found for &ldquo;{query}&rdquo;.</div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">
                 Try a page or action like Dashboard, Payments, Exchange, or Settings.
               </div>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 {EMPTY_STATE_SUGGESTIONS.map((suggestion) => (
                   <span
                     key={suggestion}
-                    className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-1.5 text-xs text-[var(--app-text-soft)]"
+                    className="rounded-full border border-(--app-border) bg-(--app-surface) px-3 py-1.5 text-xs text-(--app-text-soft)"
                   >
                     {suggestion}
                   </span>
@@ -302,14 +300,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             displaySections.map(({ title, routes }) => (
               <li key={title} role="presentation">
                 <div className="flex items-center justify-between gap-3 px-2 pb-2">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--app-text-faint)]">
-                    {title}
-                  </p>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-(--app-text-faint)">{title}</p>
                   {title === `Recent` && routes.length > 0 ? (
                     <button
                       type="button"
                       onClick={clearRecentRoutes}
-                      className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--app-text-soft)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]"
+                      className="rounded-full border border-(--app-border) bg-(--app-surface-muted) px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-(--app-text-soft) transition hover:bg-(--app-surface) hover:text-(--app-text)"
                     >
                       Clear
                     </button>
@@ -336,8 +332,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                           className={cn(
                             `flex w-full items-center justify-between gap-4 rounded-[22px] border px-3 py-3.5 text-left transition-[transform,background-color,border-color,color,box-shadow] duration-200 ease-out will-change-transform sm:px-4`,
                             isActive
-                              ? `-translate-y-0.5 scale-[1.01] border-[color:var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-text)] shadow-[var(--app-shadow)]`
-                              : `border-transparent bg-[var(--app-surface-muted)] text-[var(--app-text-soft)] hover:-translate-y-0.5 hover:scale-[1.01] hover:border-[color:var(--app-border)] hover:bg-[var(--app-surface)]`,
+                              ? `-translate-y-0.5 scale-[1.01] border-(--app-primary) bg-(--app-primary-soft) text-(--app-text) shadow-(--app-shadow)`
+                              : `border-transparent bg-(--app-surface-muted) text-(--app-text-soft) hover:-translate-y-0.5 hover:scale-[1.01] hover:border-(--app-border) hover:bg-(--app-surface)`,
                           )}
                           onMouseEnter={() => setActiveIndex(routeIndex)}
                           onClick={() => navigate(route.href)}
@@ -348,7 +344,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                             <div
                               className={cn(
                                 `mt-1 truncate text-xs`,
-                                isActive ? `text-[var(--app-primary)]` : `text-[var(--app-text-faint)]`,
+                                isActive ? `text-(--app-primary)` : `text-(--app-text-faint)`,
                               )}
                             >
                               {renderHighlightedText(route.href, queryTokens)}
@@ -357,7 +353,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                               <div
                                 className={cn(
                                   `mt-1 line-clamp-1 text-[11px]`,
-                                  isActive ? `text-[var(--app-text-soft)]` : `text-[var(--app-text-muted)]`,
+                                  isActive ? `text-(--app-text-soft)` : `text-(--app-text-muted)`,
                                 )}
                               >
                                 {renderHighlightedText(keywordsText, queryTokens)}
@@ -366,7 +362,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
                             {exactMatch ? (
-                              <span className="rounded-full border border-transparent bg-[var(--app-primary)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--app-primary-contrast)]">
+                              <span className="rounded-full border border-transparent bg-(--app-primary) px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-(--app-primary-contrast)">
                                 Exact match
                               </span>
                             ) : null}
@@ -374,8 +370,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                               className={cn(
                                 `hidden rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] sm:inline-flex`,
                                 isActive
-                                  ? `border-transparent bg-[var(--app-surface)] text-[var(--app-primary)]`
-                                  : `border-[color:var(--app-border)] bg-[var(--app-bg)] text-[var(--app-text-faint)]`,
+                                  ? `border-transparent bg-(--app-surface) text-(--app-primary)`
+                                  : `border-(--app-border) bg-(--app-bg) text-(--app-text-faint)`,
                               )}
                             >
                               {route.group}
@@ -383,7 +379,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                             <span
                               className={cn(
                                 `text-[11px] font-medium`,
-                                isActive ? `text-[var(--app-primary)]` : `text-[var(--app-text-faint)]`,
+                                isActive ? `text-(--app-primary)` : `text-(--app-text-faint)`,
                               )}
                             >
                               Enter
@@ -399,28 +395,28 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           )}
         </ul>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--app-border)] px-3 py-3 text-xs sm:px-4 md:px-5">
-          <div className="flex flex-wrap items-center gap-3 text-[var(--app-text-faint)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-(--app-border) px-3 py-3 text-xs sm:px-4 md:px-5">
+          <div className="flex flex-wrap items-center gap-3 text-(--app-text-faint)">
             <span className="inline-flex items-center gap-2">
-              <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--app-text-soft)]">
+              <kbd className="rounded-md border border-(--app-border) bg-(--app-surface-muted) px-1.5 py-0.5 text-[10px] font-medium text-(--app-text-soft)">
                 ↑↓
               </kbd>
               Navigate
             </span>
             <span className="inline-flex items-center gap-2">
-              <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--app-text-soft)]">
+              <kbd className="rounded-md border border-(--app-border) bg-(--app-surface-muted) px-1.5 py-0.5 text-[10px] font-medium text-(--app-text-soft)">
                 ↵
               </kbd>
               Open
             </span>
             <span className="inline-flex items-center gap-2">
-              <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--app-text-soft)]">
+              <kbd className="rounded-md border border-(--app-border) bg-(--app-surface-muted) px-1.5 py-0.5 text-[10px] font-medium text-(--app-text-soft)">
                 Esc
               </kbd>
               Close
             </span>
           </div>
-          <div className="text-[var(--app-text-muted)]">
+          <div className="text-(--app-text-muted)">
             {query ? `Press Enter to open the selected result.` : `Start typing to narrow down pages and actions.`}
           </div>
         </div>
