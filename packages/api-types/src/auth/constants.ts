@@ -67,11 +67,4 @@ export const HOW_DID_HEAR_ABOUT_US_VALUES = [
 
 export const AUTH_RATE_LIMIT_MESSAGE = `Too many attempts. Please wait a few minutes and try again.`;
 
-const VERIFICATION_STATUS = {
-  PENDING: `PENDING`,
-  APPROVED: `APPROVED`,
-  MORE_INFO: `MORE_INFO`,
-  REJECTED: `REJECTED`,
-  FLAGGED: `FLAGGED`,
-} as const;
-export type TVerificationStatus = (typeof VERIFICATION_STATUS)[keyof typeof VERIFICATION_STATUS];
+export type TVerificationStatus = `PENDING` | `APPROVED` | `MORE_INFO` | `REJECTED` | `FLAGGED`;

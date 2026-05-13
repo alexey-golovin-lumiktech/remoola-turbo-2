@@ -1,4 +1,3 @@
-const ADMIN_V2_BRIDGE_ROLES = [`SUPER_ADMIN`, `OPS_ADMIN`] as const;
 export const ADMIN_V2_SCHEMA_ROLES = [
   `SUPER_ADMIN`,
   `OPS_ADMIN`,
@@ -8,7 +7,7 @@ export const ADMIN_V2_SCHEMA_ROLES = [
   `READONLY_ADMIN`,
 ] as const;
 
-export type AdminV2BridgeRole = (typeof ADMIN_V2_BRIDGE_ROLES)[number];
+export type AdminV2BridgeRole = `SUPER_ADMIN` | `OPS_ADMIN`;
 export type AdminV2Role = (typeof ADMIN_V2_SCHEMA_ROLES)[number];
 export type AdminV2Workspace =
   | `overview`
@@ -178,18 +177,6 @@ export function hasValidAdminV2CapabilitySet(schemaCapabilities: readonly string
   }
 
   return schemaCapabilities.every((capability) => knownSet.has(capability));
-}
-
-function hasBridgeCapabilityCoverage(
-  schemaCapabilities: readonly string[],
-  requiredBridgeCapabilities: readonly AdminV2Capability[],
-) {
-  if (!hasValidAdminV2CapabilitySet(schemaCapabilities)) {
-    return false;
-  }
-
-  const schemaSet = new Set(schemaCapabilities);
-  return requiredBridgeCapabilities.every((capability) => schemaSet.has(capability));
 }
 
 function isOverridableAdminV2Capability(capability: string): capability is AdminV2Capability {

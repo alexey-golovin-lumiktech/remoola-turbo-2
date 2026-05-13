@@ -79,7 +79,3 @@ export const ADMIN_V2_LARGE_VALUE_THRESHOLDS: Partial<Record<$Enums.CurrencyCode
   JPY: 1_500_000,
   CNY: 70_000,
 };
-
-function isAdminV2LedgerAnomalyClass(value: string): value is AdminV2LedgerAnomalyClass {
-  return (ADMIN_V2_LEDGER_ANOMALY_CLASSES as readonly string[]).includes(value);
-}

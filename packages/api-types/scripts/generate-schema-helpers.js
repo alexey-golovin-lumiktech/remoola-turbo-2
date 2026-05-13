@@ -106,7 +106,7 @@ function generateContent(models) {
     ``,
     `// This file is auto-generated from packages/database-2/prisma/schema.prisma.`,
     `// Run \`yarn schema:generate:helpers\` from the repo root to regenerate it.`,
-    `/* eslint-disable @typescript-eslint/no-empty-object-type */`,
+    `/* eslint-disable @typescript-eslint/no-empty-object-type, max-len, prettier/prettier */`,
     ``,
   ];
 

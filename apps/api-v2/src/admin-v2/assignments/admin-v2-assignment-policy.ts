@@ -2,16 +2,16 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
 import { MAX_ASSIGNMENT_REASON_LENGTH, MIN_ASSIGNMENT_REASON_LENGTH } from './admin-v2-assignments.dto';
 
-export type AssignmentActorProfile = {
+type AssignmentActorProfile = {
   role: string;
 };
 
-export type AdminRefInput = {
+type AdminRefInput = {
   id: string | null;
   email: string | null;
 };
 
-export type AdminRefOutput = {
+type AdminRefOutput = {
   id: string;
   name: null;
   email: string | null;

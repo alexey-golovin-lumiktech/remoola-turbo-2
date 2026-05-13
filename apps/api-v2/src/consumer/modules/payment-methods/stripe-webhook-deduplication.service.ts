@@ -14,14 +14,12 @@ export const STRIPE_WEBHOOK_EVENT_STATUS = {
   FAILED: `FAILED`,
 } as const;
 
-export type StripeWebhookEventStatus = (typeof STRIPE_WEBHOOK_EVENT_STATUS)[keyof typeof STRIPE_WEBHOOK_EVENT_STATUS];
-
-export type StripeWebhookEventClaimResult =
+type StripeWebhookEventClaimResult =
   | { result: `claimed`; claimToken: string }
   | { result: `duplicate` }
   | { result: `inFlight` };
 
-export const STRIPE_WEBHOOK_PROCESSING_STALE_AFTER_MS = 15 * 60 * 1000;
+const STRIPE_WEBHOOK_PROCESSING_STALE_AFTER_MS = 15 * 60 * 1000;
 const MAX_STORED_ERROR_MESSAGE_LENGTH = 500;
 
 @Injectable()

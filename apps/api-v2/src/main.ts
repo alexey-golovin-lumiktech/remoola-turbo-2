@@ -1,57 +1,24 @@
+import { type IncomingMessage, type ServerResponse } from 'node:http';
+
 import { Logger, type INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { type NestExpressApplication } from '@nestjs/platform-express';
-
-import { type PrismaClient } from '@remoola/database-2';
+import { ExpressAdapter, type NestExpressApplication } from '@nestjs/platform-express';
+import express, { type Express } from 'express';
 
 import { AppModule } from './app.module';
-import { seedBootstrapData } from './bootstrap/bootstrap-seed';
 import { configureApp } from './configure-app';
+import { devBootstrapSeed } from './devBootstrapSeed';
 import { envs } from './envs';
 import { NgrokIngressService } from './infrastructure/ngrok/ngrok-ingress.service';
 import { OriginResolverService } from './shared/origin-resolver.service';
 import { PrismaService } from './shared/prisma.service';
+import { waitForDatabase } from './waitForDatabase';
 
 const logger = new Logger(`Bootstrap`);
 
-const DB_CONNECT_MAX_ATTEMPTS = 30;
-const DB_CONNECT_DELAY_MS = 500;
-
 let isShuttingDown = false;
-
-async function waitForDatabase(prisma: PrismaClient): Promise<void> {
-  for (let attempt = 1; attempt <= DB_CONNECT_MAX_ATTEMPTS; attempt++) {
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-
-      if (attempt > 1) {
-        logger.log(`Database ready after ${attempt} attempt(s)`);
-      }
-
-      return;
-    } catch (error) {
-      if (attempt === DB_CONNECT_MAX_ATTEMPTS) {
-        throw error;
-      }
-
-      logger.warn(
-        `Database not ready (attempt ${attempt}/${DB_CONNECT_MAX_ATTEMPTS}), retrying in ${DB_CONNECT_DELAY_MS}ms...`,
-      );
-
-      await new Promise((resolve) => setTimeout(resolve, DB_CONNECT_DELAY_MS));
-    }
-  }
-}
-
-async function runDevBootstrapSeed(prisma: PrismaClient): Promise<void> {
-  if (envs.isProductionLike) {
-    return;
-  }
-
-  logger.log(`Running bootstrap seed`);
-  await seedBootstrapData(prisma, logger);
-  logger.log(`Bootstrap seed complete`);
-}
+let vercelServer: Express | undefined;
+let vercelServerPromise: Promise<Express> | undefined;
 
 function registerProcessHandlers(app: INestApplication): void {
   const shutdown = async (signal: string, exitCode = 0): Promise<void> => {
@@ -124,8 +91,8 @@ async function bootstrap(): Promise<INestApplication> {
   configureApp(app, originResolver);
   const prisma = app.get(PrismaService);
 
-  await waitForDatabase(prisma);
-  await runDevBootstrapSeed(prisma);
+  await waitForDatabase(logger, prisma);
+  await devBootstrapSeed(logger, prisma);
 
   const port = envs.PORT || 3000;
   await app.listen(port);
@@ -151,6 +118,42 @@ async function bootstrap(): Promise<INestApplication> {
   registerProcessHandlers(app);
 
   return app;
+}
+
+async function createVercelServer(): Promise<Express> {
+  const server = express();
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter(server), {
+    rawBody: true,
+  });
+  const originResolver = app.get(OriginResolverService);
+  configureApp(app, originResolver);
+  const prisma = app.get(PrismaService);
+
+  await waitForDatabase(logger, prisma);
+  await devBootstrapSeed(logger, prisma);
+  await app.init();
+
+  return server;
+}
+
+async function getVercelServer(): Promise<Express> {
+  if (vercelServer) {
+    return vercelServer;
+  }
+
+  vercelServerPromise ??= createVercelServer();
+  try {
+    vercelServer = await vercelServerPromise;
+    return vercelServer;
+  } catch (error) {
+    vercelServerPromise = undefined;
+    throw error;
+  }
+}
+
+export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const server = await getVercelServer();
+  server(req, res);
 }
 
 if (require.main === module) {

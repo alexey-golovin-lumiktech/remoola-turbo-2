@@ -103,10 +103,6 @@ function isCurrencyCode(value: string): value is TCurrencyCode {
   return CURRENCY_CODES.includes(value as TCurrencyCode);
 }
 
-function isCurrencyDefinedAndValid(value: string | undefined | null): value is TCurrencyCode {
-  return !!value && isCurrencyCode(value);
-}
-
 export function toCurrencyOrUndefined(value: string | undefined | null): TCurrencyCode | undefined {
   return value && isCurrencyCode(value) ? value : undefined;
 }
@@ -117,29 +113,4 @@ export function toCurrencyOrNull(value: string | undefined | null): TCurrencyCod
 
 export function toCurrencyOrDefault(value: string | undefined | null, defaultValue: TCurrencyCode): TCurrencyCode {
   return value && isCurrencyCode(value) ? value : defaultValue;
-}
-
-function toCurrencyOrThrow(value: string | undefined | null): TCurrencyCode {
-  if (value && isCurrencyCode(value)) return value;
-  throw new Error(`Invalid currency code: ${value}`);
-}
-
-function toCurrency(value: string): TCurrencyCode | never {
-  if (isCurrencyCode(value)) return value;
-  throw new Error(`Invalid currency code: ${value}`);
-}
-
-/** Returns the currency symbol for display (e.g. USD → $, EUR → €). Uses Intl; falls back to code. */
-function getCurrencySymbol(currencyCode: TCurrencyCode): string {
-  try {
-    const parts = new Intl.NumberFormat(`en-US`, {
-      style: `currency`,
-      currency: currencyCode,
-      currencyDisplay: `symbol`,
-    }).formatToParts(0);
-    const currencyPart = parts.find((p) => p.type === `currency`);
-    return currencyPart?.value ?? currencyCode;
-  } catch {
-    return currencyCode;
-  }
 }

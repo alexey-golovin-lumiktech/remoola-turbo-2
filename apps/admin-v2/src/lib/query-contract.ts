@@ -1,7 +1,7 @@
 export type SearchParamValue = string | string[] | null | undefined;
-export type QueryParamValue = string | number | boolean | null | undefined;
+type QueryParamValue = string | number | boolean | null | undefined;
 
-export function singleSearchParam(value: SearchParamValue): string | undefined {
+function singleSearchParam(value: SearchParamValue): string | undefined {
   if (Array.isArray(value)) {
     return value[0];
   }

@@ -72,7 +72,3 @@ export const adminV2StepUpConfirmedVersionedMutationBodySchema = adminV2StepUpVe
 export const adminV2ExpectedDeletedAtNullBodySchema = z.object({
   expectedDeletedAtNull: z.literal(0),
 });
-
-const adminV2OptionalReasonSchema = z.object({
-  reason: z.string().trim().optional().nullable(),
-});

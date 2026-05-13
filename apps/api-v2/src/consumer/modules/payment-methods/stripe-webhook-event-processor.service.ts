@@ -4,7 +4,7 @@ import { StripeWebhookDeduplicationService } from './stripe-webhook-deduplicatio
 
 import type Stripe from 'stripe';
 
-export type StripeWebhookEventProcessorResult = `processed` | `duplicate` | `inFlight`;
+type StripeWebhookEventProcessorResult = `processed` | `duplicate` | `inFlight`;
 
 @Injectable()
 export class StripeWebhookEventProcessorService {

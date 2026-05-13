@@ -426,7 +426,11 @@ async function databaseExists(adminDatabaseUrl: string, databaseName: string): P
   }
 }
 
-async function createDatabase(adminDatabaseUrl: string, databaseName: string, templateDatabaseName?: string): Promise<void> {
+async function createDatabase(
+  adminDatabaseUrl: string,
+  databaseName: string,
+  templateDatabaseName?: string,
+): Promise<void> {
   const prisma = new PrismaClient({ datasourceUrl: adminDatabaseUrl });
   try {
     const quotedDatabaseName = quoteIdentifier(databaseName);
@@ -454,7 +458,11 @@ async function dropDatabase(adminDatabaseUrl: string, databaseName: string): Pro
   }
 }
 
-async function createTemplateDatabase(repoRoot: string, adminDatabaseUrl: string, templateDatabaseName: string): Promise<void> {
+async function createTemplateDatabase(
+  repoRoot: string,
+  adminDatabaseUrl: string,
+  templateDatabaseName: string,
+): Promise<void> {
   await createDatabase(adminDatabaseUrl, templateDatabaseName);
   const templateDatabaseUrl = buildDatabaseUrl(adminDatabaseUrl, templateDatabaseName);
   runPrismaMigrations(repoRoot, templateDatabaseUrl);
@@ -729,7 +737,9 @@ async function resolveFastTemplateMetadata(repoRoot: string): Promise<FastTempla
   try {
     const existing = readFastTemplateMetadata(repoRoot);
     if (existing && existing.ownerPid === getFastTemplateOwnerPid() && isPidAlive(existing.ownerPid)) {
-      const templateReady = await databaseExists(existing.adminDatabaseUrl, existing.templateDatabaseName).catch(() => false);
+      const templateReady = await databaseExists(existing.adminDatabaseUrl, existing.templateDatabaseName).catch(
+        () => false,
+      );
       if (templateReady) return existing;
     }
 
@@ -743,7 +753,8 @@ async function resolveFastTemplateMetadata(repoRoot: string): Promise<FastTempla
 
 async function createFastWorkerTemporaryDatabase(repoRoot: string): Promise<TemporaryDatabaseHandle> {
   const metadata = await resolveFastTemplateMetadata(repoRoot);
-  const workerDbName = `remoola_test_worker_${getFastTemplateRunKey()}_${process.pid}_${process.env.JEST_WORKER_ID ?? `0`}`;
+  const workerId = process.env.JEST_WORKER_ID ?? `0`;
+  const workerDbName = `remoola_test_worker_${getFastTemplateRunKey()}_${process.pid}_${workerId}`;
   await dropDatabase(metadata.adminDatabaseUrl, workerDbName);
   await createDatabase(metadata.adminDatabaseUrl, workerDbName, metadata.templateDatabaseName);
   const databaseUrl = buildDatabaseUrl(metadata.adminDatabaseUrl, workerDbName);

@@ -12,23 +12,20 @@ export const ADMIN_V2_QUICKSTART_IDS = [
 ] as const;
 
 const ADMIN_V2_QUICKSTART_SURFACES = [`shell`, `overview`, `all`] as const;
-const ADMIN_V2_QUICKSTART_OPERATOR_MODELS = [`entry-only`, `saved-view-compatible`, `threshold-editor`] as const;
-const ADMIN_V2_QUICKSTART_TARGET_ROUTES = [
-  `/verification`,
-  `/payments`,
-  `/payments/operations`,
-  `/ledger/anomalies`,
-  `/documents`,
-  `/exchange/scheduled`,
-  `/admins`,
-  `/audit/admin-actions`,
-  `/system/alerts`,
-] as const;
 
 export type AdminV2QuickstartId = (typeof ADMIN_V2_QUICKSTART_IDS)[number];
 export type AdminV2QuickstartSurface = (typeof ADMIN_V2_QUICKSTART_SURFACES)[number];
-export type AdminV2QuickstartOperatorModel = (typeof ADMIN_V2_QUICKSTART_OPERATOR_MODELS)[number];
-export type AdminV2QuickstartTargetRoute = (typeof ADMIN_V2_QUICKSTART_TARGET_ROUTES)[number];
+export type AdminV2QuickstartOperatorModel = `entry-only` | `saved-view-compatible` | `threshold-editor`;
+export type AdminV2QuickstartTargetRoute =
+  | `/verification`
+  | `/payments`
+  | `/payments/operations`
+  | `/ledger/anomalies`
+  | `/documents`
+  | `/exchange/scheduled`
+  | `/admins`
+  | `/audit/admin-actions`
+  | `/system/alerts`;
 
 export type AdminV2VerificationQuickstartFilters = {
   status?: string;

@@ -1,11 +1,11 @@
 import { escapeAttr, escapeHtml, safeHttpUrl } from './sanitize';
 
-export type EmailCta = {
+type EmailCta = {
   href: string;
   label: string;
 };
 
-export type EmailLayoutParams = {
+type EmailLayoutParams = {
   /**
    * Hidden text shown as preview snippet in some email clients.
    * This must be plain text (will be escaped).

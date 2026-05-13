@@ -1,6 +1,4 @@
 import {
-  ACCOUNT_TYPE,
-  CONTRACTOR_KIND,
   type TAccountType,
   type TConsumerRole,
   type TContractorKind,
@@ -195,23 +193,6 @@ export type ConsumerSignupPayload = {
   organizationDetails?: ConsumerSignupOrganizationDetailsPayload;
   personalDetails?: ConsumerSignupPersonalDetailsPayload;
 };
-
-function consumerSignupRequiresOrganizationDetails(
-  accountType: TAccountType,
-  contractorKind?: TContractorKind | null,
-): boolean {
-  return (
-    accountType === ACCOUNT_TYPE.BUSINESS ||
-    (accountType === ACCOUNT_TYPE.CONTRACTOR && contractorKind === CONTRACTOR_KIND.ENTITY)
-  );
-}
-
-function consumerSignupRequiresPersonalDetails(
-  accountType: TAccountType,
-  contractorKind?: TContractorKind | null,
-): boolean {
-  return accountType === ACCOUNT_TYPE.CONTRACTOR && contractorKind === CONTRACTOR_KIND.INDIVIDUAL;
-}
 
 export type ConsumerForgotPasswordBody = {
   email: string;

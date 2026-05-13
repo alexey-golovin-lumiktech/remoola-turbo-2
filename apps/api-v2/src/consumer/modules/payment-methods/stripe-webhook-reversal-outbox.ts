@@ -1,7 +1,7 @@
 import { $Enums, type Prisma } from '@remoola/database-2';
 
 export const STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE = `stripe.reversal.email_requested`;
-export const STRIPE_REVERSAL_EMAIL_OUTBOX_AGGREGATE_TYPE = `ledger_reversal`;
+const STRIPE_REVERSAL_EMAIL_OUTBOX_AGGREGATE_TYPE = `ledger_reversal`;
 
 export type StripeReversalEmailOutboxPayload = {
   paymentRequestId: string;

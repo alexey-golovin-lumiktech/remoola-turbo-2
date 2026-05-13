@@ -2,9 +2,9 @@ import { createHash } from 'crypto';
 
 import { $Enums } from '@remoola/database-2';
 
-export type PaymentReversalKind = `REFUND` | `CHARGEBACK`;
+type PaymentReversalKind = `REFUND` | `CHARGEBACK`;
 
-export type StrictReversalAmountResolution =
+type StrictReversalAmountResolution =
   | {
       ok: true;
       finalAmount: number;

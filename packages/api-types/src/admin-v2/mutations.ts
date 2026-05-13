@@ -17,8 +17,6 @@ export const PAYMENT_REVERSAL_KIND = {
 } as const;
 export type TPaymentReversalKind = (typeof PAYMENT_REVERSAL_KIND)[keyof typeof PAYMENT_REVERSAL_KIND];
 
-const PAYMENT_REVERSAL_KINDS = [PAYMENT_REVERSAL_KIND.REFUND, PAYMENT_REVERSAL_KIND.CHARGEBACK] as const;
-
 export type AdminV2LoginBody = {
   email: string;
   password: string;
@@ -164,35 +162,6 @@ export type AdminV2LegacyAdminStatusBody = {
   passwordConfirmation?: string;
 };
 
-const adminV2LoginBodySchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
-
-const adminV2RequestPasswordResetBodySchema = z.object({
-  email: z.string().email(),
-});
-
-const adminV2TokenPasswordBodySchema = z.object({
-  token: z.string().min(1),
-  password: z.string().min(1),
-});
-
-const adminV2RevokeAdminSessionBodySchema = z.object({
-  sessionId: z.string().uuid().optional(),
-});
-
-const adminV2CreateConsumerNoteBodySchema = z.object({
-  content: z.string().trim().min(1).max(4000),
-});
-
-const adminV2AddConsumerFlagBodySchema = z.object({
-  flag: z.string().trim().min(1).max(64),
-  reason: z.string().trim().max(500).optional().nullable(),
-});
-
-const adminV2RemoveConsumerFlagBodySchema = adminV2VersionedMutationBodySchema;
-
 export const adminV2ForceLogoutConsumerBodySchema = adminV2ConfirmedMutationBodySchema;
 
 export const adminV2SuspendConsumerBodySchema = adminV2ConfirmedMutationBodySchema.extend({
@@ -216,14 +185,11 @@ export const adminV2PaymentReversalBodySchema = z
   })
   .strict();
 
-const adminV2PaymentReversalKindSchema = z.enum(PAYMENT_REVERSAL_KINDS);
-
 export const adminV2DisablePaymentMethodBodySchema = adminV2ConfirmedVersionedMutationBodySchema.extend({
   reason: z.string().trim().min(1).max(500),
 });
 
 export const adminV2RemoveDefaultPaymentMethodBodySchema = adminV2VersionedMutationBodySchema;
-const adminV2DuplicateEscalatePaymentMethodBodySchema = adminV2VersionedMutationBodySchema;
 
 export const adminV2EscalatePayoutBodySchema = adminV2ConfirmedVersionedMutationBodySchema.extend({
   reason: z.string().trim().max(500).optional(),
@@ -231,30 +197,6 @@ export const adminV2EscalatePayoutBodySchema = adminV2ConfirmedVersionedMutation
 
 export const adminV2ApproveRateBodySchema = adminV2StepUpConfirmedVersionedMutationBodySchema.extend({
   reason: z.string().trim().min(1).max(500),
-});
-
-const adminV2DocumentTagCreateBodySchema = z.object({
-  name: z.string().trim().min(1).max(64),
-});
-
-const adminV2DocumentTagUpdateBodySchema = adminV2VersionedMutationBodySchema.extend({
-  name: z.string().trim().min(1).max(64),
-});
-
-const adminV2DocumentTagDeleteBodySchema = adminV2ConfirmedVersionedMutationBodySchema;
-
-const adminV2DocumentRetagBodySchema = adminV2VersionedMutationBodySchema.extend({
-  tagIds: z.array(z.string().uuid()),
-});
-
-const adminV2DocumentBulkTagBodySchema = z.object({
-  tagIds: z.array(z.string().uuid()),
-  resources: z.array(
-    z.object({
-      resourceId: z.string().uuid(),
-      version: z.number().int().positive(),
-    }),
-  ),
 });
 
 export const adminV2InviteAdminBodySchema = z.object({

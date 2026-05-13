@@ -1,6 +1,6 @@
-import { type ConsumerAppScope } from '../http';
 import { type TAccountType, type TContractorKind } from '../auth';
 import { type TCurrencyCode } from '../currency';
+import { type ConsumerAppScope } from '../http';
 import { type TPaymentDirection } from '../payments';
 import { type ConsumerPageQuery, type ConsumerOffsetQuery } from './common';
 
