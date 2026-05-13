@@ -2811,7 +2811,7 @@
   - **Stripe reversal notification scheduler:** Add a Cloudflare Worker cron app that drains the internal `/api/internal/jobs/stripe-reversal-notification-outbox` endpoint every minute with the same 25-row batch ceiling as the removed Nest in-process scheduler.
 
   ### 🔐 Security / Production Safety
-  - **Outbox drain controls:** Send both bearer `CRON_SECRET` and the Vercel protection-bypass header from the Worker, remove the duplicate Nest cron provider, and keep the daily Vercel Cron path documented as a low-throughput emergency fallback.
+  - **Outbox drain controls:** Send both bearer `CRON_SECRET` and the Vercel protection-bypass header from the Worker, remove the duplicate Nest cron provider, and make the Cloudflare Worker the scheduled outbox drain path.
   - **Worker rollout guardrails:** Add a GitHub Actions deploy workflow with Wrangler type checks and a Cloudflare Worker secret preflight for `CRON_SECRET` and `VERCEL_AUTOMATION_BYPASS_SECRET`.
 
   ### 🧪 Testing

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "secrets:list": "wrangler secret list --name remoola-outbox-scheduler",
     "types:wrangler": "wrangler types --check",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .wrangler"
