@@ -2802,7 +2802,7 @@
 
 # Changelog (May 2026)
 
-<details open>
+<details>
 <summary>2026-05-12</summary>
 
 - **2026-05-12:**
@@ -2822,6 +2822,36 @@
 
   ### ⚠️ Notes
   - **Rollout verification:** Live Cloudflare secrets, deploy-token scope, Vercel protection-bypass behavior, and actual cron execution still require environment verification after deployment.
+
+</details>
+
+<details open>
+<summary>2026-05-13</summary>
+
+- **2026-05-13:**
+
+  ### 🚀 Feature
+  - **Consumer read model isolation:** Extract consumer document listing, document attachment access checks, admin consumer case aggregation, and exchange-rate reads into focused query/policy services while preserving existing payment, ledger, and exchange behavior.
+
+  ### 🔐 Security / Production Safety
+  - **Payment request send concurrency:** Enforce an atomic draft-to-pending transition before ledger creation or payer notification so competing send requests cannot duplicate registered-payer ledger entries or notifications.
+  - **Admin production hardening:** Align admin-v2 query handling across ledger, payments, payment methods, payouts, verification, anomalies, and consumers; gate payment reversals with `payments.reverse`; harden legacy session rejection, webhook handling, Prisma errors, S3 wiring, logging, and audit paths.
+  - **API Vercel bootstrap hardening:** Export the `api-v2` Nest/Express handler for Vercel, share database readiness and dev bootstrap seeding across startup paths, and reset cached server initialization after failed cold starts while preserving scoped-cookie and payment/ledger invariants.
+  - **Outbox scheduler deployment path:** Remove the unused `apps/api-v2/vercel.json` cron config and keep the Cloudflare Worker as the scheduled Stripe reversal notification outbox drain path.
+
+  ### 🗄 Database & Migrations
+  - **Payment reversal permission migration:** Add the idempotent `20260513122000_admin_v2_payments_reverse_permission` data migration to grant `payments.reverse` to `SUPER_ADMIN` before relying on the new production reversal gate.
+
+  ### 🧪 Testing
+  - **Payment and API safety coverage:** Add DB concurrency coverage for registered-payer draft sends, race-loser and notification-dedupe unit coverage, admin-v2 controller/query/proxy coverage, auth/session guard coverage, webhook/reversal tests, S3/logging/audit tests, consumer document DB smoke tests, and Vercel handler retry coverage.
+  - **Verification pass:** Record the `api-v2` test, lint, typecheck, and Vercel guard build verification from the bootstrap/API contract change.
+
+  ### 🛠 DevEx
+  - **API type and bootstrap cleanup:** Trim unused `@remoola/api-types` exports and generated helper schemas, align generated schema helper output with lint/format constraints, and add focused database readiness/dev bootstrap seed entrypoints.
+  - **Outbox scheduler CI alignment:** Adjust the Worker deploy workflow secret preflight to run Wrangler from the scheduler package, add the scheduler `secrets:list` script, and align the root Node engine constraint for GitHub Actions.
+
+  ### 📄 Documentation
+  - **Production release notes:** Update API v2 release gate notes for bootstrap seeding, legacy session rejection, and generated fixture ignore behavior.
 
 </details>
 
