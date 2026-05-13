@@ -1,6 +1,6 @@
 import { buildPaymentRequestParticipantIdsSql } from '../../../shared/prisma-raw.utils';
 
-export function buildConsumerContractPaymentParticipantWhere(consumerId: string, consumerEmail: string | null) {
+function buildConsumerContractPaymentParticipantWhere(consumerId: string, consumerEmail: string | null) {
   return [
     { requesterId: consumerId },
     { payerId: consumerId },
@@ -19,7 +19,7 @@ export function buildConsumerContractPaymentParticipantWhere(consumerId: string,
   ];
 }
 
-export function buildConsumerContractCounterpartyWhere(emails: string[]) {
+function buildConsumerContractCounterpartyWhere(emails: string[]) {
   return emails.flatMap((email) => [
     { payer: { email: { equals: email, mode: `insensitive` as const } } },
     { requester: { email: { equals: email, mode: `insensitive` as const } } },

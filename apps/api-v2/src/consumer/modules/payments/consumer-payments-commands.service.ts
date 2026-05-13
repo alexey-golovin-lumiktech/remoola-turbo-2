@@ -262,14 +262,37 @@ export class ConsumerPaymentsCommandsService {
         throw new BadRequestException(errorCodes.INVALID_AMOUNT_SEND_DRAFT);
       }
 
-      const updated = await tx.paymentRequestModel.update({
-        where: { id: paymentRequestId },
+      const transition = await tx.paymentRequestModel.updateMany({
+        where: {
+          id: paymentRequestId,
+          requesterId: consumerId,
+          status: $Enums.TransactionStatus.DRAFT,
+        },
         data: {
           status: $Enums.TransactionStatus.PENDING,
           sentDate: new Date(),
           updatedBy: consumerId,
         },
       });
+
+      if (transition.count === 0) {
+        const current = await tx.paymentRequestModel.findUnique({
+          where: { id: paymentRequestId },
+          select: {
+            id: true,
+            requesterId: true,
+            status: true,
+          },
+        });
+
+        if (!current) {
+          throw new NotFoundException(errorCodes.PAYMENT_REQUEST_NOT_FOUND_SEND_DRAFT);
+        }
+        if (current.requesterId !== consumerId) {
+          throw new ForbiddenException(errorCodes.PAYMENT_ACCESS_DENIED_SEND_DRAFT);
+        }
+        throw new BadRequestException(errorCodes.ONLY_DRAFT_REQUESTS_CAN_BE_SENT);
+      }
 
       if (!paymentRequest.payerId && paymentRequest._count.ledgerEntries > 0) {
         throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_EMAIL_PAYMENT_SEND);
@@ -324,7 +347,7 @@ export class ConsumerPaymentsCommandsService {
       }
 
       return {
-        paymentRequestId: updated.id,
+        paymentRequestId: paymentRequest.id,
         email: {
           payerEmail: paymentRequest.payer?.email ?? paymentRequest.payerEmail ?? ``,
           requesterEmail: paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? ``,

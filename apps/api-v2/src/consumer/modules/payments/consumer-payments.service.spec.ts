@@ -450,7 +450,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
     const tx = {
       paymentRequestModel: {
         findUnique: jest.fn(),
-        update: jest.fn(),
+        updateMany: jest.fn(async () => ({ count: 1 })),
       },
       ledgerEntryModel: {
         create: jest.fn(),
@@ -495,12 +495,22 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
       requester: { email: requesterEmail },
       _count: { ledgerEntries: 0 },
     });
-    tx.paymentRequestModel.update.mockResolvedValue({ id: `pr-1` });
     tx.ledgerEntryModel.create.mockResolvedValue({});
 
     const result = await service.sendPaymentRequest(consumerId, `pr-1`, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(result).toEqual({ paymentRequestId: `pr-1` });
+    expect(tx.paymentRequestModel.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: `pr-1`,
+        requesterId: consumerId,
+        status: $Enums.TransactionStatus.DRAFT,
+      },
+      data: expect.objectContaining({
+        status: $Enums.TransactionStatus.PENDING,
+        updatedBy: consumerId,
+      }),
+    });
     expect(tx.ledgerEntryModel.create).toHaveBeenCalledTimes(2);
     expect(tx.ledgerEntryModel.create).toHaveBeenNthCalledWith(
       1,
@@ -559,12 +569,84 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
       requester: { email: requesterEmail },
       _count: { ledgerEntries: 0 },
     });
-    tx.paymentRequestModel.update.mockResolvedValue({ id: `pr-2` });
 
     const result = await service.sendPaymentRequest(consumerId, `pr-2`, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(result).toEqual({ paymentRequestId: `pr-2` });
     expect(tx.ledgerEntryModel.create).not.toHaveBeenCalled();
+    expect(mailingService.sendPaymentRequestEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payerEmail: `outside@example.com`,
+        requesterEmail,
+        consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
+      }),
+    );
+  });
+
+  it(`does not create ledger entries or notify when the draft transition loses a race`, async () => {
+    const { service, tx, mailingService } = makeService();
+
+    tx.paymentRequestModel.findUnique
+      .mockResolvedValueOnce({
+        id: `pr-race`,
+        requesterId: consumerId,
+        payerId: null,
+        payerEmail: `outside@example.com`,
+        status: $Enums.TransactionStatus.DRAFT,
+        amount: 42,
+        currencyCode: $Enums.CurrencyCode.USD,
+        description: null,
+        dueDate: null,
+        payer: null,
+        requester: { email: requesterEmail },
+        _count: { ledgerEntries: 0 },
+      })
+      .mockResolvedValueOnce({
+        id: `pr-race`,
+        requesterId: consumerId,
+        status: $Enums.TransactionStatus.PENDING,
+      });
+    tx.paymentRequestModel.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    await expect(service.sendPaymentRequest(consumerId, `pr-race`)).rejects.toThrow(BadRequestException);
+
+    expect(tx.ledgerEntryModel.create).not.toHaveBeenCalled();
+    expect(mailingService.sendPaymentRequestEmail).not.toHaveBeenCalled();
+  });
+
+  it(`only one concurrent email-only draft send notifies the payer`, async () => {
+    const { service, tx, mailingService } = makeService();
+    const draft = {
+      id: `pr-race`,
+      requesterId: consumerId,
+      payerId: null,
+      payerEmail: `outside@example.com`,
+      status: $Enums.TransactionStatus.DRAFT,
+      amount: 42,
+      currencyCode: $Enums.CurrencyCode.USD,
+      description: null,
+      dueDate: null,
+      payer: null,
+      requester: { email: requesterEmail },
+      _count: { ledgerEntries: 0 },
+    };
+
+    tx.paymentRequestModel.findUnique.mockResolvedValueOnce(draft).mockResolvedValueOnce(draft).mockResolvedValueOnce({
+      id: `pr-race`,
+      requesterId: consumerId,
+      status: $Enums.TransactionStatus.PENDING,
+    });
+    tx.paymentRequestModel.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+
+    const results = await Promise.allSettled([
+      service.sendPaymentRequest(consumerId, `pr-race`, CURRENT_CONSUMER_APP_SCOPE),
+      service.sendPaymentRequest(consumerId, `pr-race`, CURRENT_CONSUMER_APP_SCOPE),
+    ]);
+
+    expect(results.filter((result) => result.status === `fulfilled`)).toHaveLength(1);
+    expect(results.filter((result) => result.status === `rejected`)).toHaveLength(1);
+    expect(tx.ledgerEntryModel.create).not.toHaveBeenCalled();
+    expect(mailingService.sendPaymentRequestEmail).toHaveBeenCalledTimes(1);
     expect(mailingService.sendPaymentRequestEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         payerEmail: `outside@example.com`,
