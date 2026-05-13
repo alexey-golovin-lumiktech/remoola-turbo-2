@@ -9,18 +9,34 @@ import { TinyPill } from '../../../../components/tiny-pill';
 import {
   actionGroupClass,
   actionGroupLabelClass,
+  checkboxFieldClass,
+  checkboxInputClass,
+  dangerButtonClass,
+  fieldClass,
+  fieldLabelClass,
   monoMutedTextClass,
   mutedTextClass,
   nestedPanelClass,
+  operatorFormActionsClass,
+  operatorFormClass,
+  operatorFormConfirmClass,
+  operatorFormFieldsClass,
+  operatorFormFullWidthCtaClass,
+  operatorFormIntroClass,
+  operatorFormSectionClass,
   rawDataClass,
   stackClass,
+  textAreaClass,
+  textInputClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminIdentity, getAdmins, getPaymentCaseResult } from '../../../../lib/admin-api.server';
 import { getAdminDocumentDownloadHref } from '../../../../lib/admin-document-download';
 import {
+  chargebackPaymentAction,
   claimPaymentRequestAssignmentAction,
   reassignPaymentRequestAssignmentAction,
+  refundPaymentAction,
   releasePaymentRequestAssignmentAction,
 } from '../../../../lib/admin-mutations.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
@@ -90,6 +106,7 @@ export default async function PaymentCasePage({
   );
   const canManageAssignments = Boolean(identity?.capabilities?.includes(`assignments.manage`));
   const canReassignAssignments = identity?.role === `SUPER_ADMIN`;
+  const canReverse = Boolean(identity?.capabilities?.includes(`payments.reverse`));
   const canClaim = canManageAssignments && !currentAssignment;
   const canRelease = Boolean(currentAssignment && canManageAssignments && (ownsAssignment || canReassignAssignments));
   const canReassign = Boolean(currentAssignment && canReassignAssignments);
@@ -343,6 +360,142 @@ export default async function PaymentCasePage({
             </div>
           </Panel>
         </section>
+
+        {canReverse ? (
+          <section className="detailGrid">
+            <Panel title="Refund">
+              <form
+                action={refundPaymentAction.bind(
+                  null,
+                  paymentCase.id,
+                  paymentCase.payer.id ?? null,
+                  paymentCase.requester.id ?? null,
+                )}
+                className={operatorFormClass}
+              >
+                <div className={operatorFormSectionClass}>
+                  <div className={operatorFormIntroClass}>
+                    <p className="text-sm font-medium text-white/90">Issue refund</p>
+                    <p className={mutedTextClass}>
+                      Initiates a Stripe refund for this payment. Leave amount blank to reverse the remaining reversible
+                      amount (prior partial reversals reduce this). Requires step-up password confirmation.
+                    </p>
+                  </div>
+                  <div className={operatorFormFieldsClass}>
+                    <label className={fieldClass}>
+                      <span className={fieldLabelClass}>Amount (optional)</span>
+                      <input
+                        className={textInputClass}
+                        name="amount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Leave blank to reverse remaining reversible amount"
+                      />
+                    </label>
+                    <label className={fieldClass}>
+                      <span className={fieldLabelClass}>Reason (optional)</span>
+                      <textarea
+                        className={textAreaClass}
+                        name="reason"
+                        maxLength={500}
+                        placeholder="Optional context for the audit trail."
+                      />
+                    </label>
+                    <label className={fieldClass}>
+                      <span className={fieldLabelClass}>Current password</span>
+                      <input
+                        className={textInputClass}
+                        name="passwordConfirmation"
+                        type="password"
+                        autoComplete="current-password"
+                        required
+                        placeholder="Confirm with your current password"
+                      />
+                    </label>
+                  </div>
+                  <div className={operatorFormConfirmClass}>
+                    <label className={checkboxFieldClass}>
+                      <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+                      <span className={fieldLabelClass}>I confirm this refund is correct</span>
+                    </label>
+                  </div>
+                  <div className={operatorFormActionsClass}>
+                    <button className={`${dangerButtonClass} ${operatorFormFullWidthCtaClass}`} type="submit">
+                      Issue refund
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </Panel>
+
+            <Panel title="Chargeback">
+              <form
+                action={chargebackPaymentAction.bind(
+                  null,
+                  paymentCase.id,
+                  paymentCase.payer.id ?? null,
+                  paymentCase.requester.id ?? null,
+                )}
+                className={operatorFormClass}
+              >
+                <div className={operatorFormSectionClass}>
+                  <div className={operatorFormIntroClass}>
+                    <p className="text-sm font-medium text-white/90">Record chargeback</p>
+                    <p className={mutedTextClass}>
+                      Records a manual chargeback for this payment. Leave amount blank to apply the remaining reversible
+                      amount (prior partial reversals reduce this). Requires step-up password confirmation.
+                    </p>
+                  </div>
+                  <div className={operatorFormFieldsClass}>
+                    <label className={fieldClass}>
+                      <span className={fieldLabelClass}>Amount (optional)</span>
+                      <input
+                        className={textInputClass}
+                        name="amount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Leave blank to apply remaining reversible amount"
+                      />
+                    </label>
+                    <label className={fieldClass}>
+                      <span className={fieldLabelClass}>Reason (optional)</span>
+                      <textarea
+                        className={textAreaClass}
+                        name="reason"
+                        maxLength={500}
+                        placeholder="Optional context for the audit trail."
+                      />
+                    </label>
+                    <label className={fieldClass}>
+                      <span className={fieldLabelClass}>Current password</span>
+                      <input
+                        className={textInputClass}
+                        name="passwordConfirmation"
+                        type="password"
+                        autoComplete="current-password"
+                        required
+                        placeholder="Confirm with your current password"
+                      />
+                    </label>
+                  </div>
+                  <div className={operatorFormConfirmClass}>
+                    <label className={checkboxFieldClass}>
+                      <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+                      <span className={fieldLabelClass}>I confirm this chargeback is correct</span>
+                    </label>
+                  </div>
+                  <div className={operatorFormActionsClass}>
+                    <button className={`${dangerButtonClass} ${operatorFormFullWidthCtaClass}`} type="submit">
+                      Record chargeback
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </Panel>
+          </section>
+        ) : null}
       </>
     </WorkspaceLayout>
   );

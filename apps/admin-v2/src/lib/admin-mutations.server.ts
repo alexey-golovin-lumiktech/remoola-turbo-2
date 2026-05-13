@@ -20,6 +20,7 @@ import {
   adminV2OperationalAlertCreateBodySchema,
   adminV2OperationalAlertDeleteBodySchema,
   adminV2OperationalAlertUpdateBodySchema,
+  adminV2PaymentReversalBodySchema,
   adminV2RemoveDefaultPaymentMethodBodySchema,
   adminV2ResendConsumerEmailBodySchema,
   adminV2SavedViewCreateBodySchema,
@@ -178,6 +179,18 @@ function parseOptionalConsumerId(formData: FormData): string | null {
   return consumerId || null;
 }
 
+function revalidatePaymentPaths(paymentRequestId: string, consumerIds: (string | null)[]) {
+  revalidatePath(`/payments`);
+  revalidatePath(`/payments/${paymentRequestId}`);
+  const seen = new Set<string>();
+  for (const id of consumerIds) {
+    if (id && !seen.has(id)) {
+      revalidatePath(`/consumers/${id}`);
+      seen.add(id);
+    }
+  }
+}
+
 function revalidatePaymentMethodPaths(paymentMethodId: string, consumerId: string | null) {
   revalidatePath(`/payment-methods`);
   revalidatePath(`/payment-methods/${paymentMethodId}`);
@@ -272,6 +285,50 @@ export async function escalateDuplicatePaymentMethodAction(paymentMethodId: stri
     `Failed to escalate duplicate payment method`,
   );
   revalidatePaymentMethodPaths(paymentMethodId, consumerId);
+}
+
+export async function refundPaymentAction(
+  paymentRequestId: string,
+  payerId: string | null,
+  requesterId: string | null,
+  formData: FormData,
+): Promise<void> {
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  if (!confirmed) {
+    throw new Error(`Confirmation is required to issue a refund`);
+  }
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const rawAmount = String(formData.get(`amount`) ?? ``).trim();
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  const body = adminV2PaymentReversalBodySchema.parse({
+    amount: rawAmount ? Number(rawAmount) : undefined,
+    reason: reason || undefined,
+    passwordConfirmation,
+  });
+  await postAdminMutation(`/admin-v2/payments/${paymentRequestId}/refund`, body, `Failed to create refund`);
+  revalidatePaymentPaths(paymentRequestId, [payerId, requesterId]);
+}
+
+export async function chargebackPaymentAction(
+  paymentRequestId: string,
+  payerId: string | null,
+  requesterId: string | null,
+  formData: FormData,
+): Promise<void> {
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  if (!confirmed) {
+    throw new Error(`Confirmation is required to record a chargeback`);
+  }
+  const passwordConfirmation = parsePasswordConfirmation(formData);
+  const rawAmount = String(formData.get(`amount`) ?? ``).trim();
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  const body = adminV2PaymentReversalBodySchema.parse({
+    amount: rawAmount ? Number(rawAmount) : undefined,
+    reason: reason || undefined,
+    passwordConfirmation,
+  });
+  await postAdminMutation(`/admin-v2/payments/${paymentRequestId}/chargeback`, body, `Failed to create chargeback`);
+  revalidatePaymentPaths(paymentRequestId, [payerId, requesterId]);
 }
 
 export async function escalatePayoutAction(payoutId: string, formData: FormData): Promise<void> {
