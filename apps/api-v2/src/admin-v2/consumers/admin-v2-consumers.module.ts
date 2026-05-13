@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { ConsumerAdminCaseQuery } from './admin-v2-consumer-case.query';
 import { AdminV2ConsumersController } from './admin-v2-consumers.controller';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
 import { ConsumerModule } from '../../consumer/consumer.module';
@@ -9,7 +10,7 @@ import { AdminV2SharedModule } from '../admin-v2-shared.module';
 @Module({
   imports: [ConsumerContractsModule, ConsumerModule, AdminV2SharedModule],
   controllers: [AdminV2ConsumersController],
-  providers: [AdminV2ConsumersService],
+  providers: [ConsumerAdminCaseQuery, AdminV2ConsumersService],
   exports: [AdminV2ConsumersService],
 })
 export class AdminV2ConsumersModule {}
