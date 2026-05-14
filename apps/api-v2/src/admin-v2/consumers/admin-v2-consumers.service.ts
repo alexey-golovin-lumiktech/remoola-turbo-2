@@ -7,21 +7,19 @@ import {
   normalizeOptionalReason,
   validateConsumerSuspensionReason,
 } from './admin-v2-consumer-action-policy';
-import { AdminV2ConsumerActivityRepository } from './admin-v2-consumer-activity.repository';
-import { ConsumerAdminCaseRepository } from './admin-v2-consumer-case.repository';
+import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
+import { AdminV2ConsumerCaseQuery } from './admin-v2-consumer-case.query';
 import { AdminV2ConsumerFlagsRepository } from './admin-v2-consumer-flags.repository';
-import { AdminV2ConsumerLedgerRepository } from './admin-v2-consumer-ledger.repository';
+import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
 import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.repository';
-import { buildCreatedAtFilter, mapConsumerDisplayName, normalizePagination } from './admin-v2-consumer-query-helpers';
+import { mapConsumerDisplayName } from './admin-v2-consumer-query-helpers';
 import { type AdminV2ConsumerListParams, AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';
 import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
-import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
 const NOTE_MAX_LEN = 4000;
-const DEFAULT_CONSUMER_ACTION_RANGE_DAYS = 7;
 
 type RequestMeta = {
   ipAddress?: string | null;
@@ -45,15 +43,15 @@ export class AdminV2ConsumersService {
   // and side-effect collaborators without taking a direct Prisma dependency.
   constructor(
     private readonly consumerRepository: AdminV2ConsumerRepository,
-    private readonly consumerActivityQuery: AdminV2ConsumerActivityRepository,
-    private readonly consumerLedgerQuery: AdminV2ConsumerLedgerRepository,
+    private readonly consumerActivityQuery: AdminV2ConsumerActivityQuery,
+    private readonly consumerLedgerQuery: AdminV2ConsumerLedgerQuery,
     private readonly consumerNotesRepository: AdminV2ConsumerNotesRepository,
     private readonly consumerFlagsRepository: AdminV2ConsumerFlagsRepository,
     private readonly consumerContractsService: ConsumerContractsService,
     private readonly adminActionAudit: AdminActionAuditService,
     private readonly consumerAuthService: ConsumerAuthService,
     private readonly idempotency: AdminV2IdempotencyService,
-    private readonly consumerCaseQuery: ConsumerAdminCaseRepository,
+    private readonly consumerCaseQuery: AdminV2ConsumerCaseQuery,
   ) {}
 
   private async requireConsumer(consumerId: string) {
@@ -113,25 +111,14 @@ export class AdminV2ConsumersService {
     },
   ) {
     const consumer = await this.requireConsumer(consumerId);
-    const pagination = normalizePagination(params?.page, params?.pageSize);
-    const createdAt = buildCreatedAtFilter(params?.dateFrom, params?.dateTo);
-    const where = {
-      identityType: AUTH_IDENTITY_TYPES.consumer,
-      OR: [{ identityId: consumerId }, { email: consumer.email.toLowerCase() }],
-      ...(createdAt ? { createdAt } : {}),
-    };
-
-    const [items, total] = await Promise.all([
-      this.consumerActivityQuery.findAuthHistory(where, pagination.skip, pagination.pageSize),
-      this.consumerActivityQuery.countAuthHistory(where),
-    ]);
-
-    return {
-      items,
-      total,
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-    };
+    return this.consumerActivityQuery.getConsumerAuthHistory({
+      consumerId,
+      consumerEmail: consumer.email,
+      page: params?.page,
+      pageSize: params?.pageSize,
+      dateFrom: params?.dateFrom,
+      dateTo: params?.dateTo,
+    });
   }
 
   async getConsumerActionLog(
@@ -145,30 +132,14 @@ export class AdminV2ConsumersService {
     },
   ) {
     await this.requireConsumer(consumerId);
-    const pagination = normalizePagination(params?.page, params?.pageSize);
-    const dateTo = params?.dateTo ?? new Date();
-    const dateFrom =
-      params?.dateFrom ?? new Date(Date.now() - DEFAULT_CONSUMER_ACTION_RANGE_DAYS * 24 * 60 * 60 * 1000);
-    const createdAt = buildCreatedAtFilter(dateFrom, dateTo);
-    const where = {
+    return this.consumerActivityQuery.getConsumerActionLog({
       consumerId,
-      ...(params?.action?.trim() ? { action: params.action.trim() } : {}),
-      ...(createdAt ? { createdAt } : {}),
-    };
-
-    const [items, total] = await Promise.all([
-      this.consumerActivityQuery.findActionLog(where, pagination.skip, pagination.pageSize),
-      this.consumerActivityQuery.countActionLog(where),
-    ]);
-
-    return {
-      items,
-      total,
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      dateFrom,
-      dateTo,
-    };
+      page: params?.page,
+      pageSize: params?.pageSize,
+      dateFrom: params?.dateFrom,
+      dateTo: params?.dateTo,
+      action: params?.action,
+    });
   }
 
   async getConsumerCase(consumerId: string) {

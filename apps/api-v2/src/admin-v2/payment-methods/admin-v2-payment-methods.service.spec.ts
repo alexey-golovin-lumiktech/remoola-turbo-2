@@ -2,90 +2,102 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
+import { type AdminV2PaymentMethodsQuery } from './admin-v2-payment-methods.query';
+import { type AdminV2PaymentMethodsRepository } from './admin-v2-payment-methods.repository';
 import { AdminV2PaymentMethodsService } from './admin-v2-payment-methods.service';
 
 describe(`AdminV2PaymentMethodsService`, () => {
   function buildService() {
-    const queryRaw = jest.fn();
-    const paymentMethodModel = {
-      findMany: jest.fn(async () => []),
-      count: jest.fn(async () => 0),
-      findFirst: jest.fn(),
-      findUnique: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
-      updateMany: jest.fn(),
+    const query = {
+      listPaymentMethods: jest.fn(),
+      getPaymentMethodCase: jest.fn(),
+      listFingerprintDuplicates: jest.fn(),
     };
-    const paymentMethodDuplicateEscalationModel = {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-    };
-    const adminActionAuditLogModel = {
-      create: jest.fn(),
-    };
-    const tx = {
-      $queryRaw: queryRaw,
-      paymentMethodModel,
-      paymentMethodDuplicateEscalationModel,
-      adminActionAuditLogModel,
-    };
-    const prisma = {
-      paymentMethodModel,
-      paymentMethodDuplicateEscalationModel,
-      adminActionAuditLogModel,
-      $transaction: jest.fn(async (callback: (value: typeof tx) => unknown) => callback(tx)),
+    const repository = {
+      getPaymentMethodForMutation: jest.fn(),
+      listFingerprintDuplicateIds: jest.fn(),
+      disablePaymentMethod: jest.fn(),
+      removeDefaultPaymentMethod: jest.fn(),
+      escalateDuplicatePaymentMethod: jest.fn(),
     };
     const idempotency = {
       execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
+
     return {
-      service: new AdminV2PaymentMethodsService(prisma as never, idempotency as never),
-      prisma,
-      paymentMethodModel,
-      paymentMethodDuplicateEscalationModel,
-      adminActionAuditLogModel,
+      service: new AdminV2PaymentMethodsService(
+        query as unknown as AdminV2PaymentMethodsQuery,
+        repository as unknown as AdminV2PaymentMethodsRepository,
+        idempotency as never,
+      ),
+      query,
+      repository,
       idempotency,
-      queryRaw,
     };
   }
 
-  it(`keeps list filters inside schema-backed read scope`, async () => {
-    const { service, paymentMethodModel } = buildService();
+  it(`maps list results returned by the query collaborator`, async () => {
+    const { service, query } = buildService();
+    query.listPaymentMethods.mockResolvedValueOnce({
+      items: [
+        {
+          id: `pm-1`,
+          type: $Enums.PaymentMethodType.BANK_ACCOUNT,
+          brand: null,
+          last4: null,
+          bankLast4: `6789`,
+          defaultSelected: true,
+          stripeFingerprint: `fp-1`,
+          disabledAt: null,
+          createdAt: new Date(`2026-04-16T08:00:00.000Z`),
+          updatedAt: new Date(`2026-04-16T09:00:00.000Z`),
+          deletedAt: null,
+          consumer: { id: `consumer-1`, email: `owner@example.com` },
+        },
+      ],
+      total: 1,
+      page: 2,
+      pageSize: 10,
+    });
 
-    await service.listPaymentMethods({
+    const result = await service.listPaymentMethods({
       page: 2,
       pageSize: 10,
       consumerId: `consumer-1`,
-      type: `BANK_ACCOUNT`,
-      defaultSelected: true,
-      fingerprint: `fp-1`,
-      includeDeleted: true,
     });
 
-    expect(paymentMethodModel.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        skip: 10,
-        take: 10,
-        where: {
-          consumerId: `consumer-1`,
-          type: $Enums.PaymentMethodType.BANK_ACCOUNT,
+    expect(query.listPaymentMethods).toHaveBeenCalledWith({
+      page: 2,
+      pageSize: 10,
+      consumerId: `consumer-1`,
+    });
+    expect(result).toEqual({
+      items: [
+        {
+          id: `pm-1`,
+          type: `BANK_ACCOUNT`,
+          brand: null,
+          last4: null,
+          bankLast4: `6789`,
           defaultSelected: true,
           stripeFingerprint: `fp-1`,
+          status: `ACTIVE`,
+          disabledAt: null,
+          createdAt: `2026-04-16T08:00:00.000Z`,
+          updatedAt: `2026-04-16T09:00:00.000Z`,
+          deletedAt: null,
+          consumer: { id: `consumer-1`, email: `owner@example.com` },
         },
-      }),
-    );
-    expect(paymentMethodModel.count).toHaveBeenCalledWith({
-      where: {
-        consumerId: `consumer-1`,
-        type: $Enums.PaymentMethodType.BANK_ACCOUNT,
-        defaultSelected: true,
-        stripeFingerprint: `fp-1`,
-      },
+      ],
+      total: 1,
+      page: 2,
+      pageSize: 10,
     });
   });
 
   it(`returns only schema-backed detail fields and fingerprint duplicates`, async () => {
-    const { service, paymentMethodModel, paymentMethodDuplicateEscalationModel } = buildService();
-    paymentMethodModel.findFirst.mockResolvedValue({
+    const { service, query } = buildService();
+    query.getPaymentMethodCase.mockResolvedValueOnce({
       id: `pm-1`,
       type: $Enums.PaymentMethodType.CREDIT_CARD,
       stripePaymentMethodId: `stripe-pm-1`,
@@ -105,10 +117,7 @@ describe(`AdminV2PaymentMethodsService`, () => {
       createdAt: new Date(`2026-04-16T08:00:00.000Z`),
       updatedAt: new Date(`2026-04-16T09:00:00.000Z`),
       deletedAt: new Date(`2026-04-16T10:00:00.000Z`),
-      consumer: {
-        id: `consumer-1`,
-        email: `owner@example.com`,
-      },
+      consumer: { id: `consumer-1`, email: `owner@example.com` },
       billingDetails: {
         id: `billing-1`,
         email: `billing@example.com`,
@@ -130,7 +139,7 @@ describe(`AdminV2PaymentMethodsService`, () => {
         },
       ],
     });
-    paymentMethodModel.findMany.mockResolvedValue([
+    query.listFingerprintDuplicates.mockResolvedValueOnce([
       {
         id: `pm-2`,
         type: $Enums.PaymentMethodType.CREDIT_CARD,
@@ -140,95 +149,22 @@ describe(`AdminV2PaymentMethodsService`, () => {
         defaultSelected: false,
         createdAt: new Date(`2026-04-15T08:00:00.000Z`),
         deletedAt: null,
-        consumer: {
-          id: `consumer-2`,
-          email: `other@example.com`,
-        },
+        consumer: { id: `consumer-2`, email: `other@example.com` },
       },
     ]);
-    paymentMethodDuplicateEscalationModel.findUnique.mockResolvedValue(null);
 
     const paymentMethod = await service.getPaymentMethodCase(`pm-1`);
 
-    expect(paymentMethodModel.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: `pm-1` },
-      }),
-    );
-    expect(paymentMethodModel.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          stripeFingerprint: `fp-shared`,
-          id: { not: `pm-1` },
-        },
-      }),
-    );
-    expect(paymentMethod).toEqual({
-      id: `pm-1`,
-      type: `CREDIT_CARD`,
-      status: `DISABLED`,
-      stripePaymentMethodId: `stripe-pm-1`,
-      stripeFingerprint: `fp-shared`,
-      defaultSelected: true,
-      version: new Date(`2026-04-16T09:00:00.000Z`).getTime(),
-      brand: `Visa`,
-      last4: `4242`,
-      expMonth: `04`,
-      expYear: `2030`,
-      bankName: null,
-      bankLast4: null,
-      bankCountry: null,
-      bankCurrency: null,
-      serviceFee: 0,
-      createdAt: `2026-04-16T08:00:00.000Z`,
-      updatedAt: `2026-04-16T09:00:00.000Z`,
-      disabledAt: `2026-04-16T09:30:00.000Z`,
-      disabledBy: `admin-9`,
-      deletedAt: `2026-04-16T10:00:00.000Z`,
-      consumer: {
-        id: `consumer-1`,
-        email: `owner@example.com`,
-      },
-      billingDetails: {
-        id: `billing-1`,
-        email: `billing@example.com`,
-        name: `Owner`,
-        phone: `+10000000000`,
-        deletedAt: null,
-      },
-      duplicateEscalation: {
-        id: `esc-1`,
-        fingerprint: `fp-shared`,
-        duplicateCount: 2,
-        duplicatePaymentMethodIds: [`pm-2`],
-        createdAt: `2026-04-16T11:00:00.000Z`,
-        escalatedBy: {
-          id: `admin-2`,
-          email: `super@example.com`,
-        },
-      },
-      fingerprintDuplicates: [
-        {
-          id: `pm-2`,
-          type: `CREDIT_CARD`,
-          brand: `Visa`,
-          last4: `1111`,
-          bankLast4: null,
-          defaultSelected: false,
-          createdAt: `2026-04-15T08:00:00.000Z`,
-          deletedAt: null,
-          consumer: {
-            id: `consumer-2`,
-            email: `other@example.com`,
-          },
-        },
-      ],
-    });
+    expect(query.getPaymentMethodCase).toHaveBeenCalledWith(`pm-1`);
+    expect(query.listFingerprintDuplicates).toHaveBeenCalledWith(`fp-shared`, `pm-1`);
+    expect(paymentMethod.fingerprintDuplicates).toHaveLength(1);
+    expect(paymentMethod.duplicateEscalation?.id).toBe(`esc-1`);
+    expect(paymentMethod.status).toBe(`DISABLED`);
   });
 
   it(`does not invent fingerprint duplicate rows when fingerprint is absent`, async () => {
-    const { service, paymentMethodModel } = buildService();
-    paymentMethodModel.findFirst.mockResolvedValue({
+    const { service, query } = buildService();
+    query.getPaymentMethodCase.mockResolvedValueOnce({
       id: `pm-bank-1`,
       type: $Enums.PaymentMethodType.BANK_ACCOUNT,
       stripePaymentMethodId: null,
@@ -248,19 +184,15 @@ describe(`AdminV2PaymentMethodsService`, () => {
       createdAt: new Date(`2026-04-16T08:00:00.000Z`),
       updatedAt: new Date(`2026-04-16T09:00:00.000Z`),
       deletedAt: null,
-      consumer: {
-        id: `consumer-1`,
-        email: `owner@example.com`,
-      },
+      consumer: { id: `consumer-1`, email: `owner@example.com` },
       billingDetails: null,
       duplicateEscalations: [],
     });
 
     const paymentMethod = await service.getPaymentMethodCase(`pm-bank-1`);
 
-    expect(paymentMethodModel.findMany).not.toHaveBeenCalled();
+    expect(query.listFingerprintDuplicates).not.toHaveBeenCalled();
     expect(paymentMethod.fingerprintDuplicates).toEqual([]);
-    expect(paymentMethod.bankLast4).toBe(`6789`);
     expect(paymentMethod.duplicateEscalation).toBeNull();
   });
 
@@ -275,23 +207,26 @@ describe(`AdminV2PaymentMethodsService`, () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it(`routes disable through isolated idempotency scope and atomic audit`, async () => {
-    const { service, paymentMethodModel, adminActionAuditLogModel, idempotency } = buildService();
-    paymentMethodModel.findUnique.mockResolvedValueOnce({
+  it(`routes disable through isolated idempotency scope and repository persistence`, async () => {
+    const { service, repository, idempotency } = buildService();
+    repository.getPaymentMethodForMutation.mockResolvedValueOnce({
       id: `pm-1`,
       consumerId: `consumer-1`,
       defaultSelected: true,
       disabledAt: null,
       deletedAt: null,
       updatedAt: new Date(`2026-04-16T09:00:00.000Z`),
+      stripeFingerprint: `fp-shared`,
     });
-    paymentMethodModel.updateMany.mockResolvedValueOnce({ count: 1 });
-    paymentMethodModel.findUniqueOrThrow.mockResolvedValueOnce({
-      id: `pm-1`,
+    repository.disablePaymentMethod.mockResolvedValueOnce({
+      paymentMethodId: `pm-1`,
       consumerId: `consumer-1`,
+      status: `DISABLED`,
       defaultSelected: false,
-      disabledAt: new Date(`2026-04-16T10:00:00.000Z`),
-      updatedAt: new Date(`2026-04-16T10:00:00.000Z`),
+      disabledAt: `2026-04-16T10:00:00.000Z`,
+      version: new Date(`2026-04-16T10:00:00.000Z`).getTime(),
+      alreadyDisabled: false,
+      defaultCleared: true,
     });
 
     const result = await service.disablePaymentMethod(
@@ -308,21 +243,11 @@ describe(`AdminV2PaymentMethodsService`, () => {
         key: `idem-1`,
       }),
     );
-    expect(paymentMethodModel.updateMany).toHaveBeenCalledWith(
+    expect(repository.disablePaymentMethod).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          disabledBy: `admin-1`,
-          defaultSelected: false,
-        }),
-      }),
-    );
-    expect(adminActionAuditLogModel.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          action: `payment_method_disable`,
-          resource: `payment_method`,
-          resourceId: `pm-1`,
-        }),
+        paymentMethod: expect.objectContaining({ id: `pm-1` }),
+        adminId: `admin-1`,
+        reason: `Fraud signal`,
       }),
     );
     expect(result).toEqual(
@@ -330,27 +255,27 @@ describe(`AdminV2PaymentMethodsService`, () => {
         paymentMethodId: `pm-1`,
         consumerId: `consumer-1`,
         status: `DISABLED`,
-        alreadyDisabled: false,
-        defaultCleared: true,
       }),
     );
   });
 
   it(`treats remove-default as idempotent when the marker is already absent`, async () => {
-    const { service, paymentMethodModel } = buildService();
-    paymentMethodModel.findUnique.mockResolvedValueOnce({
+    const { service, repository } = buildService();
+    repository.getPaymentMethodForMutation.mockResolvedValueOnce({
       id: `pm-1`,
       consumerId: `consumer-1`,
       defaultSelected: false,
       disabledAt: null,
       deletedAt: null,
       updatedAt: new Date(`2026-04-16T09:00:00.000Z`),
+      stripeFingerprint: null,
     });
 
     const result = await service.removeDefaultPaymentMethod(`pm-1`, `admin-1`, {
       version: new Date(`2026-04-16T09:00:00.000Z`).getTime(),
     });
 
+    expect(repository.removeDefaultPaymentMethod).not.toHaveBeenCalled();
     expect(result).toEqual({
       paymentMethodId: `pm-1`,
       consumerId: `consumer-1`,
@@ -362,13 +287,14 @@ describe(`AdminV2PaymentMethodsService`, () => {
   });
 
   it(`rejects duplicate escalation without a real fingerprint cohort`, async () => {
-    const { service, paymentMethodModel } = buildService();
-    paymentMethodModel.findUnique.mockResolvedValueOnce({
+    const { service, repository } = buildService();
+    repository.getPaymentMethodForMutation.mockResolvedValueOnce({
       id: `pm-1`,
       consumerId: `consumer-1`,
       stripeFingerprint: null,
-      deletedAt: null,
+      defaultSelected: false,
       disabledAt: null,
+      deletedAt: null,
       updatedAt: new Date(`2026-04-16T09:00:00.000Z`),
     });
 
@@ -379,27 +305,18 @@ describe(`AdminV2PaymentMethodsService`, () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
-  it(`rejects duplicate escalation for soft-deleted methods even if the UI hides the affordance`, async () => {
-    const { service, paymentMethodModel, queryRaw } = buildService();
-    paymentMethodModel.findUnique.mockResolvedValueOnce({
+  it(`rejects duplicate escalation when there are no matching duplicates`, async () => {
+    const { service, repository } = buildService();
+    repository.getPaymentMethodForMutation.mockResolvedValueOnce({
       id: `pm-1`,
       consumerId: `consumer-1`,
       stripeFingerprint: `fp-shared`,
-      deletedAt: new Date(`2026-04-16T09:05:00.000Z`),
+      defaultSelected: false,
       disabledAt: null,
+      deletedAt: null,
       updatedAt: new Date(`2026-04-16T09:00:00.000Z`),
     });
-    paymentMethodModel.findMany.mockResolvedValueOnce([{ id: `pm-2` }]);
-    queryRaw.mockResolvedValueOnce([
-      {
-        id: `pm-1`,
-        consumer_id: `consumer-1`,
-        stripe_fingerprint: `fp-shared`,
-        deleted_at: new Date(`2026-04-16T09:05:00.000Z`),
-        disabled_at: null,
-        updated_at: new Date(`2026-04-16T09:00:00.000Z`),
-      },
-    ]);
+    repository.listFingerprintDuplicateIds.mockResolvedValueOnce([]);
 
     await expect(
       service.escalateDuplicatePaymentMethod(`pm-1`, `admin-1`, {
@@ -408,60 +325,19 @@ describe(`AdminV2PaymentMethodsService`, () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
-  it(`creates a durable duplicate escalation record and audit entry`, async () => {
-    const { service, paymentMethodModel, paymentMethodDuplicateEscalationModel, adminActionAuditLogModel, queryRaw } =
-      buildService();
-    paymentMethodModel.findUnique.mockResolvedValueOnce({
+  it(`delegates duplicate escalation persistence to the repository`, async () => {
+    const { service, repository } = buildService();
+    repository.getPaymentMethodForMutation.mockResolvedValueOnce({
       id: `pm-1`,
       consumerId: `consumer-1`,
       stripeFingerprint: `fp-shared`,
-      deletedAt: null,
+      defaultSelected: false,
       disabledAt: null,
+      deletedAt: null,
       updatedAt: new Date(`2026-04-16T09:00:00.000Z`),
     });
-    paymentMethodModel.findMany.mockResolvedValueOnce([{ id: `pm-2` }, { id: `pm-3` }]);
-    queryRaw.mockResolvedValueOnce([
-      {
-        id: `pm-1`,
-        consumer_id: `consumer-1`,
-        stripe_fingerprint: `fp-shared`,
-        deleted_at: null,
-        disabled_at: null,
-        updated_at: new Date(`2026-04-16T09:00:00.000Z`),
-      },
-    ]);
-    paymentMethodDuplicateEscalationModel.findUnique.mockResolvedValueOnce(null);
-    paymentMethodDuplicateEscalationModel.create.mockResolvedValueOnce({
-      id: `esc-1`,
-      createdAt: new Date(`2026-04-16T10:00:00.000Z`),
-      duplicateCount: 3,
-      duplicatePaymentMethodIds: [`pm-2`, `pm-3`],
-    });
-
-    const result = await service.escalateDuplicatePaymentMethod(`pm-1`, `admin-1`, {
-      version: new Date(`2026-04-16T09:00:00.000Z`).getTime(),
-    });
-
-    expect(paymentMethodDuplicateEscalationModel.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          paymentMethodId: `pm-1`,
-          fingerprint: `fp-shared`,
-          duplicateCount: 3,
-          duplicatePaymentMethodIds: [`pm-2`, `pm-3`],
-          escalatedBy: `admin-1`,
-        }),
-      }),
-    );
-    expect(adminActionAuditLogModel.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          action: `payment_method_duplicate_escalate`,
-          resourceId: `pm-1`,
-        }),
-      }),
-    );
-    expect(result).toEqual({
+    repository.listFingerprintDuplicateIds.mockResolvedValueOnce([`pm-2`, `pm-3`]);
+    repository.escalateDuplicatePaymentMethod.mockResolvedValueOnce({
       paymentMethodId: `pm-1`,
       consumerId: `consumer-1`,
       escalationId: `esc-1`,
@@ -471,34 +347,18 @@ describe(`AdminV2PaymentMethodsService`, () => {
       createdAt: `2026-04-16T10:00:00.000Z`,
       alreadyEscalated: false,
     });
-  });
 
-  it(`rejects duplicate escalation on stale version after the row lock resolves the latest state`, async () => {
-    const { service, paymentMethodModel, queryRaw } = buildService();
-    paymentMethodModel.findUnique.mockResolvedValueOnce({
-      id: `pm-1`,
-      consumerId: `consumer-1`,
-      stripeFingerprint: `fp-shared`,
-      deletedAt: null,
-      disabledAt: null,
-      updatedAt: new Date(`2026-04-16T09:00:00.000Z`),
+    const result = await service.escalateDuplicatePaymentMethod(`pm-1`, `admin-1`, {
+      version: new Date(`2026-04-16T09:00:00.000Z`).getTime(),
     });
-    paymentMethodModel.findMany.mockResolvedValueOnce([{ id: `pm-2` }]);
-    queryRaw.mockResolvedValueOnce([
-      {
-        id: `pm-1`,
-        consumer_id: `consumer-1`,
-        stripe_fingerprint: `fp-shared`,
-        deleted_at: null,
-        disabled_at: null,
-        updated_at: new Date(`2026-04-16T10:00:00.000Z`),
-      },
-    ]);
 
-    await expect(
-      service.escalateDuplicatePaymentMethod(`pm-1`, `admin-1`, {
-        version: new Date(`2026-04-16T09:00:00.000Z`).getTime(),
+    expect(repository.escalateDuplicatePaymentMethod).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fingerprint: `fp-shared`,
+        duplicatePaymentMethodIds: [`pm-2`, `pm-3`],
+        expectedVersion: new Date(`2026-04-16T09:00:00.000Z`).getTime(),
       }),
-    ).rejects.toBeInstanceOf(ConflictException);
+    );
+    expect(result.escalationId).toBe(`esc-1`);
   });
 });

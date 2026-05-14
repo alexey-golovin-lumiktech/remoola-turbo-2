@@ -4,9 +4,14 @@ import { ConsumerPaymentMethodsRepository } from './consumer-payment-methods.rep
 import { ConsumerPaymentMethodsService } from './consumer-payment-methods.service';
 import { StripeCheckoutSchedulerRepository } from './stripe-checkout-scheduler.repository';
 import { StripeCheckoutScheduler } from './stripe-checkout.scheduler';
+import { StripeCustomerAccessRepository } from './stripe-customer-access.repository';
+import { StripePaymentOutcomesRepository } from './stripe-payment-outcomes.repository';
 import { StripePaymentRequestAccessRepository } from './stripe-payment-request-access.repository';
+import { StripePaymentRequestLedgerBootstrapRepository } from './stripe-payment-request-ledger-bootstrap.repository';
 import { StripeReversalSchedulerRepository } from './stripe-reversal-scheduler.repository';
 import { StripeReversalScheduler } from './stripe-reversal.scheduler';
+import { StripeSavedPaymentMethodsRepository } from './stripe-saved-payment-methods.repository';
+import { StripeSetupIntentPersistenceRepository } from './stripe-setup-intent-persistence.repository';
 import { StripeWebhookDeduplicationRepository } from './stripe-webhook-deduplication.repository';
 import { StripeWebhookDeduplicationService } from './stripe-webhook-deduplication.service';
 import { StripeWebhookEventProcessorService } from './stripe-webhook-event-processor.service';
@@ -54,7 +59,12 @@ export const providers = [
   StripeWebhookReversalsService,
   StripeWebhookRouterService,
   StripeWebhookService,
+  StripeCustomerAccessRepository,
+  StripePaymentOutcomesRepository,
+  StripePaymentRequestLedgerBootstrapRepository,
   StripePaymentRequestAccessRepository,
+  StripeSavedPaymentMethodsRepository,
+  StripeSetupIntentPersistenceRepository,
   ConsumerStripeService,
   ConsumerPaymentMethodsRepository,
   ConsumerPaymentMethodsService,

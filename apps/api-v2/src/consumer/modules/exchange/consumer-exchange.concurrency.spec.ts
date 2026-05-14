@@ -4,6 +4,9 @@
  */
 import { $Enums } from '@remoola/database-2';
 
+import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
+import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
+import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
 import { ConsumerExchangeService } from './consumer-exchange.service';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
@@ -92,7 +95,12 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
 
   function createService(prisma: any) {
     const balanceService = new BalanceCalculationService(prisma);
-    return new ConsumerExchangeService(prisma, balanceService);
+    return new ConsumerExchangeService(
+      balanceService,
+      new ConsumerExchangeRateReader(prisma),
+      new ConsumerExchangeExecutionRepository(prisma),
+      new ConsumerExchangeAutomationRepository(prisma),
+    );
   }
 
   describe(`Exchange - Concurrent Requests`, () => {

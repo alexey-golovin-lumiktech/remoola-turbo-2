@@ -3,13 +3,25 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
+import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
 import {
   normalizeConsumerExchangeRule,
   normalizeConsumerScheduledConversion,
   roundConsumerExchangeAmountToCurrency,
 } from './consumer-exchange-normalizers';
+import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
 import { ConsumerExchangeService } from './consumer-exchange.service';
 import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
+
+function buildService(prisma: any, balanceService: any) {
+  return new ConsumerExchangeService(
+    balanceService,
+    new ConsumerExchangeRateReader(prisma),
+    new ConsumerExchangeExecutionRepository(prisma),
+    new ConsumerExchangeAutomationRepository(prisma),
+  );
+}
 
 function createExchangeRateRecord(overrides?: Partial<Record<string, unknown>>) {
   return {
@@ -44,7 +56,7 @@ function createRateLookupService() {
   const balanceService = {} as any;
 
   return {
-    service: new ConsumerExchangeService(prisma, balanceService),
+    service: buildService(prisma, balanceService),
     prisma,
   };
 }
@@ -108,7 +120,7 @@ describe(`ConsumerExchangeService.convert`, () => {
       calculateInTransaction: jest.fn().mockResolvedValue(0),
     } as any;
 
-    const service = new ConsumerExchangeService(prisma, balanceService);
+    const service = buildService(prisma, balanceService);
 
     await expect(
       service.convert(consumerId, { from: $Enums.CurrencyCode.USD, to: $Enums.CurrencyCode.EUR, amount: 50 }),
@@ -131,7 +143,7 @@ describe(`ConsumerExchangeService.getBalanceByCurrency`, () => {
       calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: { USD: 100 } }),
     } as any;
     const prisma = {} as any;
-    const service = new ConsumerExchangeService(prisma, balanceService);
+    const service = buildService(prisma, balanceService);
 
     const result = await service.getBalanceByCurrency(consumerId);
 
@@ -144,7 +156,7 @@ describe(`ConsumerExchangeService.getCurrencies`, () => {
   it(`returns structured currency items for the consumer contract`, () => {
     const prisma = {} as any;
     const balanceService = {} as any;
-    const service = new ConsumerExchangeService(prisma, balanceService);
+    const service = buildService(prisma, balanceService);
 
     expect(service.getCurrencies()).toEqual(
       expect.arrayContaining([

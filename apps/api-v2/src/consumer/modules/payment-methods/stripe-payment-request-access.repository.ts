@@ -1,10 +1,9 @@
-import { randomUUID } from 'crypto';
-
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { $Enums, Prisma } from '@remoola/database-2';
+import { $Enums, type Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { StripePaymentRequestLedgerBootstrapRepository } from './stripe-payment-request-ledger-bootstrap.repository';
 import { PrismaService } from '../../../shared/prisma.service';
 
 type PaymentRequestSettlementTransitionClient =
@@ -13,7 +12,10 @@ type PaymentRequestSettlementTransitionClient =
 
 @Injectable()
 export class StripePaymentRequestAccessRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ledgerBootstrapRepository: StripePaymentRequestLedgerBootstrapRepository,
+  ) {}
 
   async ensureCardPaymentRail(
     client: PaymentRequestSettlementTransitionClient,
@@ -27,6 +29,31 @@ export class StripePaymentRequestAccessRepository {
         updatedBy,
       },
     });
+  }
+
+  async ensureCardPaymentRailForRequest(paymentRequestId: string, updatedBy: string) {
+    await this.ensureCardPaymentRail(this.prisma, paymentRequestId, updatedBy);
+  }
+
+  async markPaymentRequestCompletedForStripe(
+    client: PaymentRequestSettlementTransitionClient,
+    paymentRequestId: string,
+  ) {
+    await client.paymentRequestModel.updateMany({
+      where: {
+        id: paymentRequestId,
+        OR: [{ status: { not: $Enums.TransactionStatus.COMPLETED } }, { paymentRail: null }],
+      },
+      data: {
+        status: $Enums.TransactionStatus.COMPLETED,
+        paymentRail: $Enums.PaymentRail.CARD,
+        updatedBy: `stripe`,
+      },
+    });
+  }
+
+  async markPaymentRequestCompletedForStripeRequest(paymentRequestId: string) {
+    await this.markPaymentRequestCompletedForStripe(this.prisma, paymentRequestId);
   }
 
   async getPaymentRequestForPayer(consumerId: string, paymentRequestId: string) {
@@ -90,60 +117,16 @@ export class StripePaymentRequestAccessRepository {
           if (!paymentRequest.requesterId) {
             throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_EMAIL_PAYMENT_STRIPE);
           }
-          const amount = Number(paymentRequest.amount);
-          const ledgerId = randomUUID();
-          const payerKey = `pr:${paymentRequest.id}:payer`;
-          const requesterKey = `pr:${paymentRequest.id}:requester`;
-
-          try {
-            await tx.ledgerEntryModel.create({
-              data: {
-                ledgerId,
-                consumerId,
-                paymentRequestId: paymentRequest.id,
-                type: $Enums.LedgerEntryType.USER_PAYMENT,
-                currencyCode: paymentRequest.currencyCode,
-                status: $Enums.TransactionStatus.PENDING,
-                amount: -amount,
-                createdBy: consumerId,
-                updatedBy: consumerId,
-                idempotencyKey: payerKey,
-                metadata: {
-                  rail: $Enums.PaymentRail.CARD,
-                  counterpartyId: paymentRequest.requesterId,
-                },
-              },
-            });
-          } catch (err) {
-            if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== `P2002`) {
-              throw err;
-            }
-          }
-
-          try {
-            await tx.ledgerEntryModel.create({
-              data: {
-                ledgerId,
-                consumerId: paymentRequest.requesterId,
-                paymentRequestId: paymentRequest.id,
-                type: $Enums.LedgerEntryType.USER_DEPOSIT,
-                currencyCode: paymentRequest.currencyCode,
-                status: $Enums.TransactionStatus.PENDING,
-                amount,
-                createdBy: consumerId,
-                updatedBy: consumerId,
-                idempotencyKey: requesterKey,
-                metadata: {
-                  rail: $Enums.PaymentRail.CARD,
-                  counterpartyId: consumerId,
-                },
-              },
-            });
-          } catch (err) {
-            if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== `P2002`) {
-              throw err;
-            }
-          }
+          await this.ledgerBootstrapRepository.bootstrapInitialLedgerEntries({
+            tx,
+            paymentRequest: {
+              id: paymentRequest.id,
+              requesterId: paymentRequest.requesterId,
+              amount: paymentRequest.amount,
+              currencyCode: paymentRequest.currencyCode,
+            },
+            consumerId,
+          });
         }
       }
     });

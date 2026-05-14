@@ -13,7 +13,6 @@ import { type VerificationConsumerDb } from './stripe-webhook-verification.repos
 import { StripeWebhookVerificationService } from './stripe-webhook-verification.service';
 import { CONSUMER_STRIPE_WEBHOOK_CLIENT } from './stripe-webhook.tokens';
 import { envs } from '../../../envs';
-import { PrismaService } from '../../../shared/prisma.service';
 
 type StripeWebhookResult = {
   statusCode: number;
@@ -28,7 +27,6 @@ export class StripeWebhookService {
   private readonly logger = new Logger(StripeWebhookService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
     @Inject(CONSUMER_STRIPE_WEBHOOK_CLIENT) private readonly stripe: Stripe,
     private readonly paymentMethodsService: StripeWebhookPaymentMethodsService,
     private readonly settlementsService: StripeWebhookSettlementsService,
@@ -37,37 +35,6 @@ export class StripeWebhookService {
     private readonly router: StripeWebhookRouterService,
     private readonly eventProcessor: StripeWebhookEventProcessorService,
   ) {}
-
-  private getEffectiveStatus(entry: {
-    status: $Enums.TransactionStatus;
-    outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-  }): $Enums.TransactionStatus {
-    return entry.outcomes?.[0]?.status ?? entry.status;
-  }
-
-  private getRequesterReversalEntryType(params: {
-    settlementEntryType: $Enums.LedgerEntryType | null | undefined;
-    paymentRail?: $Enums.PaymentRail | null;
-  }): $Enums.LedgerEntryType {
-    return params.settlementEntryType === $Enums.LedgerEntryType.USER_DEPOSIT ||
-      params.paymentRail === $Enums.PaymentRail.CARD
-      ? $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL
-      : $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL;
-  }
-
-  private async ensureCardPaymentRail(
-    tx: Pick<Prisma.TransactionClient, `paymentRequestModel`>,
-    paymentRequestId: string,
-    updatedBy: string,
-  ) {
-    await tx.paymentRequestModel.updateMany({
-      where: { id: paymentRequestId, paymentRail: null },
-      data: {
-        paymentRail: $Enums.PaymentRail.CARD,
-        updatedBy,
-      },
-    });
-  }
 
   private logWebhookFailure(params: {
     stage: `signature_verification_failed` | `managed_verification_processing_failed` | `webhook_processing_failed`;

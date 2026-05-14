@@ -4,10 +4,10 @@ import { Test } from '@nestjs/testing';
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { normalizeOptionalReason, validateConsumerSuspensionReason } from './admin-v2-consumer-action-policy';
-import { AdminV2ConsumerActivityRepository } from './admin-v2-consumer-activity.repository';
-import { ConsumerAdminCaseRepository } from './admin-v2-consumer-case.repository';
+import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
+import { AdminV2ConsumerCaseQuery } from './admin-v2-consumer-case.query';
 import { AdminV2ConsumerFlagsRepository } from './admin-v2-consumer-flags.repository';
-import { AdminV2ConsumerLedgerRepository } from './admin-v2-consumer-ledger.repository';
+import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
 import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.repository';
 import { mapConsumerDisplayName, mapPaymentMethodStatus } from './admin-v2-consumer-query-helpers';
 import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
@@ -138,22 +138,22 @@ describe(`admin-v2 consumer pure helpers`, () => {
 describe(`AdminV2ConsumersService`, () => {
   it(`resolves the consumer case query dependency through Nest DI`, async () => {
     const moduleProviders = Reflect.getMetadata(`providers`, AdminV2ConsumersModule) as unknown[] | undefined;
-    expect(moduleProviders).toContain(ConsumerAdminCaseRepository);
+    expect(moduleProviders).toContain(AdminV2ConsumerCaseQuery);
     expect(moduleProviders).toContain(AdminV2ConsumerRepository);
-    expect(moduleProviders).toContain(AdminV2ConsumerLedgerRepository);
-    expect(moduleProviders).toContain(AdminV2ConsumerActivityRepository);
+    expect(moduleProviders).toContain(AdminV2ConsumerLedgerQuery);
+    expect(moduleProviders).toContain(AdminV2ConsumerActivityQuery);
     expect(moduleProviders).toContain(AdminV2ConsumerNotesRepository);
     expect(moduleProviders).toContain(AdminV2ConsumerFlagsRepository);
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         AdminV2ConsumerRepository,
-        AdminV2ConsumerLedgerRepository,
-        AdminV2ConsumerActivityRepository,
+        AdminV2ConsumerLedgerQuery,
+        AdminV2ConsumerActivityQuery,
         AdminV2ConsumerNotesRepository,
         AdminV2ConsumerFlagsRepository,
         AdminV2ConsumersService,
-        ConsumerAdminCaseRepository,
+        AdminV2ConsumerCaseQuery,
         { provide: PrismaService, useValue: {} },
         { provide: ConsumerContractsService, useValue: {} },
         { provide: AdminActionAuditService, useValue: {} },
@@ -163,9 +163,157 @@ describe(`AdminV2ConsumersService`, () => {
     }).compile();
 
     expect(moduleRef.get(AdminV2ConsumersService)).toBeInstanceOf(AdminV2ConsumersService);
-    expect(moduleRef.get(ConsumerAdminCaseRepository)).toBeInstanceOf(ConsumerAdminCaseRepository);
+    expect(moduleRef.get(AdminV2ConsumerCaseQuery)).toBeInstanceOf(AdminV2ConsumerCaseQuery);
 
     await moduleRef.close();
+  });
+
+  it(`delegates auth history reads to the activity query with consumer identity context`, async () => {
+    const consumerRepository = {
+      findSummaryById: jest.fn().mockResolvedValue({
+        id: `consumer-1`,
+        email: `Consumer@Example.com`,
+      }),
+    };
+    const consumerActivityQuery = {
+      getConsumerAuthHistory: jest.fn().mockResolvedValue({
+        items: [{ id: `auth-1` }],
+        total: 1,
+        page: 2,
+        pageSize: 5,
+      }),
+    };
+    const service = new AdminV2ConsumersService(
+      consumerRepository as never,
+      consumerActivityQuery as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(
+      service.getConsumerAuthHistory(`consumer-1`, {
+        page: 2,
+        pageSize: 5,
+        dateFrom: new Date(`2026-05-01T00:00:00.000Z`),
+        dateTo: new Date(`2026-05-07T00:00:00.000Z`),
+      }),
+    ).resolves.toEqual({
+      items: [{ id: `auth-1` }],
+      total: 1,
+      page: 2,
+      pageSize: 5,
+    });
+
+    expect(consumerActivityQuery.getConsumerAuthHistory).toHaveBeenCalledWith({
+      consumerId: `consumer-1`,
+      consumerEmail: `Consumer@Example.com`,
+      page: 2,
+      pageSize: 5,
+      dateFrom: new Date(`2026-05-01T00:00:00.000Z`),
+      dateTo: new Date(`2026-05-07T00:00:00.000Z`),
+    });
+  });
+
+  it(`delegates action-log reads to the activity query without widening command dependencies`, async () => {
+    const consumerRepository = {
+      findSummaryById: jest.fn().mockResolvedValue({
+        id: `consumer-1`,
+        email: `consumer@example.com`,
+      }),
+    };
+    const consumerActivityQuery = {
+      getConsumerActionLog: jest.fn().mockResolvedValue({
+        items: [{ id: `action-1` }],
+        total: 1,
+        page: 1,
+        pageSize: 10,
+        dateFrom: new Date(`2026-05-08T00:00:00.000Z`),
+        dateTo: new Date(`2026-05-14T00:00:00.000Z`),
+      }),
+    };
+    const service = new AdminV2ConsumersService(
+      consumerRepository as never,
+      consumerActivityQuery as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(
+      service.getConsumerActionLog(`consumer-1`, {
+        action: `PASSWORD_RESET`,
+        page: 1,
+        pageSize: 10,
+      }),
+    ).resolves.toEqual({
+      items: [{ id: `action-1` }],
+      total: 1,
+      page: 1,
+      pageSize: 10,
+      dateFrom: new Date(`2026-05-08T00:00:00.000Z`),
+      dateTo: new Date(`2026-05-14T00:00:00.000Z`),
+    });
+
+    expect(consumerActivityQuery.getConsumerActionLog).toHaveBeenCalledWith({
+      consumerId: `consumer-1`,
+      action: `PASSWORD_RESET`,
+      page: 1,
+      pageSize: 10,
+      dateFrom: undefined,
+      dateTo: undefined,
+    });
+  });
+
+  it(`keeps ledger summary and consumer case on dedicated read-side collaborators`, async () => {
+    const consumerRepository = {
+      findSummaryById: jest.fn().mockResolvedValue({
+        id: `consumer-1`,
+        email: `consumer@example.com`,
+      }),
+    };
+    const consumerLedgerQuery = {
+      getLedgerSummary: jest
+        .fn()
+        .mockResolvedValue({ consumerId: `consumer-1`, summary: { USD: { completedAmount: `1.00` } } }),
+    };
+    const consumerCaseQuery = {
+      getConsumerCase: jest.fn().mockResolvedValue({ id: `consumer-1`, email: `consumer@example.com` }),
+    };
+    const service = new AdminV2ConsumersService(
+      consumerRepository as never,
+      {} as never,
+      consumerLedgerQuery as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      consumerCaseQuery as never,
+    );
+
+    await expect(service.getConsumerLedgerSummary(`consumer-1`)).resolves.toEqual({
+      consumerId: `consumer-1`,
+      summary: { USD: { completedAmount: `1.00` } },
+    });
+    await expect(service.getConsumerCase(`consumer-1`)).resolves.toEqual({
+      id: `consumer-1`,
+      email: `consumer@example.com`,
+    });
+
+    expect(consumerLedgerQuery.getLedgerSummary).toHaveBeenCalledWith(`consumer-1`);
+    expect(consumerCaseQuery.getConsumerCase).toHaveBeenCalledWith(`consumer-1`);
   });
 
   function buildService(initialState?: Partial<TestState> & { consumer?: Partial<TestConsumerState> }) {
@@ -302,12 +450,12 @@ describe(`AdminV2ConsumersService`, () => {
       execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
 
-    const consumerLedgerQuery = new AdminV2ConsumerLedgerRepository(prisma as never);
+    const consumerLedgerQuery = new AdminV2ConsumerLedgerQuery(prisma as never);
 
     return {
       service: new AdminV2ConsumersService(
         new AdminV2ConsumerRepository(prisma as never),
-        new AdminV2ConsumerActivityRepository(prisma as never),
+        new AdminV2ConsumerActivityQuery(prisma as never),
         consumerLedgerQuery,
         new AdminV2ConsumerNotesRepository(prisma as never),
         new AdminV2ConsumerFlagsRepository(prisma as never),
@@ -315,7 +463,7 @@ describe(`AdminV2ConsumersService`, () => {
         adminActionAudit as never,
         consumerAuthService as never,
         idempotency as never,
-        new ConsumerAdminCaseRepository(prisma as never, consumerLedgerQuery),
+        new AdminV2ConsumerCaseQuery(prisma as never, consumerLedgerQuery),
       ),
       prisma,
       adminActionAudit,

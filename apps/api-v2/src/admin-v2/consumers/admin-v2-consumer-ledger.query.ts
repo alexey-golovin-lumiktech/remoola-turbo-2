@@ -5,7 +5,7 @@ import { $Enums } from '@remoola/database-2';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
-export class AdminV2ConsumerLedgerRepository {
+export class AdminV2ConsumerLedgerQuery {
   constructor(private readonly prisma: PrismaService) {}
 
   async getLedgerSummary(consumerId: string) {

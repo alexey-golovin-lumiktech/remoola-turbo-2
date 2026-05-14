@@ -1,52 +1,21 @@
-import { randomUUID } from 'crypto';
-
 import { Inject, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 
-import { $Enums, Prisma } from '@remoola/database-2';
+import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { StripeWebhookReversalNotificationService } from './stripe-webhook-reversal-notification.service';
-import {
-  STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE,
-  buildStripeReversalEmailOutboxRows,
-} from './stripe-webhook-reversal-outbox';
 import { StripeWebhookReversalsRepository } from './stripe-webhook-reversals.repository';
 import { CONSUMER_STRIPE_WEBHOOK_CLIENT } from './stripe-webhook.tokens';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
-import {
-  buildStripeReversalLedgerIdempotencyKeys,
-  calculateAlreadyReversedAmount,
-  capExternalReversalAmount,
-  getEffectiveLedgerStatus,
-  getRequesterReversalEntryType,
-} from '../../../shared/payment-reversal-calculator';
-import {
-  acquireTransactionAdvisoryLock,
-  buildConsumerOperationLockName,
-  buildConsumerOutgoingBalanceLockName,
-  buildPaymentRequestOperationLockName,
-} from '../../../shared/prisma-advisory-locks';
-import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
 import type Stripe from 'stripe';
 
 @Injectable()
 export class StripeWebhookReversalsService {
-  private static readonly PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES = [
-    $Enums.LedgerEntryType.USER_PAYMENT,
-    $Enums.LedgerEntryType.USER_DEPOSIT,
-  ] as const;
-  private static readonly PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES = [
-    $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-    $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL,
-  ] as const;
-
   private readonly logger = new Logger(StripeWebhookReversalsService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
     private readonly reversalsRepository: StripeWebhookReversalsRepository,
     private readonly reversalNotifications: StripeWebhookReversalNotificationService,
     private readonly balanceService: BalanceCalculationService,
@@ -95,28 +64,11 @@ export class StripeWebhookReversalsService {
         : refund.status === `failed` || refund.status === `canceled`
           ? $Enums.TransactionStatus.DENIED
           : $Enums.TransactionStatus.PENDING;
-    const transitionExternalId = `refund-update:${refund.id}:${status}`;
 
-    await this.prisma.$transaction(async (tx) => {
-      const entries = await tx.ledgerEntryModel.findMany({
-        where: {
-          stripeId: refund.id,
-          type: { in: [...StripeWebhookReversalsService.PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES] },
-        },
-        select: { id: true },
-      });
-      for (const entry of entries) {
-        await createOutcomeIdempotent(
-          tx,
-          {
-            ledgerEntryId: entry.id,
-            status,
-            source: `stripe`,
-            externalId: transitionExternalId,
-          },
-          this.logger,
-        );
-      }
+    await this.reversalsRepository.appendRefundUpdatedOutcome({
+      refundId: refund.id,
+      status,
+      logger: this.logger,
     });
   }
 
@@ -138,21 +90,7 @@ export class StripeWebhookReversalsService {
 
     if (dispute.status !== `lost`) return;
 
-    const existingManualChargeback = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        paymentRequestId: paymentRequest.id,
-        type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-      },
-      select: { metadata: true },
-    });
-
-    const hasManualChargeback = existingManualChargeback.some((entry) => {
-      if (!entry.metadata || typeof entry.metadata !== `object` || Array.isArray(entry.metadata)) return false;
-      const metadata = entry.metadata as Record<string, unknown>;
-      return metadata.source === `admin` && metadata.stripeObjectType === `manual_chargeback`;
-    });
-
-    if (hasManualChargeback) return;
+    if (await this.reversalsRepository.hasManualChargebackReversal(paymentRequest.id)) return;
 
     const requestAmount = Number(paymentRequest.amount);
     const digits = getCurrencyFractionDigits(paymentRequest.currencyCode);
@@ -180,47 +118,18 @@ export class StripeWebhookReversalsService {
 
   async recordDisputeStatus(params: { paymentIntentId: string; dispute: Stripe.Dispute }) {
     const { paymentIntentId, dispute } = params;
-    const createDisputeIfMissing = async (ledgerEntryId: string) => {
-      await this.prisma.$transaction(async (tx) => {
-        await acquireTransactionAdvisoryLock(
-          tx,
-          buildConsumerOperationLockName(ledgerEntryId, `${dispute.id}:dispute`),
-        );
-        const existingDispute = await tx.ledgerEntryDisputeModel.findFirst({
-          where: { ledgerEntryId, stripeDisputeId: dispute.id },
-          select: { id: true },
-        });
-        if (existingDispute) {
-          return;
-        }
-        try {
-          await tx.ledgerEntryDisputeModel.create({
-            data: {
-              ledgerEntryId,
-              stripeDisputeId: dispute.id,
-              metadata: {
-                status: dispute.status,
-                amount: dispute.amount,
-                reason: dispute.reason ?? null,
-                updatedAt: new Date().toISOString(),
-              },
-            },
-          });
-        } catch (err) {
-          if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-            return;
-          }
-          throw err;
-        }
-      });
-    };
-
     const ledgerEntryId = await this.reversalsRepository.resolveDisputeLedgerEntryIdByPaymentIntent(paymentIntentId);
     if (!ledgerEntryId) {
       return;
     }
 
-    await createDisputeIfMissing(ledgerEntryId);
+    await this.reversalsRepository.createDisputeIfMissing({
+      ledgerEntryId,
+      stripeDisputeId: dispute.id,
+      status: dispute.status,
+      amount: dispute.amount,
+      reason: dispute.reason ?? null,
+    });
   }
 
   async createStripeReversal(params: {
@@ -250,178 +159,34 @@ export class StripeWebhookReversalsService {
 
     if (!payerId) return;
 
-    const idempotencyKeys = buildStripeReversalLedgerIdempotencyKeys({ kind, stripeObjectId });
-
-    const rail = kind === `CHARGEBACK` ? $Enums.PaymentRail.STRIPE_CHARGEBACK : $Enums.PaymentRail.STRIPE_REFUND;
-    const baseMetadata = {
-      rail,
-      reversalKind: kind,
-      source: `stripe`,
-      stripeObjectType: kind === `REFUND` ? `refund` : `dispute`,
-      ...metadata,
-    } as const;
-
-    const ledgerId = randomUUID();
-    let appendedAmount = 0;
-
-    try {
-      await this.prisma.$transaction(async (tx) => {
-        await acquireTransactionAdvisoryLock(
-          tx,
-          buildPaymentRequestOperationLockName(paymentRequestId, `stripe-reversal-pr`),
-        );
-
-        const reversalEntries = await tx.ledgerEntryModel.findMany({
-          where: {
-            paymentRequestId,
-            type: { in: [...StripeWebhookReversalsService.PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES] },
-          },
-          select: {
-            amount: true,
-            status: true,
-            outcomes: {
-              orderBy: { createdAt: `desc` },
-              take: 1,
-              select: { status: true },
-            },
-          },
-        });
-        const alreadyReversed = calculateAlreadyReversedAmount(reversalEntries);
-        const { finalAmount } = capExternalReversalAmount({
-          requestAmount,
-          alreadyReversed,
-          externalAmount: amount,
-        });
-        if (finalAmount <= 0) {
-          return;
-        }
-        appendedAmount = finalAmount;
-
-        const requesterSettlementEntry = requesterId
-          ? await tx.ledgerEntryModel.findFirst({
-              where: {
-                paymentRequestId,
-                consumerId: requesterId,
-                amount: { gt: 0 },
-                type: { in: [...StripeWebhookReversalsService.PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES] },
-              },
-              orderBy: { createdAt: `desc` },
-              select: {
-                type: true,
-                ledgerId: true,
-                paymentRequest: {
-                  select: {
-                    paymentRail: true,
-                  },
-                },
-              },
-            })
-          : null;
-        const requesterReversalType = getRequesterReversalEntryType({
-          settlementEntryType: requesterSettlementEntry?.type,
-          paymentRail: requesterSettlementEntry?.paymentRequest?.paymentRail ?? null,
-        });
-        const payerSettlementEntry = await tx.ledgerEntryModel.findFirst({
-          where: {
-            paymentRequestId,
-            consumerId: payerId,
-            amount: { lt: 0 },
-            type: $Enums.LedgerEntryType.USER_PAYMENT,
-          },
-          orderBy: { createdAt: `desc` },
-          select: { ledgerId: true },
-        });
-        const payerMetadata = {
-          ...baseMetadata,
-          reversalOfLedgerId: payerSettlementEntry?.ledgerId ?? null,
-        } as Prisma.InputJsonValue;
-        const requesterMetadata = {
-          ...baseMetadata,
-          reversalOfLedgerId: requesterSettlementEntry?.ledgerId ?? null,
-        } as Prisma.InputJsonValue;
-
-        if (requesterId) {
-          await acquireTransactionAdvisoryLock(tx, buildConsumerOutgoingBalanceLockName(requesterId));
-          await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(requesterId, `stripe-reversal`));
-
-          if (kind === `CHARGEBACK`) {
-            const requesterBalance = await this.balanceService.calculateInTransaction(tx, requesterId, currencyCode, {
-              mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
-            });
-            if (requesterBalance < finalAmount) {
-              throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
-            }
-          }
-        }
-
-        await tx.ledgerEntryModel.create({
-          data: {
-            ledgerId,
-            consumerId: payerId,
-            paymentRequestId,
-            type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-            currencyCode,
-            status: $Enums.TransactionStatus.COMPLETED,
-            amount: appendedAmount,
-            createdBy: `stripe`,
-            updatedBy: `stripe`,
-            metadata: payerMetadata,
-            stripeId: stripeObjectId ?? undefined,
-            idempotencyKey: idempotencyKeys.payer,
-          },
-        });
-
-        if (requesterId) {
-          await tx.ledgerEntryModel.create({
-            data: {
-              ledgerId,
-              consumerId: requesterId,
-              paymentRequestId,
-              type: requesterReversalType,
-              currencyCode,
-              status: $Enums.TransactionStatus.COMPLETED,
-              amount: -appendedAmount,
-              createdBy: `stripe`,
-              updatedBy: `stripe`,
-              metadata: requesterMetadata,
-              stripeId: stripeObjectId ?? undefined,
-              idempotencyKey: idempotencyKeys.requester,
-            },
-          });
-        }
-
-        const outboxRows = buildStripeReversalEmailOutboxRows({
-          aggregateId: ledgerId,
-          idempotencyKeyBase: idempotencyKeys.payer,
-          paymentRequestId,
-          payerId,
-          requesterId,
-          requesterEmail: requesterEmail ?? undefined,
-          amount: appendedAmount,
-          currencyCode,
-          kind,
-          reason: typeof metadata?.reason === `string` ? metadata.reason : null,
-        });
-        if (outboxRows.length > 0) {
-          await tx.notificationOutboxModel.createMany({
-            data: outboxRows,
-            skipDuplicates: true,
-          });
-        }
-      });
-    } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-        this.logger.debug(`Reversal already created (idempotent skip)`);
-        return;
-      }
-      throw err;
-    }
-
-    this.logger.debug({
-      event: STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE,
+    await this.reversalsRepository.appendStripeReversal({
       paymentRequestId,
+      payerId,
+      requesterId,
+      requesterEmail,
+      currencyCode,
+      requestAmount,
+      amount,
       kind,
-      outboxQueued: appendedAmount > 0,
+      stripeObjectId,
+      metadata,
+      logger: this.logger,
+      assertRequesterBalance:
+        requesterId && kind === `CHARGEBACK`
+          ? async ({ tx, requesterId: requesterConsumerId, currencyCode: reversalCurrencyCode, finalAmount }) => {
+              const requesterBalance = await this.balanceService.calculateInTransaction(
+                tx,
+                requesterConsumerId,
+                reversalCurrencyCode,
+                {
+                  mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
+                },
+              );
+              if (requesterBalance < finalAmount) {
+                throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
+              }
+            }
+          : undefined,
     });
   }
 
@@ -436,12 +201,5 @@ export class StripeWebhookReversalsService {
     reason?: string | null;
   }) {
     return this.reversalNotifications.sendReversalEmails(params);
-  }
-
-  private getEffectiveStatus(entry: {
-    status: $Enums.TransactionStatus;
-    outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-  }): $Enums.TransactionStatus {
-    return getEffectiveLedgerStatus(entry);
   }
 }

@@ -1,62 +1,27 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { $Enums, Prisma } from '@remoola/database-2';
-
 import {
   buildStaleVersionPayload,
   deriveStatus,
   deriveVersion,
   mapBillingDetails,
   mapConsumer,
-  normalizeEnumValue,
-  normalizePage,
-  normalizePageSize,
   toNullableIso,
 } from './admin-v2-payment-methods-mappers';
-import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
+import { AdminV2PaymentMethodsQuery } from './admin-v2-payment-methods.query';
+import {
+  AdminV2PaymentMethodsRepository,
+  type AdminV2PaymentMethodsRequestMeta as RequestMeta,
+} from './admin-v2-payment-methods.repository';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
 const REASON_MAX_LENGTH = 500;
 
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
-
-type LockedPaymentMethodRow = {
-  id: string;
-  consumer_id: string;
-  stripe_fingerprint: string | null;
-  deleted_at: Date | null;
-  disabled_at: Date | null;
-  updated_at: Date;
-};
-
-async function lockPaymentMethodForMutation(
-  tx: Pick<Prisma.TransactionClient, `$queryRaw`>,
-  id: string,
-): Promise<LockedPaymentMethodRow | null> {
-  const rows = await tx.$queryRaw<LockedPaymentMethodRow[]>(Prisma.sql`
-    SELECT
-      "id",
-      "consumer_id",
-      "stripe_fingerprint",
-      "deleted_at",
-      "disabled_at",
-      "updated_at"
-    FROM "payment_method"
-    WHERE "id" = ${id}
-    FOR UPDATE
-  `);
-  return rows[0] ?? null;
-}
-
 @Injectable()
 export class AdminV2PaymentMethodsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2PaymentMethodsQuery,
+    private readonly repository: AdminV2PaymentMethodsRepository,
     private readonly idempotency: AdminV2IdempotencyService,
   ) {}
 
@@ -69,49 +34,7 @@ export class AdminV2PaymentMethodsService {
     fingerprint?: string;
     includeDeleted?: boolean;
   }) {
-    const page = normalizePage(params?.page);
-    const pageSize = normalizePageSize(params?.pageSize);
-    const type = normalizeEnumValue(
-      params?.type,
-      Object.values($Enums.PaymentMethodType) as $Enums.PaymentMethodType[],
-    );
-    const fingerprint = params?.fingerprint?.trim() || undefined;
-    const where: Prisma.PaymentMethodModelWhereInput = {
-      ...(params?.includeDeleted ? {} : { deletedAt: null }),
-      ...(params?.consumerId?.trim() ? { consumerId: params.consumerId.trim() } : {}),
-      ...(type ? { type } : {}),
-      ...(typeof params?.defaultSelected === `boolean` ? { defaultSelected: params.defaultSelected } : {}),
-      ...(fingerprint ? { stripeFingerprint: fingerprint } : {}),
-    };
-
-    const [items, total] = await Promise.all([
-      this.prisma.paymentMethodModel.findMany({
-        where,
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        select: {
-          id: true,
-          type: true,
-          brand: true,
-          last4: true,
-          bankLast4: true,
-          defaultSelected: true,
-          stripeFingerprint: true,
-          disabledAt: true,
-          createdAt: true,
-          updatedAt: true,
-          deletedAt: true,
-          consumer: {
-            select: {
-              id: true,
-              email: true,
-            },
-          },
-        },
-      }),
-      this.prisma.paymentMethodModel.count({ where }),
-    ]);
+    const { items, total, page, pageSize } = await this.query.listPaymentMethods(params);
 
     return {
       items: items.map((item) => ({
@@ -136,91 +59,14 @@ export class AdminV2PaymentMethodsService {
   }
 
   async getPaymentMethodCase(id: string) {
-    const paymentMethod = await this.prisma.paymentMethodModel.findFirst({
-      where: { id },
-      select: {
-        id: true,
-        type: true,
-        stripePaymentMethodId: true,
-        stripeFingerprint: true,
-        defaultSelected: true,
-        disabledBy: true,
-        disabledAt: true,
-        brand: true,
-        last4: true,
-        expMonth: true,
-        expYear: true,
-        bankName: true,
-        bankLast4: true,
-        bankCountry: true,
-        bankCurrency: true,
-        serviceFee: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        consumer: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-        billingDetails: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            phone: true,
-            deletedAt: true,
-          },
-        },
-        duplicateEscalations: {
-          orderBy: { createdAt: `desc` },
-          take: 1,
-          select: {
-            id: true,
-            fingerprint: true,
-            duplicateCount: true,
-            duplicatePaymentMethodIds: true,
-            createdAt: true,
-            escalatedByAdmin: {
-              select: {
-                id: true,
-                email: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const paymentMethod = await this.query.getPaymentMethodCase(id);
 
     if (!paymentMethod) {
       throw new NotFoundException(`Payment method not found`);
     }
 
     const fingerprintDuplicates = paymentMethod.stripeFingerprint
-      ? await this.prisma.paymentMethodModel.findMany({
-          where: {
-            stripeFingerprint: paymentMethod.stripeFingerprint,
-            id: { not: paymentMethod.id },
-          },
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          select: {
-            id: true,
-            type: true,
-            brand: true,
-            last4: true,
-            bankLast4: true,
-            defaultSelected: true,
-            createdAt: true,
-            deletedAt: true,
-            consumer: {
-              select: {
-                id: true,
-                email: true,
-              },
-            },
-          },
-        })
+      ? await this.query.listFingerprintDuplicates(paymentMethod.stripeFingerprint, paymentMethod.id)
       : [];
 
     return {
@@ -303,17 +149,7 @@ export class AdminV2PaymentMethodsService {
       key: meta?.idempotencyKey,
       payload: { paymentMethodId: id, version: expectedVersion, confirmed: true, reason },
       execute: async () => {
-        const paymentMethod = await this.prisma.paymentMethodModel.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            consumerId: true,
-            defaultSelected: true,
-            disabledAt: true,
-            deletedAt: true,
-            updatedAt: true,
-          },
-        });
+        const paymentMethod = await this.repository.getPaymentMethodForMutation(id);
 
         if (!paymentMethod) {
           throw new NotFoundException(`Payment method not found`);
@@ -337,72 +173,11 @@ export class AdminV2PaymentMethodsService {
           };
         }
 
-        const disabledAt = new Date();
-        return this.prisma.$transaction(async (tx) => {
-          const updated = await tx.paymentMethodModel.updateMany({
-            where: {
-              id: paymentMethod.id,
-              updatedAt: paymentMethod.updatedAt,
-              disabledAt: null,
-              deletedAt: null,
-            },
-            data: {
-              disabledAt,
-              disabledBy: adminId,
-              defaultSelected: false,
-            },
-          });
-
-          if (updated.count === 0) {
-            const current = await tx.paymentMethodModel.findUnique({
-              where: { id: paymentMethod.id },
-              select: { updatedAt: true },
-            });
-            throw new ConflictException(
-              current ? buildStaleVersionPayload(current.updatedAt) : `Payment method has changed`,
-            );
-          }
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.payment_method_disable,
-              resource: `payment_method`,
-              resourceId: paymentMethod.id,
-              metadata: {
-                previousStatus: `ACTIVE`,
-                nextStatus: `DISABLED`,
-                reason,
-                confirmed: true,
-                previousDefaultSelected: paymentMethod.defaultSelected,
-                defaultCleared: paymentMethod.defaultSelected,
-              },
-              ipAddress: meta?.ipAddress ?? null,
-              userAgent: meta?.userAgent ?? null,
-            },
-          });
-
-          const fresh = await tx.paymentMethodModel.findUniqueOrThrow({
-            where: { id: paymentMethod.id },
-            select: {
-              id: true,
-              consumerId: true,
-              defaultSelected: true,
-              disabledAt: true,
-              updatedAt: true,
-            },
-          });
-
-          return {
-            paymentMethodId: fresh.id,
-            consumerId: fresh.consumerId,
-            status: `DISABLED`,
-            defaultSelected: fresh.defaultSelected,
-            disabledAt: fresh.disabledAt?.toISOString() ?? disabledAt.toISOString(),
-            version: deriveVersion(fresh.updatedAt),
-            alreadyDisabled: false,
-            defaultCleared: paymentMethod.defaultSelected,
-          };
+        return this.repository.disablePaymentMethod({
+          paymentMethod,
+          adminId,
+          reason,
+          meta,
         });
       },
     });
@@ -420,17 +195,7 @@ export class AdminV2PaymentMethodsService {
       key: meta?.idempotencyKey,
       payload: { paymentMethodId: id, version: expectedVersion },
       execute: async () => {
-        const paymentMethod = await this.prisma.paymentMethodModel.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            consumerId: true,
-            defaultSelected: true,
-            disabledAt: true,
-            deletedAt: true,
-            updatedAt: true,
-          },
-        });
+        const paymentMethod = await this.repository.getPaymentMethodForMutation(id);
 
         if (!paymentMethod) {
           throw new NotFoundException(`Payment method not found`);
@@ -452,64 +217,10 @@ export class AdminV2PaymentMethodsService {
           };
         }
 
-        return this.prisma.$transaction(async (tx) => {
-          const updated = await tx.paymentMethodModel.updateMany({
-            where: {
-              id: paymentMethod.id,
-              updatedAt: paymentMethod.updatedAt,
-              deletedAt: null,
-              defaultSelected: true,
-            },
-            data: {
-              defaultSelected: false,
-            },
-          });
-
-          if (updated.count === 0) {
-            const current = await tx.paymentMethodModel.findUnique({
-              where: { id: paymentMethod.id },
-              select: { updatedAt: true },
-            });
-            throw new ConflictException(
-              current ? buildStaleVersionPayload(current.updatedAt) : `Payment method has changed`,
-            );
-          }
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.payment_method_remove_default,
-              resource: `payment_method`,
-              resourceId: paymentMethod.id,
-              metadata: {
-                previousDefaultSelected: true,
-                nextDefaultSelected: false,
-                statusAtMutation: deriveStatus(paymentMethod),
-              },
-              ipAddress: meta?.ipAddress ?? null,
-              userAgent: meta?.userAgent ?? null,
-            },
-          });
-
-          const fresh = await tx.paymentMethodModel.findUniqueOrThrow({
-            where: { id: paymentMethod.id },
-            select: {
-              id: true,
-              consumerId: true,
-              defaultSelected: true,
-              disabledAt: true,
-              updatedAt: true,
-            },
-          });
-
-          return {
-            paymentMethodId: fresh.id,
-            consumerId: fresh.consumerId,
-            defaultSelected: fresh.defaultSelected,
-            status: deriveStatus(fresh),
-            version: deriveVersion(fresh.updatedAt),
-            alreadyNotDefault: false,
-          };
+        return this.repository.removeDefaultPaymentMethod({
+          paymentMethod,
+          adminId,
+          meta,
         });
       },
     });
@@ -527,17 +238,7 @@ export class AdminV2PaymentMethodsService {
       key: meta?.idempotencyKey,
       payload: { paymentMethodId: id, version: expectedVersion },
       execute: async () => {
-        const paymentMethod = await this.prisma.paymentMethodModel.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            consumerId: true,
-            stripeFingerprint: true,
-            deletedAt: true,
-            disabledAt: true,
-            updatedAt: true,
-          },
-        });
+        const paymentMethod = await this.repository.getPaymentMethodForMutation(id);
 
         if (!paymentMethod) {
           throw new NotFoundException(`Payment method not found`);
@@ -551,106 +252,25 @@ export class AdminV2PaymentMethodsService {
           throw new ConflictException(`Duplicate escalation requires a schema-backed fingerprint`);
         }
 
-        const duplicates = await this.prisma.paymentMethodModel.findMany({
-          where: {
-            stripeFingerprint: fingerprint,
-            id: { not: paymentMethod.id },
-          },
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          select: {
-            id: true,
-          },
-        });
-
-        if (duplicates.length === 0) {
+        const duplicatePaymentMethodIds = await this.repository.listFingerprintDuplicateIds(
+          fingerprint,
+          paymentMethod.id,
+        );
+        if (duplicatePaymentMethodIds.length === 0) {
           throw new ConflictException(`Duplicate escalation requires at least one matching fingerprint duplicate`);
         }
 
-        return this.prisma.$transaction(async (tx) => {
-          const lockedPaymentMethod = await lockPaymentMethodForMutation(tx, paymentMethod.id);
-          if (!lockedPaymentMethod) {
-            throw new NotFoundException(`Payment method not found`);
-          }
-          if (deriveVersion(lockedPaymentMethod.updated_at) !== expectedVersion) {
-            throw new ConflictException(buildStaleVersionPayload(lockedPaymentMethod.updated_at));
-          }
-          if (lockedPaymentMethod.deleted_at) {
-            throw new ConflictException(`Soft-deleted payment method cannot escalate duplicate review`);
-          }
-
-          const existing = await tx.paymentMethodDuplicateEscalationModel.findUnique({
-            where: {
-              paymentMethodId_fingerprint: {
-                paymentMethodId: paymentMethod.id,
-                fingerprint,
-              },
-            },
-            select: {
-              id: true,
-              createdAt: true,
-              duplicateCount: true,
-              duplicatePaymentMethodIds: true,
-            },
-          });
-
-          if (existing) {
-            return {
-              paymentMethodId: paymentMethod.id,
-              consumerId: paymentMethod.consumerId,
-              escalationId: existing.id,
-              fingerprint,
-              duplicateCount: existing.duplicateCount,
-              duplicatePaymentMethodIds: existing.duplicatePaymentMethodIds,
-              createdAt: existing.createdAt.toISOString(),
-              alreadyEscalated: true,
-            };
-          }
-
-          const duplicatePaymentMethodIds = duplicates.map((item) => item.id);
-          const escalation = await tx.paymentMethodDuplicateEscalationModel.create({
-            data: {
-              paymentMethodId: paymentMethod.id,
-              fingerprint,
-              duplicateCount: duplicatePaymentMethodIds.length + 1,
-              duplicatePaymentMethodIds,
-              escalatedBy: adminId,
-            },
-            select: {
-              id: true,
-              createdAt: true,
-              duplicateCount: true,
-              duplicatePaymentMethodIds: true,
-            },
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.payment_method_duplicate_escalate,
-              resource: `payment_method`,
-              resourceId: paymentMethod.id,
-              metadata: {
-                fingerprint,
-                duplicateCount: escalation.duplicateCount,
-                duplicatePaymentMethodIds,
-                currentStatus: deriveStatus({ disabledAt: lockedPaymentMethod.disabled_at }),
-                softDeleted: false,
-              },
-              ipAddress: meta?.ipAddress ?? null,
-              userAgent: meta?.userAgent ?? null,
-            },
-          });
-
-          return {
-            paymentMethodId: paymentMethod.id,
+        return this.repository.escalateDuplicatePaymentMethod({
+          paymentMethod: {
+            id: paymentMethod.id,
             consumerId: paymentMethod.consumerId,
-            escalationId: escalation.id,
-            fingerprint,
-            duplicateCount: escalation.duplicateCount,
-            duplicatePaymentMethodIds: escalation.duplicatePaymentMethodIds,
-            createdAt: escalation.createdAt.toISOString(),
-            alreadyEscalated: false,
-          };
+            updatedAt: paymentMethod.updatedAt,
+          },
+          fingerprint,
+          duplicatePaymentMethodIds,
+          expectedVersion,
+          adminId,
+          meta,
         });
       },
     });
