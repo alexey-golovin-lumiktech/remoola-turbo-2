@@ -5,7 +5,7 @@ import { THEME } from '@remoola/api-types';
 
 import { ConsumerSettingsController } from './consumer-settings.controller';
 import { ConsumerSettingsService } from './consumer-settings.service';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
+import { AuthGuard } from '../../../guards';
 
 describe(`ConsumerSettingsController`, () => {
   let controller: ConsumerSettingsController;
@@ -36,7 +36,7 @@ describe(`ConsumerSettingsController`, () => {
     })
       .overrideGuard(ThrottlerGuard)
       .useValue({ canActivate: () => true })
-      .overrideGuard(JwtAuthGuard)
+      .overrideGuard(AuthGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

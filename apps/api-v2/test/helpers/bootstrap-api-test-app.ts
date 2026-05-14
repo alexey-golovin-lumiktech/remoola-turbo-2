@@ -6,7 +6,6 @@ import { Test, type TestingModule, type TestingModuleBuilder } from '@nestjs/tes
 import cookieParser from 'cookie-parser';
 import express from 'express';
 
-import { JwtAuthGuard } from '../../src/auth/jwt.guard';
 import { IDENTITY } from '../../src/common';
 import { configureApp } from '../../src/configure-app';
 import { envs } from '../../src/envs';
@@ -120,11 +119,19 @@ function configureManualAuthContractApp(
   app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
 }
 
-function configureValidationOnlyApp(app: NestExpressApplication, cookieSecret: string, jsonLimit: string) {
+function configureValidationOnlyApp(
+  app: NestExpressApplication,
+  cookieSecret: string,
+  jsonLimit: string,
+  identity?: unknown,
+) {
   app.setGlobalPrefix(`api`);
   app.use(express.json({ limit: jsonLimit }));
   app.use(cookieParser(cookieSecret));
   app.useGlobalPipes(createStrictValidationPipe());
+  if (identity !== undefined) {
+    app.useGlobalGuards(buildIdentityGuard(identity));
+  }
 }
 
 function configureWebhookApp(
@@ -171,14 +178,6 @@ export async function bootstrapApiTestApp<TApp extends INestApplication = NestEx
   const finalProviderOverrides = [...providerOverrides];
   const finalGuardOverrides = [...guardOverrides];
 
-  if (preset === `authContract`) {
-    finalProviderOverrides.unshift({ provide: AuthGuard, useValue: { canActivate: () => true } });
-  }
-
-  if (preset === `validationOnly` && identity !== undefined) {
-    finalGuardOverrides.unshift({ provide: JwtAuthGuard, useValue: buildIdentityGuard(identity) });
-  }
-
   builder = applyOverrides(builder, finalProviderOverrides, `provider`);
   builder = applyOverrides(builder, finalGuardOverrides, `guard`);
 
@@ -193,7 +192,7 @@ export async function bootstrapApiTestApp<TApp extends INestApplication = NestEx
       configureManualAuthContractApp(app, moduleFixture, cookieSecret, jsonLimit);
       break;
     case `validationOnly`:
-      configureValidationOnlyApp(app, cookieSecret, jsonLimit);
+      configureValidationOnlyApp(app, cookieSecret, jsonLimit, identity);
       break;
     case `webhook`:
       configureWebhookApp(app, rawBodyProperty, cookieSecret, jsonLimit);

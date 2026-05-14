@@ -6,7 +6,7 @@ import { envs } from '../envs';
 import { JwtStrategy } from './jwt.strategy';
 import { DatabaseModule } from '../shared/database.module';
 
-/** Registers Passport `jwt` strategy once for app-wide `JwtAuthGuard` usage. */
+/** Registers the shared JWT strategy and JwtService for the app auth stack and auth-focused tests. */
 @Module({
   imports: [
     DatabaseModule,

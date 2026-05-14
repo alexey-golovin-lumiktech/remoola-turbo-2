@@ -1,11 +1,10 @@
-import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
 import { ConsumerContractsService } from './consumer-contracts.service';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../../common';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
 
@@ -56,7 +55,6 @@ class ConsumerContractsListQuery {
 
 @ApiTags(`Consumer: Contracts`)
 @Controller(`consumer/contracts`)
-@UseGuards(JwtAuthGuard)
 export class ConsumerContractsController {
   constructor(private readonly service: ConsumerContractsService) {}
 

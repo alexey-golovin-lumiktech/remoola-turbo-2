@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform } from 'class-transformer';
@@ -7,7 +7,6 @@ import { IsBoolean, IsDate, IsNumber, IsOptional, IsString, MaxLength, Min } fro
 import { PAYMENT_REVERSAL_KIND } from '@remoola/api-types';
 
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import {
@@ -119,7 +118,6 @@ class PaymentReversalBody {
   passwordConfirmation!: string;
 }
 
-@UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Payments`)
 @Throttle({ default: { limit: 500, ttl: 60000 } })

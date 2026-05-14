@@ -1,11 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 import { AdminV2LedgerAnomaliesService } from './admin-v2-ledger-anomalies.service';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../../common';
 import { AdminV2AccessService } from '../../admin-v2-access.service';
 import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../admin-v2-query-transforms';
@@ -41,7 +40,6 @@ class LedgerAnomaliesListQuery {
   limit?: number;
 }
 
-@UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Ledger anomalies`)
 @Throttle({ default: { limit: 500, ttl: 60000 } })

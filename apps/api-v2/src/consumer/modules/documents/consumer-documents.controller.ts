@@ -7,7 +7,6 @@ import {
   Query,
   Res,
   StreamableFile,
-  UseGuards,
   UploadedFiles,
   UseInterceptors,
   Param,
@@ -22,7 +21,6 @@ import express from 'express';
 
 import { ConsumerDocumentsService } from './consumer-documents.service';
 import { AttachDocuments, BulkDeleteDocuments, ConsumerDocumentsListResponse, SetTags } from './dto/document.dto';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../../common';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
 
@@ -61,7 +59,6 @@ class UploadDocumentsBody {
 
 @ApiTags(`Consumer: documents`)
 @Controller(`consumer/documents`)
-@UseGuards(JwtAuthGuard)
 export class ConsumerDocumentsController {
   constructor(private readonly documents: ConsumerDocumentsService) {}
 

@@ -1,21 +1,8 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
-import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { SavedViewCreateBody, SavedViewDeleteBody, SavedViewUpdateBody } from './admin-v2-saved-views.dto';
@@ -33,7 +20,6 @@ function requestMeta(req: express.Request) {
   };
 }
 
-@UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Saved Views`)
 @Throttle({ default: { limit: 500, ttl: 60000 } })

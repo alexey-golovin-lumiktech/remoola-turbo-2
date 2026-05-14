@@ -1,14 +1,4 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Param,
-  Post,
-  Query,
-  Req,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Param, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
@@ -17,13 +7,11 @@ import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { CreatePaymentRequest } from './dto';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
 
 @ApiTags(`Consumer: Payment Requests`)
 @Controller(`consumer/payment-requests`)
-@UseGuards(JwtAuthGuard)
 export class ConsumerPaymentRequestsController {
   constructor(
     private readonly service: ConsumerPaymentsService,

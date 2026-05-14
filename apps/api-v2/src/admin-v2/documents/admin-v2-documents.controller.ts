@@ -1,24 +1,10 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  Req,
-  Res,
-  StreamableFile,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, Res, StreamableFile } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import express from 'express';
 
-import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { resolveRequestBaseUrl } from '../../shared/request-base-url';
 import { AdminV2AccessService } from '../admin-v2-access.service';
@@ -180,7 +166,6 @@ class AdminDocumentsListQuery {
   includeDeleted?: boolean;
 }
 
-@UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Documents`)
 @Throttle({ default: { limit: 500, ttl: 60000 } })

@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Type } from 'class-transformer';
@@ -20,7 +20,6 @@ import express from 'express';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { constants } from '../../shared-common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
@@ -156,7 +155,6 @@ class LegacyAdminStatusBody {
   passwordConfirmation?: string;
 }
 
-@UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Admins`)
 @Throttle({ default: { limit: 500, ttl: 60000 } })

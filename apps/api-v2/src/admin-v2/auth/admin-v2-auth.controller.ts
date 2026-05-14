@@ -9,7 +9,6 @@ import {
   Req,
   Res,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -19,7 +18,6 @@ import express from 'express';
 
 import { AdminAuthControllerSupportService } from '../../admin-auth/admin-auth-controller-support.service';
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
 import { BACKOFFICE } from '../../dtos';
 import { BackofficeCredentials } from '../../dtos/backoffice';
@@ -145,7 +143,6 @@ export class AdminV2AuthController {
     return { ok: true };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post(`revoke-session`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiCookieAuth()
@@ -189,14 +186,12 @@ export class AdminV2AuthController {
     return { ok: true as const, ...result };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(`me`)
   @ApiCookieAuth()
   async me(@Identity() identity: IIdentityContext) {
     return identity;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(`me/sessions`)
   @ApiCookieAuth()
   async listMySessions(@Identity() identity: IIdentityContext) {

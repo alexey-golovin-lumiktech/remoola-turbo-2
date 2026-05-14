@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Put, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Put, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 import { type ConsumerModel } from '@remoola/database-2';
@@ -7,12 +7,10 @@ import { ConsumerSettingsService } from './consumer-settings.service';
 import { PatchConsumerSettings } from './dto/patch-consumer-settings.dto';
 import { UpdatePreferredCurrency } from './dto/update-preferred-currency.dto';
 import { UpdateTheme } from './dto/update-theme.dto';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 
 @ApiTags(`Consumer Settings`)
 @Controller(`consumer/settings`)
-@UseGuards(JwtAuthGuard)
 export class ConsumerSettingsController {
   constructor(private readonly settingsService: ConsumerSettingsService) {}
 

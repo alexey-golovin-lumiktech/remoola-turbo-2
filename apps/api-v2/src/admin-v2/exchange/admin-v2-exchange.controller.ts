@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
@@ -6,7 +6,6 @@ import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class
 import express from 'express';
 
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
@@ -159,7 +158,6 @@ class ExchangeListScheduledConversionsQuery {
   status?: string;
 }
 
-@UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Exchange`)
 @Throttle({ default: { limit: 500, ttl: 60000 } })

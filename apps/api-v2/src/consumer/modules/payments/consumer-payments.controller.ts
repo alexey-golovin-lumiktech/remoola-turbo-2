@@ -9,7 +9,6 @@ import {
   Query,
   Req,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
@@ -24,7 +23,6 @@ import { ConsumerInvoiceService } from './consumer-invoice.service';
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, TrackConsumerAction } from '../../../common';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
@@ -67,7 +65,6 @@ class ConsumerPaymentsListQuery {
 
 @ApiTags(`Consumer: Payments`)
 @Controller(`consumer/payments`)
-@UseGuards(JwtAuthGuard)
 export class ConsumerPaymentsController {
   constructor(
     private readonly service: ConsumerPaymentsService,

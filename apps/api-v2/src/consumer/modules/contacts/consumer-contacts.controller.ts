@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsEmail, IsNumber, IsOptional, IsString, Min } from 'class-validator';
@@ -11,7 +11,6 @@ import {
   ConsumerCreateContact,
   ConsumerUpdateContact,
 } from './dto/consumer-contact.dto';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../../common';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
 
@@ -51,7 +50,6 @@ class ConsumerContactLookupQuery {
 
 @ApiTags(`Consumer: Contacts`)
 @Controller(`consumer/contacts`)
-@UseGuards(JwtAuthGuard)
 export class ConsumerContactsController {
   constructor(private service: ConsumerContactsService) {}
 

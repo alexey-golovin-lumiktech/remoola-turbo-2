@@ -1,14 +1,12 @@
-import { BadRequestException, Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
-import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { isQuickstartId, isQuickstartSurface, type IAdminV2QuickstartSurface } from './admin-v2-quickstarts.dto';
 import { AdminV2QuickstartsService } from './admin-v2-quickstarts.service';
 
-@UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Quickstarts`)
 @Throttle({ default: { limit: 500, ttl: 60000 } })

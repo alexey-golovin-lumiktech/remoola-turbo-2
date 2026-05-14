@@ -1,11 +1,10 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
-import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
@@ -98,7 +97,6 @@ class DuplicateEscalatePaymentMethodBody {
   version!: number;
 }
 
-@UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Payment Methods`)
 @Throttle({ default: { limit: 500, ttl: 60000 } })

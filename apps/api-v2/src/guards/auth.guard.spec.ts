@@ -27,6 +27,7 @@ type MockRequest = {
 describe(`AuthGuard`, () => {
   const reflector = {
     get: jest.fn(),
+    getAllAndOverride: jest.fn(),
   };
   const jwtService = {
     verify: jest.fn(),
@@ -58,11 +59,13 @@ describe(`AuthGuard`, () => {
         getRequest: () => request,
       }),
       getHandler: () => undefined,
+      getClass: () => undefined,
     }) as unknown as ExecutionContext;
 
   beforeEach(() => {
     jest.clearAllMocks();
     reflector.get.mockReturnValue(false);
+    reflector.getAllAndOverride.mockReturnValue(false);
     originResolver.validateConsumerAppScope.mockImplementation((value?: string | null) =>
       value === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
     );

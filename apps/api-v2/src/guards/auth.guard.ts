@@ -45,7 +45,7 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext) {
     const request: TExpressRequest = context.switchToHttp().getRequest();
-    const isPublic = this.reflector.get<boolean>(IS_PUBLIC, context.getHandler());
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [context.getHandler(), context.getClass()]);
     if (isPublic) return true;
 
     const path = getRequestPath(request);

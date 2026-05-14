@@ -1,16 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerPaymentMethodsService } from './consumer-payment-methods.service';
 import { CreateManualPaymentMethod, PaymentMethodsResponse, UpdatePaymentMethod } from './dto/payment-method.dto';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, TrackConsumerAction } from '../../../common';
 
 @ApiTags(`Consumer: Payment Methods`)
 @Controller(`consumer/payment-methods`)
-@UseGuards(JwtAuthGuard)
 export class ConsumerPaymentMethodsController {
   constructor(private paymentService: ConsumerPaymentMethodsService) {}
 
