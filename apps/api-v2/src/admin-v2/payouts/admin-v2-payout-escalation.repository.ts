@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { type Prisma } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
@@ -10,9 +10,61 @@ type RequestMeta = {
   userAgent?: string | null;
 };
 
+type LockedPayoutRow = {
+  id: string;
+  type: $Enums.LedgerEntryType;
+  status: $Enums.TransactionStatus;
+  consumer_id: string;
+  payment_request_id: string | null;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+};
+
 @Injectable()
 export class AdminV2PayoutEscalationRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  findEscalationPreflight(payoutId: string) {
+    return this.prisma.ledgerEntryModel.findUnique({
+      where: { id: payoutId },
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+        outcomes: {
+          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+          take: 1,
+          select: {
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  async lockPayoutForEscalation(tx: Prisma.TransactionClient, payoutId: string): Promise<LockedPayoutRow | null> {
+    const lockedRows = await tx.$queryRaw<LockedPayoutRow[]>(Prisma.sql`
+      SELECT
+        "id",
+        "type",
+        "status",
+        "consumer_id",
+        "payment_request_id",
+        "created_at",
+        "updated_at",
+        "deleted_at"
+      FROM "ledger_entry"
+      WHERE "id" = ${payoutId}
+      FOR UPDATE
+    `);
+
+    return lockedRows[0] ?? null;
+  }
 
   findLatestOutcome(tx: Prisma.TransactionClient, ledgerEntryId: string) {
     return tx.ledgerEntryOutcomeModel.findFirst({

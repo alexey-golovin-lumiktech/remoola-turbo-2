@@ -64,17 +64,6 @@ type PaymentMethodSummaryRow = {
   deletedAt: Date | null;
 };
 
-type LockedPayoutRow = {
-  id: string;
-  type: $Enums.LedgerEntryType;
-  status: $Enums.TransactionStatus;
-  consumer_id: string;
-  payment_request_id: string | null;
-  created_at: Date;
-  updated_at: Date;
-  deleted_at: Date | null;
-};
-
 type PayoutHighValuePolicy = {
   availability: PayoutHighValuePolicyAvailability;
   source: string;
@@ -668,7 +657,7 @@ export class AdminV2PayoutsService {
         reason,
       },
       execute: async () => {
-        const payout = await this.payoutsQuery.findEscalationPreflight(payoutId);
+        const payout = await this.payoutEscalationRepository.findEscalationPreflight(payoutId);
 
         if (!payout || !PAYOUT_TYPES.includes(payout.type as (typeof PAYOUT_TYPES)[number])) {
           throw new NotFoundException(`Payout not found`);
@@ -679,21 +668,7 @@ export class AdminV2PayoutsService {
         }
 
         return this.prisma.$transaction(async (tx) => {
-          const lockedRows = await tx.$queryRaw<LockedPayoutRow[]>(Prisma.sql`
-            SELECT
-              "id",
-              "type",
-              "status",
-              "consumer_id",
-              "payment_request_id",
-              "created_at",
-              "updated_at",
-              "deleted_at"
-            FROM "ledger_entry"
-            WHERE "id" = ${payoutId}
-            FOR UPDATE
-          `);
-          const locked = lockedRows[0];
+          const locked = await this.payoutEscalationRepository.lockPayoutForEscalation(tx, payoutId);
           if (!locked || !PAYOUT_TYPES.includes(locked.type as (typeof PAYOUT_TYPES)[number])) {
             throw new NotFoundException(`Payout not found`);
           }

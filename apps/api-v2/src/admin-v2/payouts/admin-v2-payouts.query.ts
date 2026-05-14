@@ -170,26 +170,4 @@ export class AdminV2PayoutsQuery {
       take: 20,
     });
   }
-
-  findEscalationPreflight(payoutId: string) {
-    return this.prisma.ledgerEntryModel.findUnique({
-      where: { id: payoutId },
-      select: {
-        id: true,
-        type: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        outcomes: {
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          take: 1,
-          select: {
-            status: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
-  }
 }
