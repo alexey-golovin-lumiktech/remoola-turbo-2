@@ -3,22 +3,17 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CURRENCY_CODES, type TCurrencyCode, toCurrencyOrNull, toCurrencyOrUndefined } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
+import { ConsumerSettingsRepository } from './consumer-settings.repository';
 import { type PatchConsumerSettings } from './dto/patch-consumer-settings.dto';
 import { UpdatePreferredCurrency } from './dto/update-preferred-currency.dto';
 import { UpdateTheme } from './dto/update-theme.dto';
-import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class ConsumerSettingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly settingsRepository: ConsumerSettingsRepository) {}
 
   async getSettings(consumerId: string) {
-    const settings = await this.prisma.consumerSettingsModel.findUnique({
-      where: {
-        consumerId,
-        deletedAt: null,
-      },
-    });
+    const settings = await this.settingsRepository.findActiveByConsumerId(consumerId);
 
     return {
       theme: settings?.theme ?? null,
@@ -27,32 +22,14 @@ export class ConsumerSettingsService {
   }
 
   async getThemeSettings(consumerId: string) {
-    const settings = await this.prisma.consumerSettingsModel.findUnique({
-      where: {
-        consumerId,
-        deletedAt: null,
-      },
-    });
+    const settings = await this.settingsRepository.findActiveByConsumerId(consumerId);
     return {
       theme: settings?.theme ?? null,
     };
   }
 
   async updateThemeSettings(consumerId: string, updateThemeDto: UpdateTheme) {
-    const settings = await this.prisma.consumerSettingsModel.upsert({
-      where: {
-        consumerId,
-        deletedAt: null,
-      },
-      update: {
-        theme: updateThemeDto.theme,
-        updatedAt: new Date(),
-      },
-      create: {
-        consumerId,
-        theme: updateThemeDto.theme,
-      },
-    });
+    const settings = await this.settingsRepository.upsertTheme(consumerId, updateThemeDto.theme);
 
     return {
       theme: settings.theme,
@@ -65,20 +42,7 @@ export class ConsumerSettingsService {
       throw new BadRequestException(`Unsupported preferred currency`);
     }
 
-    const settings = await this.prisma.consumerSettingsModel.upsert({
-      where: {
-        consumerId,
-        deletedAt: null,
-      },
-      update: {
-        preferredCurrency,
-        updatedAt: new Date(),
-      },
-      create: {
-        consumerId,
-        preferredCurrency,
-      },
-    });
+    const settings = await this.settingsRepository.upsertPreferredCurrency(consumerId, preferredCurrency);
 
     return {
       preferredCurrency: settings.preferredCurrency,
@@ -101,18 +65,7 @@ export class ConsumerSettingsService {
       if (preferredCurrency !== undefined) update.preferredCurrency = preferredCurrency;
     }
 
-    const settings = await this.prisma.consumerSettingsModel.upsert({
-      where: {
-        consumerId,
-        deletedAt: null,
-      },
-      update,
-      create: {
-        consumerId,
-        ...(update.theme && { theme: update.theme }),
-        ...(update.preferredCurrency !== undefined && { preferredCurrency: update.preferredCurrency }),
-      },
-    });
+    const settings = await this.settingsRepository.patchSettings(consumerId, update);
 
     const preferredCurrency = settings.preferredCurrency ?? null;
     return {

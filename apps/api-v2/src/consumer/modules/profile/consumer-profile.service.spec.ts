@@ -3,10 +3,10 @@ import { Test, type TestingModule } from '@nestjs/testing';
 
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerProfileRepository } from './consumer-profile.repository';
 import { ConsumerProfileService } from './consumer-profile.service';
 import { UpdateConsumerProfileBody, UpdateConsumerProfilePersonalDetails } from './dtos/update-consumer-profile.dto';
 import { AuthAuditService } from '../../../shared/auth-audit.service';
-import { PrismaService } from '../../../shared/prisma.service';
 import { passwordUtils } from '../../../shared-common';
 
 jest.mock(`../../../shared-common`, () => ({
@@ -36,13 +36,14 @@ const mockHashPassword = passwordUtils.hashPassword as jest.MockedFunction<typeo
 
 describe(`ConsumerProfileService.changePassword`, () => {
   let service: ConsumerProfileService;
-  let prisma: {
-    consumerModel: { findUnique: jest.Mock; update: jest.Mock };
-    personalDetailsModel: { findFirst: jest.Mock };
-    addressDetailsModel: { findFirst: jest.Mock };
-    organizationDetailsModel: { findFirst: jest.Mock };
-    authSessionModel: { updateMany: jest.Mock };
-    $transaction: jest.Mock;
+  let profileRepository: {
+    findPasswordCredentials: jest.Mock;
+    findProfileById: jest.Mock;
+    findPersonalDetails: jest.Mock;
+    findAddressDetails: jest.Mock;
+    findOrganizationDetails: jest.Mock;
+    updateProfile: jest.Mock;
+    persistPasswordAndRevokeSessions: jest.Mock;
   };
   let authAudit: { recordAudit: jest.Mock };
 
@@ -58,24 +59,14 @@ describe(`ConsumerProfileService.changePassword`, () => {
     mockVerifyPassword.mockResolvedValue(true);
     mockHashPassword.mockResolvedValue({ hash: `new-hash`, salt: `new-salt` });
 
-    prisma = {
-      consumerModel: {
-        findUnique: jest.fn().mockResolvedValue(consumer),
-        update: jest.fn().mockResolvedValue(undefined),
-      },
-      personalDetailsModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
-      },
-      addressDetailsModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
-      },
-      organizationDetailsModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
-      },
-      authSessionModel: {
-        updateMany: jest.fn().mockResolvedValue({ count: 2 }),
-      },
-      $transaction: jest.fn().mockImplementation(async (queries: Promise<unknown>[]) => Promise.all(queries)),
+    profileRepository = {
+      findPasswordCredentials: jest.fn().mockResolvedValue(consumer),
+      findProfileById: jest.fn().mockResolvedValue(null),
+      findPersonalDetails: jest.fn().mockResolvedValue(null),
+      findAddressDetails: jest.fn().mockResolvedValue(null),
+      findOrganizationDetails: jest.fn().mockResolvedValue(null),
+      updateProfile: jest.fn().mockResolvedValue(undefined),
+      persistPasswordAndRevokeSessions: jest.fn().mockResolvedValue(undefined),
     };
 
     authAudit = {
@@ -85,7 +76,7 @@ describe(`ConsumerProfileService.changePassword`, () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConsumerProfileService,
-        { provide: PrismaService, useValue: prisma },
+        { provide: ConsumerProfileRepository, useValue: profileRepository },
         { provide: AuthAuditService, useValue: authAudit },
       ],
     }).compile();
@@ -104,11 +95,11 @@ describe(`ConsumerProfileService.changePassword`, () => {
     ).rejects.toMatchObject({
       response: { message: errorCodes.CURRENT_PASSWORD_INVALID },
     });
-    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(profileRepository.persistPasswordAndRevokeSessions).not.toHaveBeenCalled();
   });
 
   it(`allows first password set for Google accounts without current password`, async () => {
-    prisma.consumerModel.findUnique.mockResolvedValueOnce({
+    profileRepository.findPasswordCredentials.mockResolvedValueOnce({
       id: `consumer-id`,
       email: `consumer@example.com`,
       password: null,
@@ -119,14 +110,11 @@ describe(`ConsumerProfileService.changePassword`, () => {
 
     expect(mockVerifyPassword).not.toHaveBeenCalled();
     expect(mockHashPassword).toHaveBeenCalledWith(`newPassword1!`);
-    expect(prisma.consumerModel.update).toHaveBeenCalledWith({
-      where: { id: `consumer-id` },
-      data: { password: `new-hash`, salt: `new-salt` },
-    });
-    expect(prisma.authSessionModel.updateMany).toHaveBeenCalledWith({
-      where: { consumerId: `consumer-id`, revokedAt: null },
-      data: { revokedAt: expect.any(Date), invalidatedReason: `logout_all`, lastUsedAt: expect.any(Date) },
-    });
+    expect(profileRepository.persistPasswordAndRevokeSessions).toHaveBeenCalledWith(
+      `consumer-id`,
+      `new-hash`,
+      `new-salt`,
+    );
   });
 
   it(`still requires current password for accounts that already have one`, async () => {
@@ -134,11 +122,11 @@ describe(`ConsumerProfileService.changePassword`, () => {
       response: { message: errorCodes.CURRENT_PASSWORD_INVALID },
     });
     expect(mockVerifyPassword).not.toHaveBeenCalled();
-    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(profileRepository.persistPasswordAndRevokeSessions).not.toHaveBeenCalled();
   });
 
   it(`rejects password change when stored credentials are in a partial state`, async () => {
-    prisma.consumerModel.findUnique.mockResolvedValueOnce({
+    profileRepository.findPasswordCredentials.mockResolvedValueOnce({
       id: `consumer-id`,
       email: `consumer@example.com`,
       password: `stored-hash`,
@@ -150,28 +138,22 @@ describe(`ConsumerProfileService.changePassword`, () => {
     });
     expect(mockVerifyPassword).not.toHaveBeenCalled();
     expect(mockHashPassword).not.toHaveBeenCalled();
-    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(profileRepository.persistPasswordAndRevokeSessions).not.toHaveBeenCalled();
     expect(authAudit.recordAudit).not.toHaveBeenCalled();
   });
 
   it(`updates password, revokes sessions and records password_change + logout_all audit`, async () => {
     await service.changePassword(`consumer-id`, { currentPassword: `currentPass1!`, password: `newPassword1!` });
 
-    expect(prisma.consumerModel.findUnique).toHaveBeenCalledWith({
-      where: { id: `consumer-id` },
-      select: { id: true, email: true, password: true, salt: true },
-    });
+    expect(profileRepository.findPasswordCredentials).toHaveBeenCalledWith(`consumer-id`);
     expect(mockVerifyPassword).toHaveBeenCalled();
     expect(mockHashPassword).toHaveBeenCalledWith(`newPassword1!`);
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(prisma.consumerModel.update).toHaveBeenCalledWith({
-      where: { id: `consumer-id` },
-      data: { password: `new-hash`, salt: `new-salt` },
-    });
-    expect(prisma.authSessionModel.updateMany).toHaveBeenCalledWith({
-      where: { consumerId: `consumer-id`, revokedAt: null },
-      data: { revokedAt: expect.any(Date), invalidatedReason: `logout_all`, lastUsedAt: expect.any(Date) },
-    });
+    expect(profileRepository.persistPasswordAndRevokeSessions).toHaveBeenCalledTimes(1);
+    expect(profileRepository.persistPasswordAndRevokeSessions).toHaveBeenCalledWith(
+      `consumer-id`,
+      `new-hash`,
+      `new-salt`,
+    );
     expect(authAudit.recordAudit).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
@@ -193,7 +175,7 @@ describe(`ConsumerProfileService.changePassword`, () => {
   });
 
   it(`sanitizes getProfile response and exposes hasPassword`, async () => {
-    prisma.consumerModel.findUnique.mockResolvedValueOnce({
+    profileRepository.findProfileById.mockResolvedValueOnce({
       id: `consumer-id`,
       email: `consumer@example.com`,
       password: `stored-hash`,
@@ -226,7 +208,7 @@ describe(`ConsumerProfileService.changePassword`, () => {
   });
 
   it(`sanitizes updateProfile response and exposes hasPassword`, async () => {
-    prisma.consumerModel.update.mockResolvedValueOnce({
+    profileRepository.updateProfile.mockResolvedValueOnce({
       id: `consumer-id`,
       email: `consumer@example.com`,
       password: null,
@@ -250,9 +232,9 @@ describe(`ConsumerProfileService.changePassword`, () => {
   });
 
   it(`persists explicitly cleared settings fields instead of keeping stale profile data`, async () => {
-    prisma.personalDetailsModel.findFirst.mockResolvedValueOnce({
-      firstName: `Alexey`,
-      lastName: `Golovin`,
+    profileRepository.findPersonalDetails.mockResolvedValueOnce({
+      firstName: `Jon`,
+      lastName: `Dow`,
       citizenOf: `US`,
       passportOrIdNumber: `ABC123`,
       legalStatus: null,
@@ -261,26 +243,26 @@ describe(`ConsumerProfileService.changePassword`, () => {
       taxId: `123`,
       phoneNumber: `+12065550123`,
     });
-    prisma.addressDetailsModel.findFirst.mockResolvedValueOnce({
+    profileRepository.findAddressDetails.mockResolvedValueOnce({
       postalCode: `20500`,
       country: `United States`,
       city: `Washington`,
       street: `1600 Pennsylvania Avenue NW`,
       state: null,
     });
-    prisma.organizationDetailsModel.findFirst.mockResolvedValueOnce({
+    profileRepository.findOrganizationDetails.mockResolvedValueOnce({
       name: `DDD`,
       consumerRole: null,
       consumerRoleOther: null,
       size: `SMALL`,
     });
-    prisma.consumerModel.update.mockResolvedValueOnce({
+    profileRepository.updateProfile.mockResolvedValueOnce({
       id: `consumer-id`,
       email: `consumer@example.com`,
       password: null,
       salt: null,
       accountType: `CONTRACTOR`,
-      personalDetails: { firstName: ``, lastName: `Golovin`, phoneNumber: `` },
+      personalDetails: { firstName: ``, lastName: `Dow`, phoneNumber: `` },
       addressDetails: {
         country: `United States`,
         city: ``,
@@ -296,82 +278,74 @@ describe(`ConsumerProfileService.changePassword`, () => {
       organizationDetails: { name: `` },
     });
 
-    expect(prisma.consumerModel.update).toHaveBeenCalledWith({
-      where: { id: `consumer-id` },
-      data: {
-        personalDetails: {
-          upsert: {
-            create: {
-              firstName: ``,
-              lastName: `Golovin`,
-              citizenOf: `US`,
-              passportOrIdNumber: `ABC123`,
-              legalStatus: null,
-              dateOfBirth: new Date(`1990-01-01T00:00:00.000Z`),
-              countryOfTaxResidence: `US`,
-              taxId: `123`,
-              phoneNumber: ``,
-            },
-            update: {
-              firstName: ``,
-              lastName: `Golovin`,
-              citizenOf: `US`,
-              passportOrIdNumber: `ABC123`,
-              legalStatus: null,
-              dateOfBirth: new Date(`1990-01-01T00:00:00.000Z`),
-              countryOfTaxResidence: `US`,
-              taxId: `123`,
-              phoneNumber: ``,
-            },
+    expect(profileRepository.updateProfile).toHaveBeenCalledWith(`consumer-id`, {
+      personalDetails: {
+        upsert: {
+          create: {
+            firstName: ``,
+            lastName: `Dow`,
+            citizenOf: `US`,
+            passportOrIdNumber: `ABC123`,
+            legalStatus: null,
+            dateOfBirth: new Date(`1990-01-01T00:00:00.000Z`),
+            countryOfTaxResidence: `US`,
+            taxId: `123`,
+            phoneNumber: ``,
           },
-        },
-        addressDetails: {
-          upsert: {
-            create: {
-              postalCode: `20500`,
-              country: `United States`,
-              city: ``,
-              street: `1600 Pennsylvania Avenue NW`,
-              state: null,
-            },
-            update: {
-              postalCode: `20500`,
-              country: `United States`,
-              city: ``,
-              street: `1600 Pennsylvania Avenue NW`,
-              state: null,
-            },
-          },
-        },
-        organizationDetails: {
-          upsert: {
-            create: {
-              name: ``,
-              consumerRole: null,
-              consumerRoleOther: null,
-              size: `SMALL`,
-            },
-            update: {
-              name: ``,
-              consumerRole: null,
-              consumerRoleOther: null,
-              size: `SMALL`,
-            },
+          update: {
+            firstName: ``,
+            lastName: `Dow`,
+            citizenOf: `US`,
+            passportOrIdNumber: `ABC123`,
+            legalStatus: null,
+            dateOfBirth: new Date(`1990-01-01T00:00:00.000Z`),
+            countryOfTaxResidence: `US`,
+            taxId: `123`,
+            phoneNumber: ``,
           },
         },
       },
-      include: {
-        personalDetails: true,
-        addressDetails: true,
-        organizationDetails: true,
+      addressDetails: {
+        upsert: {
+          create: {
+            postalCode: `20500`,
+            country: `United States`,
+            city: ``,
+            street: `1600 Pennsylvania Avenue NW`,
+            state: null,
+          },
+          update: {
+            postalCode: `20500`,
+            country: `United States`,
+            city: ``,
+            street: `1600 Pennsylvania Avenue NW`,
+            state: null,
+          },
+        },
+      },
+      organizationDetails: {
+        upsert: {
+          create: {
+            name: ``,
+            consumerRole: null,
+            consumerRoleOther: null,
+            size: `SMALL`,
+          },
+          update: {
+            name: ``,
+            consumerRole: null,
+            consumerRoleOther: null,
+            size: `SMALL`,
+          },
+        },
       },
     });
   });
 
   it(`preserves omitted sibling DTO fields when Nest transforms partial profile payloads`, async () => {
-    prisma.personalDetailsModel.findFirst.mockResolvedValueOnce({
-      firstName: `Alexey`,
-      lastName: `Golovin`,
+    profileRepository.findPersonalDetails.mockResolvedValueOnce({
+      firstName: `Jon`,
+      lastName: `Dow`,
       citizenOf: `US`,
       passportOrIdNumber: `ABC123`,
       legalStatus: null,
@@ -380,13 +354,13 @@ describe(`ConsumerProfileService.changePassword`, () => {
       taxId: `123`,
       phoneNumber: `+12065550123`,
     });
-    prisma.consumerModel.update.mockResolvedValueOnce({
+    profileRepository.updateProfile.mockResolvedValueOnce({
       id: `consumer-id`,
       email: `consumer@example.com`,
       password: null,
       salt: null,
       accountType: `CONTRACTOR`,
-      personalDetails: { firstName: ``, lastName: `Golovin`, phoneNumber: `+12065550123` },
+      personalDetails: { firstName: ``, lastName: `Dow`, phoneNumber: `+12065550123` },
       addressDetails: null,
       organizationDetails: null,
     });
@@ -397,24 +371,23 @@ describe(`ConsumerProfileService.changePassword`, () => {
 
     await service.updateProfile(`consumer-id`, body);
 
-    expect(prisma.consumerModel.update).toHaveBeenCalledWith(
+    expect(profileRepository.updateProfile).toHaveBeenCalledWith(
+      `consumer-id`,
       expect.objectContaining({
-        data: expect.objectContaining({
-          personalDetails: {
-            upsert: {
-              create: expect.objectContaining({
-                firstName: ``,
-                lastName: `Golovin`,
-                phoneNumber: `+12065550123`,
-              }),
-              update: expect.objectContaining({
-                firstName: ``,
-                lastName: `Golovin`,
-                phoneNumber: `+12065550123`,
-              }),
-            },
+        personalDetails: {
+          upsert: {
+            create: expect.objectContaining({
+              firstName: ``,
+              lastName: `Dow`,
+              phoneNumber: `+12065550123`,
+            }),
+            update: expect.objectContaining({
+              firstName: ``,
+              lastName: `Dow`,
+              phoneNumber: `+12065550123`,
+            }),
           },
-        }),
+        },
       }),
     );
   });

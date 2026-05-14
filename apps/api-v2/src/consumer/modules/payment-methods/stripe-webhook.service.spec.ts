@@ -5,14 +5,21 @@ import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
+import { StripeWebhookDeduplicationRepository } from './stripe-webhook-deduplication.repository';
 import { STRIPE_WEBHOOK_EVENT_STATUS, StripeWebhookDeduplicationService } from './stripe-webhook-deduplication.service';
 import { StripeWebhookEventProcessorService } from './stripe-webhook-event-processor.service';
+import { StripeWebhookPaymentMethodsRepository } from './stripe-webhook-payment-methods.repository';
 import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-methods.service';
+import { StripeWebhookPayoutsRepository } from './stripe-webhook-payouts.repository';
 import { StripeWebhookPayoutsService } from './stripe-webhook-payouts.service';
+import { StripeWebhookReversalNotificationRepository } from './stripe-webhook-reversal-notification.repository';
 import { StripeWebhookReversalNotificationService } from './stripe-webhook-reversal-notification.service';
+import { StripeWebhookReversalsRepository } from './stripe-webhook-reversals.repository';
 import { StripeWebhookReversalsService } from './stripe-webhook-reversals.service';
 import { StripeWebhookRouterService } from './stripe-webhook-router.service';
+import { StripeWebhookSettlementsRepository } from './stripe-webhook-settlements.repository';
 import { StripeWebhookSettlementsService } from './stripe-webhook-settlements.service';
+import { StripeWebhookVerificationRepository } from './stripe-webhook-verification.repository';
 import { StripeWebhookVerificationService } from './stripe-webhook-verification.service';
 import { StripeWebhookService as StripeWebhookServiceClass } from './stripe-webhook.service';
 import { envs } from '../../../envs';
@@ -22,12 +29,31 @@ import { STRIPE_IDENTITY_STATUS } from '../../../shared-common';
 class StripeWebhookService extends StripeWebhookServiceClass {
   constructor(prisma: any, mailingService: any, balanceService: any, consumerPaymentsPoliciesService: any) {
     let stripe: any = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
-    const paymentMethodsService = new StripeWebhookPaymentMethodsService(prisma, stripe);
-    const payoutsService = new StripeWebhookPayoutsService(prisma);
-    const settlementsService = new StripeWebhookSettlementsService(prisma);
-    const verificationService = new StripeWebhookVerificationService(prisma, consumerPaymentsPoliciesService, stripe);
-    const reversalNotifications = new StripeWebhookReversalNotificationService(prisma, mailingService);
-    const reversalsService = new StripeWebhookReversalsService(prisma, reversalNotifications, balanceService, stripe);
+    const webhookPaymentMethodsRepository = new StripeWebhookPaymentMethodsRepository(prisma);
+    const paymentMethodsService = new StripeWebhookPaymentMethodsService(webhookPaymentMethodsRepository, stripe);
+    const payoutsRepository = new StripeWebhookPayoutsRepository(prisma);
+    const payoutsService = new StripeWebhookPayoutsService(payoutsRepository);
+    const settlementsRepository = new StripeWebhookSettlementsRepository(prisma);
+    const settlementsService = new StripeWebhookSettlementsService(settlementsRepository);
+    const verificationRepository = new StripeWebhookVerificationRepository(prisma);
+    const verificationService = new StripeWebhookVerificationService(
+      verificationRepository,
+      consumerPaymentsPoliciesService,
+      stripe,
+    );
+    const reversalNotificationRepository = new StripeWebhookReversalNotificationRepository(prisma);
+    const reversalNotifications = new StripeWebhookReversalNotificationService(
+      reversalNotificationRepository,
+      mailingService,
+    );
+    const reversalsRepository = new StripeWebhookReversalsRepository(prisma);
+    const reversalsService = new StripeWebhookReversalsService(
+      prisma,
+      reversalsRepository,
+      reversalNotifications,
+      balanceService,
+      stripe,
+    );
     const router = new StripeWebhookRouterService(
       paymentMethodsService,
       payoutsService,
@@ -35,7 +61,10 @@ class StripeWebhookService extends StripeWebhookServiceClass {
       verificationService,
       reversalsService,
     );
-    const eventProcessor = new StripeWebhookEventProcessorService(new StripeWebhookDeduplicationService(prisma));
+    const deduplicationRepository = new StripeWebhookDeduplicationRepository(prisma);
+    const eventProcessor = new StripeWebhookEventProcessorService(
+      new StripeWebhookDeduplicationService(deduplicationRepository),
+    );
 
     super(
       prisma,
@@ -76,6 +105,12 @@ function makeStripeWebhookDuplicateEventError() {
     clientVersion: `test`,
     meta: { target: [`event_id`] },
   });
+}
+
+async function waitForMockCalls(mock: { mock: { calls: unknown[] } }, expectedCalls: number) {
+  for (let attempt = 0; attempt < 10 && mock.mock.calls.length < expectedCalls; attempt += 1) {
+    await Promise.resolve();
+  }
 }
 
 jest.mock(`../../../envs`, () => ({
@@ -517,7 +552,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
     const firstProcessing = service.processStripeEvent(makeReq(), firstRes);
     await Promise.resolve();
     const secondProcessing = service.processStripeEvent(makeReq(), secondRes);
-    await Promise.resolve();
+    await waitForMockCalls(handleChargeRefunded, 1);
 
     expect(handleChargeRefunded).toHaveBeenCalledTimes(1);
 
@@ -1117,6 +1152,187 @@ describe(`StripeWebhookService payment link scope`, () => {
   });
 });
 
+describe(`StripeWebhookReversalsRepository.resolvePaymentRequestByPaymentIntent`, () => {
+  const paymentRequestSelect = {
+    id: true,
+    amount: true,
+    currencyCode: true,
+    payerId: true,
+    requesterId: true,
+    requesterEmail: true,
+  };
+
+  it(`prefers the newest outcome-backed payment request before checking fallback ledger rows`, async () => {
+    const prisma = {
+      ledgerEntryOutcomeModel: {
+        findFirst: jest.fn().mockResolvedValue({
+          ledgerEntry: {
+            paymentRequest: {
+              id: `pr-outcome`,
+              amount: 25,
+              currencyCode: $Enums.CurrencyCode.USD,
+              payerId: `payer-1`,
+              requesterId: `requester-1`,
+              requesterEmail: `requester@example.com`,
+            },
+          },
+        }),
+      },
+      ledgerEntryModel: {
+        findFirst: jest.fn(),
+      },
+    } as any;
+    const repository = new StripeWebhookReversalsRepository(prisma);
+
+    await expect(repository.resolvePaymentRequestByPaymentIntent(`pi_1`)).resolves.toEqual({
+      id: `pr-outcome`,
+      amount: 25,
+      currencyCode: $Enums.CurrencyCode.USD,
+      payerId: `payer-1`,
+      requesterId: `requester-1`,
+      requesterEmail: `requester@example.com`,
+    });
+
+    expect(prisma.ledgerEntryOutcomeModel.findFirst).toHaveBeenCalledWith({
+      where: { externalId: `pi_1` },
+      orderBy: { createdAt: `desc` },
+      select: {
+        ledgerEntry: {
+          select: {
+            paymentRequest: {
+              select: paymentRequestSelect,
+            },
+          },
+        },
+      },
+    });
+    expect(prisma.ledgerEntryModel.findFirst).not.toHaveBeenCalled();
+  });
+
+  it(`falls back to the newest USER_PAYMENT ledger entry when the outcome lookup misses`, async () => {
+    const prisma = {
+      ledgerEntryOutcomeModel: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      ledgerEntryModel: {
+        findFirst: jest.fn().mockResolvedValue({
+          paymentRequest: {
+            id: `pr-fallback`,
+            amount: 30,
+            currencyCode: $Enums.CurrencyCode.GBP,
+            payerId: `payer-2`,
+            requesterId: `requester-2`,
+            requesterEmail: `requester-2@example.com`,
+          },
+        }),
+      },
+    } as any;
+    const repository = new StripeWebhookReversalsRepository(prisma);
+
+    await expect(repository.resolvePaymentRequestByPaymentIntent(`pi_2`)).resolves.toEqual({
+      id: `pr-fallback`,
+      amount: 30,
+      currencyCode: $Enums.CurrencyCode.GBP,
+      payerId: `payer-2`,
+      requesterId: `requester-2`,
+      requesterEmail: `requester-2@example.com`,
+    });
+
+    expect(prisma.ledgerEntryModel.findFirst).toHaveBeenCalledWith({
+      where: {
+        stripeId: `pi_2`,
+        type: $Enums.LedgerEntryType.USER_PAYMENT,
+      },
+      select: {
+        paymentRequest: {
+          select: paymentRequestSelect,
+        },
+      },
+      orderBy: { createdAt: `desc` },
+    });
+  });
+
+  it(`returns null when neither lookup resolves a payment request`, async () => {
+    const prisma = {
+      ledgerEntryOutcomeModel: {
+        findFirst: jest.fn().mockResolvedValue({
+          ledgerEntry: {
+            paymentRequest: null,
+          },
+        }),
+      },
+      ledgerEntryModel: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+    } as any;
+    const repository = new StripeWebhookReversalsRepository(prisma);
+
+    await expect(repository.resolvePaymentRequestByPaymentIntent(`pi_3`)).resolves.toBeNull();
+    expect(prisma.ledgerEntryModel.findFirst).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe(`StripeWebhookReversalsRepository.resolveDisputeLedgerEntryIdByPaymentIntent`, () => {
+  it(`prefers the newest direct USER_PAYMENT ledger row before checking outcomes`, async () => {
+    const prisma = {
+      ledgerEntryModel: {
+        findFirst: jest.fn().mockResolvedValue({ id: `ledger-direct` }),
+      },
+      ledgerEntryOutcomeModel: {
+        findFirst: jest.fn(),
+      },
+    } as any;
+    const repository = new StripeWebhookReversalsRepository(prisma);
+
+    await expect(repository.resolveDisputeLedgerEntryIdByPaymentIntent(`pi_direct`)).resolves.toBe(`ledger-direct`);
+
+    expect(prisma.ledgerEntryModel.findFirst).toHaveBeenCalledWith({
+      where: {
+        stripeId: `pi_direct`,
+        type: $Enums.LedgerEntryType.USER_PAYMENT,
+      },
+      select: { id: true },
+      orderBy: { createdAt: `desc` },
+    });
+    expect(prisma.ledgerEntryOutcomeModel.findFirst).not.toHaveBeenCalled();
+  });
+
+  it(`falls back to the newest outcome row when no direct USER_PAYMENT ledger row exists`, async () => {
+    const prisma = {
+      ledgerEntryModel: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      ledgerEntryOutcomeModel: {
+        findFirst: jest.fn().mockResolvedValue({ ledgerEntryId: `ledger-outcome` }),
+      },
+    } as any;
+    const repository = new StripeWebhookReversalsRepository(prisma);
+
+    await expect(repository.resolveDisputeLedgerEntryIdByPaymentIntent(`pi_outcome`)).resolves.toBe(`ledger-outcome`);
+
+    expect(prisma.ledgerEntryOutcomeModel.findFirst).toHaveBeenCalledWith({
+      where: { externalId: `pi_outcome` },
+      orderBy: { createdAt: `desc` },
+      select: { ledgerEntryId: true },
+    });
+  });
+
+  it(`returns null when neither direct nor outcome lookup resolves a ledger entry`, async () => {
+    const prisma = {
+      ledgerEntryModel: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      ledgerEntryOutcomeModel: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+    } as any;
+    const repository = new StripeWebhookReversalsRepository(prisma);
+
+    await expect(repository.resolveDisputeLedgerEntryIdByPaymentIntent(`pi_missing`)).resolves.toBeNull();
+    expect(prisma.ledgerEntryOutcomeModel.findFirst).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe(`StripeWebhookService.recordDisputeStatus`, () => {
   function makeService(prismaOverrides: Record<string, unknown>) {
     const prisma = {
@@ -1201,7 +1417,71 @@ describe(`StripeWebhookService.recordDisputeStatus`, () => {
   });
 });
 
-describe(`StripeWebhookService.finalizeCheckoutSessionSuccess`, () => {
+describe(`StripeWebhookSettlementsService.finalizeCheckoutSessionSuccess`, () => {
+  function createRepositoryMock(settlementReady = true) {
+    return {
+      finalizeCheckoutSettlement: jest.fn().mockResolvedValue(settlementReady),
+    } as unknown as jest.Mocked<StripeWebhookSettlementsRepository>;
+  }
+
+  it(`delegates checkout settlement persistence to the repository before collecting payment methods`, async () => {
+    const settlementsRepository = createRepositoryMock();
+    const service = new StripeWebhookSettlementsService(settlementsRepository);
+    const collectPaymentMethodFromCheckout = jest.fn().mockResolvedValue(undefined);
+
+    await service.finalizeCheckoutSessionSuccess(
+      {
+        id: `cs_1`,
+        metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` },
+        payment_intent: `pi_1`,
+        payment_status: `paid`,
+        amount_total: 2500,
+        currency: `usd`,
+        customer: `cus_1`,
+      } as unknown as Stripe.Checkout.Session,
+      { collectPaymentMethodFromCheckout },
+    );
+
+    expect(settlementsRepository.finalizeCheckoutSettlement).toHaveBeenCalledWith({
+      checkoutSessionId: `cs_1`,
+      paymentRequestId: `pr-1`,
+      consumerId: `consumer-1`,
+      paymentIntentId: `pi_1`,
+      paymentStatus: `paid`,
+      amountTotal: 2500,
+      currency: `usd`,
+      customerId: `cus_1`,
+      logger: expect.anything(),
+    });
+    expect(collectPaymentMethodFromCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({ id: `cs_1` }),
+      `consumer-1`,
+    );
+  });
+
+  it(`does not collect payment methods when settlement persistence is skipped`, async () => {
+    const settlementsRepository = createRepositoryMock(false);
+    const service = new StripeWebhookSettlementsService(settlementsRepository);
+    const collectPaymentMethodFromCheckout = jest.fn();
+
+    await service.finalizeCheckoutSessionSuccess(
+      {
+        id: `cs_1`,
+        metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` },
+        payment_intent: `pi_1`,
+        payment_status: `paid`,
+        amount_total: 2600,
+        currency: `usd`,
+        customer: `cus_1`,
+      } as unknown as Stripe.Checkout.Session,
+      { collectPaymentMethodFromCheckout },
+    );
+
+    expect(collectPaymentMethodFromCheckout).not.toHaveBeenCalled();
+  });
+});
+
+describe(`StripeWebhookSettlementsRepository.finalizeCheckoutSettlement`, () => {
   it(`stamps completed payment requests with CARD rail without mutating settlement rows`, async () => {
     const paymentRequestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
     const prisma = {
@@ -1235,17 +1515,18 @@ describe(`StripeWebhookService.finalizeCheckoutSessionSuccess`, () => {
         }),
       ),
     } as any;
-    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
-    jest.spyOn(service as any, `collectPaymentMethodFromCheckout`).mockResolvedValue(undefined);
+    const repository = new StripeWebhookSettlementsRepository(prisma);
 
-    await (service as any).finalizeCheckoutSessionSuccess({
-      id: `cs_1`,
-      metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` },
-      payment_intent: `pi_1`,
-      payment_status: `paid`,
-      amount_total: 2500,
+    await repository.finalizeCheckoutSettlement({
+      checkoutSessionId: `cs_1`,
+      paymentRequestId: `pr-1`,
+      consumerId: `consumer-1`,
+      paymentIntentId: `pi_1`,
+      paymentStatus: `paid`,
+      amountTotal: 2500,
       currency: `usd`,
-      customer: `cus_1`,
+      customerId: `cus_1`,
+      logger: { warn: jest.fn() } as any,
     });
 
     expect(paymentRequestUpdateMany).toHaveBeenCalledWith({
@@ -1300,17 +1581,18 @@ describe(`StripeWebhookService.finalizeCheckoutSessionSuccess`, () => {
         }),
       ),
     } as any;
-    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
-    jest.spyOn(service as any, `collectPaymentMethodFromCheckout`).mockResolvedValue(undefined);
+    const repository = new StripeWebhookSettlementsRepository(prisma);
 
-    await (service as any).finalizeCheckoutSessionSuccess({
-      id: `cs_1`,
-      metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` },
-      payment_intent: `pi_1`,
-      payment_status: `paid`,
-      amount_total: 2600,
+    await repository.finalizeCheckoutSettlement({
+      checkoutSessionId: `cs_1`,
+      paymentRequestId: `pr-1`,
+      consumerId: `consumer-1`,
+      paymentIntentId: `pi_1`,
+      paymentStatus: `paid`,
+      amountTotal: 2600,
       currency: `usd`,
-      customer: `cus_1`,
+      customerId: `cus_1`,
+      logger: { warn: jest.fn() } as any,
     });
 
     expect(ledgerFindMany).not.toHaveBeenCalled();
@@ -1319,6 +1601,99 @@ describe(`StripeWebhookService.finalizeCheckoutSessionSuccess`, () => {
 });
 
 describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, () => {
+  function createRepositoryMock() {
+    return {
+      storeCheckoutPaymentMethod: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<StripeWebhookPaymentMethodsRepository>;
+  }
+
+  function createStripeMock(paymentMethod: Partial<Stripe.PaymentMethod> = {}) {
+    return {
+      paymentIntents: {
+        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
+      },
+      paymentMethods: {
+        attach: jest.fn(),
+        retrieve: jest.fn().mockResolvedValue({
+          id: `pm_1`,
+          type: `card`,
+          customer: `cus_1`,
+          billing_details: { email: `payer@example.com`, name: `Payer`, phone: null },
+          card: { brand: `visa`, exp_month: 12, exp_year: 2030, fingerprint: `fp_1`, last4: `4242` },
+          ...paymentMethod,
+        }),
+      },
+    } as unknown as Stripe;
+  }
+
+  it(`delegates checkout payment method storage to the repository`, async () => {
+    const repository = createRepositoryMock();
+    const stripe = createStripeMock();
+    const service = new StripeWebhookPaymentMethodsService(repository, stripe);
+
+    await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
+      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+    });
+
+    expect(repository.storeCheckoutPaymentMethod).toHaveBeenCalledWith({
+      consumerId: `consumer-1`,
+      type: $Enums.PaymentMethodType.CREDIT_CARD,
+      stripePaymentMethodId: `pm_1`,
+      stripeFingerprint: `fp_1`,
+      brand: `visa`,
+      last4: `4242`,
+      expMonth: `12`,
+      expYear: `2030`,
+      billingDetails: { email: `payer@example.com`, name: `Payer`, phone: null },
+    });
+  });
+
+  it(`does not store unsupported payment method types`, async () => {
+    const repository = createRepositoryMock();
+    const stripe = createStripeMock({
+      type: `us_bank_account`,
+      card: null,
+    } as Partial<Stripe.PaymentMethod>);
+    const service = new StripeWebhookPaymentMethodsService(repository, stripe);
+
+    await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
+      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+    });
+
+    expect(repository.storeCheckoutPaymentMethod).not.toHaveBeenCalled();
+  });
+
+  it(`skips storage when Stripe says the payment method cannot be reused`, async () => {
+    const repository = createRepositoryMock();
+    const stripe = {
+      paymentIntents: {
+        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
+      },
+      paymentMethods: {
+        attach: jest.fn().mockRejectedValue({
+          type: `invalid_request_error`,
+          message: `This payment method was previously used without being attached to a Customer`,
+        }),
+        retrieve: jest.fn().mockResolvedValue({
+          id: `pm_1`,
+          type: `card`,
+          customer: null,
+          billing_details: { email: `payer@example.com`, name: `Payer`, phone: null },
+          card: { brand: `visa`, exp_month: 12, exp_year: 2030, fingerprint: `fp_1`, last4: `4242` },
+        }),
+      },
+    } as unknown as Stripe;
+    const service = new StripeWebhookPaymentMethodsService(repository, stripe);
+
+    await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
+      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+    });
+
+    expect(repository.storeCheckoutPaymentMethod).not.toHaveBeenCalled();
+  });
+});
+
+describe(`StripeWebhookPaymentMethodsRepository.storeCheckoutPaymentMethod`, () => {
   it(`serializes duplicate checkout storage and skips create when method already exists`, async () => {
     const tx = {
       $executeRaw: jest.fn().mockResolvedValue(undefined),
@@ -1336,25 +1711,18 @@ describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, 
         .fn()
         .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
     } as any;
-    const stripe = {
-      paymentIntents: {
-        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
-      },
-      paymentMethods: {
-        attach: jest.fn(),
-        retrieve: jest.fn().mockResolvedValue({
-          id: `pm_1`,
-          type: `card`,
-          customer: `cus_1`,
-          billing_details: { email: `payer@example.com`, name: `Payer`, phone: null },
-          card: { brand: `visa`, exp_month: 12, exp_year: 2030, fingerprint: `fp_1`, last4: `4242` },
-        }),
-      },
-    } as any;
-    const service = new StripeWebhookPaymentMethodsService(prisma, stripe);
+    const repository = new StripeWebhookPaymentMethodsRepository(prisma);
 
-    await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
-      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+    await repository.storeCheckoutPaymentMethod({
+      consumerId: `consumer-1`,
+      type: $Enums.PaymentMethodType.CREDIT_CARD,
+      stripePaymentMethodId: `pm_1`,
+      stripeFingerprint: `fp_1`,
+      brand: `visa`,
+      last4: `4242`,
+      expMonth: `12`,
+      expYear: `2030`,
+      billingDetails: { email: `payer@example.com`, name: `Payer`, phone: null },
     });
 
     expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
@@ -1387,25 +1755,18 @@ describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, 
         .fn()
         .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
     } as any;
-    const stripe = {
-      paymentIntents: {
-        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
-      },
-      paymentMethods: {
-        attach: jest.fn(),
-        retrieve: jest.fn().mockResolvedValue({
-          id: `pm_1`,
-          type: `card`,
-          customer: `cus_1`,
-          billing_details: { email: `payer@example.com`, name: `Payer`, phone: null },
-          card: { brand: `visa`, exp_month: 12, exp_year: 2030, fingerprint: `fp_1`, last4: `4242` },
-        }),
-      },
-    } as any;
-    const service = new StripeWebhookPaymentMethodsService(prisma, stripe);
+    const repository = new StripeWebhookPaymentMethodsRepository(prisma);
 
-    await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
-      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+    await repository.storeCheckoutPaymentMethod({
+      consumerId: `consumer-1`,
+      type: $Enums.PaymentMethodType.CREDIT_CARD,
+      stripePaymentMethodId: `pm_1`,
+      stripeFingerprint: `fp_1`,
+      brand: `visa`,
+      last4: `4242`,
+      expMonth: `12`,
+      expYear: `2030`,
+      billingDetails: { email: `payer@example.com`, name: `Payer`, phone: null },
     });
 
     expect(tx.paymentMethodModel.updateMany).toHaveBeenCalledWith({
@@ -1450,26 +1811,19 @@ describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, 
         findFirst: jest.fn().mockResolvedValue({ id: `pm-visible-after-race` }),
       },
     } as any;
-    const stripe = {
-      paymentIntents: {
-        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
-      },
-      paymentMethods: {
-        attach: jest.fn(),
-        retrieve: jest.fn().mockResolvedValue({
-          id: `pm_1`,
-          type: `card`,
-          customer: `cus_1`,
-          billing_details: { email: `payer@example.com`, name: `Payer`, phone: null },
-          card: { brand: `visa`, exp_month: 12, exp_year: 2030, fingerprint: `fp_1`, last4: `4242` },
-        }),
-      },
-    } as any;
-    const service = new StripeWebhookPaymentMethodsService(prisma, stripe);
+    const repository = new StripeWebhookPaymentMethodsRepository(prisma);
 
     await expect(
-      service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
-        ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+      repository.storeCheckoutPaymentMethod({
+        consumerId: `consumer-1`,
+        type: $Enums.PaymentMethodType.CREDIT_CARD,
+        stripePaymentMethodId: `pm_1`,
+        stripeFingerprint: `fp_1`,
+        brand: `visa`,
+        last4: `4242`,
+        expMonth: `12`,
+        expYear: `2030`,
+        billingDetails: { email: `payer@example.com`, name: `Payer`, phone: null },
       }),
     ).resolves.toBeUndefined();
 

@@ -1,10 +1,10 @@
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 
-import { $Enums, Prisma } from '@remoola/database-2';
+import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { StripeWebhookPaymentMethodsRepository } from './stripe-webhook-payment-methods.repository';
 import { CONSUMER_STRIPE_WEBHOOK_CLIENT } from './stripe-webhook.tokens';
-import { PrismaService } from '../../../shared/prisma.service';
 
 import type Stripe from 'stripe';
 
@@ -13,14 +13,12 @@ export class StripeWebhookPaymentMethodsService {
   private readonly logger = new Logger(StripeWebhookPaymentMethodsService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly paymentMethodsRepository: StripeWebhookPaymentMethodsRepository,
     @Inject(CONSUMER_STRIPE_WEBHOOK_CLIENT) private readonly stripe: Stripe,
   ) {}
 
   async ensureStripeCustomer(consumerId: string) {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-    });
+    const consumer = await this.paymentMethodsRepository.findConsumer(consumerId);
 
     if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_WEBHOOK);
 
@@ -35,15 +33,9 @@ export class StripeWebhookPaymentMethodsService {
       { idempotencyKey: this.buildEnsureCustomerIdempotencyKey(consumer.id) },
     );
 
-    const claimed = await this.prisma.consumerModel.updateMany({
-      where: { id: consumer.id, stripeCustomerId: null },
-      data: { stripeCustomerId: customer.id },
-    });
-    if (claimed.count === 0) {
-      const existing = await this.prisma.consumerModel.findUnique({
-        where: { id: consumer.id },
-        select: { stripeCustomerId: true },
-      });
+    const claimed = await this.paymentMethodsRepository.claimStripeCustomerId(consumer.id, customer.id);
+    if (!claimed) {
+      const existing = await this.paymentMethodsRepository.findStripeCustomerId(consumer.id);
       if (existing?.stripeCustomerId) {
         return { consumer, customerId: existing.stripeCustomerId };
       }
@@ -58,9 +50,7 @@ export class StripeWebhookPaymentMethodsService {
     this.logger.log({ message: `Payment method migration started` });
 
     try {
-      const consumers = await this.prisma.consumerModel.findMany({
-        include: { paymentMethods: true },
-      });
+      const consumers = await this.paymentMethodsRepository.findConsumersWithPaymentMethods();
 
       let totalAttached = 0;
       let totalFailed = 0;
@@ -92,13 +82,7 @@ export class StripeWebhookPaymentMethodsService {
               (err.message.includes(`previously used without being attached`) ||
                 err.message.includes(`was previously used without being attached`))
             ) {
-              await this.prisma.paymentMethodModel.update({
-                where: { id: paymentMethod.id },
-                data: {
-                  deletedAt: new Date(),
-                  stripePaymentMethodId: null,
-                },
-              });
+              await this.paymentMethodsRepository.markPaymentMethodUnusable(paymentMethod.id);
               this.logger.debug({ message: `Payment method marked unusable`, paymentMethodId: paymentMethod.id });
             } else {
               this.logger.warn({
@@ -203,94 +187,17 @@ export class StripeWebhookPaymentMethodsService {
     }
 
     const fingerprint = paymentMethod.card?.fingerprint ?? null;
-    const duplicateWhere: Prisma.PaymentMethodModelWhereInput = fingerprint
-      ? {
-          consumerId,
-          deletedAt: null,
-          OR: [{ stripePaymentMethodId: paymentMethod.id }, { stripeFingerprint: fingerprint }],
-        }
-      : {
-          consumerId,
-          deletedAt: null,
-          stripePaymentMethodId: paymentMethod.id,
-        };
-
-    try {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.$executeRaw(Prisma.sql`
-          SELECT pg_advisory_xact_lock(
-            hashtext((${consumerId} || ':' || ${type} || ':checkout-payment-method')::text)::bigint
-          )
-        `);
-
-        const existingPaymentMethod = await tx.paymentMethodModel.findFirst({
-          where: duplicateWhere,
-        });
-
-        if (existingPaymentMethod) {
-          return;
-        }
-
-        let billingDetails;
-        if (paymentMethod.billing_details) {
-          billingDetails = await tx.billingDetailsModel.create({
-            data: {
-              email: paymentMethod.billing_details.email || null,
-              name: paymentMethod.billing_details.name || null,
-              phone: paymentMethod.billing_details.phone || null,
-            },
-          });
-        }
-
-        const hasDefault = await tx.paymentMethodModel.count({
-          where: {
-            consumerId,
-            deletedAt: null,
-            type,
-            defaultSelected: true,
-          },
-        });
-        const shouldBeDefault = hasDefault === 0;
-
-        if (shouldBeDefault) {
-          await tx.paymentMethodModel.updateMany({
-            where: {
-              consumerId,
-              deletedAt: null,
-              type,
-            },
-            data: { defaultSelected: false },
-          });
-        }
-
-        await tx.paymentMethodModel.create({
-          data: {
-            type,
-            stripePaymentMethodId: paymentMethod.id,
-            stripeFingerprint: fingerprint,
-            defaultSelected: shouldBeDefault,
-            brand: brand || `card`,
-            last4: last4 || ``,
-            expMonth,
-            expYear,
-            serviceFee: 0,
-            billingDetailsId: billingDetails?.id || null,
-            consumerId,
-          },
-        });
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === `P2002`) {
-        const existingPaymentMethod = await this.prisma.paymentMethodModel.findFirst({
-          where: duplicateWhere,
-          select: { id: true },
-        });
-        if (existingPaymentMethod) {
-          return;
-        }
-      }
-      throw error;
-    }
+    await this.paymentMethodsRepository.storeCheckoutPaymentMethod({
+      consumerId,
+      type,
+      stripePaymentMethodId: paymentMethod.id,
+      stripeFingerprint: fingerprint,
+      brand: brand || `card`,
+      last4: last4 || ``,
+      expMonth,
+      expYear,
+      billingDetails: paymentMethod.billing_details,
+    });
   }
 
   private buildEnsureCustomerIdempotencyKey(consumerId: string): string {

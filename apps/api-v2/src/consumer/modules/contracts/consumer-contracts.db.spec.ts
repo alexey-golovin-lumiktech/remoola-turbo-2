@@ -4,13 +4,14 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 
 import { $Enums } from '@remoola/database-2';
 
+import { ConsumerContractsQuery } from './consumer-contracts.query';
 import { ConsumerContractsService } from './consumer-contracts.service';
 import { createPrismaTestContext } from '../../../../test/helpers/prisma-test-context';
 
 describe(`ConsumerContractsService DB smoke`, () => {
   const prismaContext = createPrismaTestContext();
   const { prisma } = prismaContext;
-  const service = new ConsumerContractsService(prisma as any);
+  const service = new ConsumerContractsService(new ConsumerContractsQuery(prisma as any));
 
   let ownerId = ``;
   let alphaRequestId = ``;

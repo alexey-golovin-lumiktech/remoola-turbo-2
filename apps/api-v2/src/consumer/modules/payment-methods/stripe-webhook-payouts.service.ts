@@ -2,14 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
-import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
-import { PrismaService } from '../../../shared/prisma.service';
+import { StripeWebhookPayoutsRepository } from './stripe-webhook-payouts.repository';
 
 @Injectable()
 export class StripeWebhookPayoutsService {
   private readonly logger = new Logger(StripeWebhookPayoutsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly payoutsRepository: StripeWebhookPayoutsRepository) {}
 
   async handlePayoutPaid(transactionId: string, externalId: string) {
     return this.recordPayoutOutcome(transactionId, externalId, $Enums.TransactionStatus.COMPLETED);
@@ -20,17 +19,11 @@ export class StripeWebhookPayoutsService {
   }
 
   private async recordPayoutOutcome(transactionId: string, externalId: string, status: $Enums.TransactionStatus) {
-    await this.prisma.$transaction(async (tx) => {
-      await createOutcomeIdempotent(
-        tx,
-        {
-          ledgerEntryId: transactionId,
-          status,
-          source: `stripe`,
-          externalId,
-        },
-        this.logger,
-      );
+    await this.payoutsRepository.recordPayoutOutcome({
+      transactionId,
+      externalId,
+      status,
+      logger: this.logger,
     });
   }
 }

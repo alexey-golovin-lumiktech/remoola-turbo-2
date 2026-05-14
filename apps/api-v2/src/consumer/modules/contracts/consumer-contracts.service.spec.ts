@@ -1,5 +1,118 @@
 import { buildConsumerContractPaymentsWhere } from './consumer-contract-query-helpers';
+import { type ConsumerContractsQuery } from './consumer-contracts.query';
 import { ConsumerContractsService } from './consumer-contracts.service';
+
+function createContractsQueryMock(prisma: any): ConsumerContractsQuery {
+  return {
+    supportsRawContractsQuery: jest.fn(() => typeof prisma.$queryRaw === `function`),
+    getConsumerEmail: jest.fn(async (consumerId: string) => {
+      const consumerModel = prisma.consumerModel;
+      if (!consumerModel || typeof consumerModel.findUnique !== `function`) {
+        return null;
+      }
+      const consumer = await consumerModel.findUnique({
+        where: { id: consumerId },
+        select: { email: true },
+      });
+      return consumer?.email?.trim().toLowerCase() ?? null;
+    }),
+    getContractsRaw: jest.fn(),
+    findContactsForList: jest.fn((consumerId: string, term: string) =>
+      prisma.contactModel.findMany({
+        where: {
+          consumerId,
+          deletedAt: null,
+          ...(term
+            ? {
+                OR: [
+                  { email: { contains: term, mode: `insensitive` as const } },
+                  { name: { contains: term, mode: `insensitive` as const } },
+                ],
+              }
+            : {}),
+        },
+        orderBy: { updatedAt: `desc` },
+      }),
+    ),
+    findPaymentRequestsForContracts: jest.fn((consumerId: string, emails: string[], consumerEmail: string | null) =>
+      prisma.paymentRequestModel.findMany({
+        where: buildConsumerContractPaymentsWhere(consumerId, emails, consumerEmail),
+        include: {
+          payer: true,
+          requester: true,
+          ledgerEntries: {
+            where: { consumerId },
+            orderBy: { createdAt: `desc` },
+            take: 1,
+            include: {
+              outcomes: {
+                orderBy: { createdAt: `desc` },
+                take: 1,
+                select: { status: true },
+              },
+            },
+          },
+          attachments: {
+            where: {
+              deletedAt: null,
+              resource: {
+                deletedAt: null,
+              },
+            },
+          },
+        },
+      }),
+    ),
+    findContactForDetails: jest.fn((id: string, consumerId: string) =>
+      prisma.contactModel.findFirst({
+        where: {
+          id,
+          consumerId,
+          deletedAt: null,
+        },
+      }),
+    ),
+    findPaymentRequestsForDetails: jest.fn((consumerId: string, contractEmail: string, consumerEmail: string | null) =>
+      prisma.paymentRequestModel.findMany({
+        where: buildConsumerContractPaymentsWhere(consumerId, [contractEmail], consumerEmail),
+        include: {
+          ledgerEntries: {
+            where: { consumerId },
+            orderBy: { createdAt: `desc` },
+            take: 1,
+            include: {
+              outcomes: {
+                orderBy: { createdAt: `desc` },
+                take: 1,
+                select: { status: true },
+              },
+            },
+          },
+          attachments: {
+            where: {
+              deletedAt: null,
+              resource: {
+                deletedAt: null,
+              },
+            },
+            include: {
+              resource: {
+                include: {
+                  resourceTags: {
+                    include: {
+                      tag: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: [{ updatedAt: `desc` }, { createdAt: `desc` }],
+      }),
+    ),
+  } as unknown as ConsumerContractsQuery;
+}
 
 describe(`consumer contract query helpers`, () => {
   it(`builds participant and counterparty relationship filters`, () => {
@@ -62,7 +175,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     const result = await service.getContracts(`consumer-1`);
 
     expect(prisma.paymentRequestModel.findMany).toHaveBeenCalledWith({
@@ -170,7 +283,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     const result = await service.getContracts(`consumer-1`);
 
     expect(result).toEqual({
@@ -203,7 +316,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     const result = await service.getContracts(`consumer-1`);
 
     expect(result).toEqual({
@@ -234,7 +347,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     const result = await service.getContracts(`consumer-1`, 2, 25, `search hit`);
 
     expect(prisma.contactModel.findMany).toHaveBeenCalledWith({
@@ -266,7 +379,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     await service.getContracts(`consumer-1`, 1, 10, `   `);
 
     expect(prisma.contactModel.findMany).toHaveBeenCalledWith({
@@ -358,7 +471,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
 
     await expect(service.getContracts(`consumer-1`, 1, 10, undefined, `completed`)).resolves.toEqual({
       items: [
@@ -487,7 +600,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     const result = await service.getContracts(`consumer-1`, 2, 1, undefined, `completed`);
 
     expect(result).toEqual({
@@ -579,7 +692,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
 
     await expect(
       service.getContracts(`consumer-1`, 1, 10, undefined, undefined, `yes`, `yes`, `payments_count`),
@@ -660,7 +773,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
 
     await expect(service.getContracts(`consumer-1`)).resolves.toEqual({
       items: [
@@ -727,7 +840,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
 
     await expect(service.getContracts(`consumer-1`, 1, 10, undefined, `draft`)).resolves.toEqual({
       items: [
@@ -781,7 +894,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     const result = await service.getContracts(`consumer-1`, 1, 10, undefined, undefined, undefined, undefined, `name`);
 
     expect(result).toEqual({
@@ -878,7 +991,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     const result = await service.getContracts(
       `consumer-1`,
       1,
@@ -970,7 +1083,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     const result = await service.getDetails(`contact-1`, `consumer-1`, `http://localhost:3334`);
 
     expect(prisma.contactModel.findFirst).toHaveBeenCalledWith({
@@ -1130,7 +1243,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     const result = await service.getDetails(`contact-2`, `consumer-1`, `http://localhost:3334`);
 
     expect(result.summary).toEqual({
@@ -1172,7 +1285,7 @@ describe(`ConsumerContractsService`, () => {
         },
       } as any;
 
-      const service = new ConsumerContractsService(prisma);
+      const service = new ConsumerContractsService(createContractsQueryMock(prisma));
 
       await service.getDetails(`contact-tenant-safe`, `consumer-1`, `http://localhost:3334`);
 
@@ -1246,7 +1359,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(prisma);
+    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
     await service.getContracts(`consumer-1`);
 
     expect(prisma.contactModel.findMany).toHaveBeenCalledWith({

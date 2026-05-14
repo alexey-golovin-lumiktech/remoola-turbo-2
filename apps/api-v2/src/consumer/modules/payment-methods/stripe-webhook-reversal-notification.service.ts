@@ -1,17 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
+import { StripeWebhookReversalNotificationRepository } from './stripe-webhook-reversal-notification.repository';
 import { type StripeReversalEmailOutboxPayload } from './stripe-webhook-reversal-outbox';
 import { MailingService } from '../../../shared/mailing.service';
-import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../../shared/payment-link-scope-resolver';
-import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class StripeWebhookReversalNotificationService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly notificationRepository: StripeWebhookReversalNotificationRepository,
     private readonly mailingService: MailingService,
   ) {}
 
@@ -26,12 +24,9 @@ export class StripeWebhookReversalNotificationService {
     reason?: string | null;
   }) {
     const { paymentRequestId, payerId, requesterId, requesterEmail, amount, currencyCode, kind, reason } = params;
-    const consumerAppScope = await this.resolvePaymentLinkConsumerAppScope(paymentRequestId);
+    const consumerAppScope = await this.notificationRepository.resolvePaymentLinkConsumerAppScope(paymentRequestId);
     const consumerIds = [payerId, ...(requesterId ? [requesterId] : [])];
-    const consumers = await this.prisma.consumerModel.findMany({
-      where: { id: { in: consumerIds } },
-      select: { id: true, email: true },
-    });
+    const consumers = await this.notificationRepository.findConsumerEmails(consumerIds);
 
     const payer = consumers.find((consumer) => consumer.id === payerId);
     const requester = requesterId ? consumers.find((consumer) => consumer.id === requesterId) : null;
@@ -90,12 +85,11 @@ export class StripeWebhookReversalNotificationService {
   }
 
   async sendReversalEmail(payload: StripeReversalEmailOutboxPayload) {
-    const consumerAppScope = await this.resolvePaymentLinkConsumerAppScope(payload.paymentRequestId);
+    const consumerAppScope = await this.notificationRepository.resolvePaymentLinkConsumerAppScope(
+      payload.paymentRequestId,
+    );
     const consumerIds = [payload.payerId, ...(payload.requesterId ? [payload.requesterId] : [])];
-    const consumers = await this.prisma.consumerModel.findMany({
-      where: { id: { in: consumerIds } },
-      select: { id: true, email: true },
-    });
+    const consumers = await this.notificationRepository.findConsumerEmails(consumerIds);
 
     const payer = consumers.find((consumer) => consumer.id === payload.payerId);
     const requester = payload.requesterId ? consumers.find((consumer) => consumer.id === payload.requesterId) : null;
@@ -127,9 +121,5 @@ export class StripeWebhookReversalNotificationService {
     }
 
     await this.mailingService.sendPaymentChargebackEmailRequired(params);
-  }
-
-  private async resolvePaymentLinkConsumerAppScope(paymentRequestId: string): Promise<ConsumerAppScope | undefined> {
-    return resolvePaymentLinkConsumerAppScopeFromLedgerHistory(this.prisma, paymentRequestId);
   }
 }

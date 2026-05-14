@@ -2,35 +2,35 @@ import { Test, type TestingModule } from '@nestjs/testing';
 
 import { THEME } from '@remoola/api-types';
 
+import { ConsumerSettingsRepository } from './consumer-settings.repository';
 import { ConsumerSettingsService } from './consumer-settings.service';
-import { PrismaService } from '../../../shared/prisma.service';
 
 describe(`ConsumerSettingsService`, () => {
   let service: ConsumerSettingsService;
-  let prisma: {
-    consumerSettingsModel: {
-      findUnique: jest.Mock;
-      upsert: jest.Mock;
-    };
+  let settingsRepository: {
+    findActiveByConsumerId: jest.Mock;
+    upsertTheme: jest.Mock;
+    upsertPreferredCurrency: jest.Mock;
+    patchSettings: jest.Mock;
   };
 
   beforeEach(async () => {
-    prisma = {
-      consumerSettingsModel: {
-        findUnique: jest.fn(),
-        upsert: jest.fn(),
-      },
+    settingsRepository = {
+      findActiveByConsumerId: jest.fn(),
+      upsertTheme: jest.fn(),
+      upsertPreferredCurrency: jest.fn(),
+      patchSettings: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ConsumerSettingsService, { provide: PrismaService, useValue: prisma }],
+      providers: [ConsumerSettingsService, { provide: ConsumerSettingsRepository, useValue: settingsRepository }],
     }).compile();
 
     service = module.get(ConsumerSettingsService);
   });
 
   it(`returns null-safe settings with the persisted theme`, async () => {
-    prisma.consumerSettingsModel.findUnique.mockResolvedValueOnce({
+    settingsRepository.findActiveByConsumerId.mockResolvedValueOnce({
       theme: THEME.DARK,
       preferredCurrency: `EUR`,
     });
@@ -39,16 +39,11 @@ describe(`ConsumerSettingsService`, () => {
       theme: THEME.DARK,
       preferredCurrency: `EUR`,
     });
-    expect(prisma.consumerSettingsModel.findUnique).toHaveBeenCalledWith({
-      where: {
-        consumerId: `consumer-1`,
-        deletedAt: null,
-      },
-    });
+    expect(settingsRepository.findActiveByConsumerId).toHaveBeenCalledWith(`consumer-1`);
   });
 
   it(`upserts theme-only updates through patchSettings`, async () => {
-    prisma.consumerSettingsModel.upsert.mockResolvedValueOnce({
+    settingsRepository.patchSettings.mockResolvedValueOnce({
       theme: THEME.SYSTEM,
       preferredCurrency: `USD`,
     });
@@ -57,43 +52,23 @@ describe(`ConsumerSettingsService`, () => {
       theme: THEME.SYSTEM,
       preferredCurrency: `USD`,
     });
-    expect(prisma.consumerSettingsModel.upsert).toHaveBeenCalledWith({
-      where: {
-        consumerId: `consumer-2`,
-        deletedAt: null,
-      },
-      update: {
+    expect(settingsRepository.patchSettings).toHaveBeenCalledWith(
+      `consumer-2`,
+      expect.objectContaining({
         theme: THEME.SYSTEM,
         updatedAt: expect.any(Date),
-      },
-      create: {
-        consumerId: `consumer-2`,
-        theme: THEME.SYSTEM,
-      },
-    });
+      }),
+    );
   });
 
   it(`upserts theme-specific requests through updateThemeSettings`, async () => {
-    prisma.consumerSettingsModel.upsert.mockResolvedValueOnce({
+    settingsRepository.upsertTheme.mockResolvedValueOnce({
       theme: THEME.LIGHT,
     });
 
     await expect(service.updateThemeSettings(`consumer-3`, { theme: THEME.LIGHT })).resolves.toEqual({
       theme: THEME.LIGHT,
     });
-    expect(prisma.consumerSettingsModel.upsert).toHaveBeenCalledWith({
-      where: {
-        consumerId: `consumer-3`,
-        deletedAt: null,
-      },
-      update: {
-        theme: THEME.LIGHT,
-        updatedAt: expect.any(Date),
-      },
-      create: {
-        consumerId: `consumer-3`,
-        theme: THEME.LIGHT,
-      },
-    });
+    expect(settingsRepository.upsertTheme).toHaveBeenCalledWith(`consumer-3`, THEME.LIGHT);
   });
 });

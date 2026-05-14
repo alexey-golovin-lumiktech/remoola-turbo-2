@@ -2,7 +2,6 @@ import { Inject, Injectable, Logger, type RawBodyRequest } from '@nestjs/common'
 import express from 'express';
 import Stripe from 'stripe';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { StripeWebhookEventProcessorService } from './stripe-webhook-event-processor.service';
@@ -10,25 +9,18 @@ import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-met
 import { StripeWebhookReversalsService } from './stripe-webhook-reversals.service';
 import { StripeWebhookRouterService } from './stripe-webhook-router.service';
 import { StripeWebhookSettlementsService } from './stripe-webhook-settlements.service';
+import { type VerificationConsumerDb } from './stripe-webhook-verification.repository';
 import { StripeWebhookVerificationService } from './stripe-webhook-verification.service';
 import { CONSUMER_STRIPE_WEBHOOK_CLIENT } from './stripe-webhook.tokens';
 import { envs } from '../../../envs';
-import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../../shared/payment-link-scope-resolver';
 import { PrismaService } from '../../../shared/prisma.service';
-import { STRIPE_IDENTITY_STATUS } from '../../../shared-common';
 
-type VerificationConsumerDb = Pick<PrismaService, `consumerModel`>;
 type StripeWebhookResult = {
   statusCode: number;
   body: {
     received: boolean;
     error?: string;
   };
-};
-type VerificationSessionState = {
-  stripeIdentityStatus: string | null;
-  stripeIdentitySessionId: string | null;
-  legalVerified?: boolean | null;
 };
 
 @Injectable()
@@ -99,25 +91,6 @@ export class StripeWebhookService {
       prismaCode,
       hasRawBody,
       hasSignatureHeader,
-    });
-  }
-
-  private buildVerificationSessionIdempotencyKey(consumerId: string, priorSessionId: string | null): string {
-    return `verify-session:${consumerId}:${priorSessionId ?? `none`}`;
-  }
-
-  private buildVerificationSessionResponse(session: Stripe.Identity.VerificationSession) {
-    return { clientSecret: session.client_secret, sessionId: session.id };
-  }
-
-  private async getVerificationSessionState(consumerId: string): Promise<VerificationSessionState | null> {
-    return this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: {
-        legalVerified: true,
-        stripeIdentityStatus: true,
-        stripeIdentitySessionId: true,
-      },
     });
   }
 
@@ -203,89 +176,20 @@ export class StripeWebhookService {
     res.status(result.statusCode).json(result.body);
   }
 
-  private async handleVerified(session: Stripe.Identity.VerificationSession, db: VerificationConsumerDb = this.prisma) {
+  private async handleVerified(session: Stripe.Identity.VerificationSession, db?: VerificationConsumerDb) {
     return this.verificationService.handleVerified(session, db);
   }
 
-  private async handleRequiresInput(
-    session: Stripe.Identity.VerificationSession,
-    db: VerificationConsumerDb = this.prisma,
-  ) {
+  private async handleRequiresInput(session: Stripe.Identity.VerificationSession, db?: VerificationConsumerDb) {
     return this.verificationService.handleRequiresInput(session, db);
   }
 
   private async handleLifecycleUpdate(
     session: Stripe.Identity.VerificationSession,
     eventType: string,
-    db: VerificationConsumerDb = this.prisma,
+    db?: VerificationConsumerDb,
   ) {
     return this.verificationService.handleLifecycleUpdate(session, eventType, db);
-  }
-
-  private async getReusableVerificationSession(consumerId: string, consumer?: VerificationSessionState | null) {
-    const state = consumer ?? (await this.getVerificationSessionState(consumerId));
-
-    if (!state?.stripeIdentitySessionId || !this.canReuseVerificationSession(state.stripeIdentityStatus)) {
-      return null;
-    }
-
-    try {
-      const session = await this.stripe.identity.verificationSessions.retrieve(state.stripeIdentitySessionId);
-      if (typeof session.client_secret === `string` && session.client_secret.length > 0) {
-        return this.buildVerificationSessionResponse(session);
-      }
-    } catch (error: unknown) {
-      this.logger.warn({
-        message: `Failed to reuse verification session`,
-        consumerId,
-        sessionId: state.stripeIdentitySessionId,
-        errorClass: error instanceof Error ? error.name : `UnknownError`,
-      });
-    }
-
-    return null;
-  }
-
-  private canReuseVerificationSession(status?: string | null) {
-    return status === STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION || status === STRIPE_IDENTITY_STATUS.REQUIRES_INPUT;
-  }
-
-  private async findConsumerForVerificationSession(db: VerificationConsumerDb, consumerId: string, sessionId: string) {
-    const consumer = await db.consumerModel.findFirst({
-      where: {
-        id: consumerId,
-        OR: [{ stripeIdentitySessionId: sessionId }, { stripeIdentitySessionId: null }],
-      },
-      include: { personalDetails: true },
-    });
-    if (consumer) {
-      return consumer;
-    }
-
-    await this.logUnexpectedVerificationSessionState(consumerId, sessionId, db);
-    return null;
-  }
-
-  private async logUnexpectedVerificationSessionState(
-    consumerId: string,
-    sessionId: string,
-    db: VerificationConsumerDb = this.prisma,
-  ) {
-    const consumer = await db.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: { id: true, stripeIdentitySessionId: true },
-    });
-    if (!consumer) {
-      this.logger.warn({ message: `Consumer not found for verification session` });
-      return;
-    }
-
-    this.logger.warn({
-      message: `Ignoring stale verification session update`,
-      consumerId,
-      incomingSessionId: sessionId,
-      currentSessionId: consumer.stripeIdentitySessionId,
-    });
   }
 
   async finalizeCheckoutSessionSuccess(session: Stripe.Checkout.Session) {
@@ -309,56 +213,6 @@ export class StripeWebhookService {
     return this.paymentMethodsService.collectPaymentMethodFromCheckout(session, consumerId, {
       ensureStripeCustomer: (id) => this.ensureStripeCustomer(id),
     });
-  }
-
-  private async resolvePaymentRequestByPaymentIntent(paymentIntentId: string) {
-    const byOutcome = await this.prisma.ledgerEntryOutcomeModel.findFirst({
-      where: { externalId: paymentIntentId },
-      orderBy: { createdAt: `desc` },
-      select: {
-        ledgerEntry: {
-          select: {
-            paymentRequestId: true,
-            paymentRequest: {
-              select: {
-                id: true,
-                amount: true,
-                currencyCode: true,
-                payerId: true,
-                requesterId: true,
-                requesterEmail: true,
-              },
-            },
-          },
-        },
-      },
-    });
-    if (byOutcome?.ledgerEntry?.paymentRequest) return byOutcome.ledgerEntry.paymentRequest;
-
-    const entry = await this.prisma.ledgerEntryModel.findFirst({
-      where: {
-        stripeId: paymentIntentId,
-        type: $Enums.LedgerEntryType.USER_PAYMENT,
-      },
-      select: {
-        paymentRequestId: true,
-        paymentRequest: {
-          select: {
-            id: true,
-            amount: true,
-            currencyCode: true,
-            payerId: true,
-            requesterId: true,
-            requesterEmail: true,
-          },
-        },
-      },
-      orderBy: { createdAt: `desc` },
-    });
-
-    if (!entry?.paymentRequest) return null;
-
-    return entry.paymentRequest;
   }
 
   private async createStripeReversal(params: {
@@ -387,10 +241,6 @@ export class StripeWebhookService {
     reason?: string | null;
   }) {
     return this.reversalsService.sendReversalEmails(params);
-  }
-
-  private async resolvePaymentLinkConsumerAppScope(paymentRequestId: string): Promise<ConsumerAppScope | undefined> {
-    return resolvePaymentLinkConsumerAppScopeFromLedgerHistory(this.prisma, paymentRequestId);
   }
 
   private async handleChargeRefunded(charge: Stripe.Charge) {

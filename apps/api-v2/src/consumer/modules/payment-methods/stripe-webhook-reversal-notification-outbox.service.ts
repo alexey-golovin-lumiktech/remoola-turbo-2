@@ -2,14 +2,15 @@ import { randomUUID } from 'crypto';
 
 import { Injectable, Logger } from '@nestjs/common';
 
-import { type NotificationOutboxModel } from '@remoola/database-2';
-
+import {
+  type ClaimedReversalNotificationOutboxRow,
+  StripeWebhookReversalNotificationOutboxRepository,
+} from './stripe-webhook-reversal-notification-outbox.repository';
 import { StripeWebhookReversalNotificationService } from './stripe-webhook-reversal-notification.service';
 import {
   STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE,
   parseStripeReversalEmailOutboxPayload,
 } from './stripe-webhook-reversal-outbox';
-import { PrismaService } from '../../../shared/prisma.service';
 
 const RETRYABLE_OUTBOX_STATUSES = [`PENDING`, `FAILED`] as const;
 
@@ -23,7 +24,7 @@ export class StripeWebhookReversalNotificationOutboxService {
   private readonly logger = new Logger(StripeWebhookReversalNotificationOutboxService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly outboxRepository: StripeWebhookReversalNotificationOutboxRepository,
     private readonly reversalNotifications: StripeWebhookReversalNotificationService,
   ) {}
 
@@ -47,95 +48,40 @@ export class StripeWebhookReversalNotificationOutboxService {
     const staleProcessingBefore = new Date(
       now.getTime() - StripeWebhookReversalNotificationOutboxService.PROCESSING_STALE_MS,
     );
-    return this.prisma.$transaction(async (tx) => {
-      const candidates = await tx.notificationOutboxModel.findMany({
-        where: {
-          eventType: STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE,
-          OR: [
-            {
-              status: { in: [...RETRYABLE_OUTBOX_STATUSES] },
-              nextAttemptAt: { lte: now },
-            },
-            {
-              status: `PROCESSING`,
-              processingStartedAt: { lt: staleProcessingBefore },
-            },
-          ],
-        },
-        orderBy: [{ nextAttemptAt: `asc` }, { createdAt: `asc` }],
-        take: limit,
-      });
-
-      const claimed: NotificationOutboxModel[] = [];
-      for (const candidate of candidates) {
-        const result = await tx.notificationOutboxModel.updateMany({
-          where: {
-            id: candidate.id,
-            eventType: STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE,
-            OR: [
-              {
-                status: { in: [...RETRYABLE_OUTBOX_STATUSES] },
-                nextAttemptAt: { lte: now },
-              },
-              {
-                status: `PROCESSING`,
-                processingStartedAt: { lt: staleProcessingBefore },
-              },
-            ],
-          },
-          data: {
-            status: `PROCESSING`,
-            claimToken,
-            processingStartedAt: now,
-            attemptCount: { increment: 1 },
-            lastErrorClass: null,
-            lastErrorMessage: null,
-          },
-        });
-        if (result.count === 1) {
-          claimed.push({
-            ...candidate,
-            claimToken,
-            status: `PROCESSING`,
-            processingStartedAt: now,
-            attemptCount: candidate.attemptCount + 1,
-          });
-        }
-      }
-      return claimed;
+    return this.outboxRepository.claimDueRows({
+      eventType: STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE,
+      retryableStatuses: RETRYABLE_OUTBOX_STATUSES,
+      processingStatus: `PROCESSING`,
+      claimToken,
+      now,
+      staleProcessingBefore,
+      limit,
     });
   }
 
-  private async markSent(row: NotificationOutboxModel) {
+  private async markSent(row: ClaimedReversalNotificationOutboxRow) {
     const now = new Date();
-    await this.prisma.notificationOutboxModel.updateMany({
-      where: { id: row.id, claimToken: row.claimToken, status: `PROCESSING` },
-      data: {
-        status: `SENT`,
-        sentAt: now,
-        failedAt: null,
-        claimToken: null,
-        processingStartedAt: null,
-      },
+    await this.outboxRepository.markSent({
+      row,
+      processingStatus: `PROCESSING`,
+      sentStatus: `SENT`,
+      now,
     });
   }
 
-  private async markFailed(row: NotificationOutboxModel, error: unknown) {
+  private async markFailed(row: ClaimedReversalNotificationOutboxRow, error: unknown) {
     const attempt = row.attemptCount;
     const nextStatus = attempt >= StripeWebhookReversalNotificationOutboxService.MAX_ATTEMPTS ? `DEAD` : `FAILED`;
     const { errorClass, errorMessage } = this.normalizeError(error);
     const now = new Date();
-    await this.prisma.notificationOutboxModel.updateMany({
-      where: { id: row.id, claimToken: row.claimToken, status: `PROCESSING` },
-      data: {
-        status: nextStatus,
-        failedAt: now,
-        nextAttemptAt: new Date(now.getTime() + this.getRetryDelayMs(attempt)),
-        claimToken: null,
-        processingStartedAt: null,
-        lastErrorClass: errorClass,
-        lastErrorMessage: errorMessage,
-      },
+    await this.outboxRepository.markFailed({
+      row,
+      processingStatus: `PROCESSING`,
+      nextStatus,
+      failedAt: now,
+      nextAttemptAt: new Date(now.getTime() + this.getRetryDelayMs(attempt)),
+      errorClass,
+      errorMessage,
     });
   }
 

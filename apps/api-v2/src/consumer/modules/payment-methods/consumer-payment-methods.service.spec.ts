@@ -1,55 +1,67 @@
 import { $Enums } from '@remoola/database-2';
 
+import { type ConsumerPaymentMethodsRepository } from './consumer-payment-methods.repository';
 import { ConsumerPaymentMethodsService } from './consumer-payment-methods.service';
 
 describe(`ConsumerPaymentMethodsService`, () => {
   const consumerId = `consumer-1`;
 
-  it(`marks only Stripe-backed cards as reusable for payer payments`, async () => {
-    const prisma = {
-      paymentMethodModel: {
-        findMany: jest.fn().mockResolvedValue([
-          {
-            id: `pm-manual-card`,
-            consumerId,
-            type: $Enums.PaymentMethodType.CREDIT_CARD,
-            brand: `Manual Probe`,
-            last4: `9999`,
-            expMonth: `12`,
-            expYear: `2034`,
-            defaultSelected: false,
-            stripePaymentMethodId: null,
-            billingDetails: null,
-          },
-          {
-            id: `pm-reusable-card`,
-            consumerId,
-            type: $Enums.PaymentMethodType.CREDIT_CARD,
-            brand: `visa`,
-            last4: `4242`,
-            expMonth: `12`,
-            expYear: `2034`,
-            defaultSelected: true,
-            stripePaymentMethodId: `pm_stripe`,
-            billingDetails: null,
-          },
-          {
-            id: `pm-bank`,
-            consumerId,
-            type: $Enums.PaymentMethodType.BANK_ACCOUNT,
-            brand: `Test Bank`,
-            last4: `6789`,
-            expMonth: null,
-            expYear: null,
-            defaultSelected: true,
-            stripePaymentMethodId: null,
-            billingDetails: null,
-          },
-        ]),
-      },
-    } as any;
+  function createRepositoryMock() {
+    return {
+      listForConsumer: jest.fn(),
+      createManualPaymentMethod: jest.fn(),
+      findActiveByIdForConsumer: jest.fn(),
+      clearDefaultForType: jest.fn(),
+      createBillingDetails: jest.fn(),
+      attachBillingDetails: jest.fn(),
+      updateBillingDetails: jest.fn(),
+      updatePaymentMethodDefault: jest.fn(),
+      softDeleteAndPromoteFallback: jest.fn(),
+    } as unknown as jest.Mocked<ConsumerPaymentMethodsRepository>;
+  }
 
-    const service = new ConsumerPaymentMethodsService(prisma);
+  it(`marks only Stripe-backed cards as reusable for payer payments`, async () => {
+    const paymentMethodsRepository = createRepositoryMock();
+    paymentMethodsRepository.listForConsumer.mockResolvedValue([
+      {
+        id: `pm-manual-card`,
+        consumerId,
+        type: $Enums.PaymentMethodType.CREDIT_CARD,
+        brand: `Manual Probe`,
+        last4: `9999`,
+        expMonth: `12`,
+        expYear: `2034`,
+        defaultSelected: false,
+        stripePaymentMethodId: null,
+        billingDetails: null,
+      },
+      {
+        id: `pm-reusable-card`,
+        consumerId,
+        type: $Enums.PaymentMethodType.CREDIT_CARD,
+        brand: `visa`,
+        last4: `4242`,
+        expMonth: `12`,
+        expYear: `2034`,
+        defaultSelected: true,
+        stripePaymentMethodId: `pm_stripe`,
+        billingDetails: null,
+      },
+      {
+        id: `pm-bank`,
+        consumerId,
+        type: $Enums.PaymentMethodType.BANK_ACCOUNT,
+        brand: `Test Bank`,
+        last4: `6789`,
+        expMonth: null,
+        expYear: null,
+        defaultSelected: true,
+        stripePaymentMethodId: null,
+        billingDetails: null,
+      },
+    ] as never);
+
+    const service = new ConsumerPaymentMethodsService(paymentMethodsRepository);
 
     await expect(service.list(consumerId)).resolves.toEqual({
       items: [
@@ -67,118 +79,86 @@ describe(`ConsumerPaymentMethodsService`, () => {
         }),
       ],
     });
+    expect(paymentMethodsRepository.listForConsumer).toHaveBeenCalledWith(consumerId);
   });
 
   it(`honors defaultSelected when creating a new manual method`, async () => {
-    const tx = {
-      billingDetailsModel: {
-        create: jest.fn().mockResolvedValue({ id: `billing-1` }),
-      },
-      paymentMethodModel: {
-        count: jest.fn().mockResolvedValue(1),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-        create: jest.fn().mockResolvedValue({ id: `pm-2`, defaultSelected: true }),
-      },
-    };
-    const prisma = {
-      $transaction: jest.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
-    } as any;
-
-    const service = new ConsumerPaymentMethodsService(prisma);
-
-    await service.createManual(consumerId, {
+    const paymentMethodsRepository = createRepositoryMock();
+    paymentMethodsRepository.createManualPaymentMethod.mockResolvedValue({
+      id: `pm-2`,
+      defaultSelected: true,
+    } as never);
+    const service = new ConsumerPaymentMethodsService(paymentMethodsRepository);
+    const body = {
       type: $Enums.PaymentMethodType.BANK_ACCOUNT,
       brand: `Backup Bank`,
       last4: `4321`,
-      billingName: `Alexey Golovin`,
+      billingName: `Jon Dow`,
       defaultSelected: true,
-    });
+    };
 
-    expect(tx.paymentMethodModel.updateMany).toHaveBeenCalledWith({
-      where: { consumerId, deletedAt: null, type: $Enums.PaymentMethodType.BANK_ACCOUNT },
-      data: { defaultSelected: false },
-    });
-    expect(tx.paymentMethodModel.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        consumerId,
-        brand: `Backup Bank`,
-        defaultSelected: true,
-      }),
-    });
+    await expect(service.createManual(consumerId, body)).resolves.toEqual({ id: `pm-2`, defaultSelected: true });
+
+    expect(paymentMethodsRepository.createManualPaymentMethod).toHaveBeenCalledWith(consumerId, body);
   });
 
   it(`promotes a fallback method when deleting the current default`, async () => {
-    const tx = {
-      paymentMethodModel: {
-        update: jest.fn().mockResolvedValue({}),
-        findFirst: jest.fn().mockResolvedValue({ id: `pm-fallback` }),
-      },
-    };
-    const prisma = {
-      paymentMethodModel: {
-        findFirst: jest.fn().mockResolvedValue({
-          id: `pm-default`,
-          consumerId,
-          type: $Enums.PaymentMethodType.BANK_ACCOUNT,
-          defaultSelected: true,
-        }),
-      },
-      $transaction: jest.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
-    } as any;
-
-    const service = new ConsumerPaymentMethodsService(prisma);
+    const paymentMethodsRepository = createRepositoryMock();
+    paymentMethodsRepository.findActiveByIdForConsumer.mockResolvedValue({
+      id: `pm-default`,
+      consumerId,
+      type: $Enums.PaymentMethodType.BANK_ACCOUNT,
+      defaultSelected: true,
+    } as never);
+    paymentMethodsRepository.softDeleteAndPromoteFallback.mockResolvedValue(undefined);
+    const service = new ConsumerPaymentMethodsService(paymentMethodsRepository);
 
     await service.delete(consumerId, `pm-default`);
 
-    expect(tx.paymentMethodModel.findFirst).toHaveBeenCalledWith({
-      where: { consumerId, deletedAt: null, type: $Enums.PaymentMethodType.BANK_ACCOUNT },
-      orderBy: { createdAt: `desc` },
-      select: { id: true },
-    });
-    expect(tx.paymentMethodModel.update).toHaveBeenNthCalledWith(2, {
-      where: { id: `pm-fallback` },
-      data: { defaultSelected: true },
+    expect(paymentMethodsRepository.findActiveByIdForConsumer).toHaveBeenCalledWith(consumerId, `pm-default`);
+    expect(paymentMethodsRepository.softDeleteAndPromoteFallback).toHaveBeenCalledWith({
+      consumerId,
+      paymentMethodId: `pm-default`,
+      type: $Enums.PaymentMethodType.BANK_ACCOUNT,
+      wasDefault: true,
     });
   });
 
   it(`keeps bank default when a card becomes default`, async () => {
-    const tx = {
-      billingDetailsModel: {
-        create: jest.fn().mockResolvedValue({ id: `billing-2` }),
-      },
-      paymentMethodModel: {
-        count: jest.fn().mockResolvedValue(1),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-        create: jest.fn().mockResolvedValue({ id: `pm-card`, defaultSelected: true }),
-      },
-    };
-    const prisma = {
-      $transaction: jest.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
-    } as any;
-
-    const service = new ConsumerPaymentMethodsService(prisma);
-
-    await service.createManual(consumerId, {
+    const paymentMethodsRepository = createRepositoryMock();
+    const service = new ConsumerPaymentMethodsService(paymentMethodsRepository);
+    const body = {
       type: $Enums.PaymentMethodType.CREDIT_CARD,
       brand: `Visa`,
       last4: `4242`,
       expMonth: `12`,
       expYear: `2030`,
-      billingName: `Alexey Golovin`,
+      billingName: `Jon Dow`,
       defaultSelected: true,
-    });
+    };
 
-    expect(tx.paymentMethodModel.count).toHaveBeenCalledWith({
-      where: {
-        consumerId,
-        deletedAt: null,
-        type: $Enums.PaymentMethodType.CREDIT_CARD,
-        defaultSelected: true,
-      },
-    });
-    expect(tx.paymentMethodModel.updateMany).toHaveBeenCalledWith({
-      where: { consumerId, deletedAt: null, type: $Enums.PaymentMethodType.CREDIT_CARD },
-      data: { defaultSelected: false },
-    });
+    await service.createManual(consumerId, body);
+
+    expect(paymentMethodsRepository.createManualPaymentMethod).toHaveBeenCalledWith(consumerId, body);
+  });
+
+  it(`clears same-type defaults when updating a method to default`, async () => {
+    const paymentMethodsRepository = createRepositoryMock();
+    paymentMethodsRepository.findActiveByIdForConsumer.mockResolvedValue({
+      id: `pm-card`,
+      consumerId,
+      type: $Enums.PaymentMethodType.CREDIT_CARD,
+      defaultSelected: false,
+      billingDetailsId: null,
+    } as never);
+    const service = new ConsumerPaymentMethodsService(paymentMethodsRepository);
+
+    await service.update(consumerId, `pm-card`, { defaultSelected: true });
+
+    expect(paymentMethodsRepository.clearDefaultForType).toHaveBeenCalledWith(
+      consumerId,
+      $Enums.PaymentMethodType.CREDIT_CARD,
+    );
+    expect(paymentMethodsRepository.updatePaymentMethodDefault).toHaveBeenCalledWith(`pm-card`, true);
   });
 });

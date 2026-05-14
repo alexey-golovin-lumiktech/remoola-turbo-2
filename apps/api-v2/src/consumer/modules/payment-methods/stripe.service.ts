@@ -1,23 +1,20 @@
-import { randomUUID } from 'crypto';
-
 import {
   Inject,
   BadRequestException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
-  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import Stripe from 'stripe';
 
 import { sanitizeNextForRedirect } from '@remoola/api-types';
-import { $Enums, Prisma } from '@remoola/database-2';
+import { $Enums, type Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConfirmStripeSetupIntent, PayWithSavedPaymentMethod } from './dto/payment-method.dto';
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
+import { StripePaymentRequestAccessRepository } from './stripe-payment-request-access.repository';
 import { PrismaService } from '../../../shared/prisma.service';
 import { STRIPE_CLIENT } from '../../../shared/stripe-client';
 import { getCurrencyFractionDigits } from '../../../shared-common';
@@ -33,8 +30,9 @@ export class ConsumerStripeService {
   private readonly logger = new Logger(ConsumerStripeService.name);
 
   constructor(
-    private prisma: PrismaService,
+    private readonly prisma: PrismaService,
     @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
+    private readonly paymentRequestAccessRepository: StripePaymentRequestAccessRepository,
   ) {}
 
   private getEffectiveStatus(entry: {
@@ -44,22 +42,12 @@ export class ConsumerStripeService {
     return entry.outcomes?.[0]?.status ?? entry.status;
   }
 
-  private getRequesterSettlementEntryTypeForCard(): $Enums.LedgerEntryType {
-    return $Enums.LedgerEntryType.USER_DEPOSIT;
-  }
-
   private async ensureCardPaymentRail(
     client: PaymentRequestSettlementTransitionClient,
     paymentRequestId: string,
     updatedBy: string,
   ) {
-    await client.paymentRequestModel.updateMany({
-      where: { id: paymentRequestId, paymentRail: null },
-      data: {
-        paymentRail: $Enums.PaymentRail.CARD,
-        updatedBy,
-      },
-    });
+    await this.paymentRequestAccessRepository.ensureCardPaymentRail(client, paymentRequestId, updatedBy);
   }
 
   private isTransientStripeError(error: unknown): boolean {
@@ -150,145 +138,7 @@ export class ConsumerStripeService {
   }
 
   private async getPaymentRequestForPayer(consumerId: string, paymentRequestId: string) {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: { email: true },
-    });
-
-    if (!consumer?.email) {
-      throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_CONSUMER);
-    }
-
-    const consumerEmail = consumer.email.trim().toLowerCase();
-
-    await this.prisma.$transaction(async (tx) => {
-      const paymentRequest = await tx.paymentRequestModel.findUnique({
-        where: { id: paymentRequestId },
-        include: { ledgerEntries: true },
-      });
-
-      if (!paymentRequest) {
-        throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_REQUEST);
-      }
-
-      const canAccessAsPayer =
-        paymentRequest.payerId === consumerId ||
-        (!paymentRequest.payerId &&
-          !!paymentRequest.payerEmail &&
-          paymentRequest.payerEmail.trim().toLowerCase() === consumerEmail);
-
-      if (!canAccessAsPayer) {
-        throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_ACCESS);
-      }
-
-      if (paymentRequest.status !== $Enums.TransactionStatus.PENDING) {
-        throw new ForbiddenException(errorCodes.PAYMENT_ALREADY_PROCESSED_CONFIRM);
-      }
-
-      if (!paymentRequest.payerId && paymentRequest.ledgerEntries.length > 0) {
-        throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_EMAIL_PAYMENT_STRIPE);
-      }
-
-      if (!paymentRequest.payerId) {
-        const claim = await tx.paymentRequestModel.updateMany({
-          where: {
-            id: paymentRequestId,
-            payerId: null,
-            payerEmail: { equals: consumerEmail, mode: `insensitive` },
-          },
-          data: {
-            payerId: consumerId,
-            updatedBy: consumerId,
-          },
-        });
-
-        if (claim.count === 0) {
-          throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_CLAIM);
-        }
-
-        if (paymentRequest.ledgerEntries.length === 0) {
-          if (!paymentRequest.requesterId) {
-            throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_EMAIL_PAYMENT_STRIPE);
-          }
-          const amount = Number(paymentRequest.amount);
-          const ledgerId = randomUUID();
-          const payerKey = `pr:${paymentRequest.id}:payer`;
-          const requesterKey = `pr:${paymentRequest.id}:requester`;
-
-          try {
-            await tx.ledgerEntryModel.create({
-              data: {
-                ledgerId,
-                consumerId,
-                paymentRequestId: paymentRequest.id,
-                type: $Enums.LedgerEntryType.USER_PAYMENT,
-                currencyCode: paymentRequest.currencyCode,
-                status: $Enums.TransactionStatus.PENDING,
-                amount: -amount,
-                createdBy: consumerId,
-                updatedBy: consumerId,
-                idempotencyKey: payerKey,
-                metadata: {
-                  rail: $Enums.PaymentRail.CARD,
-                  counterpartyId: paymentRequest.requesterId,
-                },
-              },
-            });
-          } catch (err) {
-            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-              // Another concurrent attempt already created the idempotent ledger entry.
-            } else {
-              throw err;
-            }
-          }
-
-          try {
-            await tx.ledgerEntryModel.create({
-              data: {
-                ledgerId,
-                consumerId: paymentRequest.requesterId,
-                paymentRequestId: paymentRequest.id,
-                type: this.getRequesterSettlementEntryTypeForCard(),
-                currencyCode: paymentRequest.currencyCode,
-                status: $Enums.TransactionStatus.PENDING,
-                amount: amount,
-                createdBy: consumerId,
-                updatedBy: consumerId,
-                idempotencyKey: requesterKey,
-                metadata: {
-                  rail: $Enums.PaymentRail.CARD,
-                  counterpartyId: consumerId,
-                },
-              },
-            });
-          } catch (err) {
-            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-              // Another concurrent attempt already created the idempotent ledger entry.
-            } else {
-              throw err;
-            }
-          }
-        }
-      }
-    });
-
-    const paymentRequest = await this.prisma.paymentRequestModel.findUnique({
-      where: { id: paymentRequestId },
-      include: {
-        ledgerEntries: true,
-        requester: true,
-      },
-    });
-
-    if (!paymentRequest || paymentRequest.payerId !== consumerId) {
-      throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_CONFIRM);
-    }
-
-    if (paymentRequest.status !== $Enums.TransactionStatus.PENDING) {
-      throw new ForbiddenException(errorCodes.PAYMENT_ALREADY_PROCESSED_PAY);
-    }
-
-    return paymentRequest;
+    return this.paymentRequestAccessRepository.getPaymentRequestForPayer(consumerId, paymentRequestId);
   }
 
   async createStripeSession(

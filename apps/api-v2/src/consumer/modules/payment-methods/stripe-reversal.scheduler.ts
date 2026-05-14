@@ -4,85 +4,27 @@ import Stripe from 'stripe';
 
 import { $Enums } from '@remoola/database-2';
 
-import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
-import { PrismaService } from '../../../shared/prisma.service';
+import { StripeReversalSchedulerRepository } from './stripe-reversal-scheduler.repository';
 import { STRIPE_CLIENT } from '../../../shared/stripe-client';
 
 @Injectable()
 export class StripeReversalScheduler {
-  private static readonly ADVISORY_LOCK_KEY = 227947120;
-  private static readonly LOCK_TRANSACTION_TIMEOUT_MS = 120000;
-  private static readonly MAX_STRIPE_IDS_PER_RUN = 50;
-  private static readonly PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES = [
-    $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-    $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL,
-  ] as const;
   private readonly logger = new Logger(StripeReversalScheduler.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly reversalSchedulerRepository: StripeReversalSchedulerRepository,
     @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
   ) {}
-
-  private getEffectiveStatus(entry: {
-    status: $Enums.TransactionStatus;
-    outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-  }): $Enums.TransactionStatus {
-    return entry.outcomes?.[0]?.status ?? entry.status;
-  }
-
-  private async selectPendingStripeIdsForRun(): Promise<
-    { skipped: true } | { skipped: false; stripeIdsForRun: string[]; pendingStripeIds: number }
-  > {
-    return this.prisma.$transaction(
-      async (tx) => {
-        const lockRows = await tx.$queryRaw<{ locked: boolean }[]>`
-          SELECT pg_try_advisory_xact_lock(${StripeReversalScheduler.ADVISORY_LOCK_KEY}) AS "locked"
-        `;
-        if (lockRows[0]?.locked !== true) {
-          this.logger.log({ event: `stripe_reversal_reconcile_skipped_lock_not_acquired` });
-          return { skipped: true as const };
-        }
-
-        const pendingEntries = await tx.ledgerEntryModel.findMany({
-          where: {
-            type: { in: [...StripeReversalScheduler.PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES] },
-            stripeId: { not: null },
-            createdBy: { not: `stripe` },
-          },
-          select: {
-            stripeId: true,
-            status: true,
-            outcomes: {
-              orderBy: { createdAt: `desc` },
-              take: 1,
-              select: { status: true },
-            },
-          },
-        });
-
-        const stripeIds = [
-          ...new Set(
-            pendingEntries
-              .filter((entry) => this.getEffectiveStatus(entry) === $Enums.TransactionStatus.PENDING)
-              .map((entry) => entry.stripeId)
-              .filter(Boolean),
-          ),
-        ] as string[];
-        return {
-          skipped: false as const,
-          pendingStripeIds: stripeIds.length,
-          stripeIdsForRun: stripeIds.slice(0, StripeReversalScheduler.MAX_STRIPE_IDS_PER_RUN),
-        };
-      },
-      { timeout: StripeReversalScheduler.LOCK_TRANSACTION_TIMEOUT_MS },
-    );
-  }
 
   @Cron(`*/10 * * * *`)
   async reconcilePendingRefunds() {
     try {
-      const selection = await this.selectPendingStripeIdsForRun();
+      const selection = await this.reversalSchedulerRepository.selectPendingStripeIdsForRun();
+      if (selection.skipped) {
+        this.logger.log({ event: `stripe_reversal_reconcile_skipped_lock_not_acquired` });
+        return;
+      }
+
       if (`stripeIdsForRun` in selection) {
         const { stripeIdsForRun, pendingStripeIds } = selection;
         let processed = 0;
@@ -99,23 +41,11 @@ export class StripeReversalScheduler {
                   : $Enums.TransactionStatus.PENDING;
             const transitionExternalId = `reconcile:${stripeId}:${status}`;
 
-            await this.prisma.$transaction(async (tx) => {
-              const entries = await tx.ledgerEntryModel.findMany({
-                where: { stripeId, type: { in: [...StripeReversalScheduler.PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES] } },
-                select: { id: true },
-              });
-              for (const entry of entries) {
-                await createOutcomeIdempotent(
-                  tx,
-                  {
-                    ledgerEntryId: entry.id,
-                    status,
-                    source: `stripe-reconcile`,
-                    externalId: transitionExternalId,
-                  },
-                  this.logger,
-                );
-              }
+            await this.reversalSchedulerRepository.recordRefundOutcome({
+              stripeId,
+              status,
+              externalId: transitionExternalId,
+              logger: this.logger,
             });
             processed += 1;
           } catch (error: unknown) {

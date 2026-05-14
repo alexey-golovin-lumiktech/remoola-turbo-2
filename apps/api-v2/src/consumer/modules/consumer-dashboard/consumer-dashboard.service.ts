@@ -1,32 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { $Enums, Prisma } from '@remoola/database-2';
+import { $Enums } from '@remoola/database-2';
 
+import { ConsumerDashboardQuery, type DashboardActivityLedgerRow } from './consumer-dashboard.query';
 import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { BalanceCalculationService, BalanceCalculationMode } from '../../../shared/balance-calculation.service';
-import { PrismaService } from '../../../shared/prisma.service';
 import { buildConsumerVerificationState } from '../../../shared-common';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
-
-type DashboardActivityLedgerRow = {
-  id: string;
-  ledgerId: string;
-  type: $Enums.LedgerEntryType;
-  status: $Enums.TransactionStatus;
-  amount: number | { toString(): string };
-  currencyCode: $Enums.CurrencyCode;
-  createdAt: Date;
-  metadata: Prisma.JsonValue | null;
-  paymentRequestId: string | null;
-  outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-  paymentRequest?: { paymentRail: $Enums.PaymentRail | null } | null;
-};
 
 @Injectable()
 export class ConsumerDashboardService {
   private readonly logger = new Logger(ConsumerDashboardService.name);
   constructor(
-    private prisma: PrismaService,
+    private readonly dashboardQuery: ConsumerDashboardQuery,
     private readonly balanceService: BalanceCalculationService,
   ) {}
 
@@ -72,47 +58,6 @@ export class ConsumerDashboardService {
       | undefined,
   ): boolean {
     return this.getEffectivePaymentRequestStatus(paymentRequest) !== $Enums.TransactionStatus.COMPLETED;
-  }
-
-  private getDashboardCandidateWhere(consumerId: string) {
-    return {
-      OR: [
-        { status: { not: $Enums.TransactionStatus.COMPLETED } },
-        {
-          ledgerEntries: {
-            some: {
-              consumerId,
-              OR: [
-                { status: { not: $Enums.TransactionStatus.COMPLETED } },
-                { outcomes: { some: { status: { not: $Enums.TransactionStatus.COMPLETED } } } },
-              ],
-            },
-          },
-        },
-      ],
-    };
-  }
-
-  private getDashboardPayerWhere(
-    consumerId: string,
-    consumerEmail: string | null,
-  ): Prisma.PaymentRequestModelWhereInput {
-    return {
-      OR: [
-        { payerId: consumerId },
-        ...(consumerEmail
-          ? [{ payerId: null, payerEmail: { equals: consumerEmail, mode: `insensitive` as const } }]
-          : []),
-      ],
-    };
-  }
-
-  private async getConsumerEmail(consumerId: string): Promise<string | null> {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: { email: true },
-    });
-    return consumer?.email?.trim().toLowerCase() ?? null;
   }
 
   private pickSummaryCurrencyCode(
@@ -301,35 +246,7 @@ export class ConsumerDashboardService {
   }
 
   private async buildFinancialActivity(consumerId: string): Promise<ActivityItem[]> {
-    const rows = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        consumerId,
-        deletedAt: null,
-        type: {
-          in: [
-            $Enums.LedgerEntryType.USER_PAYMENT,
-            $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-            $Enums.LedgerEntryType.USER_PAYOUT,
-            $Enums.LedgerEntryType.USER_PAYOUT_REVERSAL,
-            $Enums.LedgerEntryType.USER_DEPOSIT,
-            $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL,
-            $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-          ],
-        },
-      },
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: 100,
-      include: {
-        outcomes: {
-          orderBy: { createdAt: `desc` },
-          take: 1,
-          select: { status: true },
-        },
-        paymentRequest: {
-          select: { paymentRail: true },
-        },
-      },
-    });
+    const rows = await this.dashboardQuery.findFinancialActivityRows(consumerId);
 
     if (rows.length === 0) {
       return [];
@@ -355,17 +272,7 @@ export class ConsumerDashboardService {
     const paymentMethodLabelById = new Map<string, string>();
 
     if (paymentMethodIds.length > 0) {
-      const paymentMethods = await this.prisma.paymentMethodModel.findMany({
-        where: {
-          id: { in: paymentMethodIds },
-          consumerId,
-        },
-        select: {
-          id: true,
-          brand: true,
-          last4: true,
-        },
-      });
+      const paymentMethods = await this.dashboardQuery.findPaymentMethodLabels(consumerId, paymentMethodIds);
 
       for (const paymentMethod of paymentMethods) {
         const brand = paymentMethod.brand || `Bank account`;
@@ -382,18 +289,7 @@ export class ConsumerDashboardService {
   }
 
   private async buildSetupActivity(consumerId: string): Promise<ActivityItem[]> {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      include: {
-        personalDetails: true,
-        paymentMethods: true,
-        consumerResources: {
-          include: {
-            resource: true,
-          },
-        },
-      },
-    });
+    const consumer = await this.dashboardQuery.findSetupConsumer(consumerId);
     const verification = buildConsumerVerificationState(consumer);
 
     const items: ActivityItem[] = [];
@@ -494,7 +390,7 @@ export class ConsumerDashboardService {
   }
 
   private async buildSummary(consumerId: string) {
-    const consumerEmail = await this.getConsumerEmail(consumerId);
+    const consumerEmail = await this.dashboardQuery.getConsumerEmail(consumerId);
     const [settledBalanceResult, availableBalanceResult, activeRequestCandidates, lastPayment, settings] =
       await Promise.all([
         this.balanceService.calculateMultiCurrency(consumerId, {
@@ -503,39 +399,9 @@ export class ConsumerDashboardService {
         this.balanceService.calculateMultiCurrency(consumerId, {
           mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
         }),
-        this.prisma.paymentRequestModel.findMany({
-          where: {
-            AND: [this.getDashboardPayerWhere(consumerId, consumerEmail), this.getDashboardCandidateWhere(consumerId)],
-          },
-          select: {
-            status: true,
-            ledgerEntries: {
-              where: { consumerId },
-              orderBy: { createdAt: `desc` },
-              take: 1,
-              select: {
-                status: true,
-                outcomes: {
-                  orderBy: { createdAt: `desc` },
-                  take: 1,
-                  select: { status: true },
-                },
-              },
-            },
-          },
-        }),
-
-        // Last payment made
-        this.prisma.ledgerEntryModel.findFirst({
-          where: { consumerId, deletedAt: null },
-          orderBy: { createdAt: `desc` },
-          select: { createdAt: true },
-        }),
-
-        this.prisma.consumerSettingsModel.findUnique({
-          where: { consumerId, deletedAt: null },
-          select: { preferredCurrency: true },
-        }),
+        this.dashboardQuery.findActiveRequestCandidates(consumerId, consumerEmail),
+        this.dashboardQuery.findLastPayment(consumerId),
+        this.dashboardQuery.findSettings(consumerId),
       ]);
     const activeRequests = activeRequestCandidates.filter((paymentRequest) =>
       this.isActiveDashboardPaymentRequest(paymentRequest),
@@ -564,29 +430,8 @@ export class ConsumerDashboardService {
   }
 
   private async buildPendingRequests(consumerId: string): Promise<PendingRequest[]> {
-    const consumerEmail = await this.getConsumerEmail(consumerId);
-    const paymentRequests = await this.prisma.paymentRequestModel.findMany({
-      where: {
-        AND: [this.getDashboardPayerWhere(consumerId, consumerEmail), this.getDashboardCandidateWhere(consumerId)],
-      },
-      orderBy: [{ updatedAt: `desc` }, { createdAt: `desc` }, { id: `desc` }],
-      include: {
-        requester: {
-          select: { email: true },
-        },
-        ledgerEntries: {
-          where: { consumerId },
-          orderBy: { createdAt: `desc` },
-          include: {
-            outcomes: {
-              orderBy: { createdAt: `desc` },
-              take: 1,
-              select: { status: true, createdAt: true },
-            },
-          },
-        },
-      },
-    });
+    const consumerEmail = await this.dashboardQuery.getConsumerEmail(consumerId);
+    const paymentRequests = await this.dashboardQuery.findPendingPaymentRequests(consumerId, consumerEmail);
 
     return paymentRequests
       .map((paymentRequest) => {
@@ -632,18 +477,7 @@ export class ConsumerDashboardService {
   }
 
   private async buildTasks(consumerId: string): Promise<ComplianceTask[]> {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      include: {
-        personalDetails: true,
-        paymentMethods: true,
-        consumerResources: {
-          include: {
-            resource: true,
-          },
-        },
-      },
-    });
+    const consumer = await this.dashboardQuery.findSetupConsumer(consumerId);
     const verification = buildConsumerVerificationState(consumer);
 
     const hasW9 = consumer.consumerResources.some((consumerResource) => {
@@ -676,25 +510,13 @@ export class ConsumerDashboardService {
   }
 
   private async buildVerification(consumerId: string) {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      include: { personalDetails: true },
-    });
+    const consumer = await this.dashboardQuery.findVerificationConsumer(consumerId);
 
     return buildConsumerVerificationState(consumer);
   }
 
   private async buildQuickDocs(consumerId: string): Promise<QuickDoc[]> {
-    const consumerResources = await this.prisma.consumerResourceModel.findMany({
-      where: { consumerId },
-      include: {
-        resource: true,
-      },
-      orderBy: {
-        createdAt: `desc`,
-      },
-      take: 5,
-    });
+    const consumerResources = await this.dashboardQuery.findQuickDocs(consumerId);
 
     return consumerResources.map((consumerResource) => ({
       id: consumerResource.resource.id,

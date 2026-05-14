@@ -2,6 +2,7 @@ import { BadRequestException, ServiceUnavailableException } from '@nestjs/common
 
 import { $Enums } from '@remoola/database-2';
 
+import { StripePaymentRequestAccessRepository } from './stripe-payment-request-access.repository';
 import { ConsumerStripeService } from './stripe.service';
 import { type PrismaService } from '../../../shared/prisma.service';
 
@@ -65,7 +66,12 @@ describe(`ConsumerStripeService`, () => {
       paymentIntents: { create: paymentIntentsCreate },
       checkout: { sessions: { create: checkoutSessionsCreate } },
     };
-    service = new ConsumerStripeService(prisma as unknown as PrismaService, stripeClient as any);
+    const paymentRequestAccessRepository = new StripePaymentRequestAccessRepository(prisma as unknown as PrismaService);
+    service = new ConsumerStripeService(
+      prisma as unknown as PrismaService,
+      stripeClient as any,
+      paymentRequestAccessRepository,
+    );
     jest
       .spyOn(
         service as unknown as { ensureStripeCustomer: (...args: unknown[]) => Promise<unknown> },
@@ -290,6 +296,7 @@ describe(`ConsumerStripeService`, () => {
           sessions: { create: jest.fn().mockResolvedValue({ id: `cs_1`, url: `https://stripe.test/cs_1` }) },
         },
       } as any,
+      new StripePaymentRequestAccessRepository(prismaForClaim as unknown as PrismaService),
     );
     jest
       .spyOn(
@@ -330,9 +337,13 @@ describe(`ConsumerStripeService`, () => {
       },
     } as unknown as PrismaService;
     const customersCreate = jest.fn().mockResolvedValue({ id: `cus_new` });
-    const serviceForCustomer = new ConsumerStripeService(prismaForCustomer, {
-      customers: { create: customersCreate },
-    } as any);
+    const serviceForCustomer = new ConsumerStripeService(
+      prismaForCustomer,
+      {
+        customers: { create: customersCreate },
+      } as any,
+      new StripePaymentRequestAccessRepository(prismaForCustomer),
+    );
 
     await (
       serviceForCustomer as unknown as { ensureStripeCustomer: (consumerId: string) => Promise<unknown> }
@@ -347,6 +358,87 @@ describe(`ConsumerStripeService`, () => {
     ).toHaveBeenCalledWith({
       where: { id: `consumer-1`, stripeCustomerId: null },
       data: { stripeCustomerId: `cus_new` },
+    });
+  });
+});
+
+describe(`StripePaymentRequestAccessRepository`, () => {
+  it(`materializes requester settlement as user deposit when card claim creates ledger rows`, async () => {
+    const txLedgerCreate = jest.fn().mockResolvedValue(undefined);
+    const txPaymentRequestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const prisma = {
+      consumerModel: {
+        findUnique: jest.fn().mockResolvedValue({ email: `payer@example.com` }),
+      },
+      paymentRequestModel: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: `payment-request-claim`,
+          payerId: `consumer-1`,
+          status: $Enums.TransactionStatus.PENDING,
+          currencyCode: $Enums.CurrencyCode.USD,
+          ledgerEntries: [],
+          requester: { email: `requester@example.com` },
+          requesterEmail: null,
+        }),
+      },
+      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback({
+          paymentRequestModel: {
+            findUnique: jest.fn().mockResolvedValue({
+              id: `payment-request-claim`,
+              payerId: null,
+              payerEmail: `payer@example.com`,
+              requesterId: `requester-1`,
+              amount: 25,
+              currencyCode: $Enums.CurrencyCode.USD,
+              status: $Enums.TransactionStatus.PENDING,
+              ledgerEntries: [],
+            }),
+            updateMany: txPaymentRequestUpdateMany,
+          },
+          ledgerEntryModel: {
+            create: txLedgerCreate,
+          },
+        }),
+      ),
+    } as any;
+    const repository = new StripePaymentRequestAccessRepository(prisma);
+
+    await expect(repository.getPaymentRequestForPayer(`consumer-1`, `payment-request-claim`)).resolves.toEqual(
+      expect.objectContaining({
+        id: `payment-request-claim`,
+        payerId: `consumer-1`,
+      }),
+    );
+
+    expect(txLedgerCreate).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          consumerId: `requester-1`,
+          type: $Enums.LedgerEntryType.USER_DEPOSIT,
+          amount: 25,
+        }),
+      }),
+    );
+  });
+
+  it(`stamps late-selected card payments with CARD rail`, async () => {
+    const paymentRequestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const repository = new StripePaymentRequestAccessRepository({} as PrismaService);
+
+    await repository.ensureCardPaymentRail(
+      { paymentRequestModel: { updateMany: paymentRequestUpdateMany } } as any,
+      `payment-request-1`,
+      `consumer-1`,
+    );
+
+    expect(paymentRequestUpdateMany).toHaveBeenCalledWith({
+      where: { id: `payment-request-1`, paymentRail: null },
+      data: {
+        paymentRail: $Enums.PaymentRail.CARD,
+        updatedBy: `consumer-1`,
+      },
     });
   });
 });

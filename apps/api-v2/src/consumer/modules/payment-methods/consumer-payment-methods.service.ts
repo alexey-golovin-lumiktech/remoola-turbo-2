@@ -2,24 +2,20 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerPaymentMethodsRepository } from './consumer-payment-methods.repository';
 import {
   CreateManualPaymentMethod,
   PaymentMethodItem,
   PaymentMethodsResponse,
   UpdatePaymentMethod,
 } from './dto/payment-method.dto';
-import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class ConsumerPaymentMethodsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly paymentMethodsRepository: ConsumerPaymentMethodsRepository) {}
 
   async list(consumerId: string): Promise<PaymentMethodsResponse> {
-    const paymentMethods = await this.prisma.paymentMethodModel.findMany({
-      where: { consumerId, deletedAt: null },
-      include: { billingDetails: true },
-      orderBy: { createdAt: `desc` },
-    });
+    const paymentMethods = await this.paymentMethodsRepository.listForConsumer(consumerId);
 
     const items: PaymentMethodItem[] = paymentMethods.map((paymentMethod) => {
       let billingDetails;
@@ -49,120 +45,43 @@ export class ConsumerPaymentMethodsService {
   }
 
   async createManual(consumerId: string, body: CreateManualPaymentMethod) {
-    return this.prisma.$transaction(async (tx) => {
-      const billingDetails = await tx.billingDetailsModel.create({
-        data: {
-          email: body.billingEmail ?? null,
-          name: body.billingName ?? null,
-          phone: body.billingPhone ?? null,
-        },
-      });
-
-      const hasDefault = await tx.paymentMethodModel.count({
-        where: { consumerId, deletedAt: null, type: body.type, defaultSelected: true },
-      });
-      const shouldBeDefault = body.defaultSelected === true || hasDefault === 0;
-
-      if (shouldBeDefault) {
-        await tx.paymentMethodModel.updateMany({
-          where: { consumerId, deletedAt: null, type: body.type },
-          data: { defaultSelected: false },
-        });
-      }
-
-      return tx.paymentMethodModel.create({
-        data: {
-          type: body.type,
-          defaultSelected: shouldBeDefault,
-          brand: body.brand,
-          last4: body.last4.slice(-4),
-          serviceFee: 0,
-          expMonth: body.expMonth ?? null,
-          expYear: body.expYear ?? null,
-          billingDetailsId: billingDetails.id,
-          consumerId,
-          stripePaymentMethodId: body.stripePaymentMethodId ?? null,
-        },
-      });
-    });
+    return this.paymentMethodsRepository.createManualPaymentMethod(consumerId, body);
   }
 
   async update(consumerId: string, id: string, body: UpdatePaymentMethod) {
-    const pm = await this.prisma.paymentMethodModel.findFirst({
-      where: { id, consumerId, deletedAt: null },
-      include: { billingDetails: true },
-    });
+    const pm = await this.paymentMethodsRepository.findActiveByIdForConsumer(consumerId, id);
 
     if (!pm) throw new BadRequestException(errorCodes.PAYMENT_METHOD_NOT_FOUND);
 
     if (body.defaultSelected) {
-      await this.prisma.paymentMethodModel.updateMany({
-        where: { consumerId, deletedAt: null, type: pm.type },
-        data: { defaultSelected: false },
-      });
+      await this.paymentMethodsRepository.clearDefaultForType(consumerId, pm.type);
     }
 
     if (body.billingName || body.billingEmail || body.billingPhone) {
       if (!pm.billingDetailsId) {
-        const bd = await this.prisma.billingDetailsModel.create({
-          data: {
-            name: body.billingName ?? null,
-            email: body.billingEmail ?? null,
-            phone: body.billingPhone ?? null,
-          },
-        });
-
-        await this.prisma.paymentMethodModel.update({
-          where: { id: pm.id },
-          data: { billingDetailsId: bd.id },
-        });
+        const bd = await this.paymentMethodsRepository.createBillingDetails(body);
+        await this.paymentMethodsRepository.attachBillingDetails(pm.id, bd.id);
       } else {
-        await this.prisma.billingDetailsModel.update({
-          where: { id: pm.billingDetailsId },
-          data: {
-            name: body.billingName ?? undefined,
-            email: body.billingEmail ?? undefined,
-            phone: body.billingPhone ?? undefined,
-          },
-        });
+        await this.paymentMethodsRepository.updateBillingDetails(pm.billingDetailsId, body);
       }
     }
 
-    return this.prisma.paymentMethodModel.update({
-      where: { id: pm.id },
-      data: {
-        defaultSelected: body.defaultSelected !== undefined ? body.defaultSelected : pm.defaultSelected,
-      },
-    });
+    return this.paymentMethodsRepository.updatePaymentMethodDefault(
+      pm.id,
+      body.defaultSelected !== undefined ? body.defaultSelected : pm.defaultSelected,
+    );
   }
 
   async delete(consumerId: string, id: string) {
-    const pm = await this.prisma.paymentMethodModel.findFirst({
-      where: { id, consumerId, deletedAt: null },
-    });
+    const pm = await this.paymentMethodsRepository.findActiveByIdForConsumer(consumerId, id);
 
     if (!pm) return { success: true };
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.paymentMethodModel.update({
-        where: { id },
-        data: { deletedAt: new Date(), defaultSelected: false },
-      });
-
-      if (!pm.defaultSelected) return;
-
-      const fallback = await tx.paymentMethodModel.findFirst({
-        where: { consumerId, deletedAt: null, type: pm.type },
-        orderBy: { createdAt: `desc` },
-        select: { id: true },
-      });
-
-      if (!fallback) return;
-
-      await tx.paymentMethodModel.update({
-        where: { id: fallback.id },
-        data: { defaultSelected: true },
-      });
+    await this.paymentMethodsRepository.softDeleteAndPromoteFallback({
+      consumerId,
+      paymentMethodId: id,
+      type: pm.type,
+      wasDefault: pm.defaultSelected,
     });
 
     return { success: true };

@@ -3,6 +3,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerContactsRepository } from './consumer-contacts.repository';
 import { ConsumerContactDetails } from './dto/consumer-contact-details.dto';
 import {
   ConsumerContact,
@@ -10,13 +11,12 @@ import {
   ConsumerCreateContact,
   ConsumerUpdateContact,
 } from './dto/consumer-contact.dto';
-import { PrismaService } from '../../../shared/prisma.service';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
 @Injectable()
 export class ConsumerContactsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly contactsRepository: ConsumerContactsRepository) {}
 
   private getEffectiveLedgerStatus(
     entry:
@@ -32,9 +32,7 @@ export class ConsumerContactsService {
   }
 
   async get(id: string, consumerId: string): Promise<ConsumerContact> {
-    const contact = await this.prisma.contactModel.findFirst({
-      where: { id, consumerId },
-    });
+    const contact = await this.contactsRepository.findByIdForConsumer(id, consumerId);
 
     if (!contact) throw new NotFoundException(errorCodes.CONTACT_NOT_FOUND);
 
@@ -51,15 +49,7 @@ export class ConsumerContactsService {
     const term = `${query.trim()}`;
     if (!term) return [];
 
-    const contacts = await this.prisma.contactModel.findMany({
-      where: {
-        consumerId,
-        OR: [{ email: { contains: term, mode: `insensitive` } }, { name: { contains: term, mode: `insensitive` } }],
-      },
-      select: { id: true, name: true, email: true },
-      take: safeLimit,
-      orderBy: { createdAt: `desc` },
-    });
+    const contacts = await this.contactsRepository.search(consumerId, term, safeLimit);
 
     return contacts.map((c) => ({
       id: c.id,
@@ -72,16 +62,7 @@ export class ConsumerContactsService {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) return null;
 
-    const contact = await this.prisma.contactModel.findFirst({
-      where: {
-        consumerId,
-        email: {
-          equals: normalizedEmail,
-          mode: `insensitive`,
-        },
-      },
-      select: { id: true, name: true, email: true },
-    });
+    const contact = await this.contactsRepository.findByExactEmail(consumerId, normalizedEmail);
 
     if (!contact) return null;
     return {
@@ -92,35 +73,11 @@ export class ConsumerContactsService {
   }
 
   async getDetails(id: string, consumerId: string, backendBaseUrl?: string): Promise<ConsumerContactDetails> {
-    const contact = await this.prisma.contactModel.findFirst({
-      where: { id, consumerId },
-    });
+    const contact = await this.contactsRepository.findByIdForConsumer(id, consumerId);
 
     if (!contact) throw new NotFoundException(errorCodes.CONTACT_NOT_FOUND);
 
-    const paymentRequests = await this.prisma.paymentRequestModel.findMany({
-      where: {
-        OR: [{ payer: { email: contact.email } }, { requester: { email: contact.email } }],
-      },
-      include: {
-        attachments: {
-          include: { resource: true },
-        },
-        ledgerEntries: {
-          where: { consumerId },
-          orderBy: { createdAt: `desc` },
-          take: 1,
-          include: {
-            outcomes: {
-              orderBy: { createdAt: `desc` },
-              take: 1,
-              select: { status: true },
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: `desc` },
-    });
+    const paymentRequests = await this.contactsRepository.findPaymentRequestsForDetails(contact.email, consumerId);
 
     const documents = paymentRequests.flatMap((paymentRequest) =>
       paymentRequest.attachments.map((paymentRequestAttachment) => ({
@@ -157,13 +114,8 @@ export class ConsumerContactsService {
     const safePageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSize)) || 10));
 
     const [total, contacts] = await Promise.all([
-      this.prisma.contactModel.count({ where: { consumerId } }),
-      this.prisma.contactModel.findMany({
-        where: { consumerId },
-        orderBy: { createdAt: `desc` },
-        skip: (safePage - 1) * safePageSize,
-        take: safePageSize,
-      }),
+      this.contactsRepository.countForConsumer(consumerId),
+      this.contactsRepository.listForConsumer(consumerId, (safePage - 1) * safePageSize, safePageSize),
     ]);
 
     const items = contacts.map((contact) => ({
@@ -177,37 +129,29 @@ export class ConsumerContactsService {
   }
 
   async create(consumerId: string, body: ConsumerCreateContact) {
-    const existByEmail = await this.prisma.contactModel.findFirst({
-      where: { consumerId, email: body.email },
-    });
+    const existByEmail = await this.contactsRepository.findByEmailForConsumer(consumerId, body.email);
 
     if (existByEmail) {
       throw new ConflictException(errorCodes.CONTACT_EMAIL_ALREADY_EXISTS);
     }
 
-    return this.prisma.contactModel.create({
-      data: {
-        email: body.email,
-        name: body.name,
-        address: body.address ? JSON.parse(JSON.stringify(body.address)) : null,
-        consumer: { connect: { id: consumerId } },
-      },
+    return this.contactsRepository.create(consumerId, {
+      email: body.email,
+      name: body.name,
+      address: body.address ? JSON.parse(JSON.stringify(body.address)) : null,
     });
   }
 
   async update(id: string, consumerId: string, body: ConsumerUpdateContact) {
-    return this.prisma.contactModel.update({
-      where: { id, consumerId },
-      data: {
-        email: body.email,
-        name: body.name,
-        address: body.address === undefined ? undefined : JSON.parse(JSON.stringify(body.address)),
-      },
+    return this.contactsRepository.update(id, consumerId, {
+      email: body.email,
+      name: body.name,
+      address: body.address === undefined ? undefined : JSON.parse(JSON.stringify(body.address)),
     });
   }
 
   async delete(id: string, consumerId: string) {
-    await this.prisma.contactModel.delete({ where: { id, consumerId } });
+    await this.contactsRepository.delete(id, consumerId);
     return { success: true };
   }
 }

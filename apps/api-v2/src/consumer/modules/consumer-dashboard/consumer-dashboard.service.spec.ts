@@ -2,6 +2,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 
 import { $Enums } from '@remoola/database-2';
 
+import { type ConsumerDashboardQuery } from './consumer-dashboard.query';
 import { ConsumerDashboardService } from './consumer-dashboard.service';
 import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 
@@ -15,6 +16,28 @@ function mockResolvedSequence<T>(...values: T[]) {
     mock.mockResolvedValueOnce(value);
   }
   return mock;
+}
+
+function createDashboardQueryMock(overrides: Partial<Record<keyof ConsumerDashboardQuery, jest.Mock>> = {}) {
+  return {
+    getConsumerEmail: mockResolved(null),
+    findFinancialActivityRows: mockResolved([]),
+    findPaymentMethodLabels: mockResolved([]),
+    findSetupConsumer: mockResolved({
+      personalDetails: null,
+      paymentMethods: [],
+      consumerResources: [],
+    }),
+    findActiveRequestCandidates: mockResolved([]),
+    findLastPayment: mockResolved(null),
+    findSettings: mockResolved(null),
+    findPendingPaymentRequests: mockResolved([]),
+    findVerificationConsumer: mockResolved({
+      personalDetails: null,
+    }),
+    findQuickDocs: mockResolved([]),
+    ...overrides,
+  } as unknown as ConsumerDashboardQuery;
 }
 
 describe(`ConsumerDashboardService`, () => {
@@ -35,34 +58,17 @@ describe(`ConsumerDashboardService`, () => {
         },
       ],
     };
-    const prisma = {
-      paymentRequestModel: {
-        findMany: mockResolvedSequence([effectivelyCompletedRequest], [effectivelyCompletedRequest]),
-      },
-      ledgerEntryModel: {
-        findFirst: mockResolved(null),
-      },
-      consumerSettingsModel: {
-        findUnique: mockResolved(null),
-      },
-      consumerModel: {
-        findUnique: mockResolved({
-          personalDetails: null,
-          paymentMethods: [],
-          consumerResources: [],
-        }),
-      },
-      consumerResourceModel: {
-        findMany: mockResolved([]),
-      },
-    } as any;
+    const dashboardQuery = createDashboardQueryMock({
+      findActiveRequestCandidates: mockResolved([effectivelyCompletedRequest]),
+      findPendingPaymentRequests: mockResolved([effectivelyCompletedRequest]),
+    });
     const balanceService = {
       calculateMultiCurrency: mockResolved({
         balances: { [$Enums.CurrencyCode.USD]: 0 },
       }),
     } as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     jest.spyOn(service as any, `buildActivity`).mockResolvedValue([]);
     jest.spyOn(service as any, `buildTasks`).mockResolvedValue([]);
     jest.spyOn(service as any, `buildQuickDocs`).mockResolvedValue([]);
@@ -86,31 +92,8 @@ describe(`ConsumerDashboardService`, () => {
 
     expect(result.summary.activeRequests).toBe(0);
     expect(result.pendingRequests).toEqual([]);
-    expect(prisma.paymentRequestModel.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          AND: [
-            { OR: [{ payerId: consumerId }] },
-            {
-              OR: [
-                { status: { not: $Enums.TransactionStatus.COMPLETED } },
-                {
-                  ledgerEntries: {
-                    some: {
-                      consumerId,
-                      OR: [
-                        { status: { not: $Enums.TransactionStatus.COMPLETED } },
-                        { outcomes: { some: { status: { not: $Enums.TransactionStatus.COMPLETED } } } },
-                      ],
-                    },
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      }),
-    );
+    expect(dashboardQuery.findActiveRequestCandidates).toHaveBeenCalledWith(consumerId, null);
+    expect(dashboardQuery.findPendingPaymentRequests).toHaveBeenCalledWith(consumerId, null);
     expect(balanceService.calculateMultiCurrency).toHaveBeenNthCalledWith(1, consumerId, {
       mode: BalanceCalculationMode.COMPLETED,
     });
@@ -122,20 +105,11 @@ describe(`ConsumerDashboardService`, () => {
   it(`derives settled and available summary
     balances from the preferred dashboard currency and returns cents`, async () => {
     const consumerId = `consumer-1`;
-    const prisma = {
-      paymentRequestModel: {
-        findMany: mockResolved([]),
-      },
-      ledgerEntryModel: {
-        findFirst: mockResolved({ createdAt: new Date(`2026-03-25T17:23:20.000Z`) }),
-      },
-      consumerSettingsModel: {
-        findUnique: mockResolved({ preferredCurrency: $Enums.CurrencyCode.EUR }),
-      },
-      consumerModel: {
-        findUnique: mockResolved({ email: `consumer@example.com` }),
-      },
-    } as any;
+    const dashboardQuery = createDashboardQueryMock({
+      getConsumerEmail: mockResolved(`consumer@example.com`),
+      findLastPayment: mockResolved({ createdAt: new Date(`2026-03-25T17:23:20.000Z`) }),
+      findSettings: mockResolved({ preferredCurrency: $Enums.CurrencyCode.EUR }),
+    });
     const balanceService = {
       calculateMultiCurrency: mockResolvedSequence(
         {
@@ -147,7 +121,7 @@ describe(`ConsumerDashboardService`, () => {
       ),
     } as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
     jest.spyOn(service as any, `buildActivity`).mockResolvedValue([]);
     jest.spyOn(service as any, `buildTasks`).mockResolvedValue([]);
@@ -184,20 +158,11 @@ describe(`ConsumerDashboardService`, () => {
 
   it(`falls back from preferred currency when it has no non-zero balances`, async () => {
     const consumerId = `consumer-preferred-zero`;
-    const prisma = {
-      paymentRequestModel: {
-        findMany: mockResolved([]),
-      },
-      ledgerEntryModel: {
-        findFirst: mockResolved({ createdAt: new Date(`2026-03-25T17:23:20.000Z`) }),
-      },
-      consumerSettingsModel: {
-        findUnique: mockResolved({ preferredCurrency: $Enums.CurrencyCode.JPY }),
-      },
-      consumerModel: {
-        findUnique: mockResolved({ email: `consumer@example.com` }),
-      },
-    } as any;
+    const dashboardQuery = createDashboardQueryMock({
+      getConsumerEmail: mockResolved(`consumer@example.com`),
+      findLastPayment: mockResolved({ createdAt: new Date(`2026-03-25T17:23:20.000Z`) }),
+      findSettings: mockResolved({ preferredCurrency: $Enums.CurrencyCode.JPY }),
+    });
     const balanceService = {
       calculateMultiCurrency: mockResolvedSequence(
         {
@@ -215,7 +180,7 @@ describe(`ConsumerDashboardService`, () => {
       ),
     } as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
     jest.spyOn(service as any, `buildActivity`).mockResolvedValue([]);
     jest.spyOn(service as any, `buildTasks`).mockResolvedValue([]);
@@ -246,75 +211,27 @@ describe(`ConsumerDashboardService`, () => {
 
   it(`keeps active summary requests when raw payment request status is stale completed`, async () => {
     const consumerId = `consumer-2`;
-    const prisma = {
-      paymentRequestModel: {
-        findMany: mockResolvedSequence(
-          [
-            {
-              status: $Enums.TransactionStatus.COMPLETED,
-              ledgerEntries: [
-                {
-                  status: $Enums.TransactionStatus.PENDING,
-                  outcomes: [{ status: $Enums.TransactionStatus.WAITING }],
-                },
-              ],
-            },
-          ],
-          [],
-        ),
-      },
-      ledgerEntryModel: {
-        findFirst: mockResolved(null),
-        findMany: mockResolved([]),
-      },
-      consumerSettingsModel: {
-        findUnique: mockResolved(null),
-      },
-      consumerModel: {
-        findUnique: mockResolved({
-          personalDetails: null,
-          paymentMethods: [],
-          consumerResources: [],
-        }),
-      },
-      consumerResourceModel: {
-        findMany: mockResolved([]),
-      },
-    } as any;
+    const activeRequestCandidate = {
+      status: $Enums.TransactionStatus.COMPLETED,
+      ledgerEntries: [
+        {
+          status: $Enums.TransactionStatus.PENDING,
+          outcomes: [{ status: $Enums.TransactionStatus.WAITING }],
+        },
+      ],
+    };
+    const dashboardQuery = createDashboardQueryMock({
+      findActiveRequestCandidates: mockResolved([activeRequestCandidate]),
+    });
     const balanceService = {
       calculateMultiCurrency: mockResolved({ balances: {} }),
     } as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     const result = await service.getDashboardData(consumerId);
 
     expect(result.summary.activeRequests).toBe(1);
-    expect(prisma.paymentRequestModel.findMany).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        where: {
-          AND: [
-            { OR: [{ payerId: consumerId }] },
-            {
-              OR: [
-                { status: { not: $Enums.TransactionStatus.COMPLETED } },
-                {
-                  ledgerEntries: {
-                    some: {
-                      consumerId,
-                      OR: [
-                        { status: { not: $Enums.TransactionStatus.COMPLETED } },
-                        { outcomes: { some: { status: { not: $Enums.TransactionStatus.COMPLETED } } } },
-                      ],
-                    },
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      }),
-    );
+    expect(dashboardQuery.findActiveRequestCandidates).toHaveBeenCalledWith(consumerId, null);
   });
 
   it(`keeps pending requests visible when raw payment request status is stale completed`, async () => {
@@ -334,33 +251,14 @@ describe(`ConsumerDashboardService`, () => {
         },
       ],
     };
-    const prisma = {
-      paymentRequestModel: {
-        findMany: mockResolvedSequence([], [staleCompletedRequest]),
-      },
-      ledgerEntryModel: {
-        findFirst: mockResolved(null),
-        findMany: mockResolved([]),
-      },
-      consumerSettingsModel: {
-        findUnique: mockResolved(null),
-      },
-      consumerModel: {
-        findUnique: mockResolved({
-          personalDetails: null,
-          paymentMethods: [],
-          consumerResources: [],
-        }),
-      },
-      consumerResourceModel: {
-        findMany: mockResolved([]),
-      },
-    } as any;
+    const dashboardQuery = createDashboardQueryMock({
+      findPendingPaymentRequests: mockResolved([staleCompletedRequest]),
+    });
     const balanceService = {
       calculateMultiCurrency: mockResolved({ balances: {} }),
     } as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     const result = await service.getDashboardData(consumerId);
 
     expect(result.pendingRequests).toEqual([
@@ -384,29 +282,16 @@ describe(`ConsumerDashboardService`, () => {
       updatedAt: new Date(`2026-03-27T15:00:00.000Z`),
       ledgerEntries: [],
     };
-    const prisma = {
-      paymentRequestModel: {
-        findMany: mockResolvedSequence([emailOnlyPayerRequest], [emailOnlyPayerRequest]),
-      },
-      ledgerEntryModel: {
-        findFirst: mockResolved(null),
-        findMany: mockResolved([]),
-      },
-      consumerSettingsModel: {
-        findUnique: mockResolved(null),
-      },
-      consumerModel: {
-        findUnique: mockResolved({ email: consumerEmail }),
-      },
-      consumerResourceModel: {
-        findMany: mockResolved([]),
-      },
-    } as any;
+    const dashboardQuery = createDashboardQueryMock({
+      getConsumerEmail: mockResolved(consumerEmail),
+      findActiveRequestCandidates: mockResolved([emailOnlyPayerRequest]),
+      findPendingPaymentRequests: mockResolved([emailOnlyPayerRequest]),
+    });
     const balanceService = {
       calculateMultiCurrency: mockResolved({ balances: {} }),
     } as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     jest.spyOn(service as any, `buildActivity`).mockResolvedValue([]);
     jest.spyOn(service as any, `buildTasks`).mockResolvedValue([]);
     jest.spyOn(service as any, `buildQuickDocs`).mockResolvedValue([]);
@@ -436,38 +321,8 @@ describe(`ConsumerDashboardService`, () => {
         status: `Pending`,
       }),
     ]);
-    expect(prisma.paymentRequestModel.findMany).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        where: {
-          AND: [
-            {
-              OR: [
-                { payerId: consumerId },
-                { payerId: null, payerEmail: { equals: consumerEmail, mode: `insensitive` } },
-              ],
-            },
-            expect.any(Object),
-          ],
-        },
-      }),
-    );
-    expect(prisma.paymentRequestModel.findMany).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        where: {
-          AND: [
-            {
-              OR: [
-                { payerId: consumerId },
-                { payerId: null, payerEmail: { equals: consumerEmail, mode: `insensitive` } },
-              ],
-            },
-            expect.any(Object),
-          ],
-        },
-      }),
-    );
+    expect(dashboardQuery.findActiveRequestCandidates).toHaveBeenCalledWith(consumerId, consumerEmail);
+    expect(dashboardQuery.findPendingPaymentRequests).toHaveBeenCalledWith(consumerId, consumerEmail);
   });
 
   it(`orders open payment requests by latest consumer-visible activity and formats status wording`, async () => {
@@ -511,33 +366,14 @@ describe(`ConsumerDashboardService`, () => {
         },
       ],
     };
-    const prisma = {
-      paymentRequestModel: {
-        findMany: mockResolvedSequence([], [olderByUpdateButNewerByOutcome, newerByUpdateOnly]),
-      },
-      ledgerEntryModel: {
-        findFirst: mockResolved(null),
-        findMany: mockResolved([]),
-      },
-      consumerSettingsModel: {
-        findUnique: mockResolved(null),
-      },
-      consumerModel: {
-        findUnique: mockResolved({
-          personalDetails: null,
-          paymentMethods: [],
-          consumerResources: [],
-        }),
-      },
-      consumerResourceModel: {
-        findMany: mockResolved([]),
-      },
-    } as any;
+    const dashboardQuery = createDashboardQueryMock({
+      findPendingPaymentRequests: mockResolved([olderByUpdateButNewerByOutcome, newerByUpdateOnly]),
+    });
     const balanceService = {
       calculateMultiCurrency: mockResolved({ balances: {} }),
     } as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     const result = await service.getDashboardData(consumerId);
 
     expect(result.pendingRequests).toEqual([
@@ -580,33 +416,14 @@ describe(`ConsumerDashboardService`, () => {
         },
       ],
     };
-    const prisma = {
-      paymentRequestModel: {
-        findMany: mockResolvedSequence([], [paymentRequest]),
-      },
-      ledgerEntryModel: {
-        findFirst: mockResolved(null),
-        findMany: mockResolved([]),
-      },
-      consumerSettingsModel: {
-        findUnique: mockResolved(null),
-      },
-      consumerModel: {
-        findUnique: mockResolved({
-          personalDetails: null,
-          paymentMethods: [],
-          consumerResources: [],
-        }),
-      },
-      consumerResourceModel: {
-        findMany: mockResolved([]),
-      },
-    } as any;
+    const dashboardQuery = createDashboardQueryMock({
+      findPendingPaymentRequests: mockResolved([paymentRequest]),
+    });
     const balanceService = {
       calculateMultiCurrency: mockResolved({ balances: {} }),
     } as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     const result = await service.getDashboardData(consumerId);
 
     expect(result.pendingRequests).toEqual([
@@ -620,63 +437,59 @@ describe(`ConsumerDashboardService`, () => {
 
   it(`builds dashboard activity from mixed ledger history with user-facing labels`, async () => {
     const consumerId = `consumer-activity`;
-    const prisma = {
-      ledgerEntryModel: {
-        findMany: mockResolved([
-          {
-            id: `exchange-usd`,
-            ledgerId: `ledger-exchange`,
-            type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-            status: $Enums.TransactionStatus.COMPLETED,
-            amount: 1.06,
-            currencyCode: $Enums.CurrencyCode.USD,
-            createdAt: new Date(`2026-03-27T14:44:14.867Z`),
-            metadata: { from: `EUR`, to: `USD`, rate: 1.0576 },
-            paymentRequestId: null,
-            outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
-            paymentRequest: null,
-          },
-          {
-            id: `withdrawal`,
-            ledgerId: `ledger-withdrawal`,
-            type: $Enums.LedgerEntryType.USER_PAYOUT,
-            status: $Enums.TransactionStatus.PENDING,
-            amount: -1,
-            currencyCode: $Enums.CurrencyCode.USD,
-            createdAt: new Date(`2026-03-27T14:37:49.778Z`),
-            metadata: { paymentMethodId: `pm-bank-1`, rail: `BANK_TRANSFER` },
-            paymentRequestId: null,
-            outcomes: [{ status: $Enums.TransactionStatus.PENDING }],
-            paymentRequest: null,
-          },
-          {
-            id: `payment`,
-            ledgerId: `ledger-payment`,
-            type: $Enums.LedgerEntryType.USER_PAYMENT,
-            status: $Enums.TransactionStatus.PENDING,
-            amount: -27.54,
-            currencyCode: $Enums.CurrencyCode.GBP,
-            createdAt: new Date(`2026-03-27T12:42:30.618Z`),
-            metadata: { rail: `BANK_TRANSFER` },
-            paymentRequestId: `payment-request-1`,
-            outcomes: [{ status: $Enums.TransactionStatus.PENDING }],
-            paymentRequest: { paymentRail: $Enums.PaymentRail.BANK_TRANSFER },
-          },
-        ]),
-      },
-      paymentMethodModel: {
-        findMany: mockResolved([
-          {
-            id: `pm-bank-1`,
-            brand: `Test Bank`,
-            last4: `6789`,
-          },
-        ]),
-      },
-    } as any;
+    const dashboardQuery = createDashboardQueryMock({
+      findFinancialActivityRows: mockResolved([
+        {
+          id: `exchange-usd`,
+          ledgerId: `ledger-exchange`,
+          type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: 1.06,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-03-27T14:44:14.867Z`),
+          metadata: { from: `EUR`, to: `USD`, rate: 1.0576 },
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+        {
+          id: `withdrawal`,
+          ledgerId: `ledger-withdrawal`,
+          type: $Enums.LedgerEntryType.USER_PAYOUT,
+          status: $Enums.TransactionStatus.PENDING,
+          amount: -1,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-03-27T14:37:49.778Z`),
+          metadata: { paymentMethodId: `pm-bank-1`, rail: `BANK_TRANSFER` },
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.PENDING }],
+          paymentRequest: null,
+        },
+        {
+          id: `payment`,
+          ledgerId: `ledger-payment`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT,
+          status: $Enums.TransactionStatus.PENDING,
+          amount: -27.54,
+          currencyCode: $Enums.CurrencyCode.GBP,
+          createdAt: new Date(`2026-03-27T12:42:30.618Z`),
+          metadata: { rail: `BANK_TRANSFER` },
+          paymentRequestId: `payment-request-1`,
+          outcomes: [{ status: $Enums.TransactionStatus.PENDING }],
+          paymentRequest: { paymentRail: $Enums.PaymentRail.BANK_TRANSFER },
+        },
+      ]),
+      findPaymentMethodLabels: mockResolved([
+        {
+          id: `pm-bank-1`,
+          brand: `Test Bank`,
+          last4: `6789`,
+        },
+      ]),
+    });
     const balanceService = {} as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     jest.spyOn(service as any, `buildSummary`).mockResolvedValue({
       balanceCents: 0,
       balanceCurrencyCode: $Enums.CurrencyCode.USD,
@@ -733,24 +546,22 @@ describe(`ConsumerDashboardService`, () => {
 
   it(`treats W-9 filenames as completing the W-9 setup task`, async () => {
     const consumerId = `consumer-w9`;
-    const prisma = {
-      consumerModel: {
-        findUnique: mockResolved({
-          personalDetails: null,
-          paymentMethods: [],
-          consumerResources: [
-            {
-              resource: {
-                originalName: `IRS-W-9.pdf`,
-              },
+    const dashboardQuery = createDashboardQueryMock({
+      findSetupConsumer: mockResolved({
+        personalDetails: null,
+        paymentMethods: [],
+        consumerResources: [
+          {
+            resource: {
+              originalName: `IRS-W-9.pdf`,
             },
-          ],
-        }),
-      },
-    } as any;
+          },
+        ],
+      }),
+    });
     const balanceService = {} as any;
 
-    const service = new ConsumerDashboardService(prisma, balanceService);
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
     const tasks = await (service as any).buildTasks(consumerId);
 
     expect(tasks).toEqual(

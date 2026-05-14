@@ -2,9 +2,9 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerProfileRepository } from './consumer-profile.repository';
 import { ChangePasswordBody, UpdateConsumerProfileBody } from './dtos';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../../shared/auth-audit.service';
-import { PrismaService } from '../../../shared/prisma.service';
 import { buildConsumerVerificationState, passwordUtils } from '../../../shared-common';
 
 @Injectable()
@@ -12,15 +12,12 @@ export class ConsumerProfileService {
   private readonly logger = new Logger(ConsumerProfileService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly profileRepository: ConsumerProfileRepository,
     private readonly authAudit: AuthAuditService,
   ) {}
 
   async changePassword(consumerId: string, body: ChangePasswordBody): Promise<void> {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: { id: true, email: true, password: true, salt: true },
-    });
+    const consumer = await this.profileRepository.findPasswordCredentials(consumerId);
     if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
     const hasStoredPassword = consumer.password != null && consumer.salt != null;
     const hasNoStoredPassword = consumer.password == null && consumer.salt == null;
@@ -44,7 +41,8 @@ export class ConsumerProfileService {
         throw new BadRequestException(errorCodes.CURRENT_PASSWORD_INVALID);
       }
     }
-    await this.persistPasswordAndRevokeSessions(consumer.id, body.password);
+    const { hash, salt } = await passwordUtils.hashPassword(body.password);
+    await this.profileRepository.persistPasswordAndRevokeSessions(consumer.id, hash, salt);
     await this.authAudit.recordAudit({
       identityType: AUTH_IDENTITY_TYPES.consumer,
       identityId: consumer.id,
@@ -60,14 +58,7 @@ export class ConsumerProfileService {
   }
 
   async getProfile(consumerId: string) {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      include: {
-        personalDetails: true,
-        addressDetails: true,
-        organizationDetails: true,
-      },
-    });
+    const consumer = await this.profileRepository.findProfileById(consumerId);
 
     return {
       ...this.buildSafeConsumerPayload(consumer),
@@ -79,7 +70,7 @@ export class ConsumerProfileService {
     const updates: Record<string, unknown> = {};
 
     if (body.personalDetails) {
-      const current = await this.prisma.personalDetailsModel.findFirst({ where: { consumerId } });
+      const current = await this.profileRepository.findPersonalDetails(consumerId);
       const personalDetails = body.personalDetails;
       const rawDob = body.personalDetails.dateOfBirth?.trim();
       const dateOfBirth =
@@ -109,7 +100,7 @@ export class ConsumerProfileService {
     }
 
     if (body.addressDetails) {
-      const current = await this.prisma.addressDetailsModel.findFirst({ where: { consumerId } });
+      const current = await this.profileRepository.findAddressDetails(consumerId);
       const addressDetails = body.addressDetails;
       const patch = {
         postalCode:
@@ -129,7 +120,7 @@ export class ConsumerProfileService {
     }
 
     if (body.organizationDetails) {
-      const current = await this.prisma.organizationDetailsModel.findFirst({ where: { consumerId } });
+      const current = await this.profileRepository.findOrganizationDetails(consumerId);
       const consumerRole = body.organizationDetails.consumerRole ?? current?.consumerRole ?? null;
       const consumerRoleOther =
         consumerRole === `OTHER`
@@ -154,15 +145,7 @@ export class ConsumerProfileService {
     }
 
     try {
-      const consumer = await this.prisma.consumerModel.update({
-        where: { id: consumerId },
-        data: updates,
-        include: {
-          personalDetails: true,
-          addressDetails: true,
-          organizationDetails: true,
-        },
-      });
+      const consumer = await this.profileRepository.updateProfile(consumerId, updates);
       return this.buildSafeConsumerPayload(consumer);
     } catch (error) {
       this.logger.error(`updateProfile failed`, {
@@ -171,20 +154,6 @@ export class ConsumerProfileService {
       });
       throw error;
     }
-  }
-
-  private async persistPasswordAndRevokeSessions(consumerId: string, password: string) {
-    const { hash, salt } = await passwordUtils.hashPassword(password);
-    await this.prisma.$transaction([
-      this.prisma.consumerModel.update({
-        where: { id: consumerId },
-        data: { password: hash, salt },
-      }),
-      this.prisma.authSessionModel.updateMany({
-        where: { consumerId, revokedAt: null },
-        data: { revokedAt: new Date(), invalidatedReason: `logout_all`, lastUsedAt: new Date() },
-      }),
-    ]);
   }
 
   private buildSafeConsumerPayload<

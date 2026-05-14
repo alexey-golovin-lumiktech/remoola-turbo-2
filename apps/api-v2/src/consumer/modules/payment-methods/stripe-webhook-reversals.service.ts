@@ -11,6 +11,7 @@ import {
   STRIPE_REVERSAL_EMAIL_OUTBOX_EVENT_TYPE,
   buildStripeReversalEmailOutboxRows,
 } from './stripe-webhook-reversal-outbox';
+import { StripeWebhookReversalsRepository } from './stripe-webhook-reversals.repository';
 import { CONSUMER_STRIPE_WEBHOOK_CLIENT } from './stripe-webhook.tokens';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import {
@@ -46,6 +47,7 @@ export class StripeWebhookReversalsService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly reversalsRepository: StripeWebhookReversalsRepository,
     private readonly reversalNotifications: StripeWebhookReversalNotificationService,
     private readonly balanceService: BalanceCalculationService,
     @Inject(CONSUMER_STRIPE_WEBHOOK_CLIENT) private readonly stripe: Stripe,
@@ -56,7 +58,7 @@ export class StripeWebhookReversalsService {
       typeof charge.payment_intent === `string` ? charge.payment_intent : charge.payment_intent?.id;
     if (!paymentIntentId) return;
 
-    const paymentRequest = await this.resolvePaymentRequestByPaymentIntent(paymentIntentId);
+    const paymentRequest = await this.reversalsRepository.resolvePaymentRequestByPaymentIntent(paymentIntentId);
     if (!paymentRequest) return;
 
     const requestAmount = Number(paymentRequest.amount);
@@ -126,7 +128,7 @@ export class StripeWebhookReversalsService {
       typeof charge.payment_intent === `string` ? charge.payment_intent : charge.payment_intent?.id;
     if (!paymentIntentId) return;
 
-    const paymentRequest = await this.resolvePaymentRequestByPaymentIntent(paymentIntentId);
+    const paymentRequest = await this.reversalsRepository.resolvePaymentRequestByPaymentIntent(paymentIntentId);
     if (!paymentRequest) return;
 
     await this.recordDisputeStatus({
@@ -213,26 +215,12 @@ export class StripeWebhookReversalsService {
       });
     };
 
-    const entry = await this.prisma.ledgerEntryModel.findFirst({
-      where: {
-        stripeId: paymentIntentId,
-        type: $Enums.LedgerEntryType.USER_PAYMENT,
-      },
-      select: { id: true },
-      orderBy: { createdAt: `desc` },
-    });
-    if (!entry) {
-      const byOutcome = await this.prisma.ledgerEntryOutcomeModel.findFirst({
-        where: { externalId: paymentIntentId },
-        orderBy: { createdAt: `desc` },
-        select: { ledgerEntryId: true },
-      });
-      if (!byOutcome) return;
-      await createDisputeIfMissing(byOutcome.ledgerEntryId);
+    const ledgerEntryId = await this.reversalsRepository.resolveDisputeLedgerEntryIdByPaymentIntent(paymentIntentId);
+    if (!ledgerEntryId) {
       return;
     }
 
-    await createDisputeIfMissing(entry.id);
+    await createDisputeIfMissing(ledgerEntryId);
   }
 
   async createStripeReversal(params: {
@@ -448,56 +436,6 @@ export class StripeWebhookReversalsService {
     reason?: string | null;
   }) {
     return this.reversalNotifications.sendReversalEmails(params);
-  }
-
-  private async resolvePaymentRequestByPaymentIntent(paymentIntentId: string) {
-    const byOutcome = await this.prisma.ledgerEntryOutcomeModel.findFirst({
-      where: { externalId: paymentIntentId },
-      orderBy: { createdAt: `desc` },
-      select: {
-        ledgerEntry: {
-          select: {
-            paymentRequestId: true,
-            paymentRequest: {
-              select: {
-                id: true,
-                amount: true,
-                currencyCode: true,
-                payerId: true,
-                requesterId: true,
-                requesterEmail: true,
-              },
-            },
-          },
-        },
-      },
-    });
-    if (byOutcome?.ledgerEntry?.paymentRequest) return byOutcome.ledgerEntry.paymentRequest;
-
-    const entry = await this.prisma.ledgerEntryModel.findFirst({
-      where: {
-        stripeId: paymentIntentId,
-        type: $Enums.LedgerEntryType.USER_PAYMENT,
-      },
-      select: {
-        paymentRequestId: true,
-        paymentRequest: {
-          select: {
-            id: true,
-            amount: true,
-            currencyCode: true,
-            payerId: true,
-            requesterId: true,
-            requesterEmail: true,
-          },
-        },
-      },
-      orderBy: { createdAt: `desc` },
-    });
-
-    if (!entry?.paymentRequest) return null;
-
-    return entry.paymentRequest;
   }
 
   private getEffectiveStatus(entry: {

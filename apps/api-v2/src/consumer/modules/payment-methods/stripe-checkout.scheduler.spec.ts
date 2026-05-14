@@ -1,53 +1,33 @@
 import { $Enums } from '@remoola/database-2';
 
+import {
+  type CheckoutSchedulerSelection,
+  StripeCheckoutSchedulerRepository,
+} from './stripe-checkout-scheduler.repository';
 import { StripeCheckoutScheduler } from './stripe-checkout.scheduler';
-import { type PrismaService } from '../../../shared/prisma.service';
 
 describe(`StripeCheckoutScheduler`, () => {
   let scheduler: StripeCheckoutScheduler;
-  let prisma: {
-    $transaction: jest.Mock;
-  };
+  let checkoutSchedulerRepository: jest.Mocked<StripeCheckoutSchedulerRepository>;
   let logSpy: jest.SpyInstance;
   let warnSpy: jest.SpyInstance;
   let sessionsRetrieveMock: jest.Mock;
   let finalizeCheckoutSessionSuccessMock: jest.Mock;
-  let lockAcquired: boolean;
-  let sessionIds: string[];
+  let selection: CheckoutSchedulerSelection;
 
   beforeEach(() => {
-    lockAcquired = true;
-    sessionIds = [`cs_test_1`, `cs_test_1`];
+    selection = { skipped: false, sessionIdsForRun: [`cs_test_1`], pendingSessionIds: 1 };
     sessionsRetrieveMock = jest.fn().mockResolvedValue({
       id: `cs_test_1`,
       payment_status: `paid`,
       metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` },
     });
     finalizeCheckoutSessionSuccessMock = jest.fn().mockResolvedValue(undefined);
-    prisma = {
-      $transaction: jest.fn().mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
-        const tx = {
-          $queryRaw: jest.fn().mockResolvedValue([{ locked: lockAcquired }]),
-          ledgerEntryModel: {
-            findMany: jest.fn().mockResolvedValue(
-              sessionIds.map((sessionId) => ({
-                status: $Enums.TransactionStatus.PENDING,
-                outcomes: [
-                  {
-                    status: $Enums.TransactionStatus.WAITING,
-                    source: `stripe`,
-                    externalId: sessionId,
-                  },
-                ],
-              })),
-            ),
-          },
-        };
-        return cb(tx);
-      }),
-    };
+    checkoutSchedulerRepository = {
+      selectWaitingSessionIdsForRun: jest.fn().mockImplementation(async () => selection),
+    } as unknown as jest.Mocked<StripeCheckoutSchedulerRepository>;
     scheduler = new StripeCheckoutScheduler(
-      prisma as unknown as PrismaService,
+      checkoutSchedulerRepository,
       { finalizeCheckoutSessionSuccess: finalizeCheckoutSessionSuccessMock } as any,
       { checkout: { sessions: { retrieve: sessionsRetrieveMock } } } as any,
     );
@@ -80,7 +60,7 @@ describe(`StripeCheckoutScheduler`, () => {
   });
 
   it(`skips run when advisory lock is not acquired`, async () => {
-    lockAcquired = false;
+    selection = { skipped: true };
 
     await expect(scheduler.reconcileWaitingCheckouts()).resolves.toBeUndefined();
 
@@ -111,5 +91,101 @@ describe(`StripeCheckoutScheduler`, () => {
       processed: 0,
       failed: 1,
     });
+  });
+});
+
+describe(`StripeCheckoutSchedulerRepository`, () => {
+  function createRepository(params?: {
+    lockAcquired?: boolean;
+    waitingEntries?: Array<{
+      status: $Enums.TransactionStatus;
+      outcomes: Array<{
+        status: $Enums.TransactionStatus;
+        source: string | null;
+        externalId: string | null;
+      }>;
+    }>;
+  }) {
+    const ledgerEntryFindMany = jest.fn().mockResolvedValue(params?.waitingEntries ?? []);
+    const tx = {
+      $queryRaw: jest.fn().mockResolvedValue([{ locked: params?.lockAcquired ?? true }]),
+      ledgerEntryModel: {
+        findMany: ledgerEntryFindMany,
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn().mockImplementation(async (cb: (innerTx: typeof tx) => Promise<unknown>) => cb(tx)),
+    } as any;
+
+    return {
+      repository: new StripeCheckoutSchedulerRepository(prisma),
+      tx,
+      ledgerEntryFindMany,
+      prisma,
+    };
+  }
+
+  function makeEntry(params: {
+    status?: $Enums.TransactionStatus;
+    outcomeStatus?: $Enums.TransactionStatus;
+    source?: string | null;
+    externalId?: string | null;
+  }) {
+    return {
+      status: params.status ?? $Enums.TransactionStatus.PENDING,
+      outcomes: [
+        {
+          status: params.outcomeStatus ?? $Enums.TransactionStatus.WAITING,
+          source: params.source ?? `stripe`,
+          externalId: params.externalId ?? `cs_test_1`,
+        },
+      ],
+    };
+  }
+
+  it(`skips selection when advisory lock is not acquired`, async () => {
+    const { repository, ledgerEntryFindMany } = createRepository({ lockAcquired: false });
+
+    await expect(repository.selectWaitingSessionIdsForRun()).resolves.toEqual({ skipped: true });
+
+    expect(ledgerEntryFindMany).not.toHaveBeenCalled();
+  });
+
+  it(`dedupes waiting Stripe checkout session ids`, async () => {
+    const { repository } = createRepository({
+      waitingEntries: [
+        makeEntry({ externalId: `cs_test_1` }),
+        makeEntry({ externalId: `cs_test_1` }),
+        makeEntry({ externalId: `cs_test_2` }),
+        makeEntry({ externalId: `pi_not_checkout` }),
+        makeEntry({ source: `manual`, externalId: `cs_manual` }),
+        makeEntry({ outcomeStatus: $Enums.TransactionStatus.COMPLETED, externalId: `cs_completed` }),
+      ],
+    });
+
+    await expect(repository.selectWaitingSessionIdsForRun()).resolves.toEqual({
+      skipped: false,
+      pendingSessionIds: 2,
+      sessionIdsForRun: [`cs_test_1`, `cs_test_2`],
+    });
+  });
+
+  it(`limits selected checkout session ids per run`, async () => {
+    const { repository } = createRepository({
+      waitingEntries: Array.from({ length: 55 }, (_, index) => makeEntry({ externalId: `cs_test_${index}` })),
+    });
+
+    const selection = await repository.selectWaitingSessionIdsForRun();
+
+    expect(selection).toEqual(
+      expect.objectContaining({
+        skipped: false,
+        pendingSessionIds: 55,
+      }),
+    );
+    if (!(`sessionIdsForRun` in selection)) {
+      throw new Error(`Expected checkout selection to acquire the lock`);
+    }
+    expect(selection.sessionIdsForRun).toHaveLength(50);
   });
 });

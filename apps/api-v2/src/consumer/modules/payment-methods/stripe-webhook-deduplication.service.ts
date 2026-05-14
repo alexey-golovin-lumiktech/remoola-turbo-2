@@ -2,9 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { Injectable } from '@nestjs/common';
 
-import { Prisma } from '@remoola/database-2';
-
-import { PrismaService } from '../../../shared/prisma.service';
+import { StripeWebhookDeduplicationRepository } from './stripe-webhook-deduplication.repository';
 
 import type Stripe from 'stripe';
 
@@ -24,44 +22,29 @@ const MAX_STORED_ERROR_MESSAGE_LENGTH = 500;
 
 @Injectable()
 export class StripeWebhookDeduplicationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly repository: StripeWebhookDeduplicationRepository) {}
 
   async hasProcessed(eventId: string) {
-    const processedEvent = await this.prisma.stripeWebhookEventModel.findUnique({
-      where: { eventId },
-      select: { eventId: true, status: true },
-    });
+    const processedEvent = await this.repository.findStatus(eventId);
     return processedEvent?.status === STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED;
   }
 
   async claim(event: Pick<Stripe.Event, `id` | `type`>): Promise<StripeWebhookEventClaimResult> {
     const now = new Date();
     const claimToken = randomUUID();
-    try {
-      await this.prisma.stripeWebhookEventModel.create({
-        data: {
-          eventId: event.id,
-          eventType: event.type,
-          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
-          claimToken,
-          processingStartedAt: now,
-          attemptCount: 1,
-        },
-      });
+
+    const createResult = await this.repository.tryCreateProcessingClaim({
+      eventId: event.id,
+      eventType: event.type,
+      status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+      claimToken,
+      now,
+    });
+    if (createResult === `created`) {
       return { result: `claimed`, claimToken };
-    } catch (error) {
-      if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== `P2002`) {
-        throw error;
-      }
     }
 
-    const existingEvent = await this.prisma.stripeWebhookEventModel.findUnique({
-      where: { eventId: event.id },
-      select: {
-        status: true,
-        processingStartedAt: true,
-      },
-    });
+    const existingEvent = await this.repository.findProcessingState(event.id);
 
     if (!existingEvent || existingEvent.status === STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED) {
       return { result: `duplicate` };
@@ -75,83 +58,44 @@ export class StripeWebhookDeduplicationService {
     }
 
     const staleCutoff = new Date(now.getTime() - STRIPE_WEBHOOK_PROCESSING_STALE_AFTER_MS);
-    const reclaimResult = await this.prisma.stripeWebhookEventModel.updateMany({
-      where: {
-        eventId: event.id,
-        OR: [
-          { status: STRIPE_WEBHOOK_EVENT_STATUS.FAILED },
-          {
-            status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
-            processingStartedAt: { lte: staleCutoff },
-          },
-        ],
-      },
-      data: {
-        eventType: event.type,
-        status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
-        claimToken,
-        processingStartedAt: now,
-        failedAt: null,
-        lastErrorClass: null,
-        lastErrorMessage: null,
-        attemptCount: { increment: 1 },
-      },
+    const reclaimed = await this.repository.tryReclaimProcessingClaim({
+      eventId: event.id,
+      eventType: event.type,
+      status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+      failedStatus: STRIPE_WEBHOOK_EVENT_STATUS.FAILED,
+      claimToken,
+      now,
+      staleCutoff,
     });
 
-    return reclaimResult.count === 1 ? { result: `claimed`, claimToken } : { result: `inFlight` };
+    return reclaimed ? { result: `claimed`, claimToken } : { result: `inFlight` };
   }
 
   async markProcessed(eventId: string, claimToken: string) {
-    await this.prisma.stripeWebhookEventModel.updateMany({
-      where: {
-        eventId,
-        status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
-        claimToken,
-      },
-      data: {
-        status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED,
-        processedAt: new Date(),
-        failedAt: null,
-        lastErrorClass: null,
-        lastErrorMessage: null,
-      },
+    await this.repository.markProcessed({
+      eventId,
+      claimToken,
+      processingStatus: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+      processedStatus: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED,
+      now: new Date(),
     });
   }
 
   async markFailed(eventId: string, claimToken: string, error: unknown) {
     const normalizedError = this.normalizeError(error);
-    await this.prisma.stripeWebhookEventModel.updateMany({
-      where: {
-        eventId,
-        status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
-        claimToken,
-      },
-      data: {
-        status: STRIPE_WEBHOOK_EVENT_STATUS.FAILED,
-        failedAt: new Date(),
-        lastErrorClass: normalizedError.errorClass,
-        lastErrorMessage: normalizedError.errorMessage,
-      },
+    await this.repository.markFailed({
+      eventId,
+      claimToken,
+      processingStatus: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
+      failedStatus: STRIPE_WEBHOOK_EVENT_STATUS.FAILED,
+      now: new Date(),
+      errorClass: normalizedError.errorClass,
+      errorMessage: normalizedError.errorMessage,
     });
   }
 
   async recordProcessed(eventId: string) {
-    try {
-      await this.prisma.stripeWebhookEventModel.create({
-        data: {
-          eventId,
-          status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED,
-          processedAt: new Date(),
-          attemptCount: 1,
-        },
-      });
-      return `created` as const;
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === `P2002`) {
-        return `duplicate` as const;
-      }
-      throw error;
-    }
+    return this.repository.tryRecordProcessed(eventId, STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED, new Date());
   }
 
   private isProcessingStale(processingStartedAt: Date | null, now: Date) {
