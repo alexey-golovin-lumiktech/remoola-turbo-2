@@ -9,14 +9,16 @@ import { ConsumerDocumentListQuery } from './consumer-document-list.query';
 import { formatConsumerDocumentRows } from './consumer-document-mapper';
 import { buildConsumerDocumentPaymentParticipantWhere } from './consumer-document-query-helpers';
 import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
+import { ConsumerDocumentRepository } from './consumer-document.repository';
 import { ConsumerDocumentsService } from './consumer-documents.service';
 
 function createConsumerDocumentsService(prisma: any, storage: any = {}): ConsumerDocumentsService {
+  const documentRepository = new ConsumerDocumentRepository(prisma);
   return new ConsumerDocumentsService(
-    prisma,
     storage,
-    new ConsumerDocumentAccessPolicy(prisma),
+    new ConsumerDocumentAccessPolicy(documentRepository),
     new ConsumerDocumentListQuery(prisma),
+    documentRepository,
   );
 }
 

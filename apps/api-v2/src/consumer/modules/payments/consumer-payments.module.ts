@@ -1,10 +1,15 @@
 import { Module } from '@nestjs/common';
 
+import { ConsumerInvoiceRepository } from './consumer-invoice.repository';
 import { ConsumerInvoiceService } from './consumer-invoice.service';
 import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
+import { ConsumerPaymentRequestRepository } from './consumer-payment-request.repository';
 import { ConsumerPaymentRequestsController } from './consumer-payment-requests.controller';
 import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
+import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity.repository';
+import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
+import { ConsumerPaymentsPolicyQuery } from './consumer-payments-policy.query';
 import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
 import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
 import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
@@ -17,6 +22,11 @@ import { FilesModule } from '../files/files.module';
   imports: [MailingModule, FilesModule],
   controllers: [ConsumerPaymentsController, ConsumerPaymentRequestsController],
   providers: [
+    ConsumerPaymentsIdentityRepository,
+    ConsumerPaymentsLedgerRepository,
+    ConsumerPaymentsPolicyQuery,
+    ConsumerPaymentRequestRepository,
+    ConsumerInvoiceRepository,
     ConsumerPaymentsPoliciesService,
     ConsumerPaymentsQueriesService,
     ConsumerPaymentsCommandsService,

@@ -4,7 +4,10 @@ import { AUTH_NOTICE_QUERY, type ConsumerAppScope } from '@remoola/api-types';
 import { oauthCrypto, hashTokenToHex } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerAuthSessionRepository } from './consumer-auth-session.repository';
 import { ConsumerAuthSessionService } from './consumer-auth-session.service';
+import { ConsumerIdentityRepository } from './consumer-identity.repository';
+import { PasswordResetRepository } from './password-reset.repository';
 import { type CONSUMER } from '../../dtos';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
@@ -32,6 +35,9 @@ export class ConsumerAuthRecoveryService {
     private readonly originResolver: OriginResolverService,
     private readonly authAudit: AuthAuditService,
     private readonly sessionService: ConsumerAuthSessionService,
+    private readonly consumerIdentityRepository: ConsumerIdentityRepository,
+    private readonly passwordResetRepository: PasswordResetRepository,
+    private readonly sessionRepository: ConsumerAuthSessionRepository,
   ) {}
 
   async resendPasswordRecoveryEmail(
@@ -43,15 +49,7 @@ export class ConsumerAuthRecoveryService {
       throw new BadRequestException(`Invalid app scope`);
     }
 
-    const consumer = await this.prisma.consumerModel.findFirst({
-      where: { id: consumerId, deletedAt: null },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        salt: true,
-      },
-    });
+    const consumer = await this.consumerIdentityRepository.findActiveRecoveryCandidateById(consumerId);
     if (!consumer) {
       throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
     }
@@ -76,12 +74,12 @@ export class ConsumerAuthRecoveryService {
     const token = oauthCrypto.generateOAuthState();
     const expiredAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    await this.prisma.resetPasswordModel.updateMany({
-      where: { consumerId: consumer.id, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
-    await this.prisma.resetPasswordModel.create({
-      data: { consumerId: consumer.id, tokenHash: hashTokenToHex(token), expiredAt, appScope: validatedAppScope },
+    await this.passwordResetRepository.invalidateActiveTokensByConsumerId(consumer.id);
+    await this.passwordResetRepository.createToken({
+      consumerId: consumer.id,
+      tokenHash: hashTokenToHex(token),
+      expiredAt,
+      appScope: validatedAppScope,
     });
 
     const backendBaseURL = resolveEmailApiBaseUrl();
@@ -101,12 +99,7 @@ export class ConsumerAuthRecoveryService {
   }
 
   async sendConsumerSuspensionEmail(consumerId: string, reason: string): Promise<boolean> {
-    const consumer = await this.prisma.consumerModel.findFirst({
-      where: { id: consumerId, deletedAt: null },
-      select: {
-        email: true,
-      },
-    });
+    const consumer = await this.consumerIdentityRepository.findActiveIdentitySummaryById(consumerId);
     if (!consumer) {
       throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
     }
@@ -124,9 +117,7 @@ export class ConsumerAuthRecoveryService {
     const origin = this.resolveForgotPasswordAppScopeOrigin(appScope);
 
     const normalizedEmail = email?.trim()?.toLowerCase() ?? ``;
-    const consumer = await this.prisma.consumerModel.findFirst({
-      where: { email: normalizedEmail, deletedAt: null },
-    });
+    const consumer = await this.consumerIdentityRepository.findActiveRecoveryCandidateByEmail(normalizedEmail);
     if (!consumer) return `unknown_or_unsupported`;
     if (consumer.password == null || consumer.salt == null) {
       const loginUrl = new URL(`/login`, origin);
@@ -142,13 +133,10 @@ export class ConsumerAuthRecoveryService {
       return `provider_guidance_email_sent`;
     }
     const cooldownWindowStart = new Date(Date.now() - ConsumerAuthRecoveryService.forgotPasswordCooldownMs);
-    const cooldownHit = await this.prisma.resetPasswordModel.findFirst({
-      where: {
-        consumerId: consumer.id,
-        createdAt: { gte: cooldownWindowStart },
-      },
-      select: { id: true },
-    });
+    const cooldownHit = await this.passwordResetRepository.findRecentTokenByConsumerId(
+      consumer.id,
+      cooldownWindowStart,
+    );
     if (cooldownHit) {
       this.logger.warn({
         event: `consumer_auth_forgot_password_cooldown_hit`,
@@ -161,12 +149,12 @@ export class ConsumerAuthRecoveryService {
     const token = oauthCrypto.generateOAuthState();
     const expiredAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    await this.prisma.resetPasswordModel.updateMany({
-      where: { consumerId: consumer.id, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
-    await this.prisma.resetPasswordModel.create({
-      data: { consumerId: consumer.id, tokenHash: hashTokenToHex(token), expiredAt, appScope },
+    await this.passwordResetRepository.invalidateActiveTokensByConsumerId(consumer.id);
+    await this.passwordResetRepository.createToken({
+      consumerId: consumer.id,
+      tokenHash: hashTokenToHex(token),
+      expiredAt,
+      appScope,
     });
 
     const backendBaseURL = resolveEmailApiBaseUrl();
@@ -186,15 +174,7 @@ export class ConsumerAuthRecoveryService {
 
   async validateForgotPasswordTokenAndRedirect(token: string, res: express.Response): Promise<void> {
     const tokenHash = hashTokenToHex(token);
-    const row = await this.prisma.resetPasswordModel.findFirst({
-      where: { tokenHash },
-      orderBy: { createdAt: `desc` },
-      select: {
-        appScope: true,
-        deletedAt: true,
-        expiredAt: true,
-      },
-    });
+    const row = await this.passwordResetRepository.findLatestTokenByHash(tokenHash);
     const activeToken = !!row && row.deletedAt == null && row.expiredAt > new Date();
     const confirmUrl = this.buildForgotPasswordConfirmUrl(row?.appScope, activeToken ? token : undefined);
     res.redirect(confirmUrl.toString());
@@ -208,9 +188,7 @@ export class ConsumerAuthRecoveryService {
     },
   ): Promise<void> {
     const tokenHash = hashTokenToHex(token);
-    const row = await this.prisma.resetPasswordModel.findFirst({
-      where: { tokenHash, deletedAt: null, expiredAt: { gt: new Date() } },
-    });
+    const row = await this.passwordResetRepository.findActiveTokenByHash(tokenHash);
     if (!row) {
       this.logger.warn({ event: `consumer_auth_password_reset_failed`, reason: `token_not_found_or_expired` });
       throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
@@ -220,31 +198,20 @@ export class ConsumerAuthRecoveryService {
       throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
     }
 
-    const consumer = await this.prisma.consumerModel.findFirst({
-      where: { id: row.consumerId, deletedAt: null },
-      select: { id: true, email: true },
-    });
+    const consumer = await this.consumerIdentityRepository.findActiveIdentitySummaryById(row.consumerId);
     if (!consumer) {
       this.logger.warn({ event: `consumer_auth_password_reset_failed`, reason: `consumer_not_found` });
       throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
     }
-    const activeSessionsBeforeReset = await this.prisma.authSessionModel.count({
-      where: { consumerId: consumer.id, revokedAt: null },
-    });
+    const activeSessionsBeforeReset = await this.sessionRepository.countActiveByConsumerId(consumer.id);
 
     const { hash, salt } = await passwordUtils.hashPassword(newPassword);
     const consumed = await this.prisma.$transaction(async (tx) => {
-      const updateResult = await tx.resetPasswordModel.updateMany({
-        where: { id: row.id, deletedAt: null },
-        data: { deletedAt: new Date() },
-      });
+      const updateResult = await this.passwordResetRepository.consumeToken(row.id, tx);
       if (updateResult.count !== 1) {
         return null;
       }
-      await tx.consumerModel.update({
-        where: { id: consumer.id },
-        data: { password: hash, salt },
-      });
+      await this.consumerIdentityRepository.updatePassword(consumer.id, hash, salt, tx);
       return consumer;
     });
 

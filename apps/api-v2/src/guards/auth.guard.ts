@@ -24,8 +24,9 @@ import {
   getRequestPath,
   GuardMessage,
 } from './auth-guard-boundary';
+import { AuthIdentityRepository } from './auth-identity.repository';
+import { AuthSessionRepository } from './auth-session.repository';
 import { OriginResolverService } from '../shared/origin-resolver.service';
-import { PrismaService } from '../shared/prisma.service';
 import { secureCompare } from '../shared-common';
 import { ensureAuthenticatedMutationCsrf } from '../shared-common/csrf-protection';
 
@@ -38,8 +39,8 @@ export class AuthGuard implements CanActivate {
     private readonly reflector: Reflector,
     @Inject(JwtService)
     private readonly jwtService: JwtService,
-    @Inject(PrismaService)
-    private readonly prisma: PrismaService,
+    private readonly authSessionRepository: AuthSessionRepository,
+    private readonly authIdentityRepository: AuthIdentityRepository,
     private readonly originResolver: OriginResolverService,
   ) {}
 
@@ -65,14 +66,6 @@ export class AuthGuard implements CanActivate {
     await this.processAccessToken(cookieAccessToken, request, consumerScope);
     ensureAuthenticatedMutationCsrf(request, this.originResolver);
     return true;
-  }
-
-  private getAdminByIdentityId(identityId: string) {
-    return this.prisma.adminModel.findFirst({ where: { id: identityId, deletedAt: null } });
-  }
-
-  private getConsumerByIdentityId(identityId: string) {
-    return this.prisma.consumerModel.findFirst({ where: { id: identityId } });
   }
 
   private async processAccessToken(accessToken: string, request: TExpressRequest, requestAppScope?: ConsumerAppScope) {
@@ -120,9 +113,11 @@ export class AuthGuard implements CanActivate {
         this.logger.warn(`AuthGuard: consumer access token missing sid`);
         throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
       }
-      const session = await this.prisma.authSessionModel.findFirst({
-        where: { id: verified.sid, consumerId: identityId, appScope: requestAppScope, revokedAt: null },
-      });
+      const session = await this.authSessionRepository.findActiveConsumerSession(
+        verified.sid,
+        identityId,
+        requestAppScope,
+      );
       if (session == null || session.expiresAt < new Date()) {
         this.logger.warn(`AuthGuard: consumer session not found or expired`);
         throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
@@ -140,9 +135,7 @@ export class AuthGuard implements CanActivate {
         this.logger.warn(`AuthGuard: admin access token missing sid`);
         throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
       }
-      const session = await this.prisma.adminAuthSessionModel.findFirst({
-        where: { id: verified.sid, adminId: identityId, revokedAt: null },
-      });
+      const session = await this.authSessionRepository.findActiveAdminSession(verified.sid, identityId);
       if (session == null || session.expiresAt < new Date()) {
         this.logger.warn(`AuthGuard: admin session not found or expired`);
         throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
@@ -153,8 +146,8 @@ export class AuthGuard implements CanActivate {
       }
     }
 
-    const admin = await this.getAdminByIdentityId(identityId);
-    const consumer = await this.getConsumerByIdentityId(identityId);
+    const admin = await this.authIdentityRepository.findActiveAdminById(identityId);
+    const consumer = await this.authIdentityRepository.findConsumerById(identityId);
     const identity = admin ?? consumer;
 
     if (identity == null) {

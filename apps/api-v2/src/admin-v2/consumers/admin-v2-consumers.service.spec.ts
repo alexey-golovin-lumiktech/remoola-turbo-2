@@ -4,8 +4,13 @@ import { Test } from '@nestjs/testing';
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { normalizeOptionalReason, validateConsumerSuspensionReason } from './admin-v2-consumer-action-policy';
+import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
 import { ConsumerAdminCaseQuery } from './admin-v2-consumer-case.query';
+import { AdminV2ConsumerFlagsRepository } from './admin-v2-consumer-flags.repository';
+import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
+import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.repository';
 import { mapConsumerDisplayName, mapPaymentMethodStatus } from './admin-v2-consumer-query-helpers';
+import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
 import { AdminV2ConsumersModule } from './admin-v2-consumers.module';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';
@@ -134,9 +139,19 @@ describe(`AdminV2ConsumersService`, () => {
   it(`resolves the consumer case query dependency through Nest DI`, async () => {
     const moduleProviders = Reflect.getMetadata(`providers`, AdminV2ConsumersModule) as unknown[] | undefined;
     expect(moduleProviders).toContain(ConsumerAdminCaseQuery);
+    expect(moduleProviders).toContain(AdminV2ConsumerRepository);
+    expect(moduleProviders).toContain(AdminV2ConsumerLedgerQuery);
+    expect(moduleProviders).toContain(AdminV2ConsumerActivityQuery);
+    expect(moduleProviders).toContain(AdminV2ConsumerNotesRepository);
+    expect(moduleProviders).toContain(AdminV2ConsumerFlagsRepository);
 
     const moduleRef = await Test.createTestingModule({
       providers: [
+        AdminV2ConsumerRepository,
+        AdminV2ConsumerLedgerQuery,
+        AdminV2ConsumerActivityQuery,
+        AdminV2ConsumerNotesRepository,
+        AdminV2ConsumerFlagsRepository,
         AdminV2ConsumersService,
         ConsumerAdminCaseQuery,
         { provide: PrismaService, useValue: {} },
@@ -289,7 +304,11 @@ describe(`AdminV2ConsumersService`, () => {
 
     return {
       service: new AdminV2ConsumersService(
-        prisma as never,
+        new AdminV2ConsumerRepository(prisma as never),
+        new AdminV2ConsumerActivityQuery(prisma as never),
+        new AdminV2ConsumerLedgerQuery(prisma as never),
+        new AdminV2ConsumerNotesRepository(prisma as never),
+        new AdminV2ConsumerFlagsRepository(prisma as never),
         consumerContractsService as never,
         adminActionAudit as never,
         consumerAuthService as never,

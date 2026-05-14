@@ -6,8 +6,12 @@ import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
+import { ConsumerPaymentRequestRepository } from './consumer-payment-request.repository';
 import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
+import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity.repository';
+import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
+import { ConsumerPaymentsPolicyQuery } from './consumer-payments-policy.query';
 import { createPrismaTestContext } from '../../../../test/helpers/prisma-test-context';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
@@ -21,7 +25,10 @@ describe(`ConsumerPaymentsCommandsService DB concurrency`, () => {
     prisma as any,
     new ConsumerPaymentRequestNotificationService(mailingService as any),
     new BalanceCalculationService(prisma as any),
-    new ConsumerPaymentsPoliciesService(prisma as any),
+    new ConsumerPaymentsPoliciesService(prisma as any, new ConsumerPaymentsPolicyQuery(prisma as any)),
+    new ConsumerPaymentsIdentityRepository(prisma as any),
+    new ConsumerPaymentsLedgerRepository(prisma as any),
+    new ConsumerPaymentRequestRepository(prisma as any),
   );
 
   beforeAll(async () => {

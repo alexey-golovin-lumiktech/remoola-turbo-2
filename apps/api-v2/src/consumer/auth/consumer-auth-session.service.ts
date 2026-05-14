@@ -6,6 +6,8 @@ import { type Prisma, type ConsumerModel } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerAuthSessionRepository } from './consumer-auth-session.repository';
+import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { type IJwtTokenPayload } from '../../dtos/consumer';
 import { envs } from '../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
@@ -26,6 +28,8 @@ export class ConsumerAuthSessionService {
     private readonly prisma: PrismaService,
     private readonly authAudit: AuthAuditService,
     private readonly originResolver: OriginResolverService,
+    private readonly consumerIdentityRepository: ConsumerIdentityRepository,
+    private readonly sessionRepository: ConsumerAuthSessionRepository,
   ) {}
 
   async refreshAccess(refreshToken: string, appScope: ConsumerAppScope, ctx?: LoginContext) {
@@ -52,9 +56,7 @@ export class ConsumerAuthSessionService {
       throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
     }
 
-    const session = await this.prisma.authSessionModel.findFirst({
-      where: { id: sessionId, consumerId: identityId, appScope },
-    });
+    const session = await this.sessionRepository.findByIdForRefresh(sessionId, identityId, appScope);
     if (session == null) {
       this.logger.warn(`ConsumerAuth: no auth session for refresh`);
       throw new BadRequestException(errorCodes.NO_IDENTITY_RECORD);
@@ -63,8 +65,8 @@ export class ConsumerAuthSessionService {
     const refreshTokenHash = this.hashToken(refreshToken);
     if (!secureCompare(session.refreshTokenHash, refreshTokenHash)) {
       if (session.replacedById || session.revokedAt) {
-        await this.revokeSessionFamily(session.sessionFamilyId, `refresh_reuse_detected`);
-        const reusedConsumer = await this.prisma.consumerModel.findFirst({ where: { id: identityId } });
+        await this.sessionRepository.revokeSessionFamily(session.sessionFamilyId, `refresh_reuse_detected`);
+        const reusedConsumer = await this.consumerIdentityRepository.findAnyById(identityId);
         await this.authAudit.recordAudit({
           identityType: AUTH_IDENTITY_TYPES.consumer,
           identityId,
@@ -74,7 +76,7 @@ export class ConsumerAuthSessionService {
           userAgent: ctx?.userAgent,
         });
       } else {
-        const maybeConsumer = await this.prisma.consumerModel.findFirst({ where: { id: identityId } });
+        const maybeConsumer = await this.consumerIdentityRepository.findAnyById(identityId);
         await this.authAudit.recordAudit({
           identityType: AUTH_IDENTITY_TYPES.consumer,
           identityId,
@@ -92,7 +94,7 @@ export class ConsumerAuthSessionService {
       throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
     }
 
-    const consumer = await this.prisma.consumerModel.findFirst({ where: { id: identityId, deletedAt: null } });
+    const consumer = await this.consumerIdentityRepository.findActiveById(identityId);
     if (!consumer) {
       this.logger.warn(`ConsumerAuth: consumer not found for identity`);
       throw new BadRequestException(errorCodes.NO_IDENTITY_RECORD);
@@ -131,15 +133,11 @@ export class ConsumerAuthSessionService {
       const identityId = this.resolveIdentityId(verified);
       const tokenAppScope = this.originResolver.validateConsumerAppScope(verified.appScope);
       if (!identityId || !verified.sid || !tokenAppScope || (appScope && tokenAppScope !== appScope)) return;
-      await this.prisma.authSessionModel.updateMany({
-        where: {
-          id: verified.sid,
-          consumerId: identityId,
-          appScope: tokenAppScope,
-          refreshTokenHash: this.hashToken(refreshToken),
-          revokedAt: null,
-        },
-        data: { revokedAt: new Date(), invalidatedReason: `logout`, lastUsedAt: new Date() },
+      await this.sessionRepository.revokeScopedSessionByRefreshToken({
+        sessionId: verified.sid,
+        consumerId: identityId,
+        appScope: tokenAppScope,
+        refreshTokenHash: this.hashToken(refreshToken),
       });
     } catch {
       // Ignore invalid or already-unusable refresh tokens during logout cleanup.
@@ -154,9 +152,8 @@ export class ConsumerAuthSessionService {
     if (!refreshToken) return;
     try {
       const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
-      const consumer = await this.prisma.consumerModel.findFirst({
-        where: { id: verified.identityId, deletedAt: null },
-      });
+      const identityId = this.resolveIdentityId(verified);
+      const consumer = identityId ? await this.consumerIdentityRepository.findActiveById(identityId) : null;
       await this.revokeSessionByRefreshToken(refreshToken, appScope);
       if (consumer) {
         await this.authAudit.recordAudit({
@@ -178,15 +175,9 @@ export class ConsumerAuthSessionService {
   }
 
   async revokeAllSessionsByConsumerIdAndAudit(identityId: ConsumerModel[`id`], ctx?: LoginContext): Promise<void> {
-    const consumer = await this.prisma.consumerModel.findFirst({
-      where: { id: identityId, deletedAt: null },
-      select: { id: true, email: true },
-    });
+    const consumer = await this.consumerIdentityRepository.findActiveIdentitySummaryById(identityId);
     if (!consumer) return;
-    await this.prisma.authSessionModel.updateMany({
-      where: { consumerId: consumer.id, revokedAt: null },
-      data: { revokedAt: new Date(), invalidatedReason: `logout_all`, lastUsedAt: new Date() },
-    });
+    await this.sessionRepository.revokeAllByConsumerId(consumer.id, `logout_all`);
     await this.authAudit.recordAudit({
       identityType: AUTH_IDENTITY_TYPES.consumer,
       identityId: consumer.id,
@@ -275,13 +266,6 @@ export class ConsumerAuthSessionService {
 
   private hashToken(token: string): string {
     return oauthCrypto.hashOAuthState(token);
-  }
-
-  private async revokeSessionFamily(sessionFamilyId: string, reason: string): Promise<void> {
-    await this.prisma.authSessionModel.updateMany({
-      where: { sessionFamilyId, revokedAt: null },
-      data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
-    });
   }
 
   private ensureConsumerNotSuspended(consumer: Pick<ConsumerModel, `suspendedAt`>) {

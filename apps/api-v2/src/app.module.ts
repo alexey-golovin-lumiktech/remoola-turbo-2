@@ -14,6 +14,8 @@ import {
 import { DeviceIdMiddleware } from './common/middleware/device-id.middleware';
 import { ConsumerModule } from './consumer/consumer.module';
 import { AuthGuard } from './guards';
+import { AuthIdentityRepository } from './guards/auth-identity.repository';
+import { AuthSessionRepository } from './guards/auth-session.repository';
 import { HealthModule } from './health/health.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { TransformResponseInterceptor } from './interceptors';
@@ -38,6 +40,8 @@ import { DatabaseModule } from './shared/database.module';
   providers: [
     CorrelationIdMiddleware,
     DeviceIdMiddleware,
+    AuthSessionRepository,
+    AuthIdentityRepository,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

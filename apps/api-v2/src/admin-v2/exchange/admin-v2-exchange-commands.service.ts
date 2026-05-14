@@ -12,6 +12,8 @@ import { PrismaService } from '../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../shared-common';
 import { type AdminV2DomainEvent, AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
+import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 
 type RequestMeta = {
   ipAddress?: string | null;
@@ -128,6 +130,8 @@ export class AdminV2ExchangeCommandsService {
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly balanceService: BalanceCalculationService,
     private readonly domainEvents: AdminV2DomainEventsService,
+    private readonly preflightRepository: AdminV2ExchangePreflightRepository,
+    private readonly persistenceRepository: AdminV2ExchangePersistenceRepository,
   ) {}
 
   async approveRate(
@@ -161,9 +165,7 @@ export class AdminV2ExchangeCommandsService {
         reason,
       },
       execute: async () => {
-        const rate = await this.prisma.exchangeRateModel.findFirst({
-          where: { id: rateId, deletedAt: null },
-        });
+        const rate = await this.preflightRepository.findActiveRateById(rateId);
 
         if (!rate) {
           throw new NotFoundException(adminErrorCodes.ADMIN_EXCHANGE_RATE_NOT_FOUND);
@@ -174,59 +176,13 @@ export class AdminV2ExchangeCommandsService {
         }
 
         return this.prisma.$transaction(async (tx) => {
-          const locked = await tx.exchangeRateModel.findFirst({
-            where: { id: rateId, deletedAt: null },
+          return this.persistenceRepository.approveDraftRate(tx, {
+            rateId,
+            expectedVersion,
+            adminId,
+            reason,
+            meta,
           });
-
-          if (!locked) {
-            throw new NotFoundException(adminErrorCodes.ADMIN_EXCHANGE_RATE_NOT_FOUND);
-          }
-
-          if (deriveVersion(locked.updatedAt) !== expectedVersion) {
-            throw new ConflictException(buildStaleVersionPayload(`Exchange rate`, locked.updatedAt));
-          }
-
-          if (locked.status !== $Enums.ExchangeRateStatus.DRAFT) {
-            throw new ConflictException(`Only draft exchange rates can be approved`);
-          }
-
-          const approvedAt = new Date();
-          const updated = await tx.exchangeRateModel.update({
-            where: { id: locked.id },
-            data: {
-              status: $Enums.ExchangeRateStatus.APPROVED,
-              approvedAt,
-              approvedBy: adminId,
-              updatedBy: adminId,
-            },
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_rate_approve,
-              resource: `exchange_rate`,
-              resourceId: updated.id,
-              metadata: {
-                confirmed: true,
-                reason,
-                expectedVersion,
-                fromCurrency: updated.fromCurrency,
-                toCurrency: updated.toCurrency,
-                provider: updated.provider,
-                effectiveAt: updated.effectiveAt.toISOString(),
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-
-          return {
-            rateId: updated.id,
-            status: updated.status,
-            approvedAt: approvedAt.toISOString(),
-            version: deriveVersion(updated.updatedAt),
-          };
         });
       },
     });
@@ -247,9 +203,7 @@ export class AdminV2ExchangeCommandsService {
         expectedVersion,
       },
       execute: async () => {
-        const rule = await this.prisma.walletAutoConversionRuleModel.findFirst({
-          where: { id: ruleId, deletedAt: null },
-        });
+        const rule = await this.preflightRepository.findActiveRuleById(ruleId);
 
         if (!rule) {
           throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
@@ -260,45 +214,13 @@ export class AdminV2ExchangeCommandsService {
         }
 
         return this.prisma.$transaction(async (tx) => {
-          const locked = await this.lockRuleRow(tx, ruleId);
-          if (!locked || locked.deleted_at) {
-            throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
-          }
-          if (deriveVersion(locked.updated_at) !== expectedVersion) {
-            throw new ConflictException(buildStaleVersionPayload(`Exchange rule`, locked.updated_at));
-          }
-          if (!locked.enabled) {
-            throw new ConflictException(`Exchange rule is already paused`);
-          }
-
-          const updated = await tx.walletAutoConversionRuleModel.update({
-            where: { id: locked.id },
-            data: {
-              enabled: false,
-            },
+          return this.persistenceRepository.setRuleEnabled(tx, {
+            ruleId,
+            expectedVersion,
+            adminId,
+            enabled: false,
+            meta,
           });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_rule_pause,
-              resource: `exchange_rule`,
-              resourceId: updated.id,
-              metadata: {
-                expectedVersion,
-                enabledBefore: true,
-                enabledAfter: false,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-
-          return {
-            ruleId: updated.id,
-            enabled: updated.enabled,
-            version: deriveVersion(updated.updatedAt),
-          };
         });
       },
     });
@@ -319,9 +241,7 @@ export class AdminV2ExchangeCommandsService {
         expectedVersion,
       },
       execute: async () => {
-        const rule = await this.prisma.walletAutoConversionRuleModel.findFirst({
-          where: { id: ruleId, deletedAt: null },
-        });
+        const rule = await this.preflightRepository.findActiveRuleById(ruleId);
 
         if (!rule) {
           throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
@@ -332,45 +252,13 @@ export class AdminV2ExchangeCommandsService {
         }
 
         return this.prisma.$transaction(async (tx) => {
-          const locked = await this.lockRuleRow(tx, ruleId);
-          if (!locked || locked.deleted_at) {
-            throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
-          }
-          if (deriveVersion(locked.updated_at) !== expectedVersion) {
-            throw new ConflictException(buildStaleVersionPayload(`Exchange rule`, locked.updated_at));
-          }
-          if (locked.enabled) {
-            throw new ConflictException(`Exchange rule is already active`);
-          }
-
-          const updated = await tx.walletAutoConversionRuleModel.update({
-            where: { id: locked.id },
-            data: {
-              enabled: true,
-            },
+          return this.persistenceRepository.setRuleEnabled(tx, {
+            ruleId,
+            expectedVersion,
+            adminId,
+            enabled: true,
+            meta,
           });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_rule_resume,
-              resource: `exchange_rule`,
-              resourceId: updated.id,
-              metadata: {
-                expectedVersion,
-                enabledBefore: false,
-                enabledAfter: true,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-
-          return {
-            ruleId: updated.id,
-            enabled: updated.enabled,
-            version: deriveVersion(updated.updatedAt),
-          };
         });
       },
     });
@@ -392,9 +280,7 @@ export class AdminV2ExchangeCommandsService {
         expectedVersion,
       },
       execute: async () => {
-        const preflight = await this.prisma.walletAutoConversionRuleModel.findFirst({
-          where: { id: ruleId, deletedAt: null },
-        });
+        const preflight = await this.preflightRepository.findActiveRuleById(ruleId);
 
         if (!preflight) {
           throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
@@ -494,9 +380,7 @@ export class AdminV2ExchangeCommandsService {
         confirmed: true,
       },
       execute: async () => {
-        const preflight = await this.prisma.scheduledFxConversionModel.findFirst({
-          where: { id: conversionId, deletedAt: null },
-        });
+        const preflight = await this.preflightRepository.findActiveScheduledConversionById(conversionId);
 
         if (!preflight) {
           throw new NotFoundException(adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND);
@@ -625,9 +509,7 @@ export class AdminV2ExchangeCommandsService {
         confirmed: true,
       },
       execute: async () => {
-        const preflight = await this.prisma.scheduledFxConversionModel.findFirst({
-          where: { id: conversionId, deletedAt: null },
-        });
+        const preflight = await this.preflightRepository.findActiveScheduledConversionById(conversionId);
 
         if (!preflight) {
           throw new NotFoundException(adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND);
@@ -638,46 +520,12 @@ export class AdminV2ExchangeCommandsService {
         }
 
         return this.prisma.$transaction(async (tx) => {
-          const locked = await this.lockScheduledRow(tx, conversionId);
-          if (!locked || locked.deleted_at) {
-            throw new NotFoundException(adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND);
-          }
-          if (deriveVersion(locked.updated_at) !== expectedVersion) {
-            throw new ConflictException(buildStaleVersionPayload(`Scheduled FX conversion`, locked.updated_at));
-          }
-          if (locked.status !== $Enums.ScheduledFxConversionStatus.PENDING) {
-            throw new ConflictException(`Only pending scheduled conversions can be cancelled`);
-          }
-
-          const updated = await tx.scheduledFxConversionModel.update({
-            where: { id: locked.id },
-            data: {
-              status: $Enums.ScheduledFxConversionStatus.CANCELLED,
-            },
+          return this.persistenceRepository.cancelScheduledConversion(tx, {
+            conversionId,
+            expectedVersion,
+            adminId,
+            meta,
           });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_scheduled_cancel,
-              resource: `scheduled_fx_conversion`,
-              resourceId: updated.id,
-              metadata: {
-                confirmed: true,
-                expectedVersion,
-                statusBefore: locked.status,
-                statusAfter: updated.status,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-
-          return {
-            conversionId: updated.id,
-            status: updated.status,
-            version: deriveVersion(updated.updatedAt),
-          };
         });
       },
     });

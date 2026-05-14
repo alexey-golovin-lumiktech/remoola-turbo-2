@@ -3,10 +3,11 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { envs } from '../../envs';
-import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
+import { AdminV2PayoutsQuery } from './admin-v2-payouts.query';
 import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_LIMIT = 25;
@@ -145,6 +146,8 @@ export class AdminV2PayoutsService {
     private readonly prisma: PrismaService,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly assignmentsService: AdminV2AssignmentsService,
+    private readonly payoutsQuery: AdminV2PayoutsQuery,
+    private readonly payoutEscalationRepository: AdminV2PayoutEscalationRepository,
   ) {}
 
   private parseMetadata(metadata: Prisma.JsonValue | null | undefined): Record<string, unknown> {
@@ -431,20 +434,7 @@ export class AdminV2PayoutsService {
       return new Map<string, PaymentMethodSummaryRow>();
     }
 
-    const paymentMethods = await this.prisma.paymentMethodModel.findMany({
-      where: {
-        id: { in: paymentMethodIds },
-      },
-      select: {
-        id: true,
-        consumerId: true,
-        type: true,
-        brand: true,
-        last4: true,
-        bankLast4: true,
-        deletedAt: true,
-      },
-    });
+    const paymentMethods = await this.payoutsQuery.fetchPaymentMethodsByIds(paymentMethodIds);
 
     return new Map(paymentMethods.map((paymentMethod) => [paymentMethod.id, paymentMethod]));
   }
@@ -493,49 +483,14 @@ export class AdminV2PayoutsService {
     const cursor = decodeAdminV2Cursor(params?.cursor);
     const highValueConfig = this.getHighValueConfig();
 
-    const rows = await this.prisma.ledgerEntryModel.findMany({
-      where: {
+    const rows = await this.payoutsQuery.listPayoutRows(
+      {
         deletedAt: null,
         type: { in: [...PAYOUT_TYPES] },
         ...buildCreatedAtCursorWhere(cursor),
       },
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: limit + 1,
-      select: {
-        id: true,
-        ledgerId: true,
-        type: true,
-        currencyCode: true,
-        status: true,
-        amount: true,
-        stripeId: true,
-        metadata: true,
-        consumerId: true,
-        paymentRequestId: true,
-        createdAt: true,
-        updatedAt: true,
-        consumer: {
-          select: {
-            email: true,
-          },
-        },
-        payoutEscalation: {
-          select: {
-            id: true,
-          },
-        },
-        outcomes: {
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          take: 1,
-          select: {
-            id: true,
-            status: true,
-            externalId: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
+      limit + 1,
+    );
 
     const visibleRows = rows.slice(0, limit) as PayoutListRow[];
     const paymentMethodsById = await this.fetchPaymentMethodsById(visibleRows);
@@ -577,109 +532,19 @@ export class AdminV2PayoutsService {
 
   async getPayoutCase(payoutId: string) {
     const highValueConfig = this.getHighValueConfig();
-    const entry = await this.prisma.ledgerEntryModel.findUnique({
-      where: { id: payoutId },
-      select: {
-        id: true,
-        ledgerId: true,
-        type: true,
-        currencyCode: true,
-        status: true,
-        amount: true,
-        stripeId: true,
-        metadata: true,
-        consumerId: true,
-        paymentRequestId: true,
-        createdAt: true,
-        updatedAt: true,
-        consumer: {
-          select: {
-            email: true,
-          },
-        },
-        payoutEscalation: {
-          select: {
-            id: true,
-            reason: true,
-            confirmed: true,
-            createdAt: true,
-            escalatedByAdmin: {
-              select: {
-                id: true,
-                email: true,
-              },
-            },
-          },
-        },
-        paymentRequest: {
-          select: {
-            id: true,
-            amount: true,
-            currencyCode: true,
-            status: true,
-            paymentRail: true,
-            payerId: true,
-            payerEmail: true,
-            requesterId: true,
-            requesterEmail: true,
-            payer: { select: { email: true } },
-            requester: { select: { email: true } },
-          },
-        },
-        outcomes: {
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          select: {
-            id: true,
-            status: true,
-            source: true,
-            externalId: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
+    const entry = await this.payoutsQuery.findPayoutCaseEntry(payoutId);
 
     if (!entry || !PAYOUT_TYPES.includes(entry.type as (typeof PAYOUT_TYPES)[number])) {
       throw new NotFoundException(`Payout not found`);
     }
 
     const paymentMethodsById = await this.fetchPaymentMethodsById([entry]);
-    const relatedEntries = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        ledgerId: entry.ledgerId,
-        deletedAt: null,
-      },
-      orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-      select: {
-        id: true,
-        type: true,
-        amount: true,
-        currencyCode: true,
-        status: true,
-        createdAt: true,
-        outcomes: {
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          take: 1,
-          select: { status: true },
-        },
-      },
-    });
+    const relatedEntries = await this.payoutsQuery.findRelatedEntries(entry.ledgerId);
 
     const [auditContext, assignment] = await Promise.all([
-      this.prisma.adminActionAuditLogModel.findMany({
-        where: {
-          OR: [{ resourceId: entry.id }, ...(entry.paymentRequestId ? [{ resourceId: entry.paymentRequestId }] : [])],
-        },
-        include: {
-          admin: {
-            select: {
-              email: true,
-            },
-          },
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: 20,
-      }),
+      this.payoutsQuery.findAuditContext(
+        [entry.id, entry.paymentRequestId].filter((resourceId): resourceId is string => Boolean(resourceId)),
+      ),
       this.assignmentsService.getAssignmentContextForResource(`payout`, entry.id),
     ]);
 
@@ -803,25 +668,7 @@ export class AdminV2PayoutsService {
         reason,
       },
       execute: async () => {
-        const payout = await this.prisma.ledgerEntryModel.findUnique({
-          where: { id: payoutId },
-          select: {
-            id: true,
-            type: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true,
-            deletedAt: true,
-            outcomes: {
-              orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-              take: 1,
-              select: {
-                status: true,
-                createdAt: true,
-              },
-            },
-          },
-        });
+        const payout = await this.payoutsQuery.findEscalationPreflight(payoutId);
 
         if (!payout || !PAYOUT_TYPES.includes(payout.type as (typeof PAYOUT_TYPES)[number])) {
           throw new NotFoundException(`Payout not found`);
@@ -857,17 +704,7 @@ export class AdminV2PayoutsService {
             throw new ConflictException(`Soft-deleted payouts remain investigation-only`);
           }
 
-          const latestOutcome = await tx.ledgerEntryOutcomeModel.findFirst({
-            where: {
-              ledgerEntryId: locked.id,
-            },
-            orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-            select: {
-              status: true,
-              createdAt: true,
-              externalId: true,
-            },
-          });
+          const latestOutcome = await this.payoutEscalationRepository.findLatestOutcome(tx, locked.id);
 
           const effectiveStatus = latestOutcome?.status ?? locked.status;
           const derivedStatus = this.derivePayoutStatus({
@@ -888,16 +725,7 @@ export class AdminV2PayoutsService {
             throw new ConflictException(`Only failed or stuck payouts can be escalated`);
           }
 
-          const existingEscalation = await tx.payoutEscalationModel.findUnique({
-            where: {
-              ledgerEntryId: locked.id,
-            },
-            select: {
-              id: true,
-              createdAt: true,
-              reason: true,
-            },
-          });
+          const existingEscalation = await this.payoutEscalationRepository.findExistingEscalation(tx, locked.id);
 
           if (existingEscalation) {
             return {
@@ -912,40 +740,17 @@ export class AdminV2PayoutsService {
             };
           }
 
-          const escalation = await tx.payoutEscalationModel.create({
-            data: {
-              ledgerEntryId: locked.id,
-              escalatedBy: adminId,
-              reason,
-              confirmed: true,
-            },
-            select: {
-              id: true,
-              createdAt: true,
-              reason: true,
-            },
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.payout_escalate,
-              resource: `payout`,
-              resourceId: locked.id,
-              metadata: {
-                confirmed: true,
-                reason,
-                derivedStatus,
-                effectiveStatus,
-                persistedStatus: locked.status,
-                expectedVersion,
-                escalationId: escalation.id,
-                payoutType: locked.type,
-                paymentRequestId: locked.payment_request_id,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
+          const escalation = await this.payoutEscalationRepository.createEscalationWithAudit(tx, {
+            payoutId: locked.id,
+            adminId,
+            reason,
+            expectedVersion,
+            derivedStatus,
+            effectiveStatus,
+            persistedStatus: locked.status,
+            payoutType: locked.type,
+            paymentRequestId: locked.payment_request_id,
+            meta,
           });
 
           return {

@@ -3,11 +3,11 @@ import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/com
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { PrismaService } from '../../../shared/prisma.service';
+import { ConsumerDocumentRepository } from './consumer-document.repository';
 
 @Injectable()
 export class ConsumerDocumentAccessPolicy {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly documentRepository: ConsumerDocumentRepository) {}
 
   async assertDraftOwnedPaymentRequest(consumerId: string, paymentRequestId: string) {
     const normalizedPaymentRequestId = paymentRequestId.trim();
@@ -15,17 +15,7 @@ export class ConsumerDocumentAccessPolicy {
       throw new BadRequestException(`Payment request id is required`);
     }
 
-    const payment = await this.prisma.paymentRequestModel.findFirst({
-      where: {
-        id: normalizedPaymentRequestId,
-        requesterId: consumerId,
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        status: true,
-      },
-    });
+    const payment = await this.documentRepository.findOwnedDraftPaymentRequest(consumerId, normalizedPaymentRequestId);
 
     if (!payment) {
       throw new ForbiddenException(errorCodes.PAYMENT_NOT_OWNED);

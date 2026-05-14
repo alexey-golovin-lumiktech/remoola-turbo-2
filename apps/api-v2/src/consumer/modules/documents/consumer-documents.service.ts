@@ -6,9 +6,8 @@ import { errorCodes } from '@remoola/shared-constants';
 import { ConsumerDocumentAccessPolicy } from './consumer-document-access-policy';
 import { ConsumerDocumentListQuery } from './consumer-document-list.query';
 import { type DocumentListItem } from './consumer-document-mapper';
-import { buildConsumerDocumentPaymentParticipantWhere } from './consumer-document-query-helpers';
 import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
-import { PrismaService } from '../../../shared/prisma.service';
+import { ConsumerDocumentRepository } from './consumer-document.repository';
 import { FileStorageService } from '../files/file-storage.service';
 
 const SINGLE_DRAFT_ATTACHMENT_DELETE_BLOCK_MESSAGE =
@@ -26,10 +25,10 @@ const MULTI_NON_DRAFT_ATTACHMENT_DELETE_BLOCK_MESSAGE =
 @Injectable()
 export class ConsumerDocumentsService {
   constructor(
-    private prisma: PrismaService,
     private storage: FileStorageService,
     private readonly documentAccessPolicy: ConsumerDocumentAccessPolicy,
     private readonly documentListQuery: ConsumerDocumentListQuery,
+    private readonly documentRepository: ConsumerDocumentRepository,
   ) {}
 
   private async assertDraftOwnedPaymentRequest(consumerId: string, paymentRequestId: string) {
@@ -37,16 +36,7 @@ export class ConsumerDocumentsService {
   }
 
   private async getConsumerEmail(consumerId: string): Promise<string | null> {
-    const consumerModel = this.prisma.consumerModel;
-    if (!consumerModel || typeof consumerModel.findUnique !== `function`) {
-      return null;
-    }
-
-    const consumer = await consumerModel.findUnique({
-      where: { id: consumerId },
-      select: { email: true },
-    });
-
+    const consumer = await this.documentRepository.findConsumerEmailById(consumerId);
     return consumer?.email?.trim().toLowerCase() ?? null;
   }
 
@@ -96,34 +86,16 @@ export class ConsumerDocumentsService {
         backendBaseUrl,
       );
 
-      const resource = await this.prisma.resourceModel.create({
-        data: {
-          access: $Enums.ResourceAccess.PRIVATE,
-          originalName: originalName,
-          mimetype: file.mimetype,
-          size: file.size,
-          bucket: stored.bucket,
-          key: stored.key,
-          downloadUrl: stored.downloadUrl,
-        },
+      const resource = await this.documentRepository.createUploadedResource({
+        consumerId,
+        originalName,
+        mimetype: file.mimetype,
+        size: file.size,
+        bucket: stored.bucket,
+        key: stored.key,
+        downloadUrl: stored.downloadUrl,
+        ...(targetPaymentRequest ? { paymentRequestId: targetPaymentRequest.id } : {}),
       });
-
-      await this.prisma.consumerResourceModel.create({
-        data: {
-          consumerId,
-          resourceId: resource.id,
-        },
-      });
-
-      if (targetPaymentRequest) {
-        await this.prisma.paymentRequestAttachmentModel.create({
-          data: {
-            paymentRequestId: targetPaymentRequest.id,
-            requesterId: consumerId,
-            resourceId: resource.id,
-          },
-        });
-      }
 
       created.push(resource.id);
     }
@@ -133,72 +105,11 @@ export class ConsumerDocumentsService {
 
   async openDownload(consumerId: string, resourceId: string) {
     const consumerEmail = await this.getConsumerEmail(consumerId);
-    const resource = await this.prisma.resourceModel.findFirst({
-      where: {
-        id: resourceId,
-        deletedAt: null,
-        OR: [
-          {
-            consumerResources: {
-              some: {
-                consumerId,
-                deletedAt: null,
-              },
-            },
-          },
-          {
-            AND: [
-              {
-                resourceTags: {
-                  none: {
-                    tag: { name: { startsWith: `INVOICE-` } },
-                  },
-                },
-              },
-              {
-                attachments: {
-                  some: {
-                    deletedAt: null,
-                    paymentRequest: {
-                      deletedAt: null,
-                      OR: buildConsumerDocumentPaymentParticipantWhere(consumerId, consumerEmail),
-                    },
-                  },
-                },
-              },
-            ],
-          },
-          {
-            AND: [
-              {
-                resourceTags: {
-                  some: {
-                    tag: { name: { startsWith: `INVOICE-` } },
-                  },
-                },
-              },
-              {
-                attachments: {
-                  some: {
-                    deletedAt: null,
-                    requesterId: consumerId,
-                    paymentRequest: {
-                      deletedAt: null,
-                    },
-                  },
-                },
-              },
-            ],
-          },
-        ],
-      },
-      select: {
-        bucket: true,
-        key: true,
-        originalName: true,
-        mimetype: true,
-      },
-    });
+    const resource = await this.documentRepository.findDownloadableResourceForConsumer(
+      consumerId,
+      resourceId,
+      consumerEmail,
+    );
 
     if (!resource) {
       throw new ForbiddenException(errorCodes.DOCUMENT_ACCESS_DENIED);
@@ -213,32 +124,14 @@ export class ConsumerDocumentsService {
       return { success: true };
     }
 
-    const ownedResources = await this.prisma.consumerResourceModel.findMany({
-      where: {
-        consumerId,
-        resourceId: { in: normalizedIds },
-      },
-      select: { resourceId: true },
-    });
+    const ownedResources = await this.documentRepository.findOwnedResourceMappings(consumerId, normalizedIds);
     const ownedResourceIds = ownedResources.map((resource) => resource.resourceId);
 
     if (ownedResourceIds.length !== normalizedIds.length) {
       throw new ForbiddenException(errorCodes.DOCUMENT_ACCESS_DENIED);
     }
 
-    const paymentAttachments = await this.prisma.paymentRequestAttachmentModel.findMany({
-      where: {
-        resourceId: { in: ownedResourceIds },
-      },
-      select: {
-        resourceId: true,
-        paymentRequest: {
-          select: {
-            status: true,
-          },
-        },
-      },
-    });
+    const paymentAttachments = await this.documentRepository.findAttachmentStatuses(ownedResourceIds);
 
     const nonDraftBlockedResourceIds = new Set(
       paymentAttachments
@@ -266,18 +159,8 @@ export class ConsumerDocumentsService {
       );
     }
 
-    await this.prisma.consumerResourceModel.deleteMany({
-      where: {
-        consumerId,
-        resourceId: { in: ownedResourceIds },
-      },
-    });
-
-    await this.prisma.resourceTagModel.deleteMany({
-      where: {
-        resourceId: { in: ownedResourceIds },
-      },
-    });
+    await this.documentRepository.deleteOwnedResourceMappings(consumerId, ownedResourceIds);
+    await this.documentRepository.deleteResourceTags(ownedResourceIds);
 
     return { success: true };
   }
@@ -291,20 +174,7 @@ export class ConsumerDocumentsService {
     resourceIds: string[],
     consumerEmail: string | null,
   ) {
-    return this.prisma.paymentRequestAttachmentModel.findMany({
-      where: {
-        deletedAt: null,
-        resource: {
-          deletedAt: null,
-        },
-        resourceId: { in: resourceIds },
-        paymentRequest: {
-          deletedAt: null,
-          OR: buildConsumerDocumentPaymentParticipantWhere(consumerId, consumerEmail),
-        },
-      },
-      select: { resourceId: true },
-    });
+    return this.documentRepository.findAccessibleAttachmentResources(consumerId, resourceIds, consumerEmail);
   }
 
   async attachToPayment(consumerId: string, paymentRequestId: string, resourceIds: string[]) {
@@ -319,17 +189,7 @@ export class ConsumerDocumentsService {
     const consumerEmail = await this.getConsumerEmail(consumerId);
 
     const [ownedResources, accessibleAttachments] = await Promise.all([
-      this.prisma.consumerResourceModel.findMany({
-        where: {
-          consumerId,
-          resourceId: { in: ids },
-          deletedAt: null,
-          resource: {
-            deletedAt: null,
-          },
-        },
-        select: { resourceId: true },
-      }),
+      this.documentRepository.findOwnedAccessibleResources(consumerId, ids),
       this.getAccessibleAttachmentResources(consumerId, ids, consumerEmail),
     ]);
 
@@ -342,27 +202,16 @@ export class ConsumerDocumentsService {
       throw new ForbiddenException(errorCodes.DOCUMENT_ACCESS_DENIED);
     }
 
-    const paymentRequestAttachments = await this.prisma.paymentRequestAttachmentModel.findMany({
-      where: {
-        paymentRequestId,
-        resourceId: { in: ids },
-        deletedAt: null,
-      },
-      select: { resourceId: true },
-    });
+    const paymentRequestAttachments = await this.documentRepository.findExistingPaymentAttachments(
+      paymentRequestId,
+      ids,
+    );
 
     const existingAttachmentResourceIds = new Set(paymentRequestAttachments.map((attachment) => attachment.resourceId));
 
     const toCreate = ids.filter((resourceId) => !existingAttachmentResourceIds.has(resourceId));
 
-    await this.prisma.paymentRequestAttachmentModel.createMany({
-      data: toCreate.map((resourceId) => ({
-        paymentRequestId,
-        requesterId: consumerId,
-        resourceId,
-      })),
-      skipDuplicates: true,
-    });
+    await this.documentRepository.createPaymentAttachments(paymentRequestId, consumerId, toCreate);
 
     return { success: true };
   }
@@ -375,13 +224,7 @@ export class ConsumerDocumentsService {
 
     const paymentRequest = await this.assertDraftOwnedPaymentRequest(consumerId, paymentRequestId);
 
-    await this.prisma.paymentRequestAttachmentModel.deleteMany({
-      where: {
-        paymentRequestId: paymentRequest.id,
-        requesterId: consumerId,
-        resourceId: normalizedResourceId,
-      },
-    });
+    await this.documentRepository.detachPaymentAttachment(paymentRequest.id, consumerId, normalizedResourceId);
 
     return { success: true };
   }
@@ -389,30 +232,8 @@ export class ConsumerDocumentsService {
   async setTags(consumerId: string, resourceId: string, tags: string[]) {
     const consumerEmail = await this.getConsumerEmail(consumerId);
     const [consumerResource, accessibleAttachment] = await Promise.all([
-      this.prisma.consumerResourceModel.findFirst({
-        where: {
-          consumerId,
-          resourceId,
-          deletedAt: null,
-          resource: {
-            deletedAt: null,
-          },
-        },
-      }),
-      this.prisma.paymentRequestAttachmentModel.findFirst({
-        where: {
-          deletedAt: null,
-          resource: {
-            deletedAt: null,
-          },
-          resourceId,
-          paymentRequest: {
-            deletedAt: null,
-            OR: buildConsumerDocumentPaymentParticipantWhere(consumerId, consumerEmail),
-          },
-        },
-        select: { resourceId: true },
-      }),
+      this.documentRepository.findConsumerResourceAccess(consumerId, resourceId),
+      this.documentRepository.findAttachmentAccess(consumerId, resourceId, consumerEmail),
     ]);
 
     if (!consumerResource && !accessibleAttachment) {
@@ -423,24 +244,14 @@ export class ConsumerDocumentsService {
 
     const documentTags = [];
     for (const name of cleaned) {
-      const documentTag = await this.prisma.documentTagModel.upsert({
-        where: { name },
-        update: {},
-        create: { name },
-      });
+      const documentTag = await this.documentRepository.upsertDocumentTag(name);
       documentTags.push(documentTag);
     }
 
-    await this.prisma.resourceTagModel.deleteMany({
-      where: { resourceId },
-    });
-
-    await this.prisma.resourceTagModel.createMany({
-      data: documentTags.map((documentTag) => ({
-        resourceId,
-        tagId: documentTag.id,
-      })),
-    });
+    await this.documentRepository.replaceResourceTags(
+      resourceId,
+      documentTags.map((documentTag) => documentTag.id),
+    );
 
     return { success: true };
   }

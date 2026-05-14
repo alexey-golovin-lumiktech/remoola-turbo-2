@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
+import { AdminV2PayoutsQuery } from './admin-v2-payouts.query';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
 import { envs } from '../../envs';
 
@@ -46,7 +48,13 @@ function buildService() {
     getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
     getActiveAssigneesForResource: jest.fn(async () => new Map()),
   };
-  const service = new AdminV2PayoutsService(prisma as never, idempotency as never, assignmentsService as never);
+  const service = new AdminV2PayoutsService(
+    prisma as never,
+    idempotency as never,
+    assignmentsService as never,
+    new AdminV2PayoutsQuery(prisma as never),
+    new AdminV2PayoutEscalationRepository(prisma as never),
+  );
 
   return {
     service,

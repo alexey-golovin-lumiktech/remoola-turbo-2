@@ -2,8 +2,6 @@
 
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { type INestApplication, ValidationPipe } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import express from 'express';
@@ -14,14 +12,13 @@ import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
+import { applyManualAuthGuard } from './helpers/bootstrap-api-test-app';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { StripeWebhookService } from '../src/consumer/modules/payment-methods/stripe-webhook.service';
 import { ConsumerPaymentsPoliciesService } from '../src/consumer/modules/payments/consumer-payments-policies.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
-import { OriginResolverService } from '../src/shared/origin-resolver.service';
-import { PrismaService } from '../src/shared/prisma.service';
 import { STRIPE_IDENTITY_STATUS, getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
 describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
@@ -140,11 +137,7 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
         },
       }),
     );
-    const reflector = moduleFixture.get(Reflector);
-    const jwtService = moduleFixture.get(JwtService);
-    const prismaService = moduleFixture.get(PrismaService);
-    const originResolver = moduleFixture.get(OriginResolverService);
-    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
+    applyManualAuthGuard(app, moduleFixture);
     await app.init();
   });
 

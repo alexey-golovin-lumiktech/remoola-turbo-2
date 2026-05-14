@@ -2,7 +2,14 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
 
-import { AdminV2DocumentsService } from './admin-v2-documents.service';
+import { AdminV2DocumentsQuery } from './admin-v2-documents.query';
+import { AdminV2DocumentsService as AdminV2DocumentsServiceClass } from './admin-v2-documents.service';
+
+class AdminV2DocumentsService extends AdminV2DocumentsServiceClass {
+  constructor(prisma: any, storage: any, idempotency: any, assignmentsService: any) {
+    super(prisma, storage, idempotency, assignmentsService, new AdminV2DocumentsQuery(prisma));
+  }
+}
 
 function createIdempotency() {
   return {

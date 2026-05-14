@@ -28,6 +28,7 @@ import { ConsumerAuthRecoveryService } from './consumer-auth-recovery.service';
 import { ConsumerAuthSessionService } from './consumer-auth-session.service';
 import { ConsumerAuthSignupService } from './consumer-auth-signup.service';
 import { ConsumerAuthVerificationService } from './consumer-auth-verification.service';
+import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { ConsumerSignup } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
@@ -66,6 +67,7 @@ export class ConsumerAuthService {
     private readonly recoveryService: ConsumerAuthRecoveryService,
     private readonly signupService: ConsumerAuthSignupService,
     private readonly verificationService: ConsumerAuthVerificationService,
+    private readonly consumerIdentityRepository: ConsumerIdentityRepository,
   ) {}
 
   private static readonly googleSignupTokenType = `google_signup` as const;
@@ -122,9 +124,7 @@ export class ConsumerAuthService {
   }
 
   async findConsumerByEmail(email: string) {
-    return this.prisma.consumerModel.findFirst({
-      where: { email: email.toLowerCase(), deletedAt: null },
-    });
+    return this.consumerIdentityRepository.findActiveByEmail(email);
   }
 
   private hasStoredPasswordCredentials(identity: Pick<ConsumerModel, `password` | `salt`>): boolean {
@@ -140,9 +140,7 @@ export class ConsumerAuthService {
     const email = body.email?.trim()?.toLowerCase() ?? ``;
     await this.authAudit.checkLockoutAndRateLimit(AUTH_IDENTITY_TYPES.consumer, email);
 
-    const identity = await this.prisma.consumerModel.findFirst({
-      where: { email, deletedAt: null },
-    });
+    const identity = await this.consumerIdentityRepository.findActiveByEmail(email);
     if (!identity) throw new UnauthorizedException(errorCodes.INVALID_CREDENTIALS);
     this.ensureConsumerNotSuspended(identity);
 

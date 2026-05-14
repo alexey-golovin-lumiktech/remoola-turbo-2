@@ -5,8 +5,12 @@ import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
+import { ConsumerPaymentRequestRepository } from './consumer-payment-request.repository';
 import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.service';
+import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity.repository';
+import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
+import { ConsumerPaymentsPolicyQuery } from './consumer-payments-policy.query';
 import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
 import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
 import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
@@ -19,7 +23,7 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
   private readonly testPoliciesService: ConsumerPaymentsPoliciesService;
 
   constructor(prisma: any, mailingService: any, balanceService: any) {
-    const policiesService = new ConsumerPaymentsPoliciesService(prisma);
+    const policiesService = new ConsumerPaymentsPoliciesService(prisma, new ConsumerPaymentsPolicyQuery(prisma));
     const commandPolicies: any = {
       appendConsumerAppScopeMetadata: (...args: any[]) =>
         (policiesService.appendConsumerAppScopeMetadata as any)(...args),
@@ -34,6 +38,9 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
           new ConsumerPaymentRequestNotificationService(mailingService),
           balanceService,
           commandPolicies,
+          new ConsumerPaymentsIdentityRepository(prisma),
+          new ConsumerPaymentsLedgerRepository(prisma),
+          new ConsumerPaymentRequestRepository(prisma),
         ),
       ),
     );

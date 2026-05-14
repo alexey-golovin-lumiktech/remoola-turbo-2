@@ -1,5 +1,6 @@
 import { $Enums } from '@remoola/database-2';
 
+import { ConsumerInvoiceRepository } from './consumer-invoice.repository';
 import { ConsumerInvoiceService } from './consumer-invoice.service';
 
 describe(`ConsumerInvoiceService`, () => {
@@ -34,7 +35,7 @@ describe(`ConsumerInvoiceService`, () => {
       },
     } as any;
 
-    const service = new ConsumerInvoiceService(prisma, {} as any);
+    const service = new ConsumerInvoiceService({} as any, new ConsumerInvoiceRepository(prisma));
     const result = await service.generateInvoice(`payment-1`, consumerId, `http://localhost:3334`);
 
     expect(result).toEqual({
@@ -88,7 +89,7 @@ describe(`ConsumerInvoiceService`, () => {
         downloadUrl: `legacy://unused`,
       }),
     } as any;
-    const service = new ConsumerInvoiceService(prisma, storage);
+    const service = new ConsumerInvoiceService(storage, new ConsumerInvoiceRepository(prisma));
     const renderPdfFromHtml = jest.spyOn(service as any, `renderPdfFromHtml`).mockResolvedValue(Buffer.from(`pdf`));
     const dateNow = jest.spyOn(Date, `now`).mockReturnValue(now);
 

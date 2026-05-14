@@ -1,8 +1,6 @@
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
@@ -11,6 +9,7 @@ import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 
+import { applyManualAuthGuard } from './helpers/bootstrap-api-test-app';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/configure-app';
@@ -18,8 +17,6 @@ import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { MailingService } from '../src/shared/mailing.service';
-import { OriginResolverService } from '../src/shared/origin-resolver.service';
-import { PrismaService } from '../src/shared/prisma.service';
 import {
   getApiConsumerAccessTokenCookieKey,
   getApiConsumerCsrfTokenCookieKeysForRead,
@@ -138,11 +135,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
     app = moduleFixture.createNestApplication<NestExpressApplication>();
     configureApp(app);
-    const reflector = moduleFixture.get(Reflector);
-    const jwtService = moduleFixture.get(JwtService);
-    const prismaService = moduleFixture.get(PrismaService);
-    const originResolver = moduleFixture.get(OriginResolverService);
-    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
+    applyManualAuthGuard(app, moduleFixture);
     await app.init();
     authService = app.get(ConsumerAuthService);
     mailingService = app.get(MailingService);

@@ -14,6 +14,9 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
+import { ConsumerPaymentRequestRepository } from './consumer-payment-request.repository';
+import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity.repository';
+import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { type CreatePaymentRequest, type TransferBody, type WithdrawBody } from './dto';
 import { type StartPayment } from './dto/start-payment.dto';
@@ -34,6 +37,9 @@ export class ConsumerPaymentsCommandsService {
     private readonly paymentRequestNotification: ConsumerPaymentRequestNotificationService,
     private readonly balanceService: BalanceCalculationService,
     private readonly policiesService: ConsumerPaymentsPoliciesService,
+    private readonly paymentsIdentityRepository: ConsumerPaymentsIdentityRepository,
+    private readonly paymentsLedgerRepository: ConsumerPaymentsLedgerRepository,
+    private readonly paymentRequestRepository: ConsumerPaymentRequestRepository,
   ) {}
 
   private getRequesterSettlementEntryType(paymentRail: $Enums.PaymentRail): $Enums.LedgerEntryType {
@@ -50,11 +56,7 @@ export class ConsumerPaymentsCommandsService {
   }
 
   private async getConsumerEmail(consumerId: string): Promise<string | null> {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: { email: true },
-    });
-    return consumer?.email?.trim().toLowerCase() ?? null;
+    return this.paymentsIdentityRepository.findConsumerEmailById(consumerId);
   }
 
   async startPayment(consumerId: string, body: StartPayment, consumerAppScope?: ConsumerAppScope) {
@@ -67,12 +69,7 @@ export class ConsumerPaymentsCommandsService {
       throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_START_PAYMENT);
     }
 
-    const recipient = await this.prisma.consumerModel.findFirst({
-      where: {
-        email: { equals: normalizedEmail, mode: `insensitive` },
-        deletedAt: null,
-      },
-    });
+    const recipient = await this.paymentsIdentityRepository.findActiveRecipientByEmail(normalizedEmail);
 
     if (recipient?.id === consumerId) {
       throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_START_PAYMENT);
@@ -168,12 +165,7 @@ export class ConsumerPaymentsCommandsService {
     await this.policiesService.ensureProfileComplete(consumerId);
     const normalizedEmail = body.email.trim().toLowerCase();
 
-    const recipient = await this.prisma.consumerModel.findFirst({
-      where: {
-        email: { equals: normalizedEmail, mode: `insensitive` },
-        deletedAt: null,
-      },
-    });
+    const recipient = await this.paymentsIdentityRepository.findActiveRecipientByEmail(normalizedEmail);
 
     if (recipient?.id === consumerId) {
       throw new BadRequestException(errorCodes.REQUEST_FROM_SELF_BY_ID);
@@ -197,19 +189,12 @@ export class ConsumerPaymentsCommandsService {
       return date;
     };
 
-    const paymentRequest = await this.prisma.paymentRequestModel.create({
-      data: {
-        payerId: recipient?.id ?? null,
-        payerEmail: recipient?.email ?? normalizedEmail,
-        requesterId: consumerId,
-        currencyCode: body.currencyCode ?? $Enums.CurrencyCode.USD,
-        amount,
-        description: body.description ?? null,
-        dueDate: parseDate(body.dueDate),
-        status: $Enums.TransactionStatus.DRAFT,
-        createdBy: consumerId,
-        updatedBy: consumerId,
-      },
+    const paymentRequest = await this.paymentRequestRepository.createDraftPaymentRequest({
+      consumerId,
+      normalizedEmail,
+      recipient,
+      body,
+      dueDate: parseDate(body.dueDate),
     });
 
     if (!recipient) {
@@ -377,25 +362,14 @@ export class ConsumerPaymentsCommandsService {
     const key = idempotencyKey.trim();
     const withdrawCurrency = toCurrencyOrDefault(body.currencyCode ?? body.currency, $Enums.CurrencyCode.USD);
 
-    const existing = await this.prisma.ledgerEntryModel.findFirst({
-      where: {
-        idempotencyKey: `withdraw:${key}`,
-        consumerId,
-        type: $Enums.LedgerEntryType.USER_PAYOUT,
-        deletedAt: null,
-      },
-    });
+    const existing = await this.paymentsLedgerRepository.findExistingWithdrawByIdempotencyKey(consumerId, key);
     if (existing) return { ledgerId: existing.ledgerId };
 
     if (body.paymentMethodId?.trim()) {
-      const payoutMethod = await this.prisma.paymentMethodModel.findFirst({
-        where: {
-          id: body.paymentMethodId.trim(),
-          consumerId,
-          deletedAt: null,
-        },
-        select: { id: true, type: true },
-      });
+      const payoutMethod = await this.paymentsIdentityRepository.findActiveBankPayoutMethod(
+        consumerId,
+        body.paymentMethodId,
+      );
       if (!payoutMethod || payoutMethod.type !== $Enums.PaymentMethodType.BANK_ACCOUNT) {
         throw new BadRequestException(errorCodes.PAYMENT_METHOD_NOT_FOUND);
       }
@@ -442,14 +416,7 @@ export class ConsumerPaymentsCommandsService {
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === `P2002`) {
-        const duplicate = await this.prisma.ledgerEntryModel.findFirst({
-          where: {
-            idempotencyKey: `withdraw:${key}`,
-            consumerId,
-            type: $Enums.LedgerEntryType.USER_PAYOUT,
-            deletedAt: null,
-          },
-        });
+        const duplicate = await this.paymentsLedgerRepository.findExistingWithdrawByIdempotencyKey(consumerId, key);
         if (duplicate) return { ledgerId: duplicate.ledgerId };
       }
       this.logger.error(`Withdraw failed`, { consumerId });
@@ -467,20 +434,12 @@ export class ConsumerPaymentsCommandsService {
     }
 
     const key = idempotencyKey.trim();
-    const existing = await this.prisma.ledgerEntryModel.findFirst({
-      where: {
-        idempotencyKey: `transfer:${key}:sender`,
-        consumerId,
-        type: $Enums.LedgerEntryType.USER_PAYMENT,
-        deletedAt: null,
-      },
-      select: { ledgerId: true },
-    });
+    const existing = await this.paymentsLedgerRepository.findExistingTransferByIdempotencyKey(consumerId, key);
     if (existing) return { ledgerId: existing.ledgerId };
 
-    const recipient = await this.prisma.consumerModel.findFirst({
-      where: this.policiesService.buildTransferRecipientWhere(body),
-    });
+    const recipient = await this.paymentsIdentityRepository.findTransferRecipient(
+      this.policiesService.buildTransferRecipientWhere(body),
+    );
     if (!recipient) {
       throw new NotFoundException(errorCodes.RECIPIENT_NOT_FOUND_TRANSFER);
     }
@@ -550,15 +509,7 @@ export class ConsumerPaymentsCommandsService {
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === `P2002`) {
-        const duplicate = await this.prisma.ledgerEntryModel.findFirst({
-          where: {
-            idempotencyKey: `transfer:${key}:sender`,
-            consumerId,
-            type: $Enums.LedgerEntryType.USER_PAYMENT,
-            deletedAt: null,
-          },
-          select: { ledgerId: true },
-        });
+        const duplicate = await this.paymentsLedgerRepository.findExistingTransferByIdempotencyKey(consumerId, key);
         if (duplicate) return { ledgerId: duplicate.ledgerId };
       }
       this.logger.error(`Transfer failed`, { consumerId });

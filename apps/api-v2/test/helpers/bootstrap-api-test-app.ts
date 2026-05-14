@@ -9,6 +9,8 @@ import express from 'express';
 import { IDENTITY } from '../../src/common';
 import { configureApp } from '../../src/configure-app';
 import { envs } from '../../src/envs';
+import { AuthIdentityRepository } from '../../src/guards/auth-identity.repository';
+import { AuthSessionRepository } from '../../src/guards/auth-session.repository';
 import { AuthGuard } from '../../src/guards/auth.guard';
 import { OriginResolverService } from '../../src/shared/origin-resolver.service';
 import { PrismaService } from '../../src/shared/prisma.service';
@@ -101,6 +103,25 @@ function applyOverrides(
   return nextBuilder;
 }
 
+export function createManualAuthGuard(moduleFixture: TestingModule): AuthGuard {
+  const reflector = moduleFixture.get(Reflector);
+  const jwtService = moduleFixture.get(JwtService);
+  const prismaService = moduleFixture.get(PrismaService);
+  const originResolver = moduleFixture.get(OriginResolverService, { strict: false });
+
+  return new AuthGuard(
+    reflector,
+    jwtService,
+    new AuthSessionRepository(prismaService),
+    new AuthIdentityRepository(prismaService),
+    originResolver,
+  );
+}
+
+export function applyManualAuthGuard(app: Pick<INestApplication, `useGlobalGuards`>, moduleFixture: TestingModule) {
+  app.useGlobalGuards(createManualAuthGuard(moduleFixture));
+}
+
 function configureManualAuthContractApp(
   app: NestExpressApplication,
   moduleFixture: TestingModule,
@@ -111,12 +132,7 @@ function configureManualAuthContractApp(
   app.use(express.json({ limit: jsonLimit }));
   app.use(cookieParser(cookieSecret));
   app.useGlobalPipes(createAuthContractValidationPipe());
-
-  const reflector = moduleFixture.get(Reflector);
-  const jwtService = moduleFixture.get(JwtService);
-  const prismaService = moduleFixture.get(PrismaService);
-  const originResolver = moduleFixture.get(OriginResolverService, { strict: false });
-  app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService, originResolver));
+  applyManualAuthGuard(app, moduleFixture);
 }
 
 function configureValidationOnlyApp(

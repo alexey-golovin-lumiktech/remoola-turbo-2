@@ -10,9 +10,10 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { JwtPassportModule } from '../auth/jwt-passport.module';
 import { type IDENTITY } from '../common';
+import { AuthIdentityRepository } from './auth-identity.repository';
+import { AuthSessionRepository } from './auth-session.repository';
 import { AuthGuard } from './auth.guard';
 import { OriginResolverService } from '../shared/origin-resolver.service';
-import { PrismaService } from '../shared/prisma.service';
 import { getApiConsumerAccessTokenCookieKeysForRead, getApiConsumerCsrfTokenCookieKeysForRead } from '../shared-common';
 
 type MockRequest = {
@@ -76,7 +77,8 @@ describe(`AuthGuard`, () => {
     guard = new AuthGuard(
       reflector as unknown as Reflector,
       jwtService as unknown as JwtService,
-      prisma as never,
+      new AuthSessionRepository(prisma as never),
+      new AuthIdentityRepository(prisma as never),
       originResolver as never,
     );
   });
@@ -87,7 +89,8 @@ describe(`AuthGuard`, () => {
       providers: [
         AuthGuard,
         { provide: Reflector, useValue: reflector },
-        { provide: PrismaService, useValue: prisma },
+        { provide: AuthSessionRepository, useValue: new AuthSessionRepository(prisma as never) },
+        { provide: AuthIdentityRepository, useValue: new AuthIdentityRepository(prisma as never) },
         { provide: OriginResolverService, useValue: originResolver },
       ],
     }).compile();

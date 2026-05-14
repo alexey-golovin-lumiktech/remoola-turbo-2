@@ -8,7 +8,11 @@ import {
   normalizeOptionalReason,
   validateConsumerSuspensionReason,
 } from './admin-v2-consumer-action-policy';
+import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
 import { ConsumerAdminCaseQuery } from './admin-v2-consumer-case.query';
+import { AdminV2ConsumerFlagsRepository } from './admin-v2-consumer-flags.repository';
+import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
+import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.repository';
 import {
   ACCOUNT_TYPES,
   buildCreatedAtFilter,
@@ -17,11 +21,11 @@ import {
   normalizePagination,
   VERIFICATION_STATUSES,
 } from './admin-v2-consumer-query-helpers';
+import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';
 import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
 const SEARCH_MAX_LEN = 200;
@@ -47,7 +51,11 @@ type ResendConsumerEmailBody = {
 @Injectable()
 export class AdminV2ConsumersService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly consumerRepository: AdminV2ConsumerRepository,
+    private readonly consumerActivityQuery: AdminV2ConsumerActivityQuery,
+    private readonly consumerLedgerQuery: AdminV2ConsumerLedgerQuery,
+    private readonly consumerNotesRepository: AdminV2ConsumerNotesRepository,
+    private readonly consumerFlagsRepository: AdminV2ConsumerFlagsRepository,
     private readonly consumerContractsService: ConsumerContractsService,
     private readonly adminActionAudit: AdminActionAuditService,
     private readonly consumerAuthService: ConsumerAuthService,
@@ -56,16 +64,7 @@ export class AdminV2ConsumersService {
   ) {}
 
   private async requireConsumer(consumerId: string) {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: {
-        id: true,
-        email: true,
-        suspendedAt: true,
-        suspendedBy: true,
-        suspensionReason: true,
-      },
-    });
+    const consumer = await this.consumerRepository.findSummaryById(consumerId);
     if (!consumer) {
       throw new NotFoundException(`Consumer not found`);
     }
@@ -120,52 +119,8 @@ export class AdminV2ConsumersService {
     };
 
     const [items, total] = await Promise.all([
-      this.prisma.consumerModel.findMany({
-        where,
-        orderBy: { createdAt: `desc` },
-        skip,
-        take: pageSize,
-        select: {
-          id: true,
-          email: true,
-          accountType: true,
-          contractorKind: true,
-          verificationStatus: true,
-          stripeIdentityStatus: true,
-          createdAt: true,
-          updatedAt: true,
-          deletedAt: true,
-          personalDetails: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
-          organizationDetails: {
-            select: {
-              name: true,
-            },
-          },
-          adminFlags: {
-            where: { removedAt: null },
-            orderBy: { createdAt: `desc` },
-            take: 3,
-            select: {
-              id: true,
-              flag: true,
-            },
-          },
-          _count: {
-            select: {
-              adminNotes: true,
-              adminFlags: {
-                where: { removedAt: null },
-              },
-            },
-          },
-        },
-      }),
-      this.prisma.consumerModel.count({ where }),
+      this.consumerRepository.findMany(where, skip, pageSize),
+      this.consumerRepository.count(where),
     ]);
 
     return {
@@ -198,46 +153,7 @@ export class AdminV2ConsumersService {
 
   async getConsumerLedgerSummary(consumerId: string) {
     await this.requireConsumer(consumerId);
-    const rows = await this.prisma.ledgerEntryModel.groupBy({
-      by: [`currencyCode`, `status`],
-      where: {
-        consumerId,
-        deletedAt: null,
-      },
-      _sum: {
-        amount: true,
-      },
-      _count: {
-        _all: true,
-      },
-    });
-
-    const summary = rows.reduce<
-      Record<string, { completedAmount: string; pendingAmount: string; completedCount: number; pendingCount: number }>
-    >((acc, row) => {
-      const key = row.currencyCode;
-      const bucket = acc[key] ?? {
-        completedAmount: `0`,
-        pendingAmount: `0`,
-        completedCount: 0,
-        pendingCount: 0,
-      };
-      const amount = row._sum.amount?.toString() ?? `0`;
-      if (row.status === $Enums.TransactionStatus.COMPLETED) {
-        bucket.completedAmount = (Number(bucket.completedAmount) + Number(amount)).toFixed(2);
-        bucket.completedCount += row._count._all;
-      } else {
-        bucket.pendingAmount = (Number(bucket.pendingAmount) + Number(amount)).toFixed(2);
-        bucket.pendingCount += row._count._all;
-      }
-      acc[key] = bucket;
-      return acc;
-    }, {});
-
-    return {
-      consumerId,
-      summary,
-    };
+    return this.consumerLedgerQuery.getLedgerSummary(consumerId);
   }
 
   async getConsumerAuthHistory(
@@ -259,13 +175,8 @@ export class AdminV2ConsumersService {
     };
 
     const [items, total] = await Promise.all([
-      this.prisma.authAuditLogModel.findMany({
-        where,
-        orderBy: { createdAt: `desc` },
-        skip: pagination.skip,
-        take: pagination.pageSize,
-      }),
-      this.prisma.authAuditLogModel.count({ where }),
+      this.consumerActivityQuery.findAuthHistory(where, pagination.skip, pagination.pageSize),
+      this.consumerActivityQuery.countAuthHistory(where),
     ]);
 
     return {
@@ -299,13 +210,8 @@ export class AdminV2ConsumersService {
     };
 
     const [items, total] = await Promise.all([
-      this.prisma.consumerActionLogModel.findMany({
-        where,
-        orderBy: { createdAt: `desc` },
-        skip: pagination.skip,
-        take: pagination.pageSize,
-      }),
-      this.prisma.consumerActionLogModel.count({ where }),
+      this.consumerActivityQuery.findActionLog(where, pagination.skip, pagination.pageSize),
+      this.consumerActivityQuery.countActionLog(where),
     ]);
 
     return {
@@ -331,34 +237,7 @@ export class AdminV2ConsumersService {
       throw new BadRequestException(`Note content is too long`);
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      const note = await tx.consumerAdminNoteModel.create({
-        data: {
-          consumerId,
-          adminId,
-          content: normalizedContent,
-        },
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-        },
-      });
-
-      await tx.adminActionAuditLogModel.create({
-        data: {
-          adminId,
-          action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_note_create,
-          resource: `consumer`,
-          resourceId: consumerId,
-          metadata: { noteId: note.id },
-          ipAddress: meta?.ipAddress ?? null,
-          userAgent: meta?.userAgent ?? null,
-        },
-      });
-
-      return note;
-    });
+    return this.consumerNotesRepository.createWithAudit(consumerId, adminId, normalizedContent, meta);
   }
 
   async addFlag(consumerId: string, adminId: string, flag: string, reason?: string | null, meta?: RequestMeta) {
@@ -368,55 +247,12 @@ export class AdminV2ConsumersService {
     }
 
     const normalizedReason = normalizeOptionalReason(reason);
-    const existing = await this.prisma.consumerFlagModel.findFirst({
-      where: {
-        consumerId,
-        flag: normalizedFlag,
-        removedAt: null,
-      },
-      select: {
-        id: true,
-        flag: true,
-        reason: true,
-        version: true,
-        createdAt: true,
-      },
-    });
+    const existing = await this.consumerFlagsRepository.findActiveByConsumerAndFlag(consumerId, normalizedFlag);
     if (existing) {
       return { ...existing, alreadyExisted: true };
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      const created = await tx.consumerFlagModel.create({
-        data: {
-          consumerId,
-          adminId,
-          flag: normalizedFlag,
-          reason: normalizedReason,
-        },
-        select: {
-          id: true,
-          flag: true,
-          reason: true,
-          version: true,
-          createdAt: true,
-        },
-      });
-
-      await tx.adminActionAuditLogModel.create({
-        data: {
-          adminId,
-          action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_flag_add,
-          resource: `consumer`,
-          resourceId: consumerId,
-          metadata: { flagId: created.id, flag: normalizedFlag, reason: normalizedReason },
-          ipAddress: meta?.ipAddress ?? null,
-          userAgent: meta?.userAgent ?? null,
-        },
-      });
-
-      return created;
-    });
+    return this.consumerFlagsRepository.createWithAudit(consumerId, adminId, normalizedFlag, normalizedReason, meta);
   }
 
   async removeFlag(consumerId: string, flagId: string, adminId: string, version: number, meta?: RequestMeta) {
@@ -424,65 +260,7 @@ export class AdminV2ConsumersService {
       throw new BadRequestException(`Valid version is required`);
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      const flag = await tx.consumerFlagModel.findFirst({
-        where: {
-          id: flagId,
-          consumerId,
-        },
-        select: {
-          id: true,
-          flag: true,
-          version: true,
-          removedAt: true,
-        },
-      });
-
-      if (!flag) {
-        throw new NotFoundException(`Flag not found`);
-      }
-      if (flag.removedAt) {
-        return { id: flag.id, alreadyRemoved: true };
-      }
-      if (flag.version !== version) {
-        throw new ConflictException({
-          error: `STALE_VERSION`,
-          message: `Resource has been modified by another operator`,
-          currentVersion: flag.version,
-          recommendedAction: `reload`,
-        });
-      }
-
-      const removedAt = new Date();
-      const updated = await tx.consumerFlagModel.update({
-        where: { id: flagId },
-        data: {
-          removedAt,
-          removedBy: adminId,
-          version: { increment: 1 },
-        },
-        select: {
-          id: true,
-          flag: true,
-          version: true,
-          removedAt: true,
-        },
-      });
-
-      await tx.adminActionAuditLogModel.create({
-        data: {
-          adminId,
-          action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_flag_remove,
-          resource: `consumer`,
-          resourceId: consumerId,
-          metadata: { flagId, flag: flag.flag, removedAt },
-          ipAddress: meta?.ipAddress ?? null,
-          userAgent: meta?.userAgent ?? null,
-        },
-      });
-
-      return updated;
-    });
+    return this.consumerFlagsRepository.removeWithAudit(consumerId, flagId, adminId, version, meta);
   }
 
   async forceLogout(consumerId: string, adminId: string, body: { confirmed?: boolean }, meta?: RequestMeta) {
@@ -496,9 +274,7 @@ export class AdminV2ConsumersService {
       key: meta?.idempotencyKey,
       payload: { consumerId, confirmed: true },
       execute: async () => {
-        const activeSessionsBefore = await this.prisma.authSessionModel.count({
-          where: { consumerId, revokedAt: null },
-        });
+        const activeSessionsBefore = await this.consumerRepository.countActiveSessions(consumerId);
         await this.consumerAuthService.revokeAllSessionsByConsumerIdAndAudit(consumerId, {
           ipAddress: meta?.ipAddress,
           userAgent: meta?.userAgent,
@@ -536,17 +312,7 @@ export class AdminV2ConsumersService {
       payload: { consumerId, confirmed: true, reason },
       execute: async () => {
         const suspendedAt = new Date();
-        const updated = await this.prisma.consumerModel.updateMany({
-          where: {
-            id: consumerId,
-            suspendedAt: null,
-          },
-          data: {
-            suspendedAt,
-            suspendedBy: adminId,
-            suspensionReason: reason,
-          },
-        });
+        const updated = await this.consumerRepository.suspendIfActive(consumerId, adminId, reason, suspendedAt);
         if (updated.count === 0) {
           const current = await this.requireConsumer(consumerId);
           return {

@@ -1,10 +1,9 @@
 import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerInvoiceRepository } from './consumer-invoice.repository';
 import { buildInvoiceHtmlV5 } from './templates';
-import { PrismaService } from '../../../shared/prisma.service';
 import { getBrowser, pfdPageViewport } from '../../../shared-common/pdf-generator-package/constants';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
@@ -16,8 +15,8 @@ const RECENT_INVOICE_WINDOW_MS = 60_000;
 @Injectable()
 export class ConsumerInvoiceService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly storage: FileStorageService,
+    private readonly invoiceRepository: ConsumerInvoiceRepository,
   ) {}
 
   async generateInvoice(
@@ -25,22 +24,10 @@ export class ConsumerInvoiceService {
     consumerId: string,
     backendBaseUrl: string | undefined,
   ): Promise<{ invoiceNumber: string; resourceId: string; downloadUrl: string }> {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: { email: true },
-    });
-    const payment = await this.prisma.paymentRequestModel.findUnique({
-      where: { id: paymentRequestId },
-      include: {
-        payer: {
-          include: { personalDetails: true, addressDetails: true },
-        },
-        requester: {
-          include: { personalDetails: true },
-        },
-        ledgerEntries: true,
-      },
-    });
+    const [consumer, payment] = await Promise.all([
+      this.invoiceRepository.findConsumerEmailById(consumerId),
+      this.invoiceRepository.findPaymentForInvoice(paymentRequestId),
+    ]);
 
     if (!payment) throw new NotFoundException(errorCodes.PAYMENT_REQUEST_NOT_FOUND_INVOICE);
 
@@ -65,21 +52,7 @@ export class ConsumerInvoiceService {
     }
 
     const since = new Date(Date.now() - RECENT_INVOICE_WINDOW_MS);
-    const existing = await this.prisma.paymentRequestAttachmentModel.findFirst({
-      where: {
-        paymentRequestId: payment.id,
-        requesterId: consumerId,
-        deletedAt: null,
-        createdAt: { gte: since },
-        resource: {
-          resourceTags: {
-            some: { tag: { name: { startsWith: `INVOICE-` } } },
-          },
-        },
-      },
-      orderBy: { createdAt: `desc` },
-      include: { resource: true },
-    });
+    const existing = await this.invoiceRepository.findRecentInvoiceAttachment(payment.id, consumerId, since);
     if (existing?.resource) {
       const name = existing.resource.originalName.replace(/\.pdf$/i, ``);
       return {
@@ -103,41 +76,16 @@ export class ConsumerInvoiceService {
         backendBaseUrl,
       );
 
-      const resource = await this.prisma.resourceModel.create({
-        data: {
-          access: $Enums.ResourceAccess.PRIVATE,
-          originalName: originalName,
-          mimetype: mimetype,
-          size: buffer.length,
-          bucket,
-          key,
-          downloadUrl: downloadUrl,
-          resourceTags: {
-            create: {
-              tag: {
-                connectOrCreate: {
-                  where: { name: `INVOICE-${consumerFacingStatus}` },
-                  create: { name: `INVOICE-${consumerFacingStatus}` },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      await this.prisma.consumerResourceModel.create({
-        data: {
-          consumerId,
-          resourceId: resource.id,
-        },
-      });
-
-      await this.prisma.paymentRequestAttachmentModel.create({
-        data: {
-          paymentRequestId: payment.id,
-          requesterId: consumerId,
-          resourceId: resource.id,
-        },
+      const resource = await this.invoiceRepository.createInvoiceResourceAndAttachment({
+        consumerId,
+        paymentRequestId: payment.id,
+        invoiceNumber,
+        consumerFacingStatus,
+        mimetype,
+        size: buffer.length,
+        bucket,
+        key,
+        downloadUrl,
       });
 
       return {

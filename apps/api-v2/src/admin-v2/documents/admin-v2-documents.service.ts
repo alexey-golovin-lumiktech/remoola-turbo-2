@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { AdminV2DocumentsQuery } from './admin-v2-documents.query';
 import { FileStorageService } from '../../consumer/modules/files/file-storage.service';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
@@ -99,6 +100,7 @@ export class AdminV2DocumentsService {
     private readonly storage: FileStorageService,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly assignmentsService: AdminV2AssignmentsService,
+    private readonly documentsQuery: AdminV2DocumentsQuery,
   ) {}
 
   async listDocuments(params?: {
@@ -210,55 +212,8 @@ export class AdminV2DocumentsService {
     };
 
     const [items, total] = await Promise.all([
-      this.prisma.resourceModel.findMany({
-        where,
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: {
-          consumerResources: {
-            where: { deletedAt: null },
-            orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-            select: {
-              consumer: {
-                select: {
-                  id: true,
-                  email: true,
-                  deletedAt: true,
-                },
-              },
-            },
-          },
-          resourceTags: {
-            orderBy: [{ tag: { name: `asc` } }, { id: `asc` }],
-            select: {
-              tag: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-          attachments: {
-            where: { deletedAt: null },
-            orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-            select: {
-              paymentRequest: {
-                select: {
-                  id: true,
-                  amount: true,
-                  currencyCode: true,
-                  status: true,
-                  createdAt: true,
-                  deletedAt: true,
-                },
-              },
-            },
-          },
-        },
-      }),
-      this.prisma.resourceModel.count({ where }),
+      this.documentsQuery.findMany(where, page, pageSize),
+      this.documentsQuery.count(where),
     ]);
 
     const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
@@ -292,59 +247,9 @@ export class AdminV2DocumentsService {
 
   async getDocumentCase(resourceId: string, backendBaseUrl?: string) {
     const [resource, assignment] = await Promise.all([
-      this.prisma.resourceModel.findFirst({
-        where: {
-          id: resourceId,
-          AND: [this.evidenceScopeWhere()],
-        },
-        include: {
-          consumerResources: {
-            where: { deletedAt: null },
-            orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-            select: {
-              consumer: {
-                select: {
-                  id: true,
-                  email: true,
-                  deletedAt: true,
-                },
-              },
-            },
-          },
-          resourceTags: {
-            orderBy: [{ tag: { name: `asc` } }, { id: `asc` }],
-            select: {
-              tag: {
-                select: {
-                  id: true,
-                  name: true,
-                  createdAt: true,
-                  updatedAt: true,
-                },
-              },
-            },
-          },
-          attachments: {
-            where: { deletedAt: null },
-            orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-            select: {
-              paymentRequest: {
-                select: {
-                  id: true,
-                  amount: true,
-                  currencyCode: true,
-                  status: true,
-                  createdAt: true,
-                  deletedAt: true,
-                  payerId: true,
-                  payerEmail: true,
-                  requesterId: true,
-                  requesterEmail: true,
-                },
-              },
-            },
-          },
-        },
+      this.documentsQuery.findCaseResource({
+        id: resourceId,
+        AND: [this.evidenceScopeWhere()],
       }),
       this.assignmentsService.getAssignmentContextForResource(`document`, resourceId),
     ]);
@@ -386,20 +291,7 @@ export class AdminV2DocumentsService {
   }
 
   async listTags() {
-    const tags = await this.prisma.documentTagModel.findMany({
-      orderBy: [{ name: `asc` }, { id: `asc` }],
-      select: {
-        id: true,
-        name: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            resourceTags: true,
-          },
-        },
-      },
-    });
+    const tags = await this.documentsQuery.listTags();
 
     return {
       items: tags.map((tag) => ({
@@ -415,17 +307,9 @@ export class AdminV2DocumentsService {
   }
 
   async openDownload(resourceId: string) {
-    const resource = await this.prisma.resourceModel.findFirst({
-      where: {
-        id: resourceId,
-        AND: [this.evidenceScopeWhere()],
-      },
-      select: {
-        bucket: true,
-        key: true,
-        originalName: true,
-        mimetype: true,
-      },
+    const resource = await this.documentsQuery.findDownloadResource({
+      id: resourceId,
+      AND: [this.evidenceScopeWhere()],
     });
 
     if (!resource) {
@@ -444,14 +328,7 @@ export class AdminV2DocumentsService {
       key: meta?.idempotencyKey,
       payload: { name },
       execute: async () => {
-        const existing = await this.prisma.documentTagModel.findUnique({
-          where: { name },
-          select: {
-            id: true,
-            name: true,
-            updatedAt: true,
-          },
-        });
+        const existing = await this.documentsQuery.findTagByName(name);
 
         if (existing) {
           return {
@@ -509,14 +386,7 @@ export class AdminV2DocumentsService {
       key: meta?.idempotencyKey,
       payload: { tagId, name, expectedVersion },
       execute: async () => {
-        const tag = await this.prisma.documentTagModel.findUnique({
-          where: { id: tagId },
-          select: {
-            id: true,
-            name: true,
-            updatedAt: true,
-          },
-        });
+        const tag = await this.documentsQuery.findTagById(tagId);
 
         if (!tag) {
           throw new NotFoundException(`Document tag not found`);
@@ -528,10 +398,7 @@ export class AdminV2DocumentsService {
           throw new ConflictException(buildStaleVersionPayload(`Document tag`, tag.updatedAt));
         }
 
-        const duplicate = await this.prisma.documentTagModel.findUnique({
-          where: { name },
-          select: { id: true },
-        });
+        const duplicate = await this.documentsQuery.findTagByName(name);
         if (duplicate && duplicate.id !== tag.id) {
           throw new ConflictException(`Document tag name is already in use`);
         }
@@ -615,14 +482,7 @@ export class AdminV2DocumentsService {
       key: meta?.idempotencyKey,
       payload: { tagId, expectedVersion, confirmed: true },
       execute: async () => {
-        const tag = await this.prisma.documentTagModel.findUnique({
-          where: { id: tagId },
-          select: {
-            id: true,
-            name: true,
-            updatedAt: true,
-          },
-        });
+        const tag = await this.documentsQuery.findTagById(tagId);
 
         if (!tag) {
           throw new NotFoundException(`Document tag not found`);
@@ -697,26 +557,9 @@ export class AdminV2DocumentsService {
       key: meta?.idempotencyKey,
       payload: { resourceId, expectedVersion, tagIds },
       execute: async () => {
-        const resource = await this.prisma.resourceModel.findFirst({
-          where: {
-            id: resourceId,
-            AND: [this.evidenceScopeWhere()],
-          },
-          select: {
-            id: true,
-            updatedAt: true,
-            deletedAt: true,
-            resourceTags: {
-              select: {
-                tag: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-            },
-          },
+        const resource = await this.documentsQuery.findResourceForRetag({
+          id: resourceId,
+          AND: [this.evidenceScopeWhere()],
         });
 
         if (!resource) {
@@ -841,16 +684,9 @@ export class AdminV2DocumentsService {
         }
 
         const resourceIds = resources.map((resource) => resource.resourceId);
-        const documents = await this.prisma.resourceModel.findMany({
-          where: {
-            id: { in: resourceIds },
-            AND: [this.evidenceScopeWhere()],
-          },
-          select: {
-            id: true,
-            updatedAt: true,
-            deletedAt: true,
-          },
+        const documents = await this.documentsQuery.findBulkTagDocuments({
+          id: { in: resourceIds },
+          AND: [this.evidenceScopeWhere()],
         });
 
         if (documents.length !== resourceIds.length) {
@@ -1048,17 +884,7 @@ export class AdminV2DocumentsService {
       return [] as Array<{ id: string; name: string }>;
     }
 
-    const tags = await this.prisma.documentTagModel.findMany({
-      where: {
-        id: {
-          in: tagIds,
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
+    const tags = await this.documentsQuery.loadTagSelection(tagIds);
 
     if (tags.length !== tagIds.length) {
       throw new NotFoundException(`One or more document tags were not found`);
