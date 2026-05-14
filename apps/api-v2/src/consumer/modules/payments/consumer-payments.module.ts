@@ -9,9 +9,10 @@ import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.se
 import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity.repository';
 import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
-import { ConsumerPaymentsPolicyQuery } from './consumer-payments-policy.query';
-import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
+import { ConsumerPaymentsPolicyRepository } from './consumer-payments-policy.repository';
+import { ConsumerPaymentsQueriesRepository } from './consumer-payments-queries.repository';
 import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
+import { ConsumerPaymentsTransactionRunner } from './consumer-payments-transaction.runner';
 import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsController } from './consumer-payments.controller';
 import { ConsumerPaymentsService } from './consumer-payments.service';
@@ -24,11 +25,12 @@ import { FilesModule } from '../files/files.module';
   providers: [
     ConsumerPaymentsIdentityRepository,
     ConsumerPaymentsLedgerRepository,
-    ConsumerPaymentsPolicyQuery,
+    ConsumerPaymentsPolicyRepository,
     ConsumerPaymentRequestRepository,
     ConsumerInvoiceRepository,
     ConsumerPaymentsPoliciesService,
-    ConsumerPaymentsQueriesService,
+    ConsumerPaymentsQueriesRepository,
+    ConsumerPaymentsTransactionRunner,
     ConsumerPaymentsCommandsService,
     ConsumerPaymentsReadService,
     ConsumerPaymentsWriteService,

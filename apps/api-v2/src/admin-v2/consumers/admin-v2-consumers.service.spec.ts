@@ -4,10 +4,10 @@ import { Test } from '@nestjs/testing';
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { normalizeOptionalReason, validateConsumerSuspensionReason } from './admin-v2-consumer-action-policy';
-import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
-import { ConsumerAdminCaseQuery } from './admin-v2-consumer-case.query';
+import { AdminV2ConsumerActivityRepository } from './admin-v2-consumer-activity.repository';
+import { ConsumerAdminCaseRepository } from './admin-v2-consumer-case.repository';
 import { AdminV2ConsumerFlagsRepository } from './admin-v2-consumer-flags.repository';
-import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
+import { AdminV2ConsumerLedgerRepository } from './admin-v2-consumer-ledger.repository';
 import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.repository';
 import { mapConsumerDisplayName, mapPaymentMethodStatus } from './admin-v2-consumer-query-helpers';
 import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
@@ -138,22 +138,22 @@ describe(`admin-v2 consumer pure helpers`, () => {
 describe(`AdminV2ConsumersService`, () => {
   it(`resolves the consumer case query dependency through Nest DI`, async () => {
     const moduleProviders = Reflect.getMetadata(`providers`, AdminV2ConsumersModule) as unknown[] | undefined;
-    expect(moduleProviders).toContain(ConsumerAdminCaseQuery);
+    expect(moduleProviders).toContain(ConsumerAdminCaseRepository);
     expect(moduleProviders).toContain(AdminV2ConsumerRepository);
-    expect(moduleProviders).toContain(AdminV2ConsumerLedgerQuery);
-    expect(moduleProviders).toContain(AdminV2ConsumerActivityQuery);
+    expect(moduleProviders).toContain(AdminV2ConsumerLedgerRepository);
+    expect(moduleProviders).toContain(AdminV2ConsumerActivityRepository);
     expect(moduleProviders).toContain(AdminV2ConsumerNotesRepository);
     expect(moduleProviders).toContain(AdminV2ConsumerFlagsRepository);
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         AdminV2ConsumerRepository,
-        AdminV2ConsumerLedgerQuery,
-        AdminV2ConsumerActivityQuery,
+        AdminV2ConsumerLedgerRepository,
+        AdminV2ConsumerActivityRepository,
         AdminV2ConsumerNotesRepository,
         AdminV2ConsumerFlagsRepository,
         AdminV2ConsumersService,
-        ConsumerAdminCaseQuery,
+        ConsumerAdminCaseRepository,
         { provide: PrismaService, useValue: {} },
         { provide: ConsumerContractsService, useValue: {} },
         { provide: AdminActionAuditService, useValue: {} },
@@ -163,7 +163,7 @@ describe(`AdminV2ConsumersService`, () => {
     }).compile();
 
     expect(moduleRef.get(AdminV2ConsumersService)).toBeInstanceOf(AdminV2ConsumersService);
-    expect(moduleRef.get(ConsumerAdminCaseQuery)).toBeInstanceOf(ConsumerAdminCaseQuery);
+    expect(moduleRef.get(ConsumerAdminCaseRepository)).toBeInstanceOf(ConsumerAdminCaseRepository);
 
     await moduleRef.close();
   });
@@ -302,12 +302,12 @@ describe(`AdminV2ConsumersService`, () => {
       execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
 
-    const consumerLedgerQuery = new AdminV2ConsumerLedgerQuery(prisma as never);
+    const consumerLedgerQuery = new AdminV2ConsumerLedgerRepository(prisma as never);
 
     return {
       service: new AdminV2ConsumersService(
         new AdminV2ConsumerRepository(prisma as never),
-        new AdminV2ConsumerActivityQuery(prisma as never),
+        new AdminV2ConsumerActivityRepository(prisma as never),
         consumerLedgerQuery,
         new AdminV2ConsumerNotesRepository(prisma as never),
         new AdminV2ConsumerFlagsRepository(prisma as never),
@@ -315,7 +315,7 @@ describe(`AdminV2ConsumersService`, () => {
         adminActionAudit as never,
         consumerAuthService as never,
         idempotency as never,
-        new ConsumerAdminCaseQuery(prisma as never, consumerLedgerQuery),
+        new ConsumerAdminCaseRepository(prisma as never, consumerLedgerQuery),
       ),
       prisma,
       adminActionAudit,

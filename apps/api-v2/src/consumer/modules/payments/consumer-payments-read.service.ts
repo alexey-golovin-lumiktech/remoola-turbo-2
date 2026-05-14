@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
-import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
+import { ConsumerPaymentsQueriesRepository } from './consumer-payments-queries.repository';
 import { type PaymentsHistoryQuery } from './dto';
 
 @Injectable()
 export class ConsumerPaymentsReadService {
-  constructor(private readonly queriesService: ConsumerPaymentsQueriesService) {}
+  constructor(private readonly queriesService: ConsumerPaymentsQueriesRepository) {}
 
   async listPayments(params: {
     consumerId: string;

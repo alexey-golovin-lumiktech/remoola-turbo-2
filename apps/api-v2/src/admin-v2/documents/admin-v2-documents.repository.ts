@@ -5,8 +5,12 @@ import { type Prisma } from '@remoola/database-2';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
-export class AdminV2DocumentsQuery {
+export class AdminV2DocumentsRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  runInTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+    return this.prisma.$transaction(callback);
+  }
 
   findMany(where: Prisma.ResourceModelWhereInput, page: number, pageSize: number) {
     return this.prisma.resourceModel.findMany({

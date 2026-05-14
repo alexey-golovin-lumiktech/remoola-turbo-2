@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
-export class AdminV2ConsumerActivityQuery {
+export class AdminV2ConsumerActivityRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findAuthHistory(where: Record<string, unknown>, skip: number, take: number) {

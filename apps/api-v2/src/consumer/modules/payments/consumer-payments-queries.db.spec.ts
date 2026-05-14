@@ -4,13 +4,13 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 
 import { $Enums } from '@remoola/database-2';
 
-import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
+import { ConsumerPaymentsQueriesRepository } from './consumer-payments-queries.repository';
 import { createPrismaTestContext } from '../../../../test/helpers/prisma-test-context';
 
-describe(`ConsumerPaymentsQueriesService DB smoke`, () => {
+describe(`ConsumerPaymentsQueriesRepository DB smoke`, () => {
   const prismaContext = createPrismaTestContext();
   const { prisma } = prismaContext;
-  const service = new ConsumerPaymentsQueriesService(
+  const service = new ConsumerPaymentsQueriesRepository(
     prisma as any,
     {
       calculateMultiCurrency: async () => ({ balances: {} }),

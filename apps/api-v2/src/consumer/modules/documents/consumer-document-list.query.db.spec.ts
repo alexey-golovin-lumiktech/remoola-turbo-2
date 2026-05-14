@@ -4,13 +4,13 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 
 import { $Enums } from '@remoola/database-2';
 
-import { ConsumerDocumentListQuery } from './consumer-document-list.query';
+import { ConsumerDocumentListRepository } from './consumer-document-list.repository';
 import { createPrismaTestContext } from '../../../../test/helpers/prisma-test-context';
 
-describe(`ConsumerDocumentListQuery DB smoke`, () => {
+describe(`ConsumerDocumentListRepository DB smoke`, () => {
   const prismaContext = createPrismaTestContext();
   const { prisma } = prismaContext;
-  const query = new ConsumerDocumentListQuery(prisma as any);
+  const query = new ConsumerDocumentListRepository(prisma as any);
 
   let ownerId = ``;
   let contactAlphaId = ``;

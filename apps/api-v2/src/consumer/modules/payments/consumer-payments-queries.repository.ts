@@ -18,8 +18,10 @@ import { normalizeConsumerFacingTransactionStatus, buildConsumerStatusFilter } f
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
 @Injectable()
-export class ConsumerPaymentsQueriesService {
-  private readonly logger = new Logger(ConsumerPaymentsQueriesService.name);
+// Read-side repository for payment projections and history.
+// Prisma access is intentionally contained here instead of the command/policy services.
+export class ConsumerPaymentsQueriesRepository {
+  private readonly logger = new Logger(ConsumerPaymentsQueriesRepository.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -522,7 +524,7 @@ export class ConsumerPaymentsQueriesService {
 
   async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
     const { direction, status, type, limit = 20, offset = 0 } = query;
-    let items: ReturnType<ConsumerPaymentsQueriesService[`mapHistoryEntry`]>[];
+    let items: ReturnType<ConsumerPaymentsQueriesRepository[`mapHistoryEntry`]>[];
     let total: number;
 
     if (typeof this.prisma.$queryRaw === `function`) {
@@ -707,7 +709,7 @@ export class ConsumerPaymentsQueriesService {
     } else {
       const where: Prisma.LedgerEntryModelWhereInput = { consumerId, deletedAt: null };
       const batchSize = Math.max(offset + limit + 50, 200);
-      const latestEntryByLedgerId = new Map<string, ReturnType<ConsumerPaymentsQueriesService[`mapHistoryEntry`]>>();
+      const latestEntryByLedgerId = new Map<string, ReturnType<ConsumerPaymentsQueriesRepository[`mapHistoryEntry`]>>();
 
       for (let skip = 0; ; skip += batchSize) {
         const rows = await this.prisma.ledgerEntryModel.findMany({

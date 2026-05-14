@@ -6,8 +6,8 @@ import { ConsumerPaymentsCommandsService } from './consumer-payments-commands.se
 import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity.repository';
 import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
-import { ConsumerPaymentsPolicyQuery } from './consumer-payments-policy.query';
-import { ConsumerPaymentsQueriesService } from './consumer-payments-queries.service';
+import { ConsumerPaymentsPolicyRepository } from './consumer-payments-policy.repository';
+import { ConsumerPaymentsQueriesRepository } from './consumer-payments-queries.repository';
 import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
 import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsService as ConsumerPaymentsServiceClass } from './consumer-payments.service';
@@ -16,7 +16,8 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
   private readonly testPoliciesService: ConsumerPaymentsPoliciesService;
 
   constructor(prisma: any, mailingService: any, balanceService: any) {
-    const policiesService = new ConsumerPaymentsPoliciesService(prisma, new ConsumerPaymentsPolicyQuery(prisma));
+    const policiesService = new ConsumerPaymentsPoliciesService(new ConsumerPaymentsPolicyRepository(prisma));
+    const transactionRunner = { run: (callback: any) => prisma.$transaction(callback) };
     const commandPolicies: any = {
       appendConsumerAppScopeMetadata: (...args: any[]) =>
         (policiesService.appendConsumerAppScopeMetadata as any)(...args),
@@ -24,10 +25,10 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
 
     super(
       policiesService,
-      new ConsumerPaymentsReadService(new ConsumerPaymentsQueriesService(prisma, balanceService)),
+      new ConsumerPaymentsReadService(new ConsumerPaymentsQueriesRepository(prisma, balanceService)),
       new ConsumerPaymentsWriteService(
         new ConsumerPaymentsCommandsService(
-          prisma,
+          transactionRunner as any,
           new ConsumerPaymentRequestNotificationService(mailingService),
           balanceService,
           commandPolicies,

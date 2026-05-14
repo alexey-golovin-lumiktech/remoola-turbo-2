@@ -4,7 +4,7 @@ import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerDocumentAccessPolicy } from './consumer-document-access-policy';
-import { ConsumerDocumentListQuery } from './consumer-document-list.query';
+import { ConsumerDocumentListRepository } from './consumer-document-list.repository';
 import { type DocumentListItem } from './consumer-document-mapper';
 import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
 import { ConsumerDocumentRepository } from './consumer-document.repository';
@@ -27,7 +27,7 @@ export class ConsumerDocumentsService {
   constructor(
     private storage: FileStorageService,
     private readonly documentAccessPolicy: ConsumerDocumentAccessPolicy,
-    private readonly documentListQuery: ConsumerDocumentListQuery,
+    private readonly documentListQuery: ConsumerDocumentListRepository,
     private readonly documentRepository: ConsumerDocumentRepository,
   ) {}
 

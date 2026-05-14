@@ -4,20 +4,19 @@ import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { ConsumerPaymentsPolicyQuery } from './consumer-payments-policy.query';
+import {
+  type ConsumerPaymentsPolicyReadClient,
+  ConsumerPaymentsPolicyRepository,
+} from './consumer-payments-policy.repository';
 import { type TransferBody } from './dto';
 import { appendConsumerAppScopeToMetadata } from '../../../shared/payment-link-metadata';
-import { PrismaService } from '../../../shared/prisma.service';
 import { isConsumerProfileCompleteForVerification, isConsumerVerificationEffective } from '../../../shared-common';
 
 @Injectable()
 export class ConsumerPaymentsPoliciesService {
   private static readonly uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly policyQuery: ConsumerPaymentsPolicyQuery,
-  ) {}
+  constructor(private readonly policyQuery: ConsumerPaymentsPolicyRepository) {}
 
   async ensureProfileComplete(consumerId: string) {
     const consumer = await this.policyQuery.findConsumerProfileForVerification(consumerId);
@@ -67,10 +66,7 @@ export class ConsumerPaymentsPoliciesService {
     };
   }
 
-  async getKycLimits(
-    consumerId: string,
-    db: Pick<Prisma.TransactionClient, `consumerModel`> | Pick<PrismaService, `consumerModel`> = this.prisma,
-  ) {
+  async getKycLimits(consumerId: string, db?: Pick<ConsumerPaymentsPolicyReadClient, `consumerModel`>) {
     const consumer = await this.policyQuery.findConsumerVerificationRecord(consumerId, db);
 
     const isVerified = consumer ? isConsumerVerificationEffective(consumer) : false;
@@ -84,7 +80,7 @@ export class ConsumerPaymentsPoliciesService {
   async getTodayOutgoingTotal(
     consumerId: string,
     currencyCode: $Enums.CurrencyCode,
-    db: Pick<Prisma.TransactionClient, `$queryRaw`> | Pick<PrismaService, `$queryRaw`> = this.prisma,
+    db?: Pick<ConsumerPaymentsPolicyReadClient, `$queryRaw`>,
   ) {
     return this.policyQuery.getTodayOutgoingTotal(consumerId, currencyCode, db);
   }
@@ -93,9 +89,7 @@ export class ConsumerPaymentsPoliciesService {
     consumerId: string,
     amount: number,
     currencyCode: $Enums.CurrencyCode,
-    db:
-      | Pick<Prisma.TransactionClient, `consumerModel` | `$queryRaw`>
-      | Pick<PrismaService, `consumerModel` | `$queryRaw`> = this.prisma,
+    db?: ConsumerPaymentsPolicyReadClient,
   ) {
     const { maxPerOperation, dailyLimit } = await this.getKycLimits(consumerId, db);
 

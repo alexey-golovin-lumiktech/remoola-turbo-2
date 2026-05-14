@@ -1,34 +1,25 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
-import { $Enums, Prisma } from '@remoola/database-2';
 
 import {
   normalizeFlag,
   normalizeOptionalReason,
   validateConsumerSuspensionReason,
 } from './admin-v2-consumer-action-policy';
-import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
-import { ConsumerAdminCaseQuery } from './admin-v2-consumer-case.query';
+import { AdminV2ConsumerActivityRepository } from './admin-v2-consumer-activity.repository';
+import { ConsumerAdminCaseRepository } from './admin-v2-consumer-case.repository';
 import { AdminV2ConsumerFlagsRepository } from './admin-v2-consumer-flags.repository';
-import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
+import { AdminV2ConsumerLedgerRepository } from './admin-v2-consumer-ledger.repository';
 import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.repository';
-import {
-  ACCOUNT_TYPES,
-  buildCreatedAtFilter,
-  CONTRACTOR_KINDS,
-  mapConsumerDisplayName,
-  normalizePagination,
-  VERIFICATION_STATUSES,
-} from './admin-v2-consumer-query-helpers';
-import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
+import { buildCreatedAtFilter, mapConsumerDisplayName, normalizePagination } from './admin-v2-consumer-query-helpers';
+import { type AdminV2ConsumerListParams, AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';
 import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
-const SEARCH_MAX_LEN = 200;
 const NOTE_MAX_LEN = 4000;
 const DEFAULT_CONSUMER_ACTION_RANGE_DAYS = 7;
 
@@ -54,15 +45,15 @@ export class AdminV2ConsumersService {
   // and side-effect collaborators without taking a direct Prisma dependency.
   constructor(
     private readonly consumerRepository: AdminV2ConsumerRepository,
-    private readonly consumerActivityQuery: AdminV2ConsumerActivityQuery,
-    private readonly consumerLedgerQuery: AdminV2ConsumerLedgerQuery,
+    private readonly consumerActivityQuery: AdminV2ConsumerActivityRepository,
+    private readonly consumerLedgerQuery: AdminV2ConsumerLedgerRepository,
     private readonly consumerNotesRepository: AdminV2ConsumerNotesRepository,
     private readonly consumerFlagsRepository: AdminV2ConsumerFlagsRepository,
     private readonly consumerContractsService: ConsumerContractsService,
     private readonly adminActionAudit: AdminActionAuditService,
     private readonly consumerAuthService: ConsumerAuthService,
     private readonly idempotency: AdminV2IdempotencyService,
-    private readonly consumerCaseQuery: ConsumerAdminCaseQuery,
+    private readonly consumerCaseQuery: ConsumerAdminCaseRepository,
   ) {}
 
   private async requireConsumer(consumerId: string) {
@@ -73,57 +64,11 @@ export class AdminV2ConsumersService {
     return consumer;
   }
 
-  async listConsumers(params?: {
-    page?: number;
-    pageSize?: number;
-    q?: string;
-    accountType?: string;
-    contractorKind?: string;
-    verificationStatus?: string;
-    includeDeleted?: boolean;
-  }) {
+  async listConsumers(params?: AdminV2ConsumerListParams) {
     const pageSize = Math.min(Math.max(params?.pageSize ?? 20, 1), 100);
     const page = Math.max(params?.page ?? 1, 1);
     const skip = (page - 1) * pageSize;
-    const search =
-      typeof params?.q === `string` && params.q.trim().length > 0
-        ? params.q.trim().slice(0, SEARCH_MAX_LEN)
-        : undefined;
-    const accountType =
-      params?.accountType && ACCOUNT_TYPES.includes(params.accountType)
-        ? (params.accountType as $Enums.AccountType)
-        : undefined;
-    const contractorKind =
-      params?.contractorKind && CONTRACTOR_KINDS.includes(params.contractorKind)
-        ? (params.contractorKind as $Enums.ContractorKind)
-        : undefined;
-    const verificationStatus =
-      params?.verificationStatus && VERIFICATION_STATUSES.includes(params.verificationStatus)
-        ? (params.verificationStatus as $Enums.VerificationStatus)
-        : undefined;
-
-    const where: Prisma.ConsumerModelWhereInput = {
-      ...(params?.includeDeleted === true ? {} : { deletedAt: null }),
-      ...(accountType ? { accountType } : {}),
-      ...(contractorKind ? { contractorKind } : {}),
-      ...(verificationStatus ? { verificationStatus } : {}),
-      ...(search
-        ? {
-            OR: [
-              { id: { equals: search } },
-              { email: { contains: search, mode: `insensitive` } },
-              { personalDetails: { firstName: { contains: search, mode: `insensitive` } } },
-              { personalDetails: { lastName: { contains: search, mode: `insensitive` } } },
-              { organizationDetails: { name: { contains: search, mode: `insensitive` } } },
-            ],
-          }
-        : {}),
-    };
-
-    const [items, total] = await Promise.all([
-      this.consumerRepository.findMany(where, skip, pageSize),
-      this.consumerRepository.count(where),
-    ]);
+    const { items, total } = await this.consumerRepository.list(params, skip, pageSize);
 
     return {
       items: items.map((item) => ({

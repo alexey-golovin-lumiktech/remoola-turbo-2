@@ -6,25 +6,23 @@ import { buildWalletEligibilityCondition } from '../../../shared/balance-calcula
 import { sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 
+export type ConsumerPaymentsPolicyReadClient = Pick<Prisma.TransactionClient, `consumerModel` | `$queryRaw`>;
+
 @Injectable()
-export class ConsumerPaymentsPolicyQuery {
+export class ConsumerPaymentsPolicyRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findConsumerProfileForVerification(
-    consumerId: string,
-    db: Pick<Prisma.TransactionClient, `consumerModel`> | Pick<PrismaService, `consumerModel`> = this.prisma,
-  ) {
-    return db.consumerModel.findUnique({
+  findConsumerProfileForVerification(consumerId: string, db?: Pick<ConsumerPaymentsPolicyReadClient, `consumerModel`>) {
+    const client = db ?? this.prisma;
+    return client.consumerModel.findUnique({
       where: { id: consumerId },
       include: { personalDetails: true },
     });
   }
 
-  findConsumerVerificationRecord(
-    consumerId: string,
-    db: Pick<Prisma.TransactionClient, `consumerModel`> | Pick<PrismaService, `consumerModel`> = this.prisma,
-  ) {
-    return db.consumerModel.findUnique({
+  findConsumerVerificationRecord(consumerId: string, db?: Pick<ConsumerPaymentsPolicyReadClient, `consumerModel`>) {
+    const client = db ?? this.prisma;
+    return client.consumerModel.findUnique({
       where: { id: consumerId },
       select: {
         legalVerified: true,
@@ -36,13 +34,14 @@ export class ConsumerPaymentsPolicyQuery {
   async getTodayOutgoingTotal(
     consumerId: string,
     currencyCode: $Enums.CurrencyCode,
-    db: Pick<Prisma.TransactionClient, `$queryRaw`> | Pick<PrismaService, `$queryRaw`> = this.prisma,
+    db?: Pick<ConsumerPaymentsPolicyReadClient, `$queryRaw`>,
   ) {
+    const client = db ?? this.prisma;
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const walletEligibilityCondition = buildWalletEligibilityCondition();
 
-    const rows = await db.$queryRaw<Array<{ total: string | null }>>(Prisma.sql`
+    const rows = await client.$queryRaw<Array<{ total: string | null }>>(Prisma.sql`
       SELECT COALESCE(SUM(le.amount), 0) AS total
       FROM ledger_entry le
       LEFT JOIN payment_request pr ON pr.id = le.payment_request_id

@@ -1,18 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
+import { AdminV2ConsumerLedgerRepository } from './admin-v2-consumer-ledger.repository';
 import { mapPaymentMethodStatus } from './admin-v2-consumer-query-helpers';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer/consumer-status-compat';
 import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
-// Read-side query-service for consumer case projections only.
+// Read-side repository for consumer case projections only.
 // This class intentionally stays Prisma-backed and read-only.
-export class ConsumerAdminCaseQuery {
+export class ConsumerAdminCaseRepository {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly adminV2ConsumerLedgerQuery: AdminV2ConsumerLedgerQuery,
+    private readonly adminV2ConsumerLedgerQuery: AdminV2ConsumerLedgerRepository,
   ) {}
 
   async getConsumerCase(consumerId: string) {

@@ -2,10 +2,9 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { AdminV2DocumentsQuery } from './admin-v2-documents.query';
+import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 import { FileStorageService } from '../../consumer/modules/files/file-storage.service';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
@@ -96,11 +95,10 @@ function resolveCanonicalConsumer(
 @Injectable()
 export class AdminV2DocumentsService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly storage: FileStorageService,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly assignmentsService: AdminV2AssignmentsService,
-    private readonly documentsQuery: AdminV2DocumentsQuery,
+    private readonly documentsQuery: AdminV2DocumentsRepository,
   ) {}
 
   async listDocuments(params?: {
@@ -340,7 +338,7 @@ export class AdminV2DocumentsService {
           };
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.documentsQuery.runInTransaction(async (tx) => {
           const created = await tx.documentTagModel.create({
             data: { name },
           });
@@ -413,7 +411,7 @@ export class AdminV2DocumentsService {
           };
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.documentsQuery.runInTransaction(async (tx) => {
           const updated = await tx.documentTagModel.updateMany({
             where: {
               id: tag.id,
@@ -494,7 +492,7 @@ export class AdminV2DocumentsService {
           throw new ConflictException(buildStaleVersionPayload(`Document tag`, tag.updatedAt));
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.documentsQuery.runInTransaction(async (tx) => {
           const affectedResourceCount = await tx.resourceTagModel.count({
             where: { tagId: tag.id },
           });
@@ -577,7 +575,7 @@ export class AdminV2DocumentsService {
           throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.documentsQuery.runInTransaction(async (tx) => {
           const touchedAt = new Date();
           const updated = await tx.resourceModel.updateMany({
             where: {
@@ -710,7 +708,7 @@ export class AdminV2DocumentsService {
           }
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.documentsQuery.runInTransaction(async (tx) => {
           const touchedAt = new Date();
 
           for (const resource of resources) {

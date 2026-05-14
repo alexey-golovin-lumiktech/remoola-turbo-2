@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto';
 
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -18,22 +17,18 @@ import { ConsumerPaymentRequestRepository } from './consumer-payment-request.rep
 import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity.repository';
 import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
+import { ConsumerPaymentsTransactionRunner } from './consumer-payments-transaction.runner';
 import { type CreatePaymentRequest, type TransferBody, type WithdrawBody } from './dto';
 import { type StartPayment } from './dto/start-payment.dto';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
-import {
-  acquireTransactionAdvisoryLock,
-  buildConsumerOperationLockName,
-  buildConsumerOutgoingBalanceLockName,
-} from '../../../shared/prisma-advisory-locks';
-import { PrismaService } from '../../../shared/prisma.service';
+import { acquireTransactionAdvisoryLock, buildConsumerOperationLockName } from '../../../shared/prisma-advisory-locks';
 
 @Injectable()
 export class ConsumerPaymentsCommandsService {
   private readonly logger = new Logger(ConsumerPaymentsCommandsService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly transactions: ConsumerPaymentsTransactionRunner,
     private readonly paymentRequestNotification: ConsumerPaymentRequestNotificationService,
     private readonly balanceService: BalanceCalculationService,
     private readonly policiesService: ConsumerPaymentsPoliciesService,
@@ -46,13 +41,6 @@ export class ConsumerPaymentsCommandsService {
     return paymentRail === $Enums.PaymentRail.CARD
       ? $Enums.LedgerEntryType.USER_DEPOSIT
       : $Enums.LedgerEntryType.USER_PAYMENT;
-  }
-
-  private async lockConsumerOutgoing(
-    tx: Pick<Prisma.TransactionClient, `$executeRaw`>,
-    consumerId: string,
-  ): Promise<void> {
-    await acquireTransactionAdvisoryLock(tx, buildConsumerOutgoingBalanceLockName(consumerId));
   }
 
   private async getConsumerEmail(consumerId: string): Promise<string | null> {
@@ -83,69 +71,35 @@ export class ConsumerPaymentsCommandsService {
     const paymentRail =
       body.method === PAYMENT_METHOD.CREDIT_CARD ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const ledgerId = randomUUID();
-
-      const paymentRequest = await tx.paymentRequestModel.create({
-        data: {
-          payerId: consumerId,
-          requesterId: recipient?.id ?? null,
-          requesterEmail: recipient?.email ?? normalizedEmail,
-          currencyCode: paymentCurrency,
-          paymentRail,
-          amount,
-          description: body.description ?? null,
-          status: $Enums.TransactionStatus.PENDING,
-          createdBy: consumerId,
-          updatedBy: consumerId,
-        },
-      });
-
-      await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
-          consumerId,
-          paymentRequestId: paymentRequest.id,
-          type: $Enums.LedgerEntryType.USER_PAYMENT,
-          currencyCode: paymentCurrency,
-          status: $Enums.TransactionStatus.PENDING,
-          amount: -amount,
-          createdBy: consumerId,
-          updatedBy: consumerId,
-          idempotencyKey: `pr:${paymentRequest.id}:payer`,
-          metadata: this.policiesService.appendConsumerAppScopeMetadata(
-            {
-              rail: paymentRail,
-              ...(recipient ? { counterpartyId: recipient.id } : {}),
-            },
-            consumerAppScope,
-          ),
-        },
-      });
-
-      if (recipient) {
-        await tx.ledgerEntryModel.create({
-          data: {
-            ledgerId,
-            consumerId: recipient.id,
-            paymentRequestId: paymentRequest.id,
-            type: this.getRequesterSettlementEntryType(paymentRail),
-            currencyCode: paymentCurrency,
-            status: $Enums.TransactionStatus.PENDING,
-            amount,
-            createdBy: consumerId,
-            updatedBy: consumerId,
-            idempotencyKey: `pr:${paymentRequest.id}:requester`,
-            metadata: this.policiesService.appendConsumerAppScopeMetadata(
-              {
-                rail: paymentRail,
-                counterpartyId: consumerId,
-              },
-              consumerAppScope,
-            ),
+      const paymentRequest = await this.paymentRequestRepository.createPendingStartPayment(tx, {
+        ledgerId,
+        consumerId,
+        normalizedEmail,
+        recipient,
+        paymentCurrency,
+        paymentRail,
+        amount,
+        description: body.description,
+        payerMetadata: this.policiesService.appendConsumerAppScopeMetadata(
+          {
+            rail: paymentRail,
+            ...(recipient ? { counterpartyId: recipient.id } : {}),
           },
-        });
-      } else {
+          consumerAppScope,
+        ),
+        requesterMetadata: this.policiesService.appendConsumerAppScopeMetadata(
+          {
+            rail: paymentRail,
+            counterpartyId: consumerId,
+          },
+          consumerAppScope,
+        ),
+        requesterEntryType: this.getRequesterSettlementEntryType(paymentRail),
+      });
+
+      if (!recipient) {
         this.logger.log({
           event: `start_payment_created_without_registered_recipient`,
           paymentRequestId: paymentRequest.id,
@@ -212,137 +166,13 @@ export class ConsumerPaymentsCommandsService {
   async sendPaymentRequest(consumerId: string, paymentRequestId: string, consumerAppScope?: ConsumerAppScope) {
     await this.policiesService.ensureProfileComplete(consumerId);
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const paymentRequest = await tx.paymentRequestModel.findUnique({
-        where: { id: paymentRequestId },
-        select: {
-          id: true,
-          requesterId: true,
-          requesterEmail: true,
-          payerId: true,
-          payerEmail: true,
-          status: true,
-          amount: true,
-          currencyCode: true,
-          description: true,
-          dueDate: true,
-          payer: { select: { email: true } },
-          requester: { select: { email: true } },
-          _count: { select: { ledgerEntries: true } },
-        },
+    const result = await this.transactions.run(async (tx) => {
+      return this.paymentRequestRepository.sendDraftPaymentRequest(tx, {
+        consumerId,
+        paymentRequestId,
+        ledgerId: randomUUID(),
+        consumerAppScope,
       });
-
-      if (!paymentRequest) {
-        throw new NotFoundException(errorCodes.PAYMENT_REQUEST_NOT_FOUND_SEND_DRAFT);
-      }
-      if (paymentRequest.requesterId !== consumerId) {
-        throw new ForbiddenException(errorCodes.PAYMENT_ACCESS_DENIED_SEND_DRAFT);
-      }
-      if (paymentRequest.status !== $Enums.TransactionStatus.DRAFT) {
-        throw new BadRequestException(errorCodes.ONLY_DRAFT_REQUESTS_CAN_BE_SENT);
-      }
-
-      const amount = Number(paymentRequest.amount);
-      if (!Number.isFinite(amount) || amount <= 0) {
-        throw new BadRequestException(errorCodes.INVALID_AMOUNT_SEND_DRAFT);
-      }
-
-      const transition = await tx.paymentRequestModel.updateMany({
-        where: {
-          id: paymentRequestId,
-          requesterId: consumerId,
-          status: $Enums.TransactionStatus.DRAFT,
-        },
-        data: {
-          status: $Enums.TransactionStatus.PENDING,
-          sentDate: new Date(),
-          updatedBy: consumerId,
-        },
-      });
-
-      if (transition.count === 0) {
-        const current = await tx.paymentRequestModel.findUnique({
-          where: { id: paymentRequestId },
-          select: {
-            id: true,
-            requesterId: true,
-            status: true,
-          },
-        });
-
-        if (!current) {
-          throw new NotFoundException(errorCodes.PAYMENT_REQUEST_NOT_FOUND_SEND_DRAFT);
-        }
-        if (current.requesterId !== consumerId) {
-          throw new ForbiddenException(errorCodes.PAYMENT_ACCESS_DENIED_SEND_DRAFT);
-        }
-        throw new BadRequestException(errorCodes.ONLY_DRAFT_REQUESTS_CAN_BE_SENT);
-      }
-
-      if (!paymentRequest.payerId && paymentRequest._count.ledgerEntries > 0) {
-        throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_EMAIL_PAYMENT_SEND);
-      }
-      if (paymentRequest.payerId && paymentRequest._count.ledgerEntries > 0) {
-        throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_DRAFT);
-      }
-
-      if (paymentRequest._count.ledgerEntries === 0 && paymentRequest.payerId && paymentRequest.requesterId) {
-        const ledgerId = randomUUID();
-        await tx.ledgerEntryModel.create({
-          data: {
-            ledgerId,
-            consumerId: paymentRequest.payerId,
-            paymentRequestId: paymentRequest.id,
-            type: $Enums.LedgerEntryType.USER_PAYMENT,
-            currencyCode: paymentRequest.currencyCode,
-            status: $Enums.TransactionStatus.PENDING,
-            amount: -amount,
-            createdBy: consumerId,
-            updatedBy: consumerId,
-            idempotencyKey: `pr:${paymentRequest.id}:payer`,
-            metadata: this.policiesService.appendConsumerAppScopeMetadata(
-              {
-                counterpartyId: paymentRequest.requesterId,
-              },
-              consumerAppScope,
-            ),
-          },
-        });
-
-        await tx.ledgerEntryModel.create({
-          data: {
-            ledgerId,
-            consumerId: paymentRequest.requesterId,
-            paymentRequestId: paymentRequest.id,
-            type: $Enums.LedgerEntryType.USER_PAYMENT,
-            currencyCode: paymentRequest.currencyCode,
-            status: $Enums.TransactionStatus.PENDING,
-            amount,
-            createdBy: consumerId,
-            updatedBy: consumerId,
-            idempotencyKey: `pr:${paymentRequest.id}:requester`,
-            metadata: this.policiesService.appendConsumerAppScopeMetadata(
-              {
-                counterpartyId: paymentRequest.payerId,
-              },
-              consumerAppScope,
-            ),
-          },
-        });
-      }
-
-      return {
-        paymentRequestId: paymentRequest.id,
-        email: {
-          payerEmail: paymentRequest.payer?.email ?? paymentRequest.payerEmail ?? ``,
-          requesterEmail: paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? ``,
-          amount,
-          currencyCode: paymentRequest.currencyCode,
-          description: paymentRequest.description,
-          dueDate: paymentRequest.dueDate,
-          paymentRequestId: paymentRequest.id,
-        },
-      };
     });
 
     await this.paymentRequestNotification.sendPaymentRequest(result.email, consumerAppScope);
@@ -378,8 +208,8 @@ export class ConsumerPaymentsCommandsService {
     const ledgerId = randomUUID();
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
-        await this.lockConsumerOutgoing(tx, consumerId);
+      return await this.transactions.run(async (tx) => {
+        await this.paymentsLedgerRepository.lockConsumerOutgoing(tx, consumerId);
         await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(consumerId, `withdraw`));
 
         await this.policiesService.ensureLimits(consumerId, amount, withdrawCurrency, tx);
@@ -391,24 +221,14 @@ export class ConsumerPaymentsCommandsService {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
         }
 
-        await tx.ledgerEntryModel.create({
-          data: {
-            ledgerId,
-            consumerId,
-            type: $Enums.LedgerEntryType.USER_PAYOUT,
-            currencyCode: withdrawCurrency,
-            status: $Enums.TransactionStatus.PENDING,
-            amount: -amount,
-            createdBy: consumerId,
-            updatedBy: consumerId,
-            idempotencyKey: `withdraw:${key}`,
-            metadata: {
-              rail: $Enums.PaymentRail.BANK_TRANSFER,
-              requesterId: consumerId,
-              ...(body.paymentMethodId?.trim() ? { paymentMethodId: body.paymentMethodId.trim() } : {}),
-              ...(body.note?.trim() ? { note: body.note.trim() } : {}),
-            },
-          },
+        await this.paymentsLedgerRepository.createWithdrawLedgerEntry(tx, {
+          ledgerId,
+          consumerId,
+          currencyCode: withdrawCurrency,
+          amount,
+          idempotencyKey: key,
+          paymentMethodId: body.paymentMethodId,
+          note: body.note,
         });
 
         return { ledgerId };
@@ -452,8 +272,8 @@ export class ConsumerPaymentsCommandsService {
     const [firstId, secondId] = [consumerId, recipient.id].sort();
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
-        await this.lockConsumerOutgoing(tx, consumerId);
+      return await this.transactions.run(async (tx) => {
+        await this.paymentsLedgerRepository.lockConsumerOutgoing(tx, consumerId);
         await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(firstId, `transfer`));
         await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(secondId, `transfer`));
 
@@ -466,42 +286,13 @@ export class ConsumerPaymentsCommandsService {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_TRANSFER);
         }
 
-        await tx.ledgerEntryModel.create({
-          data: {
-            ledgerId,
-            consumerId,
-            type: $Enums.LedgerEntryType.USER_PAYMENT,
-            currencyCode: transferCurrency,
-            status: $Enums.TransactionStatus.COMPLETED,
-            amount: -amount,
-            createdBy: consumerId,
-            updatedBy: consumerId,
-            idempotencyKey: `transfer:${key}:sender`,
-            metadata: {
-              rail: $Enums.PaymentRail.BANK_TRANSFER,
-              senderId: consumerId,
-              recipientId: recipient.id,
-            },
-          },
-        });
-
-        await tx.ledgerEntryModel.create({
-          data: {
-            ledgerId,
-            consumerId: recipient.id,
-            type: $Enums.LedgerEntryType.USER_PAYMENT,
-            currencyCode: transferCurrency,
-            status: $Enums.TransactionStatus.COMPLETED,
-            amount,
-            createdBy: consumerId,
-            updatedBy: consumerId,
-            idempotencyKey: `transfer:${key}:recipient`,
-            metadata: {
-              rail: $Enums.PaymentRail.BANK_TRANSFER,
-              senderId: consumerId,
-              recipientId: recipient.id,
-            },
-          },
+        await this.paymentsLedgerRepository.createTransferLedgerEntries(tx, {
+          ledgerId,
+          consumerId,
+          recipientId: recipient.id,
+          currencyCode: transferCurrency,
+          amount,
+          idempotencyKey: key,
         });
 
         return { ledgerId };

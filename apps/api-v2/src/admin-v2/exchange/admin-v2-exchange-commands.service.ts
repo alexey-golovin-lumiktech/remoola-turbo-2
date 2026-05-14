@@ -7,7 +7,6 @@ import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { envs } from '../../envs';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../shared-common';
 import { type AdminV2DomainEvent, AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
@@ -17,6 +16,7 @@ import {
   type LockedScheduledExecutionRow as LockedScheduledRow,
 } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
+import { AdminV2ExchangeTransactionRunner } from './admin-v2-exchange-transaction.runner';
 
 type RequestMeta = {
   ipAddress?: string | null;
@@ -83,7 +83,7 @@ function adminIdOrConsumer(consumerId: string, adminId: string | null | undefine
 @Injectable()
 export class AdminV2ExchangeCommandsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly transactions: AdminV2ExchangeTransactionRunner,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly balanceService: BalanceCalculationService,
     private readonly domainEvents: AdminV2DomainEventsService,
@@ -132,7 +132,7 @@ export class AdminV2ExchangeCommandsService {
           throw new ConflictException(buildStaleVersionPayload(`Exchange rate`, rate.updatedAt));
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.transactions.run(async (tx) => {
           return this.persistenceRepository.approveDraftRate(tx, {
             rateId,
             expectedVersion,
@@ -170,7 +170,7 @@ export class AdminV2ExchangeCommandsService {
           throw new ConflictException(buildStaleVersionPayload(`Exchange rule`, rule.updatedAt));
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.transactions.run(async (tx) => {
           return this.persistenceRepository.setRuleEnabled(tx, {
             ruleId,
             expectedVersion,
@@ -208,7 +208,7 @@ export class AdminV2ExchangeCommandsService {
           throw new ConflictException(buildStaleVersionPayload(`Exchange rule`, rule.updatedAt));
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.transactions.run(async (tx) => {
           return this.persistenceRepository.setRuleEnabled(tx, {
             ruleId,
             expectedVersion,
@@ -247,7 +247,7 @@ export class AdminV2ExchangeCommandsService {
           throw new ConflictException(buildStaleVersionPayload(`Exchange rule`, preflight.updatedAt));
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.transactions.run(async (tx) => {
           const locked = await this.persistenceRepository.lockRuleExecutionRow(tx, ruleId);
           if (!locked || locked.deleted_at) {
             throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
@@ -325,7 +325,7 @@ export class AdminV2ExchangeCommandsService {
           throw new ConflictException(buildStaleVersionPayload(`Scheduled FX conversion`, preflight.updatedAt));
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.transactions.run(async (tx) => {
           const locked = await this.persistenceRepository.lockScheduledExecutionRow(tx, conversionId);
           if (!locked || locked.deleted_at) {
             throw new NotFoundException(adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND);
@@ -427,7 +427,7 @@ export class AdminV2ExchangeCommandsService {
           throw new ConflictException(buildStaleVersionPayload(`Scheduled FX conversion`, preflight.updatedAt));
         }
 
-        return this.prisma.$transaction(async (tx) => {
+        return this.transactions.run(async (tx) => {
           return this.persistenceRepository.cancelScheduledConversion(tx, {
             conversionId,
             expectedVersion,

@@ -5,7 +5,7 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerDocumentAccessPolicy } from './consumer-document-access-policy';
 import { detectConsumerDocumentKind } from './consumer-document-kind.util';
-import { ConsumerDocumentListQuery } from './consumer-document-list.query';
+import { ConsumerDocumentListRepository } from './consumer-document-list.repository';
 import { formatConsumerDocumentRows } from './consumer-document-mapper';
 import { buildConsumerDocumentPaymentParticipantWhere } from './consumer-document-query-helpers';
 import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
@@ -17,7 +17,7 @@ function createConsumerDocumentsService(prisma: any, storage: any = {}): Consume
   return new ConsumerDocumentsService(
     storage,
     new ConsumerDocumentAccessPolicy(documentRepository),
-    new ConsumerDocumentListQuery(prisma),
+    new ConsumerDocumentListRepository(prisma),
     documentRepository,
   );
 }

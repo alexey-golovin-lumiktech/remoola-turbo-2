@@ -5,7 +5,7 @@ import { type Prisma } from '@remoola/database-2';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
-export class AdminV2PayoutsQuery {
+export class AdminV2PayoutsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   listPayoutRows(where: Prisma.LedgerEntryModelWhereInput, take: number) {

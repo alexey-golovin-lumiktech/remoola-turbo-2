@@ -23,7 +23,7 @@ type DocumentListResult = {
 };
 
 @Injectable()
-export class ConsumerDocumentListQuery {
+export class ConsumerDocumentListRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   private async getConsumerEmail(consumerId: string): Promise<string | null> {
