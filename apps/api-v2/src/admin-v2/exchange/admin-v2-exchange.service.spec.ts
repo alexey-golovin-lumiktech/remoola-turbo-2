@@ -6,6 +6,7 @@ import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.ser
 import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { AdminV2ExchangeQueriesService } from './admin-v2-exchange-queries.service';
+import { AdminV2ExchangeTransactionRunner } from './admin-v2-exchange-transaction.runner';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
 
 describe(`AdminV2ExchangeService`, () => {
@@ -79,7 +80,7 @@ describe(`AdminV2ExchangeService`, () => {
     return {
       service: new AdminV2ExchangeService(
         new AdminV2ExchangeCommandsService(
-          prisma,
+          new AdminV2ExchangeTransactionRunner(prisma),
           idempotency,
           balanceService,
           domainEvents,
