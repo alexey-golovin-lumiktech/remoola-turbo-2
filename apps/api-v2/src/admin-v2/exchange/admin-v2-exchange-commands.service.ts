@@ -6,13 +6,16 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { envs } from '../../envs';
-import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../shared-common';
 import { type AdminV2DomainEvent, AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
+import {
+  AdminV2ExchangePersistenceRepository,
+  type LockedRuleExecutionRow as LockedRuleRow,
+  type LockedScheduledExecutionRow as LockedScheduledRow,
+} from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 
 type RequestMeta = {
@@ -34,45 +37,6 @@ type RuleExecutionSummary = {
   source: string;
   actorId?: string | null;
 };
-
-type LockedRuleRow = {
-  id: string;
-  consumer_id: string;
-  from_currency: $Enums.CurrencyCode;
-  to_currency: $Enums.CurrencyCode;
-  target_balance: Prisma.Decimal;
-  max_convert_amount: Prisma.Decimal | null;
-  min_interval_minutes: number;
-  next_run_at: Date | null;
-  last_run_at: Date | null;
-  enabled: boolean;
-  metadata: Prisma.JsonValue | null;
-  updated_at: Date;
-  deleted_at: Date | null;
-};
-
-type LockedScheduledRow = {
-  id: string;
-  consumer_id: string;
-  from_currency: $Enums.CurrencyCode;
-  to_currency: $Enums.CurrencyCode;
-  amount: Prisma.Decimal;
-  status: $Enums.ScheduledFxConversionStatus;
-  execute_at: Date;
-  processing_at: Date | null;
-  executed_at: Date | null;
-  failed_at: Date | null;
-  attempts: number;
-  last_error: string | null;
-  ledger_id: string | null;
-  metadata: Prisma.JsonValue | null;
-  updated_at: Date;
-  deleted_at: Date | null;
-};
-
-function toNullableIso(value: Date | null | undefined) {
-  return value?.toISOString() ?? null;
-}
 
 function asRecord(value: Prisma.JsonValue | Record<string, unknown> | null | undefined): Record<string, unknown> {
   return value && typeof value === `object` && !Array.isArray(value) ? { ...value } : {};
@@ -110,13 +74,6 @@ function parseUuidOrThrow(raw: string | null | undefined, headerName: string) {
 
 function getRateReferenceAt(rate: { fetchedAt?: Date | null; effectiveAt: Date; createdAt: Date }) {
   return rate.fetchedAt ?? rate.effectiveAt ?? rate.createdAt;
-}
-
-function mergeMetadata(base: Prisma.JsonValue | null | undefined, patch: Record<string, unknown>) {
-  return {
-    ...asRecord(base),
-    ...patch,
-  } as Prisma.InputJsonValue;
 }
 
 function adminIdOrConsumer(consumerId: string, adminId: string | null | undefined) {
@@ -291,14 +248,14 @@ export class AdminV2ExchangeCommandsService {
         }
 
         return this.prisma.$transaction(async (tx) => {
-          const locked = await this.lockRuleRow(tx, ruleId);
+          const locked = await this.persistenceRepository.lockRuleExecutionRow(tx, ruleId);
           if (!locked || locked.deleted_at) {
             throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
           }
           if (deriveVersion(locked.updated_at) !== expectedVersion) {
             throw new ConflictException(buildStaleVersionPayload(`Exchange rule`, locked.updated_at));
           }
-          if (!(await this.tryActionLock(tx, `exchange_rule_run_now:${ruleId}`))) {
+          if (!(await this.persistenceRepository.tryActionLock(tx, `exchange_rule_run_now:${ruleId}`))) {
             throw new ConflictException(errorCodes.CONVERSION_ALREADY_PROCESSING);
           }
 
@@ -310,40 +267,18 @@ export class AdminV2ExchangeCommandsService {
             now,
           });
 
-          const updatedRule = await tx.walletAutoConversionRuleModel.update({
-            where: { id: locked.id },
-            data: {
-              lastRunAt: now,
-              nextRunAt: new Date(now.getTime() + locked.min_interval_minutes * 60 * 1000),
-              metadata: mergeMetadata(locked.metadata, {
-                lastExecution: execution.summary,
-              }),
-            },
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_rule_run_now,
-              resource: `exchange_rule`,
-              resourceId: locked.id,
-              metadata: {
-                expectedVersion,
-                status: execution.summary.status,
-                reason: execution.summary.reason,
-                ledgerId: execution.summary.ledgerId ?? null,
-                idempotencyKey,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
+          const finalized = await this.persistenceRepository.finalizeRuleExecution(tx, {
+            locked,
+            summary: execution.summary,
+            expectedVersion,
+            adminId,
+            idempotencyKey,
+            meta,
+            now,
           });
 
           return {
-            ruleId: locked.id,
-            version: deriveVersion(updatedRule.updatedAt),
-            nextRunAt: toNullableIso(updatedRule.nextRunAt),
-            lastRunAt: toNullableIso(updatedRule.lastRunAt),
+            ...finalized,
             ...execution,
           };
         });
@@ -391,7 +326,7 @@ export class AdminV2ExchangeCommandsService {
         }
 
         return this.prisma.$transaction(async (tx) => {
-          const locked = await this.lockScheduledRow(tx, conversionId);
+          const locked = await this.persistenceRepository.lockScheduledExecutionRow(tx, conversionId);
           if (!locked || locked.deleted_at) {
             throw new NotFoundException(adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND);
           }
@@ -407,7 +342,9 @@ export class AdminV2ExchangeCommandsService {
             }
             throw new ConflictException(errorCodes.CONVERSION_ALREADY_PROCESSING);
           }
-          if (!(await this.tryActionLock(tx, `exchange_scheduled_force_execute:${conversionId}`))) {
+          if (
+            !(await this.persistenceRepository.tryActionLock(tx, `exchange_scheduled_force_execute:${conversionId}`))
+          ) {
             throw new ConflictException(errorCodes.CONVERSION_ALREADY_PROCESSING);
           }
 
@@ -418,47 +355,18 @@ export class AdminV2ExchangeCommandsService {
             now,
           });
 
-          const updated = await tx.scheduledFxConversionModel.update({
-            where: { id: locked.id },
-            data: {
-              status:
-                execution.summary.status === `executed`
-                  ? $Enums.ScheduledFxConversionStatus.EXECUTED
-                  : $Enums.ScheduledFxConversionStatus.FAILED,
-              processingAt: now,
-              executedAt: execution.summary.status === `executed` ? now : null,
-              failedAt: execution.summary.status === `failed` ? now : null,
-              attempts: { increment: 1 },
-              ledgerId: execution.summary.ledgerId ?? null,
-              lastError: execution.summary.status === `failed` ? execution.summary.reason : null,
-            },
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_scheduled_force_execute,
-              resource: `scheduled_fx_conversion`,
-              resourceId: locked.id,
-              metadata: {
-                confirmed: true,
-                expectedVersion,
-                status: execution.summary.status,
-                reason: execution.summary.reason,
-                amount: locked.amount.toString(),
-                sourceCurrency: locked.from_currency,
-                targetCurrency: locked.to_currency,
-                ledgerId: execution.summary.ledgerId ?? null,
-                idempotencyKey,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
+          const finalized = await this.persistenceRepository.finalizeScheduledExecution(tx, {
+            locked,
+            summary: execution.summary,
+            expectedVersion,
+            adminId,
+            idempotencyKey,
+            meta,
+            now,
           });
 
           return {
-            conversionId: locked.id,
-            version: deriveVersion(updated.updatedAt),
+            ...finalized,
             ...execution,
           };
         });
@@ -734,11 +642,14 @@ export class AdminV2ExchangeCommandsService {
       throw new BadRequestException(errorCodes.INVALID_AMOUNT_CONVERT);
     }
 
-    await tx.$executeRaw(Prisma.sql`
-      SELECT pg_advisory_xact_lock(hashtext((${params.consumerId} || ':exchange')::text)::bigint)
-    `);
+    await this.persistenceRepository.acquireConversionAdvisoryLock(tx, params.consumerId);
 
-    const rateRow = await this.findApprovedRateForConversion(tx, params.fromCurrency, params.toCurrency, params.now);
+    const rateRow = await this.persistenceRepository.findApprovedRateForConversion(
+      tx,
+      params.fromCurrency,
+      params.toCurrency,
+      params.now,
+    );
     if (!rateRow) {
       throw new NotFoundException(errorCodes.RATE_NOT_AVAILABLE);
     }
@@ -767,40 +678,23 @@ export class AdminV2ExchangeCommandsService {
       rateId: rateRow.id,
       ...params.metadata,
     };
-
-    await tx.ledgerEntryModel.create({
-      data: {
-        ledgerId,
-        consumerId: params.consumerId,
-        type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-        currencyCode: params.fromCurrency,
-        status: $Enums.TransactionStatus.COMPLETED,
-        amount: -params.amount,
-        createdBy: params.createdBy,
-        updatedBy: params.updatedBy,
-        idempotencyKey: sourceKey,
-        metadata,
-      },
-    });
-
-    const income = await tx.ledgerEntryModel.create({
-      data: {
-        ledgerId,
-        consumerId: params.consumerId,
-        type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-        currencyCode: params.toCurrency,
-        status: $Enums.TransactionStatus.COMPLETED,
-        amount: converted,
-        createdBy: params.createdBy,
-        updatedBy: params.updatedBy,
-        idempotencyKey: targetKey,
-        metadata,
-      },
+    const { entryId } = await this.persistenceRepository.createConversionLedgerEntries(tx, {
+      ledgerId,
+      consumerId: params.consumerId,
+      fromCurrency: params.fromCurrency,
+      toCurrency: params.toCurrency,
+      sourceAmount: params.amount,
+      targetAmount: converted,
+      createdBy: params.createdBy,
+      updatedBy: params.updatedBy,
+      sourceIdempotencyKey: sourceKey,
+      targetIdempotencyKey: targetKey,
+      metadata,
     });
 
     return {
       ledgerId,
-      entryId: income.id,
+      entryId,
       targetAmount: converted,
     };
   }
@@ -825,85 +719,10 @@ export class AdminV2ExchangeCommandsService {
     return error instanceof Error ? error.message : `Unknown error`;
   }
 
-  private async findApprovedRateForConversion(
-    tx: Prisma.TransactionClient,
-    fromCurrency: $Enums.CurrencyCode,
-    toCurrency: $Enums.CurrencyCode,
-    now: Date,
-  ) {
-    return tx.exchangeRateModel.findFirst({
-      where: {
-        fromCurrency,
-        toCurrency,
-        status: $Enums.ExchangeRateStatus.APPROVED,
-        deletedAt: null,
-        effectiveAt: { lte: now },
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-      },
-      orderBy: [{ effectiveAt: `desc` }, { createdAt: `desc` }, { id: `desc` }],
-    });
-  }
-
   private async lockedBalance(tx: Prisma.TransactionClient, consumerId: string, currency: $Enums.CurrencyCode) {
     return this.balanceService.calculateInTransaction(tx, consumerId, currency, {
       mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
     });
-  }
-
-  private async tryActionLock(tx: Prisma.TransactionClient, lockKey: string) {
-    const rows = await tx.$queryRaw<Array<{ locked: boolean }>>(Prisma.sql`
-      SELECT pg_try_advisory_xact_lock(hashtext(${lockKey}::text)::bigint) AS locked
-    `);
-    return Boolean(rows[0]?.locked);
-  }
-
-  private async lockRuleRow(tx: Prisma.TransactionClient, ruleId: string) {
-    const rows = await tx.$queryRaw<LockedRuleRow[]>(Prisma.sql`
-      SELECT
-        rule."id",
-        rule."consumer_id",
-        rule."from_currency",
-        rule."to_currency",
-        rule."target_balance",
-        rule."max_convert_amount",
-        rule."min_interval_minutes",
-        rule."next_run_at",
-        rule."last_run_at",
-        rule."enabled",
-        rule."metadata",
-        rule."updated_at",
-        rule."deleted_at"
-      FROM "wallet_auto_conversion_rule" AS rule
-      WHERE rule."id" = ${ruleId}
-      FOR UPDATE
-    `);
-    return rows[0] ?? null;
-  }
-
-  private async lockScheduledRow(tx: Prisma.TransactionClient, conversionId: string) {
-    const rows = await tx.$queryRaw<LockedScheduledRow[]>(Prisma.sql`
-      SELECT
-        conversion."id",
-        conversion."consumer_id",
-        conversion."from_currency",
-        conversion."to_currency",
-        conversion."amount",
-        conversion."status",
-        conversion."execute_at",
-        conversion."processing_at",
-        conversion."executed_at",
-        conversion."failed_at",
-        conversion."attempts",
-        conversion."last_error",
-        conversion."ledger_id",
-        conversion."metadata",
-        conversion."updated_at",
-        conversion."deleted_at"
-      FROM "scheduled_fx_conversion" AS conversion
-      WHERE conversion."id" = ${conversionId}
-      FOR UPDATE
-    `);
-    return rows[0] ?? null;
   }
 
   private isScheduledForceExecutable(status: $Enums.ScheduledFxConversionStatus) {
