@@ -1,58 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { $Enums } from '@remoola/database-2';
-
+import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
 import { mapPaymentMethodStatus } from './admin-v2-consumer-query-helpers';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer/consumer-status-compat';
 import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
+// Read-side query-service for consumer case projections only.
+// This class intentionally stays Prisma-backed and read-only.
 export class ConsumerAdminCaseQuery {
-  constructor(private readonly prisma: PrismaService) {}
-
-  private async getConsumerLedgerSummary(consumerId: string) {
-    const rows = await this.prisma.ledgerEntryModel.groupBy({
-      by: [`currencyCode`, `status`],
-      where: {
-        consumerId,
-        deletedAt: null,
-      },
-      _sum: {
-        amount: true,
-      },
-      _count: {
-        _all: true,
-      },
-    });
-
-    const summary = rows.reduce<
-      Record<string, { completedAmount: string; pendingAmount: string; completedCount: number; pendingCount: number }>
-    >((acc, row) => {
-      const key = row.currencyCode;
-      const bucket = acc[key] ?? {
-        completedAmount: `0`,
-        pendingAmount: `0`,
-        completedCount: 0,
-        pendingCount: 0,
-      };
-      const amount = row._sum.amount?.toString() ?? `0`;
-      if (row.status === $Enums.TransactionStatus.COMPLETED) {
-        bucket.completedAmount = (Number(bucket.completedAmount) + Number(amount)).toFixed(2);
-        bucket.completedCount += row._count._all;
-      } else {
-        bucket.pendingAmount = (Number(bucket.pendingAmount) + Number(amount)).toFixed(2);
-        bucket.pendingCount += row._count._all;
-      }
-      acc[key] = bucket;
-      return acc;
-    }, {});
-
-    return {
-      consumerId,
-      summary,
-    };
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly adminV2ConsumerLedgerQuery: AdminV2ConsumerLedgerQuery,
+  ) {}
 
   async getConsumerCase(consumerId: string) {
     const consumer = await this.prisma.consumerModel.findUnique({
@@ -248,7 +209,7 @@ export class ConsumerAdminCaseQuery {
         orderBy: { createdAt: `desc` },
         take: 10,
       }),
-      this.getConsumerLedgerSummary(consumerId),
+      this.adminV2ConsumerLedgerQuery.getLedgerSummary(consumerId),
     ]);
 
     const recentPaymentRequests = [...consumer.asPayerPaymentRequests, ...consumer.asRequesterPaymentRequests]

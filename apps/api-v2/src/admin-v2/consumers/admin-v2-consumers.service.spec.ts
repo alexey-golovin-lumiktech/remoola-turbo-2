@@ -302,18 +302,20 @@ describe(`AdminV2ConsumersService`, () => {
       execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
 
+    const consumerLedgerQuery = new AdminV2ConsumerLedgerQuery(prisma as never);
+
     return {
       service: new AdminV2ConsumersService(
         new AdminV2ConsumerRepository(prisma as never),
         new AdminV2ConsumerActivityQuery(prisma as never),
-        new AdminV2ConsumerLedgerQuery(prisma as never),
+        consumerLedgerQuery,
         new AdminV2ConsumerNotesRepository(prisma as never),
         new AdminV2ConsumerFlagsRepository(prisma as never),
         consumerContractsService as never,
         adminActionAudit as never,
         consumerAuthService as never,
         idempotency as never,
-        new ConsumerAdminCaseQuery(prisma as never),
+        new ConsumerAdminCaseQuery(prisma as never, consumerLedgerQuery),
       ),
       prisma,
       adminActionAudit,

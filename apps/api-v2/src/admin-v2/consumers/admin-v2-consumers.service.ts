@@ -50,6 +50,8 @@ type ResendConsumerEmailBody = {
 
 @Injectable()
 export class AdminV2ConsumersService {
+  // This service owns orchestration only: it coordinates repositories, read-side queries,
+  // and side-effect collaborators without taking a direct Prisma dependency.
   constructor(
     private readonly consumerRepository: AdminV2ConsumerRepository,
     private readonly consumerActivityQuery: AdminV2ConsumerActivityQuery,
