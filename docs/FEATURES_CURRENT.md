@@ -17,7 +17,7 @@ List of features and repository workflows that are implemented and present in th
 - Root database workflow is driven through `packages/database-2` with `yarn db:generate`, `yarn db:validate`, `yarn db:migrate`, `yarn db:deploy`, and `yarn db:studio`.
 - `turbo.json` wires `db:generate` into the monorepo lifecycle, so root `dev` and `build` depend on Prisma generation.
 - Root tests are intentionally local-only via `scripts/ensure-local-development.js`. Local e2e/test DB flows rely on `@remoola/test-db` and Testcontainers, so Docker is part of the expected development setup.
-- `.husky/pre-commit` skips lint/tests for docs-only changes; for code changes it runs staged lint, typecheck, and test helpers. Fast e2e fallback is handled in `.husky/pre-push` via `apps/api-v2`.
+- `.husky/pre-commit` runs staged Prettier/lint/typecheck/test helpers. `.husky/pre-push` runs affected-workspace lint and fast e2e checks, with a root-lint plus `@remoola/api-v2` fast-e2e fallback for repo-wide tooling changes.
 
 ## Implemented and Working Now
 
@@ -211,7 +211,7 @@ Shared packages present in repo:
 Infrastructure and testing:
 
 - Root `yarn test`, `yarn test:e2e`, and `yarn test:e2e:fast` are gated by `scripts/ensure-local-development.js`: they run only in local development and are blocked in CI and on Vercel to avoid accidental production/CI DB usage.
-- Root pre-commit checks build `@remoola/test-db`, run maintained unit tests, and `apps/api-v2` fast e2e after linting.
+- Root pre-commit checks staged formatting/lint/typecheck/test coverage. Pre-push runs affected-workspace lint and fast e2e checks, falling back to root lint plus `@remoola/api-v2` fast e2e for repo-wide tooling changes.
 - Local e2e/test DB flows rely on Testcontainers through `@remoola/test-db`, so Docker availability is an expected prerequisite.
 - Fintech safety and DB compliance are documented in `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`; schema design rules in `docs/postgresql-design-rules.md`.
 

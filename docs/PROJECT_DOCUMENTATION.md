@@ -21,7 +21,7 @@ Root workflow highlights:
 - There is no root `.env.example`; setup is driven by `packages/database-2/.env.example` plus the per-app `apps/*/.env.example` files you actually need.
 - Root `yarn test`, `yarn test:e2e`, and `yarn test:e2e:fast` are local-only entrypoints guarded by `scripts/ensure-local-development.js`.
 - Local test/e2e flows rely on `@remoola/test-db` and Testcontainers, so Docker is an expected prerequisite.
-- `.husky/pre-commit` skips docs-only changes and otherwise runs lint, builds `@remoola/test-db`, then runs maintained unit tests plus `apps/api-v2` fast e2e coverage.
+- `.husky/pre-commit` runs staged Prettier/lint/typecheck/test helpers. `.husky/pre-push` runs affected-workspace lint and fast e2e checks, with a full-root fallback for repo-wide tooling changes.
 
 ## API (NestJS) - Implemented Features
 
@@ -218,7 +218,7 @@ Common infrastructure in `apps/api-v2/src/shared` and `apps/api-v2/src/shared-co
   explicitly provided; invalid values are ignored and the template falls back to
   env-derived/default links.
 - JWT auth guard and interceptors.
-- Shared auth cookie policy (cookie names and options from `@remoola/api-types`; __Host- prefix in production); consumer auth backed by `auth_sessions` table (hashed refresh, rotation lineage, revocation).
+- Shared auth cookie policy (cookie names and options from `@remoola/api-types`; \_\_Host- prefix in production); consumer auth backed by `auth_sessions` table (hashed refresh, rotation lineage, revocation).
 - Auth audit (login success/failure tracking) and account lockout (per-email after N failures).
 - Error filtering and logging.
 - Common DTOs used across admin and consumer APIs.
@@ -258,12 +258,13 @@ Internal admin-v2 server routes:
 ## Consumer CSS Grid App (Next.js)
 
 `apps/consumer-css-grid` is the only supported consumer frontend in this repository. Legacy consumer apps no longer participate in the maintained release surface.
-  - Financial: Bank, CreditCard, CurrencyDollar, Exchange, TrendingUp
-  - Documents & Files: Clipboard, ClipboardCopy, ClipboardList, Document, Download, Paperclip, Upload
-  - Communication: Bell, Mail, Phone
-  - User & Settings: Lock, Logout, Settings, User, Users
-  - Status & Feedback: AlertTriangle, Check, CheckCircle, ExclamationCircle, InformationCircle, Spinner, XCircle
-  - UI Controls: Calendar, Clock, DotsVertical, Eye, EyeOff, Filter, Lightning, Pencil, SwitchHorizontal, Tag, Trash
+
+- Financial: Bank, CreditCard, CurrencyDollar, Exchange, TrendingUp
+- Documents & Files: Clipboard, ClipboardCopy, ClipboardList, Document, Download, Paperclip, Upload
+- Communication: Bell, Mail, Phone
+- User & Settings: Lock, Logout, Settings, User, Users
+- Status & Feedback: AlertTriangle, Check, CheckCircle, ExclamationCircle, InformationCircle, Spinner, XCircle
+- UI Controls: Calendar, Clock, DotsVertical, Eye, EyeOff, Filter, Lightning, Pencil, SwitchHorizontal, Tag, Trash
 - **IconBadge**: Gradient-styled icon container with variants (primary, success, info, warning, danger, secondary), sizes (sm, md, lg), optional ring effects, and interactive hover animations
 - **PageHeader**: Mobile-optimized page header component with icon, title, subtitle, badge, and actions slots; supports sticky positioning with backdrop blur
 - **SearchInput**: Search input component with magnifying glass icon, clear button (when value present), and mobile-friendly 44px minimum touch target

@@ -26,7 +26,7 @@ Remoola is a Turborepo monorepo for the Remoola payments and FX platform. The cu
 
 ## Prerequisites
 
-- Node.js `>= 18`
+- Node.js `>= 22.x`
 - Yarn `1.22.22`
 - PostgreSQL for local development
 - Docker for local test/e2e flows that use `@remoola/test-db` and Testcontainers
@@ -106,7 +106,7 @@ yarn db:studio
 
 - Root `yarn dev` runs all workspace `dev` tasks in parallel and depends on `db:generate` through `turbo.json`.
 - Root `yarn build` generates the Prisma client first, then runs the Turborepo build pipeline.
-- `.husky/pre-commit` skips lint/tests for docs-only commits. For code changes it runs staged lint/typecheck/test helpers; fast e2e fallback now targets `apps/api-v2`.
+- `.husky/pre-commit` runs staged Prettier/lint/typecheck/test helpers. `.husky/pre-push` runs affected-workspace lint and fast e2e checks, falling back to root lint plus `@remoola/api-v2` fast e2e for repo-wide tooling changes.
 - `build:vercel-guard` covers the maintained Vercel release surface: `@remoola/api-v2`, `@remoola/consumer-css-grid`, and `@remoola/admin-v2`.
 - Use `yarn verify:v2-apps` as the dedicated pre-PR / pre-production gate for the maintained `api-v2` + `consumer-css-grid` + `admin-v2` surface.
 

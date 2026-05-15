@@ -6,13 +6,13 @@ Remoola is a payments and FX platform delivered as a Turborepo monorepo. The mai
 
 ## Repo at a glance
 
-| Layer | Path | Role |
-|------|------|------|
-| Backend | `apps/api-v2` | NestJS REST API authority for `consumer-css-grid` and current auth-sensitive cutovers |
-| Admin UI | `apps/admin-v2` | Next.js dashboard for operators on port `3011` |
-| Consumer CSS Grid | `apps/consumer-css-grid` | Next.js css-grid consumer shell on port `3003` |
-| Database | `packages/database-2` | Prisma schema, migrations, generated client |
-| Shared packages | `packages/api-types`, `packages/security-utils`, `packages/test-db`, `packages/ui`, `packages/shared-constants`, `packages/api-e2e` | Contracts, auth helpers, testing, UI, tooling |
+| Layer             | Path                                                                                                                                | Role                                                                                  |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Backend           | `apps/api-v2`                                                                                                                       | NestJS REST API authority for `consumer-css-grid` and current auth-sensitive cutovers |
+| Admin UI          | `apps/admin-v2`                                                                                                                     | Next.js dashboard for operators on port `3011`                                        |
+| Consumer CSS Grid | `apps/consumer-css-grid`                                                                                                            | Next.js css-grid consumer shell on port `3003`                                        |
+| Database          | `packages/database-2`                                                                                                               | Prisma schema, migrations, generated client                                           |
+| Shared packages   | `packages/api-types`, `packages/security-utils`, `packages/test-db`, `packages/ui`, `packages/shared-constants`, `packages/api-e2e` | Contracts, auth helpers, testing, UI, tooling                                         |
 
 ---
 
@@ -36,7 +36,7 @@ Remoola is a payments and FX platform delivered as a Turborepo monorepo. The mai
 
 ## Tech stack
 
-- Runtime: Node.js `>= 18`
+- Runtime: Node.js `>= 22.x`
 - Package manager: Yarn `1.22.22`
 - Backend: NestJS, Prisma, PostgreSQL
 - Frontend: Next.js `15`, React `19`
@@ -101,7 +101,7 @@ Use the same hostname family (`localhost` or `127.0.0.1`) across backend, fronte
   - `yarn db:studio`
 - `yarn test`, `yarn test:e2e`, and `yarn test:e2e:fast` are local-development-only entrypoints and are blocked in CI/Vercel by `scripts/ensure-local-development.js`.
 - Local test/e2e flows rely on `@remoola/test-db` and Testcontainers, so Docker availability is part of the expected developer environment.
-- `.husky/pre-commit` skips lint/tests for docs-only changes; for code changes it runs `yarn lint`, builds `@remoola/test-db`, then runs maintained unit tests and `apps/api-v2` fast e2e.
+- `.husky/pre-commit` runs staged Prettier/lint/typecheck/test helpers. `.husky/pre-push` runs affected-workspace lint and fast e2e checks, with a full-root fallback for repo-wide tooling changes.
 - `yarn verify:v2-apps` is the root verification gate for the maintained `api-v2` + `consumer-css-grid` + `admin-v2` surface.
 
 ---
@@ -110,32 +110,32 @@ Use the same hostname family (`localhost` or `127.0.0.1`) across backend, fronte
 
 ### Start here
 
-| File | Purpose |
-|------|---------|
-| `README.md` | Setup, commands, repo layout, documentation map |
-| `docs/PROJECT_SUMMARY.md` | Current-state summary and navigation map |
+| File                      | Purpose                                         |
+| ------------------------- | ----------------------------------------------- |
+| `README.md`               | Setup, commands, repo layout, documentation map |
+| `docs/PROJECT_SUMMARY.md` | Current-state summary and navigation map        |
 
 ### Current-state references
 
-| File | Purpose |
-|------|---------|
+| File                            | Purpose                                               |
+| ------------------------------- | ----------------------------------------------------- |
 | `docs/PROJECT_DOCUMENTATION.md` | Consolidated API, app, package, and database overview |
-| `docs/FEATURES_CURRENT.md` | Implemented features and current repository state |
+| `docs/FEATURES_CURRENT.md`      | Implemented features and current repository state     |
 
 ### Operational and release docs
 
-| File | Purpose |
-|------|---------|
-| `docs/CONSUMER_AUTH_COOKIE_POLICY.md` | Canonical browser/BFF cookie contract |
-| `docs/API_V2_PRODUCTION_RELEASE_GATE.md` | Required evidence for auth-sensitive `api-v2` releases |
-| `docs/SWAGGER_COOKIE_AUTH_USAGE.md` | Swagger cookie-auth workflow on API-origin docs pages |
-| `docs/CONSUMER_AUTH_CUTOVER_RELEASE_HANDOFF.md` | Release-specific handoff and closure notes for the consumer auth cutover |
-| `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md` | Browser identity (`deviceId`) and consumer action-log contracts |
-| `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` | Fintech safety, ledger invariants, idempotency, and DB rollout constraints |
+| File                                            | Purpose                                                                    |
+| ----------------------------------------------- | -------------------------------------------------------------------------- |
+| `docs/CONSUMER_AUTH_COOKIE_POLICY.md`           | Canonical browser/BFF cookie contract                                      |
+| `docs/API_V2_PRODUCTION_RELEASE_GATE.md`        | Required evidence for auth-sensitive `api-v2` releases                     |
+| `docs/SWAGGER_COOKIE_AUTH_USAGE.md`             | Swagger cookie-auth workflow on API-origin docs pages                      |
+| `docs/CONSUMER_AUTH_CUTOVER_RELEASE_HANDOFF.md` | Release-specific handoff and closure notes for the consumer auth cutover   |
+| `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md`    | Browser identity (`deviceId`) and consumer action-log contracts            |
+| `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`    | Fintech safety, ledger invariants, idempotency, and DB rollout constraints |
 
 ### Governance docs
 
-| File | Purpose |
-|------|---------|
-| `docs/project-design-rules.md` | Project design rules and repo boundaries |
-| `docs/postgresql-design-rules.md` | PostgreSQL schema and migration rules |
+| File                              | Purpose                                  |
+| --------------------------------- | ---------------------------------------- |
+| `docs/project-design-rules.md`    | Project design rules and repo boundaries |
+| `docs/postgresql-design-rules.md` | PostgreSQL schema and migration rules    |
