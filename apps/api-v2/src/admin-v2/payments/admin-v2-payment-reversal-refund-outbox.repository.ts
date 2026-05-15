@@ -112,7 +112,7 @@ export class AdminV2PaymentReversalRefundOutboxRepository {
 
   markSentByIdempotencyKey(idempotencyKey: string, now = new Date()) {
     return this.prisma.notificationOutboxModel.updateMany({
-      where: { idempotencyKey },
+      where: { idempotencyKey, status: { not: DEAD_STATUS } },
       data: { status: SENT_STATUS, sentAt: now, failedAt: null, claimToken: null, processingStartedAt: null },
     });
   }
@@ -137,7 +137,7 @@ export class AdminV2PaymentReversalRefundOutboxRepository {
   markFailedByIdempotencyKey(idempotencyKey: string, error: unknown, now = new Date()) {
     const { errorClass, errorMessage } = this.normalizeError(error);
     return this.prisma.notificationOutboxModel.updateMany({
-      where: { idempotencyKey },
+      where: { idempotencyKey, status: { notIn: [SENT_STATUS, DEAD_STATUS] } },
       data: {
         status: `FAILED`,
         failedAt: now,
@@ -153,7 +153,7 @@ export class AdminV2PaymentReversalRefundOutboxRepository {
   markDeadByIdempotencyKey(idempotencyKey: string, error: unknown, now = new Date()) {
     const { errorClass, errorMessage } = this.normalizeError(error);
     return this.prisma.notificationOutboxModel.updateMany({
-      where: { idempotencyKey },
+      where: { idempotencyKey, status: { notIn: [SENT_STATUS, DEAD_STATUS] } },
       data: {
         status: DEAD_STATUS,
         failedAt: now,

@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, relative } from 'path';
 
 import { MODULE_METADATA } from '@nestjs/common/constants';
 
@@ -69,6 +69,34 @@ function listRepositoryFiles(directory: string): string[] {
   return files.sort();
 }
 
+function listSourceFiles(directory: string): string[] {
+  const entries = readdirSync(directory);
+  const files: string[] = [];
+  for (const entry of entries) {
+    const path = join(directory, entry);
+    if (statSync(path).isDirectory()) {
+      files.push(...listSourceFiles(path));
+      continue;
+    }
+    if (entry.endsWith(`.ts`) && !entry.endsWith(`.spec.ts`)) {
+      files.push(path);
+    }
+  }
+  return files.sort();
+}
+
+function sourceFileCounts(directory: string, pattern: RegExp): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const file of listSourceFiles(directory)) {
+    const source = readFileSync(file, `utf8`);
+    const count = source.match(pattern)?.length ?? 0;
+    if (count > 0) {
+      counts.set(relative(directory, file).replace(/\\/g, `/`), count);
+    }
+  }
+  return counts;
+}
+
 describe(`Nest module provider boundaries`, () => {
   it(`keeps the admin-v2 shared public surface explicit`, () => {
     expectExactExports(AdminV2SharedModule, [
@@ -121,5 +149,28 @@ describe(`Nest module provider boundaries`, () => {
       const source = readFileSync(file, `utf8`);
       expect(source).not.toMatch(/\.\$transaction\s*\(/);
     }
+  });
+
+  it(`keeps admin-v2 idempotency transaction posture explicit`, () => {
+    const adminV2Dir = join(__dirname, `admin-v2`);
+
+    expect(sourceFileCounts(adminV2Dir, /idempotency\.executeInTransaction\s*\(/g)).toEqual(
+      new Map([[`admins/admin-v2-admin-mutations.service.ts`, 4]]),
+    );
+    expect(sourceFileCounts(adminV2Dir, /idempotency\.execute\s*\(/g)).toEqual(
+      new Map([
+        [`admins/admin-v2-admin-invitations.service.ts`, 1],
+        [`admins/admin-v2-admin-password-flows.service.ts`, 1],
+        [`assignments/admin-v2-assignments.service.ts`, 3],
+        [`consumers/admin-v2-consumers.service.ts`, 3],
+        [`documents/admin-v2-documents.service.ts`, 5],
+        [`exchange/admin-v2-exchange-commands.service.ts`, 6],
+        [`operational-alerts/admin-v2-operational-alerts.service.ts`, 3],
+        [`payment-methods/admin-v2-payment-methods.service.ts`, 3],
+        [`payouts/admin-v2-payouts.service.ts`, 1],
+        [`saved-views/admin-v2-saved-views.service.ts`, 3],
+        [`verification/admin-v2-verification.service.ts`, 1],
+      ]),
+    );
   });
 });

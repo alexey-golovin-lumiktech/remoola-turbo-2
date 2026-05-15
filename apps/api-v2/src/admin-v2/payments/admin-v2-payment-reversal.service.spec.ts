@@ -2,6 +2,7 @@ import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2PaymentReversalRefundFinalizerService } from './admin-v2-payment-reversal-refund-finalizer.service';
+import { buildAdminRefundFinalizationOutboxIdempotencyKey } from './admin-v2-payment-reversal-refund-outbox';
 /* eslint-disable-next-line max-len */
 import { type AdminV2PaymentReversalRefundOutboxRepository } from './admin-v2-payment-reversal-refund-outbox.repository';
 import { type AdminV2PaymentReversalWorkflowService } from './admin-v2-payment-reversal-workflow.service';
@@ -400,7 +401,7 @@ describe(`AdminV2PaymentReversalService`, () => {
 
   it(`marks the refund reversal denied when Stripe refund creation fails`, async () => {
     const stripeError = new Error(`stripe down`);
-    const { service, repository, stripe, tx } = buildService({
+    const { service, repository, outboxRepository, stripe, tx } = buildService({
       query: {
         getPaymentRequestForReversal: jest.fn().mockResolvedValue({
           ...paymentRequest,
@@ -442,6 +443,9 @@ describe(`AdminV2PaymentReversalService`, () => {
       ledgerId: `ledger-created`,
       idempotencyKeyBase: `base-2`,
     });
+    const outboxKey = buildAdminRefundFinalizationOutboxIdempotencyKey(`base-2`);
+    expect(outboxRepository.markDeadByIdempotencyKey).toHaveBeenCalledWith(outboxKey, stripeError);
+    expect(outboxRepository.markFailedByIdempotencyKey).toHaveBeenCalledWith(outboxKey, stripeError);
   });
 
   it(`replays an existing refund reversal and finalizes it from the stored Stripe refund id`, async () => {
