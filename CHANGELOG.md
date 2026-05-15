@@ -2825,7 +2825,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-13</summary>
 
 - **2026-05-13:**
@@ -2852,6 +2852,48 @@
 
   ### 📄 Documentation
   - **Production release notes:** Update API v2 release gate notes for bootstrap seeding, legacy session rejection, and generated fixture ignore behavior.
+
+</details>
+
+<details>
+<summary>2026-05-14</summary>
+
+- **2026-05-14:**
+
+  ### 🔐 Security / Production Safety
+  - **Auth guard convergence:** Remove legacy `JwtAuthGuard` wrappers and keep protected route enforcement on the canonical app-level `AuthGuard`, preserving token scope, session, cookie, CSRF, and public-endpoint behavior.
+  - **Payment and ledger persistence boundaries:** Extract admin-v2 exchange, payout escalation, consumer payments, Stripe webhook/reversal, and ledger read/write persistence behind focused repositories while preserving advisory-lock, row-lock, idempotency, and append-only ledger invariants.
+  - **Admin-v2 read/write isolation:** Move admin, consumer, assignment, document, operational-alert, saved-view, verification, payment-method, and anomaly query/write details out of orchestration services to reduce direct Prisma drift across production-sensitive admin surfaces.
+
+  ### 🗄 Database & Migrations
+  - **Code-only persistence refactors:** Keep the 2026-05-14 persistence waves migration-free with no backfill requirement; existing tables, transactions, and row/advisory locking semantics remain in place.
+
+  ### 🧪 Testing
+  - **Boundary and service coverage:** Add or update focused specs for extracted repositories/query services, auth guard wiring, payment/ledger concurrency, Stripe webhook/reversal behavior, payout escalation locking, and admin-v2 service delegation.
+
+  ### 🛠 DevEx
+  - **Nest provider boundaries:** Align admin-v2, consumer, Stripe, exchange, and shared persistence with Nest provider/module boundaries, replacing slice-specific transaction runners with shared transaction infrastructure where applicable.
+
+</details>
+
+<details open>
+<summary>2026-05-15</summary>
+
+- **2026-05-15:**
+
+  ### 🔐 Security / Production Safety
+  - **Transaction and raw SQL hardening:** Centralize Prisma transaction policy through `PrismaTransactionRunner`, add bounded `P2034` retry for serializable ledger mutations, and normalize raw SQL validation failures through `SqlValidationError` and `SqlValidationExceptionFilter`.
+  - **Durable admin refund finalization:** Move admin payment reversal arithmetic to Decimal-backed helpers and process Stripe refund finalization through the existing `notification_outbox` claim/mark flow, preserving response shapes, append-only ledger semantics, and idempotent refund/reversal finalization.
+  - **Auth and audit repository boundaries:** Keep auth/session and audit contracts stable while moving data access behind dedicated repositories, reducing service-layer drift without changing public API behavior.
+
+  ### 🗄 Database & Migrations
+  - **Outbox reuse:** Reuse the existing `notification_outbox` table for admin refund finalization; no schema migration, migration-first rollout, or backfill is required.
+
+  ### 🧪 Testing
+  - **Verification pass:** Record green lint, build, typecheck, unit test, and e2e gates for the service-boundary and payment-finalization hardening work.
+
+  ### 🛠 DevEx
+  - **Shared helpers and API type reuse:** Add shared Decimal money and Prisma raw SQL helpers, extend module-boundary guardrails, and reuse shared admin API types in admin-v2 UI/server code to reduce duplicate contracts.
 
 </details>
 
