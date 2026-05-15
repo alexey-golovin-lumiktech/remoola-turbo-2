@@ -4,13 +4,13 @@ import { Prisma } from '@remoola/database-2';
 
 import { PrismaService } from './prisma.service';
 
-export type PrismaTransactionOptions = {
+type PrismaTransactionOptions = {
   maxWait?: number;
   timeout?: number;
   isolationLevel?: Prisma.TransactionIsolationLevel;
 };
 
-export type PrismaTransactionPolicy = {
+type PrismaTransactionPolicy = {
   readonly name: string;
   readonly options: Required<PrismaTransactionOptions>;
   readonly retry?: {
@@ -19,7 +19,7 @@ export type PrismaTransactionPolicy = {
   };
 };
 
-export const PRISMA_TRANSACTION_POLICIES = {
+const PRISMA_TRANSACTION_POLICIES = {
   default: {
     name: `default`,
     options: {
@@ -52,11 +52,11 @@ export const PRISMA_TRANSACTION_POLICIES = {
 
 // Ledger mutations run at Serializable and retry P2034 write-conflict/deadlock aborts.
 // Advisory locks still reduce contention and keep domain-level ordering explicit.
-export const LEDGER_TRANSACTION_POLICY = PRISMA_TRANSACTION_POLICIES.ledgerMutation;
+const LEDGER_TRANSACTION_POLICY = PRISMA_TRANSACTION_POLICIES.ledgerMutation;
 
-export const AUTH_SESSION_ROTATION_TRANSACTION_POLICY = PRISMA_TRANSACTION_POLICIES.authSessionRotation;
+const AUTH_SESSION_ROTATION_TRANSACTION_POLICY = PRISMA_TRANSACTION_POLICIES.authSessionRotation;
 
-export const DEFAULT_TRANSACTION_OPTIONS = PRISMA_TRANSACTION_POLICIES.default.options;
+const DEFAULT_TRANSACTION_OPTIONS = PRISMA_TRANSACTION_POLICIES.default.options;
 
 @Injectable()
 export class PrismaTransactionRunner {

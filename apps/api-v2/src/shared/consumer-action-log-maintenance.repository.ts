@@ -13,7 +13,7 @@ function quoteIdentifier(identifier: string): string {
   return `"${identifier.replace(/"/g, `""`)}"`;
 }
 
-export function assertConsumerActionLogPartitionName(partitionName: string): ConsumerActionLogPartitionName {
+function assertConsumerActionLogPartitionName(partitionName: string): ConsumerActionLogPartitionName {
   if (!CONSUMER_ACTION_LOG_PARTITION_NAME_REGEX.test(partitionName)) {
     throw new Error(`Unsafe consumer_action_log partition name`);
   }

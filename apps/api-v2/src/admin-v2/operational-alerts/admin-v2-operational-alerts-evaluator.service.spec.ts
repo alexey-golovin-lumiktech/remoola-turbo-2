@@ -1,12 +1,11 @@
 import { AdminV2OperationalAlertsEvaluatorQuery } from './admin-v2-operational-alerts-evaluator.query';
 import { AdminV2OperationalAlertsEvaluatorRepository } from './admin-v2-operational-alerts-evaluator.repository';
-import {
-  AdminV2OperationalAlertsEvaluatorService,
-  EVALUATOR_PER_ALERT_TIMEOUT_MS,
-  EVALUATOR_TICK_MAX_ALERTS,
-  EVALUATOR_TICK_WALL_BUDGET_MS,
-} from './admin-v2-operational-alerts-evaluator.service';
+import { AdminV2OperationalAlertsEvaluatorService } from './admin-v2-operational-alerts-evaluator.service';
 import { type OperationalAlertWorkspaceEvaluator } from './admin-v2-operational-alerts-workspace-evaluators';
+
+const EVALUATOR_TICK_MAX_ALERTS = 100;
+const EVALUATOR_PER_ALERT_TIMEOUT_MS = 10_000;
+const EVALUATOR_TICK_WALL_BUDGET_MS = 240_000;
 
 type DueAlertRow = {
   id: string;

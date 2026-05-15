@@ -1,10 +1,11 @@
 import { $Enums } from '@remoola/database-2';
 
-import {
-  type CheckoutSchedulerSelection,
-  StripeCheckoutSchedulerRepository,
-} from './stripe-checkout-scheduler.repository';
+import { StripeCheckoutSchedulerRepository } from './stripe-checkout-scheduler.repository';
 import { StripeCheckoutScheduler } from './stripe-checkout.scheduler';
+
+type CheckoutSchedulerSelection =
+  | { skipped: true }
+  | { skipped: false; sessionIdsForRun: string[]; pendingSessionIds: number };
 
 describe(`StripeCheckoutScheduler`, () => {
   let scheduler: StripeCheckoutScheduler;

@@ -1,5 +1,6 @@
 import { AdminV2OperationalAlertsEvaluatorQuery } from './admin-v2-operational-alerts-evaluator.query';
-import { EVALUATOR_TICK_MAX_ALERTS } from './admin-v2-operational-alerts-evaluator.service';
+
+const EVALUATOR_TICK_MAX_ALERTS = 100;
 
 describe(`AdminV2OperationalAlertsEvaluatorQuery`, () => {
   it(`selects due alerts via parameterized raw SQL with the tick limit`, async () => {

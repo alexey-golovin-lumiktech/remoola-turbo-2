@@ -6,7 +6,6 @@ import {
   buildDateRangeSql,
   buildDescendingCreatedAtIdCursorSql,
   buildOptionalUuidEqualsSql,
-  InvalidSqlUuidError,
   isUuid,
   parseRawFiniteNumber,
   SqlValidationError,
@@ -14,7 +13,6 @@ import {
   sqlRequiredUuid,
   sqlRequiredUuidArray,
   sqlUuid,
-  sqlUuidArray,
 } from './prisma-raw.utils';
 
 type RenderedSql = {
@@ -57,16 +55,16 @@ describe(`prisma raw SQL helpers`, () => {
     expect(cursor.sql).toContain(`le.id <`);
   });
 
-  it(`builds SQL lists and UUID arrays from parameterized values`, () => {
+  it(`builds SQL lists and required UUID arrays from parameterized values`, () => {
     expect(render(sqlInList([`PENDING`, `COMPLETED`])).values).toEqual([`PENDING`, `COMPLETED`]);
     expect(
-      render(sqlUuidArray([`550e8400-e29b-41d4-a716-446655440000`, `550e8400-e29b-41d4-a716-446655440001`])).sql,
+      render(sqlRequiredUuidArray([`550e8400-e29b-41d4-a716-446655440000`, `550e8400-e29b-41d4-a716-446655440001`]))
+        .sql,
     ).toContain(`::uuid[]`);
   });
 
   it(`renders invalid UUID casts as null UUIDs at raw SQL boundaries`, () => {
     expect(render(sqlUuid(`not-a-uuid`)).sql).toContain(`NULL::uuid`);
-    expect(render(sqlUuidArray([`550e8400-e29b-41d4-a716-446655440000`, `not-a-uuid`])).sql).toContain(`NULL::uuid`);
 
     const cursor = render(
       buildDescendingCreatedAtIdCursorSql({
@@ -82,7 +80,7 @@ describe(`prisma raw SQL helpers`, () => {
     expect(render(sqlRequiredUuid(`  550e8400-e29b-41d4-a716-446655440000  `, `resourceId`)).values).toEqual([
       `550e8400-e29b-41d4-a716-446655440000`,
     ]);
-    expect(() => sqlRequiredUuid(`not-a-uuid`, `resourceId`)).toThrow(InvalidSqlUuidError);
+    expect(() => sqlRequiredUuid(`not-a-uuid`, `resourceId`)).toThrow(SqlValidationError);
     expect(() => sqlRequiredUuid(`not-a-uuid`, `resourceId`)).toThrow(`resourceId must be a valid UUID`);
   });
 
@@ -91,7 +89,7 @@ describe(`prisma raw SQL helpers`, () => {
       `550e8400-e29b-41d4-a716-446655440000`,
     ]);
     expect(() => sqlRequiredUuidArray([`550e8400-e29b-41d4-a716-446655440000`, `not-a-uuid`], `resourceIds`)).toThrow(
-      InvalidSqlUuidError,
+      SqlValidationError,
     );
     expect(() => sqlRequiredUuidArray([`550e8400-e29b-41d4-a716-446655440000`, `not-a-uuid`], `resourceIds`)).toThrow(
       `resourceIds must be a valid UUID`,
@@ -118,7 +116,7 @@ describe(`prisma raw SQL helpers`, () => {
     );
     expect(assertRawDate(date, `created_at`)).toBe(date);
     expect(parseRawFiniteNumber({ toString: () => `12.5` }, `balance`)).toBe(12.5);
-    expect(() => assertRawUuid(`not-a-uuid`, `row id`)).toThrow(InvalidSqlUuidError);
+    expect(() => assertRawUuid(`not-a-uuid`, `row id`)).toThrow(SqlValidationError);
     expect(() => assertRawUuid(`not-a-uuid`, `row id`)).toThrow(`row id must be a valid UUID`);
     expect(() => assertRawDate(`2026-03-02`, `created_at`)).toThrow(SqlValidationError);
     expect(() => assertRawDate(`2026-03-02`, `created_at`)).toThrow(`created_at must be a valid Date`);

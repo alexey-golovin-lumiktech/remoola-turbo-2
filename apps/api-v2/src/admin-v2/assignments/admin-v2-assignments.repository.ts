@@ -14,7 +14,7 @@ type AssignmentRequestMeta = {
   idempotencyKey?: string | null;
 };
 
-export type AssignmentRow = {
+type AssignmentRow = {
   id: string;
   resource_type: string;
   resource_id: string;

@@ -1,14 +1,21 @@
 import { type Logger } from '@nestjs/common';
 
-import { Prisma } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 
-import { createOutcomeIdempotent, type CreateOutcomeIdempotentData } from './ledger-outcome-idempotent';
+import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
+
+type CreateOutcomeIdempotentData = {
+  ledgerEntryId: string;
+  status: $Enums.TransactionStatus;
+  source: string;
+  externalId: string;
+};
 
 describe(`createOutcomeIdempotent`, () => {
   const ledgerEntryId = `le-1`;
   const data: CreateOutcomeIdempotentData = {
     ledgerEntryId,
-    status: `COMPLETED` as const,
+    status: $Enums.TransactionStatus.COMPLETED,
     source: `stripe`,
     externalId: `ext-1`,
   };

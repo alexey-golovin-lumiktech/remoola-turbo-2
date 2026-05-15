@@ -1,13 +1,15 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
-import {
-  assertSavedViewWorkspace,
-  isSavedViewWorkspace,
-  MAX_SAVED_VIEW_PAYLOAD_BYTES,
-} from './admin-v2-saved-views.dto';
+import { assertSavedViewWorkspace, MAX_SAVED_VIEW_PAYLOAD_BYTES } from './admin-v2-saved-views.dto';
 import { AdminV2SavedViewsQuery } from './admin-v2-saved-views.query';
 import { AdminV2SavedViewsRepository } from './admin-v2-saved-views.repository';
-import { AdminV2SavedViewsService, type SavedViewActorContext } from './admin-v2-saved-views.service';
+import { AdminV2SavedViewsService } from './admin-v2-saved-views.service';
+
+type SavedViewActorContext = {
+  id: string;
+  email: string;
+  type: `ADMIN` | `SUPER`;
+};
 
 const OPS_ADMIN_ID = `11111111-1111-4111-8111-111111111111`;
 const OTHER_ADMIN_ID = `22222222-2222-4222-8222-222222222222`;
@@ -91,22 +93,18 @@ const meta = {
 describe(`AdminV2SavedViewsService`, () => {
   describe(`allowlist`, () => {
     it(`accepts ledger_anomalies`, () => {
-      expect(isSavedViewWorkspace(`ledger_anomalies`)).toBe(true);
       expect(() => assertSavedViewWorkspace(`ledger_anomalies`)).not.toThrow();
     });
 
     it(`accepts verification_queue`, () => {
-      expect(isSavedViewWorkspace(`verification_queue`)).toBe(true);
       expect(() => assertSavedViewWorkspace(`verification_queue`)).not.toThrow();
     });
 
     it(`rejects shell_quickstarts_verification`, () => {
-      expect(isSavedViewWorkspace(`shell_quickstarts_verification`)).toBe(false);
       expect(() => assertSavedViewWorkspace(`shell_quickstarts_verification`)).toThrow(BadRequestException);
     });
 
     it(`rejects shell_unknown`, () => {
-      expect(isSavedViewWorkspace(`shell_unknown`)).toBe(false);
       expect(() => assertSavedViewWorkspace(`shell_unknown`)).toThrow(BadRequestException);
     });
   });

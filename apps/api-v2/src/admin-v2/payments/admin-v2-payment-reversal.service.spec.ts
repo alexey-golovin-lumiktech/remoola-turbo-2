@@ -16,7 +16,7 @@ import {
   calculateAlreadyReversedAmount,
   capExternalReversalAmount,
   deriveEffectivePaymentRequestStatus,
-  resolveStrictReversalAmount,
+  resolveStrictReversalDecimalAmount,
 } from '../../shared/payment-reversal-calculator';
 import { type PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 
@@ -34,16 +34,15 @@ describe(`PaymentReversalCalculator strict admin helpers`, () => {
     ]);
 
     expect(alreadyReversed).toBe(15);
-    expect(resolveStrictReversalAmount({ requestAmount: 20, alreadyReversed })).toEqual({
-      ok: true,
-      finalAmount: 5,
-      remainingBefore: 5,
-    });
-    expect(resolveStrictReversalAmount({ requestAmount: 20, alreadyReversed, requestedAmount: 6 })).toEqual({
-      ok: false,
-      reason: `EXCEEDS_REMAINING_BALANCE`,
-      remainingBefore: 5,
-    });
+    const fullRemaining = resolveStrictReversalDecimalAmount({ requestAmount: 20, alreadyReversed });
+    expect(fullRemaining.ok).toBe(true);
+    expect(fullRemaining.ok === true ? fullRemaining.finalAmount.toNumber() : null).toBe(5);
+    expect(fullRemaining.remainingBefore.toNumber()).toBe(5);
+
+    const excessive = resolveStrictReversalDecimalAmount({ requestAmount: 20, alreadyReversed, requestedAmount: 6 });
+    expect(excessive.ok).toBe(false);
+    expect(excessive.ok === false ? excessive.reason : null).toBe(`EXCEEDS_REMAINING_BALANCE`);
+    expect(excessive.remainingBefore.toNumber()).toBe(5);
     expect(capExternalReversalAmount({ requestAmount: 20, alreadyReversed, externalAmount: 6 })).toEqual({
       finalAmount: 5,
       remainingBefore: 5,

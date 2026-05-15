@@ -11,10 +11,13 @@ import {
 } from './admin-v2-operational-alerts.dto';
 import { AdminV2OperationalAlertsQuery } from './admin-v2-operational-alerts.query';
 import { AdminV2OperationalAlertsRepository } from './admin-v2-operational-alerts.repository';
-import {
-  AdminV2OperationalAlertsService,
-  type OperationalAlertActorContext,
-} from './admin-v2-operational-alerts.service';
+import { AdminV2OperationalAlertsService } from './admin-v2-operational-alerts.service';
+
+type OperationalAlertActorContext = {
+  id: string;
+  email: string;
+  type: `ADMIN` | `SUPER`;
+};
 
 const OPS_ADMIN_ID = `11111111-1111-4111-8111-111111111111`;
 const OTHER_ADMIN_ID = `22222222-2222-4222-8222-222222222222`;

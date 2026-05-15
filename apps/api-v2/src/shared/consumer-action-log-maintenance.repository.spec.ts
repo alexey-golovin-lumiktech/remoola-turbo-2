@@ -1,7 +1,4 @@
-import {
-  assertConsumerActionLogPartitionName,
-  ConsumerActionLogMaintenanceRepository,
-} from './consumer-action-log-maintenance.repository';
+import { ConsumerActionLogMaintenanceRepository } from './consumer-action-log-maintenance.repository';
 import { type PrismaService } from './prisma.service';
 
 describe(`ConsumerActionLogMaintenanceRepository`, () => {
@@ -17,16 +14,20 @@ describe(`ConsumerActionLogMaintenanceRepository`, () => {
     };
   }
 
-  it(`accepts only consumer_action_log monthly and default partition names`, () => {
-    expect(assertConsumerActionLogPartitionName(`consumer_action_log_p202605`)).toBe(`consumer_action_log_p202605`);
-    expect(assertConsumerActionLogPartitionName(`consumer_action_log_pdefault`)).toBe(`consumer_action_log_pdefault`);
+  it(`accepts only consumer_action_log monthly and default partition names`, async () => {
+    const { repository } = buildRepository();
 
-    expect(() => assertConsumerActionLogPartitionName(`consumer_action_log_202605`)).toThrow(
+    await expect(repository.dropPartition(`consumer_action_log_p202605`)).resolves.toBe(0);
+    await expect(
+      repository.deleteBoundaryRowsBatch(`consumer_action_log_pdefault`, new Date(), new Date(), 1),
+    ).resolves.toBe(0);
+
+    expect(() => repository.dropPartition(`consumer_action_log_202605`)).toThrow(
       `Unsafe consumer_action_log partition name`,
     );
-    expect(() =>
-      assertConsumerActionLogPartitionName(`consumer_action_log_p202605; DROP TABLE consumer_action_log`),
-    ).toThrow(`Unsafe consumer_action_log partition name`);
+    expect(() => repository.dropPartition(`consumer_action_log_p202605; DROP TABLE consumer_action_log`)).toThrow(
+      `Unsafe consumer_action_log partition name`,
+    );
   });
 
   it(`rejects unsafe partition names before executing dynamic SQL`, () => {

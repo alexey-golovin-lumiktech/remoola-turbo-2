@@ -1,13 +1,25 @@
 import { Prisma } from '@remoola/database-2';
 
-import {
-  AUTH_SESSION_ROTATION_TRANSACTION_POLICY,
-  DEFAULT_TRANSACTION_OPTIONS,
-  LEDGER_TRANSACTION_POLICY,
-  PRISMA_TRANSACTION_POLICIES,
-  PrismaTransactionRunner,
-} from './prisma-transaction.runner';
+import { PrismaTransactionRunner } from './prisma-transaction.runner';
 import { type PrismaService } from './prisma.service';
+
+const DEFAULT_TRANSACTION_OPTIONS = {
+  maxWait: 2_000,
+  timeout: 10_000,
+  isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+};
+
+const AUTH_SESSION_ROTATION_TRANSACTION_OPTIONS = {
+  maxWait: 1_000,
+  timeout: 5_000,
+  isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+};
+
+const LEDGER_TRANSACTION_OPTIONS = {
+  maxWait: 5_000,
+  timeout: 20_000,
+  isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+};
 
 describe(`PrismaTransactionRunner`, () => {
   function buildRunner() {
@@ -42,19 +54,15 @@ describe(`PrismaTransactionRunner`, () => {
     expect(prisma.$transaction).toHaveBeenCalledWith(callback, { ...DEFAULT_TRANSACTION_OPTIONS, timeout: 30_000 });
   });
 
-  it(`publishes named policies for auth and ledger workflows`, () => {
-    expect(AUTH_SESSION_ROTATION_TRANSACTION_POLICY.options).toEqual({
-      maxWait: 1_000,
-      timeout: 5_000,
-      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
-    });
-    expect(LEDGER_TRANSACTION_POLICY.options).toEqual({
-      maxWait: 5_000,
-      timeout: 20_000,
-      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-    });
-    expect(LEDGER_TRANSACTION_POLICY.retry).toEqual({ maxAttempts: 3, baseDelayMs: 25 });
-    expect(PRISMA_TRANSACTION_POLICIES.default.options).toEqual(DEFAULT_TRANSACTION_OPTIONS);
+  it(`applies named policy options for auth and ledger workflows`, async () => {
+    const { prisma, runner } = buildRunner();
+    const callback = jest.fn(async () => `ok`);
+
+    await runner.runAuthSessionRotation(callback);
+    await runner.runLedgerMutation(callback);
+
+    expect(prisma.$transaction).toHaveBeenNthCalledWith(1, callback, AUTH_SESSION_ROTATION_TRANSACTION_OPTIONS);
+    expect(prisma.$transaction).toHaveBeenNthCalledWith(2, callback, LEDGER_TRANSACTION_OPTIONS);
   });
 
   it(`runs callbacks with explicit named policy options`, async () => {
@@ -64,7 +72,7 @@ describe(`PrismaTransactionRunner`, () => {
     await expect(runner.runLedgerMutation(callback)).resolves.toBe(`ok`);
 
     expect(callback).toHaveBeenCalledWith(tx);
-    expect(prisma.$transaction).toHaveBeenCalledWith(callback, LEDGER_TRANSACTION_POLICY.options);
+    expect(prisma.$transaction).toHaveBeenCalledWith(callback, LEDGER_TRANSACTION_OPTIONS);
   });
 
   it(`retries policy transactions on Prisma P2034 conflicts`, async () => {

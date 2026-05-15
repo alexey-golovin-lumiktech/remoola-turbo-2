@@ -21,7 +21,7 @@ type AssignmentRequestMeta = {
   idempotencyKey?: string | null;
 };
 
-export type AssignmentActorContext = {
+type AssignmentActorContext = {
   id: string;
   email?: string;
   type: string;

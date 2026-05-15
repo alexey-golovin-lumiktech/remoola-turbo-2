@@ -1,5 +1,4 @@
 export * from './base.model';
-export * from './admin.model';
 export * from './consumer.model';
 export * from './google-profile-details.model';
 export * from './personal-details.model';

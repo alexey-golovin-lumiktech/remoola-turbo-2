@@ -6,7 +6,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { StripeWebhookDeduplicationRepository } from './stripe-webhook-deduplication.repository';
-import { STRIPE_WEBHOOK_EVENT_STATUS, StripeWebhookDeduplicationService } from './stripe-webhook-deduplication.service';
+import { StripeWebhookDeduplicationService } from './stripe-webhook-deduplication.service';
 import { StripeWebhookEventProcessorService } from './stripe-webhook-event-processor.service';
 import { StripeWebhookPaymentMethodsRepository } from './stripe-webhook-payment-methods.repository';
 import { StripeWebhookPaymentMethodsService } from './stripe-webhook-payment-methods.service';
@@ -25,6 +25,12 @@ import { StripeWebhookService as StripeWebhookServiceClass } from './stripe-webh
 import { envs } from '../../../envs';
 import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 import { STRIPE_IDENTITY_STATUS } from '../../../shared-common';
+
+const STRIPE_WEBHOOK_EVENT_STATUS = {
+  PROCESSING: `PROCESSING`,
+  PROCESSED: `PROCESSED`,
+  FAILED: `FAILED`,
+} as const;
 
 class StripeWebhookService extends StripeWebhookServiceClass {
   constructor(prisma: any, mailingService: any, balanceService: any, consumerPaymentsPoliciesService: any) {

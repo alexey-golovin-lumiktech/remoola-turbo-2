@@ -96,18 +96,6 @@ const paymentMethodDuplicateSelect = Prisma.validator<Prisma.PaymentMethodModelS
   },
 });
 
-export type AdminV2PaymentMethodListItemRecord = Prisma.PaymentMethodModelGetPayload<{
-  select: typeof listPaymentMethodSelect;
-}>;
-
-export type AdminV2PaymentMethodCaseRecord = Prisma.PaymentMethodModelGetPayload<{
-  select: typeof paymentMethodCaseSelect;
-}>;
-
-export type AdminV2PaymentMethodFingerprintDuplicateRecord = Prisma.PaymentMethodModelGetPayload<{
-  select: typeof paymentMethodDuplicateSelect;
-}>;
-
 @Injectable()
 export class AdminV2PaymentMethodsQuery {
   constructor(private readonly prisma: PrismaService) {}

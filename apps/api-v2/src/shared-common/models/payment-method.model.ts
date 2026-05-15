@@ -3,26 +3,6 @@ import { type $Enums } from '@remoola/database-2';
 import { type CreditCardExpMonth, type CreditCardExpYear } from '../types';
 import { type IBaseModel } from './base.model';
 
-type IPaymentMethodCommon = {
-  consumerId: string;
-  brand: string;
-  last4: string;
-  defaultSelected: boolean;
-
-  billingDetailsId?: string;
-  serviceFee?: number;
-} & IBaseModel;
-
-export type IPaymentMethodBankAccountModel = {
-  type: typeof $Enums.PaymentMethodType.BANK_ACCOUNT;
-} & IPaymentMethodCommon;
-
-export type IPaymentMethodCreditCardModel = {
-  type: typeof $Enums.PaymentMethodType.CREDIT_CARD;
-  expMonth: CreditCardExpMonth;
-  expYear: CreditCardExpYear;
-} & IPaymentMethodCommon;
-
 export type IPaymentMethodModel = {
   consumerId: string;
   type: $Enums.PaymentMethodType;
@@ -35,5 +15,3 @@ export type IPaymentMethodModel = {
   expMonth?: CreditCardExpMonth;
   expYear?: CreditCardExpYear;
 } & IBaseModel;
-
-export type IPaymentMethodModelType = IPaymentMethodCreditCardModel | IPaymentMethodBankAccountModel;

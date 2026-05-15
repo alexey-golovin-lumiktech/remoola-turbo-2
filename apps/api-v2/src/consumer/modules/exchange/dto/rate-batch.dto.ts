@@ -4,7 +4,7 @@ import { IsArray, IsEnum, ValidateNested } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
-export class ExchangeRatePair {
+class ExchangeRatePair {
   @Expose()
   @ApiProperty({ enum: $Enums.CurrencyCode })
   @IsEnum($Enums.CurrencyCode)

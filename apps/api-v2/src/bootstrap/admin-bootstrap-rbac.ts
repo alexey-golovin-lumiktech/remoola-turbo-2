@@ -40,7 +40,7 @@ type BootstrapAdminSyncSummary = {
 
 const DEFAULT_BOOTSTRAP_LOGGER = new Logger(`BootstrapAdminRbac`);
 
-export function resolveBootstrapAdminRoleKey(type: $Enums.AdminType): BootstrapRoleKey {
+function resolveBootstrapAdminRoleKey(type: $Enums.AdminType): BootstrapRoleKey {
   if (type === $Enums.AdminType.SUPER) {
     return `SUPER_ADMIN`;
   }

@@ -7,7 +7,7 @@ import {
   getApiConsumerCsrfTokenCookieKey,
 } from './shared-common';
 
-export const SWAGGER_COOKIE_SECURITY_NAME = `cookie`;
+const SWAGGER_COOKIE_SECURITY_NAME = `cookie`;
 const SWAGGER_ADMIN_COOKIE_NAME = ADMIN_ACCESS_TOKEN_COOKIE_KEY;
 const SWAGGER_CONSUMER_COOKIE_NAME = CONSUMER_ACCESS_TOKEN_COOKIE_KEY;
 type SwaggerCookieAuthAudience = `admin` | `consumer`;
@@ -45,7 +45,7 @@ export const swaggerCookieAuthCustomCss = `
 }
 `;
 
-export function buildSwaggerCookieAuthDescription(audience: `admin` | `consumer`, linkedDocsHtml: string): string {
+function buildSwaggerCookieAuthDescription(audience: `admin` | `consumer`, linkedDocsHtml: string): string {
   if (audience === `admin`) {
     return [
       `Admin API ${linkedDocsHtml}`,

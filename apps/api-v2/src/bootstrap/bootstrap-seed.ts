@@ -62,7 +62,7 @@ export async function seedBootstrapData(prisma: PrismaClient, seedLogger: Logger
   }
 }
 
-export async function runBootstrapSeed(): Promise<void> {
+async function runBootstrapSeed(): Promise<void> {
   if (envs.isProductionLike && !envs.ALLOW_PRODUCTION_BOOTSTRAP_SEED) {
     const optInMessage = `Set ALLOW_PRODUCTION_BOOTSTRAP_SEED=true to opt in.`;
     const message = [`Refusing to run bootstrap seed when NODE_ENV=${envs.NODE_ENV}.`, optInMessage].join(` `);

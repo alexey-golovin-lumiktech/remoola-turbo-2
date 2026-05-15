@@ -10,7 +10,7 @@ type LedgerOutcomeClient = {
 };
 
 /** Convenience input: use ledgerEntryId; helper maps to Prisma relation form. */
-export type CreateOutcomeIdempotentData = {
+type CreateOutcomeIdempotentData = {
   ledgerEntryId: string;
   status: Prisma.LedgerEntryOutcomeModelCreateInput[`status`];
   source?: string | null;

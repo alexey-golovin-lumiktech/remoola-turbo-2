@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose } from 'class-transformer';
 
 import { BaseModel } from './base-model.dto';
 import {
@@ -34,17 +34,6 @@ class AddressDetails extends BaseModel implements IAddressDetailsModel {
 export class AddressDetailsResponse
   extends OmitType(AddressDetails, [`deletedAt`] as const)
   implements IAddressDetailsResponse {}
-
-export class AddressDetailsListResponse {
-  @Expose()
-  @ApiProperty({ description: `Total number of addresses in the result set`, required: true })
-  count: number;
-
-  @Expose()
-  @ApiProperty({ description: `Array of address records`, required: true, type: [AddressDetailsResponse] })
-  @Type(() => AddressDetailsResponse)
-  data: AddressDetailsResponse[];
-}
 
 export class AddressDetailsCreate
   extends PickType(AddressDetails, [`postalCode`, `country`, `state`, `city`, `street`] as const)

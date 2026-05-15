@@ -7,12 +7,9 @@ import {
   getApiAdminCsrfTokenCookieKey,
   getApiConsumerCsrfTokenCookieKey,
 } from './shared-common';
-import {
-  buildSwaggerCookieAuthDescription,
-  buildSwaggerCookieAuthDocumentConfig,
-  buildSwaggerCookieAuthScript,
-  SWAGGER_COOKIE_SECURITY_NAME,
-} from './swagger-cookie-auth';
+import { buildSwaggerCookieAuthDocumentConfig, buildSwaggerCookieAuthScript } from './swagger-cookie-auth';
+
+const SWAGGER_COOKIE_SECURITY_NAME = `cookie`;
 
 @ApiTags(`Protected`)
 @ApiCookieAuth()
@@ -26,7 +23,8 @@ class ProtectedController {
 
 describe(`swagger cookie auth helpers`, () => {
   it(`documents the admin cookie-first login flow`, () => {
-    const description = buildSwaggerCookieAuthDescription(`admin`, `<a href="/docs/consumer">consumer</a>`);
+    const description = buildSwaggerCookieAuthDocumentConfig(`admin`, `<a href="/docs/consumer">consumer</a>`).info
+      .description;
 
     expect(description).toContain(`POST /api/admin-v2/auth/login`);
     expect(description).toContain(`POST /api/admin-v2/auth/refresh-access`);
@@ -36,7 +34,8 @@ describe(`swagger cookie auth helpers`, () => {
   });
 
   it(`documents consumer csrf requirements`, () => {
-    const description = buildSwaggerCookieAuthDescription(`consumer`, `<a href="/docs/admin">admin</a>`);
+    const description = buildSwaggerCookieAuthDocumentConfig(`consumer`, `<a href="/docs/admin">admin</a>`).info
+      .description;
 
     expect(description).toContain(`POST /api/consumer/auth/login`);
     expect(description).toContain(`x-csrf-token`);

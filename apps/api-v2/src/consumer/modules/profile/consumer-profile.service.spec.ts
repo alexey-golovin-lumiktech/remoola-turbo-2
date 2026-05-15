@@ -5,7 +5,7 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerProfileRepository } from './consumer-profile.repository';
 import { ConsumerProfileService } from './consumer-profile.service';
-import { UpdateConsumerProfileBody, UpdateConsumerProfilePersonalDetails } from './dtos/update-consumer-profile.dto';
+import { UpdateConsumerProfileBody } from './dtos/update-consumer-profile.dto';
 import { AuthAuditService } from '../../../shared/auth-audit.service';
 import { passwordUtils } from '../../../shared-common';
 
@@ -366,8 +366,7 @@ describe(`ConsumerProfileService.changePassword`, () => {
     });
 
     const body = new UpdateConsumerProfileBody();
-    body.personalDetails = new UpdateConsumerProfilePersonalDetails();
-    body.personalDetails.firstName = ``;
+    body.personalDetails = { firstName: `` };
 
     await service.updateProfile(`consumer-id`, body);
 

@@ -1,17 +1,6 @@
 import { type $Enums } from '@remoola/database-2';
 
-import { type PGComparisonOperator, type SortDirection } from '../enums';
 import { type IBaseModel } from '../models';
-
-type OneOfObjectKeys<T> = keyof T;
-type OneOfObjectValues<T> = T[OneOfObjectKeys<T>];
-
-export type SortDirectionValue = OneOfObjectValues<typeof SortDirection>;
-type PGComparisonOperatorValue = OneOfObjectValues<typeof PGComparisonOperator>;
-
-export type ReqQueryFilter<T> = {
-  [P in OneOfObjectKeys<T>]?: T[P] | [PGComparisonOperatorValue, T[P]] | string | symbol | number;
-};
 
 export type WithoutDeletedAt<T> = T extends IBaseModel ? Omit<T, `deletedAt`> : T;
 export type OnlyUpsertFields<T> = T extends IBaseModel & { consumerId?: string } //

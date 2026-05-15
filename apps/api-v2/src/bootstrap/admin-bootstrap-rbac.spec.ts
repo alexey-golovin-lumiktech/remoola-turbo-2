@@ -1,15 +1,10 @@
 import { $Enums } from '@remoola/database-2';
 
-import { resolveBootstrapAdminRoleKey, syncBootstrapAdminSeedAccounts } from './admin-bootstrap-rbac';
+import { syncBootstrapAdminSeedAccounts } from './admin-bootstrap-rbac';
 import { SUPER_ADMIN_CAPABILITIES } from '../admin-v2/admin-v2-access';
 import { AdminV2AccessService } from '../admin-v2/admin-v2-access.service';
 
 describe(`admin bootstrap RBAC`, () => {
-  it(`maps bootstrap seed admin types onto deterministic schema roles`, () => {
-    expect(resolveBootstrapAdminRoleKey($Enums.AdminType.SUPER)).toBe(`SUPER_ADMIN`);
-    expect(resolveBootstrapAdminRoleKey($Enums.AdminType.ADMIN)).toBe(`OPS_ADMIN`);
-  });
-
   it(`fails fast when bootstrap schema roles are missing`, async () => {
     const prisma = {
       adminRoleModel: {

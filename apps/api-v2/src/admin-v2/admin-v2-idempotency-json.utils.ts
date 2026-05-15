@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-export type AdminV2IdempotencyJson =
+type AdminV2IdempotencyJson =
   | string
   | number
   | boolean

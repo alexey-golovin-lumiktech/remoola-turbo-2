@@ -188,12 +188,6 @@ type AdminV2PaymentsListRow = Prisma.PaymentRequestModelGetPayload<{
   select: typeof paymentListSelect;
 }>;
 
-export type AdminV2PaymentCaseRow = Prisma.PaymentRequestModelGetPayload<{
-  select: typeof paymentCaseSelect;
-}>;
-
-export type AdminV2PaymentAuditRow = Prisma.AdminActionAuditLogModelGetPayload<typeof paymentAuditSelect>;
-
 export type AdminV2PaymentsQueueRow = Prisma.PaymentRequestModelGetPayload<{
   select: typeof paymentOperationsQueueSelect;
 }>;

@@ -165,23 +165,11 @@ export type AdminV2LedgerListItemRecord = Prisma.LedgerEntryModelGetPayload<{
   include: typeof ledgerListInclude;
 }>;
 
-export type AdminV2LedgerCaseRecord = Prisma.LedgerEntryModelGetPayload<{
-  select: typeof ledgerCaseSelect;
-}>;
-
-export type AdminV2LedgerCaseRelatedEntryRecord = Prisma.LedgerEntryModelGetPayload<{
-  select: typeof relatedLedgerEntrySelect;
-}>;
-
-export type AdminV2LedgerAuditContextRecord = Prisma.AdminActionAuditLogModelGetPayload<{
+type AdminV2LedgerAuditContextRecord = Prisma.AdminActionAuditLogModelGetPayload<{
   include: typeof adminActionAuditContextInclude;
 }>;
 
-export type AdminV2LedgerDisputeRecord = Prisma.LedgerEntryDisputeModelGetPayload<{
-  include: typeof ledgerDisputeInclude;
-}>;
-
-export type AdminV2LedgerListQueryParams = {
+type AdminV2LedgerListQueryParams = {
   limit: number;
   cursor: LedgerCursor;
   search?: string;
@@ -194,7 +182,7 @@ export type AdminV2LedgerListQueryParams = {
   createdAt?: Prisma.DateTimeFilter;
 };
 
-export type AdminV2LedgerDisputesQueryParams = {
+type AdminV2LedgerDisputesQueryParams = {
   limit: number;
   cursor: LedgerCursor;
   search?: string;

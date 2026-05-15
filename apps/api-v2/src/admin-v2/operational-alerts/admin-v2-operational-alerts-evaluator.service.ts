@@ -17,9 +17,9 @@ import { AuthRefreshReuseAlertEvaluator } from './admin-v2-operational-alerts-wo
 import { VerificationQueueAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-verification';
 import { OPERATIONAL_ALERT_WORKSPACES, type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 
-export const EVALUATOR_TICK_MAX_ALERTS = 100;
-export const EVALUATOR_PER_ALERT_TIMEOUT_MS = 10_000;
-export const EVALUATOR_TICK_WALL_BUDGET_MS = 240_000;
+const EVALUATOR_TICK_MAX_ALERTS = 100;
+const EVALUATOR_PER_ALERT_TIMEOUT_MS = 10_000;
+const EVALUATOR_TICK_WALL_BUDGET_MS = 240_000;
 
 class EvaluatorTimeoutError extends Error {
   constructor(timeoutMs: number) {

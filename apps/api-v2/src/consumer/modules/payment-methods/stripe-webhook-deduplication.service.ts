@@ -6,7 +6,7 @@ import { StripeWebhookDeduplicationRepository } from './stripe-webhook-deduplica
 
 import type Stripe from 'stripe';
 
-export const STRIPE_WEBHOOK_EVENT_STATUS = {
+const STRIPE_WEBHOOK_EVENT_STATUS = {
   PROCESSING: `PROCESSING`,
   PROCESSED: `PROCESSED`,
   FAILED: `FAILED`,

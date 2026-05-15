@@ -1,7 +1,7 @@
 import { type ArgumentsHost } from '@nestjs/common';
 
 import { SqlValidationExceptionFilter } from './sql-validation-exception.filter';
-import { InvalidSqlUuidError, SqlValidationError } from '../../shared/prisma-raw.utils';
+import { SqlValidationError } from '../../shared/prisma-raw.utils';
 
 function mockHost() {
   const response = {
@@ -25,7 +25,11 @@ function mockHost() {
 
 describe(`SqlValidationExceptionFilter`, () => {
   it.each([
-    [new InvalidSqlUuidError(`resourceId`, `not-a-uuid`), `INVALID_SQL_UUID`, `resourceId must be a valid UUID`],
+    [
+      new SqlValidationError(`INVALID_SQL_UUID`, `resourceId`, `resourceId must be a valid UUID`),
+      `INVALID_SQL_UUID`,
+      `resourceId must be a valid UUID`,
+    ],
     [
       new SqlValidationError(`INVALID_SQL_DATE`, `created_at`, `created_at must be a valid Date`),
       `INVALID_SQL_DATE`,

@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional, OmitType, PickType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsDateString, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
@@ -104,10 +104,4 @@ export class ExchangeRatesListResponse {
   @ApiProperty({ description: `Array of exchange rate records`, required: true, type: [ExchangeRateResponse] })
   @Type(() => ExchangeRateResponse)
   data: ExchangeRateResponse[];
-}
-
-export class ExchangeConsumerCurrencyBody extends PickType(ExchangeRate, [`fromCurrency`, `toCurrency`] as const) {
-  @Expose()
-  @IsNumber()
-  amount: number;
 }

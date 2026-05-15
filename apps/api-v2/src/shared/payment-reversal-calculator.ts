@@ -11,18 +11,6 @@ import {
 
 type PaymentReversalKind = `REFUND` | `CHARGEBACK`;
 
-type StrictReversalAmountResolution =
-  | {
-      ok: true;
-      finalAmount: number;
-      remainingBefore: number;
-    }
-  | {
-      ok: false;
-      reason: `ALREADY_FULLY_REVERSED` | `EXCEEDS_REMAINING_BALANCE`;
-      remainingBefore: number;
-    };
-
 type StrictReversalDecimalAmountResolution =
   | {
       ok: true;
@@ -92,26 +80,6 @@ export function calculateAlreadyReversedDecimalAmount(
   }, new Prisma.Decimal(0));
 }
 
-export function resolveStrictReversalAmount(params: {
-  requestAmount: number;
-  alreadyReversed: number;
-  requestedAmount?: number;
-}): StrictReversalAmountResolution {
-  const result = resolveStrictReversalDecimalAmount(params);
-  if (result.ok === false) {
-    return {
-      ok: false,
-      reason: result.reason,
-      remainingBefore: moneyDecimalToNumber(result.remainingBefore),
-    };
-  }
-  return {
-    ok: true,
-    finalAmount: moneyDecimalToNumber(result.finalAmount),
-    remainingBefore: moneyDecimalToNumber(result.remainingBefore),
-  };
-}
-
 export function resolveStrictReversalDecimalAmount(params: {
   requestAmount: MoneyDecimalInput;
   alreadyReversed: MoneyDecimalInput;
@@ -144,7 +112,7 @@ export function capExternalReversalAmount(params: {
   };
 }
 
-export function capExternalReversalDecimalAmount(params: {
+function capExternalReversalDecimalAmount(params: {
   requestAmount: MoneyDecimalInput;
   alreadyReversed: MoneyDecimalInput;
   externalAmount: MoneyDecimalInput;

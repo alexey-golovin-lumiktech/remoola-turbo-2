@@ -12,7 +12,7 @@ import { $Enums } from '@remoola/database-2';
 
 const preserveRawField = (field: string) => Transform(({ obj }) => obj?.[field]);
 
-export class UpdateConsumerProfilePersonalDetails implements ConsumerUpdateProfilePersonalDetailsPayload {
+class UpdateConsumerProfilePersonalDetails implements ConsumerUpdateProfilePersonalDetailsPayload {
   @Expose()
   @ApiProperty({ required: false, isArray: false })
   @preserveRawField(`firstName`)
@@ -77,7 +77,7 @@ export class UpdateConsumerProfilePersonalDetails implements ConsumerUpdateProfi
   phoneNumber?: string | null;
 }
 
-export class UpdateConsumerProfileAddressDetails implements ConsumerUpdateProfileAddressDetailsPayload {
+class UpdateConsumerProfileAddressDetails implements ConsumerUpdateProfileAddressDetailsPayload {
   @Expose()
   @ApiProperty({ required: false, isArray: false })
   @preserveRawField(`postalCode`)
@@ -114,7 +114,7 @@ export class UpdateConsumerProfileAddressDetails implements ConsumerUpdateProfil
   state?: string | null;
 }
 
-export class UpdateConsumerProfileOrganizationDetails implements ConsumerUpdateProfileOrganizationDetailsPayload {
+class UpdateConsumerProfileOrganizationDetails implements ConsumerUpdateProfileOrganizationDetailsPayload {
   @Expose()
   @ApiProperty({ required: false, isArray: false })
   @preserveRawField(`name`)

@@ -19,7 +19,7 @@ export const MAX_SAVED_VIEW_NAME_LENGTH = ADMIN_V2_MAX_SAVED_VIEW_NAME_LENGTH;
 export const MAX_SAVED_VIEW_DESCRIPTION_LENGTH = ADMIN_V2_MAX_SAVED_VIEW_DESCRIPTION_LENGTH;
 export const MAX_SAVED_VIEW_PAYLOAD_BYTES = ADMIN_V2_MAX_SAVED_VIEW_PAYLOAD_BYTES;
 
-export function isSavedViewWorkspace(value: string): value is SavedViewWorkspace {
+function isSavedViewWorkspace(value: string): value is SavedViewWorkspace {
   return isAdminV2SavedViewWorkspace(value);
 }
 

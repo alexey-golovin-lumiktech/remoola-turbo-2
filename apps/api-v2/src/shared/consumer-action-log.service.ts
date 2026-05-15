@@ -8,7 +8,7 @@ type ConsumerActionLogScalar = string | number | boolean;
 
 export type ConsumerActionLogMetadata = Record<string, ConsumerActionLogScalar | Array<string | number>> | null;
 
-export type ConsumerActionLogParams = {
+type ConsumerActionLogParams = {
   deviceId: string;
   consumerId?: string | null;
   action: string;

@@ -23,7 +23,7 @@ class ConsumerContractAddress {
   country?: string | null;
 }
 
-export class ConsumerContractSummary {
+class ConsumerContractSummary {
   @Expose()
   @ApiProperty({ example: `completed`, nullable: true })
   lastStatus: string | null;
@@ -61,7 +61,7 @@ export class ConsumerContractSummary {
   waitingPaymentsCount: number;
 }
 
-export class ConsumerContractPaymentItem {
+class ConsumerContractPaymentItem {
   @Expose()
   @ApiProperty({ example: `payment-request-1` })
   id: string;
@@ -91,7 +91,7 @@ export class ConsumerContractPaymentItem {
   paymentRail: string | null;
 }
 
-export class ConsumerContractDocumentItem {
+class ConsumerContractDocumentItem {
   @Expose()
   @ApiProperty({ example: `resource-1` })
   id: string;

@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose } from 'class-transformer';
 import { IsIn, IsUUID } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
@@ -55,17 +55,6 @@ export class PaymentMethod extends BaseModel implements IPaymentMethodModel {
 export class PaymentMethodResponse
   extends OmitType(PaymentMethod, [`deletedAt`] as const)
   implements IPaymentMethodResponse {}
-
-export class PaymentMethodListResponse {
-  @Expose()
-  @ApiProperty({ description: `Total number of payment methods in the result set`, required: true })
-  count: number;
-
-  @Expose()
-  @ApiProperty({ description: `Array of payment method records`, required: true, type: [PaymentMethodResponse] })
-  @Type(() => PaymentMethodResponse)
-  data: PaymentMethodResponse[];
-}
 
 export class PaymentMethodCreate extends PickType(PaymentMethod, [
   `type`,

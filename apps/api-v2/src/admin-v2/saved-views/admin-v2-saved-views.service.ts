@@ -22,7 +22,7 @@ type SavedViewRequestMeta = {
   idempotencyKey?: string | null;
 };
 
-export type SavedViewActorContext = {
+type SavedViewActorContext = {
   id: string;
   email?: string;
   type: string;

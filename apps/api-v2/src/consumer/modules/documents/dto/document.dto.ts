@@ -36,7 +36,7 @@ export class ConsumerDocument {
   tags: string[];
 }
 
-export class ConsumerDocumentsListItem extends ConsumerDocument {
+class ConsumerDocumentsListItem extends ConsumerDocument {
   @Expose()
   @ApiProperty({ type: Boolean, isArray: false })
   isAttachedToDraftPaymentRequest: boolean;

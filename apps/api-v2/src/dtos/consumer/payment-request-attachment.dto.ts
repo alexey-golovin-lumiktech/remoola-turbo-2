@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose } from 'class-transformer';
 
 import { type PaymentRequestAttachmentModel, $Enums } from '@remoola/database-2';
 
@@ -60,19 +60,6 @@ export class PaymentRequestAttachmentResponse
   @Expose()
   @ApiProperty({ description: `Pre-signed download URL for accessing the file` })
   downloadUrl: string;
-}
-
-export class PaymentRequestAttachmentListResponse {
-  @Expose()
-  @ApiProperty({ description: `Total number of attachments in the result set`, required: true })
-  count: number;
-
-  @Expose()
-  @ApiProperty({
-    description: `Array of payment request attachment records`, required: true, type: [PaymentRequestAttachmentResponse]
-  })
-  @Type(() => PaymentRequestAttachmentResponse)
-  data: PaymentRequestAttachmentResponse[];
 }
 
 export class PaymentRequestAttachmentCreate

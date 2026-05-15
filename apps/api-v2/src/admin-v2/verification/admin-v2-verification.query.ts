@@ -59,15 +59,7 @@ const verificationSlaCandidateSelect = Prisma.validator<Prisma.ConsumerModelSele
   verificationUpdatedAt: true,
 });
 
-export type AdminV2VerificationQueueRow = Prisma.ConsumerModelGetPayload<{
-  select: typeof queueConsumerSelect;
-}>;
-
-export type AdminV2VerificationDecisionHistoryRow = Prisma.AdminActionAuditLogModelGetPayload<{
-  select: typeof decisionHistorySelect;
-}>;
-
-export type AdminV2VerificationSlaCandidateRow = Prisma.ConsumerModelGetPayload<{
+type AdminV2VerificationSlaCandidateRow = Prisma.ConsumerModelGetPayload<{
   select: typeof verificationSlaCandidateSelect;
 }>;
 

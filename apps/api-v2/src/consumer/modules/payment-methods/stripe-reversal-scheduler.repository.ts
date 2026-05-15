@@ -5,7 +5,7 @@ import { $Enums } from '@remoola/database-2';
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { PrismaService } from '../../../shared/prisma.service';
 
-export type ReversalSchedulerSelection =
+type ReversalSchedulerSelection =
   | { skipped: true }
   | { skipped: false; stripeIdsForRun: string[]; pendingStripeIds: number };
 

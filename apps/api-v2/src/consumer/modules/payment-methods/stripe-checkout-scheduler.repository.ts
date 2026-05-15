@@ -4,7 +4,7 @@ import { $Enums } from '@remoola/database-2';
 
 import { PrismaService } from '../../../shared/prisma.service';
 
-export type CheckoutSchedulerSelection =
+type CheckoutSchedulerSelection =
   | { skipped: true }
   | { skipped: false; sessionIdsForRun: string[]; pendingSessionIds: number };
 

@@ -30,7 +30,7 @@ type OperationalAlertRequestMeta = {
   idempotencyKey?: string | null;
 };
 
-export type OperationalAlertActorContext = {
+type OperationalAlertActorContext = {
   id: string;
   email?: string;
   type: string;

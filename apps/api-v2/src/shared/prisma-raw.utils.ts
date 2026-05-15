@@ -23,7 +23,7 @@ export class SqlValidationError extends Error {
   }
 }
 
-export class InvalidSqlUuidError extends SqlValidationError {
+class InvalidSqlUuidError extends SqlValidationError {
   constructor(
     readonly label: string,
     readonly value: string,
@@ -54,10 +54,6 @@ export function sqlRequiredUuid(value: string, label = `UUID`): Prisma.Sql {
   }
 
   return Prisma.sql`${normalizedValue}::uuid`;
-}
-
-export function sqlUuidArray(values: readonly string[]): Prisma.Sql {
-  return Prisma.sql`ARRAY[${Prisma.join(values.map((value) => sqlUuid(value)))}]::uuid[]`;
 }
 
 export function sqlRequiredUuidArray(values: readonly string[], label = `UUID list`): Prisma.Sql {

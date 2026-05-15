@@ -16,11 +16,10 @@ import { type GoogleOAuthService } from './google-oauth.service';
 import { type OAuthStateStoreService } from './oauth-state-store.service';
 import { envs } from '../../envs';
 import { type OriginResolverService } from '../../shared/origin-resolver.service';
-import {
-  CSRF_TOKEN_COOKIE_KEY,
-  getApiConsumerGoogleSignupSessionCookieKey,
-  GOOGLE_OAUTH_STATE_COOKIE_KEY,
-} from '../../shared-common';
+import { constants, getApiConsumerGoogleSignupSessionCookieKey } from '../../shared-common';
+
+const CSRF_TOKEN_COOKIE_KEY = constants.CSRF_TOKEN_COOKIE_KEY;
+const GOOGLE_OAUTH_STATE_COOKIE_KEY = constants.GOOGLE_OAUTH_STATE_COOKIE_KEY;
 
 describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   let controller: ConsumerAuthController;

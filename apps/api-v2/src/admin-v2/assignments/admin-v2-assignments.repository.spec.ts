@@ -2,8 +2,21 @@ import { ConflictException, ForbiddenException } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
 
-import { AdminV2AssignmentsRepository, type AssignmentRow } from './admin-v2-assignments.repository';
-import { InvalidSqlUuidError } from '../../shared/prisma-raw.utils';
+import { AdminV2AssignmentsRepository } from './admin-v2-assignments.repository';
+import { SqlValidationError } from '../../shared/prisma-raw.utils';
+
+type AssignmentRow = {
+  id: string;
+  resource_type: string;
+  resource_id: string;
+  assigned_to: string;
+  assigned_by: string | null;
+  assigned_at: Date;
+  released_at: Date | null;
+  released_by: string | null;
+  expires_at: Date | null;
+  reason: string | null;
+};
 
 const OPS_ADMIN_ID = `11111111-1111-4111-8111-111111111111`;
 const OTHER_ADMIN_ID = `22222222-2222-4222-8222-222222222222`;
@@ -134,7 +147,7 @@ describe(`AdminV2AssignmentsRepository`, () => {
           adminId: OPS_ADMIN_ID,
           reason: null,
         }),
-      ).rejects.toBeInstanceOf(InvalidSqlUuidError);
+      ).rejects.toBeInstanceOf(SqlValidationError);
       expect(queryRaw).not.toHaveBeenCalled();
     });
   });
@@ -185,7 +198,7 @@ describe(`AdminV2AssignmentsRepository`, () => {
           adminId: OPS_ADMIN_ID,
           assertCanReleaseLockedAssignment: jest.fn(),
         }),
-      ).rejects.toBeInstanceOf(InvalidSqlUuidError);
+      ).rejects.toBeInstanceOf(SqlValidationError);
       expect(queryRaw).not.toHaveBeenCalled();
     });
   });
@@ -276,7 +289,7 @@ describe(`AdminV2AssignmentsRepository`, () => {
           transferOperationId: `transfer-123`,
           meta: {},
         }),
-      ).rejects.toBeInstanceOf(InvalidSqlUuidError);
+      ).rejects.toBeInstanceOf(SqlValidationError);
       expect(queryRaw).not.toHaveBeenCalled();
     });
   });

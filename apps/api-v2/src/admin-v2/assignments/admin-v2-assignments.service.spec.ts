@@ -7,7 +7,13 @@ import {
   validateMandatoryAssignmentReason,
   validateOptionalAssignmentReason,
 } from './admin-v2-assignment-policy';
-import { AdminV2AssignmentsService, type AssignmentActorContext } from './admin-v2-assignments.service';
+import { AdminV2AssignmentsService } from './admin-v2-assignments.service';
+
+type AssignmentActorContext = {
+  id: string;
+  email: string;
+  type: `ADMIN` | `SUPER`;
+};
 
 type AssignmentRow = {
   id: string;

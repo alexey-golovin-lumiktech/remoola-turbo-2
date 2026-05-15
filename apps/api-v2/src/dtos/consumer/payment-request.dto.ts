@@ -1,4 +1,4 @@
-import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsDate, IsIn, IsNumber, IsString, IsUUID, ValidateIf } from 'class-validator';
 
@@ -6,15 +6,7 @@ import { $Enums } from '@remoola/database-2';
 
 import { BaseModel } from '../common';
 import { PaymentRequestAttachmentResponse } from './payment-request-attachment.dto';
-import {
-  type IConsumerModel,
-  type IPaymentRequestModel,
-  type IPaymentRequestResponseExtended,
-  type ReqQueryFilter,
-  type SortDirectionValue,
-  constants,
-  IsValidEmail,
-} from '../../shared-common';
+import { type IPaymentRequestModel, type IPaymentRequestResponseExtended } from '../../shared-common';
 
 class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @Expose()
@@ -127,33 +119,4 @@ export class PaymentRequestResponse
   })
   @Type(() => PaymentRequestAttachmentResponse)
   attachments: PaymentRequestAttachmentResponse[] = [];
-}
-
-export class PaymentRequestListResponse {
-  @Expose()
-  @ApiProperty({ description: `Total number of payment requests in the result set`, required: true })
-  count: number;
-
-  @Expose()
-  @ApiProperty({ description: `Array of payment request records`, required: true, type: [PaymentRequestResponse] })
-  @Type(() => PaymentRequestResponse)
-  data: PaymentRequestResponse[];
-}
-
-export class PaymentRequestsListQuery {
-  paging: { limit: number; offset: number };
-  sorting: [{ field: string; direction: SortDirectionValue }];
-  filter: ReqQueryFilter<IConsumerModel>;
-}
-
-export class PaymentRequestPayToContact extends PickType(PaymentRequest, [
-  `description`,
-  `amount`,
-  `currencyCode`,
-  `type`,
-] as const) {
-  @Expose()
-  @ApiProperty({ description: `Email address of the contact to pay` })
-  @IsValidEmail({ message: constants.INVALID_EMAIL })
-  contactEmail: string;
 }

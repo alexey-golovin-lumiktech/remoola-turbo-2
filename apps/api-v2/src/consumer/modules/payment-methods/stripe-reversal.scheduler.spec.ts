@@ -1,10 +1,11 @@
 import { $Enums } from '@remoola/database-2';
 
-import {
-  type ReversalSchedulerSelection,
-  StripeReversalSchedulerRepository,
-} from './stripe-reversal-scheduler.repository';
+import { StripeReversalSchedulerRepository } from './stripe-reversal-scheduler.repository';
 import { StripeReversalScheduler } from './stripe-reversal.scheduler';
+
+type ReversalSchedulerSelection =
+  | { skipped: true }
+  | { skipped: false; stripeIdsForRun: string[]; pendingStripeIds: number };
 
 const createOutcomeIdempotentMock = jest.fn().mockResolvedValue(undefined);
 

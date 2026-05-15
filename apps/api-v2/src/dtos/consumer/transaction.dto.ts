@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose } from 'class-transformer';
 import { IsIn, IsNotEmpty, IsString, IsUUID, ValidateIf } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
@@ -111,17 +111,6 @@ class Transaction extends BaseModel implements ITransactionModel {
 export class TransactionResponse
   extends OmitType(Transaction, [`deletedAt`] as const)
   implements ITransactionResponse {}
-
-export class TransactionListResponse {
-  @Expose()
-  @ApiProperty({ description: `Total number of transactions in the result set`, required: true })
-  count: number;
-
-  @Expose()
-  @ApiProperty({ description: `Array of transaction records`, required: true, type: [TransactionResponse] })
-  @Type(() => TransactionResponse)
-  data: TransactionResponse[];
-}
 
 export class TransactionCreate
   extends PickType(Transaction, [

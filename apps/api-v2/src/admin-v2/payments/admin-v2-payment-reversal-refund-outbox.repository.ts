@@ -14,7 +14,7 @@ import { PrismaService } from '../../shared/prisma.service';
 
 type NotificationOutboxClient = Pick<Prisma.TransactionClient, `notificationOutboxModel`>;
 
-export type ClaimedAdminRefundFinalizationOutboxRow = NotificationOutboxModel;
+type ClaimedAdminRefundFinalizationOutboxRow = NotificationOutboxModel;
 
 const RETRYABLE_OUTBOX_STATUSES = [`PENDING`, `FAILED`] as const;
 const PROCESSING_STATUS = `PROCESSING`;
