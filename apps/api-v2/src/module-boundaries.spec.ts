@@ -97,6 +97,20 @@ function sourceFileCounts(directory: string, pattern: RegExp): Map<string, numbe
   return counts;
 }
 
+function mergeAllowlistBuckets(buckets: Record<string, Map<string, number>>): Map<string, number> {
+  const merged = new Map<string, number>();
+  for (const [bucket, files] of Object.entries(buckets)) {
+    expect(files.size).toBeGreaterThan(0);
+    for (const [file, count] of files.entries()) {
+      expect(merged.has(file)).toBe(false);
+      expect(count).toBeGreaterThan(0);
+      merged.set(file, count);
+    }
+    expect([`external-effect`, `legacy-db-only`, `post-commit-event`]).toContain(bucket);
+  }
+  return merged;
+}
+
 describe(`Nest module provider boundaries`, () => {
   it(`keeps the admin-v2 shared public surface explicit`, () => {
     expectExactExports(AdminV2SharedModule, [
@@ -153,24 +167,29 @@ describe(`Nest module provider boundaries`, () => {
 
   it(`keeps admin-v2 idempotency transaction posture explicit`, () => {
     const adminV2Dir = join(__dirname, `admin-v2`);
+    const nonTransactionalExecuteAllowlist = {
+      [`external-effect`]: new Map([
+        [`admins/admin-v2-admin-invitations.service.ts`, 1],
+        [`admins/admin-v2-admin-password-flows.service.ts`, 1],
+        [`consumers/admin-v2-consumers.service.ts`, 3],
+        [`verification/admin-v2-verification.service.ts`, 1],
+      ]),
+      [`legacy-db-only`]: new Map([
+        [`assignments/admin-v2-assignments.service.ts`, 3],
+        [`documents/admin-v2-documents.service.ts`, 5],
+        [`operational-alerts/admin-v2-operational-alerts.service.ts`, 3],
+        [`payment-methods/admin-v2-payment-methods.service.ts`, 3],
+        [`payouts/admin-v2-payouts.service.ts`, 1],
+        [`saved-views/admin-v2-saved-views.service.ts`, 3],
+      ]),
+      [`post-commit-event`]: new Map([[`exchange/admin-v2-exchange-commands.service.ts`, 6]]),
+    };
 
     expect(sourceFileCounts(adminV2Dir, /idempotency\.executeInTransaction\s*\(/g)).toEqual(
       new Map([[`admins/admin-v2-admin-mutations.service.ts`, 4]]),
     );
     expect(sourceFileCounts(adminV2Dir, /idempotency\.execute\s*\(/g)).toEqual(
-      new Map([
-        [`admins/admin-v2-admin-invitations.service.ts`, 1],
-        [`admins/admin-v2-admin-password-flows.service.ts`, 1],
-        [`assignments/admin-v2-assignments.service.ts`, 3],
-        [`consumers/admin-v2-consumers.service.ts`, 3],
-        [`documents/admin-v2-documents.service.ts`, 5],
-        [`exchange/admin-v2-exchange-commands.service.ts`, 6],
-        [`operational-alerts/admin-v2-operational-alerts.service.ts`, 3],
-        [`payment-methods/admin-v2-payment-methods.service.ts`, 3],
-        [`payouts/admin-v2-payouts.service.ts`, 1],
-        [`saved-views/admin-v2-saved-views.service.ts`, 3],
-        [`verification/admin-v2-verification.service.ts`, 1],
-      ]),
+      mergeAllowlistBuckets(nonTransactionalExecuteAllowlist),
     );
   });
 });
