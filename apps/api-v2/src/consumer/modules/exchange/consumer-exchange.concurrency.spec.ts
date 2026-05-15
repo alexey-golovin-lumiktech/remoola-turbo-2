@@ -6,12 +6,14 @@ import { $Enums } from '@remoola/database-2';
 
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
+import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
 import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
 import { ConsumerExchangeService } from './consumer-exchange.service';
+import { BalanceCalculationRepository } from '../../../shared/balance-calculation.repository';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
 describe(`ConsumerExchangeService - Concurrency Safety`, () => {
-  const consumerId = `consumer-exchange-test`;
+  const consumerId = `33333333-3333-4333-8333-333333333333`;
   const mockRate = { rate: 0.92, id: `rate-1` };
 
   // Helper to convert Prisma.sql template object to string
@@ -94,10 +96,10 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
   }
 
   function createService(prisma: any) {
-    const balanceService = new BalanceCalculationService(prisma);
+    const balanceService = new BalanceCalculationService(new BalanceCalculationRepository(prisma));
     return new ConsumerExchangeService(
       balanceService,
-      new ConsumerExchangeRateReader(prisma),
+      new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma)),
       new ConsumerExchangeExecutionRepository(prisma),
       new ConsumerExchangeAutomationRepository(prisma),
     );

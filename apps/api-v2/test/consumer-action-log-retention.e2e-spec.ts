@@ -7,6 +7,7 @@ import { PrismaClient } from '@remoola/database-2';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { ConsumerActionLogRetentionScheduler } from '../src/consumer/auth/consumer-action-log-retention.scheduler';
 import { envs } from '../src/envs';
+import { ConsumerActionLogMaintenanceRepository } from '../src/shared/consumer-action-log-maintenance.repository';
 import { type PrismaService } from '../src/shared/prisma.service';
 
 describe(`Consumer action log retention smoke (e2e, isolated DB)`, () => {
@@ -51,7 +52,8 @@ describe(`Consumer action log retention smoke (e2e, isolated DB)`, () => {
         },
       });
 
-      const scheduler = new ConsumerActionLogRetentionScheduler(prisma as unknown as PrismaService);
+      const maintenanceRepository = new ConsumerActionLogMaintenanceRepository(prisma as unknown as PrismaService);
+      const scheduler = new ConsumerActionLogRetentionScheduler(maintenanceRepository);
       await scheduler.enforceRetention();
 
       const staleCount = await prisma.consumerActionLogModel.count({

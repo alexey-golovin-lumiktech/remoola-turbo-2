@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
+import { type AdminV2AdminSessionsQuery } from './admin-v2-admin-sessions.query';
 import { AdminV2AdminSessionsService } from './admin-v2-admin-sessions.service';
 
 describe(`AdminV2AdminSessionsService`, () => {
@@ -9,11 +10,11 @@ describe(`AdminV2AdminSessionsService`, () => {
     revokeResult?: { revokedSessionId: string; alreadyRevoked: boolean };
     sessions?: unknown[];
   }) {
-    const adminFindFirst = jest.fn(async () => (opts?.targetAdminExists === false ? null : { id: `admin-2` }));
-    const sessionFindFirst = jest.fn(async () => (opts?.targetSessionExists === false ? null : { id: `session-2` }));
-    const prisma = {
-      adminModel: { findFirst: adminFindFirst },
-      adminAuthSessionModel: { findFirst: sessionFindFirst },
+    const findActiveAdminId = jest.fn(async () => (opts?.targetAdminExists === false ? null : { id: `admin-2` }));
+    const findOwnedSessionId = jest.fn(async () => (opts?.targetSessionExists === false ? null : { id: `session-2` }));
+    const query = {
+      findActiveAdminId,
+      findOwnedSessionId,
     };
     const listSessionsForAdmin = jest.fn(async () => opts?.sessions ?? []);
     const revokeSessionByIdAndAudit = jest.fn(
@@ -23,31 +24,28 @@ describe(`AdminV2AdminSessionsService`, () => {
     const recordAudit = jest.fn(async () => undefined);
     const adminActionAudit = { record: recordAudit };
     const service = new AdminV2AdminSessionsService(
-      prisma as never,
+      query as unknown as AdminV2AdminSessionsQuery,
       adminAuthService as never,
       adminActionAudit as never,
     );
     return {
       service,
-      prisma,
+      query,
       listSessionsForAdmin,
       revokeSessionByIdAndAudit,
       recordAudit,
-      adminFindFirst,
-      sessionFindFirst,
+      findActiveAdminId,
+      findOwnedSessionId,
     };
   }
 
   describe(`listSessionsForAdmin`, () => {
     it(`looks up the admin and delegates to AdminAuthService.listSessionsForAdmin`, async () => {
-      const { service, listSessionsForAdmin, adminFindFirst } = buildHarness({
+      const { service, listSessionsForAdmin, findActiveAdminId } = buildHarness({
         sessions: [{ id: `session-2`, sessionFamilyId: `family-2` }],
       });
       const result = await service.listSessionsForAdmin(`admin-2`);
-      expect(adminFindFirst).toHaveBeenCalledWith({
-        where: { id: `admin-2`, deletedAt: null },
-        select: { id: true },
-      });
+      expect(findActiveAdminId).toHaveBeenCalledWith(`admin-2`);
       expect(listSessionsForAdmin).toHaveBeenCalledWith(`admin-2`);
       expect(result).toEqual({ sessions: [{ id: `session-2`, sessionFamilyId: `family-2` }] });
     });
@@ -91,10 +89,13 @@ describe(`AdminV2AdminSessionsService`, () => {
     });
 
     it(`throws when target session does not exist for the target admin`, async () => {
-      const { service, revokeSessionByIdAndAudit, recordAudit } = buildHarness({ targetSessionExists: false });
+      const { service, revokeSessionByIdAndAudit, recordAudit, findOwnedSessionId } = buildHarness({
+        targetSessionExists: false,
+      });
       await expect(service.revokeSessionAsManager(`admin-2`, `missing`, `admin-1`, ctx)).rejects.toThrow(
         BadRequestException,
       );
+      expect(findOwnedSessionId).toHaveBeenCalledWith({ adminId: `admin-2`, sessionId: `missing` });
       expect(revokeSessionByIdAndAudit).not.toHaveBeenCalled();
       expect(recordAudit).not.toHaveBeenCalled();
     });

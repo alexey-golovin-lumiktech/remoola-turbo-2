@@ -1,39 +1,37 @@
+import { type AdminV2SystemQuery } from './admin-v2-system.query';
 import { AdminV2SystemService } from './admin-v2-system.service';
 
 describe(`AdminV2SystemService`, () => {
   function makeService() {
-    const prisma = {
-      $queryRaw: jest.fn(),
-      stripeWebhookEventModel: {
-        aggregate: jest.fn(),
-      },
-      resetPasswordModel: {
-        count: jest.fn(),
-      },
-      oauthStateModel: {
-        count: jest.fn(),
-      },
+    const query = {
+      getStripeCheckoutLag: jest.fn(async () => ({ count: 0, oldestAt: null })),
+      getStripeReversalLag: jest.fn(async () => ({ count: 0, oldestAt: null })),
+      getLatestProcessedWebhookAt: jest.fn(async () => null),
+      getOverdueScheduledConversions: jest.fn(async () => ({ count: 0, oldestAt: null })),
+      countExpiredResetPasswords: jest.fn(async () => 0),
+      countExpiredOauthStates: jest.fn(async () => 0),
+      listEmailDeliveryIssuePatterns: jest.fn(async () => []),
+      getStaleRateSnapshot: jest.fn(async () => ({ count: 0, oldestReferenceAt: null })),
+    };
+    const ledgerAnomalies = {
+      getSummary: jest.fn(async () => ({
+        computedAt: `2026-04-17T12:00:00.000Z`,
+        totalCount: 0,
+        classes: {
+          stalePendingEntries: { count: 0 },
+          inconsistentOutcomeChains: { count: 0 },
+          largeValueOutliers: { count: 0 },
+          orphanedEntries: { count: 0 },
+          duplicateIdempotencyRisk: { count: 0 },
+          impossibleTransitions: { count: 0 },
+        },
+      })),
     };
 
     return {
-      prisma,
-      service: new AdminV2SystemService(
-        prisma as never,
-        {
-          getSummary: jest.fn(async () => ({
-            computedAt: `2026-04-17T12:00:00.000Z`,
-            totalCount: 0,
-            classes: {
-              stalePendingEntries: { count: 0 },
-              inconsistentOutcomeChains: { count: 0 },
-              largeValueOutliers: { count: 0 },
-              orphanedEntries: { count: 0 },
-              duplicateIdempotencyRisk: { count: 0 },
-              impossibleTransitions: { count: 0 },
-            },
-          })),
-        } as never,
-      ),
+      query,
+      ledgerAnomalies,
+      service: new AdminV2SystemService(query as unknown as AdminV2SystemQuery, ledgerAnomalies as never),
     };
   }
 
@@ -95,9 +93,9 @@ describe(`AdminV2SystemService`, () => {
   });
 
   it(`marks ledger anomalies as watch when the read-only queue reports backlog`, async () => {
-    const { prisma } = makeService();
+    const { query } = makeService();
     const service = new AdminV2SystemService(
-      prisma as never,
+      query as unknown as AdminV2SystemQuery,
       {
         getSummary: jest.fn(async () => ({
           computedAt: `2026-04-17T12:00:00.000Z`,
@@ -133,13 +131,16 @@ describe(`AdminV2SystemService`, () => {
   });
 
   it(`marks stripe webhook health as watch when payment and reversal ingestion lag is present`, async () => {
-    const { prisma, service } = makeService();
-    prisma.$queryRaw
-      .mockResolvedValueOnce([{ count: 2, oldestAt: new Date(`2026-04-17T09:00:00.000Z`) }])
-      .mockResolvedValueOnce([{ count: 1, oldestAt: new Date(`2026-04-17T10:00:00.000Z`) }]);
-    prisma.stripeWebhookEventModel.aggregate.mockResolvedValue({
-      _max: { createdAt: new Date(`2026-04-17T11:55:00.000Z`) },
+    const { query, service } = makeService();
+    query.getStripeCheckoutLag.mockResolvedValueOnce({
+      count: 2,
+      oldestAt: new Date(`2026-04-17T09:00:00.000Z`),
     });
+    query.getStripeReversalLag.mockResolvedValueOnce({
+      count: 1,
+      oldestAt: new Date(`2026-04-17T10:00:00.000Z`),
+    });
+    query.getLatestProcessedWebhookAt.mockResolvedValueOnce(new Date(`2026-04-17T11:55:00.000Z`));
 
     const card = await (service as any).getStripeWebhookHealth(new Date(`2026-04-17T12:00:00.000Z`));
 
@@ -156,9 +157,20 @@ describe(`AdminV2SystemService`, () => {
     );
   });
 
+  it(`reports scheduler health as temporarily unavailable when background probes fail`, async () => {
+    const { query, service } = makeService();
+    query.getOverdueScheduledConversions.mockRejectedValueOnce(new Error(`db unavailable`));
+
+    const card = await (service as any).getSchedulerHealth(new Date(`2026-04-17T12:00:00.000Z`));
+
+    expect(card.status).toBe(`temporarily-unavailable`);
+    expect(card.primaryAction).toBeNull();
+    expect(card.escalationHint).toContain(`Escalate if exchange scheduling or auth recovery cleanup appears delayed`);
+  });
+
   it(`reports email delivery patterns as temporarily unavailable when the audit source is not readable`, async () => {
-    const { prisma, service } = makeService();
-    prisma.$queryRaw.mockRejectedValue(new Error(`db unavailable`));
+    const { query, service } = makeService();
+    query.listEmailDeliveryIssuePatterns.mockRejectedValueOnce(new Error(`db unavailable`));
 
     const card = await (service as any).getEmailDeliveryIssuePatterns(new Date(`2026-04-17T12:00:00.000Z`));
 

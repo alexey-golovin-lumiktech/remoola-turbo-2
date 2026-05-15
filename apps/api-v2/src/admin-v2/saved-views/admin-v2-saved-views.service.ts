@@ -1,10 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { type AdminV2SavedViewSummary, type AdminV2SavedViewsListResponse } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import {
   MAX_SAVED_VIEW_DESCRIPTION_LENGTH,
@@ -14,6 +13,8 @@ import {
   assertSavedViewWorkspace,
   assertValidPayload,
 } from './admin-v2-saved-views.dto';
+import { AdminV2SavedViewsQuery } from './admin-v2-saved-views.query';
+import { AdminV2SavedViewsRepository } from './admin-v2-saved-views.repository';
 
 type SavedViewRequestMeta = {
   ipAddress?: string | null;
@@ -82,29 +83,20 @@ function assertExpectedDeletedAtNull(value: number) {
   }
 }
 
-function isUniqueViolation(error: unknown): boolean {
-  if (error == null || typeof error !== `object`) return false;
-  const candidate = error as { code?: string };
-  return candidate.code === `P2002`;
-}
-
 @Injectable()
 export class AdminV2SavedViewsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2SavedViewsQuery,
+    private readonly repository: AdminV2SavedViewsRepository,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly adminActionAudit: AdminActionAuditService,
   ) {}
 
   async list(actor: SavedViewActorContext, workspace: string): Promise<AdminV2SavedViewsListResponse> {
     assertSavedViewWorkspace(workspace);
-    const rows = await this.prisma.savedViewModel.findMany({
-      where: {
-        ownerId: actor.id,
-        workspace,
-        deletedAt: null,
-      },
-      orderBy: { name: `asc` },
+    const rows = await this.query.listOwnedActiveViews({
+      ownerId: actor.id,
+      workspace,
       take: SAVED_VIEW_LIST_HARD_CAP,
     });
     return { views: rows.map((row) => toSummary(row as SavedViewRow)) };
@@ -133,23 +125,13 @@ export class AdminV2SavedViewsService {
       key: meta.idempotencyKey,
       payload: { workspace, name, description, queryPayload },
       execute: async () => {
-        let created;
-        try {
-          created = await this.prisma.savedViewModel.create({
-            data: {
-              ownerId: adminId,
-              workspace,
-              name,
-              description,
-              queryPayload,
-            },
-          });
-        } catch (error) {
-          if (isUniqueViolation(error)) {
-            throw new ConflictException(`Saved view with this name already exists`);
-          }
-          throw error;
-        }
+        const created = await this.repository.create({
+          adminId,
+          workspace,
+          name,
+          description,
+          queryPayload,
+        });
 
         await this.adminActionAudit.record({
           adminId,
@@ -210,47 +192,15 @@ export class AdminV2SavedViewsService {
         expectedDeletedAtNull: 0,
       },
       execute: async () => {
-        const result = await this.prisma.$transaction(async (tx) => {
-          const lockedRows = await tx.$queryRaw<
-            Array<{
-              id: string;
-              owner_id: string;
-              workspace: string;
-              name: string;
-              deleted_at: Date | null;
-            }>
-          >(Prisma.sql`
-            SELECT "id", "owner_id", "workspace", "name", "deleted_at"
-            FROM "saved_view"
-            WHERE "id" = ${Prisma.sql`${savedViewId}::uuid`}
-            FOR UPDATE
-          `);
-          const locked = lockedRows[0];
-          if (!locked || locked.owner_id !== adminId) {
-            throw new NotFoundException(`Saved view not found`);
-          }
-          if (locked.deleted_at) {
-            throw new ConflictException(`Saved view is already deleted`);
-          }
-
-          let updated;
-          try {
-            updated = await tx.savedViewModel.update({
-              where: { id: savedViewId },
-              data: {
-                ...(hasName ? { name: nextName! } : {}),
-                ...(hasDescription ? { description: nextDescription ?? null } : {}),
-                ...(hasPayload ? { queryPayload: body.queryPayload as Prisma.InputJsonValue } : {}),
-              },
-            });
-          } catch (error) {
-            if (isUniqueViolation(error)) {
-              throw new ConflictException(`Saved view with this name already exists`);
-            }
-            throw error;
-          }
-
-          return { previousName: locked.name, updated };
+        const result = await this.repository.update({
+          savedViewId,
+          adminId,
+          hasName,
+          nextName,
+          hasDescription,
+          nextDescription,
+          hasPayload,
+          queryPayload: body.queryPayload,
         });
 
         const changedFields = [
@@ -294,34 +244,7 @@ export class AdminV2SavedViewsService {
       key: meta.idempotencyKey,
       payload: { savedViewId, expectedDeletedAtNull: 0 },
       execute: async () => {
-        const result = await this.prisma.$transaction(async (tx) => {
-          const lockedRows = await tx.$queryRaw<
-            Array<{
-              id: string;
-              owner_id: string;
-              workspace: string;
-              name: string;
-              deleted_at: Date | null;
-            }>
-          >(Prisma.sql`
-            SELECT "id", "owner_id", "workspace", "name", "deleted_at"
-            FROM "saved_view"
-            WHERE "id" = ${Prisma.sql`${savedViewId}::uuid`}
-            FOR UPDATE
-          `);
-          const locked = lockedRows[0];
-          if (!locked || locked.owner_id !== adminId) {
-            throw new NotFoundException(`Saved view not found`);
-          }
-          if (locked.deleted_at) {
-            throw new ConflictException(`Saved view is already deleted`);
-          }
-          const updated = await tx.savedViewModel.update({
-            where: { id: savedViewId },
-            data: { deletedAt: new Date() },
-          });
-          return { lockedName: locked.name, lockedWorkspace: locked.workspace, updated };
-        });
+        const result = await this.repository.softDelete({ savedViewId, adminId });
 
         await this.adminActionAudit.record({
           adminId,

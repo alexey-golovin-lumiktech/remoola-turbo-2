@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 
 import { AdminV2SharedModule } from '../admin-v2-shared.module';
 import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
-import { AdminV2PayoutsTransactionRunner } from './admin-v2-payouts-transaction.runner';
 import { AdminV2PayoutsController } from './admin-v2-payouts.controller';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
@@ -11,12 +10,7 @@ import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.mo
 @Module({
   imports: [AdminV2SharedModule, AdminV2AssignmentsModule],
   controllers: [AdminV2PayoutsController],
-  providers: [
-    AdminV2PayoutEscalationRepository,
-    AdminV2PayoutsRepository,
-    AdminV2PayoutsTransactionRunner,
-    AdminV2PayoutsService,
-  ],
+  providers: [AdminV2PayoutEscalationRepository, AdminV2PayoutsRepository, AdminV2PayoutsService],
   exports: [AdminV2PayoutsService],
 })
 export class AdminV2PayoutsModule {}

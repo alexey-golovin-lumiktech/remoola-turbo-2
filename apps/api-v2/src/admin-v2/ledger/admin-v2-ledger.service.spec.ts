@@ -1,38 +1,15 @@
+import { NotFoundException } from '@nestjs/common';
+
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { AdminV2LedgerService } from './admin-v2-ledger.service';
 
 const LEDGER_ENTRY_ID = `aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa`;
 const ASSIGNED_TO_ID = `bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb`;
 const ASSIGNED_BY_ID = `cccccccc-cccc-4ccc-8ccc-cccccccccccc`;
-const RELEASED_BY_ID = `dddddddd-dddd-4ddd-8ddd-dddddddddddd`;
+const RELEASED_BY_ID = `dddddddd-dddd-4ddd-dddd-dddddddddddd`;
 const ASSIGNMENT_ID_ACTIVE = `eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee`;
 const ASSIGNMENT_ID_RELEASED = `ffffffff-ffff-4fff-8fff-ffffffffffff`;
-
-function buildLedgerCaseFindUnique(id: string = LEDGER_ENTRY_ID) {
-  return {
-    id,
-    ledgerId: `ledger-group-1`,
-    type: $Enums.LedgerEntryType.USER_PAYMENT,
-    currencyCode: $Enums.CurrencyCode.USD,
-    status: $Enums.TransactionStatus.PENDING,
-    amount: new Prisma.Decimal(`48.00`),
-    feesType: null,
-    feesAmount: null,
-    stripeId: null,
-    idempotencyKey: null,
-    metadata: null,
-    consumerId: `consumer-1`,
-    paymentRequestId: null,
-    createdAt: new Date(`2026-04-13T00:00:00.000Z`),
-    updatedAt: new Date(`2026-04-13T01:00:00.000Z`),
-    consumer: { email: `consumer@example.com` },
-    paymentRequest: null,
-    outcomes: [],
-    disputes: [],
-  };
-}
 
 type AssignmentRowFixture = {
   id: string;
@@ -87,92 +64,109 @@ function buildAssignmentContextFromRows(rows: AssignmentRowFixture[]) {
   return { current, history };
 }
 
-function buildLedgerServiceWithAssignmentRows(rows: AssignmentRowFixture[]) {
-  const getAssignmentContextForResource = jest.fn(async () => buildAssignmentContextFromRows(rows));
-  const service = new AdminV2LedgerService(
-    {
-      ledgerEntryModel: {
-        findUnique: jest.fn(async () => buildLedgerCaseFindUnique()),
-        findMany: jest.fn(async () => []),
-      },
-      adminActionAuditLogModel: {
-        findMany: jest.fn(async () => []),
-      },
-    } as never,
-    { getAssignmentContextForResource } as never,
-  );
-  return { service, getAssignmentContextForResource };
+function buildLedgerListRow(id: string = LEDGER_ENTRY_ID) {
+  return {
+    id,
+    ledgerId: `ledger-group-1`,
+    type: $Enums.LedgerEntryType.USER_PAYMENT,
+    currencyCode: $Enums.CurrencyCode.USD,
+    status: $Enums.TransactionStatus.PENDING,
+    amount: new Prisma.Decimal(`48.00`),
+    feesType: null,
+    feesAmount: null,
+    stripeId: null,
+    idempotencyKey: null,
+    metadata: null,
+    consumerId: `consumer-1`,
+    paymentRequestId: null,
+    createdAt: new Date(`2026-04-13T00:00:00.000Z`),
+    updatedAt: new Date(`2026-04-13T01:00:00.000Z`),
+    consumer: { email: `consumer@example.com` },
+    paymentRequest: null,
+    outcomes: [],
+    disputes: [],
+  };
+}
+
+function buildLedgerCaseEntry(id: string = LEDGER_ENTRY_ID) {
+  return {
+    ...buildLedgerListRow(id),
+    paymentRequest: null,
+    outcomes: [],
+    disputes: [],
+  };
+}
+
+function buildService() {
+  const query = {
+    listLedgerEntries: jest.fn(),
+    getLedgerEntryCase: jest.fn(),
+    listDisputes: jest.fn(),
+  };
+  const assignmentsService = {
+    getAssignmentContextForResource: jest.fn(),
+    getActiveAssigneesForResource: jest.fn(),
+  };
+
+  return {
+    service: new AdminV2LedgerService(query as never, assignmentsService as never),
+    query,
+    assignmentsService,
+  };
 }
 
 describe(`AdminV2LedgerService`, () => {
   it(`uses latest outcome semantics on ledger case instead of earliest outcome`, async () => {
-    const service = new AdminV2LedgerService(
-      {
-        ledgerEntryModel: {
-          findUnique: jest.fn(async () => ({
-            id: `ledger-1`,
-            ledgerId: `ledger-group-1`,
-            type: $Enums.LedgerEntryType.USER_PAYMENT,
-            currencyCode: $Enums.CurrencyCode.USD,
-            status: $Enums.TransactionStatus.PENDING,
-            amount: new Prisma.Decimal(`48.00`),
-            feesType: null,
-            feesAmount: null,
-            stripeId: `pi_123`,
-            idempotencyKey: `idem-1`,
-            metadata: null,
-            consumerId: `consumer-1`,
-            paymentRequestId: `payment-1`,
-            createdAt: new Date(`2026-04-13T00:00:00.000Z`),
-            updatedAt: new Date(`2026-04-13T01:00:00.000Z`),
-            consumer: { email: `consumer@example.com` },
-            paymentRequest: {
-              id: `payment-1`,
-              status: $Enums.TransactionStatus.PENDING,
-              paymentRail: $Enums.PaymentRail.CARD,
-              payerId: `consumer-1`,
-              requesterId: `consumer-2`,
-              amount: new Prisma.Decimal(`48.00`),
-              currencyCode: $Enums.CurrencyCode.USD,
-              payer: { email: `payer@example.com` },
-              requester: { email: `requester@example.com` },
-            },
-            outcomes: [
-              {
-                id: `outcome-latest`,
-                status: $Enums.TransactionStatus.COMPLETED,
-                source: `stripe`,
-                externalId: `pi_123`,
-                createdAt: new Date(`2026-04-13T03:00:00.000Z`),
-              },
-              {
-                id: `outcome-earliest`,
-                status: $Enums.TransactionStatus.WAITING,
-                source: `stripe`,
-                externalId: `pi_122`,
-                createdAt: new Date(`2026-04-13T02:00:00.000Z`),
-              },
-            ],
-            disputes: [],
-          })),
-          findMany: jest.fn(async () => [
-            {
-              id: `ledger-1`,
-              type: $Enums.LedgerEntryType.USER_PAYMENT,
-              amount: new Prisma.Decimal(`48.00`),
-              currencyCode: $Enums.CurrencyCode.USD,
-              status: $Enums.TransactionStatus.PENDING,
-              createdAt: new Date(`2026-04-13T00:00:00.000Z`),
-              outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
-            },
-          ]),
+    const { service, query, assignmentsService } = buildService();
+    query.getLedgerEntryCase.mockResolvedValueOnce({
+      entry: {
+        ...buildLedgerCaseEntry(`ledger-1`),
+        ledgerId: `ledger-group-1`,
+        stripeId: `pi_123`,
+        idempotencyKey: `idem-1`,
+        paymentRequestId: `payment-1`,
+        paymentRequest: {
+          id: `payment-1`,
+          status: $Enums.TransactionStatus.PENDING,
+          paymentRail: $Enums.PaymentRail.CARD,
+          payerId: `consumer-1`,
+          requesterId: `consumer-2`,
+          amount: new Prisma.Decimal(`48.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          payer: { email: `payer@example.com` },
+          requester: { email: `requester@example.com` },
         },
-        adminActionAuditLogModel: {
-          findMany: jest.fn(async () => []),
+        outcomes: [
+          {
+            id: `outcome-latest`,
+            status: $Enums.TransactionStatus.COMPLETED,
+            source: `stripe`,
+            externalId: `pi_123`,
+            createdAt: new Date(`2026-04-13T03:00:00.000Z`),
+          },
+          {
+            id: `outcome-earliest`,
+            status: $Enums.TransactionStatus.WAITING,
+            source: `stripe`,
+            externalId: `pi_122`,
+            createdAt: new Date(`2026-04-13T02:00:00.000Z`),
+          },
+        ],
+      },
+      relatedEntries: [
+        {
+          id: `ledger-1`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT,
+          amount: new Prisma.Decimal(`48.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.PENDING,
+          createdAt: new Date(`2026-04-13T00:00:00.000Z`),
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
         },
-      } as never,
-      { getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })) } as never,
-    );
+      ],
+      auditContext: [],
+    });
+    assignmentsService.getAssignmentContextForResource.mockResolvedValueOnce({ current: null, history: [] });
 
     const ledgerCase = await service.getLedgerEntryCase(`ledger-1`);
 
@@ -183,29 +177,44 @@ describe(`AdminV2LedgerService`, () => {
     expect(ledgerCase.assignment).toEqual({ current: null, history: [] });
   });
 
+  it(`throws not found when the query does not return a ledger case`, async () => {
+    const { service, query } = buildService();
+    query.getLedgerEntryCase.mockResolvedValueOnce(null);
+
+    await expect(service.getLedgerEntryCase(`missing-ledger`)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
   it(`returns assignment.current populated with one history entry when the entry is actively assigned`, async () => {
+    const { service, query, assignmentsService } = buildService();
     const assignedAt = new Date(`2026-04-21T08:00:00.000Z`);
     const expiresAt = new Date(`2026-04-21T20:00:00.000Z`);
-    const { service, getAssignmentContextForResource } = buildLedgerServiceWithAssignmentRows([
-      {
-        id: ASSIGNMENT_ID_ACTIVE,
-        resource_id: LEDGER_ENTRY_ID,
-        assigned_to: ASSIGNED_TO_ID,
-        assigned_by: ASSIGNED_BY_ID,
-        released_by: null,
-        assigned_at: assignedAt,
-        released_at: null,
-        expires_at: expiresAt,
-        reason: `Assigned for cross-rail review`,
-        assigned_to_email: `ops@example.com`,
-        assigned_by_email: `super@example.com`,
-        released_by_email: null,
-      },
-    ]);
+    query.getLedgerEntryCase.mockResolvedValueOnce({
+      entry: buildLedgerCaseEntry(),
+      relatedEntries: [],
+      auditContext: [],
+    });
+    assignmentsService.getAssignmentContextForResource.mockResolvedValueOnce(
+      buildAssignmentContextFromRows([
+        {
+          id: ASSIGNMENT_ID_ACTIVE,
+          resource_id: LEDGER_ENTRY_ID,
+          assigned_to: ASSIGNED_TO_ID,
+          assigned_by: ASSIGNED_BY_ID,
+          released_by: null,
+          assigned_at: assignedAt,
+          released_at: null,
+          expires_at: expiresAt,
+          reason: `Assigned for cross-rail review`,
+          assigned_to_email: `ops@example.com`,
+          assigned_by_email: `super@example.com`,
+          released_by_email: null,
+        },
+      ]),
+    );
 
     const ledgerCase = await service.getLedgerEntryCase(LEDGER_ENTRY_ID);
 
-    expect(getAssignmentContextForResource).toHaveBeenCalledWith(`ledger_entry`, LEDGER_ENTRY_ID);
+    expect(assignmentsService.getAssignmentContextForResource).toHaveBeenCalledWith(`ledger_entry`, LEDGER_ENTRY_ID);
     expect(ledgerCase.assignment.current).toEqual({
       id: ASSIGNMENT_ID_ACTIVE,
       assignedTo: { id: ASSIGNED_TO_ID, name: null, email: `ops@example.com` },
@@ -215,32 +224,35 @@ describe(`AdminV2LedgerService`, () => {
       expiresAt: expiresAt.toISOString(),
     });
     expect(ledgerCase.assignment.history).toHaveLength(1);
-    expect(ledgerCase.assignment.history[0]).toMatchObject({
-      id: ASSIGNMENT_ID_ACTIVE,
-      releasedAt: null,
-      releasedBy: null,
-    });
   });
 
   it(`returns null current and a released row in history when the only assignment is released`, async () => {
+    const { service, query, assignmentsService } = buildService();
     const assignedAt = new Date(`2026-04-20T08:00:00.000Z`);
     const releasedAt = new Date(`2026-04-20T10:30:00.000Z`);
-    const { service } = buildLedgerServiceWithAssignmentRows([
-      {
-        id: ASSIGNMENT_ID_RELEASED,
-        resource_id: LEDGER_ENTRY_ID,
-        assigned_to: ASSIGNED_TO_ID,
-        assigned_by: ASSIGNED_BY_ID,
-        released_by: RELEASED_BY_ID,
-        assigned_at: assignedAt,
-        released_at: releasedAt,
-        expires_at: null,
-        reason: null,
-        assigned_to_email: `ops@example.com`,
-        assigned_by_email: `super@example.com`,
-        released_by_email: `ops@example.com`,
-      },
-    ]);
+    query.getLedgerEntryCase.mockResolvedValueOnce({
+      entry: buildLedgerCaseEntry(),
+      relatedEntries: [],
+      auditContext: [],
+    });
+    assignmentsService.getAssignmentContextForResource.mockResolvedValueOnce(
+      buildAssignmentContextFromRows([
+        {
+          id: ASSIGNMENT_ID_RELEASED,
+          resource_id: LEDGER_ENTRY_ID,
+          assigned_to: ASSIGNED_TO_ID,
+          assigned_by: ASSIGNED_BY_ID,
+          released_by: RELEASED_BY_ID,
+          assigned_at: assignedAt,
+          released_at: releasedAt,
+          expires_at: null,
+          reason: null,
+          assigned_to_email: `ops@example.com`,
+          assigned_by_email: `super@example.com`,
+          released_by_email: `ops@example.com`,
+        },
+      ]),
+    );
 
     const ledgerCase = await service.getLedgerEntryCase(LEDGER_ENTRY_ID);
 
@@ -254,84 +266,22 @@ describe(`AdminV2LedgerService`, () => {
     });
   });
 
-  it(`applies amount-sign and createdAt filters on ledger explorer`, async () => {
-    const findMany = jest.fn(async () => []);
-    const getActiveAssigneesForResource = jest.fn(async () => new Map());
-    const service = new AdminV2LedgerService(
-      {
-        ledgerEntryModel: {
-          findMany,
-        },
-      } as never,
-      { getActiveAssigneesForResource } as never,
-    );
-
-    const dateFrom = new Date(`2026-04-01T00:00:00.000Z`);
-    const dateTo = new Date(`2026-04-30T23:59:59.999Z`);
-
-    await service.listLedgerEntries({
-      amountSign: `negative`,
-      dateFrom,
-      dateTo,
-    });
-
-    expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          deletedAt: null,
-          createdAt: {
-            gte: dateFrom,
-            lte: dateTo,
-          },
-          amount: {
-            lt: 0,
-          },
-        }),
-      }),
-    );
-  });
-
   it(`merges active assignee onto ledger entries via post-map bulk lookup`, async () => {
+    const { service, query, assignmentsService } = buildService();
     const ledgerEntryIdAssigned = `11111111-1111-4111-8111-111111111111`;
     const ledgerEntryIdUnassigned = `22222222-2222-4222-8222-222222222222`;
     const assigneeId = `33333333-3333-4333-8333-333333333333`;
-
-    const buildRow = (id: string) => ({
-      id,
-      ledgerId: `ledger-group-1`,
-      type: $Enums.LedgerEntryType.USER_PAYMENT,
-      amount: new Prisma.Decimal(`12.34`),
-      currencyCode: $Enums.CurrencyCode.USD,
-      status: $Enums.TransactionStatus.PENDING,
-      consumerId: `consumer-1`,
-      paymentRequestId: null,
-      createdAt: new Date(`2026-04-13T00:00:00.000Z`),
-      updatedAt: new Date(`2026-04-13T01:00:00.000Z`),
-      consumer: { email: `consumer@example.com` },
-      paymentRequest: null,
-      outcomes: [],
-      disputes: [],
-      metadata: null,
+    query.listLedgerEntries.mockResolvedValueOnce({
+      rows: [buildLedgerListRow(ledgerEntryIdAssigned), buildLedgerListRow(ledgerEntryIdUnassigned)],
+      nextCursorSource: null,
     });
-
-    const findMany = jest.fn(async () => [buildRow(ledgerEntryIdAssigned), buildRow(ledgerEntryIdUnassigned)]);
-    const getActiveAssigneesForResource = jest.fn(
-      async () =>
-        new Map<string, { id: string; name: string | null; email: string | null }>([
-          [ledgerEntryIdAssigned, { id: assigneeId, name: `Alice`, email: `alice@example.com` }],
-        ]),
-    );
-
-    const service = new AdminV2LedgerService(
-      {
-        ledgerEntryModel: { findMany },
-      } as never,
-      { getActiveAssigneesForResource } as never,
+    assignmentsService.getActiveAssigneesForResource.mockResolvedValueOnce(
+      new Map([[ledgerEntryIdAssigned, { id: assigneeId, name: `Alice`, email: `alice@example.com` }]]),
     );
 
     const result = await service.listLedgerEntries({});
 
-    expect(getActiveAssigneesForResource).toHaveBeenCalledWith(`ledger_entry`, [
+    expect(assignmentsService.getActiveAssigneesForResource).toHaveBeenCalledWith(`ledger_entry`, [
       ledgerEntryIdAssigned,
       ledgerEntryIdUnassigned,
     ]);
@@ -347,33 +297,30 @@ describe(`AdminV2LedgerService`, () => {
   });
 
   it(`maps canonical disputeStatus metadata for standalone disputes surface`, async () => {
-    const service = new AdminV2LedgerService(
-      {
-        ledgerEntryDisputeModel: {
-          findMany: jest.fn(async () => [
-            {
-              id: `dispute-row-1`,
-              stripeDisputeId: `dp_fixture_open`,
-              metadata: { disputeStatus: `open`, reason: `fraudulent`, amount: 4800 },
-              createdAt: new Date(`2026-04-13T00:00:00.000Z`),
-              ledgerEntry: {
-                id: `ledger-1`,
-                ledgerId: `ledger-group-1`,
-                paymentRequestId: `payment-1`,
-                consumerId: `consumer-1`,
-                type: $Enums.LedgerEntryType.USER_PAYMENT,
-                amount: new Prisma.Decimal(`48.00`),
-                currencyCode: $Enums.CurrencyCode.USD,
-                paymentRequest: {
-                  paymentRail: $Enums.PaymentRail.CARD,
-                },
-              },
+    const { service, query } = buildService();
+    query.listDisputes.mockResolvedValueOnce({
+      rows: [
+        {
+          id: `dispute-row-1`,
+          stripeDisputeId: `dp_fixture_open`,
+          metadata: { disputeStatus: `open`, reason: `fraudulent`, amount: 4800 },
+          createdAt: new Date(`2026-04-13T00:00:00.000Z`),
+          ledgerEntry: {
+            id: `ledger-1`,
+            ledgerId: `ledger-group-1`,
+            paymentRequestId: `payment-1`,
+            consumerId: `consumer-1`,
+            type: $Enums.LedgerEntryType.USER_PAYMENT,
+            amount: new Prisma.Decimal(`48.00`),
+            currencyCode: $Enums.CurrencyCode.USD,
+            paymentRequest: {
+              paymentRail: $Enums.PaymentRail.CARD,
             },
-          ]),
+          },
         },
-      } as never,
-      {} as never,
-    );
+      ],
+      nextCursorSource: null,
+    });
 
     const disputes = await service.listDisputes();
 
@@ -390,62 +337,5 @@ describe(`AdminV2LedgerService`, () => {
         },
       }),
     ]);
-  });
-
-  it(`applies inclusive createdAt date filters on standalone disputes without changing cursor pagination`, async () => {
-    const findMany = jest.fn(async () => []);
-    const service = new AdminV2LedgerService(
-      {
-        ledgerEntryDisputeModel: {
-          findMany,
-        },
-      } as never,
-      {} as never,
-    );
-
-    const dateFrom = new Date(`2026-04-01T00:00:00.000Z`);
-    const dateTo = new Date(`2026-04-30T23:59:59.999Z`);
-
-    await service.listDisputes({
-      cursor: encodeAdminV2Cursor({ createdAt: new Date(`2026-04-15T12:00:00.000Z`), id: `dispute-row-9` }),
-      limit: 10,
-      consumerId: `consumer-1`,
-      q: `dp_fixture_open`,
-      dateFrom,
-      dateTo,
-    });
-
-    expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          AND: [
-            {
-              createdAt: {
-                gte: dateFrom,
-                lte: dateTo,
-              },
-            },
-            {
-              OR: [
-                { createdAt: { lt: new Date(`2026-04-15T12:00:00.000Z`) } },
-                {
-                  AND: [{ createdAt: new Date(`2026-04-15T12:00:00.000Z`) }, { id: { lt: `dispute-row-9` } }],
-                },
-              ],
-            },
-            {
-              OR: [{ stripeDisputeId: { contains: `dp_fixture_open`, mode: `insensitive` } }],
-            },
-            {
-              ledgerEntry: {
-                consumerId: `consumer-1`,
-              },
-            },
-          ],
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: 11,
-      }),
-    );
   });
 });

@@ -6,7 +6,9 @@ import { type PrismaService } from './prisma.service';
 
 const PAYMENT_LINK_SCOPE_BATCH_SIZE = 100;
 
-type LedgerMetadataReader = Pick<PrismaService, `ledgerEntryModel`>;
+type LedgerMetadataReader = {
+  ledgerEntryModel: Pick<PrismaService[`ledgerEntryModel`], `findMany`>;
+};
 type LedgerHistoryCursor = {
   createdAt: Date;
   id: string;

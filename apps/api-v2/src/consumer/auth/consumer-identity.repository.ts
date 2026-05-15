@@ -8,6 +8,13 @@ import { PrismaService } from '../../shared/prisma.service';
 export class ConsumerIdentityRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findSignupCollisionByEmail(email: string) {
+    return this.prisma.consumerModel.findFirst({
+      where: { email: email.toLowerCase() },
+      select: { id: true, deletedAt: true },
+    });
+  }
+
   findActiveByEmail(email: string) {
     return this.prisma.consumerModel.findFirst({
       where: { email: email.toLowerCase(), deletedAt: null },
@@ -26,12 +33,58 @@ export class ConsumerIdentityRepository {
     });
   }
 
+  findGoogleLoginCandidateByEmail(email: string) {
+    return this.prisma.consumerModel.findFirst({
+      where: { email: email.toLowerCase(), deletedAt: null },
+      include: { personalDetails: true },
+    });
+  }
+
+  findGoogleLoginCandidateByEmailOrThrow(email: string) {
+    return this.prisma.consumerModel.findFirstOrThrow({
+      where: { email: email.toLowerCase(), deletedAt: null },
+      include: { personalDetails: true },
+    });
+  }
+
   findActiveIdentitySummaryById(id: string) {
     return this.prisma.consumerModel.findFirst({
       where: { id, deletedAt: null },
       select: {
         id: true,
         email: true,
+      },
+    });
+  }
+
+  findActiveVerificationCandidateById(id: string) {
+    return this.prisma.consumerModel.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+  }
+
+  findActiveVerificationDispatchTargetById(id: string) {
+    return this.prisma.consumerModel.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+        verified: true,
+      },
+    });
+  }
+
+  findAnyVerificationDispatchTargetById(id: string) {
+    return this.prisma.consumerModel.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        verified: true,
       },
     });
   }
@@ -66,6 +119,35 @@ export class ConsumerIdentityRepository {
     return db.consumerModel.update({
       where: { id },
       data: { password, salt },
+    });
+  }
+
+  updateGoogleLoginConsumer(id: string, data: Prisma.ConsumerModelUpdateInput) {
+    return this.prisma.consumerModel.update({
+      where: { id },
+      data,
+      include: { personalDetails: true },
+    });
+  }
+
+  createGoogleLoginConsumer(data: Prisma.ConsumerModelCreateInput) {
+    return this.prisma.consumerModel.create({
+      data,
+      include: { personalDetails: true },
+    });
+  }
+
+  createSignupConsumer(data: Prisma.ConsumerModelCreateInput) {
+    return this.prisma.consumerModel.create({
+      data,
+      include: { addressDetails: true, personalDetails: true, organizationDetails: true },
+    });
+  }
+
+  markVerified(id: string) {
+    return this.prisma.consumerModel.update({
+      where: { id },
+      data: { verified: true },
     });
   }
 }

@@ -12,7 +12,6 @@ import { type CONSUMER } from '../../dtos';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { resolveEmailApiBaseUrl } from '../../shared/resolve-email-api-base-url';
 import { passwordUtils, secureCompare } from '../../shared-common';
 
@@ -30,7 +29,6 @@ export class ConsumerAuthRecoveryService {
   private static readonly forgotPasswordCooldownMs = 60_000;
 
   constructor(
-    private readonly prisma: PrismaService,
     private readonly mailingService: MailingService,
     private readonly originResolver: OriginResolverService,
     private readonly authAudit: AuthAuditService,
@@ -206,13 +204,11 @@ export class ConsumerAuthRecoveryService {
     const activeSessionsBeforeReset = await this.sessionRepository.countActiveByConsumerId(consumer.id);
 
     const { hash, salt } = await passwordUtils.hashPassword(newPassword);
-    const consumed = await this.prisma.$transaction(async (tx) => {
-      const updateResult = await this.passwordResetRepository.consumeToken(row.id, tx);
-      if (updateResult.count !== 1) {
-        return null;
-      }
-      await this.consumerIdentityRepository.updatePassword(consumer.id, hash, salt, tx);
-      return consumer;
+    const consumed = await this.passwordResetRepository.consumeTokenAndUpdatePassword({
+      resetTokenId: row.id,
+      consumerId: consumer.id,
+      password: hash,
+      salt,
     });
 
     if (!consumed) {
@@ -223,16 +219,16 @@ export class ConsumerAuthRecoveryService {
     const revokeAllSessionsByConsumerIdAndAudit =
       handlers?.revokeAllSessionsByConsumerIdAndAudit ??
       ((consumerId: string) => this.sessionService.revokeAllSessionsByConsumerIdAndAudit(consumerId));
-    await revokeAllSessionsByConsumerIdAndAudit(consumed.id);
+    await revokeAllSessionsByConsumerIdAndAudit(consumer.id);
     this.logger.log({
       event: `consumer_auth_password_reset_succeeded`,
-      consumerId: consumed.id,
+      consumerId: consumer.id,
       revokedSessionCountBucket: this.bucketSessionCount(activeSessionsBeforeReset),
     });
     await this.authAudit.recordAudit({
       identityType: AUTH_IDENTITY_TYPES.consumer,
-      identityId: consumed.id,
-      email: consumed.email,
+      identityId: consumer.id,
+      email: consumer.email,
       event: AUTH_AUDIT_EVENTS.password_change,
     });
   }

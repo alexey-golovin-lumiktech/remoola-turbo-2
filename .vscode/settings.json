@@ -3,6 +3,8 @@
   "files.associations": {
     "*.css": "tailwindcss"
   },
+  // Work around a broken built-in npm task autodetector in this monorepo.
+  "npm.autoDetect": "off",
   "editor.quickSuggestions": {
     "strings": "on"
   },

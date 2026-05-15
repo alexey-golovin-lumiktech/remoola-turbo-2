@@ -1,3 +1,5 @@
+import { AdminV2OperationalAlertsEvaluatorQuery } from './admin-v2-operational-alerts-evaluator.query';
+import { AdminV2OperationalAlertsEvaluatorRepository } from './admin-v2-operational-alerts-evaluator.repository';
 import {
   AdminV2OperationalAlertsEvaluatorService,
   EVALUATOR_PER_ALERT_TIMEOUT_MS,
@@ -59,8 +61,11 @@ function buildHarness(opts: {
   const authRefreshReuseEvaluator: OperationalAlertWorkspaceEvaluator = opts.authRefreshReuseEvaluator ?? {
     evaluate: jest.fn() as unknown as OperationalAlertWorkspaceEvaluator[`evaluate`],
   };
+  const query = new AdminV2OperationalAlertsEvaluatorQuery(prisma as never);
+  const repository = new AdminV2OperationalAlertsEvaluatorRepository(prisma as never);
   const service = new AdminV2OperationalAlertsEvaluatorService(
-    prisma as never,
+    query as never,
+    repository as never,
     ledgerAnomaliesEvaluator as never,
     verificationQueueEvaluator as never,
     authRefreshReuseEvaluator as never,

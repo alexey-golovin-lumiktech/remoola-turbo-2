@@ -1,11 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
-import { Prisma } from '@remoola/database-2';
-
-import { addUtcMonths, quoteIdentifier, startOfMonth, toPartitionName } from './consumer-action-log-partition.util';
+import { addUtcMonths, startOfMonth, toPartitionName } from './consumer-action-log-partition.util';
 import { envs } from '../../envs';
-import { PrismaService } from '../../shared/prisma.service';
+import { ConsumerActionLogMaintenanceRepository } from '../../shared/consumer-action-log-maintenance.repository';
 
 const PARTITION_NAME_WHITELIST_REGEX = /^consumer_action_log_p\d{6}$/;
 
@@ -13,7 +11,7 @@ const PARTITION_NAME_WHITELIST_REGEX = /^consumer_action_log_p\d{6}$/;
 export class ConsumerActionLogPartitionMaintenanceScheduler implements OnModuleInit {
   private readonly logger = new Logger(ConsumerActionLogPartitionMaintenanceScheduler.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly maintenanceRepository: ConsumerActionLogMaintenanceRepository) {}
 
   async onModuleInit() {
     await this.ensureUpcomingPartitions();
@@ -34,20 +32,11 @@ export class ConsumerActionLogPartitionMaintenanceScheduler implements OnModuleI
           throw new Error(`Unsafe partition name generated`);
         }
 
-        await this.prisma.$executeRawUnsafe(
-          `CREATE TABLE IF NOT EXISTS ${quoteIdentifier(partitionName)}
-             PARTITION OF "consumer_action_log"
-             FOR VALUES FROM ($1::timestamptz) TO ($2::timestamptz)`,
-          partitionStart.toISOString(),
-          partitionEnd.toISOString(),
-        );
+        await this.maintenanceRepository.ensureMonthlyPartition(partitionName, partitionStart, partitionEnd);
         createdPartitionNames.push(partitionName);
       }
-      await this.prisma.$executeRaw(
-        Prisma.sql`CREATE TABLE IF NOT EXISTS "consumer_action_log_pdefault"
-          PARTITION OF "consumer_action_log"
-          DEFAULT`,
-      );
+
+      await this.maintenanceRepository.ensureDefaultPartition();
       createdPartitionNames.push(`consumer_action_log_pdefault`);
 
       this.logger.log(`consumer_action_log partition maintenance ensured: ${createdPartitionNames.join(`, `)}`);

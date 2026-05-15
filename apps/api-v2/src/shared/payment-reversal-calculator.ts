@@ -1,6 +1,13 @@
 import { createHash } from 'crypto';
 
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
+
+import {
+  moneyDecimalToNumber,
+  toCanonicalMoneyString,
+  type MoneyDecimalInput,
+  toMoneyDecimal,
+} from './money-decimal.utils';
 
 type PaymentReversalKind = `REFUND` | `CHARGEBACK`;
 
@@ -14,6 +21,18 @@ type StrictReversalAmountResolution =
       ok: false;
       reason: `ALREADY_FULLY_REVERSED` | `EXCEEDS_REMAINING_BALANCE`;
       remainingBefore: number;
+    };
+
+type StrictReversalDecimalAmountResolution =
+  | {
+      ok: true;
+      finalAmount: Prisma.Decimal;
+      remainingBefore: Prisma.Decimal;
+    }
+  | {
+      ok: false;
+      reason: `ALREADY_FULLY_REVERSED` | `EXCEEDS_REMAINING_BALANCE`;
+      remainingBefore: Prisma.Decimal;
     };
 
 export function getEffectiveLedgerStatus(entry: {
@@ -45,11 +64,21 @@ export function deriveEffectivePaymentRequestStatus(
 
 export function calculateAlreadyReversedAmount(
   reversalEntries: Array<{
-    amount: number | string | { toString(): string };
+    amount: MoneyDecimalInput;
     status: $Enums.TransactionStatus;
     outcomes?: Array<{ status: $Enums.TransactionStatus }>;
   }>,
 ): number {
+  return moneyDecimalToNumber(calculateAlreadyReversedDecimalAmount(reversalEntries));
+}
+
+export function calculateAlreadyReversedDecimalAmount(
+  reversalEntries: Array<{
+    amount: MoneyDecimalInput;
+    status: $Enums.TransactionStatus;
+    outcomes?: Array<{ status: $Enums.TransactionStatus }>;
+  }>,
+): Prisma.Decimal {
   return reversalEntries.reduce((sum, entry) => {
     const effectiveStatus = getEffectiveLedgerStatus(entry);
     if (
@@ -58,9 +87,9 @@ export function calculateAlreadyReversedAmount(
     ) {
       return sum;
     }
-    const amount = Number(entry.amount);
-    return amount > 0 ? sum + amount : sum;
-  }, 0);
+    const amount = toMoneyDecimal(entry.amount);
+    return amount.gt(0) ? sum.plus(amount) : sum;
+  }, new Prisma.Decimal(0));
 }
 
 export function resolveStrictReversalAmount(params: {
@@ -68,13 +97,35 @@ export function resolveStrictReversalAmount(params: {
   alreadyReversed: number;
   requestedAmount?: number;
 }): StrictReversalAmountResolution {
-  const remainingBefore = params.requestAmount - params.alreadyReversed;
-  if (remainingBefore <= 0) {
+  const result = resolveStrictReversalDecimalAmount(params);
+  if (result.ok === false) {
+    return {
+      ok: false,
+      reason: result.reason,
+      remainingBefore: moneyDecimalToNumber(result.remainingBefore),
+    };
+  }
+  return {
+    ok: true,
+    finalAmount: moneyDecimalToNumber(result.finalAmount),
+    remainingBefore: moneyDecimalToNumber(result.remainingBefore),
+  };
+}
+
+export function resolveStrictReversalDecimalAmount(params: {
+  requestAmount: MoneyDecimalInput;
+  alreadyReversed: MoneyDecimalInput;
+  requestedAmount?: MoneyDecimalInput;
+}): StrictReversalDecimalAmountResolution {
+  const requestAmount = toMoneyDecimal(params.requestAmount, `requestAmount`);
+  const alreadyReversed = toMoneyDecimal(params.alreadyReversed, `alreadyReversed`);
+  const remainingBefore = requestAmount.minus(alreadyReversed);
+  if (remainingBefore.lte(0)) {
     return { ok: false, reason: `ALREADY_FULLY_REVERSED`, remainingBefore };
   }
 
-  const finalAmount = params.requestedAmount ?? remainingBefore;
-  if (finalAmount > remainingBefore) {
+  const finalAmount = params.requestedAmount == null ? remainingBefore : toMoneyDecimal(params.requestedAmount);
+  if (finalAmount.gt(remainingBefore)) {
     return { ok: false, reason: `EXCEEDS_REMAINING_BALANCE`, remainingBefore };
   }
 
@@ -86,9 +137,24 @@ export function capExternalReversalAmount(params: {
   alreadyReversed: number;
   externalAmount: number;
 }) {
-  const remainingBefore = params.requestAmount - params.alreadyReversed;
+  const capped = capExternalReversalDecimalAmount(params);
   return {
-    finalAmount: Math.min(params.externalAmount, remainingBefore),
+    finalAmount: moneyDecimalToNumber(capped.finalAmount),
+    remainingBefore: moneyDecimalToNumber(capped.remainingBefore),
+  };
+}
+
+export function capExternalReversalDecimalAmount(params: {
+  requestAmount: MoneyDecimalInput;
+  alreadyReversed: MoneyDecimalInput;
+  externalAmount: MoneyDecimalInput;
+}) {
+  const remainingBefore = toMoneyDecimal(params.requestAmount, `requestAmount`).minus(
+    toMoneyDecimal(params.alreadyReversed, `alreadyReversed`),
+  );
+  const externalAmount = toMoneyDecimal(params.externalAmount, `externalAmount`);
+  return {
+    finalAmount: externalAmount.lt(remainingBefore) ? externalAmount : remainingBefore,
     remainingBefore,
   };
 }
@@ -96,11 +162,13 @@ export function capExternalReversalAmount(params: {
 export function buildAdminPaymentReversalIdempotencyKey(payload: {
   paymentRequestId: string;
   kind: PaymentReversalKind;
-  amount: number;
+  amount: MoneyDecimalInput;
   reason?: string | null;
 }) {
   const normalized = JSON.stringify({
-    ...payload,
+    paymentRequestId: payload.paymentRequestId,
+    kind: payload.kind,
+    amount: toCanonicalMoneyString(payload.amount),
     reason: payload.reason?.trim() || null,
   });
   return createHash(`sha256`).update(normalized).digest(`hex`);

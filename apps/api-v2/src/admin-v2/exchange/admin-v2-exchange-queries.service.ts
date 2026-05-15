@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
+import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
 import { $Enums, type Prisma } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
+import { AdminV2ExchangeRateQuery } from './admin-v2-exchange-rate.query';
+import { AdminV2ExchangeRuleQuery } from './admin-v2-exchange-rule.query';
+import { AdminV2ExchangeScheduledConversionQuery } from './admin-v2-exchange-scheduled-conversion.query';
 import { envs } from '../../envs';
-import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
-import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
+import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
@@ -46,7 +48,9 @@ function getRateReferenceAt(rate: { fetchedAt?: Date | null; effectiveAt: Date; 
 @Injectable()
 export class AdminV2ExchangeQueriesService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly rateQuery: AdminV2ExchangeRateQuery,
+    private readonly ruleQuery: AdminV2ExchangeRuleQuery,
+    private readonly scheduledConversionQuery: AdminV2ExchangeScheduledConversionQuery,
     private readonly assignmentsService: AdminV2AssignmentsService,
   ) {}
 
@@ -88,15 +92,11 @@ export class AdminV2ExchangeQueriesService {
         : {}),
     };
 
-    const [total, rates] = await Promise.all([
-      this.prisma.exchangeRateModel.count({ where }),
-      this.prisma.exchangeRateModel.findMany({
-        where,
-        orderBy: [{ effectiveAt: `desc` }, { createdAt: `desc` }, { id: `desc` }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-    ]);
+    const [total, rates] = await this.rateQuery.listRates({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
 
     return {
       items: rates.map((rate) => this.mapRateListItem(rate, now)),
@@ -107,34 +107,13 @@ export class AdminV2ExchangeQueriesService {
   }
 
   async getRateCase(rateId: string) {
-    const rate = await this.prisma.exchangeRateModel.findFirst({
-      where: { id: rateId, deletedAt: null },
-    });
+    const rate = await this.rateQuery.findRateById(rateId);
 
     if (!rate) {
       throw new NotFoundException(adminErrorCodes.ADMIN_EXCHANGE_RATE_NOT_FOUND);
     }
 
-    const approvalHistory = await this.prisma.adminActionAuditLogModel.findMany({
-      where: {
-        resource: `exchange_rate`,
-        resourceId: rate.id,
-        action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_rate_approve,
-      },
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      select: {
-        id: true,
-        action: true,
-        createdAt: true,
-        metadata: true,
-        admin: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const approvalHistory = await this.rateQuery.listApprovalHistory(rate.id);
 
     const now = new Date();
     const referenceAt = getRateReferenceAt(rate);
@@ -212,23 +191,11 @@ export class AdminV2ExchangeQueriesService {
         : {}),
     };
 
-    const [total, rules] = await Promise.all([
-      this.prisma.walletAutoConversionRuleModel.count({ where }),
-      this.prisma.walletAutoConversionRuleModel.findMany({
-        where,
-        include: {
-          consumer: {
-            select: {
-              id: true,
-              email: true,
-            },
-          },
-        },
-        orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-    ]);
+    const [total, rules] = await this.ruleQuery.listRules({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
 
     return {
       items: rules.map((rule) => this.mapRuleListItem(rule)),
@@ -239,17 +206,7 @@ export class AdminV2ExchangeQueriesService {
   }
 
   async getRuleCase(ruleId: string) {
-    const rule = await this.prisma.walletAutoConversionRuleModel.findFirst({
-      where: { id: ruleId, deletedAt: null },
-      include: {
-        consumer: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const rule = await this.ruleQuery.findRuleById(ruleId);
 
     if (!rule) {
       throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
@@ -313,28 +270,16 @@ export class AdminV2ExchangeQueriesService {
         : {}),
     };
 
-    const [total, conversions] = await Promise.all([
-      this.prisma.scheduledFxConversionModel.count({ where }),
-      this.prisma.scheduledFxConversionModel.findMany({
-        where,
-        include: {
-          consumer: {
-            select: {
-              id: true,
-              email: true,
-            },
-          },
-        },
-        orderBy: [{ executeAt: `desc` }, { id: `desc` }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-    ]);
+    const [total, conversions] = await this.scheduledConversionQuery.listScheduledConversions({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
 
     const ledgerIds = conversions
       .map((conversion) => conversion.ledgerId)
       .filter((value): value is string => Boolean(value));
-    const ledgerEntryMap = await this.loadLedgerEntryMap(ledgerIds);
+    const ledgerEntryMap = await this.scheduledConversionQuery.loadLedgerEntryMap(ledgerIds);
     const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
       `fx_conversion`,
       conversions.map((conversion) => conversion.id),
@@ -349,33 +294,14 @@ export class AdminV2ExchangeQueriesService {
   }
 
   async getScheduledConversionCase(conversionId: string) {
-    const conversion = await this.prisma.scheduledFxConversionModel.findFirst({
-      where: { id: conversionId, deletedAt: null },
-      include: {
-        consumer: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const conversion = await this.scheduledConversionQuery.findScheduledConversionById(conversionId);
 
     if (!conversion) {
       throw new NotFoundException(adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND);
     }
 
     const linkedLedgerEntries = conversion.ledgerId
-      ? await this.prisma.ledgerEntryModel.findMany({
-          where: { ledgerId: conversion.ledgerId, deletedAt: null },
-          orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-          include: {
-            outcomes: {
-              orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-              take: 1,
-            },
-          },
-        })
+      ? await this.scheduledConversionQuery.listLinkedLedgerEntries(conversion.ledgerId)
       : [];
     const assignment = await this.assignmentsService.getAssignmentContextForResource(`fx_conversion`, conversion.id);
 
@@ -528,48 +454,6 @@ export class AdminV2ExchangeQueriesService {
     return (
       status === $Enums.ScheduledFxConversionStatus.PENDING || status === $Enums.ScheduledFxConversionStatus.FAILED
     );
-  }
-
-  private async loadLedgerEntryMap(ledgerIds: string[]) {
-    if (ledgerIds.length === 0) {
-      return new Map<
-        string,
-        { id: string; type: $Enums.LedgerEntryType; amount: string; currencyCode: $Enums.CurrencyCode }
-      >();
-    }
-
-    const entries = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        ledgerId: { in: ledgerIds },
-        deletedAt: null,
-        type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-        amount: { gt: 0 },
-      },
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      select: {
-        id: true,
-        ledgerId: true,
-        type: true,
-        amount: true,
-        currencyCode: true,
-      },
-    });
-
-    const map = new Map<
-      string,
-      { id: string; type: $Enums.LedgerEntryType; amount: string; currencyCode: $Enums.CurrencyCode }
-    >();
-    for (const entry of entries) {
-      if (!map.has(entry.ledgerId)) {
-        map.set(entry.ledgerId, {
-          id: entry.id,
-          type: entry.type,
-          amount: entry.amount.toString(),
-          currencyCode: entry.currencyCode,
-        });
-      }
-    }
-    return map;
   }
 
   private mapScheduledListItem(

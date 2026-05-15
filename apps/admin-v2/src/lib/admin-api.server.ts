@@ -30,6 +30,7 @@ import {
   type AdminV2SystemSummaryCard as SystemSummaryCard,
   type AdminV2SystemSummaryResponse as SystemSummaryResponse,
   type AdminV2VerificationQueueQuery,
+  type AdminV2AdminRef as AdminRef,
 } from '@remoola/api-types';
 
 import { getDefaultLookbackIsoRange } from './admin-format';
@@ -1013,8 +1014,6 @@ export type VerificationQueueResponse = {
     lastComputedAt: string | null;
   };
 };
-
-export type AdminRef = { id: string; name: string | null; email: string | null };
 
 export type AssignmentSummary = {
   id: string;

@@ -2,14 +2,18 @@ import { Injectable } from '@nestjs/common';
 
 import { type Prisma } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
 export class AdminV2DocumentsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner,
+  ) {}
 
   runInTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
-    return this.prisma.$transaction(callback);
+    return this.transactions.run(callback);
   }
 
   findMany(where: Prisma.ResourceModelWhereInput, page: number, pageSize: number) {

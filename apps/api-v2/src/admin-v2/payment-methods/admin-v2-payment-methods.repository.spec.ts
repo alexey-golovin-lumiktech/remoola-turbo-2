@@ -30,7 +30,10 @@ describe(`AdminV2PaymentMethodsRepository`, () => {
     };
 
     return {
-      repository: new AdminV2PaymentMethodsRepository(prisma as never),
+      repository: new AdminV2PaymentMethodsRepository(
+        prisma as never,
+        { run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never) } as never,
+      ),
       prisma,
       tx,
       queryRaw,

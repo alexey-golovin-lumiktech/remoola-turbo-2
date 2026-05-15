@@ -4,6 +4,7 @@ import { Prisma } from '@remoola/database-2';
 
 import { buildStaleVersionPayload, deriveStatus, deriveVersion } from './admin-v2-payment-methods-mappers';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
 
 export type AdminV2PaymentMethodsRequestMeta = {
@@ -12,7 +13,7 @@ export type AdminV2PaymentMethodsRequestMeta = {
   idempotencyKey?: string | null;
 };
 
-export type AdminV2PaymentMethodMutationRecord = {
+type AdminV2PaymentMethodMutationRecord = {
   id: string;
   consumerId: string;
   defaultSelected: boolean;
@@ -62,7 +63,10 @@ const mutationSelect = Prisma.validator<Prisma.PaymentMethodModelSelect>()({
 
 @Injectable()
 export class AdminV2PaymentMethodsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner,
+  ) {}
 
   getPaymentMethodForMutation(id: string) {
     return this.prisma.paymentMethodModel.findUnique({
@@ -95,7 +99,7 @@ export class AdminV2PaymentMethodsRepository {
     const { paymentMethod, adminId, reason, meta } = params;
     const disabledAt = new Date();
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const updated = await tx.paymentMethodModel.updateMany({
         where: {
           id: paymentMethod.id,
@@ -170,7 +174,7 @@ export class AdminV2PaymentMethodsRepository {
   }) {
     const { paymentMethod, adminId, meta } = params;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const updated = await tx.paymentMethodModel.updateMany({
         where: {
           id: paymentMethod.id,
@@ -242,7 +246,7 @@ export class AdminV2PaymentMethodsRepository {
   }) {
     const { paymentMethod, fingerprint, duplicatePaymentMethodIds, expectedVersion, adminId, meta } = params;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const lockedPaymentMethod = await lockPaymentMethodForMutation(tx, paymentMethod.id);
       if (!lockedPaymentMethod) {
         throw new NotFoundException(`Payment method not found`);

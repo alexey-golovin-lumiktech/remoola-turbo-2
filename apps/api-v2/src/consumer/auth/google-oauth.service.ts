@@ -6,9 +6,11 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerGoogleProfileQuery } from './consumer-google-profile.query';
+import { ConsumerGoogleProfileRepository } from './consumer-google-profile.repository';
+import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { envs } from '../../envs';
 import { NgrokIngressService } from '../../infrastructure/ngrok/ngrok-ingress.service';
-import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
 export class GoogleOAuthService {
@@ -39,7 +41,9 @@ export class GoogleOAuthService {
   }
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly consumerIdentityRepository: ConsumerIdentityRepository,
+    private readonly googleProfileQuery: ConsumerGoogleProfileQuery,
+    private readonly googleProfileRepository: ConsumerGoogleProfileRepository,
     private readonly ngrokIngress: NgrokIngressService,
   ) {
     const clientId = envs.GOOGLE_CLIENT_ID;
@@ -138,10 +142,7 @@ export class GoogleOAuthService {
   }
 
   private async upsertConsumerFromGooglePayload(email: string, payload: TokenPayload) {
-    const existing = await this.prisma.consumerModel.findFirst({
-      where: { email, deletedAt: null },
-      include: { personalDetails: true },
-    });
+    const existing = await this.consumerIdentityRepository.findGoogleLoginCandidateByEmail(email);
 
     const hasNameUpdate = payload.given_name || payload.family_name;
 
@@ -177,97 +178,54 @@ export class GoogleOAuthService {
         return existing;
       }
 
-      const updated = await this.prisma.consumerModel.update({
-        where: { id: existing.id },
-        data: updateData,
-        include: { personalDetails: true },
-      });
+      const updated = await this.consumerIdentityRepository.updateGoogleLoginConsumer(existing.id, updateData);
 
       return updated;
     }
 
     try {
-      const consumer = await this.prisma.consumerModel.create({
-        data: {
-          email,
-          accountType: $Enums.AccountType.CONTRACTOR,
-          contractorKind: $Enums.ContractorKind.INDIVIDUAL,
-          password: null,
-          salt: null,
-          verified: !!payload.email_verified,
-          legalVerified: false,
-          howDidHearAboutUs: null,
-          howDidHearAboutUsOther: null,
-          stripeCustomerId: null,
-          ...(hasNameUpdate && {
-            personalDetails: {
-              create: {
-                firstName: payload.given_name ?? null,
-                lastName: payload.family_name ?? null,
-                citizenOf: null,
-                dateOfBirth: null,
-                passportOrIdNumber: null,
-              },
+      const consumer = await this.consumerIdentityRepository.createGoogleLoginConsumer({
+        email,
+        accountType: $Enums.AccountType.CONTRACTOR,
+        contractorKind: $Enums.ContractorKind.INDIVIDUAL,
+        password: null,
+        salt: null,
+        verified: !!payload.email_verified,
+        legalVerified: false,
+        howDidHearAboutUs: null,
+        howDidHearAboutUsOther: null,
+        stripeCustomerId: null,
+        ...(hasNameUpdate && {
+          personalDetails: {
+            create: {
+              firstName: payload.given_name ?? null,
+              lastName: payload.family_name ?? null,
+              citizenOf: null,
+              dateOfBirth: null,
+              passportOrIdNumber: null,
             },
-          }),
-        },
-        include: { personalDetails: true },
+          },
+        }),
       });
 
       return consumer;
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-        return this.prisma.consumerModel.findFirstOrThrow({
-          where: { email, deletedAt: null },
-          include: { personalDetails: true },
-        });
+        return this.consumerIdentityRepository.findGoogleLoginCandidateByEmailOrThrow(email);
       }
       throw err;
     }
   }
 
   private async upsertGoogleProfileDetails(consumerId: string, payload: TokenPayload) {
-    const { email, email_verified, name, given_name, family_name, picture, hd } = payload;
-
-    const organization = typeof hd === `string` && hd.length > 0 ? (hd as string) : null;
-    const metadata = JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue;
-
-    await this.prisma.googleProfileDetailsModel.upsert({
-      where: { consumerId },
-      update: {
-        email: email ?? ``,
-        emailVerified: !!email_verified,
-        name: (name as string) ?? null,
-        givenName: (given_name as string) ?? null,
-        familyName: (family_name as string) ?? null,
-        picture: (picture as string) ?? null,
-        organization,
-        metadata,
-      },
-      create: {
-        email: email ?? ``,
-        emailVerified: !!email_verified,
-        name: (name as string) ?? null,
-        givenName: (given_name as string) ?? null,
-        familyName: (family_name as string) ?? null,
-        picture: (picture as string) ?? null,
-        organization,
-        metadata,
-        consumer: {
-          connect: { id: consumerId },
-        },
-      },
-    });
+    await this.googleProfileRepository.upsertProfile(this.buildGoogleProfileParams(consumerId, payload));
   }
 
   private async assertSafeGoogleLink(consumerId: string, payload: TokenPayload) {
     const incomingSub = typeof payload.sub === `string` && payload.sub.length > 0 ? payload.sub : null;
     if (!incomingSub) return;
 
-    const existing = await this.prisma.googleProfileDetailsModel.findUnique({
-      where: { consumerId },
-      select: { metadata: true },
-    });
+    const existing = await this.googleProfileQuery.findMetadataByConsumerId(consumerId);
     if (!existing?.metadata) return;
 
     const existingSub = this.extractSubFromMetadata(existing.metadata);
@@ -282,5 +240,21 @@ export class GoogleOAuthService {
     const value = (metadata as Record<string, unknown>).sub;
     if (typeof value === `string` && value.length > 0) return value;
     return null;
+  }
+
+  private buildGoogleProfileParams(consumerId: string, payload: TokenPayload) {
+    const { email, email_verified, name, given_name, family_name, picture, hd } = payload;
+
+    return {
+      consumerId,
+      email: email ?? ``,
+      emailVerified: !!email_verified,
+      name: (name as string) ?? null,
+      givenName: (given_name as string) ?? null,
+      familyName: (family_name as string) ?? null,
+      picture: (picture as string) ?? null,
+      organization: typeof hd === `string` && hd.length > 0 ? hd : null,
+      metadata: JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue,
+    };
   }
 }

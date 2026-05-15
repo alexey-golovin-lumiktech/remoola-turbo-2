@@ -1,28 +1,19 @@
 import { randomUUID } from 'crypto';
 
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-
-import { type AdminV2AdminRef, type AdminV2AssignmentContext } from '@remoola/api-types';
-import { Prisma } from '@remoola/database-2';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import {
   assertCanReleaseAssignment,
   assertExpectedReleasedAtNull,
-  mapAdminRef,
   validateMandatoryAssignmentReason,
   validateOptionalAssignmentReason,
 } from './admin-v2-assignment-policy';
 import { ASSIGNABLE_RESOURCE_TYPES, AssignableResourceType, assertResourceType } from './admin-v2-assignments.dto';
+import { AdminV2AssignmentsQuery } from './admin-v2-assignments.query';
+import { AdminV2AssignmentsRepository } from './admin-v2-assignments.repository';
 
 type AssignmentRequestMeta = {
   ipAddress?: string | null;
@@ -36,70 +27,11 @@ export type AssignmentActorContext = {
   type: string;
 };
 
-type AssignmentRow = {
-  id: string;
-  resource_type: string;
-  resource_id: string;
-  assigned_to: string;
-  assigned_by: string | null;
-  assigned_at: Date;
-  released_at: Date | null;
-  released_by: string | null;
-  expires_at: Date | null;
-  reason: string | null;
-};
-
-type AdminSummary = {
-  id: string;
-  name: string | null;
-  email: string | null;
-};
-
-type AssignmentSummaryRow = {
-  id: string;
-  resource_id: string;
-  assigned_to: string;
-  assigned_by: string | null;
-  released_by: string | null;
-  assigned_at: Date;
-  released_at: Date | null;
-  expires_at: Date | null;
-  reason: string | null;
-  assigned_to_email: string | null;
-  assigned_by_email: string | null;
-  released_by_email: string | null;
-};
-
-export type AdminRef = AdminV2AdminRef;
-
-type AssignmentContext = AdminV2AssignmentContext;
-
-function isOperationalAssignmentUniqueConflict(error: unknown): boolean {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
-    return false;
-  }
-
-  if (error.code === `P2002`) {
-    return true;
-  }
-
-  if (error.code !== `P2010`) {
-    return false;
-  }
-
-  const meta = error.meta as { code?: unknown; message?: unknown } | undefined;
-  const databaseCode = typeof meta?.code === `string` ? meta.code : null;
-  const message = typeof meta?.message === `string` ? meta.message : ``;
-  return (
-    databaseCode === `23505` &&
-    (message.includes(`idx_operational_assignment_active_resource`) || message.includes(`operational_assignment`))
-  );
-}
-
 @Injectable()
 export class AdminV2AssignmentsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2AssignmentsQuery,
+    private readonly repository: AdminV2AssignmentsRepository,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly adminActionAudit: AdminActionAuditService,
     private readonly accessService: AdminV2AccessService,
@@ -125,64 +57,7 @@ export class AdminV2AssignmentsService {
       key: meta.idempotencyKey,
       payload: { resourceType, resourceId, reason },
       execute: async () => {
-        const result = await this.prisma.$transaction(async (tx) => {
-          const existingRows = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-            SELECT "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
-                   "assigned_at", "released_at", "released_by", "expires_at", "reason"
-            FROM "operational_assignment"
-            WHERE "resource_type" = ${resourceType}
-              AND "resource_id" = ${Prisma.sql`${resourceId}::uuid`}
-              AND "released_at" IS NULL
-            ORDER BY "assigned_at" DESC
-            LIMIT 1
-            FOR UPDATE
-          `);
-          const existing = existingRows[0];
-          if (existing) {
-            if (existing.assigned_to === adminId) {
-              return {
-                status: `already-yours` as const,
-                assignment: existing,
-                createdNow: false,
-              };
-            }
-            throw new ConflictException(`Resource already assigned to another admin`);
-          }
-
-          let inserted: AssignmentRow[];
-          try {
-            inserted = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-              INSERT INTO "operational_assignment"
-                ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
-              SELECT ${resourceType},
-                     ${Prisma.sql`${resourceId}::uuid`},
-                     ${Prisma.sql`${adminId}::uuid`},
-                     ${Prisma.sql`${adminId}::uuid`},
-                     ${reason}
-              WHERE NOT EXISTS (
-                SELECT 1 FROM "operational_assignment"
-                WHERE "resource_type" = ${resourceType}
-                  AND "resource_id" = ${Prisma.sql`${resourceId}::uuid`}
-                  AND "released_at" IS NULL
-              )
-              RETURNING "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
-                        "assigned_at", "released_at", "released_by", "expires_at", "reason"
-            `);
-          } catch (error) {
-            if (isOperationalAssignmentUniqueConflict(error)) {
-              throw new ConflictException(`Resource already assigned to another admin`);
-            }
-            throw error;
-          }
-          if (inserted.length === 0) {
-            throw new ConflictException(`Resource already assigned to another admin`);
-          }
-          return {
-            status: `created` as const,
-            assignment: inserted[0]!,
-            createdNow: true,
-          };
-        });
+        const result = await this.repository.claim({ resourceType, resourceId, adminId, reason });
 
         if (result.createdNow) {
           await this.adminActionAudit.record({
@@ -200,7 +75,7 @@ export class AdminV2AssignmentsService {
           });
         }
 
-        const assignedTo = await this.loadAdminSummary(result.assignment.assigned_to);
+        const assignedTo = await this.query.loadAdminSummary(result.assignment.assigned_to);
         return {
           assignmentId: result.assignment.id,
           assignedAt: result.assignment.assigned_at.toISOString(),
@@ -231,37 +106,12 @@ export class AdminV2AssignmentsService {
       payload: { assignmentId, reason, expectedReleasedAtNull: 0 },
       execute: async () => {
         const profile = await this.accessService.getAccessProfile(actor);
-        const release = await this.prisma.$transaction(async (tx) => {
-          const lockedRows = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-            SELECT "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
-                   "assigned_at", "released_at", "released_by", "expires_at", "reason"
-            FROM "operational_assignment"
-            WHERE "id" = ${Prisma.sql`${assignmentId}::uuid`}
-            FOR UPDATE
-          `);
-          const locked = lockedRows[0];
-          if (!locked) {
-            throw new NotFoundException(`Assignment not found`);
-          }
-          if (locked.released_at) {
-            throw new ConflictException(`Assignment is already released`);
-          }
-          assertCanReleaseAssignment({ assignedTo: locked.assigned_to, adminId, profile });
-
-          const updated = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-            UPDATE "operational_assignment"
-            SET "released_at" = NOW(),
-                "released_by" = ${Prisma.sql`${adminId}::uuid`},
-                "updated_at" = NOW()
-            WHERE "id" = ${Prisma.sql`${assignmentId}::uuid`}
-              AND "released_at" IS NULL
-            RETURNING "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
-                      "assigned_at", "released_at", "released_by", "expires_at", "reason"
-          `);
-          if (updated.length === 0) {
-            throw new ConflictException(`Assignment is already released`);
-          }
-          return { row: updated[0]!, releasedFrom: locked.assigned_to };
+        const release = await this.repository.release({
+          assignmentId,
+          adminId,
+          assertCanReleaseLockedAssignment: (locked) => {
+            assertCanReleaseAssignment({ assignedTo: locked.assigned_to, adminId, profile });
+          },
         });
 
         await this.adminActionAudit.record({
@@ -322,10 +172,7 @@ export class AdminV2AssignmentsService {
       throw new BadRequestException(`Reassign to self is not allowed; use release + claim instead`);
     }
 
-    const targetAdmin = await this.prisma.adminModel.findUnique({
-      where: { id: newAssigneeId },
-      select: { id: true, deletedAt: true },
-    });
+    const targetAdmin = await this.query.getAdminTargetForReassign(newAssigneeId);
     if (!targetAdmin) {
       throw new NotFoundException(`Target admin not found`);
     }
@@ -340,112 +187,16 @@ export class AdminV2AssignmentsService {
       payload: { assignmentId, newAssigneeId, confirmed: true, reason, expectedReleasedAtNull: 0 },
       execute: async () => {
         const transferOperationId = randomUUID();
-        const result = await this.prisma.$transaction(async (tx) => {
-          const lockedRows = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-            SELECT "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
-                   "assigned_at", "released_at", "released_by", "expires_at", "reason"
-            FROM "operational_assignment"
-            WHERE "id" = ${Prisma.sql`${assignmentId}::uuid`}
-            FOR UPDATE
-          `);
-          const locked = lockedRows[0];
-          if (!locked) {
-            throw new NotFoundException(`Assignment not found`);
-          }
-          if (locked.released_at) {
-            throw new ConflictException(`Assignment is already released`);
-          }
-          if (locked.assigned_to === newAssigneeId) {
-            throw new ConflictException(`Resource is already assigned to the target admin`);
-          }
-
-          const closed = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-            UPDATE "operational_assignment"
-            SET "released_at" = NOW(),
-                "released_by" = ${Prisma.sql`${adminId}::uuid`},
-                "updated_at" = NOW()
-            WHERE "id" = ${Prisma.sql`${assignmentId}::uuid`}
-              AND "released_at" IS NULL
-            RETURNING "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
-                      "assigned_at", "released_at", "released_by", "expires_at", "reason"
-          `);
-          if (closed.length === 0) {
-            throw new ConflictException(`Assignment is already released`);
-          }
-          const closedRow = closed[0]!;
-
-          let inserted: AssignmentRow[];
-          try {
-            inserted = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-              INSERT INTO "operational_assignment"
-                ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
-              SELECT ${closedRow.resource_type},
-                     ${Prisma.sql`${closedRow.resource_id}::uuid`},
-                     ${Prisma.sql`${newAssigneeId}::uuid`},
-                     ${Prisma.sql`${adminId}::uuid`},
-                     ${reason}
-              WHERE NOT EXISTS (
-                SELECT 1 FROM "operational_assignment"
-                WHERE "resource_type" = ${closedRow.resource_type}
-                  AND "resource_id" = ${Prisma.sql`${closedRow.resource_id}::uuid`}
-                  AND "released_at" IS NULL
-              )
-              RETURNING "id", "resource_type", "resource_id", "assigned_to", "assigned_by",
-                        "assigned_at", "released_at", "released_by", "expires_at", "reason"
-            `);
-          } catch (error) {
-            if (isOperationalAssignmentUniqueConflict(error)) {
-              throw new ConflictException(`Resource was re-claimed concurrently; reassign aborted`);
-            }
-            throw error;
-          }
-          if (inserted.length === 0) {
-            throw new ConflictException(`Resource was re-claimed concurrently; reassign aborted`);
-          }
-          const newRow = inserted[0]!;
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.assignment_release,
-              resource: closedRow.resource_type,
-              resourceId: closedRow.resource_id,
-              metadata: {
-                assignmentId: closedRow.id,
-                reason,
-                reassignedFrom: closedRow.assigned_to,
-                reassignedTo: newAssigneeId,
-                transferOperationId,
-                severity: `high`,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.assignment_reassign,
-              resource: closedRow.resource_type,
-              resourceId: closedRow.resource_id,
-              metadata: {
-                oldAssignmentId: closedRow.id,
-                newAssignmentId: newRow.id,
-                fromAdmin: closedRow.assigned_to,
-                toAdmin: newAssigneeId,
-                reason,
-                transferOperationId,
-                severity: `high`,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-
-          return { closedRow, newRow };
+        const result = await this.repository.reassign({
+          assignmentId,
+          newAssigneeId,
+          adminId,
+          reason,
+          transferOperationId,
+          meta,
         });
 
-        const assignedTo = await this.loadAdminSummary(result.newRow.assigned_to);
+        const assignedTo = await this.query.loadAdminSummary(result.newRow.assigned_to);
         return {
           oldAssignmentId: result.closedRow.id,
           newAssignmentId: result.newRow.id,
@@ -461,95 +212,11 @@ export class AdminV2AssignmentsService {
     return ASSIGNABLE_RESOURCE_TYPES;
   }
 
-  async getAssignmentContextForResource(
-    resourceType: AssignableResourceType,
-    resourceId: string,
-  ): Promise<AssignmentContext> {
-    const rows = await this.prisma.$queryRaw<AssignmentSummaryRow[]>(Prisma.sql`
-      SELECT
-        a."id",
-        a."resource_id",
-        a."assigned_to",
-        a."assigned_by",
-        a."released_by",
-        a."assigned_at",
-        a."released_at",
-        a."expires_at",
-        a."reason",
-        at."email" AS assigned_to_email,
-        ab."email" AS assigned_by_email,
-        rb."email" AS released_by_email
-      FROM "operational_assignment" a
-      LEFT JOIN "admin" at ON at."id" = a."assigned_to"
-      LEFT JOIN "admin" ab ON ab."id" = a."assigned_by"
-      LEFT JOIN "admin" rb ON rb."id" = a."released_by"
-      WHERE a."resource_type" = ${resourceType}
-        AND a."resource_id" = ${Prisma.sql`${resourceId}::uuid`}
-      ORDER BY a."assigned_at" DESC
-      LIMIT 10
-    `);
-    const currentRow = rows.find((row) => row.released_at === null) ?? null;
-    const current = currentRow
-      ? {
-          id: currentRow.id,
-          assignedTo: mapAdminRef({ id: currentRow.assigned_to, email: currentRow.assigned_to_email }) ?? {
-            id: currentRow.assigned_to,
-            name: null,
-            email: null,
-          },
-          assignedBy: mapAdminRef({ id: currentRow.assigned_by, email: currentRow.assigned_by_email }),
-          assignedAt: currentRow.assigned_at.toISOString(),
-          reason: currentRow.reason,
-          expiresAt: currentRow.expires_at ? currentRow.expires_at.toISOString() : null,
-        }
-      : null;
-    const history = rows.map((row) => ({
-      id: row.id,
-      assignedTo: mapAdminRef({ id: row.assigned_to, email: row.assigned_to_email }) ?? {
-        id: row.assigned_to,
-        name: null,
-        email: null,
-      },
-      assignedBy: mapAdminRef({ id: row.assigned_by, email: row.assigned_by_email }),
-      assignedAt: row.assigned_at.toISOString(),
-      releasedAt: row.released_at ? row.released_at.toISOString() : null,
-      releasedBy: mapAdminRef({ id: row.released_by, email: row.released_by_email }),
-      reason: row.reason,
-      expiresAt: row.expires_at ? row.expires_at.toISOString() : null,
-    }));
-    return { current, history };
+  async getAssignmentContextForResource(resourceType: AssignableResourceType, resourceId: string) {
+    return this.query.getAssignmentContextForResource(resourceType, resourceId);
   }
 
-  async getActiveAssigneesForResource(
-    resourceType: AssignableResourceType,
-    resourceIds: string[],
-  ): Promise<Map<string, AdminRef>> {
-    if (resourceIds.length === 0) return new Map();
-    const rows = await this.prisma.$queryRaw<Array<{ resource_id: string; assigned_to: string; email: string | null }>>(
-      Prisma.sql`
-        SELECT a."resource_id"::text AS resource_id, a."assigned_to"::text AS assigned_to, ad."email" AS email
-        FROM "operational_assignment" a
-        LEFT JOIN "admin" ad ON ad."id" = a."assigned_to"
-        WHERE a."resource_type" = ${resourceType}
-          AND a."released_at" IS NULL
-          AND a."resource_id" = ANY(${resourceIds}::uuid[])
-      `,
-    );
-    const result = new Map<string, AdminRef>();
-    for (const row of rows) {
-      result.set(row.resource_id, { id: row.assigned_to, name: null, email: row.email });
-    }
-    return result;
-  }
-
-  private async loadAdminSummary(adminId: string): Promise<AdminSummary> {
-    const admin = await this.prisma.adminModel.findUnique({
-      where: { id: adminId },
-      select: { id: true, email: true },
-    });
-    if (!admin) {
-      return { id: adminId, name: null, email: null };
-    }
-    return { id: admin.id, name: null, email: admin.email ?? null };
+  async getActiveAssigneesForResource(resourceType: AssignableResourceType, resourceIds: string[]) {
+    return this.query.getActiveAssigneesForResource(resourceType, resourceIds);
   }
 }

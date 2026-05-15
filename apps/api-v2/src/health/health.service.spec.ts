@@ -1,11 +1,12 @@
 import { ForbiddenException } from '@nestjs/common';
 
 import { envs } from '../envs';
+import { type HealthDatabaseProbe } from './health-database.probe';
 import { HealthService } from './health.service';
 
 describe(`HealthService`, () => {
-  const prisma = {
-    $queryRaw: jest.fn(),
+  const databaseProbe = {
+    ping: jest.fn(),
   };
   const brevoMailService = {
     verify: jest.fn(),
@@ -15,13 +16,13 @@ describe(`HealthService`, () => {
   let service: HealthService;
 
   beforeEach(() => {
-    prisma.$queryRaw.mockReset();
+    databaseProbe.ping.mockReset();
     brevoMailService.verify.mockReset();
     brevoMailService.sendMail.mockReset();
     envs.PUBLIC_DETAILED_HEALTH_ENABLED = true;
     envs.PUBLIC_MAIL_TRANSPORT_HEALTH_ENABLED = true;
     envs.HEALTH_TEST_EMAIL_ENABLED = true;
-    service = new HealthService(prisma as never, brevoMailService as never);
+    service = new HealthService(databaseProbe as unknown as HealthDatabaseProbe, brevoMailService as never);
   });
 
   afterEach(() => {
@@ -30,11 +31,37 @@ describe(`HealthService`, () => {
     envs.HEALTH_TEST_EMAIL_ENABLED = true;
   });
 
+  describe(`getHealthStatus`, () => {
+    it(`returns ok when the database probe succeeds`, async () => {
+      databaseProbe.ping.mockResolvedValue(undefined);
+
+      const result = await service.getHealthStatus();
+
+      expect(databaseProbe.ping).toHaveBeenCalledWith();
+      expect(result).toMatchObject({
+        status: `ok`,
+        services: { database: `ok` },
+      });
+    });
+
+    it(`returns error when the database probe fails`, async () => {
+      databaseProbe.ping.mockRejectedValue(new Error(`db unavailable`));
+
+      const result = await service.getHealthStatus();
+
+      expect(result).toMatchObject({
+        status: `error`,
+        services: { database: `error` },
+        error: `Database check failed`,
+      });
+    });
+  });
+
   describe(`getDetailedHealthStatus`, () => {
     it(`throws when detailed health is disabled`, async () => {
       envs.PUBLIC_DETAILED_HEALTH_ENABLED = false;
       await expect(service.getDetailedHealthStatus()).rejects.toThrow(ForbiddenException);
-      expect(prisma.$queryRaw).not.toHaveBeenCalled();
+      expect(databaseProbe.ping).not.toHaveBeenCalled();
     });
   });
 

@@ -2,12 +2,23 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
 
+import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 import { AdminV2DocumentsService as AdminV2DocumentsServiceClass } from './admin-v2-documents.service';
 
 class AdminV2DocumentsService extends AdminV2DocumentsServiceClass {
   constructor(prisma: any, storage: any, idempotency: any, assignmentsService: any) {
-    super(storage, idempotency, assignmentsService, new AdminV2DocumentsRepository(prisma));
+    super(
+      storage,
+      idempotency,
+      assignmentsService,
+      new AdminV2DocumentsRepository(prisma, {
+        run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
+      } as never),
+      new AdminV2DocumentsCommandsRepository(prisma, {
+        run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
+      } as never),
+    );
   }
 }
 
@@ -522,6 +533,45 @@ describe(`AdminV2DocumentsService`, () => {
     );
   });
 
+  it(`short-circuits duplicate tag creates before entering the mutation repository`, async () => {
+    const documentTagModel = {
+      findUnique: jest.fn(async () => ({
+        id: `tag-1`,
+        name: `evidence`,
+        updatedAt: new Date(`2026-04-17T09:00:00.000Z`),
+      })),
+      create: jest.fn(),
+    };
+    const adminActionAuditLogModel = {
+      create: jest.fn(),
+    };
+    const prisma = {
+      documentTagModel,
+      adminActionAuditLogModel,
+      $transaction: jest.fn(),
+    };
+    const service = new AdminV2DocumentsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      createAssignmentsService() as never,
+    );
+
+    await expect(
+      service.createTag(`admin-1`, { name: `evidence` }, { idempotencyKey: `idem-duplicate`, userAgent: `jest` }),
+    ).resolves.toEqual({
+      tagId: `tag-1`,
+      name: `evidence`,
+      version: new Date(`2026-04-17T09:00:00.000Z`).getTime(),
+      updatedAt: `2026-04-17T09:00:00.000Z`,
+      alreadyExists: true,
+    });
+
+    expect(documentTagModel.create).not.toHaveBeenCalled();
+    expect(adminActionAuditLogModel.create).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
   it(`records document_tag_update with stale protection`, async () => {
     const originalUpdatedAt = new Date(`2026-04-17T10:00:00.000Z`);
     const nextUpdatedAt = new Date(`2026-04-17T10:05:00.000Z`);
@@ -579,6 +629,52 @@ describe(`AdminV2DocumentsService`, () => {
         }),
       }),
     );
+  });
+
+  it(`returns unchanged for a no-op tag rename without entering the mutation repository`, async () => {
+    const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
+    const tag = {
+      id: `tag-1`,
+      name: `evidence`,
+      updatedAt,
+    };
+    const documentTagModel = {
+      findUnique: jest.fn().mockResolvedValueOnce(tag).mockResolvedValueOnce(tag),
+      updateMany: jest.fn(),
+    };
+    const adminActionAuditLogModel = {
+      create: jest.fn(),
+    };
+    const prisma = {
+      documentTagModel,
+      adminActionAuditLogModel,
+      $transaction: jest.fn(),
+    };
+    const service = new AdminV2DocumentsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      createAssignmentsService() as never,
+    );
+
+    await expect(
+      service.updateTag(
+        `tag-1`,
+        `admin-1`,
+        { name: `evidence`, version: updatedAt.getTime() },
+        { idempotencyKey: `idem-unchanged` },
+      ),
+    ).resolves.toEqual({
+      tagId: `tag-1`,
+      name: `evidence`,
+      version: updatedAt.getTime(),
+      updatedAt: `2026-04-17T10:00:00.000Z`,
+      unchanged: true,
+    });
+
+    expect(documentTagModel.updateMany).not.toHaveBeenCalled();
+    expect(adminActionAuditLogModel.create).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it(`requires confirmation and records document_tag_delete`, async () => {
@@ -709,6 +805,70 @@ describe(`AdminV2DocumentsService`, () => {
     );
   });
 
+  it(`allows retagging a document down to zero tags`, async () => {
+    const updatedAt = new Date(`2026-04-17T12:00:00.000Z`);
+    const nextUpdatedAt = new Date(`2026-04-17T12:05:00.000Z`);
+    const adminActionAuditLogModel = {
+      create: jest.fn(async () => ({ id: `audit-1` })),
+    };
+    const resourceModel = {
+      findFirst: jest.fn(async () => ({
+        id: `doc-1`,
+        updatedAt,
+        deletedAt: null,
+        resourceTags: [{ tag: { id: `tag-0`, name: `old-tag` } }],
+      })),
+      updateMany: jest.fn(async () => ({ count: 1 })),
+      findUniqueOrThrow: jest.fn(async () => ({ updatedAt: nextUpdatedAt })),
+    };
+    const createMany = jest.fn(async () => ({ count: 0 }));
+    const prisma = {
+      resourceModel,
+      documentTagModel: {
+        findMany: jest.fn(),
+      },
+      resourceTagModel: {
+        deleteMany: jest.fn(async () => ({ count: 1 })),
+        createMany,
+      },
+      adminActionAuditLogModel,
+      $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
+    };
+    const service = new AdminV2DocumentsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      createAssignmentsService() as never,
+    );
+
+    await expect(
+      service.retagDocument(
+        `doc-1`,
+        `admin-1`,
+        { version: updatedAt.getTime(), tagIds: [] },
+        { idempotencyKey: `idem-3` },
+      ),
+    ).resolves.toEqual({
+      resourceId: `doc-1`,
+      tagIds: [],
+      version: nextUpdatedAt.getTime(),
+      updatedAt: `2026-04-17T12:05:00.000Z`,
+    });
+
+    expect(createMany).not.toHaveBeenCalled();
+    expect(adminActionAuditLogModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: `document_retag`,
+          metadata: expect.objectContaining({
+            nextTagIds: [],
+            nextTagNames: [],
+          }),
+        }),
+      }),
+    );
+  });
+
   it(`records document_bulk_tag and touches every selected document version`, async () => {
     const updatedAt1 = new Date(`2026-04-17T13:00:00.000Z`);
     const updatedAt2 = new Date(`2026-04-17T13:10:00.000Z`);
@@ -772,6 +932,72 @@ describe(`AdminV2DocumentsService`, () => {
         data: expect.objectContaining({
           action: `document_bulk_tag`,
           resource: `document_batch`,
+        }),
+      }),
+    );
+  });
+
+  it(`returns zero created associations when bulk tagging only duplicates`, async () => {
+    const updatedAt = new Date(`2026-04-17T13:00:00.000Z`);
+    const adminActionAuditLogModel = {
+      create: jest.fn(async () => ({ id: `audit-1` })),
+    };
+    const resourceModel = {
+      findMany: jest.fn(async () => [
+        {
+          id: `doc-1`,
+          updatedAt,
+          deletedAt: null,
+        },
+      ]),
+      updateMany: jest.fn(async () => ({ count: 1 })),
+    };
+    const resourceTagModel = {
+      createMany: jest.fn(async () => ({ count: 0 })),
+    };
+    const prisma = {
+      documentTagModel: {
+        findMany: jest.fn(async () => [{ id: `tag-1`, name: `evidence` }]),
+      },
+      resourceModel,
+      resourceTagModel,
+      adminActionAuditLogModel,
+      $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
+    };
+    const service = new AdminV2DocumentsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      createAssignmentsService() as never,
+    );
+
+    await expect(
+      service.bulkTagDocuments(
+        `admin-1`,
+        {
+          tagIds: [`tag-1`],
+          resources: [{ resourceId: `doc-1`, version: updatedAt.getTime() }],
+        },
+        { idempotencyKey: `idem-4` },
+      ),
+    ).resolves.toEqual({
+      targetCount: 1,
+      tagCount: 1,
+      associationsCreated: 0,
+    });
+
+    expect(resourceTagModel.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skipDuplicates: true,
+      }),
+    );
+    expect(adminActionAuditLogModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: `document_bulk_tag`,
+          metadata: expect.objectContaining({
+            associationsCreated: 0,
+          }),
         }),
       }),
     );

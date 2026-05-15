@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 
+import { type AdminActionAuditRepository } from './admin-action-audit.repository';
 import { AdminActionAuditService } from './admin-action-audit.service';
 
 describe(`AdminActionAuditService`, () => {
@@ -9,12 +10,10 @@ describe(`AdminActionAuditService`, () => {
 
   it(`record swallows write failures for non-critical audit telemetry`, async () => {
     jest.spyOn(Logger.prototype, `warn`).mockImplementation(() => undefined);
-    const prisma = {
-      adminActionAuditLogModel: {
-        create: jest.fn().mockRejectedValue(new Error(`database unavailable`)),
-      },
-    };
-    const service = new AdminActionAuditService(prisma as never);
+    const repository = {
+      createAuditEntry: jest.fn().mockRejectedValue(new Error(`database unavailable`)),
+    } as unknown as AdminActionAuditRepository;
+    const service = new AdminActionAuditService(repository);
 
     await expect(
       service.record({
@@ -26,12 +25,10 @@ describe(`AdminActionAuditService`, () => {
   });
 
   it(`recordRequired propagates write failures for critical audit evidence`, async () => {
-    const prisma = {
-      adminActionAuditLogModel: {
-        create: jest.fn().mockRejectedValue(new Error(`database unavailable`)),
-      },
-    };
-    const service = new AdminActionAuditService(prisma as never);
+    const repository = {
+      createAuditEntry: jest.fn().mockRejectedValue(new Error(`database unavailable`)),
+    } as unknown as AdminActionAuditRepository;
+    const service = new AdminActionAuditService(repository);
 
     await expect(
       service.recordRequired({
@@ -43,12 +40,10 @@ describe(`AdminActionAuditService`, () => {
   });
 
   it(`recordRequiredWithClient writes through the provided transaction client`, async () => {
-    const prisma = {
-      adminActionAuditLogModel: {
-        create: jest.fn().mockResolvedValue({ id: `audit-1` }),
-      },
-    };
-    const service = new AdminActionAuditService(prisma as never);
+    const repository = {
+      createAuditEntry: jest.fn().mockResolvedValue(undefined),
+    } as unknown as AdminActionAuditRepository;
+    const service = new AdminActionAuditService(repository);
     const tx = {
       adminActionAuditLogModel: {
         create: jest.fn().mockResolvedValue({ id: `audit-1` }),
@@ -63,21 +58,22 @@ describe(`AdminActionAuditService`, () => {
       metadata: { ledgerId: `ledger-1` },
     });
 
-    expect(prisma.adminActionAuditLogModel.create).not.toHaveBeenCalled();
-    expect(tx.adminActionAuditLogModel.create).toHaveBeenCalledWith(
+    expect(repository.createAuditEntry).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          action: `payment_refund`,
-          resource: `payment_request`,
-          resourceId: `payment-1`,
-          metadata: { ledgerId: `ledger-1` },
-        }),
+        action: `payment_refund`,
+        resource: `payment_request`,
+        resourceId: `payment-1`,
+        metadata: { ledgerId: `ledger-1` },
       }),
+      tx,
     );
   });
 
   it(`recordRequiredWithClient propagates transaction write failures`, async () => {
-    const service = new AdminActionAuditService({ adminActionAuditLogModel: { create: jest.fn() } } as never);
+    const repository = {
+      createAuditEntry: jest.fn().mockRejectedValue(new Error(`tx failed`)),
+    } as unknown as AdminActionAuditRepository;
+    const service = new AdminActionAuditService(repository);
     const tx = {
       adminActionAuditLogModel: {
         create: jest.fn().mockRejectedValue(new Error(`tx failed`)),

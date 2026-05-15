@@ -3,8 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import express from 'express';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
-import { $Enums, Prisma, type ConsumerModel } from '@remoola/database-2';
-import { oauthCrypto } from '@remoola/security-utils';
+import { $Enums, type ConsumerModel } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 export type GoogleSignupPayload = {
@@ -37,7 +36,6 @@ import { envs } from '../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils } from '../../shared-common';
 
 type LoginContext = { ipAddress?: string | null; userAgent?: string | null };
@@ -59,7 +57,6 @@ export class ConsumerAuthService {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
     private readonly mailingService: MailingService,
     private readonly authAudit: AuthAuditService,
     private readonly originResolver: OriginResolverService,
@@ -205,6 +202,14 @@ export class ConsumerAuthService {
     return this.sessionService.issueTokensForConsumer(identityId, appScope);
   }
 
+  async createSessionAndIssueTokens(
+    identityId: ConsumerModel[`id`],
+    appScope: ConsumerAppScope,
+    sessionFamilyId?: string,
+  ) {
+    return this.sessionService.createSessionAndIssueTokens(identityId, appScope, sessionFamilyId);
+  }
+
   async revokeAllSessionsByConsumerIdAndAudit(identityId: ConsumerModel[`id`], ctx?: LoginContext): Promise<void> {
     return this.sessionService.revokeAllSessionsByConsumerIdAndAudit(identityId, ctx);
   }
@@ -267,76 +272,6 @@ export class ConsumerAuthService {
     );
   }
 
-  private async createSessionAndIssueTokens(
-    identityId: ConsumerModel[`id`],
-    appScope: ConsumerAppScope,
-    sessionFamilyId?: string,
-    tx?: Prisma.TransactionClient,
-  ) {
-    const db = tx ?? this.prisma;
-    const temporaryHash = `pending:${oauthCrypto.generateOAuthState()}`;
-    const expiresAt = new Date(Date.now() + envs.JWT_REFRESH_TTL_SECONDS * 1000);
-
-    const created = await db.authSessionModel.create({
-      data: {
-        consumerId: identityId,
-        appScope,
-        sessionFamilyId: sessionFamilyId ?? identityId,
-        refreshTokenHash: temporaryHash,
-        expiresAt,
-      },
-    });
-
-    const effectiveSessionFamilyId = sessionFamilyId ?? created.id;
-    const accessToken = await this.getAccessToken(identityId, appScope, created.id);
-    const refreshToken = await this.getRefreshToken(identityId, appScope, created.id, effectiveSessionFamilyId);
-    const accessTokenHash = this.hashToken(accessToken);
-    const refreshTokenHash = this.hashToken(refreshToken);
-
-    await db.authSessionModel.update({
-      where: { id: created.id },
-      data: {
-        accessTokenHash,
-        sessionFamilyId: effectiveSessionFamilyId,
-        refreshTokenHash,
-        lastUsedAt: new Date(),
-      },
-    });
-
-    return { accessToken, refreshToken, sessionId: created.id, sessionFamilyId: effectiveSessionFamilyId };
-  }
-
-  private getAccessToken(identityId: string, appScope: ConsumerAppScope, sessionId: string) {
-    return this.jwtService.signAsync(
-      {
-        sub: identityId,
-        identityId,
-        sid: sessionId,
-        typ: `access` as const,
-        scope: `consumer` as const,
-        appScope,
-        role: ConsumerAuthService.accessRole,
-        permissions: ConsumerAuthService.accessPermissions,
-      },
-      { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
-    );
-  }
-
-  private getRefreshToken(identityId: string, appScope: ConsumerAppScope, sessionId: string, sessionFamilyId: string) {
-    return this.jwtService.signAsync(
-      {
-        sub: identityId,
-        identityId,
-        sid: sessionId,
-        fid: sessionFamilyId,
-        typ: `refresh`,
-        scope: `consumer`,
-        appScope,
-      },
-      { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
-    );
-  }
-
   private resolveIdentityId(payload: IJwtTokenPayload): string | null {
     return payload.identityId ?? payload.sub ?? null;
   }
@@ -345,22 +280,11 @@ export class ConsumerAuthService {
     return payload.typ === `refresh` || (payload as { type?: string }).type === `refresh`;
   }
 
-  private hashToken(token: string): string {
-    return oauthCrypto.hashOAuthState(token);
-  }
-
   private bucketSessionCount(count: number): string {
     if (count <= 0) return `0`;
     if (count === 1) return `1`;
     if (count <= 5) return `2-5`;
     return `6+`;
-  }
-
-  private async revokeSessionFamily(sessionFamilyId: string, reason: string): Promise<void> {
-    await this.prisma.authSessionModel.updateMany({
-      where: { sessionFamilyId, revokedAt: null },
-      data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
-    });
   }
 
   private ensureConsumerNotSuspended(consumer: Pick<ConsumerModel, `suspendedAt`>) {
@@ -481,36 +405,5 @@ export class ConsumerAuthService {
       firstName: dto.personalDetails.firstName ?? null,
       lastName: dto.personalDetails.lastName ?? null,
     };
-  }
-
-  private async upsertGoogleProfileDetailsFromSignup(consumerId: string, payload: GoogleSignupPayload) {
-    const metadata = JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue;
-
-    await this.prisma.googleProfileDetailsModel.upsert({
-      where: { consumerId },
-      update: {
-        email: payload.email,
-        emailVerified: payload.emailVerified,
-        name: payload.name,
-        givenName: payload.givenName,
-        familyName: payload.familyName,
-        picture: payload.picture,
-        organization: payload.organization,
-        metadata,
-      },
-      create: {
-        email: payload.email,
-        emailVerified: payload.emailVerified,
-        name: payload.name,
-        givenName: payload.givenName,
-        familyName: payload.familyName,
-        picture: payload.picture,
-        organization: payload.organization,
-        metadata,
-        consumer: {
-          connect: { id: consumerId },
-        },
-      },
-    });
   }
 }

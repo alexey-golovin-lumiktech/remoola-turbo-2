@@ -4,8 +4,9 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { type GoogleSignupPayload } from './auth.service';
+import { ConsumerGoogleProfileRepository } from './consumer-google-profile.repository';
+import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { type ConsumerSignup } from './dto';
-import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils } from '../../shared-common';
 
 @Injectable()
@@ -14,7 +15,10 @@ export class ConsumerAuthSignupService {
   private static readonly entitySignupPassportPlaceholder = `ENTITY_SIGNUP_NOT_APPLICABLE`;
   private static readonly entitySignupCitizenshipPlaceholder = `ENTITY_SIGNUP_NOT_APPLICABLE`;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly consumerIdentityRepository: ConsumerIdentityRepository,
+    private readonly googleProfileRepository: ConsumerGoogleProfileRepository,
+  ) {}
 
   async signup(dto: ConsumerSignup, googleSignupPayload?: GoogleSignupPayload) {
     this.ensureBusinessRules(dto);
@@ -24,10 +28,7 @@ export class ConsumerAuthSignupService {
       throw new BadRequestException(errorCodes.EMAIL_MISMATCH_GOOGLE);
     }
 
-    const existing = await this.prisma.consumerModel.findFirst({
-      where: { email },
-      select: { id: true, deletedAt: true },
-    });
+    const existing = await this.consumerIdentityRepository.findSignupCollisionByEmail(email);
 
     if (existing && !existing.deletedAt) {
       throw new ConflictException(errorCodes.EMAIL_ALREADY_REGISTERED_SIGNUP);
@@ -73,21 +74,18 @@ export class ConsumerAuthSignupService {
         };
       }
 
-      const consumer = await this.prisma.consumerModel.create({
-        data: {
-          email,
-          accountType: dto.accountType,
-          contractorKind: dto.accountType === $Enums.AccountType.CONTRACTOR ? (dto.contractorKind ?? null) : null,
-          ...(hash != null && salt != null ? { password: hash, salt } : {}),
-          verified: googleSignupPayload ? true : false,
-          legalVerified: false,
-          howDidHearAboutUs: dto.howDidHearAboutUs ?? null,
-          howDidHearAboutUsOther: dto.howDidHearAboutUsOther ?? null,
-          ...(addressDetails && { addressDetails }),
-          ...(personalDetails && { personalDetails }),
-          ...(organizationDetails && { organizationDetails }),
-        },
-        include: { addressDetails: true, personalDetails: true, organizationDetails: true },
+      const consumer = await this.consumerIdentityRepository.createSignupConsumer({
+        email,
+        accountType: dto.accountType,
+        contractorKind: dto.accountType === $Enums.AccountType.CONTRACTOR ? (dto.contractorKind ?? null) : null,
+        ...(hash != null && salt != null ? { password: hash, salt } : {}),
+        verified: !!googleSignupPayload,
+        legalVerified: false,
+        howDidHearAboutUs: dto.howDidHearAboutUs ?? null,
+        howDidHearAboutUsOther: dto.howDidHearAboutUsOther ?? null,
+        ...(addressDetails && { addressDetails }),
+        ...(personalDetails && { personalDetails }),
+        ...(organizationDetails && { organizationDetails }),
       });
 
       if (googleSignupPayload) {
@@ -178,33 +176,16 @@ export class ConsumerAuthSignupService {
   }
 
   private async upsertGoogleProfileDetailsFromSignup(consumerId: string, payload: GoogleSignupPayload) {
-    const metadata = JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue;
-
-    await this.prisma.googleProfileDetailsModel.upsert({
-      where: { consumerId },
-      update: {
-        email: payload.email,
-        emailVerified: payload.emailVerified,
-        name: payload.name,
-        givenName: payload.givenName,
-        familyName: payload.familyName,
-        picture: payload.picture,
-        organization: payload.organization,
-        metadata,
-      },
-      create: {
-        email: payload.email,
-        emailVerified: payload.emailVerified,
-        name: payload.name,
-        givenName: payload.givenName,
-        familyName: payload.familyName,
-        picture: payload.picture,
-        organization: payload.organization,
-        metadata,
-        consumer: {
-          connect: { id: consumerId },
-        },
-      },
+    await this.googleProfileRepository.upsertProfile({
+      consumerId,
+      email: payload.email,
+      emailVerified: payload.emailVerified,
+      name: payload.name,
+      givenName: payload.givenName,
+      familyName: payload.familyName,
+      picture: payload.picture,
+      organization: payload.organization,
+      metadata: JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue,
     });
   }
 }

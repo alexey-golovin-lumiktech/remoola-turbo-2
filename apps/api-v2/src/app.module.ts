@@ -10,6 +10,7 @@ import {
   CorrelationIdMiddleware,
   LoggingInterceptor,
   PrismaExceptionFilter,
+  SqlValidationExceptionFilter,
 } from './common';
 import { DeviceIdMiddleware } from './common/middleware/device-id.middleware';
 import { ConsumerModule } from './consumer/consumer.module';
@@ -65,6 +66,10 @@ import { DatabaseModule } from './shared/database.module';
     {
       provide: APP_FILTER,
       useClass: PrismaExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: SqlValidationExceptionFilter,
     },
   ],
 })

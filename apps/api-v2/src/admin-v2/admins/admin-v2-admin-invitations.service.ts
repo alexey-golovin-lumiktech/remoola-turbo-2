@@ -2,11 +2,11 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { JwtService } from '@nestjs/jwt';
 
 import { envs } from '../../envs';
-import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { constants, passwordUtils } from '../../shared-common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
+import { AdminV2AdminInvitationsRepository } from './admin-v2-admin-invitations.repository';
 import { AdminV2AdminLinks } from './admin-v2-admin-links';
 import {
   ALLOWED_ROLE_KEYS,
@@ -22,7 +22,8 @@ import {
 @Injectable()
 export class AdminV2AdminInvitationsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly repository: AdminV2AdminInvitationsRepository,
+    private readonly transactions: PrismaTransactionRunner,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly jwtService: JwtService,
     private readonly links: AdminV2AdminLinks,
@@ -64,10 +65,7 @@ export class AdminV2AdminInvitationsService {
   }
 
   private async getResolvedRoleKey(roleId: string): Promise<string> {
-    const role = await this.prisma.adminRoleModel.findUnique({
-      where: { id: roleId },
-      select: { key: true },
-    });
+    const role = await this.repository.getRoleById(roleId);
     if (!role || !ALLOWED_ROLE_KEYS.has(role.key)) {
       throw new BadRequestException(`Unsupported admin role`);
     }
@@ -91,20 +89,8 @@ export class AdminV2AdminInvitationsService {
       payload: { email, roleKey },
       execute: async () => {
         const [existingAdmin, role] = await Promise.all([
-          this.prisma.adminModel.findFirst({
-            where: { email },
-            select: {
-              id: true,
-              deletedAt: true,
-            },
-          }),
-          this.prisma.adminRoleModel.findFirst({
-            where: { key: roleKey },
-            select: {
-              id: true,
-              key: true,
-            },
-          }),
+          this.repository.getAdminByEmail(email),
+          this.repository.getRoleByKey(roleKey),
         ]);
 
         if (!role) {
@@ -117,21 +103,7 @@ export class AdminV2AdminInvitationsService {
           throw new ConflictException(`This email belongs to an inactive admin. Use restore instead of invite.`);
         }
 
-        const existingPending = await this.prisma.adminInvitationModel.findFirst({
-          where: {
-            email,
-            roleId: role.id,
-            acceptedAt: null,
-            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-          },
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          select: {
-            id: true,
-            email: true,
-            expiresAt: true,
-            createdAt: true,
-          },
-        });
+        const existingPending = await this.repository.getPendingInvitation(email, role.id);
 
         if (existingPending) {
           return {
@@ -146,42 +118,23 @@ export class AdminV2AdminInvitationsService {
         }
 
         const expiresAt = new Date(Date.now() + INVITATION_EXPIRY_MS);
-        const created = await this.prisma.$transaction(async (tx) => {
-          const invitation = await tx.adminInvitationModel.create({
-            data: {
-              email,
-              roleId: role.id,
-              invitedBy: actorAdminId,
-              expiresAt,
-            },
-            select: {
-              id: true,
-              email: true,
-              expiresAt: true,
-              createdAt: true,
-            },
+        const created = await this.transactions.run(async (tx) => {
+          const invitation = await this.repository.createInvitation(tx, {
+            email,
+            roleId: role.id,
+            actorAdminId,
+            expiresAt,
           });
-          const audit = await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId: actorAdminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.admin_invite,
-              resource: `admin_invitation`,
-              resourceId: invitation.id,
-              metadata: {
-                invitedEmail: email,
-                roleKey: role.key,
-                expiresAt: expiresAt.toISOString(),
-                notificationSent: false,
-                notificationType: `email`,
-                deliveryStatus: `pending`,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-            select: {
-              id: true,
-            },
+          const audit = await this.repository.createInvitationAuditEntry(tx, {
+            actorAdminId,
+            invitationId: invitation.id,
+            email,
+            roleKey: role.key,
+            expiresAt,
+            ipAddress: meta.ipAddress ?? null,
+            userAgent: meta.userAgent ?? null,
           });
+
           return {
             ...invitation,
             auditId: audit.id,
@@ -197,18 +150,12 @@ export class AdminV2AdminInvitationsService {
           email,
           signupLink: this.links.buildInvitationUrl(token),
         });
-        await this.prisma.adminActionAuditLogModel.update({
-          where: { id: created.auditId },
-          data: {
-            metadata: {
-              invitedEmail: email,
-              roleKey: role.key,
-              expiresAt: expiresAt.toISOString(),
-              notificationSent,
-              notificationType: `email`,
-              deliveryStatus: notificationSent ? `sent` : `failed`,
-            },
-          },
+        await this.repository.updateInvitationAuditDelivery({
+          auditId: created.auditId,
+          invitedEmail: email,
+          roleKey: role.key,
+          expiresAt: expiresAt.toISOString(),
+          notificationSent,
         });
 
         return {
@@ -236,16 +183,7 @@ export class AdminV2AdminInvitationsService {
     }
 
     const payload = await this.verifyInvitationToken(token);
-    const invitation = await this.prisma.adminInvitationModel.findUnique({
-      where: { id: payload.sub },
-      select: {
-        id: true,
-        email: true,
-        roleId: true,
-        expiresAt: true,
-        acceptedAt: true,
-      },
-    });
+    const invitation = await this.repository.getInvitationForAcceptance(payload.sub);
     if (
       !invitation ||
       normalizeEmail(invitation.email) !== normalizeEmail(payload.email) ||
@@ -260,13 +198,8 @@ export class AdminV2AdminInvitationsService {
       throw new ConflictException(`Invitation has expired`);
     }
 
-    const existingAdmin = await this.prisma.adminModel.findFirst({
-      where: { email: normalizeEmail(invitation.email) },
-      select: {
-        id: true,
-        deletedAt: true,
-      },
-    });
+    const normalizedInvitationEmail = normalizeEmail(invitation.email);
+    const existingAdmin = await this.repository.getAdminByEmail(normalizedInvitationEmail);
     if (existingAdmin && existingAdmin.deletedAt == null) {
       throw new ConflictException(`An active admin with this email already exists`);
     }
@@ -277,32 +210,18 @@ export class AdminV2AdminInvitationsService {
     const roleKey = await this.getResolvedRoleKey(invitation.roleId);
     const { hash, salt } = await passwordUtils.hashPassword(password);
 
-    return this.prisma.$transaction(async (tx) => {
-      const consumed = await tx.adminInvitationModel.updateMany({
-        where: {
-          id: invitation.id,
-          acceptedAt: null,
-        },
-        data: {
-          acceptedAt: new Date(),
-        },
-      });
+    const accepted = await this.transactions.run(async (tx) => {
+      const consumed = await this.repository.consumeInvitation(tx, invitation.id);
       if (consumed.count !== 1) {
-        throw new ConflictException(`Invitation has already been accepted`);
+        return null;
       }
 
-      const admin = await tx.adminModel.create({
-        data: {
-          email: normalizeEmail(invitation.email),
-          password: hash,
-          salt,
-          roleId: invitation.roleId,
-          type: toAdminType(roleKey),
-        },
-        select: {
-          id: true,
-          email: true,
-        },
+      const admin = await this.repository.createAdminFromInvitation(tx, {
+        email: normalizedInvitationEmail,
+        roleId: invitation.roleId,
+        hash,
+        salt,
+        type: toAdminType(roleKey),
       });
 
       return {
@@ -311,5 +230,10 @@ export class AdminV2AdminInvitationsService {
         accepted: true as const,
       };
     });
+    if (!accepted) {
+      throw new ConflictException(`Invitation has already been accepted`);
+    }
+
+    return accepted;
   }
 }

@@ -2,9 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { type Prisma } from '@remoola/database-2';
 
-import { PrismaService } from '../../shared/prisma.service';
 import { OVERRIDABLE_ADMIN_V2_CAPABILITIES } from '../admin-v2-access';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { AdminV2AdminsActivityQuery } from './admin-v2-admins-activity.query';
+import { AdminV2AdminsQuery } from './admin-v2-admins.query';
 import {
   ADMIN_PERMISSION_OVERRIDE_CAPABILITIES,
   RECENT_ACTIVITY_LIMIT,
@@ -19,7 +20,8 @@ import {
 @Injectable()
 export class AdminV2AdminsQueriesService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2AdminsQuery,
+    private readonly activityQuery: AdminV2AdminsActivityQuery,
     private readonly accessService: AdminV2AccessService,
   ) {}
 
@@ -29,31 +31,7 @@ export class AdminV2AdminsQueriesService {
       return new Map();
     }
 
-    const [authEvents, adminActions] = await Promise.all([
-      this.prisma.authAuditLogModel.findMany({
-        where: {
-          identityType: `admin`,
-          identityId: { in: adminIds },
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: adminIds.length * 5,
-        select: {
-          identityId: true,
-          createdAt: true,
-        },
-      }),
-      this.prisma.adminActionAuditLogModel.findMany({
-        where: {
-          adminId: { in: adminIds },
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: adminIds.length * 5,
-        select: {
-          adminId: true,
-          createdAt: true,
-        },
-      }),
-    ]);
+    const [authEvents, adminActions] = await this.activityQuery.listLastActivitySources(adminIds);
 
     for (const event of authEvents) {
       if (!event.identityId) continue;
@@ -84,52 +62,13 @@ export class AdminV2AdminsQueriesService {
         : {}),
     };
 
-    const [admins, total, pendingInvitations] = await Promise.all([
-      this.prisma.adminModel.findMany({
+    const [[admins, total], pendingInvitations] = await Promise.all([
+      this.query.listAdminsPage({
         where: adminWhere,
-        orderBy: [{ deletedAt: `asc` }, { updatedAt: `desc` }, { id: `desc` }],
         skip: (page - 1) * pageSize,
         take: pageSize,
-        select: {
-          id: true,
-          email: true,
-          type: true,
-          createdAt: true,
-          updatedAt: true,
-          deletedAt: true,
-          role: {
-            select: {
-              key: true,
-            },
-          },
-        },
       }),
-      this.prisma.adminModel.count({ where: adminWhere }),
-      this.prisma.adminInvitationModel.findMany({
-        where: {
-          acceptedAt: null,
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: 10,
-        select: {
-          id: true,
-          email: true,
-          expiresAt: true,
-          acceptedAt: true,
-          createdAt: true,
-          role: {
-            select: {
-              key: true,
-            },
-          },
-          invitedByAdmin: {
-            select: {
-              id: true,
-              email: true,
-            },
-          },
-        },
-      }),
+      this.query.listPendingInvitations(10),
     ]);
 
     const lastActivityMap = await this.buildLastActivityMap(admins.map((admin) => admin.id));
@@ -176,49 +115,7 @@ export class AdminV2AdminsQueriesService {
   }
 
   async getAdminCase(id: string) {
-    const admin = await this.prisma.adminModel.findFirst({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-        type: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        role: {
-          select: {
-            id: true,
-            key: true,
-          },
-        },
-        adminSettings: {
-          select: {
-            id: true,
-            theme: true,
-            createdAt: true,
-            updatedAt: true,
-            deletedAt: true,
-          },
-        },
-        permissionOverrides: {
-          orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-          select: {
-            granted: true,
-            permission: {
-              select: {
-                capability: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            consumerNotes: true,
-            consumerFlags: true,
-          },
-        },
-      },
-    });
+    const admin = await this.query.findAdminCaseBase(id);
 
     if (!admin) {
       throw new NotFoundException(`Admin not found`);
@@ -230,52 +127,9 @@ export class AdminV2AdminsQueriesService {
         email: admin.email,
         type: admin.type,
       }),
-      this.prisma.adminActionAuditLogModel.findMany({
-        where: { adminId: admin.id },
-        include: {
-          admin: {
-            select: {
-              email: true,
-            },
-          },
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: RECENT_ACTIVITY_LIMIT,
-      }),
-      this.prisma.authAuditLogModel.findMany({
-        where: {
-          identityType: `admin`,
-          identityId: admin.id,
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: RECENT_ACTIVITY_LIMIT,
-        select: {
-          id: true,
-          event: true,
-          ipAddress: true,
-          userAgent: true,
-          createdAt: true,
-        },
-      }),
-      this.prisma.adminInvitationModel.findMany({
-        where: {
-          OR: [{ email: admin.email }, { invitedBy: admin.id }],
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: 10,
-        select: {
-          id: true,
-          email: true,
-          expiresAt: true,
-          acceptedAt: true,
-          createdAt: true,
-          role: {
-            select: {
-              key: true,
-            },
-          },
-        },
-      }),
+      this.activityQuery.listRecentAuditActions(admin.id, RECENT_ACTIVITY_LIMIT),
+      this.activityQuery.listRecentAuthEvents(admin.id, RECENT_ACTIVITY_LIMIT),
+      this.query.listRelatedInvitations({ adminId: admin.id, email: admin.email, take: 10 }),
     ]);
 
     return {

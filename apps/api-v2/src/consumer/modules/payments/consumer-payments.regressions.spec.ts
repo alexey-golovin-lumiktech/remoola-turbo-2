@@ -17,7 +17,10 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
 
   constructor(prisma: any, mailingService: any, balanceService: any) {
     const policiesService = new ConsumerPaymentsPoliciesService(new ConsumerPaymentsPolicyRepository(prisma));
-    const transactionRunner = { run: (callback: any) => prisma.$transaction(callback) };
+    const transactionRunner = {
+      run: (callback: any) => prisma.$transaction(callback),
+      runLedgerMutation: (callback: any) => prisma.$transaction(callback),
+    };
     const commandPolicies: any = {
       appendConsumerAppScopeMetadata: (...args: any[]) =>
         (policiesService.appendConsumerAppScopeMetadata as any)(...args),

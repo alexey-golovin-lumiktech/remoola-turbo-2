@@ -7,7 +7,9 @@ import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.ser
 import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { AdminV2ExchangeQueriesService } from './admin-v2-exchange-queries.service';
-import { AdminV2ExchangeTransactionRunner } from './admin-v2-exchange-transaction.runner';
+import { AdminV2ExchangeRateQuery } from './admin-v2-exchange-rate.query';
+import { AdminV2ExchangeRuleQuery } from './admin-v2-exchange-rule.query';
+import { AdminV2ExchangeScheduledConversionQuery } from './admin-v2-exchange-scheduled-conversion.query';
 import { AdminV2ExchangeController } from './admin-v2-exchange.controller';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
 import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.module';
@@ -18,8 +20,10 @@ import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.mo
   providers: [
     AdminV2ExchangePersistenceRepository,
     AdminV2ExchangePreflightRepository,
+    AdminV2ExchangeRateQuery,
+    AdminV2ExchangeRuleQuery,
+    AdminV2ExchangeScheduledConversionQuery,
     AdminV2ExchangeQueriesService,
-    AdminV2ExchangeTransactionRunner,
     AdminV2ExchangeCommandsService,
     AdminV2ExchangeService,
   ],

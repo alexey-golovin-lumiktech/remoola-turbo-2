@@ -12,7 +12,6 @@ import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.se
 import { ConsumerPaymentsPolicyRepository } from './consumer-payments-policy.repository';
 import { ConsumerPaymentsQueriesRepository } from './consumer-payments-queries.repository';
 import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
-import { ConsumerPaymentsTransactionRunner } from './consumer-payments-transaction.runner';
 import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsController } from './consumer-payments.controller';
 import { ConsumerPaymentsService } from './consumer-payments.service';
@@ -30,7 +29,6 @@ import { FilesModule } from '../files/files.module';
     ConsumerInvoiceRepository,
     ConsumerPaymentsPoliciesService,
     ConsumerPaymentsQueriesRepository,
-    ConsumerPaymentsTransactionRunner,
     ConsumerPaymentsCommandsService,
     ConsumerPaymentsReadService,
     ConsumerPaymentsWriteService,

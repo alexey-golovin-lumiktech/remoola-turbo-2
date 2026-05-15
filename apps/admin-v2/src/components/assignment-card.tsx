@@ -1,3 +1,5 @@
+import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
+
 import { ActionGhost } from './action-ghost';
 import { ActionPrimary } from './action-primary';
 import { Panel } from './panel';
@@ -14,12 +16,7 @@ import {
   textAreaClass,
   textInputClass,
 } from './ui-classes';
-import {
-  type AdminRef,
-  type AdminsListResponse,
-  type AssignmentHistoryItem,
-  type AssignmentSummary,
-} from '../lib/admin-api.server';
+import { type AdminsListResponse, type AssignmentHistoryItem, type AssignmentSummary } from '../lib/admin-api.server';
 import { formatDateTime } from '../lib/admin-format';
 
 type ReassignCandidate = AdminsListResponse[`items`][number];

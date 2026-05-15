@@ -5,6 +5,7 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
+import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
 import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
 import { ConsumerExchangeService } from './consumer-exchange.service';
 
@@ -35,7 +36,7 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
     return {
       service: new ConsumerExchangeService(
         balanceService,
-        new ConsumerExchangeRateReader(prisma),
+        new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma)),
         new ConsumerExchangeExecutionRepository(prisma),
         new ConsumerExchangeAutomationRepository(prisma),
       ),

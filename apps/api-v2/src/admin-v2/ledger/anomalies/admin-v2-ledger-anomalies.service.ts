@@ -12,7 +12,8 @@ import {
   type LedgerAnomalyListResponse,
   type LedgerAnomalySummaryResponse,
 } from './admin-v2-ledger-anomalies.dto';
-import { AdminV2LedgerAnomaliesQuery, type AnomalyRow } from './admin-v2-ledger-anomalies.query';
+import { AdminV2LedgerAnomaliesQuery } from './admin-v2-ledger-anomalies.query';
+import { AnomalyRow } from './admin-v2-ledger-anomalies.query.types';
 import {
   CLASS_HREFS,
   CLASS_LABELS,

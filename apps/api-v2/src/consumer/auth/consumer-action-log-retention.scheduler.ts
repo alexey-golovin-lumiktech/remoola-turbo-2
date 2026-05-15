@@ -1,27 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
-import { Prisma } from '@remoola/database-2';
-
-import {
-  parsePartitionMonthStart,
-  quoteIdentifier,
-  startOfMonth,
-  toPartitionName,
-} from './consumer-action-log-partition.util';
+import { parsePartitionMonthStart, startOfMonth, toPartitionName } from './consumer-action-log-partition.util';
 import { envs } from '../../envs';
-import { PrismaService } from '../../shared/prisma.service';
+import { ConsumerActionLogMaintenanceRepository } from '../../shared/consumer-action-log-maintenance.repository';
 
 const BOUNDARY_DELETE_BATCH_SIZE = 5000;
 const MAX_BOUNDARY_DELETE_BATCHES = 24;
-
-type PartitionRow = { partitionName: string };
 
 @Injectable()
 export class ConsumerActionLogRetentionScheduler {
   private readonly logger = new Logger(ConsumerActionLogRetentionScheduler.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly maintenanceRepository: ConsumerActionLogMaintenanceRepository) {}
 
   private async deleteBoundaryRowsFromPartition(
     partitionName: string,
@@ -31,21 +22,10 @@ export class ConsumerActionLogRetentionScheduler {
     let deletedRows = 0;
 
     for (let i = 0; i < MAX_BOUNDARY_DELETE_BATCHES; i += 1) {
-      const deletedThisBatch = await this.prisma.$executeRawUnsafe(
-        `WITH doomed AS (
-           SELECT "id", "created_at"
-           FROM ${quoteIdentifier(partitionName)}
-           WHERE "created_at" >= $1::timestamptz
-             AND "created_at" < $2::timestamptz
-           ORDER BY "created_at" ASC, "id" ASC
-           LIMIT $3
-         )
-         DELETE FROM ${quoteIdentifier(partitionName)} AS target
-         USING doomed
-         WHERE target."id" = doomed."id"
-           AND target."created_at" = doomed."created_at"`,
-        cutoffMonthStart.toISOString(),
-        retentionCutoff.toISOString(),
+      const deletedThisBatch = await this.maintenanceRepository.deleteBoundaryRowsBatch(
+        partitionName,
+        cutoffMonthStart,
+        retentionCutoff,
         BOUNDARY_DELETE_BATCH_SIZE,
       );
       deletedRows += deletedThisBatch;
@@ -64,30 +44,19 @@ export class ConsumerActionLogRetentionScheduler {
       const retentionCutoff = new Date(Date.now() - envs.CONSUMER_ACTION_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000);
       const cutoffMonthStart = startOfMonth(retentionCutoff);
 
-      const partitions = await this.prisma.$queryRaw<PartitionRow[]>(Prisma.sql`
-        SELECT child.relname AS "partitionName"
-        FROM pg_inherits
-        INNER JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
-        INNER JOIN pg_class child ON pg_inherits.inhrelid = child.oid
-        INNER JOIN pg_namespace ns ON child.relnamespace = ns.oid
-        WHERE parent.relname = 'consumer_action_log'
-          AND ns.nspname = current_schema()
-        ORDER BY child.relname
-      `);
+      const partitionNames = await this.maintenanceRepository.listPartitionNames();
 
       let droppedCount = 0;
-      for (const { partitionName } of partitions) {
+      for (const partitionName of partitionNames) {
         const monthStart = parsePartitionMonthStart(partitionName);
         if (monthStart == null) continue;
         if (monthStart >= cutoffMonthStart) continue;
 
-        // Identifier interpolation is unavoidable for dynamic partition DDL, but
-        // parsePartitionMonthStart guarantees the partition naming whitelist.
-        await this.prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS ${quoteIdentifier(partitionName)}`);
+        await this.maintenanceRepository.dropPartition(partitionName);
         droppedCount += 1;
       }
 
-      const availablePartitionNames = new Set(partitions.map((partition) => partition.partitionName));
+      const availablePartitionNames = new Set(partitionNames);
       const boundaryPartitionNames = [toPartitionName(cutoffMonthStart), `consumer_action_log_pdefault`].filter(
         (name) => availablePartitionNames.has(name),
       );

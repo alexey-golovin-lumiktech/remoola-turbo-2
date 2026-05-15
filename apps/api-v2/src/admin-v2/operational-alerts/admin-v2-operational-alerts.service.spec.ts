@@ -9,6 +9,8 @@ import {
   MAX_OPERATIONAL_ALERT_QUERY_PAYLOAD_BYTES,
   MAX_OPERATIONAL_ALERT_THRESHOLD_PAYLOAD_BYTES,
 } from './admin-v2-operational-alerts.dto';
+import { AdminV2OperationalAlertsQuery } from './admin-v2-operational-alerts.query';
+import { AdminV2OperationalAlertsRepository } from './admin-v2-operational-alerts.repository';
 import {
   AdminV2OperationalAlertsService,
   type OperationalAlertActorContext,
@@ -85,7 +87,19 @@ function buildService() {
     record: jest.fn().mockResolvedValue(undefined),
   };
 
-  const service = new AdminV2OperationalAlertsService(prisma as never, idempotency as never, adminActionAudit as never);
+  const query = new AdminV2OperationalAlertsQuery(prisma as never);
+  const repository = new AdminV2OperationalAlertsRepository(
+    prisma as never,
+    {
+      run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
+    } as never,
+  );
+  const service = new AdminV2OperationalAlertsService(
+    query as never,
+    repository as never,
+    idempotency as never,
+    adminActionAudit as never,
+  );
 
   return { service, prisma, operationalAlertModel, queryRaw, idempotency, adminActionAudit };
 }

@@ -5,6 +5,8 @@ import {
   isSavedViewWorkspace,
   MAX_SAVED_VIEW_PAYLOAD_BYTES,
 } from './admin-v2-saved-views.dto';
+import { AdminV2SavedViewsQuery } from './admin-v2-saved-views.query';
+import { AdminV2SavedViewsRepository } from './admin-v2-saved-views.repository';
 import { AdminV2SavedViewsService, type SavedViewActorContext } from './admin-v2-saved-views.service';
 
 const OPS_ADMIN_ID = `11111111-1111-4111-8111-111111111111`;
@@ -63,7 +65,19 @@ function buildService() {
     record: jest.fn().mockResolvedValue(undefined),
   };
 
-  const service = new AdminV2SavedViewsService(prisma as never, idempotency as never, adminActionAudit as never);
+  const query = new AdminV2SavedViewsQuery(prisma as never);
+  const repository = new AdminV2SavedViewsRepository(
+    prisma as never,
+    {
+      run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
+    } as never,
+  );
+  const service = new AdminV2SavedViewsService(
+    query as never,
+    repository as never,
+    idempotency as never,
+    adminActionAudit as never,
+  );
 
   return { service, prisma, savedViewModel, queryRaw, idempotency, adminActionAudit };
 }

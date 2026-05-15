@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
 
 type RequestMeta = {
@@ -10,7 +11,10 @@ type RequestMeta = {
 
 @Injectable()
 export class AdminV2ConsumerFlagsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner,
+  ) {}
 
   findActiveByConsumerAndFlag(consumerId: string, flag: string) {
     return this.prisma.consumerFlagModel.findFirst({
@@ -30,7 +34,7 @@ export class AdminV2ConsumerFlagsRepository {
   }
 
   createWithAudit(consumerId: string, adminId: string, flag: string, reason: string | null, meta?: RequestMeta) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const created = await tx.consumerFlagModel.create({
         data: {
           consumerId,
@@ -64,7 +68,7 @@ export class AdminV2ConsumerFlagsRepository {
   }
 
   removeWithAudit(consumerId: string, flagId: string, adminId: string, version: number, meta?: RequestMeta) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const flag = await tx.consumerFlagModel.findFirst({
         where: {
           id: flagId,

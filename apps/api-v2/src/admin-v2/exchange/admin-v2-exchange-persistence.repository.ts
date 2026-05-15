@@ -11,7 +11,7 @@ type RequestMeta = {
   userAgent?: string | null;
 };
 
-type ExecutionSummary = {
+export type ExchangeExecutionSummary = {
   status: `executed` | `failed`;
   reason: string;
   executedAt: string;
@@ -21,6 +21,24 @@ type ExecutionSummary = {
   idempotencyKey?: string | null;
   source: string;
   actorId?: string | null;
+};
+
+type ExchangeExecutionState = `executed` | `failed`;
+
+export type ExchangeRuleExecutionResult = {
+  ruleId: string;
+  version: number;
+  lastRunAt: string | null;
+  nextRunAt: string | null;
+  executionState: ExchangeExecutionState;
+  summary: ExchangeExecutionSummary;
+};
+
+export type ExchangeScheduledExecutionResult = {
+  conversionId: string;
+  version: number;
+  executionState: ExchangeExecutionState;
+  summary: ExchangeExecutionSummary;
 };
 
 type LockedRuleRow = {
@@ -360,7 +378,7 @@ export class AdminV2ExchangePersistenceRepository {
     tx: Prisma.TransactionClient,
     params: {
       locked: LockedRuleExecutionRow;
-      summary: ExecutionSummary;
+      summary: ExchangeExecutionSummary;
       expectedVersion: number;
       adminId: string;
       idempotencyKey: string;
@@ -409,7 +427,7 @@ export class AdminV2ExchangePersistenceRepository {
     tx: Prisma.TransactionClient,
     params: {
       locked: LockedScheduledExecutionRow;
-      summary: ExecutionSummary;
+      summary: ExchangeExecutionSummary;
       expectedVersion: number;
       adminId: string;
       idempotencyKey: string;

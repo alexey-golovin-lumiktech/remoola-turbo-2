@@ -20,6 +20,7 @@ import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
 import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsService as ConsumerPaymentsServiceClass } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
+import { BalanceCalculationRepository } from '../../../shared/balance-calculation.repository';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
 class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
@@ -27,7 +28,10 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
 
   constructor(prisma: any, mailingService: any, balanceService: any) {
     const policiesService = new ConsumerPaymentsPoliciesService(new ConsumerPaymentsPolicyRepository(prisma));
-    const transactionRunner = { run: (callback: any) => prisma.$transaction(callback) };
+    const transactionRunner = {
+      run: (callback: any) => prisma.$transaction(callback),
+      runLedgerMutation: (callback: any) => prisma.$transaction(callback),
+    };
     const commandPolicies: any = {
       appendConsumerAppScopeMetadata: (...args: any[]) =>
         (policiesService.appendConsumerAppScopeMetadata as any)(...args),
@@ -77,8 +81,8 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
 }
 
 describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
-  const consumerId = `consumer-test-1`;
-  const recipientId = `consumer-test-2`;
+  const consumerId = `11111111-1111-4111-8111-111111111111`;
+  const recipientId = `22222222-2222-4222-8222-222222222222`;
   const email = `test@example.com`;
 
   function createMockPrisma(params: { balance: number }) {
@@ -162,7 +166,7 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
 
   function createService(prisma: any) {
     const mailingService = {} as any;
-    const balanceService = new BalanceCalculationService(prisma);
+    const balanceService = new BalanceCalculationService(new BalanceCalculationRepository(prisma));
     const service = new ConsumerPaymentsService(prisma, mailingService, balanceService);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
     return service;

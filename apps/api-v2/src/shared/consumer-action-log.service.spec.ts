@@ -1,10 +1,17 @@
+import { type ConsumerActionLogQuery } from './consumer-action-log.query';
+import { type ConsumerActionLogRepository } from './consumer-action-log.repository';
 import { ConsumerActionLogService } from './consumer-action-log.service';
-import { type PrismaService } from './prisma.service';
 import { envs } from '../envs';
 
 describe(`ConsumerActionLogService`, () => {
   let service: ConsumerActionLogService;
-  let prisma: { consumerActionLogModel: { create: jest.Mock } };
+  let repository: { createActionLog: jest.Mock };
+  let query: {
+    findTimelineByDeviceId: jest.Mock;
+    findTimelineByConsumerId: jest.Mock;
+    findDistinctDeviceIdsByConsumerId: jest.Mock;
+    findTimelineByDeviceIds: jest.Mock;
+  };
   let dateNowSpy: jest.SpyInstance<number, []>;
   let warnSpy: jest.SpyInstance;
   let logSpy: jest.SpyInstance;
@@ -14,10 +21,19 @@ describe(`ConsumerActionLogService`, () => {
 
   beforeEach(async () => {
     nowMs = 1700000000000;
-    prisma = {
-      consumerActionLogModel: { create: jest.fn().mockResolvedValue({}) },
+    repository = {
+      createActionLog: jest.fn().mockResolvedValue({}),
     };
-    service = new ConsumerActionLogService(prisma as unknown as PrismaService);
+    query = {
+      findTimelineByDeviceId: jest.fn().mockResolvedValue([]),
+      findTimelineByConsumerId: jest.fn().mockResolvedValue([]),
+      findDistinctDeviceIdsByConsumerId: jest.fn().mockResolvedValue([]),
+      findTimelineByDeviceIds: jest.fn().mockResolvedValue([]),
+    };
+    service = new ConsumerActionLogService(
+      query as unknown as ConsumerActionLogQuery,
+      repository as unknown as ConsumerActionLogRepository,
+    );
     warnSpy = jest
       .spyOn((service as unknown as { logger: { warn: (...args: unknown[]) => void } }).logger, `warn`)
       .mockImplementation(() => undefined);
@@ -44,8 +60,8 @@ describe(`ConsumerActionLogService`, () => {
       action: `consumer.auth.login_success`,
       resource: `auth`,
     });
-    expect(prisma.consumerActionLogModel.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(repository.createActionLog).toHaveBeenCalledWith(
+      expect.objectContaining({
         deviceId: `device-uuid`,
         action: `consumer.auth.login_success`,
         resource: `auth`,
@@ -55,11 +71,11 @@ describe(`ConsumerActionLogService`, () => {
         userAgent: null,
         correlationId: null,
       }),
-    });
+    );
   });
 
   it(`does not throw when create fails`, async () => {
-    prisma.consumerActionLogModel.create.mockRejectedValue(new Error(`DB error`));
+    repository.createActionLog.mockRejectedValue(new Error(`DB error`));
     await expect(service.record({ deviceId: `d`, action: `test`, resource: `r` })).resolves.toBeUndefined();
     expect(warnSpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -79,11 +95,11 @@ describe(`ConsumerActionLogService`, () => {
       action: `a`,
       metadata: { result: `ok`, password: `secret`, token: `x` },
     });
-    expect(prisma.consumerActionLogModel.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(repository.createActionLog).toHaveBeenCalledWith(
+      expect.objectContaining({
         metadata: { result: `ok` },
       }),
-    });
+    );
   });
 
   it(`stores minimized network metadata only when explicitly enabled`, async () => {
@@ -97,12 +113,12 @@ describe(`ConsumerActionLogService`, () => {
       userAgent: `Mozilla/5.0 Chrome/124.0.0.0`,
     });
 
-    expect(prisma.consumerActionLogModel.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(repository.createActionLog).toHaveBeenCalledWith(
+      expect.objectContaining({
         ipAddress: `203.0.113.0/24`,
         userAgent: `chrome/124`,
       }),
-    });
+    );
   });
 
   it(`skips low-priority writes when per-second cap is exceeded and sample misses`, async () => {
@@ -114,7 +130,7 @@ describe(`ConsumerActionLogService`, () => {
         resource: `payments`,
       });
     }
-    expect(prisma.consumerActionLogModel.create.mock.calls.length).toBeLessThan(300);
+    expect(repository.createActionLog.mock.calls.length).toBeLessThan(300);
     randomSpy.mockRestore();
   });
 
@@ -127,7 +143,7 @@ describe(`ConsumerActionLogService`, () => {
         resource: `payments`,
       });
     }
-    expect(prisma.consumerActionLogModel.create).toHaveBeenCalledTimes(300);
+    expect(repository.createActionLog).toHaveBeenCalledTimes(300);
     randomSpy.mockRestore();
   });
 
@@ -140,7 +156,7 @@ describe(`ConsumerActionLogService`, () => {
         resource: `payments`,
       });
     }
-    expect(prisma.consumerActionLogModel.create).toHaveBeenCalledTimes(300);
+    expect(repository.createActionLog).toHaveBeenCalledTimes(300);
     randomSpy.mockRestore();
   });
 
@@ -160,7 +176,7 @@ describe(`ConsumerActionLogService`, () => {
       });
     }
 
-    expect(prisma.consumerActionLogModel.create).toHaveBeenCalledTimes(3);
+    expect(repository.createActionLog).toHaveBeenCalledTimes(3);
 
     envs.CONSUMER_ACTION_LOG_CALLBACK_FAILURE_RATE_LIMIT_ENABLED = initialEnabled;
     envs.CONSUMER_ACTION_LOG_CALLBACK_FAILURE_MAX_PER_WINDOW = initialMax;
@@ -199,7 +215,7 @@ describe(`ConsumerActionLogService`, () => {
   });
 
   it(`emits DB pool saturation signal on Prisma timeout code`, async () => {
-    prisma.consumerActionLogModel.create.mockRejectedValue({
+    repository.createActionLog.mockRejectedValue({
       code: `P2024`,
       name: `PrismaClientKnownRequestError`,
       message: `Operation timed out`,
@@ -218,5 +234,40 @@ describe(`ConsumerActionLogService`, () => {
         event: `consumer_action_log_write_failed`,
       }),
     );
+  });
+
+  it(`delegates timeline by device lookups to the query collaborator`, async () => {
+    query.findTimelineByDeviceId.mockResolvedValueOnce([{ id: `row-1` }]);
+
+    await expect(service.getTimelineByDeviceId(`device-1`, 25)).resolves.toEqual([{ id: `row-1` }]);
+
+    expect(query.findTimelineByDeviceId).toHaveBeenCalledWith(`device-1`, 25);
+  });
+
+  it(`delegates timeline by consumer lookups to the query collaborator`, async () => {
+    query.findTimelineByConsumerId.mockResolvedValueOnce([{ id: `row-2` }]);
+
+    await expect(service.getTimelineByConsumerId(`consumer-1`, 50)).resolves.toEqual([{ id: `row-2` }]);
+
+    expect(query.findTimelineByConsumerId).toHaveBeenCalledWith(`consumer-1`, 50);
+  });
+
+  it(`returns an empty stitched timeline when no device ids are found`, async () => {
+    query.findDistinctDeviceIdsByConsumerId.mockResolvedValueOnce([]);
+
+    await expect(service.getStitchedTimelineByConsumerId(`consumer-1`, 10)).resolves.toEqual([]);
+
+    expect(query.findDistinctDeviceIdsByConsumerId).toHaveBeenCalledWith(`consumer-1`);
+    expect(query.findTimelineByDeviceIds).not.toHaveBeenCalled();
+  });
+
+  it(`delegates stitched timeline lookups through distinct device ids`, async () => {
+    query.findDistinctDeviceIdsByConsumerId.mockResolvedValueOnce([`device-1`, `device-2`]);
+    query.findTimelineByDeviceIds.mockResolvedValueOnce([{ id: `row-3` }]);
+
+    await expect(service.getStitchedTimelineByConsumerId(`consumer-1`, 10)).resolves.toEqual([{ id: `row-3` }]);
+
+    expect(query.findDistinctDeviceIdsByConsumerId).toHaveBeenCalledWith(`consumer-1`);
+    expect(query.findTimelineByDeviceIds).toHaveBeenCalledWith([`device-1`, `device-2`], 10);
   });
 });

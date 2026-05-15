@@ -1,15 +1,15 @@
 import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 
 import { envs } from '../envs';
+import { HealthDatabaseProbe } from './health-database.probe';
 import { BrevoMailService } from '../shared/brevo-mail.service';
-import { PrismaService } from '../shared/prisma.service';
 
 @Injectable()
 export class HealthService {
   private readonly logger = new Logger(HealthService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly databaseProbe: HealthDatabaseProbe,
     private readonly brevoMailService: BrevoMailService,
   ) {}
 
@@ -21,7 +21,7 @@ export class HealthService {
 
   async getHealthStatus() {
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+      await this.databaseProbe.ping();
 
       return {
         status: `ok`,

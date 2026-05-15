@@ -3,10 +3,13 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
-import { AdminV2PayoutsTransactionRunner } from './admin-v2-payouts-transaction.runner';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
 import { envs } from '../../envs';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
+import { type PrismaService } from '../../shared/prisma.service';
+import { type AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { type AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 function buildService() {
   const ledgerEntryModel = {
@@ -35,11 +38,11 @@ function buildService() {
     payoutEscalationModel,
     ledgerEntryOutcomeModel,
     $queryRaw: queryRaw,
-    $transaction: jest.fn(async (callback: (tx: any) => Promise<unknown>) =>
+    $transaction: jest.fn(async (callback: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
       callback({
         ...prisma,
         $queryRaw: queryRaw,
-      }),
+      } as unknown as Prisma.TransactionClient),
     ),
   };
   const idempotency = {
@@ -49,12 +52,13 @@ function buildService() {
     getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
     getActiveAssigneesForResource: jest.fn(async () => new Map()),
   };
+  const prismaService = prisma as unknown as PrismaService;
   const service = new AdminV2PayoutsService(
-    new AdminV2PayoutsTransactionRunner(prisma as never),
-    idempotency as never,
-    assignmentsService as never,
-    new AdminV2PayoutsRepository(prisma as never),
-    new AdminV2PayoutEscalationRepository(prisma as never),
+    new PrismaTransactionRunner(prismaService),
+    idempotency as unknown as AdminV2IdempotencyService,
+    assignmentsService as unknown as AdminV2AssignmentsService,
+    new AdminV2PayoutsRepository(prismaService),
+    new AdminV2PayoutEscalationRepository(prismaService),
   );
 
   return {
@@ -576,6 +580,7 @@ describe(`AdminV2PayoutsService`, () => {
   it(`creates a durable payout escalation record and audit entry`, async () => {
     const {
       service,
+      prisma,
       ledgerEntryModel,
       queryRaw,
       ledgerEntryOutcomeModel,
@@ -639,6 +644,7 @@ describe(`AdminV2PayoutsService`, () => {
         key: `idem-3`,
       }),
     );
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(payoutEscalationModel.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({

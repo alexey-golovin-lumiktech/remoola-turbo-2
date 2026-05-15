@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { envs } from '../envs';
 import { ConsumerActionLogPartitionMaintenanceScheduler, ConsumerActionLogRetentionScheduler } from './auth';
 import { InfrastructureModule } from '../infrastructure/infrastructure.module';
+import { ConsumerActionLogMaintenanceRepository } from '../shared/consumer-action-log-maintenance.repository';
 import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
 import { ConsumerAuthControllerSupportService } from './auth/consumer-auth-controller-support.service';
@@ -12,9 +13,13 @@ import { ConsumerAuthSessionRepository } from './auth/consumer-auth-session.repo
 import { ConsumerAuthSessionService } from './auth/consumer-auth-session.service';
 import { ConsumerAuthSignupService } from './auth/consumer-auth-signup.service';
 import { ConsumerAuthVerificationService } from './auth/consumer-auth-verification.service';
+import { ConsumerGoogleProfileQuery } from './auth/consumer-google-profile.query';
+import { ConsumerGoogleProfileRepository } from './auth/consumer-google-profile.repository';
 import { ConsumerIdentityRepository } from './auth/consumer-identity.repository';
 import { GoogleOAuthService } from './auth/google-oauth.service';
 import { OauthStateCleanupScheduler } from './auth/oauth-state-cleanup.scheduler';
+import { OAuthStateStoreQuery } from './auth/oauth-state-store.query';
+import { OAuthStateStoreRepository } from './auth/oauth-state-store.repository';
 import { OAuthStateStoreService } from './auth/oauth-state-store.service';
 import { PasswordResetRepository } from './auth/password-reset.repository';
 import { ResetPasswordCleanupScheduler } from './auth/reset-password-cleanup.scheduler';
@@ -52,6 +57,8 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
     GoogleOAuthService,
     ConsumerAuthControllerSupportService,
     ConsumerIdentityRepository,
+    ConsumerGoogleProfileQuery,
+    ConsumerGoogleProfileRepository,
     PasswordResetRepository,
     ConsumerAuthSessionRepository,
     ConsumerAuthSessionService,
@@ -59,7 +66,10 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
     ConsumerAuthSignupService,
     ConsumerAuthVerificationService,
     ConsumerAuthService,
+    OAuthStateStoreQuery,
+    OAuthStateStoreRepository,
     OAuthStateStoreService,
+    ConsumerActionLogMaintenanceRepository,
     OauthStateCleanupScheduler,
     ResetPasswordCleanupScheduler,
     ConsumerActionLogPartitionMaintenanceScheduler,

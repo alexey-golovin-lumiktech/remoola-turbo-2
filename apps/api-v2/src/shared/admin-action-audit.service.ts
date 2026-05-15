@@ -1,34 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { Prisma } from '@remoola/database-2';
-
-import { PrismaService } from './prisma.service';
-
-type AdminActionAuditParams = {
-  adminId: string;
-  action: string;
-  resource: string;
-  resourceId?: string | null;
-  metadata?: Prisma.InputJsonValue;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-};
-
-type AdminActionAuditWriter = {
-  adminActionAuditLogModel: {
-    create(args: {
-      data: {
-        adminId: string;
-        action: string;
-        resource: string;
-        resourceId: string | null;
-        metadata: Prisma.InputJsonValue | typeof Prisma.JsonNull;
-        ipAddress: string | null;
-        userAgent: string | null;
-      };
-    }): Promise<unknown>;
-  };
-};
+import {
+  type AdminActionAuditWriteClient,
+  type AdminActionAuditWriteParams,
+  AdminActionAuditRepository,
+} from './admin-action-audit.repository';
 
 /** Action names for admin action audit (fintech compliance). */
 export const ADMIN_ACTION_AUDIT_ACTIONS = {
@@ -90,12 +66,12 @@ export const ADMIN_ACTION_AUDIT_ACTIONS = {
 export class AdminActionAuditService {
   private readonly logger = new Logger(AdminActionAuditService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly repository: AdminActionAuditRepository) {}
 
   /**
    * Record a sensitive admin action. Append-only; never throws on failure so it does not break the main flow.
    */
-  async record(params: AdminActionAuditParams): Promise<void> {
+  async record(params: AdminActionAuditWriteParams): Promise<void> {
     try {
       await this.recordRequired(params);
     } catch (err) {
@@ -112,22 +88,14 @@ export class AdminActionAuditService {
    * Record a security/money-critical admin action. Callers use this when the main flow must not silently succeed
    * without durable audit evidence.
    */
-  async recordRequired(params: AdminActionAuditParams): Promise<void> {
-    await this.recordRequiredWithClient(this.prisma, params);
+  async recordRequired(params: AdminActionAuditWriteParams): Promise<void> {
+    await this.repository.createAuditEntry(params);
   }
 
-  async recordRequiredWithClient(client: AdminActionAuditWriter, params: AdminActionAuditParams): Promise<void> {
-    const { adminId, action, resource, resourceId, metadata, ipAddress, userAgent } = params;
-    await client.adminActionAuditLogModel.create({
-      data: {
-        adminId,
-        action,
-        resource,
-        resourceId: resourceId ?? null,
-        metadata: metadata ?? Prisma.JsonNull,
-        ipAddress: ipAddress ?? null,
-        userAgent: userAgent ?? null,
-      },
-    });
+  async recordRequiredWithClient(
+    client: AdminActionAuditWriteClient,
+    params: AdminActionAuditWriteParams,
+  ): Promise<void> {
+    await this.repository.createAuditEntry(params, client);
   }
 }

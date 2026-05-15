@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
+import { Prisma } from '@remoola/database-2';
+
+import { AdminV2AuditQuery } from './admin-v2-audit.query';
 import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 
 const MAX_PAGE_SIZE = 200;
 const MAX_CONSUMER_ACTION_RANGE_DAYS = 31;
@@ -56,7 +58,7 @@ function buildCreatedAtFilter(dateFrom?: Date, dateTo?: Date) {
 
 @Injectable()
 export class AdminV2AuditService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly query: AdminV2AuditQuery) {}
 
   async getAuthAudit(params: AuthAuditParams) {
     const pagination = normalizePagination(params.page, params.pageSize);
@@ -90,15 +92,11 @@ export class AdminV2AuditService {
       ...(createdAt ? { createdAt } : {}),
     };
 
-    const [items, total] = await Promise.all([
-      this.prisma.authAuditLogModel.findMany({
-        where,
-        orderBy: { createdAt: `desc` },
-        skip: pagination.skip,
-        take: pagination.pageSize,
-      }),
-      this.prisma.authAuditLogModel.count({ where }),
-    ]);
+    const [items, total] = await this.query.listAuthAudit({
+      where: where as Prisma.AuthAuditLogModelWhereInput,
+      skip: pagination.skip,
+      take: pagination.pageSize,
+    });
 
     return {
       items: items.map((item) => ({
@@ -137,22 +135,11 @@ export class AdminV2AuditService {
       ...(createdAt ? { createdAt } : {}),
     };
 
-    const [rows, total] = await Promise.all([
-      this.prisma.adminActionAuditLogModel.findMany({
-        where,
-        include: {
-          admin: {
-            select: {
-              email: true,
-            },
-          },
-        },
-        orderBy: { createdAt: `desc` },
-        skip: pagination.skip,
-        take: pagination.pageSize,
-      }),
-      this.prisma.adminActionAuditLogModel.count({ where }),
-    ]);
+    const [rows, total] = await this.query.listAdminActionAudit({
+      where: where as Prisma.AdminActionAuditLogModelWhereInput,
+      skip: pagination.skip,
+      take: pagination.pageSize,
+    });
 
     return {
       items: rows.map((row) => ({
@@ -196,15 +183,11 @@ export class AdminV2AuditService {
       ...(params.action?.trim() ? { action: params.action.trim() } : {}),
     };
 
-    const [items, total] = await Promise.all([
-      this.prisma.consumerActionLogModel.findMany({
-        where,
-        orderBy: { createdAt: `desc` },
-        skip: pagination.skip,
-        take: pagination.pageSize,
-      }),
-      this.prisma.consumerActionLogModel.count({ where }),
-    ]);
+    const [items, total] = await this.query.listConsumerActionAudit({
+      where: where as Prisma.ConsumerActionLogModelWhereInput,
+      skip: pagination.skip,
+      take: pagination.pageSize,
+    });
 
     return {
       items: items.map((item) => ({

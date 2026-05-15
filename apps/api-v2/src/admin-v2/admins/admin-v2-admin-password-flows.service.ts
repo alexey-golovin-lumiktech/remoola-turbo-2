@@ -2,13 +2,11 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 
 import { oauthCrypto } from '@remoola/security-utils';
 
-import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin-auth/admin-auth-session-reasons';
-import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { AUTH_IDENTITY_TYPES, AuthAuditService } from '../../shared/auth-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { constants, passwordUtils } from '../../shared-common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
+import { AdminV2AdminPasswordFlowsRepository } from './admin-v2-admin-password-flows.repository';
 import {
   PASSWORD_RESET_EXPIRY_MS,
   type RequestMeta,
@@ -20,7 +18,7 @@ import {
 @Injectable()
 export class AdminV2AdminPasswordFlowsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly repository: AdminV2AdminPasswordFlowsRepository,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly auditTrail: AdminV2AdminAuditTrail,
     private readonly authAudit: AuthAuditService,
@@ -32,13 +30,7 @@ export class AdminV2AdminPasswordFlowsService {
       throw new BadRequestException(`Email is required`);
     }
 
-    const admin = await this.prisma.adminModel.findFirst({
-      where: { email, deletedAt: null },
-      select: {
-        id: true,
-        email: true,
-      },
-    });
+    const admin = await this.repository.getActiveAdminByEmail(email);
     if (!admin) {
       return;
     }
@@ -46,55 +38,28 @@ export class AdminV2AdminPasswordFlowsService {
     const token = oauthCrypto.generateOAuthState();
     const tokenHash = oauthCrypto.hashOAuthState(token);
     const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS);
-    const created = await this.prisma.$transaction(async (tx) => {
-      await tx.resetPasswordModel.updateMany({
-        where: {
-          adminId: admin.id,
-          deletedAt: null,
-        },
-        data: {
-          deletedAt: new Date(),
-        },
-      });
-      await tx.resetPasswordModel.create({
-        data: {
-          adminId: admin.id,
-          tokenHash,
-          expiredAt: expiresAt,
-          appScope: `admin-v2`,
-        },
-      });
-      const audit = await tx.adminActionAuditLogModel.create({
-        data: {
-          adminId: admin.id,
-          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_password_reset,
-          resource: `admin`,
-          resourceId: admin.id,
-          metadata: {
-            targetEmail: admin.email,
-            initiatedBy: `self_service`,
-            notificationSent: false,
-            notificationType: `email`,
-            deliveryStatus: `pending`,
-          },
-          ipAddress: null,
-          userAgent: null,
-        },
-        select: {
-          id: true,
-        },
-      });
-      return { auditId: audit.id };
+    const metadata = {
+      targetEmail: admin.email,
+      initiatedBy: `self_service`,
+    };
+    const created = await this.repository.createPasswordResetArtifact({
+      adminId: admin.id,
+      auditAdminId: admin.id,
+      email: admin.email,
+      tokenHash,
+      expiresAt,
+      metadata,
+      ipAddress: null,
+      userAgent: null,
     });
-
-    await this.auditTrail.sendAdminV2PasswordResetEmail({
+    const notificationSent = await this.auditTrail.sendAdminV2PasswordResetEmailNotification({
       email: admin.email,
       token,
+    });
+    await this.repository.updateAuditNotificationStatus({
       auditId: created.auditId,
-      metadata: {
-        targetEmail: admin.email,
-        initiatedBy: `self_service`,
-      },
+      metadata,
+      notificationSent,
     });
   }
 
@@ -113,15 +78,7 @@ export class AdminV2AdminPasswordFlowsService {
         expectedVersion,
       },
       execute: async () => {
-        const target = await this.prisma.adminModel.findUnique({
-          where: { id: targetAdminId },
-          select: {
-            id: true,
-            email: true,
-            updatedAt: true,
-            deletedAt: true,
-          },
-        });
+        const target = await this.repository.getResetTarget(targetAdminId);
         if (!target) {
           throw new NotFoundException(`Admin not found`);
         }
@@ -135,61 +92,34 @@ export class AdminV2AdminPasswordFlowsService {
         const token = oauthCrypto.generateOAuthState();
         const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS);
         const tokenHash = oauthCrypto.hashOAuthState(token);
-        const created = await this.prisma.$transaction(async (tx) => {
-          await tx.resetPasswordModel.updateMany({
-            where: {
-              adminId: target.id,
-              deletedAt: null,
-            },
-            data: {
-              deletedAt: new Date(),
-            },
-          });
-          await tx.resetPasswordModel.create({
-            data: {
-              adminId: target.id,
-              tokenHash,
-              expiredAt: expiresAt,
-              appScope: `admin-v2`,
-            },
-          });
-          const audit = await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId: actorAdminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.admin_password_reset,
-              resource: `admin`,
-              resourceId: target.id,
-              metadata: {
-                targetEmail: target.email,
-                notificationSent: false,
-                notificationType: `email`,
-                deliveryStatus: `pending`,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-            select: {
-              id: true,
-            },
-          });
-          return {
-            auditId: audit.id,
-          };
+        const metadata = {
+          targetEmail: target.email,
+        };
+        const created = await this.repository.createPasswordResetArtifact({
+          adminId: target.id,
+          auditAdminId: actorAdminId,
+          email: target.email,
+          tokenHash,
+          expiresAt,
+          metadata,
+          ipAddress: meta.ipAddress ?? null,
+          userAgent: meta.userAgent ?? null,
         });
-        const { notificationSent, deliveryStatus } = await this.auditTrail.sendAdminV2PasswordResetEmail({
+        const notificationSent = await this.auditTrail.sendAdminV2PasswordResetEmailNotification({
           email: target.email,
           token,
+        });
+        await this.repository.updateAuditNotificationStatus({
           auditId: created.auditId,
-          metadata: {
-            targetEmail: target.email,
-          },
+          metadata,
+          notificationSent,
         });
         return {
           adminId: target.id,
           email: target.email,
           version: deriveVersion(target.updatedAt),
           notificationSent,
-          deliveryStatus,
+          deliveryStatus: notificationSent ? `sent` : `failed`,
         };
       },
     });
@@ -206,78 +136,33 @@ export class AdminV2AdminPasswordFlowsService {
     }
 
     const tokenHash = oauthCrypto.hashOAuthState(token);
-    const row = await this.prisma.resetPasswordModel.findFirst({
-      where: {
-        tokenHash,
-        adminId: { not: null },
-        deletedAt: null,
-        expiredAt: { gt: new Date() },
-        appScope: `admin-v2`,
-      },
-      select: {
-        id: true,
-        adminId: true,
-      },
-    });
+    const row = await this.repository.getResetToken(tokenHash);
     if (!row?.adminId) {
       throw new BadRequestException(`Reset token is invalid or expired`);
     }
 
-    const admin = await this.prisma.adminModel.findFirst({
-      where: { id: row.adminId, deletedAt: null },
-      select: {
-        id: true,
-        email: true,
-      },
-    });
+    const admin = await this.repository.getActiveAdminById(row.adminId);
     if (!admin) {
       throw new BadRequestException(`Reset token is invalid or expired`);
     }
 
     const { hash, salt } = await passwordUtils.hashPassword(password);
-    const consumed = await this.prisma.$transaction(async (tx) => {
-      const updateResult = await tx.resetPasswordModel.updateMany({
-        where: { id: row.id, deletedAt: null },
-        data: { deletedAt: new Date() },
-      });
-      if (updateResult.count !== 1) {
-        return null;
-      }
-      await tx.adminModel.update({
-        where: { id: admin.id },
-        data: {
-          password: hash,
-          salt,
-        },
-      });
-      await tx.adminAuthSessionModel.updateMany({
-        where: {
-          adminId: admin.id,
-          revokedAt: null,
-        },
-        data: {
-          revokedAt: new Date(),
-          invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.password_reset,
-          lastUsedAt: new Date(),
-        },
-      });
-      await tx.accessRefreshTokenModel.deleteMany({
-        where: {
-          identityId: admin.id,
-        },
-      });
-      return admin;
+    const consumed = await this.repository.consumeResetTokenAndUpdatePassword({
+      resetTokenId: row.id,
+      adminId: admin.id,
+      hash,
+      salt,
     });
     if (!consumed) {
       throw new BadRequestException(`Reset token is invalid or expired`);
     }
 
-    await this.authAudit.clearLockout(AUTH_IDENTITY_TYPES.admin, consumed.email);
+    await this.authAudit.clearLockout(AUTH_IDENTITY_TYPES.admin, admin.email);
 
     return {
       success: true as const,
-      adminId: consumed.id,
-      email: consumed.email,
+      adminId: admin.id,
+      email: admin.email,
     };
   }
 }

@@ -6,8 +6,11 @@ import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.ser
 import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { AdminV2ExchangeQueriesService } from './admin-v2-exchange-queries.service';
-import { AdminV2ExchangeTransactionRunner } from './admin-v2-exchange-transaction.runner';
+import { AdminV2ExchangeRateQuery } from './admin-v2-exchange-rate.query';
+import { AdminV2ExchangeRuleQuery } from './admin-v2-exchange-rule.query';
+import { AdminV2ExchangeScheduledConversionQuery } from './admin-v2-exchange-scheduled-conversion.query';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 
 describe(`AdminV2ExchangeService`, () => {
   function createService(overrides?: {
@@ -77,17 +80,25 @@ describe(`AdminV2ExchangeService`, () => {
       ...overrides?.assignmentsService,
     } as any;
 
+    const persistenceRepository = new AdminV2ExchangePersistenceRepository(prisma);
+    const transactions = new PrismaTransactionRunner(prisma);
+
     return {
       service: new AdminV2ExchangeService(
         new AdminV2ExchangeCommandsService(
-          new AdminV2ExchangeTransactionRunner(prisma),
           idempotency,
-          balanceService,
           domainEvents,
+          balanceService,
           new AdminV2ExchangePreflightRepository(prisma),
-          new AdminV2ExchangePersistenceRepository(prisma),
+          persistenceRepository,
+          transactions,
         ),
-        new AdminV2ExchangeQueriesService(prisma, assignmentsService),
+        new AdminV2ExchangeQueriesService(
+          new AdminV2ExchangeRateQuery(prisma),
+          new AdminV2ExchangeRuleQuery(prisma),
+          new AdminV2ExchangeScheduledConversionQuery(prisma),
+          assignmentsService,
+        ),
       ),
       prisma,
       idempotency,
@@ -125,6 +136,129 @@ describe(`AdminV2ExchangeService`, () => {
       page: 1,
       pageSize: 20,
     });
+  });
+
+  it(`returns rate case with approval history and action controls`, async () => {
+    const updatedAt = new Date(`2026-04-17T08:05:00.000Z`);
+    const { service } = createService({
+      prisma: {
+        exchangeRateModel: {
+          findFirst: jest.fn(async () => ({
+            id: `rate-1`,
+            fromCurrency: $Enums.CurrencyCode.USD,
+            toCurrency: $Enums.CurrencyCode.EUR,
+            rate: { toString: () => `0.92000000`, valueOf: () => 0.92 } as never,
+            spreadBps: 12,
+            confidence: 87,
+            status: $Enums.ExchangeRateStatus.DRAFT,
+            provider: `ECB`,
+            providerRateId: `provider-rate-1`,
+            fetchedAt: new Date(`2026-04-17T08:00:00.000Z`),
+            effectiveAt: new Date(`2026-04-17T08:00:00.000Z`),
+            expiresAt: null,
+            approvedAt: null,
+            approvedBy: null,
+            createdAt: new Date(`2026-04-17T07:55:00.000Z`),
+            updatedAt,
+            deletedAt: null,
+          })),
+        },
+        adminActionAuditLogModel: {
+          findMany: jest.fn(async () => [
+            {
+              id: `audit-1`,
+              action: `exchange_rate_approve`,
+              createdAt: new Date(`2026-04-17T08:06:00.000Z`),
+              metadata: { reason: `looks good` },
+              admin: { id: `admin-1`, email: `admin@example.com` },
+            },
+          ]),
+        },
+      },
+    });
+
+    const result = await service.getRateCase(`rate-1`);
+
+    expect(result.core.id).toBe(`rate-1`);
+    expect(result.approvalHistory[0]).toEqual(
+      expect.objectContaining({
+        id: `audit-1`,
+        admin: { id: `admin-1`, email: `admin@example.com` },
+      }),
+    );
+    expect(result.actionControls.canApprove).toBe(true);
+    expect(result.actionControls.allowedActions).toContain(`exchange_rate_approve`);
+  });
+
+  it(`lists rules with projected lastExecution metadata`, async () => {
+    const updatedAt = new Date(`2026-04-17T08:05:00.000Z`);
+    const { service } = createService({
+      prisma: {
+        walletAutoConversionRuleModel: {
+          count: jest.fn(async () => 1),
+          findMany: jest.fn(async () => [
+            {
+              id: `rule-1`,
+              consumer: { id: `consumer-1`, email: `consumer@example.com` },
+              fromCurrency: $Enums.CurrencyCode.USD,
+              toCurrency: $Enums.CurrencyCode.EUR,
+              targetBalance: { toString: () => `100.00` } as never,
+              maxConvertAmount: { toString: () => `50.00` } as never,
+              minIntervalMinutes: 60,
+              enabled: true,
+              nextRunAt: new Date(`2026-04-17T09:00:00.000Z`),
+              lastRunAt: new Date(`2026-04-17T08:00:00.000Z`),
+              metadata: { lastExecution: { status: `executed` } },
+              updatedAt,
+            },
+          ]),
+          findFirst: jest.fn(),
+        },
+      },
+    });
+
+    const result = await service.listRules({ page: 1, pageSize: 20 });
+
+    expect(result.total).toBe(1);
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({
+        id: `rule-1`,
+        threshold: `100.00`,
+        lastExecution: { status: `executed` },
+      }),
+    );
+  });
+
+  it(`returns rule case with resume controls when disabled`, async () => {
+    const updatedAt = new Date(`2026-04-17T08:05:00.000Z`);
+    const { service } = createService({
+      prisma: {
+        walletAutoConversionRuleModel: {
+          findFirst: jest.fn(async () => ({
+            id: `rule-1`,
+            consumer: { id: `consumer-1`, email: `consumer@example.com` },
+            fromCurrency: $Enums.CurrencyCode.USD,
+            toCurrency: $Enums.CurrencyCode.EUR,
+            targetBalance: { toString: () => `100.00` } as never,
+            maxConvertAmount: null,
+            minIntervalMinutes: 60,
+            enabled: false,
+            nextRunAt: null,
+            lastRunAt: null,
+            createdAt: new Date(`2026-04-17T07:55:00.000Z`),
+            metadata: { lastExecution: { status: `failed` } },
+            updatedAt,
+          })),
+        },
+      },
+    });
+
+    const result = await service.getRuleCase(`rule-1`);
+
+    expect(result.lastExecution).toEqual({ status: `failed` });
+    expect(result.actionControls.canPause).toBe(false);
+    expect(result.actionControls.canResume).toBe(true);
+    expect(result.actionControls.allowedActions).toContain(`exchange_rule_resume`);
   });
 
   it(`rejects stale exchange rate approval before any write`, async () => {
@@ -497,6 +631,40 @@ describe(`AdminV2ExchangeService`, () => {
 
       expect(result.assignment).toEqual(populated);
       expect(assignmentsService.getAssignmentContextForResource).toHaveBeenCalledWith(`fx_conversion`, `scheduled-1`);
+    });
+
+    it(`includes linked ledger entries with effective status when ledger history exists`, async () => {
+      const { service } = createService({
+        prisma: {
+          scheduledFxConversionModel: {
+            findFirst: jest.fn(async () => buildConversion({ ledgerId: `ledger-1` })),
+          },
+          ledgerEntryModel: {
+            findMany: jest.fn(async () => [
+              {
+                id: `entry-1`,
+                ledgerId: `ledger-1`,
+                type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
+                amount: { toString: () => `25.00` } as never,
+                currencyCode: $Enums.CurrencyCode.EUR,
+                status: `pending`,
+                createdAt: new Date(`2026-04-17T08:01:00.000Z`),
+                outcomes: [{ status: `completed` }],
+              },
+            ]),
+          },
+        },
+      });
+
+      const result = await service.getScheduledConversionCase(`scheduled-1`);
+
+      expect(result.linkedLedgerEntries).toEqual([
+        expect.objectContaining({
+          id: `entry-1`,
+          ledgerId: `ledger-1`,
+          effectiveStatus: `completed`,
+        }),
+      ]);
     });
   });
 });

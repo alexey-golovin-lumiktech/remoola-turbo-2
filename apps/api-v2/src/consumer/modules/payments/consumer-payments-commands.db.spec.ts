@@ -13,6 +13,7 @@ import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.rep
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { ConsumerPaymentsPolicyRepository } from './consumer-payments-policy.repository';
 import { createPrismaTestContext } from '../../../../test/helpers/prisma-test-context';
+import { BalanceCalculationRepository } from '../../../shared/balance-calculation.repository';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
 describe(`ConsumerPaymentsCommandsService DB concurrency`, () => {
@@ -22,9 +23,12 @@ describe(`ConsumerPaymentsCommandsService DB concurrency`, () => {
     sendPaymentRequestEmail: jest.fn(async (_payload: unknown) => undefined),
   };
   const service = new ConsumerPaymentsCommandsService(
-    { run: (callback: any) => prisma.$transaction(callback) } as any,
+    {
+      run: (callback: any) => prisma.$transaction(callback),
+      runLedgerMutation: (callback: any) => prisma.$transaction(callback),
+    } as any,
     new ConsumerPaymentRequestNotificationService(mailingService as any),
-    new BalanceCalculationService(prisma as any),
+    new BalanceCalculationService(new BalanceCalculationRepository(prisma as any)),
     new ConsumerPaymentsPoliciesService(new ConsumerPaymentsPolicyRepository(prisma as any)),
     new ConsumerPaymentsIdentityRepository(prisma as any),
     new ConsumerPaymentsLedgerRepository(prisma as any),

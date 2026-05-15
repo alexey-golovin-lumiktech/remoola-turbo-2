@@ -15,11 +15,11 @@ import { hashPassword } from '@remoola/security-utils';
 
 import { applyManualAuthGuard } from './helpers/bootstrap-api-test-app';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
-import { AdminV2PaymentReversalService } from '../src/admin-v2/payments/admin-v2-payment-reversal.service';
 import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { BrevoMailService } from '../src/shared/brevo-mail.service';
+import { STRIPE_CLIENT } from '../src/shared/stripe-client';
 import { getApiAdminCsrfTokenCookieKey } from '../src/shared-common';
 
 describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
@@ -154,22 +154,25 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
 
     refundPaymentRequestId = await seedCompletedPaymentRequest(20, `pi_refund_e2e`, 7);
     chargebackPaymentRequestId = await seedCompletedPaymentRequest(20, null, 7);
+    const refundCreateMock = jest.fn(async () => ({ id: `re_e2e_success`, status: `succeeded` }));
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(AuthGuard)
       .useValue({ canActivate: () => true })
+      .overrideProvider(STRIPE_CLIENT)
+      .useValue({
+        refunds: {
+          create: refundCreateMock,
+          retrieve: jest.fn(async () => ({ id: `re_e2e_success`, status: `succeeded` })),
+        },
+      })
       .compile();
 
-    const adminPaymentRequestsService = moduleFixture.get(AdminV2PaymentReversalService) as unknown as {
-      stripe: { refunds: { create: (...args: unknown[]) => Promise<{ id: string; status: string }> } };
-    };
     const brevoMailService = moduleFixture.get(BrevoMailService) as unknown as {
       sendMail: jest.Mock;
     };
-    const refundCreateMock = jest.fn(async () => ({ id: `re_e2e_success`, status: `succeeded` }));
-    adminPaymentRequestsService.stripe.refunds.create = refundCreateMock;
     sendMailMock = jest.spyOn(brevoMailService, `sendMail`).mockImplementation(async () => {});
 
     app = moduleFixture.createNestApplication();

@@ -1,39 +1,29 @@
 import { Injectable } from '@nestjs/common';
 
 import { type AdminV2OverviewSignalSummary, type AdminV2OverviewSummaryResponse } from '@remoola/api-types';
-import { $Enums, Prisma } from '@remoola/database-2';
+import { $Enums } from '@remoola/database-2';
 
+import { AdminV2OverviewQuery } from './admin-v2-overview.query';
 import { envs } from '../../envs';
-import { AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
+import { AUTH_AUDIT_EVENTS } from '../../shared/auth-audit.service';
 import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
 import { AdminV2VerificationSlaService } from '../verification/admin-v2-verification-sla.service';
-
-const OPEN_DISPUTE_STATUSES = [
-  `open`,
-  `needs_response`,
-  `under_review`,
-  `warning_needs_response`,
-  `warning_under_review`,
-] as const;
 
 @Injectable()
 export class AdminV2OverviewService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2OverviewQuery,
     private readonly verificationSla: AdminV2VerificationSlaService,
     private readonly ledgerAnomalies: AdminV2LedgerAnomaliesService,
   ) {}
 
-  private async getPaymentRequestSignal(params: {
+  private async getCountSignal(params: {
     label: string;
     href: string;
-    where: Prisma.PaymentRequestModelWhereInput;
+    loadCount: () => Promise<number>;
   }): Promise<AdminV2OverviewSignalSummary> {
     try {
-      const count = await this.prisma.paymentRequestModel.count({
-        where: params.where,
-      });
+      const count = await params.loadCount();
 
       return {
         label: params.label,
@@ -54,33 +44,11 @@ export class AdminV2OverviewService {
   }
 
   private async getOpenDisputesSignal(): Promise<AdminV2OverviewSignalSummary> {
-    try {
-      const [result] = await this.prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
-        SELECT COUNT(*)::int AS count
-        FROM ledger_entry_dispute led
-        INNER JOIN ledger_entry le ON le.id = led.ledger_entry_id
-        WHERE le.deleted_at IS NULL
-          AND COALESCE(led.metadata->>'status', led.metadata->>'disputeStatus', '') IN (${Prisma.join(
-            OPEN_DISPUTE_STATUSES.map((status) => Prisma.sql`${status}`),
-          )})
-      `);
-
-      return {
-        label: `Open disputes`,
-        count: result?.count ?? 0,
-        phaseStatus: `live-actionable`,
-        availability: `available`,
-        href: `/ledger?view=disputes`,
-      };
-    } catch {
-      return {
-        label: `Open disputes`,
-        count: null,
-        phaseStatus: `live-actionable`,
-        availability: `temporarily-unavailable`,
-        href: `/ledger?view=disputes`,
-      };
-    }
+    return this.getCountSignal({
+      label: `Open disputes`,
+      href: `/ledger?view=disputes`,
+      loadCount: () => this.query.countOpenDisputes(),
+    });
   }
 
   private getRateStaleCutoff(now: Date) {
@@ -90,30 +58,11 @@ export class AdminV2OverviewService {
   }
 
   private async getFailedScheduledConversionsSignal(): Promise<AdminV2OverviewSignalSummary> {
-    try {
-      const count = await this.prisma.scheduledFxConversionModel.count({
-        where: {
-          deletedAt: null,
-          status: $Enums.ScheduledFxConversionStatus.FAILED,
-        },
-      });
-
-      return {
-        label: `Failed scheduled FX`,
-        count,
-        phaseStatus: `live-actionable`,
-        availability: `available`,
-        href: `/exchange/scheduled?status=FAILED`,
-      };
-    } catch {
-      return {
-        label: `Failed scheduled FX`,
-        count: null,
-        phaseStatus: `live-actionable`,
-        availability: `temporarily-unavailable`,
-        href: `/exchange/scheduled?status=FAILED`,
-      };
-    }
+    return this.getCountSignal({
+      label: `Failed scheduled FX`,
+      href: `/exchange/scheduled?status=FAILED`,
+      loadCount: () => this.query.countFailedScheduledConversions(),
+    });
   }
 
   private async getLedgerAnomaliesSignal(): Promise<AdminV2OverviewSignalSummary> {
@@ -139,33 +88,11 @@ export class AdminV2OverviewService {
 
   private async getStaleExchangeRatesSignal(now: Date): Promise<AdminV2OverviewSignalSummary> {
     const staleCutoff = this.getRateStaleCutoff(now);
-    try {
-      const [result] = await this.prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
-        SELECT COUNT(*)::int AS count
-        FROM exchange_rate rate
-        WHERE rate.deleted_at IS NULL
-          AND rate.status = ${$Enums.ExchangeRateStatus.APPROVED}::exchange_rate_status_enum
-          AND rate.effective_at <= ${now}
-          AND (rate.expires_at IS NULL OR rate.expires_at > ${now})
-          AND COALESCE(rate.fetched_at, rate.effective_at, rate.created_at) < ${staleCutoff}
-      `);
-
-      return {
-        label: `Stale exchange rates`,
-        count: result?.count ?? 0,
-        phaseStatus: `live-actionable`,
-        availability: `available`,
-        href: `/exchange/rates?stale=true`,
-      };
-    } catch {
-      return {
-        label: `Stale exchange rates`,
-        count: null,
-        phaseStatus: `live-actionable`,
-        availability: `temporarily-unavailable`,
-        href: `/exchange/rates?stale=true`,
-      };
-    }
+    return this.getCountSignal({
+      label: `Stale exchange rates`,
+      href: `/exchange/rates?stale=true`,
+      loadCount: () => this.query.countStaleExchangeRates({ now, staleCutoff }),
+    });
   }
 
   async getSummary(): Promise<AdminV2OverviewSummaryResponse> {
@@ -183,63 +110,18 @@ export class AdminV2OverviewService {
       failedScheduledConversions,
       staleExchangeRates,
     ] = await Promise.all([
-      this.prisma.consumerModel.count({
-        where: {
-          deletedAt: null,
-          verificationStatus: {
-            in: [
-              $Enums.VerificationStatus.PENDING,
-              $Enums.VerificationStatus.MORE_INFO,
-              $Enums.VerificationStatus.FLAGGED,
-            ],
-          },
-        },
-      }),
-      this.prisma.authAuditLogModel.count({
-        where: {
-          identityType: AUTH_IDENTITY_TYPES.consumer,
-          event: AUTH_AUDIT_EVENTS.login_failure,
-          createdAt: { gte: authWindowStart },
-        },
-      }),
-      this.prisma.adminActionAuditLogModel.findMany({
-        orderBy: { createdAt: `desc` },
-        take: 5,
-        select: {
-          id: true,
-          action: true,
-          resource: true,
-          resourceId: true,
-          createdAt: true,
-          admin: {
-            select: {
-              email: true,
-            },
-          },
-        },
-      }),
-      this.getPaymentRequestSignal({
+      this.query.countPendingVerifications(),
+      this.query.countSuspiciousAuthEvents(authWindowStart),
+      this.query.listRecentAdminActions(5),
+      this.getCountSignal({
         label: `Overdue payment requests`,
         href: `/payments?overdue=true`,
-        where: {
-          deletedAt: null,
-          dueDate: { lt: now },
-          status: {
-            in: [
-              $Enums.TransactionStatus.WAITING,
-              $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
-              $Enums.TransactionStatus.PENDING,
-            ],
-          },
-        },
+        loadCount: () => this.query.countOverduePaymentRequests(now),
       }),
-      this.getPaymentRequestSignal({
+      this.getCountSignal({
         label: `Uncollectible payment requests`,
         href: `/payments?status=${$Enums.TransactionStatus.UNCOLLECTIBLE}`,
-        where: {
-          deletedAt: null,
-          status: $Enums.TransactionStatus.UNCOLLECTIBLE,
-        },
+        loadCount: () => this.query.countUncollectiblePaymentRequests(),
       }),
       this.verificationSla.getSnapshot(),
       this.getOpenDisputesSignal(),

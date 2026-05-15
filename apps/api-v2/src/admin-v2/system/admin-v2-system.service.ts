@@ -1,29 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
 import { type AdminV2SystemSummaryCard, type AdminV2SystemSummaryResponse } from '@remoola/api-types';
-import { Prisma } from '@remoola/database-2';
 
+import { type EmailPatternRow, AdminV2SystemQuery } from './admin-v2-system.query';
 import { envs } from '../../envs';
-import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
 
 type SystemSummaryCard = AdminV2SystemSummaryCard;
-
-type BacklogSnapshot = {
-  count: number;
-  oldestAt: Date | null;
-};
-
-type EmailPatternRow = {
-  action: string;
-  count: number;
-  lastFailedAt: Date | null;
-};
-
-type RateSnapshot = {
-  count: number;
-  oldestReferenceAt: Date | null;
-};
 
 type SystemSummaryResponse = AdminV2SystemSummaryResponse;
 
@@ -32,7 +15,7 @@ const EMAIL_WINDOW_DAYS = 7;
 @Injectable()
 export class AdminV2SystemService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2SystemQuery,
     private readonly ledgerAnomalies: AdminV2LedgerAnomaliesService,
   ) {}
 
@@ -61,12 +44,10 @@ export class AdminV2SystemService {
 
   private async getStripeWebhookHealth(): Promise<SystemSummaryCard> {
     try {
-      const [checkoutLag, reversalLag, latestProcessed] = await Promise.all([
-        this.getStripeCheckoutLag(),
-        this.getStripeReversalLag(),
-        this.prisma.stripeWebhookEventModel.aggregate({
-          _max: { createdAt: true },
-        }),
+      const [checkoutLag, reversalLag, latestProcessedAt] = await Promise.all([
+        this.query.getStripeCheckoutLag(),
+        this.query.getStripeReversalLag(),
+        this.query.getLatestProcessedWebhookAt(),
       ]);
 
       const totalLag = checkoutLag.count + reversalLag.count;
@@ -84,7 +65,7 @@ export class AdminV2SystemService {
           { label: `Pending checkout settlements`, value: checkoutLag.count },
           { label: `Pending reversal reconciliations`, value: reversalLag.count },
           { label: `Oldest lag marker`, value: this.formatIso(oldestLagAt) },
-          { label: `Latest processed webhook`, value: this.formatIso(latestProcessed._max.createdAt) },
+          { label: `Latest processed webhook`, value: this.formatIso(latestProcessedAt) },
         ],
         primaryAction:
           checkoutLag.count > 0
@@ -111,18 +92,9 @@ export class AdminV2SystemService {
   private async getSchedulerHealth(now: Date): Promise<SystemSummaryCard> {
     try {
       const [overdueScheduledConversions, expiredResetPasswords, expiredOauthStates] = await Promise.all([
-        this.getOverdueScheduledConversions(now),
-        this.prisma.resetPasswordModel.count({
-          where: {
-            deletedAt: null,
-            expiredAt: { lt: now },
-          },
-        }),
-        this.prisma.oauthStateModel.count({
-          where: {
-            expiresAt: { lt: now },
-          },
-        }),
+        this.query.getOverdueScheduledConversions(now),
+        this.query.countExpiredResetPasswords(now),
+        this.query.countExpiredOauthStates(now),
       ]);
 
       const totalBacklog = overdueScheduledConversions.count + expiredResetPasswords + expiredOauthStates;
@@ -169,18 +141,7 @@ export class AdminV2SystemService {
     const windowStart = new Date(now.getTime() - EMAIL_WINDOW_DAYS * 24 * 60 * 60 * 1000);
 
     try {
-      const rows = await this.prisma.$queryRaw<EmailPatternRow[]>(Prisma.sql`
-        SELECT
-          log.action AS "action",
-          COUNT(*)::int AS "count",
-          MAX(log.created_at) AS "lastFailedAt"
-        FROM admin_action_audit_log AS log
-        WHERE log.created_at >= ${windowStart}
-          AND COALESCE(log.metadata->>'notificationType', '') = 'email'
-          AND COALESCE(log.metadata->>'notificationSent', 'false') = 'false'
-        GROUP BY log.action
-        ORDER BY COUNT(*) DESC, MAX(log.created_at) DESC
-      `);
+      const rows = await this.query.listEmailDeliveryIssuePatterns(windowStart);
 
       const verificationFailures = this.sumActions(rows, [
         `verification_approve`,
@@ -290,7 +251,10 @@ export class AdminV2SystemService {
 
   private async getStaleExchangeRateAlerts(now: Date): Promise<SystemSummaryCard> {
     try {
-      const rateSnapshot = await this.getStaleRateSnapshot(now);
+      const rateSnapshot = await this.query.getStaleRateSnapshot({
+        now,
+        staleCutoff: this.getRateStaleCutoff(now),
+      });
       const staleThresholdHours = this.getRateMaxAgeHours();
 
       return {
@@ -321,95 +285,6 @@ export class AdminV2SystemService {
         escalationHint: `Use the Exchange workspace and escalate if stale-rate investigation is blocked.`,
       });
     }
-  }
-
-  private async getStripeCheckoutLag(): Promise<BacklogSnapshot> {
-    const [result] = await this.prisma.$queryRaw<Array<{ count: number; oldestAt: Date | null }>>(Prisma.sql`
-      SELECT
-        COUNT(*)::int AS "count",
-        MIN(entry.created_at) AS "oldestAt"
-      FROM ledger_entry AS entry
-      LEFT JOIN LATERAL (
-        SELECT outcome.status, outcome.source, outcome.external_id
-        FROM ledger_entry_outcome AS outcome
-        WHERE outcome.ledger_entry_id = entry.id
-        ORDER BY outcome.created_at DESC, outcome.id DESC
-        LIMIT 1
-      ) AS latest ON TRUE
-      WHERE entry.deleted_at IS NULL
-        AND entry.type::text = 'USER_PAYMENT'
-        AND COALESCE(latest.status::text, entry.status::text) = 'WAITING'
-        AND latest.source = 'stripe'
-        AND latest.external_id LIKE 'cs\_%' ESCAPE '\'
-    `);
-
-    return {
-      count: result?.count ?? 0,
-      oldestAt: result?.oldestAt ?? null,
-    };
-  }
-
-  private async getStripeReversalLag(): Promise<BacklogSnapshot> {
-    const [result] = await this.prisma.$queryRaw<Array<{ count: number; oldestAt: Date | null }>>(Prisma.sql`
-      SELECT
-        COUNT(*)::int AS "count",
-        MIN(entry.created_at) AS "oldestAt"
-      FROM ledger_entry AS entry
-      LEFT JOIN LATERAL (
-        SELECT outcome.status
-        FROM ledger_entry_outcome AS outcome
-        WHERE outcome.ledger_entry_id = entry.id
-        ORDER BY outcome.created_at DESC, outcome.id DESC
-        LIMIT 1
-      ) AS latest ON TRUE
-      WHERE entry.deleted_at IS NULL
-        AND entry.type::text IN ('USER_PAYMENT_REVERSAL', 'USER_DEPOSIT_REVERSAL')
-        AND entry.stripe_id IS NOT NULL
-        AND entry.created_by <> 'stripe'
-        AND COALESCE(latest.status::text, entry.status::text) = 'PENDING'
-    `);
-
-    return {
-      count: result?.count ?? 0,
-      oldestAt: result?.oldestAt ?? null,
-    };
-  }
-
-  private async getOverdueScheduledConversions(now: Date): Promise<BacklogSnapshot> {
-    const [result] = await this.prisma.$queryRaw<Array<{ count: number; oldestAt: Date | null }>>(Prisma.sql`
-      SELECT
-        COUNT(*)::int AS "count",
-        MIN(conversion.execute_at) AS "oldestAt"
-      FROM scheduled_fx_conversion AS conversion
-      WHERE conversion.deleted_at IS NULL
-        AND conversion.status::text = 'PENDING'
-        AND conversion.execute_at < ${now}
-    `);
-
-    return {
-      count: result?.count ?? 0,
-      oldestAt: result?.oldestAt ?? null,
-    };
-  }
-
-  private async getStaleRateSnapshot(now: Date): Promise<RateSnapshot> {
-    const staleCutoff = this.getRateStaleCutoff(now);
-    const [result] = await this.prisma.$queryRaw<Array<{ count: number; oldestReferenceAt: Date | null }>>(Prisma.sql`
-      SELECT
-        COUNT(*)::int AS "count",
-        MIN(COALESCE(rate.fetched_at, rate.effective_at, rate.created_at)) AS "oldestReferenceAt"
-      FROM exchange_rate AS rate
-      WHERE rate.deleted_at IS NULL
-        AND rate.status::text = 'APPROVED'
-        AND rate.effective_at <= ${now}
-        AND (rate.expires_at IS NULL OR rate.expires_at > ${now})
-        AND COALESCE(rate.fetched_at, rate.effective_at, rate.created_at) < ${staleCutoff}
-    `);
-
-    return {
-      count: result?.count ?? 0,
-      oldestReferenceAt: result?.oldestReferenceAt ?? null,
-    };
   }
 
   private getRateMaxAgeHours() {

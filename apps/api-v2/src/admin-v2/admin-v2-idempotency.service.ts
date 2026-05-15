@@ -1,10 +1,25 @@
 import { createHash } from 'crypto';
 
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Logger, Optional } from '@nestjs/common';
 
-import { Prisma } from '@remoola/database-2';
+import { type Prisma } from '@remoola/database-2';
 
-import { PrismaService } from '../shared/prisma.service';
+import {
+  isPlainJsonObject,
+  stableStringifyJson,
+  toIdempotencyResponseSnapshot,
+} from './admin-v2-idempotency-json.utils';
+import {
+  ADMIN_V2_IDEMPOTENCY_OPTIONS,
+  DEFAULT_ADMIN_V2_IDEMPOTENCY_OPTIONS,
+  type AdminV2IdempotencyRuntimeOptions,
+} from './admin-v2-idempotency.options';
+import {
+  ADMIN_V2_IDEMPOTENCY_REPOSITORY,
+  type AdminV2IdempotencyRepositoryPort,
+  type AdminV2PersistedIdempotencyEntry,
+} from './admin-v2-idempotency.repository';
+import { PrismaTransactionRunner } from '../shared/prisma-transaction.runner';
 
 type IdempotentExecutionParams<T> = {
   adminId: string;
@@ -14,39 +29,36 @@ type IdempotentExecutionParams<T> = {
   execute: () => Promise<T>;
 };
 
+type IdempotentTransactionalExecutionParams<T> = Omit<IdempotentExecutionParams<T>, `execute`> & {
+  execute: (tx: Prisma.TransactionClient) => Promise<T>;
+};
+
 type InFlightEntry = {
   requestHash: string;
   promise: Promise<unknown>;
 };
 
-const ENTRY_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_KEY_LENGTH = 200;
-const POLL_INTERVAL_MS = 50;
-const POLL_TIMEOUT_MS = 5_000;
-
-function stableStringify(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(`,`)}]`;
-  }
-  if (value && typeof value === `object`) {
-    return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
-      .join(`,`)}}`;
-  }
-  return JSON.stringify(value);
-}
 
 @Injectable()
 export class AdminV2IdempotencyService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(AdminV2IdempotencyService.name);
+
+  constructor(
+    @Inject(ADMIN_V2_IDEMPOTENCY_REPOSITORY)
+    private readonly repository: AdminV2IdempotencyRepositoryPort,
+    @Inject(ADMIN_V2_IDEMPOTENCY_OPTIONS)
+    private readonly options: AdminV2IdempotencyRuntimeOptions = DEFAULT_ADMIN_V2_IDEMPOTENCY_OPTIONS,
+    @Optional()
+    private readonly transactions?: PrismaTransactionRunner,
+  ) {}
 
   private readonly entries = new Map<string, InFlightEntry>();
 
   async execute<T>(params: IdempotentExecutionParams<T>): Promise<T> {
     const key = this.normalizeKey(params.key);
     const entryKey = `${params.adminId}:${params.scope}:${key}`;
-    const requestHash = createHash(`sha256`).update(stableStringify(params.payload)).digest(`hex`);
+    const requestHash = createHash(`sha256`).update(stableStringifyJson(params.payload)).digest(`hex`);
     const existing = this.entries.get(entryKey);
     if (existing) {
       if (existing.requestHash !== requestHash) {
@@ -56,6 +68,42 @@ export class AdminV2IdempotencyService {
     }
 
     const promise = this.executePersisted({
+      adminId: params.adminId,
+      scope: params.scope,
+      key,
+      requestHash,
+      execute: params.execute,
+    });
+
+    this.entries.set(entryKey, {
+      requestHash,
+      promise,
+    });
+
+    try {
+      return (await promise) as T;
+    } finally {
+      this.entries.delete(entryKey);
+    }
+  }
+
+  async executeInTransaction<T>(params: IdempotentTransactionalExecutionParams<T>): Promise<T> {
+    if (!this.transactions) {
+      throw new Error(`PrismaTransactionRunner is required for transactional idempotency`);
+    }
+
+    const key = this.normalizeKey(params.key);
+    const entryKey = `${params.adminId}:${params.scope}:${key}`;
+    const requestHash = createHash(`sha256`).update(stableStringifyJson(params.payload)).digest(`hex`);
+    const existing = this.entries.get(entryKey);
+    if (existing) {
+      if (existing.requestHash !== requestHash) {
+        throw new ConflictException(`Idempotency key was already used with a different payload`);
+      }
+      return (await existing.promise) as T;
+    }
+
+    const promise = this.executePersistedInTransaction({
       adminId: params.adminId,
       scope: params.scope,
       key,
@@ -94,17 +142,34 @@ export class AdminV2IdempotencyService {
     execute: () => Promise<T>;
   }): Promise<T> {
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const existing = await this.getExistingEntry(params.adminId, params.scope, params.key);
+      const existing = await this.repository.findEntry({
+        adminId: params.adminId,
+        scope: params.scope,
+        key: params.key,
+      });
       if (existing) {
-        if (existing.expiresAt.getTime() <= Date.now()) {
-          await this.deleteExpiredEntry(params.adminId, params.scope, params.key, existing.expiresAt);
+        if (existing.expiresAt.getTime() <= this.options.now()) {
+          if (existing.state === `pending`) {
+            throw new ConflictException(`Idempotent request is already in progress`);
+          }
+          await this.repository.deleteExpiredEntry({
+            adminId: params.adminId,
+            scope: params.scope,
+            key: params.key,
+            requestHash: existing.requestHash,
+            expiresAt: existing.expiresAt,
+          });
           continue;
         }
         if (existing.requestHash !== params.requestHash) {
           throw new ConflictException(`Idempotency key was already used with a different payload`);
         }
-        if (existing.responseSnapshot != null) {
-          return existing.responseSnapshot as T;
+        if (existing.state === `succeeded`) {
+          this.logger.debug(`Replaying idempotent admin response`, {
+            adminId: params.adminId,
+            scope: params.scope,
+          });
+          return this.replayStoredResponse<T>(existing);
         }
         return this.waitForStoredResponse<T>({
           adminId: params.adminId,
@@ -115,16 +180,12 @@ export class AdminV2IdempotencyService {
       }
 
       try {
-        await this.prisma.adminActionIdempotencyModel.create({
-          data: {
-            adminId: params.adminId,
-            scope: params.scope,
-            idempotencyKey: params.key,
-            requestHash: params.requestHash,
-            responseStatus: 0,
-            responseSnapshot: Prisma.DbNull,
-            expiresAt: new Date(Date.now() + ENTRY_TTL_MS),
-          },
+        await this.repository.createPendingEntry({
+          adminId: params.adminId,
+          scope: params.scope,
+          key: params.key,
+          requestHash: params.requestHash,
+          expiresAt: new Date(this.options.now() + this.options.entryTtlMs),
         });
         return await this.executeAndPersistResult(params);
       } catch (error) {
@@ -137,6 +198,108 @@ export class AdminV2IdempotencyService {
     throw new ConflictException(`Idempotent request is already in progress`);
   }
 
+  private async executePersistedInTransaction<T>(params: {
+    adminId: string;
+    scope: string;
+    key: string;
+    requestHash: string;
+    execute: (tx: Prisma.TransactionClient) => Promise<T>;
+  }): Promise<T> {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const existing = await this.repository.findEntry({
+        adminId: params.adminId,
+        scope: params.scope,
+        key: params.key,
+      });
+      if (existing) {
+        if (existing.expiresAt.getTime() <= this.options.now()) {
+          if (existing.state === `pending`) {
+            throw new ConflictException(`Idempotent request is already in progress`);
+          }
+          await this.repository.deleteExpiredEntry({
+            adminId: params.adminId,
+            scope: params.scope,
+            key: params.key,
+            requestHash: existing.requestHash,
+            expiresAt: existing.expiresAt,
+          });
+          continue;
+        }
+        if (existing.requestHash !== params.requestHash) {
+          throw new ConflictException(`Idempotency key was already used with a different payload`);
+        }
+        if (existing.state === `succeeded`) {
+          this.logger.debug(`Replaying idempotent admin response`, {
+            adminId: params.adminId,
+            scope: params.scope,
+          });
+          return this.replayStoredResponse<T>(existing);
+        }
+        return this.waitForStoredResponse<T>({
+          adminId: params.adminId,
+          scope: params.scope,
+          key: params.key,
+          requestHash: params.requestHash,
+        });
+      }
+
+      try {
+        return await this.transactions!.run(async (tx) => {
+          const transactionExisting = await this.repository.findEntry({
+            adminId: params.adminId,
+            scope: params.scope,
+            key: params.key,
+            client: tx,
+          });
+          if (transactionExisting) {
+            if (transactionExisting.requestHash !== params.requestHash) {
+              throw new ConflictException(`Idempotency key was already used with a different payload`);
+            }
+            if (transactionExisting.state === `succeeded`) {
+              return this.replayStoredResponse<T>(transactionExisting);
+            }
+            throw new ConflictException(`Idempotent request is already in progress`);
+          }
+
+          await this.repository.createPendingEntry({
+            adminId: params.adminId,
+            scope: params.scope,
+            key: params.key,
+            requestHash: params.requestHash,
+            expiresAt: new Date(this.options.now() + this.options.entryTtlMs),
+            client: tx,
+          });
+
+          const result = await params.execute(tx);
+          const snapshot = toIdempotencyResponseSnapshot(result);
+          const stored = await this.repository.storeSuccess({
+            adminId: params.adminId,
+            scope: params.scope,
+            key: params.key,
+            requestHash: params.requestHash,
+            result: snapshot,
+            client: tx,
+          });
+          if (stored.count !== 1) {
+            throw new ConflictException(`Idempotent request state changed before response persistence`);
+          }
+          return result;
+        });
+      } catch (error) {
+        if (!this.isUniqueConstraint(error)) {
+          throw error;
+        }
+      }
+    }
+
+    return this.waitForStoredResponse<T>({
+      adminId: params.adminId,
+      scope: params.scope,
+      key: params.key,
+      requestHash: params.requestHash,
+    });
+  }
+
   private async executeAndPersistResult<T>(params: {
     adminId: string;
     scope: string;
@@ -144,31 +307,36 @@ export class AdminV2IdempotencyService {
     requestHash: string;
     execute: () => Promise<T>;
   }): Promise<T> {
+    let result: T;
     try {
-      const result = await params.execute();
-      await this.prisma.adminActionIdempotencyModel.update({
-        where: {
-          adminId_scope_idempotencyKey: {
-            adminId: params.adminId,
-            scope: params.scope,
-            idempotencyKey: params.key,
-          },
-        },
-        data: {
-          responseStatus: 200,
-          responseSnapshot: result as object,
-        },
+      result = await params.execute();
+    } catch (error) {
+      await this.repository.deletePendingEntry({
+        adminId: params.adminId,
+        scope: params.scope,
+        key: params.key,
+        requestHash: params.requestHash,
       });
+      throw error;
+    }
+
+    try {
+      const snapshot = toIdempotencyResponseSnapshot(result);
+      const stored = await this.repository.storeSuccess({
+        adminId: params.adminId,
+        scope: params.scope,
+        key: params.key,
+        requestHash: params.requestHash,
+        result: snapshot,
+      });
+      if (stored.count !== 1) {
+        throw new ConflictException(`Idempotent request state changed before response persistence`);
+      }
       return result;
     } catch (error) {
-      await this.prisma.adminActionIdempotencyModel.deleteMany({
-        where: {
-          adminId: params.adminId,
-          scope: params.scope,
-          idempotencyKey: params.key,
-          requestHash: params.requestHash,
-          responseSnapshot: { equals: Prisma.DbNull },
-        },
+      this.logger.error(`Failed to persist idempotent admin response after execution`, {
+        adminId: params.adminId,
+        scope: params.scope,
       });
       throw error;
     }
@@ -180,54 +348,54 @@ export class AdminV2IdempotencyService {
     key: string;
     requestHash: string;
   }): Promise<T> {
-    const deadline = Date.now() + POLL_TIMEOUT_MS;
-    while (Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-      const existing = await this.getExistingEntry(params.adminId, params.scope, params.key);
+    const deadline = this.options.now() + this.options.pollTimeoutMs;
+    while (this.options.now() < deadline) {
+      await this.options.sleep(this.options.pollIntervalMs);
+      const existing = await this.repository.findEntry({
+        adminId: params.adminId,
+        scope: params.scope,
+        key: params.key,
+      });
       if (!existing) {
         break;
       }
-      if (existing.expiresAt.getTime() <= Date.now()) {
-        await this.deleteExpiredEntry(params.adminId, params.scope, params.key, existing.expiresAt);
+      if (existing.expiresAt.getTime() <= this.options.now()) {
+        if (existing.state === `pending`) {
+          break;
+        }
+        await this.repository.deleteExpiredEntry({
+          adminId: params.adminId,
+          scope: params.scope,
+          key: params.key,
+          requestHash: existing.requestHash,
+          expiresAt: existing.expiresAt,
+        });
         break;
       }
       if (existing.requestHash !== params.requestHash) {
         throw new ConflictException(`Idempotency key was already used with a different payload`);
       }
-      if (existing.responseSnapshot != null) {
-        return existing.responseSnapshot as T;
+      if (existing.state === `succeeded`) {
+        this.logger.debug(`Replaying idempotent admin response after wait`, {
+          adminId: params.adminId,
+          scope: params.scope,
+        });
+        return this.replayStoredResponse<T>(existing);
       }
     }
 
+    this.logger.warn(`Timed out waiting for in-progress idempotent admin request`, {
+      adminId: params.adminId,
+      scope: params.scope,
+    });
     throw new ConflictException(`Idempotent request is already in progress`);
   }
 
-  private getExistingEntry(adminId: string, scope: string, key: string) {
-    return this.prisma.adminActionIdempotencyModel.findUnique({
-      where: {
-        adminId_scope_idempotencyKey: {
-          adminId,
-          scope,
-          idempotencyKey: key,
-        },
-      },
-      select: {
-        requestHash: true,
-        responseSnapshot: true,
-        expiresAt: true,
-      },
-    });
-  }
-
-  private async deleteExpiredEntry(adminId: string, scope: string, key: string, expiresAt: Date) {
-    await this.prisma.adminActionIdempotencyModel.deleteMany({
-      where: {
-        adminId,
-        scope,
-        idempotencyKey: key,
-        expiresAt,
-      },
-    });
+  private replayStoredResponse<T>(entry: AdminV2PersistedIdempotencyEntry): T {
+    if (!isPlainJsonObject(entry.responseSnapshot)) {
+      throw new ConflictException(`Persisted idempotency response is invalid`);
+    }
+    return entry.responseSnapshot as T;
   }
 
   private isUniqueConstraint(error: unknown): boolean {

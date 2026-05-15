@@ -2,10 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { adminErrorCodes } from '@remoola/shared-constants';
 
+import { AdminV2AdminSessionsQuery } from './admin-v2-admin-sessions.query';
 import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin-auth/admin-auth-session-reasons';
 import { AdminAuthService, type AdminAuthSessionView } from '../../admin-auth/admin-auth.service';
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 
 type CrossAdminRevokeContext = {
   ipAddress?: string | null;
@@ -21,16 +21,13 @@ type CrossAdminRevokeResult = {
 @Injectable()
 export class AdminV2AdminSessionsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2AdminSessionsQuery,
     private readonly adminAuthService: AdminAuthService,
     private readonly adminActionAudit: AdminActionAuditService,
   ) {}
 
   async listSessionsForAdmin(adminId: string): Promise<{ sessions: AdminAuthSessionView[] }> {
-    const admin = await this.prisma.adminModel.findFirst({
-      where: { id: adminId, deletedAt: null },
-      select: { id: true },
-    });
+    const admin = await this.query.findActiveAdminId(adminId);
     if (!admin) {
       throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
     }
@@ -47,9 +44,9 @@ export class AdminV2AdminSessionsService {
     if (actorAdminId === targetAdminId) {
       throw new BadRequestException(`Use /api/admin-v2/auth/revoke-session for own sessions`);
     }
-    const session = await this.prisma.adminAuthSessionModel.findFirst({
-      where: { id: sessionId, adminId: targetAdminId },
-      select: { id: true },
+    const session = await this.query.findOwnedSessionId({
+      adminId: targetAdminId,
+      sessionId,
     });
     if (!session) {
       throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);

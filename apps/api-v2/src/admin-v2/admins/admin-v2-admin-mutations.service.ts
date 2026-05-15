@@ -1,11 +1,10 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin-auth/admin-auth-session-reasons';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { hashPassword } from '../../shared-common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
+import { AdminV2AdminMutationsRepository } from './admin-v2-admin-mutations.repository';
 import {
   ADMIN_PERMISSION_OVERRIDE_CAPABILITIES,
   ADMIN_PERMISSION_OVERRIDE_MODES,
@@ -24,24 +23,14 @@ import {
 @Injectable()
 export class AdminV2AdminMutationsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly repository: AdminV2AdminMutationsRepository,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly auditTrail: AdminV2AdminAuditTrail,
   ) {}
 
   async patchAdminPassword(targetAdminId: string, password: string, actorAdminId: string, meta: RequestMeta) {
     const { hash, salt } = await hashPassword(password);
-    const updated = await this.prisma.adminModel.update({
-      where: { id: targetAdminId },
-      data: { password: hash, salt },
-      select: {
-        id: true,
-        email: true,
-        type: true,
-        deletedAt: true,
-        updatedAt: true,
-      },
-    });
+    const updated = await this.repository.patchAdminPassword({ targetAdminId, hash, salt });
 
     await this.auditTrail.recordAdminActionAudit({
       adminId: actorAdminId,
@@ -69,18 +58,7 @@ export class AdminV2AdminMutationsService {
     actorAdminId: string,
     meta: RequestMeta,
   ) {
-    const updated = await this.prisma.adminModel.update({
-      where: { id: targetAdminId },
-      data: {
-        deletedAt: action === `delete` ? new Date() : null,
-      },
-      select: {
-        id: true,
-        email: true,
-        deletedAt: true,
-        updatedAt: true,
-      },
-    });
+    const updated = await this.repository.updateAdminStatus({ targetAdminId, action });
 
     await this.auditTrail.recordAdminActionAudit({
       adminId: actorAdminId,
@@ -120,7 +98,7 @@ export class AdminV2AdminMutationsService {
     }
     const reason = normalizeReason(body.reason);
 
-    return this.idempotency.execute({
+    return this.idempotency.executeInTransaction({
       adminId: actorAdminId,
       scope: `admin-deactivate:${targetAdminId}`,
       key: meta.idempotencyKey,
@@ -130,16 +108,8 @@ export class AdminV2AdminMutationsService {
         confirmed: true,
         reason,
       },
-      execute: async () => {
-        const target = await this.prisma.adminModel.findUnique({
-          where: { id: targetAdminId },
-          select: {
-            id: true,
-            email: true,
-            deletedAt: true,
-            updatedAt: true,
-          },
-        });
+      execute: async (tx) => {
+        const target = await this.repository.getAdminLifecycleTarget(targetAdminId);
         if (!target) {
           throw new NotFoundException(`Admin not found`);
         }
@@ -156,72 +126,42 @@ export class AdminV2AdminMutationsService {
           };
         }
 
-        return this.prisma.$transaction(async (tx) => {
-          const deactivatedAt = new Date();
-          const updated = await tx.adminModel.updateMany({
-            where: {
-              id: target.id,
-              deletedAt: null,
-              updatedAt: target.updatedAt,
-            },
-            data: {
-              deletedAt: deactivatedAt,
-            },
-          });
-          if (updated.count === 0) {
-            const current = await tx.adminModel.findUnique({
-              where: { id: target.id },
-              select: { updatedAt: true },
-            });
-            throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
-          }
-          await tx.adminAuthSessionModel.updateMany({
-            where: {
-              adminId: target.id,
-              revokedAt: null,
-            },
-            data: {
-              revokedAt: deactivatedAt,
-              invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.admin_deactivated,
-              lastUsedAt: deactivatedAt,
-            },
-          });
-          await tx.accessRefreshTokenModel.deleteMany({
-            where: {
-              identityId: target.id,
-            },
-          });
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId: actorAdminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.admin_deactivate,
-              resource: `admin`,
-              resourceId: target.id,
-              metadata: {
-                targetEmail: target.email,
-                confirmed: true,
-                reason,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-          const fresh = await tx.adminModel.findUniqueOrThrow({
-            where: { id: target.id },
-            select: {
-              id: true,
-              updatedAt: true,
-              deletedAt: true,
-            },
-          });
-          return {
-            adminId: fresh.id,
-            status: `INACTIVE`,
-            deletedAt: fresh.deletedAt?.toISOString() ?? deactivatedAt.toISOString(),
-            version: deriveVersion(fresh.updatedAt),
-            alreadyInactive: false,
-          };
+        const deactivatedAt = new Date();
+
+        const updated = await this.repository.deactivateAdmin(tx, {
+          targetId: target.id,
+          expectedUpdatedAt: target.updatedAt,
+          deactivatedAt,
         });
+        if (updated.count === 0) {
+          const current = await this.repository.findAdminUpdatedAt(tx, target.id);
+          throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
+        }
+
+        await this.repository.revokeActiveSessions(tx, target.id, deactivatedAt);
+        await this.repository.deleteRefreshTokens(tx, target.id);
+        await this.repository.createAuditEntry(tx, {
+          adminId: actorAdminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_deactivate,
+          resource: `admin`,
+          resourceId: target.id,
+          metadata: {
+            targetEmail: target.email,
+            confirmed: true,
+            reason,
+          },
+          ipAddress: meta.ipAddress ?? null,
+          userAgent: meta.userAgent ?? null,
+        });
+
+        const fresh = await this.repository.findAdminLifecycleResult(tx, target.id);
+        return {
+          adminId: fresh.id,
+          status: `INACTIVE` as const,
+          deletedAt: fresh.deletedAt?.toISOString() ?? deactivatedAt.toISOString(),
+          version: deriveVersion(fresh.updatedAt),
+          alreadyInactive: false,
+        };
       },
     });
   }
@@ -232,21 +172,13 @@ export class AdminV2AdminMutationsService {
       throw new BadRequestException(`Valid version is required`);
     }
 
-    return this.idempotency.execute({
+    return this.idempotency.executeInTransaction({
       adminId: actorAdminId,
       scope: `admin-restore:${targetAdminId}`,
       key: meta.idempotencyKey,
       payload: { targetAdminId, expectedVersion },
-      execute: async () => {
-        const target = await this.prisma.adminModel.findUnique({
-          where: { id: targetAdminId },
-          select: {
-            id: true,
-            email: true,
-            deletedAt: true,
-            updatedAt: true,
-          },
-        });
+      execute: async (tx) => {
+        const target = await this.repository.getAdminLifecycleTarget(targetAdminId);
         if (!target) {
           throw new NotFoundException(`Admin not found`);
         }
@@ -262,53 +194,35 @@ export class AdminV2AdminMutationsService {
           };
         }
 
-        return this.prisma.$transaction(async (tx) => {
-          const updated = await tx.adminModel.updateMany({
-            where: {
-              id: target.id,
-              deletedAt: { not: null },
-              updatedAt: target.updatedAt,
-            },
-            data: {
-              deletedAt: null,
-            },
-          });
-          if (updated.count === 0) {
-            const current = await tx.adminModel.findUnique({
-              where: { id: target.id },
-              select: { updatedAt: true },
-            });
-            throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
-          }
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId: actorAdminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.admin_restore,
-              resource: `admin`,
-              resourceId: target.id,
-              metadata: {
-                targetEmail: target.email,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-          const fresh = await tx.adminModel.findUniqueOrThrow({
-            where: { id: target.id },
-            select: {
-              id: true,
-              updatedAt: true,
-              deletedAt: true,
-            },
-          });
-          return {
-            adminId: fresh.id,
-            status: `ACTIVE`,
-            deletedAt: toNullableIso(fresh.deletedAt),
-            version: deriveVersion(fresh.updatedAt),
-            alreadyActive: false,
-          };
+        const updated = await this.repository.restoreAdmin(tx, {
+          targetId: target.id,
+          expectedUpdatedAt: target.updatedAt,
         });
+        if (updated.count === 0) {
+          const current = await this.repository.findAdminUpdatedAt(tx, target.id);
+          throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
+        }
+
+        await this.repository.createAuditEntry(tx, {
+          adminId: actorAdminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_restore,
+          resource: `admin`,
+          resourceId: target.id,
+          metadata: {
+            targetEmail: target.email,
+          },
+          ipAddress: meta.ipAddress ?? null,
+          userAgent: meta.userAgent ?? null,
+        });
+
+        const fresh = await this.repository.findAdminLifecycleResult(tx, target.id);
+        return {
+          adminId: fresh.id,
+          status: `ACTIVE` as const,
+          deletedAt: toNullableIso(fresh.deletedAt),
+          version: deriveVersion(fresh.updatedAt),
+          alreadyActive: false,
+        };
       },
     });
   }
@@ -331,7 +245,7 @@ export class AdminV2AdminMutationsService {
       throw new BadRequestException(`Unsupported admin role`);
     }
 
-    return this.idempotency.execute({
+    return this.idempotency.executeInTransaction({
       adminId: actorAdminId,
       scope: `admin-role-change:${targetAdminId}`,
       key: meta.idempotencyKey,
@@ -341,23 +255,8 @@ export class AdminV2AdminMutationsService {
         confirmed: true,
         nextRoleKey,
       },
-      execute: async () => {
-        const target = await this.prisma.adminModel.findUnique({
-          where: { id: targetAdminId },
-          select: {
-            id: true,
-            email: true,
-            type: true,
-            updatedAt: true,
-            deletedAt: true,
-            role: {
-              select: {
-                id: true,
-                key: true,
-              },
-            },
-          },
-        });
+      execute: async (tx) => {
+        const target = await this.repository.getAdminRoleMutationTarget(targetAdminId);
         if (!target) {
           throw new NotFoundException(`Admin not found`);
         }
@@ -376,69 +275,46 @@ export class AdminV2AdminMutationsService {
           };
         }
 
-        const nextRole = await this.prisma.adminRoleModel.findFirst({
-          where: { key: nextRoleKey },
-          select: { id: true, key: true },
-        });
+        const nextRole = await this.repository.getRoleByKey(nextRoleKey);
         if (!nextRole) {
           throw new BadRequestException(`Target role is unavailable`);
         }
 
-        return this.prisma.$transaction(async (tx) => {
-          const updated = await tx.adminModel.updateMany({
-            where: {
-              id: target.id,
-              updatedAt: target.updatedAt,
-              deletedAt: null,
-            },
-            data: {
-              roleId: nextRole.id,
-              type: toAdminType(nextRole.key),
-            },
-          });
-          if (updated.count === 0) {
-            const current = await tx.adminModel.findUnique({
-              where: { id: target.id },
-              select: { updatedAt: true },
-            });
-            throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
-          }
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId: actorAdminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.admin_role_change,
-              resource: `admin`,
-              resourceId: target.id,
-              metadata: {
-                targetEmail: target.email,
-                confirmed: true,
-                previousRoleKey: target.role?.key ?? null,
-                nextRoleKey,
-                previousType: target.type,
-                nextType: toAdminType(nextRole.key),
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-          const fresh = await tx.adminModel.findUniqueOrThrow({
-            where: { id: target.id },
-            select: {
-              updatedAt: true,
-              role: {
-                select: {
-                  key: true,
-                },
-              },
-            },
-          });
-          return {
-            adminId: target.id,
-            roleKey: fresh.role?.key ?? nextRoleKey,
-            version: deriveVersion(fresh.updatedAt),
-            alreadyApplied: false,
-          };
+        const updated = await this.repository.changeAdminRole(tx, {
+          targetId: target.id,
+          expectedUpdatedAt: target.updatedAt,
+          nextRoleId: nextRole.id,
+          nextType: toAdminType(nextRole.key),
         });
+        if (updated.count === 0) {
+          const current = await this.repository.findAdminUpdatedAt(tx, target.id);
+          throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
+        }
+
+        await this.repository.createAuditEntry(tx, {
+          adminId: actorAdminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_role_change,
+          resource: `admin`,
+          resourceId: target.id,
+          metadata: {
+            targetEmail: target.email,
+            confirmed: true,
+            previousRoleKey: target.role?.key ?? null,
+            nextRoleKey,
+            previousType: target.type,
+            nextType: toAdminType(nextRole.key),
+          },
+          ipAddress: meta.ipAddress ?? null,
+          userAgent: meta.userAgent ?? null,
+        });
+
+        const fresh = await this.repository.findAdminRoleResult(tx, target.id);
+        return {
+          adminId: target.id,
+          roleKey: fresh.role?.key ?? nextRoleKey,
+          version: deriveVersion(fresh.updatedAt),
+          alreadyApplied: false,
+        };
       },
     });
   }
@@ -473,7 +349,7 @@ export class AdminV2AdminMutationsService {
       throw new BadRequestException(`Only known admin-v2 capability overrides are supported`);
     }
 
-    return this.idempotency.execute({
+    return this.idempotency.executeInTransaction({
       adminId: actorAdminId,
       scope: `admin-permissions-change:${targetAdminId}`,
       key: meta.idempotencyKey,
@@ -482,28 +358,8 @@ export class AdminV2AdminMutationsService {
         expectedVersion,
         normalizedOverrides,
       },
-      execute: async () => {
-        const target = await this.prisma.adminModel.findUnique({
-          where: { id: targetAdminId },
-          select: {
-            id: true,
-            email: true,
-            updatedAt: true,
-            deletedAt: true,
-            permissionOverrides: {
-              select: {
-                id: true,
-                granted: true,
-                permissionId: true,
-                permission: {
-                  select: {
-                    capability: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+      execute: async (tx) => {
+        const target = await this.repository.getAdminPermissionMutationTarget(targetAdminId);
         if (!target) {
           throw new NotFoundException(`Admin not found`);
         }
@@ -514,15 +370,9 @@ export class AdminV2AdminMutationsService {
           throw new ConflictException(`Inactive admins cannot change permission overrides until restored`);
         }
 
-        const relevantPermissions = await this.prisma.adminPermissionModel.findMany({
-          where: {
-            capability: { in: [...ADMIN_PERMISSION_OVERRIDE_CAPABILITIES] },
-          },
-          select: {
-            id: true,
-            capability: true,
-          },
-        });
+        const relevantPermissions = await this.repository.listRelevantPermissions([
+          ...ADMIN_PERMISSION_OVERRIDE_CAPABILITIES,
+        ]);
         const permissionIdByCapability = new Map(
           relevantPermissions.map((permission) => [permission.capability, permission.id]),
         );
@@ -553,79 +403,51 @@ export class AdminV2AdminMutationsService {
           };
         }
 
-        return this.prisma.$transaction(async (tx) => {
-          const touchedPermissionIds = [
+        await this.repository.replaceAdminPermissionOverrides(tx, {
+          adminId: target.id,
+          normalizedOverrides,
+          touchedPermissionIds: [
             ...new Set(normalizedOverrides.map((override) => permissionIdByCapability.get(override.capability)!)),
-          ];
-          await tx.adminPermissionOverrideModel.deleteMany({
-            where: {
-              adminId: target.id,
-              permissionId: { in: touchedPermissionIds },
-            },
-          });
-          const explicitOverrides = normalizedOverrides.filter((override) => override.mode !== `inherit`);
-          if (explicitOverrides.length > 0) {
-            await tx.adminPermissionOverrideModel.createMany({
-              data: explicitOverrides.map((override) => ({
-                adminId: target.id,
-                permissionId: permissionIdByCapability.get(override.capability)!,
-                granted: override.mode === `grant`,
-              })),
-            });
-          }
-
-          await tx.adminModel.updateMany({
-            where: {
-              id: target.id,
-              updatedAt: target.updatedAt,
-            },
-            data: {
-              updatedAt: new Date(),
-            },
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId: actorAdminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.admin_permissions_change,
-              resource: `admin`,
-              resourceId: target.id,
-              metadata: {
-                targetEmail: target.email,
-                changes,
-              },
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-          });
-          const fresh = await tx.adminModel.findUniqueOrThrow({
-            where: { id: target.id },
-            select: {
-              updatedAt: true,
-              permissionOverrides: {
-                select: {
-                  granted: true,
-                  permission: {
-                    select: {
-                      capability: true,
-                    },
-                  },
-                },
-              },
-            },
-          });
-          return {
-            adminId: target.id,
-            version: deriveVersion(fresh.updatedAt),
-            overrides: fresh.permissionOverrides
-              .filter((override) => ADMIN_PERMISSION_OVERRIDE_CAPABILITIES.has(override.permission.capability))
-              .map((override) => ({
-                capability: override.permission.capability,
-                granted: override.granted,
-              })),
-            alreadyApplied: false,
-          };
+          ],
+          permissionIdByCapability,
         });
+
+        const updatedAt = new Date();
+        const updated = await this.repository.touchAdminPermissions(tx, {
+          targetId: target.id,
+          expectedUpdatedAt: target.updatedAt,
+          updatedAt,
+        });
+        if (updated.count === 0) {
+          const current = await this.repository.findAdminUpdatedAt(tx, target.id);
+          throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
+        }
+
+        await this.repository.createAuditEntry(tx, {
+          adminId: actorAdminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_permissions_change,
+          resource: `admin`,
+          resourceId: target.id,
+          metadata: {
+            targetEmail: target.email,
+            changes,
+          },
+          ipAddress: meta.ipAddress ?? null,
+          userAgent: meta.userAgent ?? null,
+        });
+
+        const fresh = await this.repository.findAdminPermissionResult(tx, target.id);
+        return {
+          adminId: target.id,
+          version: deriveVersion(fresh.updatedAt),
+          overrides: fresh.permissionOverrides
+            .filter((override) => ADMIN_PERMISSION_OVERRIDE_CAPABILITIES.has(override.permission.capability))
+            .map((override) => ({
+              capability: override.permission.capability,
+              granted: override.granted,
+            })),
+          alreadyApplied: false,
+        };
       },
     });
   }

@@ -1,18 +1,23 @@
+import { randomUUID } from 'crypto';
+
 import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
-import { type Prisma, type ConsumerModel } from '@remoola/database-2';
+import { type ConsumerModel } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { ConsumerAuthSessionRepository } from './consumer-auth-session.repository';
+import {
+  ConsumerAuthSessionRepository,
+  ConsumerAuthSessionRotationConflictError,
+} from './consumer-auth-session.repository';
 import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { type IJwtTokenPayload } from '../../dtos/consumer';
 import { envs } from '../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
-import { PrismaService } from '../../shared/prisma.service';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { secureCompare } from '../../shared-common';
 
 type LoginContext = { ipAddress?: string | null; userAgent?: string | null };
@@ -25,11 +30,11 @@ export class ConsumerAuthSessionService {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
     private readonly authAudit: AuthAuditService,
     private readonly originResolver: OriginResolverService,
     private readonly consumerIdentityRepository: ConsumerIdentityRepository,
     private readonly sessionRepository: ConsumerAuthSessionRepository,
+    private readonly transactions: PrismaTransactionRunner,
   ) {}
 
   async refreshAccess(refreshToken: string, appScope: ConsumerAppScope, ctx?: LoginContext) {
@@ -101,19 +106,72 @@ export class ConsumerAuthSessionService {
     }
     this.ensureConsumerNotSuspended(consumer);
 
-    const access = await this.prisma.$transaction(async (tx) => {
-      const next = await this.createSessionAndIssueTokens(consumer.id, appScope, session.sessionFamilyId, tx);
-      await tx.authSessionModel.update({
-        where: { id: session.id },
-        data: {
-          revokedAt: new Date(),
-          replacedById: next.sessionId,
-          invalidatedReason: `rotated`,
-          lastUsedAt: new Date(),
-        },
+    const nextSessionId = randomUUID();
+    const rotatedAt = new Date();
+    const issued = await this.issueSessionTokens(consumer.id, appScope, nextSessionId, session.sessionFamilyId);
+    let access: {
+      accessToken: string;
+      refreshToken: string;
+      sessionId: string;
+      sessionFamilyId: string;
+    };
+    try {
+      access = await this.transactions.runAuthSessionRotation(async (tx) => {
+        await this.sessionRepository.createPendingSession(
+          {
+            sessionId: nextSessionId,
+            consumerId: consumer.id,
+            appScope,
+            sessionFamilyId: session.sessionFamilyId,
+            refreshTokenHash: this.buildPendingRefreshTokenHash(),
+            expiresAt: this.buildSessionExpiryDate(rotatedAt),
+          },
+          tx,
+        );
+        const rotation = await this.sessionRepository.markSessionRotated(tx, {
+          previousSessionId: session.id,
+          consumerId: consumer.id,
+          appScope,
+          expectedRefreshTokenHash: session.refreshTokenHash,
+          replacedById: nextSessionId,
+          now: rotatedAt,
+        });
+        if (rotation.count !== 1) {
+          throw new ConsumerAuthSessionRotationConflictError();
+        }
+        await this.sessionRepository.finalizeIssuedSession(
+          {
+            sessionId: nextSessionId,
+            sessionFamilyId: session.sessionFamilyId,
+            accessTokenHash: issued.accessTokenHash,
+            refreshTokenHash: issued.refreshTokenHash,
+            finalizedAt: rotatedAt,
+          },
+          tx,
+        );
+
+        return {
+          accessToken: issued.accessToken,
+          refreshToken: issued.refreshToken,
+          sessionId: nextSessionId,
+          sessionFamilyId: session.sessionFamilyId,
+        };
       });
-      return next;
-    });
+    } catch (error) {
+      if (!(error instanceof ConsumerAuthSessionRotationConflictError)) {
+        throw error;
+      }
+      await this.sessionRepository.revokeSessionFamily(session.sessionFamilyId, `refresh_reuse_detected`);
+      await this.authAudit.recordAudit({
+        identityType: AUTH_IDENTITY_TYPES.consumer,
+        identityId: consumer.id,
+        email: consumer.email,
+        event: AUTH_AUDIT_EVENTS.refresh_reuse,
+        ipAddress: ctx?.ipAddress,
+        userAgent: ctx?.userAgent,
+      });
+      throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
+    }
 
     await this.authAudit.recordAudit({
       identityType: AUTH_IDENTITY_TYPES.consumer,
@@ -192,37 +250,42 @@ export class ConsumerAuthSessionService {
     identityId: ConsumerModel[`id`],
     appScope: ConsumerAppScope,
     sessionFamilyId?: string,
-    tx?: Prisma.TransactionClient,
   ) {
-    const db = tx ?? this.prisma;
-    const temporaryHash = `pending:${oauthCrypto.generateOAuthState()}`;
-    const expiresAt = new Date(Date.now() + envs.JWT_REFRESH_TTL_SECONDS * 1000);
+    const sessionId = randomUUID();
+    const effectiveSessionFamilyId = sessionFamilyId ?? sessionId;
+    const issuedAt = new Date();
+    const issued = await this.issueSessionTokens(identityId, appScope, sessionId, effectiveSessionFamilyId);
 
-    const created = await db.authSessionModel.create({
-      data: {
-        consumerId: identityId,
-        appScope,
-        sessionFamilyId: sessionFamilyId ?? identityId,
-        refreshTokenHash: temporaryHash,
-        expiresAt,
-      },
+    await this.transactions.run(async (tx) => {
+      await this.sessionRepository.createPendingSession(
+        {
+          sessionId,
+          consumerId: identityId,
+          appScope,
+          sessionFamilyId: effectiveSessionFamilyId,
+          refreshTokenHash: this.buildPendingRefreshTokenHash(),
+          expiresAt: this.buildSessionExpiryDate(issuedAt),
+        },
+        tx,
+      );
+      await this.sessionRepository.finalizeIssuedSession(
+        {
+          sessionId,
+          sessionFamilyId: effectiveSessionFamilyId,
+          accessTokenHash: issued.accessTokenHash,
+          refreshTokenHash: issued.refreshTokenHash,
+          finalizedAt: issuedAt,
+        },
+        tx,
+      );
     });
 
-    const effectiveSessionFamilyId = sessionFamilyId ?? created.id;
-    const accessToken = await this.getAccessToken(identityId, appScope, created.id);
-    const refreshToken = await this.getRefreshToken(identityId, appScope, created.id, effectiveSessionFamilyId);
-
-    await db.authSessionModel.update({
-      where: { id: created.id },
-      data: {
-        accessTokenHash: this.hashToken(accessToken),
-        sessionFamilyId: effectiveSessionFamilyId,
-        refreshTokenHash: this.hashToken(refreshToken),
-        lastUsedAt: new Date(),
-      },
-    });
-
-    return { accessToken, refreshToken, sessionId: created.id, sessionFamilyId: effectiveSessionFamilyId };
+    return {
+      accessToken: issued.accessToken,
+      refreshToken: issued.refreshToken,
+      sessionId,
+      sessionFamilyId: effectiveSessionFamilyId,
+    };
   }
 
   private getAccessToken(identityId: string, appScope: ConsumerAppScope, sessionId: string) {
@@ -266,6 +329,31 @@ export class ConsumerAuthSessionService {
 
   private hashToken(token: string): string {
     return oauthCrypto.hashOAuthState(token);
+  }
+
+  private buildPendingRefreshTokenHash(): string {
+    return `pending:${oauthCrypto.generateOAuthState()}`;
+  }
+
+  private buildSessionExpiryDate(now: Date = new Date()): Date {
+    return new Date(now.getTime() + envs.JWT_REFRESH_TTL_SECONDS * 1000);
+  }
+
+  private async issueSessionTokens(
+    identityId: string,
+    appScope: ConsumerAppScope,
+    sessionId: string,
+    sessionFamilyId: string,
+  ) {
+    const accessToken = await this.getAccessToken(identityId, appScope, sessionId);
+    const refreshToken = await this.getRefreshToken(identityId, appScope, sessionId, sessionFamilyId);
+
+    return {
+      accessToken,
+      refreshToken,
+      accessTokenHash: this.hashToken(accessToken),
+      refreshTokenHash: this.hashToken(refreshToken),
+    };
   }
 
   private ensureConsumerNotSuspended(consumer: Pick<ConsumerModel, `suspendedAt`>) {

@@ -1,16 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
+import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { sqlUuid } from '../../shared/prisma-raw.utils';
-import { PrismaService } from '../../shared/prisma.service';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
-import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
+import { buildDateRangeFilter } from '../admin-v2-query.utils';
+import { AdminV2LedgerQuery, type AdminV2LedgerListItemRecord } from './admin-v2-ledger.query';
+import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 const SEARCH_MAX_LENGTH = 200;
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function normalizeLimit(limit?: number): number {
   return Math.min(MAX_LIMIT, Math.max(1, limit ?? DEFAULT_LIMIT));
@@ -40,81 +40,10 @@ function normalizeAmountSign(value: string | undefined): AmountSignFilter | unde
   return normalized === `positive` || normalized === `negative` || normalized === `zero` ? normalized : undefined;
 }
 
-function buildDateRangeFilter(dateFrom?: Date, dateTo?: Date): Prisma.DateTimeFilter | undefined {
-  if (dateFrom && dateTo) {
-    return { gte: dateFrom, lte: dateTo };
-  }
-
-  if (dateFrom) {
-    return { gte: dateFrom };
-  }
-
-  if (dateTo) {
-    return { lte: dateTo };
-  }
-
-  return undefined;
-}
-
-function buildCreatedAtCursorWhere(cursor: { createdAt: Date; id: string } | null): Prisma.LedgerEntryModelWhereInput {
-  if (!cursor) {
-    return {};
-  }
-
-  return {
-    OR: [
-      { createdAt: { lt: cursor.createdAt } },
-      {
-        AND: [{ createdAt: cursor.createdAt }, { id: { lt: cursor.id } }],
-      },
-    ],
-  };
-}
-
-function buildOptionalUuidFilter(columnSql: Prisma.Sql, value: string | undefined): Prisma.Sql {
-  if (!value?.trim()) {
-    return Prisma.empty;
-  }
-
-  const normalizedValue = value.trim();
-  if (!UUID_REGEX.test(normalizedValue)) {
-    return Prisma.sql`AND FALSE`;
-  }
-
-  return Prisma.sql`AND ${columnSql} = ${sqlUuid(normalizedValue)}`;
-}
-
-type LedgerListRow = {
-  id: string;
-  ledgerId: string;
-  type: $Enums.LedgerEntryType;
-  currencyCode: $Enums.CurrencyCode;
-  status: $Enums.TransactionStatus;
-  amount: Prisma.Decimal;
-  feesType: string | null;
-  feesAmount: Prisma.Decimal | null;
-  stripeId: string | null;
-  idempotencyKey: string | null;
-  metadata: Prisma.JsonValue | null;
-  consumerId: string;
-  paymentRequestId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  consumer?: { email: string | null } | null;
-  paymentRequest?: {
-    paymentRail: $Enums.PaymentRail | null;
-    status: $Enums.TransactionStatus;
-    payerId: string | null;
-    requesterId: string | null;
-  } | null;
-  outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-  disputes?: Array<{ id: string }>;
-};
-
 @Injectable()
 export class AdminV2LedgerService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2LedgerQuery,
     private readonly assignmentsService: AdminV2AssignmentsService,
   ) {}
 
@@ -137,7 +66,7 @@ export class AdminV2LedgerService {
     return (metadata.rail as $Enums.PaymentRail | undefined) ?? entry.paymentRequest?.paymentRail ?? null;
   }
 
-  private mapLedgerRow(entry: LedgerListRow) {
+  private mapLedgerRow(entry: AdminV2LedgerListItemRecord) {
     const effectiveStatus = this.getEffectiveLedgerStatus(entry);
     return {
       id: entry.id,
@@ -187,168 +116,20 @@ export class AdminV2LedgerService {
     );
     const amountSign = normalizeAmountSign(params?.amountSign);
     const createdAt = buildDateRangeFilter(params?.dateFrom, params?.dateTo);
-
-    const include = {
-      consumer: { select: { email: true } },
-      paymentRequest: {
-        select: {
-          paymentRail: true,
-          status: true,
-          payerId: true,
-          requesterId: true,
-        },
-      },
-      outcomes: {
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: 1,
-        select: { status: true },
-      },
-      disputes: {
-        select: { id: true },
-      },
-    } satisfies Prisma.LedgerEntryModelInclude;
-
-    const searchPattern = search ? `%${search}%` : null;
-
-    if (status) {
-      const deletedSql = Prisma.sql`AND le.deleted_at IS NULL`;
-      const typeSql = type ? Prisma.sql`AND le.type::text = ${type}` : Prisma.empty;
-      const currencySql = currencyCode ? Prisma.sql`AND le.currency_code::text = ${currencyCode}` : Prisma.empty;
-      const paymentRequestSql = buildOptionalUuidFilter(Prisma.sql`le.payment_request_id`, params?.paymentRequestId);
-      const consumerSql = buildOptionalUuidFilter(Prisma.sql`le.consumer_id`, params?.consumerId);
-      const amountSignSql =
-        amountSign === `positive`
-          ? Prisma.sql`AND le.amount > 0`
-          : amountSign === `negative`
-            ? Prisma.sql`AND le.amount < 0`
-            : amountSign === `zero`
-              ? Prisma.sql`AND le.amount = 0`
-              : Prisma.empty;
-      const createdAtSql = createdAt?.gte
-        ? createdAt.lte
-          ? Prisma.sql`AND le.created_at >= ${createdAt.gte} AND le.created_at <= ${createdAt.lte}`
-          : Prisma.sql`AND le.created_at >= ${createdAt.gte}`
-        : createdAt?.lte
-          ? Prisma.sql`AND le.created_at <= ${createdAt.lte}`
-          : Prisma.empty;
-      const searchSql = searchPattern
-        ? Prisma.sql`
-            AND (
-              LOWER(COALESCE(le.stripe_id, '')) LIKE LOWER(${searchPattern})
-              OR LOWER(COALESCE(le.idempotency_key, '')) LIKE LOWER(${searchPattern})
-              ${
-                UUID_REGEX.test(search ?? ``)
-                  ? Prisma.sql`
-                      OR le.id::text = ${search}
-                      OR le.ledger_id::text = ${search}
-                      OR le.payment_request_id::text = ${search}
-                    `
-                  : Prisma.empty
-              }
-            )
-          `
-        : Prisma.empty;
-      const cursorSql = cursor
-        ? Prisma.sql`
-            AND (
-              le.created_at < ${cursor.createdAt}
-              OR (le.created_at = ${cursor.createdAt} AND le.id::text < ${cursor.id})
-            )
-          `
-        : Prisma.empty;
-
-      const pageIdRows = await this.prisma.$queryRaw<Array<{ id: string; created_at: Date }>>(Prisma.sql`
-        SELECT le.id, le.created_at
-        FROM ledger_entry le
-        LEFT JOIN LATERAL (
-          SELECT leo.status
-          FROM ledger_entry_outcome leo
-          WHERE leo.ledger_entry_id = le.id
-          ORDER BY leo.created_at DESC, leo.id DESC
-          LIMIT 1
-        ) latest_outcome ON true
-        WHERE COALESCE(latest_outcome.status::text, le.status::text) = ${status}
-          ${deletedSql}
-          ${typeSql}
-          ${currencySql}
-          ${paymentRequestSql}
-          ${consumerSql}
-          ${amountSignSql}
-          ${createdAtSql}
-          ${searchSql}
-          ${cursorSql}
-        ORDER BY le.created_at DESC, le.id DESC
-        LIMIT ${limit + 1}
-      `);
-
-      const pageIds = pageIdRows.slice(0, limit).map((row) => row.id);
-      const rows =
-        pageIds.length === 0
-          ? []
-          : await this.prisma.ledgerEntryModel.findMany({
-              where: { id: { in: pageIds } },
-              include,
-            });
-      const positionById = new Map(pageIds.map((id, index) => [id, index]));
-      rows.sort((left, right) => (positionById.get(left.id) ?? 0) - (positionById.get(right.id) ?? 0));
-      const next = pageIdRows[limit];
-
-      const items = rows.map((row) => this.mapLedgerRow(row as LedgerListRow));
-
-      const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
-        `ledger_entry`,
-        items.map((item) => item.id),
-      );
-
-      const itemsWithAssignee = items.map((item) => ({
-        ...item,
-        assignedTo: (assigneeMap.get(item.id) ?? null) as AdminRef | null,
-      }));
-
-      return {
-        items: itemsWithAssignee,
-        pageInfo: {
-          nextCursor: next ? encodeAdminV2Cursor({ createdAt: next.created_at, id: next.id }) : null,
-          limit,
-        },
-      };
-    }
-
-    const rows = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        deletedAt: null,
-        ...buildCreatedAtCursorWhere(cursor),
-        ...(type ? { type } : {}),
-        ...(currencyCode ? { currencyCode } : {}),
-        ...(params?.paymentRequestId ? { paymentRequestId: params.paymentRequestId } : {}),
-        ...(params?.consumerId ? { consumerId: params.consumerId } : {}),
-        ...(createdAt ? { createdAt } : {}),
-        ...(amountSign === `positive`
-          ? { amount: { gt: 0 } }
-          : amountSign === `negative`
-            ? { amount: { lt: 0 } }
-            : amountSign === `zero`
-              ? { amount: { equals: 0 } }
-              : {}),
-        ...(search
-          ? {
-              OR: [
-                { stripeId: { contains: search, mode: `insensitive` } },
-                { idempotencyKey: { contains: search, mode: `insensitive` } },
-                ...(UUID_REGEX.test(search)
-                  ? [{ id: search }, { ledgerId: search }, { paymentRequestId: search }]
-                  : []),
-              ],
-            }
-          : {}),
-      },
-      include,
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: limit + 1,
+    const { rows, nextCursorSource } = await this.query.listLedgerEntries({
+      limit,
+      cursor,
+      search,
+      type,
+      status,
+      currencyCode,
+      paymentRequestId: params?.paymentRequestId,
+      consumerId: params?.consumerId,
+      amountSign,
+      createdAt,
     });
 
-    const next = rows[limit];
-    const items = rows.slice(0, limit).map((row) => this.mapLedgerRow(row as LedgerListRow));
+    const items = rows.map((row) => this.mapLedgerRow(row));
 
     const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
       `ledger_entry`,
@@ -363,113 +144,18 @@ export class AdminV2LedgerService {
     return {
       items: itemsWithAssignee,
       pageInfo: {
-        nextCursor: next ? encodeAdminV2Cursor({ createdAt: next.createdAt, id: next.id }) : null,
+        nextCursor: nextCursorSource ? encodeAdminV2Cursor(nextCursorSource) : null,
         limit,
       },
     };
   }
 
   async getLedgerEntryCase(ledgerEntryId: string) {
-    const entry = await this.prisma.ledgerEntryModel.findUnique({
-      where: { id: ledgerEntryId },
-      select: {
-        id: true,
-        ledgerId: true,
-        type: true,
-        currencyCode: true,
-        status: true,
-        amount: true,
-        feesType: true,
-        feesAmount: true,
-        stripeId: true,
-        idempotencyKey: true,
-        metadata: true,
-        consumerId: true,
-        paymentRequestId: true,
-        createdAt: true,
-        updatedAt: true,
-        consumer: {
-          select: {
-            email: true,
-          },
-        },
-        paymentRequest: {
-          select: {
-            id: true,
-            status: true,
-            paymentRail: true,
-            payerId: true,
-            requesterId: true,
-            amount: true,
-            currencyCode: true,
-            payer: { select: { email: true } },
-            requester: { select: { email: true } },
-          },
-        },
-        outcomes: {
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          select: {
-            id: true,
-            status: true,
-            source: true,
-            externalId: true,
-            createdAt: true,
-          },
-        },
-        disputes: {
-          orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-          select: {
-            id: true,
-            stripeDisputeId: true,
-            metadata: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
-
-    if (!entry) {
+    const ledgerCase = await this.query.getLedgerEntryCase(ledgerEntryId);
+    if (!ledgerCase) {
       throw new NotFoundException(`Ledger entry not found`);
     }
-
-    const relatedEntries = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        ledgerId: entry.ledgerId,
-        deletedAt: null,
-      },
-      orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-      select: {
-        id: true,
-        type: true,
-        amount: true,
-        currencyCode: true,
-        status: true,
-        createdAt: true,
-        outcomes: {
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          take: 1,
-          select: { status: true },
-        },
-      },
-    });
-
-    const auditContext =
-      entry.paymentRequestId == null
-        ? []
-        : await this.prisma.adminActionAuditLogModel.findMany({
-            where: {
-              resourceId: entry.paymentRequestId,
-            },
-            include: {
-              admin: {
-                select: {
-                  email: true,
-                },
-              },
-            },
-            orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-            take: 20,
-          });
+    const { entry, relatedEntries, auditContext } = ledgerCase;
 
     const assignment = await this.assignmentsService.getAssignmentContextForResource(`ledger_entry`, entry.id);
 
@@ -560,66 +246,16 @@ export class AdminV2LedgerService {
     const cursor = decodeAdminV2Cursor(params?.cursor);
     const search = normalizeSearch(params?.q);
     const createdAt = buildDateRangeFilter(params?.dateFrom, params?.dateTo);
-    const where: Prisma.LedgerEntryDisputeModelWhereInput[] = [];
-
-    if (createdAt) {
-      where.push({ createdAt });
-    }
-
-    if (cursor) {
-      where.push({
-        OR: [
-          { createdAt: { lt: cursor.createdAt } },
-          { AND: [{ createdAt: cursor.createdAt }, { id: { lt: cursor.id } }] },
-        ],
-      });
-    }
-
-    if (search) {
-      where.push({
-        OR: [
-          { stripeDisputeId: { contains: search, mode: `insensitive` } },
-          ...(UUID_REGEX.test(search) ? [{ id: search }, { ledgerEntryId: search }] : []),
-        ],
-      });
-    }
-
-    if (params?.paymentRequestId || params?.consumerId) {
-      where.push({
-        ledgerEntry: {
-          ...(params?.paymentRequestId ? { paymentRequestId: params.paymentRequestId } : {}),
-          ...(params?.consumerId ? { consumerId: params.consumerId } : {}),
-        },
-      });
-    }
-
-    const rows = await this.prisma.ledgerEntryDisputeModel.findMany({
-      where: where.length > 0 ? { AND: where } : {},
-      include: {
-        ledgerEntry: {
-          select: {
-            id: true,
-            ledgerId: true,
-            paymentRequestId: true,
-            consumerId: true,
-            type: true,
-            amount: true,
-            currencyCode: true,
-            paymentRequest: {
-              select: {
-                paymentRail: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: limit + 1,
+    const { rows, nextCursorSource } = await this.query.listDisputes({
+      limit,
+      cursor,
+      search,
+      paymentRequestId: params?.paymentRequestId,
+      consumerId: params?.consumerId,
+      createdAt,
     });
-
-    const next = rows[limit];
     return {
-      items: rows.slice(0, limit).map((row) => {
+      items: rows.map((row) => {
         const metadata = this.parseMetadata(row.metadata);
         return {
           id: row.id,
@@ -649,7 +285,7 @@ export class AdminV2LedgerService {
         };
       }),
       pageInfo: {
-        nextCursor: next ? encodeAdminV2Cursor({ createdAt: next.createdAt, id: next.id }) : null,
+        nextCursor: nextCursorSource ? encodeAdminV2Cursor(nextCursorSource) : null,
         limit,
       },
     };

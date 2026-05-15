@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { buildWalletEligibilityCondition } from '../../../shared/balance-calculation.service';
+import { buildWalletEligibilityCondition } from '../../../shared/balance-calculation.sql';
 import { sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 

@@ -1,26 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
+import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { PrismaService } from '../../shared/prisma.service';
+import { AdminV2PaymentsQuery, type AdminV2PaymentsQueueRow } from './admin-v2-payments.query';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
-import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
-
+import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 const SEARCH_MAX_LENGTH = 200;
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES = [
   $Enums.LedgerEntryType.USER_PAYMENT,
   $Enums.LedgerEntryType.USER_DEPOSIT,
 ] as const;
 const PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET = 25;
 const STALE_WAITING_RECIPIENT_APPROVAL_THRESHOLD_HOURS = 24;
-const PAYMENT_OPERATIONS_OVERDUE_STATUSES = [
-  $Enums.TransactionStatus.WAITING,
-  $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
-  $Enums.TransactionStatus.PENDING,
-] as const;
 const OVERDUE_OPERATOR_PROMPT = [
   `Review overdue payment requests and continue investigation`,
   `from the payment detail view.`,
@@ -59,43 +53,10 @@ function normalizeEnumValue<T extends string>(value: string | undefined, values:
   return values.includes(value.trim() as T) ? (value.trim() as T) : undefined;
 }
 
-function buildCreatedAtCursorWhere(
-  cursor: { createdAt: Date; id: string } | null,
-): Prisma.PaymentRequestModelWhereInput {
-  if (!cursor) {
-    return {};
-  }
-
-  return {
-    OR: [
-      { createdAt: { lt: cursor.createdAt } },
-      {
-        AND: [{ createdAt: cursor.createdAt }, { id: { lt: cursor.id } }],
-      },
-    ],
-  };
-}
-
-function buildDateRangeFilter(dateFrom?: Date, dateTo?: Date): Prisma.DateTimeNullableFilter | undefined {
-  if (dateFrom && dateTo) {
-    return { gte: dateFrom, lte: dateTo };
-  }
-
-  if (dateFrom) {
-    return { gte: dateFrom };
-  }
-
-  if (dateTo) {
-    return { lte: dateTo };
-  }
-
-  return undefined;
-}
-
 @Injectable()
 export class AdminV2PaymentsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2PaymentsQuery,
     private readonly assignmentsService: AdminV2AssignmentsService,
   ) {}
 
@@ -105,36 +66,7 @@ export class AdminV2PaymentsService {
     return resource?.resourceTags?.some((resourceTag) => resourceTag.tag.name.startsWith(`INVOICE-`)) ?? false;
   }
 
-  private mapPaymentOperationsQueueItem(
-    row: {
-      id: string;
-      amount: Prisma.Decimal;
-      currencyCode: $Enums.CurrencyCode;
-      status: $Enums.TransactionStatus;
-      paymentRail: $Enums.PaymentRail | null;
-      dueDate: Date | null;
-      createdAt: Date;
-      updatedAt: Date;
-      payer?: { id: string; email: string } | null;
-      requester?: { id: string; email: string } | null;
-      payerEmail?: string | null;
-      requesterEmail?: string | null;
-      attachments: Array<{
-        id: string;
-        resource: {
-          id: string;
-          resourceTags?: Array<{ tag: { name: string } }>;
-        } | null;
-      }>;
-      ledgerEntries: Array<{
-        status: $Enums.TransactionStatus;
-        createdAt: Date;
-        type: $Enums.LedgerEntryType;
-        outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-      }>;
-    },
-    assignedTo: AdminRef | null = null,
-  ) {
+  private mapPaymentOperationsQueueItem(row: AdminV2PaymentsQueueRow, assignedTo: AdminRef | null = null) {
     const effectiveStatus = this.getEffectivePaymentStatus(row) ?? row.status;
     const invoiceTaggedAttachmentsCount = row.attachments.filter((attachment) =>
       this.isInvoiceTaggedResource(attachment.resource),
@@ -279,94 +211,23 @@ export class AdminV2PaymentsService {
     );
     const amountMin = asNumber(params?.amountMin);
     const amountMax = asNumber(params?.amountMax);
-    const dueDateRange = buildDateRangeFilter(params?.dueDateFrom, params?.dueDateTo);
-    const createdAtRange = buildDateRangeFilter(params?.createdFrom, params?.createdTo);
     const now = new Date();
 
-    const where: Prisma.PaymentRequestModelWhereInput = {
-      deletedAt: null,
-      ...buildCreatedAtCursorWhere(cursor),
-      ...(status ? { status } : {}),
-      ...(paymentRail ? { paymentRail } : {}),
-      ...(currencyCode ? { currencyCode } : {}),
-      ...(amountMin != null || amountMax != null
-        ? {
-            amount: {
-              ...(amountMin != null ? { gte: amountMin } : {}),
-              ...(amountMax != null ? { lte: amountMax } : {}),
-            },
-          }
-        : {}),
-      ...(dueDateRange ? { dueDate: dueDateRange } : {}),
-      ...(createdAtRange ? { createdAt: createdAtRange } : {}),
-      ...(params?.overdue === true
-        ? {
-            dueDate: {
-              ...(dueDateRange ?? {}),
-              lt: now,
-            },
-            status: {
-              in: [...PAYMENT_OPERATIONS_OVERDUE_STATUSES],
-            },
-          }
-        : {}),
-      ...(search
-        ? {
-            OR: [
-              { id: UUID_REGEX.test(search) ? search : undefined },
-              { description: { contains: search, mode: `insensitive` } },
-              { payerEmail: { contains: search, mode: `insensitive` } },
-              { requesterEmail: { contains: search, mode: `insensitive` } },
-              { payer: { email: { contains: search, mode: `insensitive` } } },
-              { requester: { email: { contains: search, mode: `insensitive` } } },
-            ].filter(Boolean) as Prisma.PaymentRequestModelWhereInput[],
-          }
-        : {}),
-    };
-
-    const rows = await this.prisma.paymentRequestModel.findMany({
-      where,
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: limit + 1,
-      select: {
-        id: true,
-        amount: true,
-        currencyCode: true,
-        status: true,
-        paymentRail: true,
-        dueDate: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        payer: { select: { id: true, email: true } },
-        requester: { select: { id: true, email: true } },
-        payerEmail: true,
-        requesterEmail: true,
-        attachments: {
-          where: { deletedAt: null },
-          select: { id: true },
-        },
-        ledgerEntries: {
-          where: {
-            deletedAt: null,
-            type: { in: [...PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES] },
-          },
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          take: 4,
-          select: {
-            id: true,
-            type: true,
-            status: true,
-            createdAt: true,
-            metadata: true,
-            outcomes: {
-              orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-              take: 1,
-              select: { status: true },
-            },
-          },
-        },
-      },
+    const rows = await this.query.listPaymentRequests({
+      cursor,
+      limit,
+      search,
+      status,
+      paymentRail,
+      currencyCode,
+      amountMin,
+      amountMax,
+      dueDateFrom: params?.dueDateFrom,
+      dueDateTo: params?.dueDateTo,
+      createdFrom: params?.createdFrom,
+      createdTo: params?.createdTo,
+      overdue: params?.overdue === true,
+      now,
     });
 
     const items = rows.slice(0, limit).map((row) => {
@@ -418,69 +279,7 @@ export class AdminV2PaymentsService {
   }
 
   async getPaymentRequestCase(paymentRequestId: string) {
-    const paymentRequest = await this.prisma.paymentRequestModel.findUnique({
-      where: { id: paymentRequestId },
-      select: {
-        id: true,
-        amount: true,
-        currencyCode: true,
-        status: true,
-        paymentRail: true,
-        description: true,
-        dueDate: true,
-        sentDate: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        payer: { select: { id: true, email: true } },
-        requester: { select: { id: true, email: true } },
-        payerEmail: true,
-        requesterEmail: true,
-        attachments: {
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          select: {
-            id: true,
-            createdAt: true,
-            deletedAt: true,
-            resource: {
-              select: {
-                id: true,
-                originalName: true,
-                size: true,
-                mimetype: true,
-                downloadUrl: true,
-                createdAt: true,
-                deletedAt: true,
-              },
-            },
-          },
-        },
-        ledgerEntries: {
-          orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-          select: {
-            id: true,
-            ledgerId: true,
-            type: true,
-            amount: true,
-            currencyCode: true,
-            status: true,
-            createdAt: true,
-            deletedAt: true,
-            metadata: true,
-            outcomes: {
-              orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-              select: {
-                id: true,
-                status: true,
-                source: true,
-                externalId: true,
-                createdAt: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const paymentRequest = await this.query.getPaymentRequestCase(paymentRequestId);
 
     if (!paymentRequest) {
       throw new NotFoundException(`Payment request not found`);
@@ -554,20 +353,7 @@ export class AdminV2PaymentsService {
     ].sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime());
 
     const [auditContext, assignment] = await Promise.all([
-      this.prisma.adminActionAuditLogModel.findMany({
-        where: {
-          resourceId: paymentRequest.id,
-        },
-        include: {
-          admin: {
-            select: {
-              email: true,
-            },
-          },
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: 20,
-      }),
+      this.query.getPaymentRequestAuditContext(paymentRequest.id),
       this.assignmentsService.getAssignmentContextForResource(`payment_request`, paymentRequest.id),
     ]);
 
@@ -637,114 +423,12 @@ export class AdminV2PaymentsService {
     const staleWaitingRecipientApprovalThreshold = new Date(
       now.getTime() - STALE_WAITING_RECIPIENT_APPROVAL_THRESHOLD_HOURS * 60 * 60 * 1000,
     );
-    const baseSelect = {
-      id: true,
-      amount: true,
-      currencyCode: true,
-      status: true,
-      paymentRail: true,
-      dueDate: true,
-      createdAt: true,
-      updatedAt: true,
-      payer: { select: { id: true, email: true } },
-      requester: { select: { id: true, email: true } },
-      payerEmail: true,
-      requesterEmail: true,
-      attachments: {
-        where: { deletedAt: null, resource: { deletedAt: null } },
-        select: {
-          id: true,
-          resource: {
-            select: {
-              id: true,
-              resourceTags: {
-                select: {
-                  tag: {
-                    select: {
-                      name: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      ledgerEntries: {
-        where: {
-          deletedAt: null,
-          type: { in: [...PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES] },
-        },
-        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-        take: 4,
-        select: {
-          id: true,
-          type: true,
-          status: true,
-          createdAt: true,
-          outcomes: {
-            orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-            take: 1,
-            select: { status: true },
-          },
-        },
-      },
-    } satisfies Prisma.PaymentRequestModelSelect;
-
-    const [overdueRows, uncollectibleRows, staleApprovalRows, inconsistentRows, missingAttachmentRows] =
-      await Promise.all([
-        this.prisma.paymentRequestModel.findMany({
-          where: {
-            deletedAt: null,
-            dueDate: { lt: now },
-            status: { in: [...PAYMENT_OPERATIONS_OVERDUE_STATUSES] },
-          },
-          orderBy: [{ dueDate: `asc` }, { updatedAt: `desc` }, { id: `desc` }],
-          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET,
-          select: baseSelect,
-        }),
-        this.prisma.paymentRequestModel.findMany({
-          where: {
-            deletedAt: null,
-            status: $Enums.TransactionStatus.UNCOLLECTIBLE,
-          },
-          orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
-          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET,
-          select: baseSelect,
-        }),
-        this.prisma.paymentRequestModel.findMany({
-          where: {
-            deletedAt: null,
-            status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
-            updatedAt: { lte: staleWaitingRecipientApprovalThreshold },
-          },
-          orderBy: [{ dueDate: `asc` }, { updatedAt: `asc` }, { id: `desc` }],
-          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET,
-          select: baseSelect,
-        }),
-        this.prisma.paymentRequestModel.findMany({
-          where: {
-            deletedAt: null,
-            ledgerEntries: {
-              some: {
-                deletedAt: null,
-                type: { in: [...PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES] },
-              },
-            },
-          },
-          orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
-          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET * 3,
-          select: baseSelect,
-        }),
-        this.prisma.paymentRequestModel.findMany({
-          where: {
-            deletedAt: null,
-          },
-          orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
-          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET * 3,
-          select: baseSelect,
-        }),
-      ]);
+    const { overdueRows, uncollectibleRows, staleApprovalRows, inconsistentRows, missingAttachmentRows } =
+      await this.query.getPaymentOperationsQueueBuckets({
+        now,
+        staleWaitingRecipientApprovalThreshold,
+        limitPerBucket: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET,
+      });
 
     const inconsistentItems = inconsistentRows
       .map((row) => this.mapPaymentOperationsQueueItem(row))

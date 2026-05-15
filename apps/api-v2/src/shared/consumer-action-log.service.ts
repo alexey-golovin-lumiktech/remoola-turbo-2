@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { Prisma } from '@remoola/database-2';
-
 import { envs } from '../envs';
-import { PrismaService } from './prisma.service';
+import { ConsumerActionLogQuery } from './consumer-action-log.query';
+import { ConsumerActionLogRepository } from './consumer-action-log.repository';
 
-type ConsumerActionLogParams = {
+type ConsumerActionLogScalar = string | number | boolean;
+
+export type ConsumerActionLogMetadata = Record<string, ConsumerActionLogScalar | Array<string | number>> | null;
+
+export type ConsumerActionLogParams = {
   deviceId: string;
   consumerId?: string | null;
   action: string;
@@ -79,9 +82,9 @@ function normalizeUserAgent(userAgent: string | null | undefined): string | null
   return `${family}/${major}`;
 }
 
-function sanitizeMetadata(metadata: Record<string, unknown> | null | undefined): Prisma.InputJsonValue {
+function sanitizeMetadata(metadata: Record<string, unknown> | null | undefined): ConsumerActionLogMetadata {
   if (metadata == null || typeof metadata !== `object`) return null;
-  const out: Record<string, unknown> = {};
+  const out: Record<string, ConsumerActionLogScalar | Array<string | number>> = {};
   for (const [key, value] of Object.entries(metadata)) {
     if (METADATA_ALLOWLIST.has(key) && value !== undefined) {
       if (typeof value === `string` || typeof value === `number` || typeof value === `boolean`) {
@@ -91,7 +94,7 @@ function sanitizeMetadata(metadata: Record<string, unknown> | null | undefined):
       }
     }
   }
-  return Object.keys(out).length === 0 ? null : (out as Prisma.InputJsonValue);
+  return Object.keys(out).length === 0 ? null : out;
 }
 
 /**
@@ -114,7 +117,10 @@ export class ConsumerActionLogService {
     sampledOverflow: 0,
   };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly query: ConsumerActionLogQuery,
+    private readonly repository: ConsumerActionLogRepository,
+  ) {}
 
   private isCriticalAction(action: string): boolean {
     return CRITICAL_ACTION_PREFIXES.some((prefix) => action.startsWith(prefix));
@@ -229,18 +235,16 @@ export class ConsumerActionLogService {
     }
 
     try {
-      await this.prisma.consumerActionLogModel.create({
-        data: {
-          deviceId,
-          consumerId: consumerId ?? null,
-          action,
-          resource: resource ?? null,
-          resourceId: resourceId ?? null,
-          metadata: sanitizeMetadata(metadata ?? null),
-          ipAddress: envs.CONSUMER_ACTION_LOG_STORE_IP_ADDRESS ? maskIpAddress(ipAddress) : null,
-          userAgent: envs.CONSUMER_ACTION_LOG_STORE_USER_AGENT ? normalizeUserAgent(userAgent) : null,
-          correlationId: correlationId ?? null,
-        },
+      await this.repository.createActionLog({
+        deviceId,
+        consumerId: consumerId ?? null,
+        action,
+        resource: resource ?? null,
+        resourceId: resourceId ?? null,
+        metadata: sanitizeMetadata(metadata ?? null),
+        ipAddress: envs.CONSUMER_ACTION_LOG_STORE_IP_ADDRESS ? maskIpAddress(ipAddress) : null,
+        userAgent: envs.CONSUMER_ACTION_LOG_STORE_USER_AGENT ? normalizeUserAgent(userAgent) : null,
+        correlationId: correlationId ?? null,
       });
       this.stats.recorded += 1;
     } catch (err) {
@@ -269,36 +273,18 @@ export class ConsumerActionLogService {
 
   /** Timeline by deviceId (internal/observability). */
   async getTimelineByDeviceId(deviceId: string, limit = 100) {
-    return this.prisma.consumerActionLogModel.findMany({
-      where: { deviceId },
-      orderBy: { createdAt: `desc` },
-      take: limit,
-    });
+    return this.query.findTimelineByDeviceId(deviceId, limit);
   }
 
   /** Timeline by consumerId (internal/observability). */
   async getTimelineByConsumerId(consumerId: string, limit = 100) {
-    return this.prisma.consumerActionLogModel.findMany({
-      where: { consumerId },
-      orderBy: { createdAt: `desc` },
-      take: limit,
-    });
+    return this.query.findTimelineByConsumerId(consumerId, limit);
   }
 
   /** Stitched timeline: all logs for deviceIds ever seen for this consumer (internal/observability). */
   async getStitchedTimelineByConsumerId(consumerId: string, limit = 100) {
-    const deviceIds = await this.prisma.consumerActionLogModel
-      .findMany({
-        where: { consumerId },
-        select: { deviceId: true },
-        distinct: [`deviceId`],
-      })
-      .then((rows) => rows.map((r) => r.deviceId));
+    const deviceIds = await this.query.findDistinctDeviceIdsByConsumerId(consumerId);
     if (deviceIds.length === 0) return [];
-    return this.prisma.consumerActionLogModel.findMany({
-      where: { deviceId: { in: deviceIds } },
-      orderBy: { createdAt: `desc` },
-      take: limit,
-    });
+    return this.query.findTimelineByDeviceIds(deviceIds, limit);
   }
 }

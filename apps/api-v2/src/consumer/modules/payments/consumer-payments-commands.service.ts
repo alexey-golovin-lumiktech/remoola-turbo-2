@@ -17,18 +17,18 @@ import { ConsumerPaymentRequestRepository } from './consumer-payment-request.rep
 import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity.repository';
 import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
-import { ConsumerPaymentsTransactionRunner } from './consumer-payments-transaction.runner';
 import { type CreatePaymentRequest, type TransferBody, type WithdrawBody } from './dto';
 import { type StartPayment } from './dto/start-payment.dto';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { acquireTransactionAdvisoryLock, buildConsumerOperationLockName } from '../../../shared/prisma-advisory-locks';
+import { PrismaTransactionRunner } from '../../../shared/prisma-transaction.runner';
 
 @Injectable()
 export class ConsumerPaymentsCommandsService {
   private readonly logger = new Logger(ConsumerPaymentsCommandsService.name);
 
   constructor(
-    private readonly transactions: ConsumerPaymentsTransactionRunner,
+    private readonly transactions: PrismaTransactionRunner,
     private readonly paymentRequestNotification: ConsumerPaymentRequestNotificationService,
     private readonly balanceService: BalanceCalculationService,
     private readonly policiesService: ConsumerPaymentsPoliciesService,
@@ -71,7 +71,7 @@ export class ConsumerPaymentsCommandsService {
     const paymentRail =
       body.method === PAYMENT_METHOD.CREDIT_CARD ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
 
-    return this.transactions.run(async (tx) => {
+    return this.transactions.runLedgerMutation(async (tx) => {
       const ledgerId = randomUUID();
       const paymentRequest = await this.paymentRequestRepository.createPendingStartPayment(tx, {
         ledgerId,
@@ -166,7 +166,7 @@ export class ConsumerPaymentsCommandsService {
   async sendPaymentRequest(consumerId: string, paymentRequestId: string, consumerAppScope?: ConsumerAppScope) {
     await this.policiesService.ensureProfileComplete(consumerId);
 
-    const result = await this.transactions.run(async (tx) => {
+    const result = await this.transactions.runLedgerMutation(async (tx) => {
       return this.paymentRequestRepository.sendDraftPaymentRequest(tx, {
         consumerId,
         paymentRequestId,
@@ -208,7 +208,7 @@ export class ConsumerPaymentsCommandsService {
     const ledgerId = randomUUID();
 
     try {
-      return await this.transactions.run(async (tx) => {
+      return await this.transactions.runLedgerMutation(async (tx) => {
         await this.paymentsLedgerRepository.lockConsumerOutgoing(tx, consumerId);
         await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(consumerId, `withdraw`));
 
@@ -272,7 +272,7 @@ export class ConsumerPaymentsCommandsService {
     const [firstId, secondId] = [consumerId, recipient.id].sort();
 
     try {
-      return await this.transactions.run(async (tx) => {
+      return await this.transactions.runLedgerMutation(async (tx) => {
         await this.paymentsLedgerRepository.lockConsumerOutgoing(tx, consumerId);
         await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(firstId, `transfer`));
         await acquireTransactionAdvisoryLock(tx, buildConsumerOperationLockName(secondId, `transfer`));

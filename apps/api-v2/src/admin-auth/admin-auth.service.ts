@@ -3,18 +3,18 @@ import { randomUUID } from 'crypto';
 import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { Prisma, type AdminModel } from '@remoola/database-2';
+import { type AdminModel } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { ADMIN_AUTH_SESSION_REVOKE_REASONS, type AdminAuthSessionRevokeReason } from './admin-auth-session-reasons';
+import { AdminAuthSessionRepository, AdminAuthSessionRotationConflictError } from './admin-auth-session.repository';
+import { AdminIdentityRepository } from './admin-identity.repository';
 import { BackofficeCredentials } from '../dtos/backoffice';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { envs } from '../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../shared/auth-audit.service';
-import { MailingService } from '../shared/mailing.service';
-import { OriginResolverService } from '../shared/origin-resolver.service';
-import { PrismaService } from '../shared/prisma.service';
+import { PrismaTransactionRunner } from '../shared/prisma-transaction.runner';
 import { passwordUtils, secureCompare } from '../shared-common';
 
 type AdminLoginContext = {
@@ -25,7 +25,6 @@ type AdminLoginContext = {
 
 const ADMIN_AUTH_SESSION_LIST_RETENTION_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000;
 
 export type AdminAuthSessionView = {
   id: string;
@@ -37,6 +36,7 @@ export type AdminAuthSessionView = {
   invalidatedReason: AdminAuthSessionRevokeReason | null;
   replacedById: string | null;
 };
+
 type AdminTokenPair = {
   accessToken: string;
   refreshToken: string;
@@ -50,19 +50,17 @@ export class AdminAuthService {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
+    private readonly adminIdentityRepository: AdminIdentityRepository,
+    private readonly adminAuthSessionRepository: AdminAuthSessionRepository,
     private readonly authAudit: AuthAuditService,
-    private readonly mailingService: MailingService,
-    private readonly originResolver: OriginResolverService,
+    private readonly transactions: PrismaTransactionRunner,
   ) {}
 
   async login(body: BackofficeCredentials, ctx?: AdminLoginContext) {
     const email = body.email?.trim()?.toLowerCase() ?? ``;
     await this.authAudit.checkLockoutAndRateLimit(AUTH_IDENTITY_TYPES.admin, email);
 
-    const identity = await this.prisma.adminModel.findFirst({
-      where: { email, deletedAt: null },
-    });
+    const identity = await this.adminIdentityRepository.findActiveByEmail(email);
     if (!identity) throw new UnauthorizedException(adminErrorCodes.ADMIN_INVALID_CREDENTIALS);
 
     const valid = await passwordUtils.verifyPassword({
@@ -108,6 +106,7 @@ export class AdminAuthService {
     if (!refreshToken) {
       throw new BadRequestException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
     }
+
     let verified: IJwtTokenPayload;
     try {
       verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
@@ -122,13 +121,12 @@ export class AdminAuthService {
       this.logger.warn(`AdminAuth: refresh token missing sid/identityId or wrong typ`);
       throw new BadRequestException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
     }
+
     return this.refreshSessionBasedAccess(refreshToken, identityId, sessionId);
   }
 
   private async refreshSessionBasedAccess(refreshToken: string, identityId: string, sessionId: string) {
-    const session = await this.prisma.adminAuthSessionModel.findFirst({
-      where: { id: sessionId, adminId: identityId },
-    });
+    const session = await this.adminAuthSessionRepository.findByIdForRefresh(sessionId, identityId);
     if (session == null) {
       this.logger.warn(`AdminAuth: no admin auth session for refresh`);
       throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
@@ -145,44 +143,53 @@ export class AdminAuthService {
         await this.authAudit.recordAudit({
           identityType: AUTH_IDENTITY_TYPES.admin,
           identityId,
-          email: (await this.prisma.adminModel.findFirst({ where: { id: identityId } }))?.email ?? `unknown`,
+          email: (await this.adminIdentityRepository.findAnyById(identityId))?.email ?? `unknown`,
           event: AUTH_AUDIT_EVENTS.refresh_reuse,
         });
       } else {
         await this.authAudit.recordAudit({
           identityType: AUTH_IDENTITY_TYPES.admin,
           identityId,
-          email: (await this.prisma.adminModel.findFirst({ where: { id: identityId } }))?.email ?? `unknown`,
+          email: (await this.adminIdentityRepository.findAnyById(identityId))?.email ?? `unknown`,
           event: AUTH_AUDIT_EVENTS.refresh_failure,
         });
       }
       this.logger.warn(`AdminAuth: refresh token mismatch`);
       throw new UnauthorizedException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
     }
+
     if (session.revokedAt || session.expiresAt < new Date()) {
       this.logger.warn(`AdminAuth: refresh token is revoked or expired`);
       throw new UnauthorizedException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
     }
 
-    const admin = await this.prisma.adminModel.findFirst({ where: { id: identityId, deletedAt: null } });
+    const admin = await this.adminIdentityRepository.findActiveById(identityId);
     if (!admin) {
       this.logger.warn(`AdminAuth: admin not found for identity`);
       throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
     }
 
-    const access = await this.prisma.$transaction(async (tx) => {
-      const next = await this.createSessionAndIssueTokens(admin.id, session.sessionFamilyId, tx);
-      await tx.adminAuthSessionModel.update({
-        where: { id: session.id },
-        data: {
-          revokedAt: new Date(),
-          replacedById: next.sessionId,
-          invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.rotated,
-          lastUsedAt: new Date(),
-        },
+    let access: AdminTokenPair;
+    try {
+      access = await this.createSessionAndIssueTokens(
+        admin.id,
+        session.sessionFamilyId,
+        session.id,
+        session.refreshTokenHash,
+      );
+    } catch (error) {
+      if (!(error instanceof AdminAuthSessionRotationConflictError)) {
+        throw error;
+      }
+      await this.revokeSessionFamily(session.sessionFamilyId, ADMIN_AUTH_SESSION_REVOKE_REASONS.refresh_reuse_detected);
+      await this.authAudit.recordAudit({
+        identityType: AUTH_IDENTITY_TYPES.admin,
+        identityId: admin.id,
+        email: admin.email,
+        event: AUTH_AUDIT_EVENTS.refresh_reuse,
       });
-      return next;
-    });
+      throw new UnauthorizedException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
+    }
 
     await this.authAudit.recordAudit({
       identityType: AUTH_IDENTITY_TYPES.admin,
@@ -205,25 +212,45 @@ export class AdminAuthService {
   private async createSessionAndIssueTokens(
     identityId: AdminModel[`id`],
     sessionFamilyId?: string,
-    tx?: Prisma.TransactionClient,
+    previousSessionId?: string,
+    expectedRefreshTokenHash?: string,
   ): Promise<AdminTokenPair> {
-    const db = tx ?? this.prisma;
     const sessionId = randomUUID();
     const effectiveSessionFamilyId = sessionFamilyId ?? sessionId;
+    const issuedAt = new Date();
     const accessToken = await this.getAccessToken(identityId, sessionId);
     const refreshToken = await this.getRefreshToken(identityId, sessionId, effectiveSessionFamilyId);
+    const nextSession = {
+      sessionId,
+      adminId: identityId,
+      sessionFamilyId: effectiveSessionFamilyId,
+      refreshTokenHash: this.hashToken(refreshToken),
+      accessTokenHash: this.hashToken(accessToken),
+      expiresAt: new Date(issuedAt.getTime() + envs.JWT_REFRESH_TTL_SECONDS * 1000),
+      issuedAt,
+    };
 
-    await db.adminAuthSessionModel.create({
-      data: {
-        id: sessionId,
-        adminId: identityId,
-        sessionFamilyId: effectiveSessionFamilyId,
-        refreshTokenHash: this.hashToken(refreshToken),
-        accessTokenHash: this.hashToken(accessToken),
-        expiresAt: new Date(Date.now() + envs.JWT_REFRESH_TTL_SECONDS * 1000),
-        lastUsedAt: new Date(),
-      },
-    });
+    if (previousSessionId) {
+      if (!expectedRefreshTokenHash) {
+        throw new BadRequestException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
+      }
+      await this.transactions.runAuthSessionRotation(async (tx) => {
+        await this.adminAuthSessionRepository.createIssuedSession(nextSession, tx);
+        const rotation = await this.adminAuthSessionRepository.markSessionRotated(tx, {
+          previousSessionId,
+          adminId: identityId,
+          expectedRefreshTokenHash,
+          invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.rotated,
+          nextSession,
+          now: issuedAt,
+        });
+        if (rotation.count !== 1) {
+          throw new AdminAuthSessionRotationConflictError();
+        }
+      });
+    } else {
+      await this.adminAuthSessionRepository.createIssuedSession(nextSession);
+    }
 
     return { accessToken, refreshToken, sessionId, sessionFamilyId: effectiveSessionFamilyId };
   }
@@ -248,13 +275,12 @@ export class AdminAuthService {
     if (trimmed.length === 0) {
       throw new BadRequestException(adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED);
     }
-    const admin = await this.prisma.adminModel.findFirst({
-      where: { id: adminId, deletedAt: null },
-      select: { id: true, password: true, salt: true },
-    });
+
+    const admin = await this.adminIdentityRepository.findStepUpCredentialsById(adminId);
     if (!admin) {
       throw new UnauthorizedException(adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_INVALID);
     }
+
     const valid = await passwordUtils.verifyPassword({
       password: trimmed,
       storedHash: admin.password,
@@ -265,61 +291,12 @@ export class AdminAuthService {
     }
   }
 
-  async issueAdminPasswordReset(adminId: string) {
-    const admin = await this.prisma.adminModel.findFirst({
-      where: { id: adminId, deletedAt: null },
-      select: { id: true, email: true },
-    });
-    if (!admin) {
-      throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
-    }
-
-    const token = oauthCrypto.generateOAuthState();
-    const tokenHash = this.hashToken(token);
-    const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS);
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.resetPasswordModel.updateMany({
-        where: { adminId: admin.id, deletedAt: null },
-        data: { deletedAt: new Date() },
-      });
-      await tx.resetPasswordModel.create({
-        data: {
-          adminId: admin.id,
-          tokenHash,
-          expiredAt: expiresAt,
-          appScope: `admin-v2`,
-        },
-      });
-    });
-
-    const originCandidate = this.originResolver.resolveConfiguredAdminOrigin();
-    if (!originCandidate) {
-      throw new BadRequestException(`Admin v2 app origin is not configured`);
-    }
-    const resetUrl = new URL(`/reset-password`, this.originResolver.normalizeOrigin(originCandidate));
-    resetUrl.searchParams.set(`token`, token);
-    const emailDispatched = await this.mailingService.sendAdminV2PasswordResetEmail({
-      email: admin.email,
-      forgotPasswordLink: resetUrl.toString(),
-    });
-
-    return {
-      adminId: admin.id,
-      expiresAt: expiresAt.toISOString(),
-      emailDispatched,
-      deliveryStatus: emailDispatched ? (`sent` as const) : (`failed` as const),
-    };
-  }
-
   async revokeSessionByRefreshTokenAndAudit(refreshToken?: string | null, ctx?: AdminLoginContext): Promise<void> {
     if (!refreshToken) return;
     try {
       const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
       const identityId = this.resolveIdentityId(verified);
-      const admin = await this.prisma.adminModel.findFirst({
-        where: { id: identityId ?? verified.identityId, deletedAt: null },
-      });
+      const admin = identityId ? await this.adminIdentityRepository.findActiveById(identityId) : null;
       await this.revokeSessionByRefreshToken(refreshToken);
       if (admin) {
         await this.authAudit.recordAudit({
@@ -337,22 +314,16 @@ export class AdminAuthService {
   }
 
   async revokeSessionByIdAndAudit(adminId: string, sessionId: string, ctx?: AdminLoginContext) {
-    const session = await this.prisma.adminAuthSessionModel.findFirst({
-      where: { id: sessionId, adminId },
-      select: { id: true, revokedAt: true, admin: { select: { email: true } } },
-    });
+    const session = await this.adminAuthSessionRepository.findOwnedSessionForRevoke(adminId, sessionId);
     if (!session) {
       throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
     }
+
     if (!session.revokedAt) {
-      await this.prisma.adminAuthSessionModel.update({
-        where: { id: sessionId },
-        data: {
-          revokedAt: new Date(),
-          invalidatedReason: ctx?.reason ?? ADMIN_AUTH_SESSION_REVOKE_REASONS.manual_revoke,
-          lastUsedAt: new Date(),
-        },
-      });
+      await this.adminAuthSessionRepository.markSessionRevokedById(
+        sessionId,
+        ctx?.reason ?? ADMIN_AUTH_SESSION_REVOKE_REASONS.manual_revoke,
+      );
       await this.authAudit.recordAudit({
         identityType: AUTH_IDENTITY_TYPES.admin,
         identityId: adminId,
@@ -362,6 +333,7 @@ export class AdminAuthService {
         userAgent: ctx?.userAgent,
       });
     }
+
     return { revokedSessionId: sessionId, alreadyRevoked: session.revokedAt != null };
   }
 
@@ -373,18 +345,11 @@ export class AdminAuthService {
       if (!identityId || !verified.sid || !this.isRefreshPayload(verified)) {
         return;
       }
-      await this.prisma.adminAuthSessionModel.updateMany({
-        where: {
-          id: verified.sid,
-          adminId: identityId,
-          refreshTokenHash: this.hashToken(refreshToken),
-          revokedAt: null,
-        },
-        data: {
-          revokedAt: new Date(),
-          invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.logout,
-          lastUsedAt: new Date(),
-        },
+      await this.adminAuthSessionRepository.revokeScopedSessionByRefreshToken({
+        sessionId: verified.sid,
+        adminId: identityId,
+        refreshTokenHash: this.hashToken(refreshToken),
+        reason: ADMIN_AUTH_SESSION_REVOKE_REASONS.logout,
       });
     } catch {
       // Ignore invalid or already-unusable refresh tokens during logout cleanup.
@@ -392,39 +357,17 @@ export class AdminAuthService {
   }
 
   private async revokeSessionFamily(sessionFamilyId: string, reason: AdminAuthSessionRevokeReason): Promise<void> {
-    await this.prisma.adminAuthSessionModel.updateMany({
-      where: { sessionFamilyId, revokedAt: null },
-      data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
-    });
+    await this.adminAuthSessionRepository.revokeSessionFamily(sessionFamilyId, reason);
   }
 
   async assertSessionBelongsToAdmin(adminId: string, sessionId: string): Promise<boolean> {
-    const session = await this.prisma.adminAuthSessionModel.findFirst({
-      where: { id: sessionId, adminId },
-      select: { id: true },
-    });
+    const session = await this.adminAuthSessionRepository.findOwnedSessionId(adminId, sessionId);
     return session != null;
   }
 
   async listSessionsForAdmin(adminId: string): Promise<AdminAuthSessionView[]> {
     const cutoff = new Date(Date.now() - ADMIN_AUTH_SESSION_LIST_RETENTION_DAYS * MS_PER_DAY);
-    const rows = await this.prisma.adminAuthSessionModel.findMany({
-      where: {
-        adminId,
-        OR: [{ revokedAt: null }, { revokedAt: { gte: cutoff } }],
-      },
-      orderBy: { createdAt: `desc` },
-      select: {
-        id: true,
-        sessionFamilyId: true,
-        createdAt: true,
-        lastUsedAt: true,
-        expiresAt: true,
-        revokedAt: true,
-        invalidatedReason: true,
-        replacedById: true,
-      },
-    });
+    const rows = await this.adminAuthSessionRepository.listRecentByAdminId(adminId, cutoff);
     return rows.map((row) => ({
       id: row.id,
       sessionFamilyId: row.sessionFamilyId,

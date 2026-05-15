@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { Prisma, $Enums } from '@remoola/database-2';
+import { type Prisma, $Enums } from '@remoola/database-2';
 
-import { sqlUuid } from './prisma-raw.utils';
-import { PrismaService } from './prisma.service';
+import { BalanceCalculationRepository } from './balance-calculation.repository';
 
 export enum BalanceCalculationMode {
   COMPLETED = `COMPLETED`,
@@ -32,45 +31,9 @@ interface MultiCurrencyBalanceResult {
   calculatedAt: Date;
 }
 
-/** Exclude external card-funded legs and unsettled credits from wallet spendable balance. */
-export function buildWalletEligibilityCondition(): Prisma.Sql {
-  const railSql = Prisma.sql`COALESCE(NULLIF(le.metadata->>'rail', ''), pr.payment_rail::text, '')`;
-  return Prisma.sql`
-    AND NOT (
-      (
-        le.type::text = ${$Enums.LedgerEntryType.USER_PAYMENT}
-        AND le.amount < 0
-        AND ${railSql} = ${$Enums.PaymentRail.CARD}
-      )
-      OR
-      (
-        le.type::text = ${$Enums.LedgerEntryType.USER_PAYMENT}
-        AND le.amount > 0
-        AND ${railSql} = ${$Enums.PaymentRail.CARD}
-        AND COALESCE(latest.status, le.status)::text <> ${$Enums.TransactionStatus.COMPLETED}
-      )
-      OR
-      (
-        le.type::text = ${$Enums.LedgerEntryType.USER_PAYMENT_REVERSAL}
-        AND le.amount > 0
-        AND (
-          ${railSql} = ${$Enums.PaymentRail.STRIPE_REFUND}
-          OR ${railSql} = ${$Enums.PaymentRail.STRIPE_CHARGEBACK}
-        )
-      )
-      OR
-      (
-        le.type::text = ${$Enums.LedgerEntryType.USER_DEPOSIT}
-        AND le.amount > 0
-        AND COALESCE(latest.status, le.status)::text <> ${$Enums.TransactionStatus.COMPLETED}
-      )
-    )
-  `;
-}
-
 @Injectable()
 export class BalanceCalculationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly repository: BalanceCalculationRepository) {}
 
   async calculateSingle(
     consumerId: string,
@@ -82,36 +45,15 @@ export class BalanceCalculationService {
     const lockSuffix = options?.lockSuffix ?? ``;
 
     if (acquireLock) {
-      const lockKey = `balance:${consumerId}${lockSuffix}`;
-      await this.prisma.$executeRaw(Prisma.sql`
-        SELECT pg_advisory_xact_lock(hashtext(${lockKey}::text)::bigint)
-      `);
+      await this.repository.acquireBalanceLock(this.repository.client(), consumerId, lockSuffix);
     }
 
-    const statusCondition = this.buildStatusCondition(mode);
-    const currencyFilter = currency ? Prisma.sql`AND le.currency_code::text = ${currency}` : Prisma.empty;
-    const walletEligibilityCondition = buildWalletEligibilityCondition();
+    const result = await this.repository.calculateSingleBalance(this.repository.client(), {
+      consumerId,
+      currency,
+      mode,
+    });
 
-    const rows = await this.prisma.$queryRaw<Array<{ currency_code: $Enums.CurrencyCode; balance: string }>>(
-      Prisma.sql`
-        SELECT le.currency_code, COALESCE(SUM(le.amount), 0) AS balance
-        FROM ledger_entry le
-        LEFT JOIN payment_request pr ON pr.id = le.payment_request_id
-        LEFT JOIN LATERAL (
-          SELECT o.status FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-          ORDER BY o.created_at DESC LIMIT 1
-        ) latest ON true
-        WHERE le.consumer_id = ${sqlUuid(consumerId)}
-          ${statusCondition}
-          AND le.deleted_at IS NULL
-          ${walletEligibilityCondition}
-          ${currencyFilter}
-        GROUP BY le.currency_code
-      `,
-    );
-
-    const result = rows[0];
     if (!result) {
       return {
         consumerId,
@@ -124,8 +66,8 @@ export class BalanceCalculationService {
 
     return {
       consumerId,
-      currency: result.currency_code,
-      balance: Number(result.balance),
+      currency: result.currency,
+      balance: result.balance,
       mode,
       calculatedAt: new Date(),
     };
@@ -140,41 +82,17 @@ export class BalanceCalculationService {
     const lockSuffix = options?.lockSuffix ?? ``;
 
     if (acquireLock) {
-      const lockKey = `balance:${consumerId}${lockSuffix}`;
-      await this.prisma.$executeRaw(Prisma.sql`
-        SELECT pg_advisory_xact_lock(hashtext(${lockKey}::text)::bigint)
-      `);
+      await this.repository.acquireBalanceLock(this.repository.client(), consumerId, lockSuffix);
     }
 
-    const statusCondition = this.buildStatusCondition(mode);
-    const walletEligibilityCondition = buildWalletEligibilityCondition();
-
-    const rows = await this.prisma.$queryRaw<Array<{ currency_code: $Enums.CurrencyCode; sum_amount: string }>>(
-      Prisma.sql`
-        SELECT le.currency_code, COALESCE(SUM(le.amount), 0) AS sum_amount
-        FROM ledger_entry le
-        LEFT JOIN payment_request pr ON pr.id = le.payment_request_id
-        LEFT JOIN LATERAL (
-          SELECT o.status FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-          ORDER BY o.created_at DESC LIMIT 1
-        ) latest ON true
-        WHERE le.consumer_id = ${sqlUuid(consumerId)}
-          ${statusCondition}
-          AND le.deleted_at IS NULL
-          ${walletEligibilityCondition}
-        GROUP BY le.currency_code
-      `,
-    );
-
-    const balances: Partial<Record<$Enums.CurrencyCode, number>> = {};
-    for (const row of rows) {
-      balances[row.currency_code] = Number(row.sum_amount);
-    }
+    const balances = await this.repository.calculateMultiCurrencyBalances(this.repository.client(), {
+      consumerId,
+      mode,
+    });
 
     return {
       consumerId,
-      balances: balances as Record<$Enums.CurrencyCode, number>,
+      balances,
       mode,
       calculatedAt: new Date(),
     };
@@ -194,35 +112,14 @@ export class BalanceCalculationService {
     const lockSuffix = options?.lockSuffix ?? ``;
 
     if (options?.acquireLock) {
-      const lockKey = `balance:${consumerId}${lockSuffix}`;
-      await tx.$executeRaw(Prisma.sql`
-        SELECT pg_advisory_xact_lock(hashtext(${lockKey}::text)::bigint)
-      `);
+      await this.repository.acquireBalanceLock(tx, consumerId, lockSuffix);
     }
 
-    const statusCondition = this.buildStatusCondition(mode);
-    const currencyFilter = currency ? Prisma.sql`AND le.currency_code::text = ${currency}` : Prisma.empty;
-    const walletEligibilityCondition = buildWalletEligibilityCondition();
-
-    const rows = await tx.$queryRaw<Array<{ balance: string }>>(
-      Prisma.sql`
-        SELECT COALESCE(SUM(le.amount), 0) AS balance
-        FROM ledger_entry le
-        LEFT JOIN payment_request pr ON pr.id = le.payment_request_id
-        LEFT JOIN LATERAL (
-          SELECT o.status FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-          ORDER BY o.created_at DESC LIMIT 1
-        ) latest ON true
-        WHERE le.consumer_id = ${sqlUuid(consumerId)}
-          ${statusCondition}
-          AND le.deleted_at IS NULL
-          ${walletEligibilityCondition}
-          ${currencyFilter}
-      `,
-    );
-
-    return Number(rows[0]?.balance ?? 0);
+    return this.repository.calculateBalanceInTransaction(tx, {
+      consumerId,
+      currency,
+      mode,
+    });
   }
 
   async assertSufficientBalance(
@@ -248,18 +145,5 @@ export class BalanceCalculationService {
     }
 
     return true;
-  }
-
-  private buildStatusCondition(mode: BalanceCalculationMode): Prisma.Sql {
-    switch (mode) {
-      case BalanceCalculationMode.COMPLETED_AND_PENDING:
-        return Prisma.sql`
-          AND (COALESCE(latest.status, le.status))::text
-          IN (${$Enums.TransactionStatus.COMPLETED}, ${$Enums.TransactionStatus.PENDING})
-        `;
-      case BalanceCalculationMode.COMPLETED:
-      default:
-        return Prisma.sql`AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}`;
-    }
   }
 }

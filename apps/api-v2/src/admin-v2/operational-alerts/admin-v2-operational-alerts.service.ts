@@ -1,10 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { type AdminV2OperationalAlertSummary, type AdminV2OperationalAlertsListResponse } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import {
   OperationalAlertThreshold,
@@ -22,6 +21,8 @@ import {
   assertOperationalAlertWorkspace,
   assertValidQueryPayload,
 } from './admin-v2-operational-alerts.dto';
+import { AdminV2OperationalAlertsQuery } from './admin-v2-operational-alerts.query';
+import { AdminV2OperationalAlertsRepository } from './admin-v2-operational-alerts.repository';
 
 type OperationalAlertRequestMeta = {
   ipAddress?: string | null;
@@ -119,29 +120,20 @@ function assertExpectedDeletedAtNull(value: number) {
   }
 }
 
-function isUniqueViolation(error: unknown): boolean {
-  if (error == null || typeof error !== `object`) return false;
-  const candidate = error as { code?: string };
-  return candidate.code === `P2002`;
-}
-
 @Injectable()
 export class AdminV2OperationalAlertsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2OperationalAlertsQuery,
+    private readonly repository: AdminV2OperationalAlertsRepository,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly adminActionAudit: AdminActionAuditService,
   ) {}
 
   async list(actor: OperationalAlertActorContext, workspace: string): Promise<AdminV2OperationalAlertsListResponse> {
     assertOperationalAlertWorkspace(workspace);
-    const rows = await this.prisma.operationalAlertModel.findMany({
-      where: {
-        ownerId: actor.id,
-        workspace,
-        deletedAt: null,
-      },
-      orderBy: { name: `asc` },
+    const rows = await this.query.listOwnedActiveAlerts({
+      ownerId: actor.id,
+      workspace,
       take: OPERATIONAL_ALERT_LIST_HARD_CAP,
     });
     return { alerts: rows.map((row) => toSummary(row as OperationalAlertRow)) };
@@ -182,25 +174,15 @@ export class AdminV2OperationalAlertsService {
       key: meta.idempotencyKey,
       payload: { workspace, name, description, queryPayload, thresholdPayload, evaluationIntervalMinutes },
       execute: async () => {
-        let created;
-        try {
-          created = await this.prisma.operationalAlertModel.create({
-            data: {
-              ownerId: adminId,
-              workspace,
-              name,
-              description,
-              queryPayload,
-              thresholdPayload,
-              evaluationIntervalMinutes,
-            },
-          });
-        } catch (error) {
-          if (isUniqueViolation(error)) {
-            throw new ConflictException(`Operational alert with this name already exists`);
-          }
-          throw error;
-        }
+        const created = await this.repository.create({
+          adminId,
+          workspace,
+          name,
+          description,
+          queryPayload,
+          thresholdPayload,
+          evaluationIntervalMinutes,
+        });
 
         await this.adminActionAudit.record({
           adminId,
@@ -274,63 +256,20 @@ export class AdminV2OperationalAlertsService {
         expectedDeletedAtNull: 0,
       },
       execute: async () => {
-        const result = await this.prisma.$transaction(async (tx) => {
-          const lockedRows = await tx.$queryRaw<
-            Array<{
-              id: string;
-              owner_id: string;
-              workspace: string;
-              name: string;
-              deleted_at: Date | null;
-            }>
-          >(Prisma.sql`
-            SELECT "id", "owner_id", "workspace", "name", "deleted_at"
-            FROM "operational_alert"
-            WHERE "id" = ${Prisma.sql`${operationalAlertId}::uuid`}
-            FOR UPDATE
-          `);
-          const locked = lockedRows[0];
-          if (!locked || locked.owner_id !== adminId) {
-            throw new NotFoundException(`Operational alert not found`);
-          }
-          if (locked.deleted_at) {
-            throw new ConflictException(`Operational alert is already deleted`);
-          }
-
-          if (hasThresholdPayload) {
-            assertValidThresholdPayload(body.thresholdPayload, locked.workspace as OperationalAlertWorkspace);
-          }
-
-          let updated;
-          try {
-            updated = await tx.operationalAlertModel.update({
-              where: { id: operationalAlertId },
-              data: {
-                ...(hasName ? { name: nextName! } : {}),
-                ...(hasDescription ? { description: nextDescription ?? null } : {}),
-                ...(hasQueryPayload ? { queryPayload: body.queryPayload as Prisma.InputJsonValue } : {}),
-                ...(hasThresholdPayload
-                  ? { thresholdPayload: body.thresholdPayload as unknown as Prisma.InputJsonValue }
-                  : {}),
-                ...(hasInterval ? { evaluationIntervalMinutes: nextInterval! } : {}),
-                ...(evaluationStateReset
-                  ? {
-                      lastEvaluatedAt: null,
-                      lastEvaluationError: null,
-                      lastFiredAt: null,
-                      lastFireReason: null,
-                    }
-                  : {}),
-              },
-            });
-          } catch (error) {
-            if (isUniqueViolation(error)) {
-              throw new ConflictException(`Operational alert with this name already exists`);
-            }
-            throw error;
-          }
-
-          return { previousName: locked.name, updated };
+        const result = await this.repository.update({
+          operationalAlertId,
+          adminId,
+          hasName,
+          nextName,
+          hasDescription,
+          nextDescription,
+          hasQueryPayload,
+          queryPayload: body.queryPayload,
+          hasThresholdPayload,
+          thresholdPayload: body.thresholdPayload,
+          hasInterval,
+          nextInterval,
+          evaluationStateReset,
         });
 
         const changedFields = [
@@ -383,34 +322,7 @@ export class AdminV2OperationalAlertsService {
       key: meta.idempotencyKey,
       payload: { operationalAlertId, expectedDeletedAtNull: 0 },
       execute: async () => {
-        const result = await this.prisma.$transaction(async (tx) => {
-          const lockedRows = await tx.$queryRaw<
-            Array<{
-              id: string;
-              owner_id: string;
-              workspace: string;
-              name: string;
-              deleted_at: Date | null;
-            }>
-          >(Prisma.sql`
-            SELECT "id", "owner_id", "workspace", "name", "deleted_at"
-            FROM "operational_alert"
-            WHERE "id" = ${Prisma.sql`${operationalAlertId}::uuid`}
-            FOR UPDATE
-          `);
-          const locked = lockedRows[0];
-          if (!locked || locked.owner_id !== adminId) {
-            throw new NotFoundException(`Operational alert not found`);
-          }
-          if (locked.deleted_at) {
-            throw new ConflictException(`Operational alert is already deleted`);
-          }
-          const updated = await tx.operationalAlertModel.update({
-            where: { id: operationalAlertId },
-            data: { deletedAt: new Date() },
-          });
-          return { lockedName: locked.name, lockedWorkspace: locked.workspace, updated };
-        });
+        const result = await this.repository.softDelete({ operationalAlertId, adminId });
 
         await this.adminActionAudit.record({
           adminId,

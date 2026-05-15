@@ -1,13 +1,16 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2VerificationSlaService } from './admin-v2-verification-sla.service';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
-import { AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
-import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { AdminV2VerificationQuery } from './admin-v2-verification.query';
+import {
+  AdminV2VerificationRepository,
+  type AdminV2VerificationDecisionState,
+} from './admin-v2-verification.repository';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 import { AdminV2ConsumersService } from '../consumers/admin-v2-consumers.service';
 
@@ -19,13 +22,6 @@ const ACTIVE_VERIFICATION_STATUSES = [
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 const REASON_MAX_LENGTH = 500;
-const VERIFICATION_ACTIONS = [
-  ADMIN_ACTION_AUDIT_ACTIONS.verification_approve,
-  ADMIN_ACTION_AUDIT_ACTIONS.verification_reject,
-  ADMIN_ACTION_AUDIT_ACTIONS.verification_request_info,
-  ADMIN_ACTION_AUDIT_ACTIONS.verification_flag,
-] as const;
-
 type RequestMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
@@ -54,18 +50,14 @@ function normalizeReason(reason?: string | null): string | null {
   return normalized.slice(0, REASON_MAX_LENGTH);
 }
 
-function deriveVersion(updatedAt: Date): number {
-  return updatedAt.getTime();
+function normalizeActiveStatuses(status?: string): Array<$Enums.VerificationStatus> {
+  return status && ACTIVE_VERIFICATION_STATUSES.includes(status as (typeof ACTIVE_VERIFICATION_STATUSES)[number])
+    ? [status as (typeof ACTIVE_VERIFICATION_STATUSES)[number]]
+    : [...ACTIVE_VERIFICATION_STATUSES];
 }
 
-function buildStaleVersionPayload(currentUpdatedAt: Date) {
-  return {
-    error: `STALE_VERSION`,
-    message: `Resource has been modified by another operator`,
-    currentVersion: deriveVersion(currentUpdatedAt),
-    currentUpdatedAt: currentUpdatedAt.toISOString(),
-    recommendedAction: `reload`,
-  };
+function deriveVersion(updatedAt: Date): number {
+  return updatedAt.getTime();
 }
 
 function hasMissingProfileData(item: {
@@ -86,7 +78,8 @@ export class AdminV2VerificationService {
   private readonly logger = new Logger(AdminV2VerificationService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2VerificationQuery,
+    private readonly repository: AdminV2VerificationRepository,
     private readonly consumersService: AdminV2ConsumersService,
     private readonly slaService: AdminV2VerificationSlaService,
     private readonly idempotency: AdminV2IdempotencyService,
@@ -105,61 +98,13 @@ export class AdminV2VerificationService {
     missingDocuments?: boolean;
   }) {
     const pagination = normalizePage(params?.page, params?.pageSize);
-    const where: Prisma.ConsumerModelWhereInput = {
-      deletedAt: null,
-      verificationStatus: {
-        in:
-          params?.status &&
-          ACTIVE_VERIFICATION_STATUSES.includes(params.status as (typeof ACTIVE_VERIFICATION_STATUSES)[number])
-            ? [params.status as (typeof ACTIVE_VERIFICATION_STATUSES)[number]]
-            : [...ACTIVE_VERIFICATION_STATUSES],
-      },
-      ...(params?.stripeIdentityStatus?.trim() ? { stripeIdentityStatus: params.stripeIdentityStatus.trim() } : {}),
-      ...(params?.contractorKind?.trim()
-        ? { contractorKind: params.contractorKind.trim() as $Enums.ContractorKind }
-        : {}),
-      ...(params?.country?.trim() ? { addressDetails: { is: { country: params.country.trim() } } } : {}),
-    };
+    const statuses = normalizeActiveStatuses(params?.status);
+    const stripeIdentityStatus = params?.stripeIdentityStatus?.trim() || undefined;
+    const contractorKind = params?.contractorKind?.trim() || undefined;
+    const country = params?.country?.trim() || undefined;
 
     const [rows, slaSnapshot] = await Promise.all([
-      this.prisma.consumerModel.findMany({
-        where,
-        orderBy: [{ verificationUpdatedAt: `asc` }, { createdAt: `asc` }],
-        select: {
-          id: true,
-          email: true,
-          accountType: true,
-          contractorKind: true,
-          verificationStatus: true,
-          stripeIdentityStatus: true,
-          createdAt: true,
-          updatedAt: true,
-          verificationUpdatedAt: true,
-          personalDetails: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
-          organizationDetails: {
-            select: {
-              name: true,
-            },
-          },
-          addressDetails: {
-            select: {
-              country: true,
-            },
-          },
-          _count: {
-            select: {
-              consumerResources: {
-                where: { deletedAt: null, resource: { deletedAt: null } },
-              },
-            },
-          },
-        },
-      }),
+      this.query.getQueueRows({ statuses, stripeIdentityStatus, contractorKind, country }),
       this.slaService.getSnapshot(),
     ]);
 
@@ -218,52 +163,13 @@ export class AdminV2VerificationService {
     missingProfileData?: boolean;
     missingDocuments?: boolean;
   }): Promise<number> {
-    const where: Prisma.ConsumerModelWhereInput = {
-      deletedAt: null,
-      verificationStatus: {
-        in:
-          filters?.status &&
-          ACTIVE_VERIFICATION_STATUSES.includes(filters.status as (typeof ACTIVE_VERIFICATION_STATUSES)[number])
-            ? [filters.status as (typeof ACTIVE_VERIFICATION_STATUSES)[number]]
-            : [...ACTIVE_VERIFICATION_STATUSES],
-      },
-      ...(filters?.stripeIdentityStatus?.trim() ? { stripeIdentityStatus: filters.stripeIdentityStatus.trim() } : {}),
-      ...(filters?.contractorKind?.trim()
-        ? { contractorKind: filters.contractorKind.trim() as $Enums.ContractorKind }
-        : {}),
-      ...(filters?.country?.trim() ? { addressDetails: { is: { country: filters.country.trim() } } } : {}),
-    };
+    const statuses = normalizeActiveStatuses(filters?.status);
+    const stripeIdentityStatus = filters?.stripeIdentityStatus?.trim() || undefined;
+    const contractorKind = filters?.contractorKind?.trim() || undefined;
+    const country = filters?.country?.trim() || undefined;
 
     if (filters?.missingProfileData === true || filters?.missingDocuments === true) {
-      const rows = await this.prisma.consumerModel.findMany({
-        where,
-        select: {
-          accountType: true,
-          personalDetails: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
-          organizationDetails: {
-            select: {
-              name: true,
-            },
-          },
-          addressDetails: {
-            select: {
-              country: true,
-            },
-          },
-          _count: {
-            select: {
-              consumerResources: {
-                where: { deletedAt: null, resource: { deletedAt: null } },
-              },
-            },
-          },
-        },
-      });
+      const rows = await this.query.getQueueCountRows({ statuses, stripeIdentityStatus, contractorKind, country });
 
       return rows.filter((item) => {
         const missingProfileData = hasMissingProfileData(item);
@@ -274,17 +180,20 @@ export class AdminV2VerificationService {
       }).length;
     }
 
-    return this.prisma.consumerModel.count({ where });
+    return this.query.countQueue({ statuses, stripeIdentityStatus, contractorKind, country });
   }
 
   async getCase(consumerId: string, controls: DecisionControls) {
     const [consumerCase, decisionHistory, authRisk, slaSnapshot, assignment] = await Promise.all([
       this.consumersService.getConsumerCase(consumerId),
-      this.getDecisionHistory(consumerId),
-      this.getAuthRiskContext(consumerId),
+      this.query.getDecisionHistory(consumerId),
+      this.query.getAuthRiskContext(consumerId),
       this.slaService.getSnapshot(),
       this.assignmentsService.getAssignmentContextForResource(`verification`, consumerId),
     ]);
+    if (!authRisk) {
+      throw new NotFoundException(`Consumer not found`);
+    }
     const updatedAt =
       consumerCase.updatedAt instanceof Date ? consumerCase.updatedAt : new Date(consumerCase.updatedAt);
     return {
@@ -328,92 +237,27 @@ export class AdminV2VerificationService {
       payload: { consumerId, decision, reason, expectedVersion, confirmed: true },
       execute: async () => {
         const notificationType = this.getDecisionNotificationType(decision);
-        const consumer = await this.prisma.consumerModel.findUnique({
-          where: { id: consumerId },
-          select: {
-            id: true,
-            verificationStatus: true,
-            updatedAt: true,
-            email: true,
-          },
-        });
-        if (!consumer) {
-          throw new NotFoundException(`Consumer not found`);
-        }
-        if (deriveVersion(consumer.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(consumer.updatedAt));
-        }
-
         const nextState = this.getDecisionState(decision);
         const actionName = this.getDecisionAction(decision);
-        const updatedAt = new Date();
-        const auditMetadata = {
-          fromStatus: consumer.verificationStatus,
-          toStatus: nextState.verificationStatus,
+        const result = await this.repository.applyDecision({
+          consumerId,
+          adminId,
           reason,
           expectedVersion,
-          ...(notificationType ? { notificationType, notificationSent: false } : {}),
-        } satisfies Prisma.InputJsonObject;
-        const result = await this.prisma.$transaction(async (tx) => {
-          const updated = await tx.consumerModel.updateMany({
-            where: {
-              id: consumer.id,
-              updatedAt: consumer.updatedAt,
-            },
-            data: {
-              verificationStatus: nextState.verificationStatus,
-              verified: nextState.verified,
-              legalVerified: nextState.legalVerified,
-              verificationReason: reason,
-              verificationUpdatedAt: updatedAt,
-              verificationUpdatedBy: adminId,
-            },
-          });
-          if (updated.count === 0) {
-            const current = await tx.consumerModel.findUnique({
-              where: { id: consumer.id },
-              select: { updatedAt: true },
-            });
-            throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Consumer has changed`);
-          }
-          const auditEntry = await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: actionName,
-              resource: `consumer`,
-              resourceId: consumer.id,
-              metadata: auditMetadata,
-              ipAddress: meta.ipAddress ?? null,
-              userAgent: meta.userAgent ?? null,
-            },
-            select: {
-              id: true,
-            },
-          });
-          const updatedConsumer = await tx.consumerModel.findUniqueOrThrow({
-            where: { id: consumer.id },
-            select: {
-              id: true,
-              verificationStatus: true,
-              verificationReason: true,
-              verificationUpdatedAt: true,
-              updatedAt: true,
-            },
-          });
-          return { updatedConsumer, auditEntryId: auditEntry.id };
+          notificationType,
+          actionName,
+          nextState,
+          meta,
         });
 
         let notificationSent = false;
         if (notificationType === `email` && decision !== `flag`) {
           notificationSent = await this.mailingService.sendAdminV2VerificationDecisionEmail({
-            email: consumer.email,
+            email: result.consumerEmail,
             decision,
             reason,
           });
-          await this.updateAuditNotificationStatus(result.auditEntryId, {
-            ...auditMetadata,
-            notificationSent,
-          });
+          await this.updateAuditNotificationStatus(result.auditEntryId, { ...result.auditMetadata, notificationSent });
         }
 
         await this.slaService.refreshBreaches();
@@ -432,12 +276,7 @@ export class AdminV2VerificationService {
 
   private async updateAuditNotificationStatus(auditEntryId: string, metadata: Prisma.InputJsonObject) {
     try {
-      await this.prisma.adminActionAuditLogModel.update({
-        where: { id: auditEntryId },
-        data: {
-          metadata,
-        },
-      });
+      await this.repository.updateAuditNotificationStatus(auditEntryId, metadata);
     } catch (error) {
       this.logger.warn(`Failed to persist verification notification status`, {
         auditEntryId,
@@ -446,76 +285,7 @@ export class AdminV2VerificationService {
     }
   }
 
-  private async getDecisionHistory(consumerId: string) {
-    return this.prisma.adminActionAuditLogModel.findMany({
-      where: {
-        resource: `consumer`,
-        resourceId: consumerId,
-        action: { in: [...VERIFICATION_ACTIONS] },
-      },
-      orderBy: { createdAt: `desc` },
-      take: 20,
-      select: {
-        id: true,
-        action: true,
-        metadata: true,
-        createdAt: true,
-        adminId: true,
-        admin: {
-          select: {
-            email: true,
-          },
-        },
-      },
-    });
-  }
-
-  private async getAuthRiskContext(consumerId: string) {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: { email: true },
-    });
-    if (!consumer) {
-      throw new NotFoundException(`Consumer not found`);
-    }
-
-    const failuresSince = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const refreshReuseSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [loginFailures24h, refreshReuse30d, recentEvents] = await Promise.all([
-      this.prisma.authAuditLogModel.count({
-        where: {
-          identityType: AUTH_IDENTITY_TYPES.consumer,
-          OR: [{ identityId: consumerId }, { email: consumer.email.toLowerCase() }],
-          event: AUTH_AUDIT_EVENTS.login_failure,
-          createdAt: { gte: failuresSince },
-        },
-      }),
-      this.prisma.authAuditLogModel.count({
-        where: {
-          identityType: AUTH_IDENTITY_TYPES.consumer,
-          OR: [{ identityId: consumerId }, { email: consumer.email.toLowerCase() }],
-          event: AUTH_AUDIT_EVENTS.refresh_reuse,
-          createdAt: { gte: refreshReuseSince },
-        },
-      }),
-      this.prisma.authAuditLogModel.findMany({
-        where: {
-          identityType: AUTH_IDENTITY_TYPES.consumer,
-          OR: [{ identityId: consumerId }, { email: consumer.email.toLowerCase() }],
-        },
-        orderBy: { createdAt: `desc` },
-        take: 10,
-      }),
-    ]);
-
-    return {
-      loginFailures24h,
-      refreshReuse30d,
-      recentEvents,
-    };
-  }
-
-  private getDecisionState(decision: VerificationDecision) {
+  private getDecisionState(decision: VerificationDecision): AdminV2VerificationDecisionState {
     switch (decision) {
       case `approve`:
         return { verificationStatus: $Enums.VerificationStatus.APPROVED, verified: true, legalVerified: true };

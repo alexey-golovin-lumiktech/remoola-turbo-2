@@ -1,14 +1,15 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { envs } from '../../envs';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
-import { AdminV2PayoutsTransactionRunner } from './admin-v2-payouts-transaction.runner';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
-import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
+import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -132,7 +133,7 @@ function buildPayoutStaleVersionPayload(currentUpdatedAt: Date) {
 @Injectable()
 export class AdminV2PayoutsService {
   constructor(
-    private readonly transactions: AdminV2PayoutsTransactionRunner,
+    private readonly transactions: PrismaTransactionRunner,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly assignmentsService: AdminV2AssignmentsService,
     private readonly payoutsQuery: AdminV2PayoutsRepository,
@@ -667,7 +668,7 @@ export class AdminV2PayoutsService {
           throw new ConflictException(buildPayoutStaleVersionPayload(payout.updatedAt));
         }
 
-        return this.transactions.run(async (tx) => {
+        return this.transactions.runLedgerMutation(async (tx) => {
           const locked = await this.payoutEscalationRepository.lockPayoutForEscalation(tx, payoutId);
           if (!locked || !PAYOUT_TYPES.includes(locked.type as (typeof PAYOUT_TYPES)[number])) {
             throw new NotFoundException(`Payout not found`);

@@ -35,6 +35,7 @@ describe(`ConsumerAuthService.login`, () => {
   let prisma: {
     consumerModel: { findFirst: jest.Mock };
     authSessionModel: { create: jest.Mock; update: jest.Mock };
+    $transaction: jest.Mock;
   };
   let jwtService: { signAsync: jest.Mock };
   let authAudit: {
@@ -65,6 +66,7 @@ describe(`ConsumerAuthService.login`, () => {
         create: jest.fn().mockResolvedValue({ id: `session-1` }),
         update: jest.fn().mockResolvedValue({ id: `session-1` }),
       },
+      $transaction: jest.fn().mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
     jwtService = {
       signAsync: jest
@@ -152,13 +154,14 @@ describe(`ConsumerAuthService.login`, () => {
     mockVerifyPassword.mockResolvedValue(true);
 
     const result = await service.login(body, appScope);
+    const sessionId = prisma.authSessionModel.create.mock.calls[0][0].data.id as string;
 
     expect(result).toMatchObject({
       identity: { id: identity.id, email: identity.email },
       accessToken: `access-token`,
       refreshToken: `refresh-token`,
-      sessionId: `session-1`,
-      sessionFamilyId: `session-1`,
+      sessionId,
+      sessionFamilyId: sessionId,
     });
     expect(authAudit.clearLockout).toHaveBeenCalledWith(AUTH_IDENTITY_TYPES.consumer, identity.email);
     expect(authAudit.recordFailedAttempt).not.toHaveBeenCalled();

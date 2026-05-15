@@ -1,11 +1,11 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { parseConsumerAppScope, type ConsumerAppScope } from '@remoola/api-types';
-import { Prisma } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 
+import { OAuthStateStoreQuery } from './oauth-state-store.query';
+import { OAuthStateStoreRepository } from './oauth-state-store.repository';
 import { envs } from '../../envs';
-import { PrismaService } from '../../shared/prisma.service';
 
 type OAuthStateRecord = {
   nonce: string;
@@ -46,12 +46,11 @@ type StoredSignupSessionRecord = OAuthSignupContextRecord & { type: `oauth_signu
 type StoredTypedRecord = StoredLoginHandoffRecord | StoredSignupHandoffRecord | StoredSignupSessionRecord;
 
 @Injectable()
-export class OAuthStateStoreService implements OnModuleDestroy {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async onModuleDestroy() {
-    // Prisma disconnect is handled by PrismaService
-  }
+export class OAuthStateStoreService {
+  constructor(
+    private readonly query: OAuthStateStoreQuery,
+    private readonly repository: OAuthStateStoreRepository,
+  ) {}
 
   createStateToken() {
     const random = oauthCrypto.generateOAuthState();
@@ -68,13 +67,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
   }
 
   async save(stateToken: string, record: OAuthStateRecord, ttlMs: number) {
-    const key = this.stateKey(stateToken);
-    const expiresAt = new Date(Date.now() + ttlMs);
-    const payload = this.serialize(record);
-
-    await this.prisma.oauthStateModel.create({
-      data: { stateKey: key, payload, expiresAt },
-    });
+    await this.savePayload(stateToken, this.serialize(record), ttlMs);
   }
 
   async saveLoginHandoff(stateToken: string, record: OAuthLoginHandoffRecord, ttlMs: number) {
@@ -108,32 +101,19 @@ export class OAuthStateStoreService implements OnModuleDestroy {
   }
 
   async consume(stateToken: string): Promise<OAuthStateRecord | null> {
-    const key = this.stateKey(stateToken);
-
-    const rows = await this.prisma.$queryRaw<{ payload: string }[]>(
-      Prisma.sql`DELETE FROM oauth_state WHERE state_key = ${key} AND expires_at > NOW() RETURNING payload`,
-    );
-    const raw = rows[0]?.payload;
+    const raw = await this.consumePayload(stateToken);
     if (!raw) return null;
     return this.deserialize(raw);
   }
 
   async read(stateToken: string): Promise<OAuthStateRecord | null> {
-    const row = await this.prisma.oauthStateModel.findUnique({
-      where: { stateKey: this.stateKey(stateToken) },
-      select: { payload: true, expiresAt: true },
-    });
-    if (!row || row.expiresAt <= new Date()) return null;
-    return this.deserialize(row.payload);
+    const raw = await this.readPayload(stateToken);
+    if (!raw) return null;
+    return this.deserialize(raw);
   }
 
   private async saveTypedRecord(stateToken: string, record: StoredTypedRecord, ttlMs: number) {
-    const key = this.stateKey(stateToken);
-    const expiresAt = new Date(Date.now() + ttlMs);
-
-    await this.prisma.oauthStateModel.create({
-      data: { stateKey: key, payload: JSON.stringify(record), expiresAt },
-    });
+    await this.savePayload(stateToken, JSON.stringify(record), ttlMs);
   }
 
   private toStoredLoginHandoffRecord(record: OAuthLoginHandoffRecord): StoredLoginHandoffRecord {
@@ -215,23 +195,34 @@ export class OAuthStateStoreService implements OnModuleDestroy {
     stateToken: string,
     type: TType,
   ): Promise<Extract<StoredTypedRecord, { type: TType }> | null> {
-    const key = this.stateKey(stateToken);
-    const rows = await this.prisma.$queryRaw<{ payload: string }[]>(
-      Prisma.sql`DELETE FROM oauth_state WHERE state_key = ${key} AND expires_at > NOW() RETURNING payload`,
-    );
-    return this.deserializeTyped(rows[0]?.payload, type);
+    const payload = await this.consumePayload(stateToken);
+    return this.deserializeTyped(payload ?? undefined, type);
   }
 
   private async readTypedRecord<TType extends StoredTypedRecord[`type`]>(
     stateToken: string,
     type: TType,
   ): Promise<Extract<StoredTypedRecord, { type: TType }> | null> {
-    const row = await this.prisma.oauthStateModel.findUnique({
-      where: { stateKey: this.stateKey(stateToken) },
-      select: { payload: true, expiresAt: true },
-    });
+    const payload = await this.readPayload(stateToken);
+    if (!payload) return null;
+    return this.deserializeTyped(payload, type);
+  }
+
+  private async savePayload(stateToken: string, payload: string, ttlMs: number) {
+    const key = this.stateKey(stateToken);
+    const expiresAt = new Date(Date.now() + ttlMs);
+
+    await this.repository.createStateRecord(key, payload, expiresAt);
+  }
+
+  private consumePayload(stateToken: string) {
+    return this.repository.consumeStatePayload(this.stateKey(stateToken));
+  }
+
+  private async readPayload(stateToken: string): Promise<string | null> {
+    const row = await this.query.readStatePayload(this.stateKey(stateToken));
     if (!row || row.expiresAt <= new Date()) return null;
-    return this.deserializeTyped(row.payload, type);
+    return row.payload;
   }
 
   private deserialize(raw: string) {

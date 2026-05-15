@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
-import { Prisma } from '@remoola/database-2';
-
+import {
+  AdminV2OperationalAlertsEvaluatorQuery,
+  type DueAlertRow,
+} from './admin-v2-operational-alerts-evaluator.query';
+import { AdminV2OperationalAlertsEvaluatorRepository } from './admin-v2-operational-alerts-evaluator.repository';
 import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
 import {
   LedgerAnomaliesAlertEvaluator,
@@ -13,29 +16,10 @@ import {
 import { AuthRefreshReuseAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-auth-refresh-reuse';
 import { VerificationQueueAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-verification';
 import { OPERATIONAL_ALERT_WORKSPACES, type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
-import { PrismaService } from '../../shared/prisma.service';
 
 export const EVALUATOR_TICK_MAX_ALERTS = 100;
 export const EVALUATOR_PER_ALERT_TIMEOUT_MS = 10_000;
 export const EVALUATOR_TICK_WALL_BUDGET_MS = 240_000;
-const EVALUATOR_ERROR_MAX_LENGTH = 500;
-const EVALUATOR_REASON_MAX_LENGTH = 500;
-
-type DueAlertRow = {
-  id: string;
-  owner_id: string;
-  workspace: string;
-  name: string;
-  query_payload: unknown;
-  threshold_payload: unknown;
-  evaluation_interval_minutes: number;
-  last_evaluated_at: Date | null;
-};
-
-function truncate(value: string, max: number): string {
-  if (value.length <= max) return value;
-  return value.slice(0, max);
-}
 
 class EvaluatorTimeoutError extends Error {
   constructor(timeoutMs: number) {
@@ -65,7 +49,8 @@ export class AdminV2OperationalAlertsEvaluatorService {
   private readonly evaluators: WorkspaceEvaluatorRegistry;
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly query: AdminV2OperationalAlertsEvaluatorQuery,
+    private readonly repository: AdminV2OperationalAlertsEvaluatorRepository,
     private readonly ledgerAnomaliesEvaluator: LedgerAnomaliesAlertEvaluator,
     private readonly verificationQueueEvaluator: VerificationQueueAlertEvaluator,
     private readonly authRefreshReuseEvaluator: AuthRefreshReuseAlertEvaluator,
@@ -112,19 +97,7 @@ export class AdminV2OperationalAlertsEvaluatorService {
   }
 
   async selectDueAlerts(): Promise<DueAlertRow[]> {
-    const limit = EVALUATOR_TICK_MAX_ALERTS;
-    return this.prisma.$queryRaw<DueAlertRow[]>(Prisma.sql`
-      SELECT "id", "owner_id", "workspace", "name", "query_payload", "threshold_payload",
-             "evaluation_interval_minutes", "last_evaluated_at"
-      FROM "operational_alert"
-      WHERE "deleted_at" IS NULL
-        AND (
-          "last_evaluated_at" IS NULL
-          OR "last_evaluated_at" <= NOW() - ("evaluation_interval_minutes" * INTERVAL '1 minute')
-        )
-      ORDER BY "last_evaluated_at" NULLS FIRST, "id" ASC
-      LIMIT ${limit}
-    `);
+    return this.query.selectDueAlerts(EVALUATOR_TICK_MAX_ALERTS);
   }
 
   private async evaluateOne(alert: DueAlertRow): Promise<`fired` | `not_fired` | `error`> {
@@ -162,36 +135,14 @@ export class AdminV2OperationalAlertsEvaluatorService {
   }
 
   private async recordFired(alertId: string, reason: string): Promise<void> {
-    const truncated = truncate(reason, EVALUATOR_REASON_MAX_LENGTH);
-    await this.prisma.operationalAlertModel.update({
-      where: { id: alertId },
-      data: {
-        lastEvaluatedAt: new Date(),
-        lastFiredAt: new Date(),
-        lastFireReason: truncated,
-        lastEvaluationError: null,
-      },
-    });
+    await this.repository.recordFired(alertId, reason);
   }
 
   private async recordNotFired(alertId: string): Promise<void> {
-    await this.prisma.operationalAlertModel.update({
-      where: { id: alertId },
-      data: {
-        lastEvaluatedAt: new Date(),
-        lastEvaluationError: null,
-      },
-    });
+    await this.repository.recordNotFired(alertId);
   }
 
   private async recordError(alertId: string, message: string): Promise<void> {
-    const truncated = truncate(message, EVALUATOR_ERROR_MAX_LENGTH);
-    await this.prisma.operationalAlertModel.update({
-      where: { id: alertId },
-      data: {
-        lastEvaluatedAt: new Date(),
-        lastEvaluationError: truncated,
-      },
-    });
+    await this.repository.recordError(alertId, message);
   }
 }

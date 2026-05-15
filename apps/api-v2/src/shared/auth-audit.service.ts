@@ -3,12 +3,13 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { envs } from '../envs';
-import { PrismaService } from './prisma.service';
+import { AuthAuditQuery } from './auth-audit.query';
+import { AuthAuditRepository } from './auth-audit.repository';
 
 const IDENTITY_TYPE_CONSUMER = `consumer`;
 const IDENTITY_TYPE_ADMIN = `admin`;
 
-type AuthIdentityType = typeof IDENTITY_TYPE_CONSUMER | typeof IDENTITY_TYPE_ADMIN;
+export type AuthIdentityType = typeof IDENTITY_TYPE_CONSUMER | typeof IDENTITY_TYPE_ADMIN;
 
 export const AUTH_IDENTITY_TYPES = {
   consumer: IDENTITY_TYPE_CONSUMER,
@@ -26,7 +27,7 @@ export const AUTH_AUDIT_EVENTS = {
   password_change: `password_change`,
 } as const;
 
-type AuthAuditEvent = (typeof AUTH_AUDIT_EVENTS)[keyof typeof AUTH_AUDIT_EVENTS];
+export type AuthAuditEvent = (typeof AUTH_AUDIT_EVENTS)[keyof typeof AUTH_AUDIT_EVENTS];
 
 type RecordAuditParams = {
   identityType: AuthIdentityType;
@@ -41,21 +42,22 @@ type RecordAuditParams = {
 export class AuthAuditService {
   private readonly logger = new Logger(AuthAuditService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly query: AuthAuditQuery,
+    private readonly repository: AuthAuditRepository,
+  ) {}
 
   async recordAudit(params: RecordAuditParams): Promise<void> {
     const { identityType, identityId, email, event, ipAddress, userAgent } = params;
     const normalizedEmail = email.trim().toLowerCase();
     try {
-      await this.prisma.authAuditLogModel.create({
-        data: {
-          identityType,
-          identityId: identityId ?? null,
-          email: normalizedEmail,
-          event,
-          ipAddress: ipAddress ?? null,
-          userAgent: userAgent ?? null,
-        },
+      await this.repository.createAuditLog({
+        identityType,
+        identityId,
+        email: normalizedEmail,
+        event,
+        ipAddress,
+        userAgent,
       });
     } catch (err) {
       this.logger.warn(`AuthAudit: failed to record audit`, {
@@ -69,11 +71,7 @@ export class AuthAuditService {
     const normalizedEmail = email.trim().toLowerCase();
     const now = new Date();
 
-    const lockout = await this.prisma.authLoginLockoutModel.findUnique({
-      where: {
-        identityType_email: { identityType, email: normalizedEmail },
-      },
-    });
+    const lockout = await this.query.findLockout(identityType, normalizedEmail);
 
     if (lockout?.lockedUntil && lockout.lockedUntil > now) {
       throw new BadRequestException(errorCodes.ACCOUNT_TEMPORARILY_LOCKED);
@@ -81,13 +79,7 @@ export class AuthAuditService {
 
     const windowMinutes = envs.AUTH_PER_EMAIL_RATE_WINDOW_MINUTES;
     const windowStart = new Date(now.getTime() - windowMinutes * 60 * 1000);
-    const count = await this.prisma.authAuditLogModel.count({
-      where: {
-        identityType,
-        email: normalizedEmail,
-        createdAt: { gte: windowStart },
-      },
-    });
+    const count = await this.query.countRecentAuditRows(identityType, normalizedEmail, windowStart);
 
     if (count >= envs.AUTH_PER_EMAIL_RATE_LIMIT) {
       throw new BadRequestException(errorCodes.TOO_MANY_LOGIN_ATTEMPTS);
@@ -102,32 +94,20 @@ export class AuthAuditService {
 
     const lockedUntilValue = new Date(now.getTime() + lockoutMinutes * 60 * 1000);
 
-    const lockout = await this.prisma.authLoginLockoutModel.upsert({
-      where: {
-        identityType_email: { identityType, email: normalizedEmail },
-      },
-      create: {
-        identityType,
-        email: normalizedEmail,
-        attemptCount: 1,
-        firstAttemptAt: now,
-        lockedUntil: maxAttempts <= 1 ? lockedUntilValue : null,
-      },
-      update: {
-        attemptCount: { increment: 1 },
-      },
+    const lockout = await this.repository.upsertFailedAttempt({
+      identityType,
+      email: normalizedEmail,
+      now,
+      lockedUntil: maxAttempts <= 1 ? lockedUntilValue : null,
     });
 
     const newCount = lockout.attemptCount;
     if (newCount >= maxAttempts) {
-      await this.prisma.authLoginLockoutModel.update({
-        where: {
-          identityType_email: { identityType, email: normalizedEmail },
-        },
-        data: {
-          lockedUntil: lockedUntilValue,
-          firstAttemptAt: lockout.firstAttemptAt ?? now,
-        },
+      await this.repository.setLockedUntil({
+        identityType,
+        email: normalizedEmail,
+        lockedUntil: lockedUntilValue,
+        firstAttemptAt: lockout.firstAttemptAt ?? now,
       });
     }
   }
@@ -135,12 +115,7 @@ export class AuthAuditService {
   async clearLockout(identityType: AuthIdentityType, email: string): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
     try {
-      await this.prisma.authLoginLockoutModel.deleteMany({
-        where: {
-          identityType,
-          email: normalizedEmail,
-        },
-      });
+      await this.repository.clearLockout(identityType, normalizedEmail);
     } catch {
       // empty catch blocks marker
     }

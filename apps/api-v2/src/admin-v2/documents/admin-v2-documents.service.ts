@@ -2,9 +2,9 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 import { FileStorageService } from '../../consumer/modules/files/file-storage.service';
-import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
@@ -99,6 +99,7 @@ export class AdminV2DocumentsService {
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly assignmentsService: AdminV2AssignmentsService,
     private readonly documentsQuery: AdminV2DocumentsRepository,
+    private readonly documentsCommands: AdminV2DocumentsCommandsRepository,
   ) {}
 
   async listDocuments(params?: {
@@ -338,33 +339,19 @@ export class AdminV2DocumentsService {
           };
         }
 
-        return this.documentsQuery.runInTransaction(async (tx) => {
-          const created = await tx.documentTagModel.create({
-            data: { name },
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.document_tag_create,
-              resource: `document_tag`,
-              resourceId: created.id,
-              metadata: {
-                tagName: created.name,
-              },
-              ipAddress: meta?.ipAddress ?? null,
-              userAgent: meta?.userAgent ?? null,
-            },
-          });
-
-          return {
-            tagId: created.id,
-            name: created.name,
-            version: deriveVersion(created.updatedAt),
-            updatedAt: created.updatedAt.toISOString(),
-            alreadyExists: false,
-          };
+        const created = await this.documentsCommands.createTagWithAudit({
+          adminId,
+          name,
+          meta,
         });
+
+        return {
+          tagId: created.id,
+          name: created.name,
+          version: deriveVersion(created.updatedAt),
+          updatedAt: created.updatedAt.toISOString(),
+          alreadyExists: false,
+        };
       },
     });
   }
@@ -411,59 +398,20 @@ export class AdminV2DocumentsService {
           };
         }
 
-        return this.documentsQuery.runInTransaction(async (tx) => {
-          const updated = await tx.documentTagModel.updateMany({
-            where: {
-              id: tag.id,
-              updatedAt: tag.updatedAt,
-            },
-            data: {
-              name,
-            },
-          });
-
-          if (updated.count === 0) {
-            const current = await tx.documentTagModel.findUnique({
-              where: { id: tag.id },
-              select: { updatedAt: true },
-            });
-            throw new ConflictException(
-              current ? buildStaleVersionPayload(`Document tag`, current.updatedAt) : `Document tag has changed`,
-            );
-          }
-
-          const fresh = await tx.documentTagModel.findUniqueOrThrow({
-            where: { id: tag.id },
-            select: {
-              id: true,
-              name: true,
-              updatedAt: true,
-            },
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.document_tag_update,
-              resource: `document_tag`,
-              resourceId: fresh.id,
-              metadata: {
-                previousName: tag.name,
-                nextName: fresh.name,
-              },
-              ipAddress: meta?.ipAddress ?? null,
-              userAgent: meta?.userAgent ?? null,
-            },
-          });
-
-          return {
-            tagId: fresh.id,
-            name: fresh.name,
-            version: deriveVersion(fresh.updatedAt),
-            updatedAt: fresh.updatedAt.toISOString(),
-            unchanged: false,
-          };
+        const fresh = await this.documentsCommands.updateTagWithAudit({
+          tag,
+          adminId,
+          nextName: name,
+          meta,
         });
+
+        return {
+          tagId: fresh.id,
+          name: fresh.name,
+          version: deriveVersion(fresh.updatedAt),
+          updatedAt: fresh.updatedAt.toISOString(),
+          unchanged: false,
+        };
       },
     });
   }
@@ -492,50 +440,17 @@ export class AdminV2DocumentsService {
           throw new ConflictException(buildStaleVersionPayload(`Document tag`, tag.updatedAt));
         }
 
-        return this.documentsQuery.runInTransaction(async (tx) => {
-          const affectedResourceCount = await tx.resourceTagModel.count({
-            where: { tagId: tag.id },
-          });
-
-          const deleted = await tx.documentTagModel.deleteMany({
-            where: {
-              id: tag.id,
-              updatedAt: tag.updatedAt,
-            },
-          });
-
-          if (deleted.count === 0) {
-            const current = await tx.documentTagModel.findUnique({
-              where: { id: tag.id },
-              select: { updatedAt: true },
-            });
-            throw new ConflictException(
-              current ? buildStaleVersionPayload(`Document tag`, current.updatedAt) : `Document tag has changed`,
-            );
-          }
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.document_tag_delete,
-              resource: `document_tag`,
-              resourceId: tag.id,
-              metadata: {
-                tagName: tag.name,
-                affectedResourceCount,
-                confirmed: true,
-              },
-              ipAddress: meta?.ipAddress ?? null,
-              userAgent: meta?.userAgent ?? null,
-            },
-          });
-
-          return {
-            tagId: tag.id,
-            deleted: true,
-            affectedResourceCount,
-          };
+        const result = await this.documentsCommands.deleteTagWithAudit({
+          tag,
+          adminId,
+          meta,
         });
+
+        return {
+          tagId: result.tagId,
+          deleted: true,
+          affectedResourceCount: result.affectedResourceCount,
+        };
       },
     });
   }
@@ -575,74 +490,19 @@ export class AdminV2DocumentsService {
           throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
         }
 
-        return this.documentsQuery.runInTransaction(async (tx) => {
-          const touchedAt = new Date();
-          const updated = await tx.resourceModel.updateMany({
-            where: {
-              id: resource.id,
-              updatedAt: resource.updatedAt,
-              deletedAt: null,
-            },
-            data: {
-              updatedAt: touchedAt,
-            },
-          });
-
-          if (updated.count === 0) {
-            const current = await tx.resourceModel.findUnique({
-              where: { id: resource.id },
-              select: { updatedAt: true },
-            });
-            throw new ConflictException(
-              current ? buildStaleVersionPayload(`Document`, current.updatedAt) : `Document has changed`,
-            );
-          }
-
-          await tx.resourceTagModel.deleteMany({
-            where: { resourceId: resource.id },
-          });
-
-          if (allowedTags.length > 0) {
-            await tx.resourceTagModel.createMany({
-              data: allowedTags.map((tag) => ({
-                resourceId: resource.id,
-                tagId: tag.id,
-              })),
-              skipDuplicates: true,
-            });
-          }
-
-          const fresh = await tx.resourceModel.findUniqueOrThrow({
-            where: { id: resource.id },
-            select: {
-              updatedAt: true,
-            },
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.document_retag,
-              resource: `document`,
-              resourceId: resource.id,
-              metadata: {
-                previousTagIds: resource.resourceTags.map((resourceTag) => resourceTag.tag.id),
-                previousTagNames: resource.resourceTags.map((resourceTag) => resourceTag.tag.name),
-                nextTagIds: allowedTags.map((tag) => tag.id),
-                nextTagNames: allowedTags.map((tag) => tag.name),
-              },
-              ipAddress: meta?.ipAddress ?? null,
-              userAgent: meta?.userAgent ?? null,
-            },
-          });
-
-          return {
-            resourceId: resource.id,
-            tagIds: allowedTags.map((tag) => tag.id),
-            version: deriveVersion(fresh.updatedAt),
-            updatedAt: fresh.updatedAt.toISOString(),
-          };
+        const result = await this.documentsCommands.replaceDocumentTagsWithAudit({
+          resource,
+          adminId,
+          allowedTags,
+          meta,
         });
+
+        return {
+          resourceId: result.resourceId,
+          tagIds: result.tagIds,
+          version: deriveVersion(result.updatedAt),
+          updatedAt: result.updatedAt.toISOString(),
+        };
       },
     });
   }
@@ -708,66 +568,14 @@ export class AdminV2DocumentsService {
           }
         }
 
-        return this.documentsQuery.runInTransaction(async (tx) => {
-          const touchedAt = new Date();
-
-          for (const resource of resources) {
-            const current = byId.get(resource.resourceId)!;
-            const updated = await tx.resourceModel.updateMany({
-              where: {
-                id: current.id,
-                updatedAt: current.updatedAt,
-                deletedAt: null,
-              },
-              data: {
-                updatedAt: touchedAt,
-              },
-            });
-
-            if (updated.count === 0) {
-              const fresh = await tx.resourceModel.findUnique({
-                where: { id: current.id },
-                select: { updatedAt: true },
-              });
-              throw new ConflictException(
-                fresh ? buildStaleVersionPayload(`Document`, fresh.updatedAt) : `Document has changed`,
-              );
-            }
-          }
-
-          const createManyResult = await tx.resourceTagModel.createMany({
-            data: resources.flatMap((resource) =>
-              allowedTags.map((tag) => ({
-                resourceId: resource.resourceId,
-                tagId: tag.id,
-              })),
-            ),
-            skipDuplicates: true,
-          });
-
-          await tx.adminActionAuditLogModel.create({
-            data: {
-              adminId,
-              action: ADMIN_ACTION_AUDIT_ACTIONS.document_bulk_tag,
-              resource: `document_batch`,
-              resourceId: null,
-              metadata: {
-                tagIds: allowedTags.map((tag) => tag.id),
-                tagNames: allowedTags.map((tag) => tag.name),
-                targetResourceIds: resources.map((resource) => resource.resourceId),
-                targetCount: resources.length,
-                associationsCreated: createManyResult.count,
-              },
-              ipAddress: meta?.ipAddress ?? null,
-              userAgent: meta?.userAgent ?? null,
-            },
-          });
-
-          return {
-            targetCount: resources.length,
-            tagCount: allowedTags.length,
-            associationsCreated: createManyResult.count,
-          };
+        return this.documentsCommands.bulkAttachTagsWithAudit({
+          adminId,
+          documents: documents.map((document) => ({
+            id: document.id,
+            updatedAt: document.updatedAt,
+          })),
+          allowedTags,
+          meta,
         });
       },
     });

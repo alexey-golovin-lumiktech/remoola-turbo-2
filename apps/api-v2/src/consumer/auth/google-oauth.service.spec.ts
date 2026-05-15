@@ -1,5 +1,9 @@
+import { UnauthorizedException } from '@nestjs/common';
 import { type TokenPayload } from 'google-auth-library';
 
+import { type ConsumerGoogleProfileQuery } from './consumer-google-profile.query';
+import { type ConsumerGoogleProfileRepository } from './consumer-google-profile.repository';
+import { type ConsumerIdentityRepository } from './consumer-identity.repository';
 import { GoogleOAuthService } from './google-oauth.service';
 import { envs } from '../../envs';
 import { type NgrokIngressService } from '../../infrastructure/ngrok/ngrok-ingress.service';
@@ -23,6 +27,18 @@ jest.mock(`google-auth-library`, () => ({
 
 describe(`GoogleOAuthService`, () => {
   let service: GoogleOAuthService;
+  let consumerIdentityRepository: {
+    findGoogleLoginCandidateByEmail: jest.Mock;
+    updateGoogleLoginConsumer: jest.Mock;
+    createGoogleLoginConsumer: jest.Mock;
+    findGoogleLoginCandidateByEmailOrThrow: jest.Mock;
+  };
+  let googleProfileQuery: {
+    findMetadataByConsumerId: jest.Mock;
+  };
+  let googleProfileRepository: {
+    upsertProfile: jest.Mock;
+  };
   let ngrokIngress: Pick<NgrokIngressService, `getListenerUrl`>;
   let originalEnvs: Pick<
     typeof envs,
@@ -43,6 +59,36 @@ describe(`GoogleOAuthService`, () => {
     envs.NEST_APP_EXTERNAL_ORIGIN = `http://localhost:3334/api`;
     envs.NGROK_OAUTH_REDIRECT_ENABLED = false;
 
+    consumerIdentityRepository = {
+      findGoogleLoginCandidateByEmail: jest.fn().mockResolvedValue({
+        id: `consumer-id`,
+        email: `google@example.com`,
+        verified: true,
+        personalDetails: {
+          firstName: `Ada`,
+          lastName: `Lovelace`,
+        },
+      }),
+      updateGoogleLoginConsumer: jest.fn().mockResolvedValue({
+        id: `consumer-id`,
+        email: `google@example.com`,
+        verified: true,
+        personalDetails: {
+          firstName: `Ada`,
+          lastName: `Lovelace`,
+        },
+      }),
+      createGoogleLoginConsumer: jest.fn(),
+      findGoogleLoginCandidateByEmailOrThrow: jest.fn(),
+    };
+    googleProfileQuery = {
+      findMetadataByConsumerId: jest.fn().mockResolvedValue({
+        metadata: { sub: `google-sub` },
+      }),
+    };
+    googleProfileRepository = {
+      upsertProfile: jest.fn().mockResolvedValue({}),
+    };
     ngrokIngress = {
       getListenerUrl: jest.fn().mockReturnValue(`https://example.ngrok-free.app`),
     };
@@ -56,7 +102,12 @@ describe(`GoogleOAuthService`, () => {
         }) satisfies Partial<TokenPayload>,
     });
 
-    service = new GoogleOAuthService({} as any, ngrokIngress as NgrokIngressService);
+    service = new GoogleOAuthService(
+      consumerIdentityRepository as unknown as ConsumerIdentityRepository,
+      googleProfileQuery as unknown as ConsumerGoogleProfileQuery,
+      googleProfileRepository as unknown as ConsumerGoogleProfileRepository,
+      ngrokIngress as NgrokIngressService,
+    );
   });
 
   afterEach(() => {
@@ -94,5 +145,52 @@ describe(`GoogleOAuthService`, () => {
       codeVerifier: `code-verifier`,
       redirect_uri: `http://localhost:3334/api/consumer/auth/google/callback`,
     });
+  });
+
+  it(`delegates Google login persistence through onboarding collaborators`, async () => {
+    const payload = {
+      sub: `google-sub`,
+      email: `google@example.com`,
+      email_verified: true,
+      given_name: `Ada`,
+      family_name: `Lovelace`,
+      name: `Ada Lovelace`,
+      picture: `https://example.com/avatar.png`,
+      hd: `example.com`,
+    } as TokenPayload;
+
+    const consumer = await service.loginWithPayload(`google@example.com`, payload);
+
+    expect(consumerIdentityRepository.findGoogleLoginCandidateByEmail).toHaveBeenCalledWith(`google@example.com`);
+    expect(consumerIdentityRepository.updateGoogleLoginConsumer).toHaveBeenCalled();
+    expect(googleProfileQuery.findMetadataByConsumerId).toHaveBeenCalledWith(`consumer-id`);
+    expect(googleProfileRepository.upsertProfile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        consumerId: `consumer-id`,
+        email: `google@example.com`,
+        emailVerified: true,
+        organization: `example.com`,
+      }),
+    );
+    expect(consumer).toEqual(
+      expect.objectContaining({
+        id: `consumer-id`,
+      }),
+    );
+  });
+
+  it(`rejects Google login when stored profile sub mismatches incoming account`, async () => {
+    googleProfileQuery.findMetadataByConsumerId.mockResolvedValue({
+      metadata: { sub: `different-google-sub` },
+    });
+
+    await expect(
+      service.loginWithPayload(`google@example.com`, {
+        sub: `google-sub`,
+        email: `google@example.com`,
+        email_verified: true,
+      } as TokenPayload),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(googleProfileRepository.upsertProfile).not.toHaveBeenCalled();
   });
 });

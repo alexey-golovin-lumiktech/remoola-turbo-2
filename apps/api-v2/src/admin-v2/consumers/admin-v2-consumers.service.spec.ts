@@ -16,6 +16,7 @@ import { AdminV2ConsumersService } from './admin-v2-consumers.service';
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';
 import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
 import { AdminActionAuditService } from '../../shared/admin-action-audit.service';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
@@ -155,6 +156,7 @@ describe(`AdminV2ConsumersService`, () => {
         AdminV2ConsumersService,
         AdminV2ConsumerCaseQuery,
         { provide: PrismaService, useValue: {} },
+        { provide: PrismaTransactionRunner, useValue: { run: jest.fn() } },
         { provide: ConsumerContractsService, useValue: {} },
         { provide: AdminActionAuditService, useValue: {} },
         { provide: ConsumerAuthService, useValue: {} },
@@ -451,14 +453,17 @@ describe(`AdminV2ConsumersService`, () => {
     };
 
     const consumerLedgerQuery = new AdminV2ConsumerLedgerQuery(prisma as never);
+    const transactions = {
+      run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
+    } as never;
 
     return {
       service: new AdminV2ConsumersService(
         new AdminV2ConsumerRepository(prisma as never),
         new AdminV2ConsumerActivityQuery(prisma as never),
         consumerLedgerQuery,
-        new AdminV2ConsumerNotesRepository(prisma as never),
-        new AdminV2ConsumerFlagsRepository(prisma as never),
+        new AdminV2ConsumerNotesRepository(prisma as never, transactions),
+        new AdminV2ConsumerFlagsRepository(prisma as never, transactions),
         consumerContractsService as never,
         adminActionAudit as never,
         consumerAuthService as never,

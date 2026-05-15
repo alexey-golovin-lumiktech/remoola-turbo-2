@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
 import { AdminAuthControllerSupportService } from './admin-auth-controller-support.service';
+import { AdminAuthSessionRepository } from './admin-auth-session.repository';
 import { AdminAuthService } from './admin-auth.service';
+import { AdminIdentityRepository } from './admin-identity.repository';
 import { envs } from '../envs';
 import { AuthAuditModule } from '../shared/auth-audit.module';
 import { DatabaseModule } from '../shared/database.module';
@@ -18,7 +20,7 @@ import { MailingModule } from '../shared/mailing.module';
       signOptions: { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
     }),
   ],
-  providers: [AdminAuthControllerSupportService, AdminAuthService],
+  providers: [AdminAuthControllerSupportService, AdminIdentityRepository, AdminAuthSessionRepository, AdminAuthService],
   exports: [AdminAuthControllerSupportService, AdminAuthService],
 })
 export class AdminAuthModule {}

@@ -4,11 +4,11 @@ import { JwtService } from '@nestjs/jwt';
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { type IJwtTokenPayload } from '../../dtos/consumer';
 import { envs } from '../../envs';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
-import { PrismaService } from '../../shared/prisma.service';
 
 import type express from 'express';
 
@@ -18,7 +18,7 @@ export class ConsumerAuthVerificationService {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
+    private readonly consumerIdentityRepository: ConsumerIdentityRepository,
     private readonly mailingService: MailingService,
     private readonly originResolver: OriginResolverService,
   ) {}
@@ -53,19 +53,14 @@ export class ConsumerAuthVerificationService {
       return;
     }
 
-    const identity = await this.prisma.consumerModel.findFirst({
-      where: { id: identityId, deletedAt: null },
-    });
+    const identity = await this.consumerIdentityRepository.findActiveVerificationCandidateById(identityId);
 
     if (!identity?.email) {
       redirectWith(`no`, appScope);
       return;
     }
 
-    const updated = await this.prisma.consumerModel.update({
-      where: { id: identity.id },
-      data: { verified: true },
-    });
+    const updated = await this.consumerIdentityRepository.markVerified(identity.id);
     const verifiedFlag: `yes` | `no` = !updated || updated.verified === false ? `no` : `yes`;
     redirectWith(verifiedFlag, appScope, identity.email);
   }
@@ -76,14 +71,7 @@ export class ConsumerAuthVerificationService {
       throw new BadRequestException(`Invalid app scope`);
     }
 
-    const consumer = await this.prisma.consumerModel.findFirst({
-      where: { id: consumerId, deletedAt: null },
-      select: {
-        id: true,
-        email: true,
-        verified: true,
-      },
-    });
+    const consumer = await this.consumerIdentityRepository.findActiveVerificationDispatchTargetById(consumerId);
     if (!consumer) {
       throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
     }
@@ -104,7 +92,7 @@ export class ConsumerAuthVerificationService {
       throw new BadRequestException(`Invalid app scope`);
     }
 
-    const consumer = await this.prisma.consumerModel.findFirst({ where: { id: consumerId } });
+    const consumer = await this.consumerIdentityRepository.findAnyVerificationDispatchTargetById(consumerId);
     if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
     if (consumer.verified) {
       this.logger.log({

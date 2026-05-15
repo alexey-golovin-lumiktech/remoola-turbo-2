@@ -3,11 +3,23 @@ import { Injectable } from '@nestjs/common';
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { type Prisma } from '@remoola/database-2';
 
+import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
 export class PasswordResetRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly consumerIdentityRepository: ConsumerIdentityRepository,
+  ) {}
+
+  async deleteExpiredTokens(now: Date = new Date()): Promise<number> {
+    const result = await this.prisma.resetPasswordModel.deleteMany({
+      where: { expiredAt: { lt: now } },
+    });
+
+    return result.count;
+  }
 
   invalidateActiveTokensByConsumerId(consumerId: string) {
     return this.prisma.resetPasswordModel.updateMany({
@@ -56,6 +68,23 @@ export class PasswordResetRepository {
     return db.resetPasswordModel.updateMany({
       where: { id, deletedAt: null },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  async consumeTokenAndUpdatePassword(params: {
+    resetTokenId: string;
+    consumerId: string;
+    password: string;
+    salt: string;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const updateResult = await this.consumeToken(params.resetTokenId, tx);
+      if (updateResult.count !== 1) {
+        return false;
+      }
+
+      await this.consumerIdentityRepository.updatePassword(params.consumerId, params.password, params.salt, tx);
+      return true;
     });
   }
 }

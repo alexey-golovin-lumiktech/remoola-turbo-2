@@ -30,7 +30,7 @@ import { PrismaService } from '../../shared/prisma.service';
 describe(`ConsumerAuthService.refreshAccess`, () => {
   let service: ConsumerAuthService;
   let prisma: {
-    authSessionModel: { findFirst: jest.Mock; updateMany: jest.Mock };
+    authSessionModel: { create: jest.Mock; findFirst: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
     consumerModel: { findFirst: jest.Mock };
     $transaction: jest.Mock;
   };
@@ -42,7 +42,9 @@ describe(`ConsumerAuthService.refreshAccess`, () => {
   beforeEach(async () => {
     prisma = {
       authSessionModel: {
+        create: jest.fn(),
         findFirst: jest.fn(),
+        update: jest.fn(),
         updateMany: jest.fn().mockResolvedValue({ count: 2 }),
       },
       consumerModel: {
@@ -162,6 +164,81 @@ describe(`ConsumerAuthService.refreshAccess`, () => {
 
     expect(prisma.authSessionModel.findFirst).not.toHaveBeenCalled();
     expect(authAudit.recordAudit).not.toHaveBeenCalled();
+  });
+
+  it(`treats a lost rotation compare-and-swap as refresh reuse`, async () => {
+    jwtService.verify.mockReturnValue({
+      identityId: `consumer-1`,
+      sid: `session-1`,
+      typ: `refresh`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
+    });
+    jwtService.signAsync.mockResolvedValueOnce(`access-token`).mockResolvedValueOnce(`refresh-token`);
+    prisma.authSessionModel.findFirst.mockResolvedValue({
+      id: `session-1`,
+      consumerId: `consumer-1`,
+      sessionFamilyId: `family-1`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
+      refreshTokenHash: `hash-refresh-token`,
+      replacedById: null,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: `consumer-1`,
+      email: `consumer@example.com`,
+      suspendedAt: null,
+    });
+    const txCreate = jest.fn().mockResolvedValue({ id: `session-2` });
+    const txUpdate = jest.fn().mockResolvedValue({ id: `session-2` });
+    const txUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
+    prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        authSessionModel: {
+          create: txCreate,
+          update: txUpdate,
+          updateMany: txUpdateMany,
+        },
+      }),
+    );
+
+    await expect(service.refreshAccess(`refresh-token`, CURRENT_CONSUMER_APP_SCOPE)).rejects.toThrow(
+      UnauthorizedException,
+    );
+    await expect(service.refreshAccess(`refresh-token`, CURRENT_CONSUMER_APP_SCOPE)).rejects.toMatchObject({
+      response: expect.objectContaining({ message: errorCodes.INVALID_REFRESH_TOKEN }),
+    });
+
+    expect(txUpdateMany).toHaveBeenCalledWith({
+      where: {
+        id: `session-1`,
+        consumerId: `consumer-1`,
+        appScope: CURRENT_CONSUMER_APP_SCOPE,
+        refreshTokenHash: `hash-refresh-token`,
+        revokedAt: null,
+        replacedById: null,
+        expiresAt: { gte: expect.any(Date) },
+      },
+      data: expect.objectContaining({
+        invalidatedReason: `rotated`,
+        replacedById: expect.any(String),
+      }),
+    });
+    expect(authAudit.recordAudit).toHaveBeenCalledWith({
+      identityType: AUTH_IDENTITY_TYPES.consumer,
+      identityId: `consumer-1`,
+      email: `consumer@example.com`,
+      event: AUTH_AUDIT_EVENTS.refresh_reuse,
+      ipAddress: undefined,
+      userAgent: undefined,
+    });
+    expect(authAudit.recordAudit).not.toHaveBeenCalledWith(
+      expect.objectContaining({ event: AUTH_AUDIT_EVENTS.refresh_success }),
+    );
+    expect(prisma.authSessionModel.updateMany).toHaveBeenCalledWith({
+      where: { sessionFamilyId: `family-1`, revokedAt: null },
+      data: expect.objectContaining({ invalidatedReason: `refresh_reuse_detected` }),
+    });
   });
 
   it(`revokes only the matching scoped session during logout cleanup`, async () => {

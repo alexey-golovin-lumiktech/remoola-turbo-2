@@ -1,7 +1,19 @@
-/* eslint-disable import/order */
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
+
+import { oauthCrypto } from '@remoola/security-utils';
+import { adminErrorCodes } from '@remoola/shared-constants';
+
+import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from './admin-auth-session-reasons';
+import { AdminAuthSessionRepository } from './admin-auth-session.repository';
+import { AdminAuthService } from './admin-auth.service';
+import { AdminIdentityRepository } from './admin-identity.repository';
+import { envs } from '../envs';
+import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../shared/auth-audit.service';
+import { PrismaTransactionRunner } from '../shared/prisma-transaction.runner';
+import { PrismaService } from '../shared/prisma.service';
+import { passwordUtils, secureCompare } from '../shared-common';
 
 jest.mock(`@remoola/security-utils`, () => ({
   oauthCrypto: {
@@ -16,18 +28,6 @@ jest.mock(`../shared-common`, () => ({
   },
   secureCompare: jest.fn((a: string, b: string) => a === b),
 }));
-
-import { oauthCrypto } from '@remoola/security-utils';
-import { adminErrorCodes } from '@remoola/shared-constants';
-
-import { AdminAuthService } from './admin-auth.service';
-import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from './admin-auth-session-reasons';
-import { envs } from '../envs';
-import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../shared/auth-audit.service';
-import { MailingService } from '../shared/mailing.service';
-import { OriginResolverService } from '../shared/origin-resolver.service';
-import { PrismaService } from '../shared/prisma.service';
-import { passwordUtils, secureCompare } from '../shared-common';
 
 const mockVerifyPassword = passwordUtils.verifyPassword as jest.MockedFunction<typeof passwordUtils.verifyPassword>;
 const mockSecureCompare = secureCompare as jest.MockedFunction<typeof secureCompare>;
@@ -95,7 +95,7 @@ describe(`AdminAuthService`, () => {
         const tx = {
           adminAuthSessionModel: {
             create: jest.fn().mockResolvedValue(undefined),
-            update: jest.fn().mockResolvedValue(undefined),
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
           },
         };
         return fn(tx);
@@ -120,17 +120,12 @@ describe(`AdminAuthService`, () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminAuthService,
+        AdminIdentityRepository,
+        AdminAuthSessionRepository,
         { provide: JwtService, useValue: jwtService },
         { provide: PrismaService, useValue: prisma },
+        PrismaTransactionRunner,
         { provide: AuthAuditService, useValue: authAudit },
-        { provide: MailingService, useValue: { sendAdminV2PasswordResetEmail: jest.fn() } },
-        {
-          provide: OriginResolverService,
-          useValue: {
-            normalizeOrigin: jest.fn((origin: string) => origin),
-            resolveConfiguredAdminOrigin: jest.fn(),
-          },
-        },
       ],
     }).compile();
 
@@ -242,12 +237,12 @@ describe(`AdminAuthService`, () => {
       prisma.adminModel.findFirst.mockResolvedValue(adminIdentity);
 
       const txCreate = jest.fn().mockResolvedValue(undefined);
-      const txUpdate = jest.fn().mockResolvedValue(undefined);
+      const txUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
       prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
         return fn({
           adminAuthSessionModel: {
             create: txCreate,
-            update: txUpdate,
+            updateMany: txUpdateMany,
           },
         });
       });
@@ -273,8 +268,15 @@ describe(`AdminAuthService`, () => {
           accessTokenHash: `hash-access-token`,
         }),
       });
-      expect(txUpdate).toHaveBeenCalledWith({
-        where: { id: activeSession.id },
+      expect(txUpdateMany).toHaveBeenCalledWith({
+        where: {
+          id: activeSession.id,
+          adminId: adminIdentity.id,
+          refreshTokenHash: activeSession.refreshTokenHash,
+          revokedAt: null,
+          replacedById: null,
+          expiresAt: { gte: expect.any(Date) },
+        },
         data: expect.objectContaining({
           replacedById: rotatedSessionId,
           invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.rotated,
@@ -285,6 +287,61 @@ describe(`AdminAuthService`, () => {
         identityId: adminIdentity.id,
         email: adminIdentity.email,
         event: AUTH_AUDIT_EVENTS.refresh_success,
+      });
+    });
+
+    it(`treats a lost rotation compare-and-swap as refresh reuse`, async () => {
+      jwtService.verify.mockReturnValue({
+        identityId: adminIdentity.id,
+        sid: activeSession.id,
+        typ: `refresh`,
+      });
+      prisma.adminAuthSessionModel.findFirst.mockResolvedValue(activeSession);
+      prisma.adminModel.findFirst.mockResolvedValue(adminIdentity);
+
+      const txCreate = jest.fn().mockResolvedValue(undefined);
+      const txUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
+      prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          adminAuthSessionModel: {
+            create: txCreate,
+            updateMany: txUpdateMany,
+          },
+        }),
+      );
+
+      await expect(service.refreshAccess(`refresh-token`)).rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshAccess(`refresh-token`)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID }),
+      });
+
+      expect(txUpdateMany).toHaveBeenCalledWith({
+        where: {
+          id: activeSession.id,
+          adminId: adminIdentity.id,
+          refreshTokenHash: activeSession.refreshTokenHash,
+          revokedAt: null,
+          replacedById: null,
+          expiresAt: { gte: expect.any(Date) },
+        },
+        data: expect.objectContaining({
+          invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.rotated,
+        }),
+      });
+      expect(authAudit.recordAudit).toHaveBeenCalledWith({
+        identityType: AUTH_IDENTITY_TYPES.admin,
+        identityId: adminIdentity.id,
+        email: adminIdentity.email,
+        event: AUTH_AUDIT_EVENTS.refresh_reuse,
+      });
+      expect(authAudit.recordAudit).not.toHaveBeenCalledWith(
+        expect.objectContaining({ event: AUTH_AUDIT_EVENTS.refresh_success }),
+      );
+      expect(prisma.adminAuthSessionModel.updateMany).toHaveBeenCalledWith({
+        where: { sessionFamilyId: activeSession.sessionFamilyId, revokedAt: null },
+        data: expect.objectContaining({
+          invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.refresh_reuse_detected,
+        }),
       });
     });
 

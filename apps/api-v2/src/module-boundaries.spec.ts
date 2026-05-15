@@ -1,0 +1,125 @@
+import { readdirSync, readFileSync, statSync } from 'fs';
+import { join } from 'path';
+
+import { MODULE_METADATA } from '@nestjs/common/constants';
+
+import { AdminV2AccessRepository } from './admin-v2/admin-v2-access.repository';
+import { AdminV2AccessService } from './admin-v2/admin-v2-access.service';
+import { AdminV2DomainEventsService } from './admin-v2/admin-v2-domain-events.service';
+import { ADMIN_V2_IDEMPOTENCY_OPTIONS } from './admin-v2/admin-v2-idempotency.options';
+import {
+  ADMIN_V2_IDEMPOTENCY_REPOSITORY,
+  AdminV2IdempotencyRepository,
+} from './admin-v2/admin-v2-idempotency.repository';
+import { AdminV2IdempotencyService } from './admin-v2/admin-v2-idempotency.service';
+import { AdminV2SharedModule } from './admin-v2/admin-v2-shared.module';
+import { AdminV2AdminsModule } from './admin-v2/admins/admin-v2-admins.module';
+import { AdminV2AdminsService } from './admin-v2/admins/admin-v2-admins.service';
+import { AdminV2AssignmentsModule } from './admin-v2/assignments/admin-v2-assignments.module';
+import { AdminV2AssignmentsService } from './admin-v2/assignments/admin-v2-assignments.service';
+import { AdminV2LedgerModule } from './admin-v2/ledger/admin-v2-ledger.module';
+import { AdminV2LedgerService } from './admin-v2/ledger/admin-v2-ledger.service';
+import { AdminV2LedgerAnomaliesService } from './admin-v2/ledger/anomalies/admin-v2-ledger-anomalies.service';
+// eslint-disable-next-line max-len
+import { AdminV2PaymentReversalRefundFinalizerService } from './admin-v2/payments/admin-v2-payment-reversal-refund-finalizer.service';
+import { AdminV2PaymentReversalWorkflowService } from './admin-v2/payments/admin-v2-payment-reversal-workflow.service';
+import { AdminV2PaymentsModule } from './admin-v2/payments/admin-v2-payments.module';
+import { AdminV2PaymentsService } from './admin-v2/payments/admin-v2-payments.service';
+import { AdminActionAuditRepository } from './shared/admin-action-audit.repository';
+import { AdminActionAuditService } from './shared/admin-action-audit.service';
+import { AuthAuditModule } from './shared/auth-audit.module';
+import { AuthAuditQuery } from './shared/auth-audit.query';
+import { AuthAuditRepository } from './shared/auth-audit.repository';
+import { AuthAuditService } from './shared/auth-audit.service';
+import { ConsumerActionLogQuery } from './shared/consumer-action-log.query';
+import { ConsumerActionLogRepository } from './shared/consumer-action-log.repository';
+import { ConsumerActionLogService } from './shared/consumer-action-log.service';
+import { PrismaTransactionRunner } from './shared/prisma-transaction.runner';
+import { PrismaModule } from './shared/prisma.module';
+import { PrismaService } from './shared/prisma.service';
+
+function exportedProviders(moduleClass: object): unknown[] {
+  return Reflect.getMetadata(MODULE_METADATA.EXPORTS, moduleClass) ?? [];
+}
+
+function expectExactExports(moduleClass: object, expected: unknown[]): void {
+  expect(new Set(exportedProviders(moduleClass))).toEqual(new Set(expected));
+}
+
+function expectNotExported(moduleClass: object, forbidden: unknown[]): void {
+  const exported = new Set(exportedProviders(moduleClass));
+  for (const provider of forbidden) {
+    expect(exported.has(provider)).toBe(false);
+  }
+}
+
+function listRepositoryFiles(directory: string): string[] {
+  const entries = readdirSync(directory);
+  const files: string[] = [];
+  for (const entry of entries) {
+    const path = join(directory, entry);
+    if (statSync(path).isDirectory()) {
+      files.push(...listRepositoryFiles(path));
+      continue;
+    }
+    if (entry.endsWith(`.repository.ts`) && !entry.endsWith(`.spec.ts`)) {
+      files.push(path);
+    }
+  }
+  return files.sort();
+}
+
+describe(`Nest module provider boundaries`, () => {
+  it(`keeps the admin-v2 shared public surface explicit`, () => {
+    expectExactExports(AdminV2SharedModule, [
+      AdminV2AccessService,
+      AdminV2IdempotencyService,
+      AdminV2DomainEventsService,
+    ]);
+    expectNotExported(AdminV2SharedModule, [
+      AdminV2AccessRepository,
+      AdminV2IdempotencyRepository,
+      ADMIN_V2_IDEMPOTENCY_REPOSITORY,
+      ADMIN_V2_IDEMPOTENCY_OPTIONS,
+    ]);
+  });
+
+  it(`exports only the payments facade from the payments module`, () => {
+    expectExactExports(AdminV2PaymentsModule, [AdminV2PaymentsService]);
+    expectNotExported(AdminV2PaymentsModule, [
+      AdminV2PaymentReversalWorkflowService,
+      AdminV2PaymentReversalRefundFinalizerService,
+    ]);
+  });
+
+  it(`exports only feature facades from admin-v2 feature modules`, () => {
+    expectExactExports(AdminV2AdminsModule, [AdminV2AdminsService]);
+    expectExactExports(AdminV2AssignmentsModule, [AdminV2AssignmentsService]);
+    expectExactExports(AdminV2LedgerModule, [AdminV2LedgerService, AdminV2LedgerAnomaliesService]);
+  });
+
+  it(`keeps the shared audit public surface explicit`, () => {
+    expectExactExports(AuthAuditModule, [AuthAuditService, AdminActionAuditService, ConsumerActionLogService]);
+    expectNotExported(AuthAuditModule, [
+      AdminActionAuditRepository,
+      AuthAuditQuery,
+      AuthAuditRepository,
+      ConsumerActionLogQuery,
+      ConsumerActionLogRepository,
+    ]);
+  });
+
+  it(`keeps prisma infrastructure exports explicit`, () => {
+    expectExactExports(PrismaModule, [PrismaService, PrismaTransactionRunner]);
+  });
+
+  it(`routes admin-v2 repository transactions through PrismaTransactionRunner`, () => {
+    const repositoryFiles = listRepositoryFiles(join(__dirname, `admin-v2`));
+
+    expect(repositoryFiles.length).toBeGreaterThan(0);
+    for (const file of repositoryFiles) {
+      const source = readFileSync(file, `utf8`);
+      expect(source).not.toMatch(/\.\$transaction\s*\(/);
+    }
+  });
+});

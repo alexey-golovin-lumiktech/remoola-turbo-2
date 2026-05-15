@@ -3,28 +3,18 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
 import { envs } from '../../../envs';
-import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class ConsumerExchangeRateReader {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly rateQuery: ConsumerExchangeRateQuery) {}
 
   async getRate(from: $Enums.CurrencyCode, to: $Enums.CurrencyCode) {
     if (from === to) return { rate: 1 };
 
     const now = new Date();
-    const rate = await this.prisma.exchangeRateModel.findFirst({
-      where: {
-        fromCurrency: from,
-        toCurrency: to,
-        status: $Enums.ExchangeRateStatus.APPROVED,
-        deletedAt: null,
-        effectiveAt: { lte: now },
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-      },
-      orderBy: [{ effectiveAt: `desc` }, { createdAt: `desc` }],
-    });
+    const rate = await this.rateQuery.findApprovedEffectiveRate(from, to, now);
 
     if (!rate) throw new NotFoundException(errorCodes.RATE_NOT_AVAILABLE);
 

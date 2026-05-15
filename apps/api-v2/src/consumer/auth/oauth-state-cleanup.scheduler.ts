@@ -1,22 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
-import { PrismaService } from '../../shared/prisma.service';
+import { OAuthStateStoreRepository } from './oauth-state-store.repository';
 
 @Injectable()
 export class OauthStateCleanupScheduler {
   private readonly logger = new Logger(OauthStateCleanupScheduler.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly oauthStateStoreRepository: OAuthStateStoreRepository) {}
 
   @Cron(`*/10 * * * *`)
   async deleteExpiredOauthState() {
     try {
-      const result = await this.prisma.oauthStateModel.deleteMany({
-        where: { expiresAt: { lt: new Date() } },
-      });
-      if (result.count > 0) {
-        this.logger.log(`OAuth state cleanup: deleted ${result.count} expired row(s)`);
+      const deletedCount = await this.oauthStateStoreRepository.deleteExpiredStates();
+      if (deletedCount > 0) {
+        this.logger.log(`OAuth state cleanup: deleted ${deletedCount} expired row(s)`);
       }
     } catch (err) {
       this.logger.warn(

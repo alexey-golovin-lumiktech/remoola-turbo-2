@@ -5,6 +5,8 @@ import { Prisma } from '@remoola/database-2';
  * - Use tagged templates / `Prisma.sql` for values so Prisma parameterizes them safely.
  * - For UUID arrays, prefer `ANY(${ids}::uuid[])` over `IN (${Prisma.join(ids)})` to avoid text-vs-uuid mismatches.
  * - Reserve `$executeRawUnsafe` for trusted DDL/identifier cases only, after explicit whitelisting and quoting.
+ * - Advisory locks here are PostgreSQL transaction-scoped locks; callers must acquire them inside the transaction
+ *   that protects the write set and keep lock ordering stable across ledger mutations.
  *
  * The shared consumer balance lock intentionally keeps the legacy `:outgoing` suffix so mixed-version
  * deployments still serialize spendable-balance mutations across withdraw / transfer / reversal flows.

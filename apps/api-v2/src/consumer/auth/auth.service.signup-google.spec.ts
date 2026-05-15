@@ -1,15 +1,10 @@
-import { JwtService } from '@nestjs/jwt';
-import { Test, type TestingModule } from '@nestjs/testing';
-
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { type GoogleSignupPayload } from './auth.service';
-import { ConsumerAuthService } from './auth.service.spec-wrapper';
-import { AuthAuditService } from '../../shared/auth-audit.service';
-import { MailingService } from '../../shared/mailing.service';
-import { OriginResolverService } from '../../shared/origin-resolver.service';
-import { PrismaService } from '../../shared/prisma.service';
+import { ConsumerAuthSignupService } from './consumer-auth-signup.service';
+import { type ConsumerGoogleProfileRepository } from './consumer-google-profile.repository';
+import { type ConsumerIdentityRepository } from './consumer-identity.repository';
 
 describe(`ConsumerAuthService.signup (Google session)`, () => {
   const createsVerifiedGoogleConsumerTestName = [
@@ -17,10 +12,13 @@ describe(`ConsumerAuthService.signup (Google session)`, () => {
     `when Google signup payload is present`,
   ].join(` `);
 
-  let service: ConsumerAuthService;
-  let prisma: {
-    consumerModel: { findFirst: jest.Mock; create: jest.Mock };
-    googleProfileDetailsModel: { upsert: jest.Mock };
+  let service: ConsumerAuthSignupService;
+  let consumerIdentityRepository: {
+    findSignupCollisionByEmail: jest.Mock;
+    createSignupConsumer: jest.Mock;
+  };
+  let googleProfileRepository: {
+    upsertProfile: jest.Mock;
   };
 
   const googlePayload = (email: string): GoogleSignupPayload => ({
@@ -40,39 +38,24 @@ describe(`ConsumerAuthService.signup (Google session)`, () => {
     appScope: CURRENT_CONSUMER_APP_SCOPE,
   });
 
-  beforeEach(async () => {
-    prisma = {
-      consumerModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({
-          id: `new-consumer-id`,
-          email: `g@example.com`,
-          verified: true,
-          accountType: $Enums.AccountType.BUSINESS,
-        }),
-      },
-      googleProfileDetailsModel: {
-        upsert: jest.fn().mockResolvedValue({}),
-      },
+  beforeEach(() => {
+    consumerIdentityRepository = {
+      findSignupCollisionByEmail: jest.fn().mockResolvedValue(null),
+      createSignupConsumer: jest.fn().mockResolvedValue({
+        id: `new-consumer-id`,
+        email: `g@example.com`,
+        verified: true,
+        accountType: $Enums.AccountType.BUSINESS,
+      }),
+    };
+    googleProfileRepository = {
+      upsertProfile: jest.fn().mockResolvedValue({}),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ConsumerAuthService,
-        { provide: PrismaService, useValue: prisma },
-        { provide: JwtService, useValue: { signAsync: jest.fn() } },
-        { provide: MailingService, useValue: { sendConsumerSignupVerificationEmail: jest.fn() } },
-        { provide: AuthAuditService, useValue: { recordAudit: jest.fn() } },
-        {
-          provide: OriginResolverService,
-          useValue: {
-            getAllowedOrigins: jest.fn(),
-          },
-        },
-      ],
-    }).compile();
-
-    service = module.get(ConsumerAuthService);
+    service = new ConsumerAuthSignupService(
+      consumerIdentityRepository as unknown as ConsumerIdentityRepository,
+      googleProfileRepository as unknown as ConsumerGoogleProfileRepository,
+    );
   });
 
   it(createsVerifiedGoogleConsumerTestName, async () => {
@@ -93,17 +76,15 @@ describe(`ConsumerAuthService.signup (Google session)`, () => {
     const consumer = await service.signup(dto as any, gp);
 
     expect(consumer.verified).toBe(true);
-    expect(prisma.consumerModel.create).toHaveBeenCalledWith(
+    expect(consumerIdentityRepository.createSignupConsumer).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          email: `g@example.com`,
-          verified: true,
-        }),
+        email: `g@example.com`,
+        verified: true,
       }),
     );
-    const createData = prisma.consumerModel.create.mock.calls[0]?.[0]?.data as Record<string, unknown>;
+    const createData = consumerIdentityRepository.createSignupConsumer.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(createData).not.toHaveProperty(`password`);
     expect(createData).not.toHaveProperty(`salt`);
-    expect(prisma.googleProfileDetailsModel.upsert).toHaveBeenCalled();
+    expect(googleProfileRepository.upsertProfile).toHaveBeenCalled();
   });
 });

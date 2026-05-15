@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
 
 type RequestMeta = {
@@ -10,10 +11,13 @@ type RequestMeta = {
 
 @Injectable()
 export class AdminV2ConsumerNotesRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner,
+  ) {}
 
   createWithAudit(consumerId: string, adminId: string, content: string, meta?: RequestMeta) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const note = await tx.consumerAdminNoteModel.create({
         data: {
           consumerId,

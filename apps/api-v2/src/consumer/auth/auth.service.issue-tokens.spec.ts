@@ -26,6 +26,7 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
   let service: ConsumerAuthService;
   let prisma: {
     authSessionModel: { create: jest.Mock; update: jest.Mock };
+    $transaction: jest.Mock;
   };
   let jwtService: { signAsync: jest.Mock };
 
@@ -38,6 +39,7 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
         create: jest.fn().mockResolvedValue({ id: `session-1` }),
         update: jest.fn().mockResolvedValue({ id: `session-1` }),
       },
+      $transaction: jest.fn().mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
     jwtService = {
       signAsync: jest
@@ -77,27 +79,29 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
 
   it(`stores both access and refresh token hashes on the created auth session`, async () => {
     const result = await service.issueTokensForConsumer(`consumer-1`, CURRENT_CONSUMER_APP_SCOPE);
+    const sessionId = prisma.authSessionModel.create.mock.calls[0][0].data.id as string;
 
     expect(result).toEqual({
       accessToken: `access-token`,
       refreshToken: `refresh-token`,
-      sessionId: `session-1`,
-      sessionFamilyId: `session-1`,
+      sessionId,
+      sessionFamilyId: sessionId,
     });
     expect(prisma.authSessionModel.create).toHaveBeenCalledWith({
       data: {
+        id: sessionId,
         consumerId: `consumer-1`,
         appScope: CURRENT_CONSUMER_APP_SCOPE,
-        sessionFamilyId: `consumer-1`,
+        sessionFamilyId: sessionId,
         refreshTokenHash: expect.stringMatching(/^pending:/),
         expiresAt: expect.any(Date),
       },
     });
     expect(prisma.authSessionModel.update).toHaveBeenCalledWith({
-      where: { id: `session-1` },
+      where: { id: sessionId },
       data: {
         accessTokenHash: `hash-access-token`,
-        sessionFamilyId: `session-1`,
+        sessionFamilyId: sessionId,
         refreshTokenHash: `hash-refresh-token`,
         lastUsedAt: expect.any(Date),
       },

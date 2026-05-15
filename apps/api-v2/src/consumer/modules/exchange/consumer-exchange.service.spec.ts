@@ -10,14 +10,19 @@ import {
   normalizeConsumerScheduledConversion,
   roundConsumerExchangeAmountToCurrency,
 } from './consumer-exchange-normalizers';
+import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
 import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
 import { ConsumerExchangeService } from './consumer-exchange.service';
 import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 
+function buildRateReader(prisma: any) {
+  return new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma));
+}
+
 function buildService(prisma: any, balanceService: any) {
   return new ConsumerExchangeService(
     balanceService,
-    new ConsumerExchangeRateReader(prisma),
+    buildRateReader(prisma),
     new ConsumerExchangeExecutionRepository(prisma),
     new ConsumerExchangeAutomationRepository(prisma),
   );

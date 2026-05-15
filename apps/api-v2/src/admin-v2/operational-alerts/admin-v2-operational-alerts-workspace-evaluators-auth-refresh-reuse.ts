@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
+import { AdminV2OperationalAlertsAuthRefreshReuseQuery } from './admin-v2-operational-alerts-auth-refresh-reuse.query';
 import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
 import {
   type EvaluationResult,
   type OperationalAlertWorkspaceEvaluator,
 } from './admin-v2-operational-alerts-workspace-evaluators';
-import { AUTH_AUDIT_EVENTS } from '../../shared/auth-audit.service';
-import { PrismaService } from '../../shared/prisma.service';
 
 type AuthRefreshReuseQuery = { windowMinutes: number };
 
@@ -37,18 +36,12 @@ function parseQueryPayload(raw: unknown): AuthRefreshReuseQuery {
 
 @Injectable()
 export class AuthRefreshReuseAlertEvaluator implements OperationalAlertWorkspaceEvaluator {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly query: AdminV2OperationalAlertsAuthRefreshReuseQuery) {}
 
   async evaluate(queryPayload: unknown, threshold: OperationalAlertThreshold): Promise<EvaluationResult> {
     const { windowMinutes } = parseQueryPayload(queryPayload);
     const since = new Date(Date.now() - windowMinutes * 60 * 1000);
-    const count = await this.prisma.authAuditLogModel.count({
-      where: {
-        identityType: `admin`,
-        event: AUTH_AUDIT_EVENTS.refresh_reuse,
-        createdAt: { gte: since },
-      },
-    });
+    const count = await this.query.countRefreshReuseSince(since);
 
     if (threshold.type === `count_gt`) {
       const fired = count > threshold.value;
