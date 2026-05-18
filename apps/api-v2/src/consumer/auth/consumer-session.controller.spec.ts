@@ -11,11 +11,11 @@ import {
   getScopedConsumerRefreshTokenCookieKeysForRead,
 } from '@remoola/api-types';
 
-import { ConsumerAuthController } from './auth.controller';
 import { type ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
 import { ConsumerGoogleOAuthController } from './consumer-google-oauth.controller';
 import { ConsumerPasswordController } from './consumer-password.controller';
+import { ConsumerSessionController } from './consumer-session.controller';
 import { ConsumerSignupController } from './consumer-signup.controller';
 import { type GoogleOAuthService } from './google-oauth.service';
 import { type OAuthStateStoreService } from './oauth-state-store.service';
@@ -27,8 +27,8 @@ import { constants, getApiConsumerGoogleSignupSessionCookieKey } from '../../sha
 const CSRF_TOKEN_COOKIE_KEY = constants.CSRF_TOKEN_COOKIE_KEY;
 const GOOGLE_OAUTH_STATE_COOKIE_KEY = constants.GOOGLE_OAUTH_STATE_COOKIE_KEY;
 
-describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
-  let controller: ConsumerAuthController;
+describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
+  let controller: ConsumerSessionController;
   let googleOAuthController: ConsumerGoogleOAuthController;
   let passwordController: ConsumerPasswordController;
   let signupController: ConsumerSignupController;
@@ -168,7 +168,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     };
 
     const supportService = new ConsumerAuthControllerSupportService(originResolver as OriginResolverService);
-    controller = new ConsumerAuthController(service as ConsumerAuthService, supportService);
+    controller = new ConsumerSessionController(service as ConsumerAuthService, supportService);
     googleOAuthController = new ConsumerGoogleOAuthController(
       service as ConsumerAuthService,
       googleOAuthService as GoogleOAuthService,

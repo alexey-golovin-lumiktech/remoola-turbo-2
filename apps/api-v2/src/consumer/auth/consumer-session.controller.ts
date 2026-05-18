@@ -27,7 +27,7 @@ import { getApiOAuthStateCookieKey } from '../../shared-common';
 
 @ApiTags(`Consumer: Auth`)
 @Controller(`consumer/auth`)
-export class ConsumerAuthController {
+export class ConsumerSessionController {
   private readonly oauthStateTtlMs = 5 * 60 * 1000;
 
   constructor(

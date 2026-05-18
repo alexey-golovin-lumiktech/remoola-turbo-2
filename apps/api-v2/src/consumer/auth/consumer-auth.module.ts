@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
-import { ConsumerAuthController } from './auth.controller';
 import { ConsumerAuthService } from './auth.service';
 import { CONSUMER_ADMIN_AUTH_ACTIONS } from './consumer-admin-auth-actions.port';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
@@ -17,6 +16,7 @@ import { ConsumerGoogleProfileRepository } from './consumer-google-profile.repos
 import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { ConsumerPasswordController } from './consumer-password.controller';
 import { CONSUMER_SESSION_REVOCATION_PORT } from './consumer-session-revocation.port';
+import { ConsumerSessionController } from './consumer-session.controller';
 import { ConsumerSignupController } from './consumer-signup.controller';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreQuery } from './oauth-state-store.query';
@@ -37,7 +37,7 @@ import { MailingModule } from '../../shared/mailing.module';
     MailingModule,
   ],
   controllers: [
-    ConsumerAuthController,
+    ConsumerSessionController,
     ConsumerGoogleOAuthController,
     ConsumerPasswordController,
     ConsumerSignupController,
