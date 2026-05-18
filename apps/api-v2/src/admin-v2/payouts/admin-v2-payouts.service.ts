@@ -3,13 +3,13 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { envs } from '../../envs';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
+import { PayoutHighValuePolicyService } from './payout-high-value-policy.service';
 import {
   derivePayoutStatus,
   getEffectiveLedgerStatus,
@@ -23,10 +23,7 @@ const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 const REASON_MAX_LENGTH = 500;
 const PAYOUT_TYPES = [$Enums.LedgerEntryType.USER_PAYOUT, $Enums.LedgerEntryType.USER_PAYOUT_REVERSAL] as const;
-const PAYOUT_HIGH_VALUE_THRESHOLD_SOURCE = `env.ADMIN_V2_PAYOUT_HIGH_VALUE_THRESHOLDS`;
 
-type PayoutHighValueEligibility = `high-value` | `below-threshold` | `not-configured`;
-type PayoutHighValuePolicyAvailability = `configured` | `partially-configured` | `unconfigured`;
 type RequestMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
@@ -64,27 +61,6 @@ type PaymentMethodSummaryRow = {
   last4: string | null;
   bankLast4: string | null;
   deletedAt: Date | null;
-};
-
-type PayoutHighValuePolicy = {
-  availability: PayoutHighValuePolicyAvailability;
-  source: string;
-  wording: string;
-  configuredThresholds: Array<{
-    currencyCode: $Enums.CurrencyCode;
-    amount: string;
-  }>;
-};
-
-type PayoutHighValueAssessment = {
-  eligibility: PayoutHighValueEligibility;
-  thresholdAmount: string | null;
-  thresholdCurrency: $Enums.CurrencyCode;
-};
-
-type PayoutHighValueConfig = {
-  policy: PayoutHighValuePolicy;
-  thresholds: Map<$Enums.CurrencyCode, Prisma.Decimal>;
 };
 
 type PayoutEscalationState = {
@@ -129,6 +105,7 @@ export class AdminV2PayoutsService {
     private readonly assignmentsService: AdminV2AssignmentsService,
     private readonly payoutsQuery: AdminV2PayoutsRepository,
     private readonly payoutEscalationRepository: AdminV2PayoutEscalationRepository,
+    private readonly highValuePolicy: PayoutHighValuePolicyService,
   ) {}
 
   private parseMetadata(metadata: Prisma.JsonValue | null | undefined): Record<string, unknown> {
@@ -166,113 +143,6 @@ export class AdminV2PayoutsService {
     return typeof parsed.paymentMethodId === `string` && parsed.paymentMethodId.trim()
       ? parsed.paymentMethodId.trim()
       : null;
-  }
-
-  private getHighValueConfig(): PayoutHighValueConfig {
-    const configuredThresholds: Array<{ currencyCode: $Enums.CurrencyCode; amount: string }> = [];
-    const thresholds = new Map<$Enums.CurrencyCode, Prisma.Decimal>();
-    const raw = envs.ADMIN_V2_PAYOUT_HIGH_VALUE_THRESHOLDS.trim();
-
-    if (!raw) {
-      return {
-        thresholds,
-        policy: {
-          availability: `unconfigured`,
-          source: PAYOUT_HIGH_VALUE_THRESHOLD_SOURCE,
-          wording: [
-            `High-value payouts appear in this list only when per-currency thresholds are configured.`,
-            `No per-currency thresholds are currently configured.`,
-          ].join(` `),
-          configuredThresholds,
-        },
-      };
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
-      if (!parsed || typeof parsed !== `object` || Array.isArray(parsed)) {
-        throw new Error(`Threshold config must be a JSON object`);
-      }
-
-      for (const [currencyCode, amount] of Object.entries(parsed)) {
-        if (!Object.values($Enums.CurrencyCode).includes(currencyCode as $Enums.CurrencyCode)) {
-          continue;
-        }
-
-        const decimalAmount = new Prisma.Decimal(String(amount));
-        if (decimalAmount.lte(0)) {
-          continue;
-        }
-
-        thresholds.set(currencyCode as $Enums.CurrencyCode, decimalAmount);
-        configuredThresholds.push({
-          currencyCode: currencyCode as $Enums.CurrencyCode,
-          amount: decimalAmount.toString(),
-        });
-      }
-    } catch {
-      return {
-        thresholds,
-        policy: {
-          availability: `partially-configured`,
-          source: PAYOUT_HIGH_VALUE_THRESHOLD_SOURCE,
-          wording: [
-            `High-value payouts cannot be evaluated truthfully`,
-            `because the current threshold config is invalid JSON.`,
-          ].join(` `),
-          configuredThresholds,
-        },
-      };
-    }
-
-    if (configuredThresholds.length === 0) {
-      return {
-        thresholds,
-        policy: {
-          availability: `partially-configured`,
-          source: PAYOUT_HIGH_VALUE_THRESHOLD_SOURCE,
-          wording: [
-            `High-value payouts are not evaluable`,
-            `because the configured threshold map does not contain valid positive per-currency amounts.`,
-          ].join(` `),
-          configuredThresholds,
-        },
-      };
-    }
-
-    return {
-      thresholds,
-      policy: {
-        availability: `configured`,
-        source: PAYOUT_HIGH_VALUE_THRESHOLD_SOURCE,
-        wording: [
-          `High-value payouts are derived from configured per-currency thresholds.`,
-          `Currencies without an explicit threshold remain non-evaluable.`,
-        ].join(` `),
-        configuredThresholds,
-      },
-    };
-  }
-
-  private assessHighValue(
-    entry: { amount: Prisma.Decimal; currencyCode: $Enums.CurrencyCode },
-    config: PayoutHighValueConfig,
-  ): PayoutHighValueAssessment {
-    const threshold = config.thresholds.get(entry.currencyCode);
-    if (!threshold) {
-      return {
-        eligibility: `not-configured`,
-        thresholdAmount: null,
-        thresholdCurrency: entry.currencyCode,
-      };
-    }
-
-    const absoluteAmount = new Prisma.Decimal(entry.amount.toString()).abs();
-    return {
-      eligibility: absoluteAmount.gte(threshold) ? `high-value` : `below-threshold`,
-      thresholdAmount: threshold.toString(),
-      thresholdCurrency: entry.currencyCode,
-    };
   }
 
   private mapEscalationState(
@@ -361,13 +231,12 @@ export class AdminV2PayoutsService {
   private mapPayoutListItem(
     entry: PayoutListRow,
     paymentMethodsById: Map<string, PaymentMethodSummaryRow>,
-    highValueConfig: PayoutHighValueConfig,
     assignedTo: AdminRef | null = null,
   ) {
     const effectiveStatus = getEffectiveLedgerStatus(entry);
     const derivedStatus = derivePayoutStatus(entry);
     const outcomeAgeHours = getOutcomeAgeHours(entry);
-    const highValue = this.assessHighValue(entry, highValueConfig);
+    const highValue = this.highValuePolicy.assess(entry);
 
     return {
       id: entry.id,
@@ -400,7 +269,7 @@ export class AdminV2PayoutsService {
   async listPayouts(params?: { cursor?: string; limit?: number }) {
     const limit = normalizeLimit(params?.limit);
     const cursor = decodeAdminV2Cursor(params?.cursor);
-    const highValueConfig = this.getHighValueConfig();
+    const highValueConfig = this.highValuePolicy.getConfig();
 
     const rows = await this.payoutsQuery.listPayoutRows(
       {
@@ -439,9 +308,7 @@ export class AdminV2PayoutsService {
         automationStatus: `This list is detected automatically; payout execution writes remain disabled`,
       },
       highValuePolicy: highValueConfig.policy,
-      items: visibleRows.map((row) =>
-        this.mapPayoutListItem(row, paymentMethodsById, highValueConfig, assigneeMap.get(row.id) ?? null),
-      ),
+      items: visibleRows.map((row) => this.mapPayoutListItem(row, paymentMethodsById, assigneeMap.get(row.id) ?? null)),
       pageInfo: {
         nextCursor: next ? encodeAdminV2Cursor({ createdAt: next.createdAt, id: next.id }) : null,
         limit,
@@ -450,7 +317,7 @@ export class AdminV2PayoutsService {
   }
 
   async getPayoutCase(payoutId: string) {
-    const highValueConfig = this.getHighValueConfig();
+    const highValueConfig = this.highValuePolicy.getConfig();
     const entry = await this.payoutsQuery.findPayoutCaseEntry(payoutId);
 
     if (!entry || !PAYOUT_TYPES.includes(entry.type as (typeof PAYOUT_TYPES)[number])) {
@@ -546,7 +413,7 @@ export class AdminV2PayoutsService {
       },
       version: deriveVersion(entry.updatedAt),
       highValuePolicy: highValueConfig.policy,
-      highValue: this.assessHighValue(entry, highValueConfig),
+      highValue: this.highValuePolicy.assess(entry),
       payoutEscalation: this.mapEscalationState(entry.payoutEscalation),
       actionControls: {
         canEscalate: escalationBlockReason == null,

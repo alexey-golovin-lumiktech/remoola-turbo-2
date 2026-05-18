@@ -5,12 +5,18 @@ import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.
 import { AdminV2PayoutsController } from './admin-v2-payouts.controller';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
+import { PayoutHighValuePolicyService } from './payout-high-value-policy.service';
 import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.module';
 
 @Module({
   imports: [AdminV2SharedModule, AdminV2AssignmentsModule],
   controllers: [AdminV2PayoutsController],
-  providers: [AdminV2PayoutEscalationRepository, AdminV2PayoutsRepository, AdminV2PayoutsService],
+  providers: [
+    AdminV2PayoutEscalationRepository,
+    AdminV2PayoutsRepository,
+    AdminV2PayoutsService,
+    PayoutHighValuePolicyService,
+  ],
   exports: [AdminV2PayoutsService],
 })
 export class AdminV2PayoutsModule {}
