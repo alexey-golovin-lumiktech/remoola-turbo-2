@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { $Enums, type Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
+import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
 import {
   AdminV2ExchangePersistenceRepository,
   type ExchangeExecutionSummary,
@@ -57,6 +58,7 @@ export class AdminV2ExchangeCommandsService {
   constructor(
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly domainEvents: AdminV2DomainEventsService,
+    private readonly rateApprovalService: AdminExchangeRateApprovalService,
     private readonly balanceService: BalanceCalculationService,
     private readonly conversionExecutor: ExchangeConversionExecutor,
     private readonly preflightRepository: AdminV2ExchangePreflightRepository,
@@ -70,44 +72,7 @@ export class AdminV2ExchangeCommandsService {
     body: { confirmed?: boolean; version?: number; reason?: string | null },
     meta: RequestMeta,
   ) {
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for exchange rate approval`);
-    }
-
-    const reason = parseOptionalString(body.reason);
-    if (!reason) {
-      throw new BadRequestException(`Approval reason is required`);
-    }
-
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
-
-    return this.idempotency.execute({
-      adminId,
-      scope: `exchange-rate-approve:${rateId}`,
-      key: meta.idempotencyKey,
-      payload: {
-        rateId,
-        expectedVersion,
-        confirmed: true,
-        reason,
-      },
-      execute: async () => {
-        await this.assertActiveRateVersion(rateId, expectedVersion);
-
-        return this.transactions.runLedgerMutation((tx) =>
-          this.persistenceRepository.approveDraftRate(tx, {
-            rateId,
-            expectedVersion,
-            adminId,
-            reason,
-            meta,
-          }),
-        );
-      },
-    });
+    return this.rateApprovalService.approveRate(rateId, adminId, body, meta);
   }
 
   async pauseRule(ruleId: string, adminId: string, body: { version?: number }, meta: RequestMeta) {
@@ -300,16 +265,6 @@ export class AdminV2ExchangeCommandsService {
         );
       },
     });
-  }
-
-  private async assertActiveRateVersion(rateId: string, expectedVersion: number) {
-    const rate = await this.preflightRepository.findActiveRateById(rateId);
-    if (!rate) {
-      throw new NotFoundException(adminErrorCodes.ADMIN_EXCHANGE_RATE_NOT_FOUND);
-    }
-    if (deriveVersion(rate.updatedAt) !== expectedVersion) {
-      throw new ConflictException(buildStaleVersionPayload(`Exchange rate`, rate.updatedAt));
-    }
   }
 
   private async assertActiveRuleVersion(ruleId: string, expectedVersion: number) {

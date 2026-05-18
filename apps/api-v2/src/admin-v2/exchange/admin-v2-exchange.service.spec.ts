@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
+import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
 import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.service';
 import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
@@ -89,6 +90,12 @@ describe(`AdminV2ExchangeService`, () => {
         new AdminV2ExchangeCommandsService(
           idempotency,
           domainEvents,
+          new AdminExchangeRateApprovalService(
+            idempotency,
+            new AdminV2ExchangePreflightRepository(prisma),
+            persistenceRepository,
+            transactions,
+          ),
           balanceService,
           new ExchangeConversionExecutor(persistenceRepository, balanceService),
           new AdminV2ExchangePreflightRepository(prisma),
