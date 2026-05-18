@@ -9,6 +9,25 @@ export default [
     },
   },
   {
+    files: ['src/**/*.ts'],
+    ignores: ['src/shared/mailing.module.ts', 'src/shared/mailing.service.ts', 'src/shared/mailing.service.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/shared/mailing.service', '**/mailing.service'],
+              importNames: ['MailingService'],
+              message:
+                'Inject a focused mailing service instead: SignupMailingService, RecoveryMailingService, PaymentMailingService, InvoiceMailingService, or AdminNotificationMailingService.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/main.ts', 'src/health/health.service.ts', 'src/consumer/modules/payment-methods/stripe-webhook.service.ts'],
     rules: {
       'no-console': 'off',

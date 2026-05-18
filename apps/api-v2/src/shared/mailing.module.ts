@@ -34,7 +34,6 @@ import { SignupMailingService } from './signup-mailing.service';
     AdminNotificationMailingService,
     BrevoMailService,
     InvoiceMailingService,
-    MailingService,
     OriginResolverService,
     PaymentMailingService,
     RecoveryMailingService,
