@@ -121,7 +121,7 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
         },
       }),
     );
-    applyManualAuthGuard(app, moduleFixture);
+    await applyManualAuthGuard(app, moduleFixture);
     await app.init();
   });
 

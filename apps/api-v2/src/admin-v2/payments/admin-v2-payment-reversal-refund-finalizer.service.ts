@@ -6,17 +6,25 @@ import { $Enums } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import {
+  PAYMENT_REVERSAL_AUDIT_PORT,
+  PAYMENT_REVERSAL_LEDGER_FINALIZATION_PORT,
+  PAYMENT_REVERSAL_LEDGER_TRANSACTION_PORT,
+  PAYMENT_REVERSAL_REFUND_OUTBOX_PORT,
+  PAYMENT_REVERSAL_STRIPE_REFUND_PORT,
+  type PaymentReversalAuditPort,
+  type PaymentReversalLedgerFinalizationPort,
+  type PaymentReversalLedgerTransactionPort,
+  type PaymentReversalRefundOutboxPort,
+  type PaymentReversalStripeRefundPort,
+} from './admin-v2-payment-reversal-refund-finalizer.ports';
+import {
   buildAdminRefundFinalizationOutboxIdempotencyKey,
   type AdminRefundFinalizationOutboxPayload,
 } from './admin-v2-payment-reversal-refund-outbox';
-import { AdminV2PaymentReversalRefundOutboxRepository } from './admin-v2-payment-reversal-refund-outbox.repository';
 import { type PaymentReversalExecutionResult } from './admin-v2-payment-reversal-workflow.service';
 import { type PaymentReversalPaymentRequest } from './admin-v2-payment-reversal.query';
-import { AdminV2PaymentReversalRepository } from './admin-v2-payment-reversal.repository';
-import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
+import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { moneyDecimalToNumber, moneyDecimalToStripeMinorUnits } from '../../shared/money-decimal.utils';
-import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
-import { STRIPE_CLIENT } from '../../shared/stripe-client';
 
 type PaymentReversalCreateInput = {
   kind: TPaymentReversalKind;
@@ -24,20 +32,21 @@ type PaymentReversalCreateInput = {
   reason?: string;
 };
 
-type PaymentReversalStripePort = {
-  refunds: Pick<Stripe[`refunds`], `create` | `retrieve`>;
-};
-
 @Injectable()
 export class AdminV2PaymentReversalRefundFinalizerService {
   private readonly logger = new Logger(AdminV2PaymentReversalRefundFinalizerService.name);
 
   constructor(
-    private readonly repository: AdminV2PaymentReversalRepository,
-    private readonly outboxRepository: AdminV2PaymentReversalRefundOutboxRepository,
-    private readonly adminActionAudit: AdminActionAuditService,
-    private readonly transactions: PrismaTransactionRunner,
-    @Inject(STRIPE_CLIENT) private readonly stripe: PaymentReversalStripePort,
+    @Inject(PAYMENT_REVERSAL_LEDGER_FINALIZATION_PORT)
+    private readonly repository: PaymentReversalLedgerFinalizationPort,
+    @Inject(PAYMENT_REVERSAL_REFUND_OUTBOX_PORT)
+    private readonly outboxRepository: PaymentReversalRefundOutboxPort,
+    @Inject(PAYMENT_REVERSAL_AUDIT_PORT)
+    private readonly adminActionAudit: PaymentReversalAuditPort,
+    @Inject(PAYMENT_REVERSAL_LEDGER_TRANSACTION_PORT)
+    private readonly transactions: PaymentReversalLedgerTransactionPort,
+    @Inject(PAYMENT_REVERSAL_STRIPE_REFUND_PORT)
+    private readonly stripe: PaymentReversalStripeRefundPort,
   ) {}
 
   async finalizeIfNeeded(params: {

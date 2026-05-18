@@ -129,7 +129,7 @@ describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`,
         },
       }),
     );
-    applyManualAuthGuard(app, moduleFixture);
+    await applyManualAuthGuard(app, moduleFixture);
     await app.init();
   });
 

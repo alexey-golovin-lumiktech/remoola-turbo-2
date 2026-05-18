@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
+import { type OperationalAlertObservation } from './admin-v2-operational-alerts-thresholds';
 import { type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 import { LEDGER_ANOMALY_CLASSES, type LedgerAnomalyClass } from '../ledger/anomalies/admin-v2-ledger-anomalies.dto';
 import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
@@ -12,7 +12,7 @@ export type EvaluationResult = {
 };
 
 export interface OperationalAlertWorkspaceEvaluator {
-  evaluate(queryPayload: unknown, thresholdPayload: OperationalAlertThreshold): Promise<EvaluationResult>;
+  evaluate(queryPayload: unknown): Promise<OperationalAlertObservation>;
 }
 
 const DEFAULT_LOOKBACK_DAYS = 1;
@@ -51,20 +51,13 @@ function parseLedgerAnomaliesQueryPayload(raw: unknown, now: Date): LedgerAnomal
 export class LedgerAnomaliesAlertEvaluator implements OperationalAlertWorkspaceEvaluator {
   constructor(private readonly anomalies: AdminV2LedgerAnomaliesService) {}
 
-  async evaluate(queryPayload: unknown, threshold: OperationalAlertThreshold): Promise<EvaluationResult> {
+  async evaluate(queryPayload: unknown): Promise<OperationalAlertObservation> {
     const parsed = parseLedgerAnomaliesQueryPayload(queryPayload, new Date());
     const count = await this.anomalies.getCount(parsed.class, parsed.dateFrom, parsed.dateTo);
-
-    if (threshold.type === `count_gt`) {
-      const fired = count > threshold.value;
-      return {
-        fired,
-        reason: fired ? `count=${count} exceeded threshold=${threshold.value} (count_gt)` : null,
-        observedValue: count,
-      };
-    }
-    const _exhaustive: never = threshold.type as never;
-    throw new Error(`Unhandled threshold type for ledger_anomalies: ${String(_exhaustive)}`);
+    return {
+      observedValue: count,
+      reasonSubject: `count`,
+    };
   }
 }
 

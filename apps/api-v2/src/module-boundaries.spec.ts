@@ -172,7 +172,7 @@ describe(`Nest module provider boundaries`, () => {
         [`admins/admin-v2-admin-invitations.service.ts`, 1],
         [`admins/admin-v2-admin-password-flows.service.ts`, 1],
         [`consumers/admin-v2-consumers.service.ts`, 3],
-        [`verification/admin-v2-verification.service.ts`, 1],
+        [`verification/admin-v2-verification-decision.service.ts`, 1],
       ]),
       [`legacy-db-only`]: new Map([
         [`assignments/admin-v2-assignments.service.ts`, 3],

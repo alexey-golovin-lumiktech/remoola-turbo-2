@@ -1,10 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
 
 import { AdminV2AdminAuditTrailRepository } from './admin-v2-admin-audit-trail.repository';
 import { AdminV2AdminLinks } from './admin-v2-admin-links';
-import { MailingService } from '../../shared/mailing.service';
+import { RecoveryMailingService } from '../../shared/recovery-mailing.service';
+import { SignupMailingService } from '../../shared/signup-mailing.service';
+
+type AdminPasswordResetEmailer = Pick<RecoveryMailingService, `sendAdminV2PasswordResetEmail`>;
+type AdminInvitationEmailer = Pick<SignupMailingService, `sendInvitationEmail`>;
 
 @Injectable()
 export class AdminV2AdminAuditTrail {
@@ -12,7 +16,10 @@ export class AdminV2AdminAuditTrail {
 
   constructor(
     private readonly repository: AdminV2AdminAuditTrailRepository,
-    private readonly mailingService: MailingService,
+    @Inject(RecoveryMailingService)
+    private readonly recoveryMailingService: AdminPasswordResetEmailer,
+    @Inject(SignupMailingService)
+    private readonly signupMailingService: AdminInvitationEmailer,
     private readonly links: AdminV2AdminLinks,
   ) {}
 
@@ -22,7 +29,7 @@ export class AdminV2AdminAuditTrail {
     auditId: string;
     metadata: Prisma.InputJsonValue;
   }): Promise<{ notificationSent: boolean; deliveryStatus: `sent` | `failed` }> {
-    const notificationSent = await this.mailingService.sendAdminV2PasswordResetEmail({
+    const notificationSent = await this.recoveryMailingService.sendAdminV2PasswordResetEmail({
       email: params.email,
       forgotPasswordLink: this.links.buildPasswordResetUrl(params.token),
     });
@@ -39,7 +46,7 @@ export class AdminV2AdminAuditTrail {
   }
 
   async sendAdminV2PasswordResetEmailNotification(params: { email: string; token: string }): Promise<boolean> {
-    return this.mailingService.sendAdminV2PasswordResetEmail({
+    return this.recoveryMailingService.sendAdminV2PasswordResetEmail({
       email: params.email,
       forgotPasswordLink: this.links.buildPasswordResetUrl(params.token),
     });
@@ -47,7 +54,7 @@ export class AdminV2AdminAuditTrail {
 
   async trySendInvitationEmail(params: { email: string; signupLink: string }): Promise<boolean> {
     try {
-      await this.mailingService.sendInvitationEmail(params);
+      await this.signupMailingService.sendInvitationEmail(params);
       return true;
     } catch {
       return false;

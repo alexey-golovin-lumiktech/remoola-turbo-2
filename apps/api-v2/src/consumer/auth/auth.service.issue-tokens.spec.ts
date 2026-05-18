@@ -13,12 +13,15 @@ jest.mock(`@remoola/security-utils`, () => ({
 import { oauthCrypto } from '@remoola/security-utils';
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import { ConsumerAuthService } from './auth.service.spec-wrapper';
+import { ConsumerAuthService } from './auth.service';
+import { consumerAuthServiceTestProviders } from './consumer-auth-testing.providers';
 import { envs } from '../../envs';
+import { AdminNotificationMailingService } from '../../shared/admin-notification-mailing.service';
 import { AuthAuditService } from '../../shared/auth-audit.service';
-import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { PrismaService } from '../../shared/prisma.service';
+import { RecoveryMailingService } from '../../shared/recovery-mailing.service';
+import { SignupMailingService } from '../../shared/signup-mailing.service';
 
 const mockHashOAuthState = oauthCrypto.hashOAuthState as jest.MockedFunction<typeof oauthCrypto.hashOAuthState>;
 
@@ -52,11 +55,12 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ConsumerAuthService,
+      providers: consumerAuthServiceTestProviders([
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwtService },
-        { provide: MailingService, useValue: { sendConsumerSignupVerificationEmail: jest.fn() } },
+        { provide: RecoveryMailingService, useValue: {} },
+        { provide: AdminNotificationMailingService, useValue: {} },
+        { provide: SignupMailingService, useValue: {} },
         {
           provide: AuthAuditService,
           useValue: {
@@ -71,7 +75,7 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
             getAllowedOrigins: jest.fn(),
           },
         },
-      ],
+      ]),
     }).compile();
 
     service = module.get(ConsumerAuthService);

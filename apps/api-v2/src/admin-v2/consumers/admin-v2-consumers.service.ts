@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
 
@@ -14,7 +14,10 @@ import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
 import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.repository';
 import { mapConsumerDisplayName } from './admin-v2-consumer-query-helpers';
 import { type AdminV2ConsumerListParams, AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
-import { ConsumerAuthService } from '../../consumer/auth/auth.service';
+import {
+  CONSUMER_ADMIN_AUTH_ACTIONS,
+  type ConsumerAdminAuthActionsPort,
+} from '../../consumer/auth/consumer-admin-auth-actions.port';
 import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
@@ -49,7 +52,8 @@ export class AdminV2ConsumersService {
     private readonly consumerFlagsRepository: AdminV2ConsumerFlagsRepository,
     private readonly consumerContractsService: ConsumerContractsService,
     private readonly adminActionAudit: AdminActionAuditService,
-    private readonly consumerAuthService: ConsumerAuthService,
+    @Inject(CONSUMER_ADMIN_AUTH_ACTIONS)
+    private readonly consumerAdminAuthActions: ConsumerAdminAuthActionsPort,
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly consumerCaseQuery: AdminV2ConsumerCaseQuery,
   ) {}
@@ -193,7 +197,7 @@ export class AdminV2ConsumersService {
       payload: { consumerId, confirmed: true },
       execute: async () => {
         const activeSessionsBefore = await this.consumerRepository.countActiveSessions(consumerId);
-        await this.consumerAuthService.revokeAllSessionsByConsumerIdAndAudit(consumerId, {
+        await this.consumerAdminAuthActions.revokeAllSessionsByConsumerIdAndAudit(consumerId, {
           ipAddress: meta?.ipAddress,
           userAgent: meta?.userAgent,
         });
@@ -241,14 +245,14 @@ export class AdminV2ConsumersService {
           };
         }
 
-        await this.consumerAuthService.revokeAllSessionsByConsumerIdAndAudit(consumerId, {
+        await this.consumerAdminAuthActions.revokeAllSessionsByConsumerIdAndAudit(consumerId, {
           ipAddress: meta?.ipAddress,
           userAgent: meta?.userAgent,
         });
 
         let emailDispatched = false;
         try {
-          emailDispatched = await this.consumerAuthService.sendConsumerSuspensionEmail(consumerId, reason);
+          emailDispatched = await this.consumerAdminAuthActions.sendConsumerSuspensionEmail(consumerId, reason);
         } catch {
           emailDispatched = false;
         }
@@ -300,7 +304,7 @@ export class AdminV2ConsumersService {
             };
 
         if (body.emailKind === `signup_verification`) {
-          const emailDispatched = await this.consumerAuthService.resendSignupVerificationEmail(
+          const emailDispatched = await this.consumerAdminAuthActions.resendSignupVerificationEmail(
             consumerId,
             body.appScope,
           );
@@ -313,7 +317,7 @@ export class AdminV2ConsumersService {
             emailDispatched,
           };
         } else {
-          const outcome = await this.consumerAuthService.resendPasswordRecoveryEmail(consumerId, body.appScope);
+          const outcome = await this.consumerAdminAuthActions.resendPasswordRecoveryEmail(consumerId, body.appScope);
           result = {
             ...outcome,
             emailDispatched: true,

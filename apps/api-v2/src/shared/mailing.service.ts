@@ -1,35 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
-
 import { envs } from '../envs';
-import { generatePdf } from '../shared-common';
-import { type BrevoAttachment, type BrevoSendMailOptions } from './brevo-mail.service';
-import { MailTransportSenderService } from './mail-transport-sender.service';
 import {
-  forgotPassword,
-  googleSignInRecovery,
-  invitation,
-  invoiceToHtml,
-  outgoingInvoiceToHtml,
-  paymentRequest,
-  payToContactPaymentInfo,
-  paymentRefund,
-  paymentChargeback,
-  signupCompletionToHtml,
-  type InvoiceForTemplate,
-} from './mailing-utils';
-import { OriginResolverService } from './origin-resolver.service';
-import { resolveEmailApiBaseUrl } from './resolve-email-api-base-url';
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll(`&`, `&amp;`)
-    .replaceAll(`<`, `&lt;`)
-    .replaceAll(`>`, `&gt;`)
-    .replaceAll(`"`, `&quot;`)
-    .replaceAll(`'`, `&#39;`);
-}
+  AdminNotificationMailingService,
+  type ConsumerSuspensionEmailParams,
+  type VerificationDecisionEmailParams,
+} from './admin-notification-mailing.service';
+import { type BrevoSendMailOptions } from './brevo-mail.service';
+import { InvoiceMailingService, type PayToContactPaymentInfoEmailParams } from './invoice-mailing.service';
+import { MailTransportSenderService } from './mail-transport-sender.service';
+import { type InvoiceForTemplate } from './mailing-utils';
+import {
+  PaymentMailingService,
+  type PaymentRequestEmailParams,
+  type PaymentReversalEmailParams,
+} from './payment-mailing.service';
+import {
+  RecoveryMailingService,
+  type PasswordResetEmailParams,
+  type PasswordlessRecoveryEmailParams,
+} from './recovery-mailing.service';
+import {
+  SignupMailingService,
+  type InvitationEmailParams,
+  type SignupVerificationEmailParams,
+} from './signup-mailing.service';
 
 @Injectable()
 export class MailingService {
@@ -37,7 +32,11 @@ export class MailingService {
 
   constructor(
     private mailTransportSender: MailTransportSenderService,
-    private originResolver: OriginResolverService,
+    private paymentMailingService: PaymentMailingService,
+    private recoveryMailingService: RecoveryMailingService,
+    private signupMailingService: SignupMailingService,
+    private invoiceMailingService: InvoiceMailingService,
+    private adminNotificationMailingService: AdminNotificationMailingService,
   ) {}
 
   private async trySendEmail(context: string, options: BrevoSendMailOptions): Promise<boolean> {
@@ -46,17 +45,6 @@ export class MailingService {
 
   private async sendEmailWithErrorHandling(context: string, options: BrevoSendMailOptions): Promise<void> {
     await this.mailTransportSender.sendEmailWithErrorHandling(context, options);
-  }
-
-  private async sendEmailOrThrow(context: string, options: BrevoSendMailOptions): Promise<void> {
-    await this.mailTransportSender.sendEmailOrThrow(context, options);
-  }
-
-  private resolveConsumerPaymentLinkOrigin(consumerAppScope?: ConsumerAppScope): string | null {
-    if (!consumerAppScope) {
-      return null;
-    }
-    return this.originResolver.resolveConsumerOriginByScope(consumerAppScope) ?? null;
   }
 
   async sendLogsEmail(data: unknown = null, email?: string) {
@@ -69,397 +57,71 @@ export class MailingService {
     });
   }
 
-  async sendConsumerSignupVerificationEmail(params: { email: string; token: string }) {
-    const backendBaseURL = resolveEmailApiBaseUrl();
-    const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);
-    // Do not put `email` in the URL (Referer/history/proxy logs); the JWT identifies the consumer.
-    emailConfirmationUrl.search = new URLSearchParams({
-      token: params.token,
-    }).toString();
-
-    const html = signupCompletionToHtml.processor(emailConfirmationUrl.toString());
-    const subject = `Welcome to Wirebill! Confirm your Email`;
-    await this.sendEmailWithErrorHandling(`sendConsumerSignupVerificationEmail`, {
-      to: params.email,
-      subject,
-      html,
-    });
+  async sendConsumerSignupVerificationEmail(params: SignupVerificationEmailParams) {
+    return this.signupMailingService.sendConsumerSignupVerificationEmail(params);
   }
 
-  async sendConsumerSignupVerificationEmailSafe(params: { email: string; token: string }): Promise<boolean> {
-    const backendBaseURL = resolveEmailApiBaseUrl();
-    const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);
-    emailConfirmationUrl.search = new URLSearchParams({
-      token: params.token,
-    }).toString();
-
-    const html = signupCompletionToHtml.processor(emailConfirmationUrl.toString());
-    const subject = `Welcome to Wirebill! Confirm your Email`;
-    return this.trySendEmail(`sendConsumerSignupVerificationEmail`, {
-      to: params.email,
-      subject,
-      html,
-    });
+  async sendConsumerSignupVerificationEmailSafe(params: SignupVerificationEmailParams): Promise<boolean> {
+    return this.signupMailingService.sendConsumerSignupVerificationEmailSafe(params);
   }
 
   async sendOutgoingInvoiceEmail(invoice: InvoiceForTemplate) {
-    const html = outgoingInvoiceToHtml.processor(invoice);
-    const subject = `NEW INVOICE #${invoice.id}`;
-    let attachments: BrevoAttachment[];
-
-    try {
-      const content = await generatePdf({ rawHtml: invoiceToHtml.processor(invoice) });
-      attachments = [{ content, filename: `invoice-${invoice.id}.pdf` }];
-    } catch (error) {
-      this.logger.error(
-        `[sendOutgoingInvoiceEmail.generatePdf] PDF generation failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        error instanceof Error ? error.stack : undefined,
-      );
-      return;
-    }
-
-    await this.sendEmailWithErrorHandling(`sendOutgoingInvoiceEmail`, {
-      to: invoice.referer,
-      subject,
-      html,
-      attachments,
-    });
+    return this.invoiceMailingService.sendOutgoingInvoiceEmail(invoice);
   }
 
-  async sendPayToContactPaymentInfoEmail(params: {
-    contactEmail: string;
-    payerEmail: string;
-    paymentDetailsLink: string;
-  }) {
-    const html = payToContactPaymentInfo.processor(params);
-    const subject = `Wirebill. Payment`;
-    await this.sendEmailWithErrorHandling(`sendPayToContactPaymentInfoEmail`, {
-      to: params.contactEmail,
-      subject,
-      html,
-    });
+  async sendPayToContactPaymentInfoEmail(params: PayToContactPaymentInfoEmailParams) {
+    return this.invoiceMailingService.sendPayToContactPaymentInfoEmail(params);
   }
 
-  async sendPaymentRequestEmail(params: {
-    payerEmail: string;
-    requesterEmail: string;
-    amount: number;
-    currencyCode: string;
-    description?: string | null;
-    dueDate?: Date | null;
-    paymentRequestId: string;
-    consumerAppScope?: ConsumerAppScope;
-  }) {
-    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
-
-    if (!origin) {
-      this.logger.error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
-      return;
-    }
-
-    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
-    const descriptionLine = params.description ? `Description: ${params.description}` : `Description: —`;
-    const dueDateLine = params.dueDate ? `Due date: ${params.dueDate.toISOString().slice(0, 10)}` : `Due date: —`;
-
-    const html = paymentRequest.processor({
-      payerEmail: params.payerEmail,
-      requesterEmail: params.requesterEmail,
-      amount: params.amount.toFixed(2),
-      currencyCode: params.currencyCode,
-      descriptionLine,
-      dueDateLine,
-      paymentRequestLink,
-    });
-
-    const subject = `Wirebill. Payment request from ${params.requesterEmail}`;
-    await this.sendEmailWithErrorHandling(`sendPaymentRequestEmail`, {
-      to: params.payerEmail,
-      subject,
-      html,
-    });
+  async sendPaymentRequestEmail(params: PaymentRequestEmailParams) {
+    return this.paymentMailingService.sendPaymentRequestEmail(params);
   }
 
-  async sendPaymentRefundEmail(params: {
-    recipientEmail: string;
-    counterpartyEmail: string;
-    amount: number;
-    currencyCode: string;
-    reason?: string | null;
-    paymentRequestId: string;
-    role: `payer` | `requester`;
-    consumerAppScope?: ConsumerAppScope;
-  }) {
-    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
-
-    if (!origin) {
-      this.logger.error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
-      return;
-    }
-
-    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
-    const summaryLine =
-      params.role === `payer`
-        ? `Your payment to ${params.counterpartyEmail} was refunded.`
-        : `A payment from ${params.counterpartyEmail} was refunded.`;
-    const reasonLine = params.reason ? `Reason: ${params.reason}` : `Reason: —`;
-
-    const html = paymentRefund.processor({
-      recipientEmail: params.recipientEmail,
-      summaryLine,
-      amount: params.amount.toFixed(2),
-      currencyCode: params.currencyCode,
-      reasonLine,
-      paymentRequestLink,
-    });
-
-    const subject = `Wirebill. Payment refund`;
-    await this.sendEmailWithErrorHandling(`sendPaymentRefundEmail`, {
-      to: params.recipientEmail,
-      subject,
-      html,
-    });
+  async sendPaymentRefundEmail(params: PaymentReversalEmailParams) {
+    return this.paymentMailingService.sendPaymentRefundEmail(params);
   }
 
-  async sendPaymentRefundEmailRequired(params: {
-    recipientEmail: string;
-    counterpartyEmail: string;
-    amount: number;
-    currencyCode: string;
-    reason?: string | null;
-    paymentRequestId: string;
-    role: `payer` | `requester`;
-    consumerAppScope?: ConsumerAppScope;
-  }) {
-    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
-
-    if (!origin) {
-      throw new Error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
-    }
-
-    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
-    const summaryLine =
-      params.role === `payer`
-        ? `Your payment to ${params.counterpartyEmail} was refunded.`
-        : `A payment from ${params.counterpartyEmail} was refunded.`;
-    const reasonLine = params.reason ? `Reason: ${params.reason}` : `Reason: —`;
-
-    const html = paymentRefund.processor({
-      recipientEmail: params.recipientEmail,
-      summaryLine,
-      amount: params.amount.toFixed(2),
-      currencyCode: params.currencyCode,
-      reasonLine,
-      paymentRequestLink,
-    });
-
-    const subject = `Wirebill. Payment refund`;
-    await this.sendEmailOrThrow(`sendPaymentRefundEmail`, {
-      to: params.recipientEmail,
-      subject,
-      html,
-    });
+  async sendPaymentRefundEmailRequired(params: PaymentReversalEmailParams) {
+    return this.paymentMailingService.sendPaymentRefundEmailRequired(params);
   }
 
-  async sendPaymentChargebackEmail(params: {
-    recipientEmail: string;
-    counterpartyEmail: string;
-    amount: number;
-    currencyCode: string;
-    reason?: string | null;
-    paymentRequestId: string;
-    role: `payer` | `requester`;
-    consumerAppScope?: ConsumerAppScope;
-  }) {
-    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
-
-    if (!origin) {
-      this.logger.error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
-      return;
-    }
-
-    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
-    const summaryLine =
-      params.role === `payer`
-        ? `A chargeback was recorded for your payment to ${params.counterpartyEmail}.`
-        : `A chargeback was recorded for a payment from ${params.counterpartyEmail}.`;
-    const reasonLine = params.reason ? `Reason: ${params.reason}` : `Reason: —`;
-
-    const html = paymentChargeback.processor({
-      recipientEmail: params.recipientEmail,
-      summaryLine,
-      amount: params.amount.toFixed(2),
-      currencyCode: params.currencyCode,
-      reasonLine,
-      paymentRequestLink,
-    });
-
-    const subject = `Wirebill. Chargeback update`;
-    await this.sendEmailWithErrorHandling(`sendPaymentChargebackEmail`, {
-      to: params.recipientEmail,
-      subject,
-      html,
-    });
+  async sendPaymentChargebackEmail(params: PaymentReversalEmailParams) {
+    return this.paymentMailingService.sendPaymentChargebackEmail(params);
   }
 
-  async sendPaymentChargebackEmailRequired(params: {
-    recipientEmail: string;
-    counterpartyEmail: string;
-    amount: number;
-    currencyCode: string;
-    reason?: string | null;
-    paymentRequestId: string;
-    role: `payer` | `requester`;
-    consumerAppScope?: ConsumerAppScope;
-  }) {
-    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
-
-    if (!origin) {
-      throw new Error(`CONSUMER_CSS_GRID_APP_ORIGIN is not configured`);
-    }
-
-    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
-    const summaryLine =
-      params.role === `payer`
-        ? `A chargeback was recorded for your payment to ${params.counterpartyEmail}.`
-        : `A chargeback was recorded for a payment from ${params.counterpartyEmail}.`;
-    const reasonLine = params.reason ? `Reason: ${params.reason}` : `Reason: —`;
-
-    const html = paymentChargeback.processor({
-      recipientEmail: params.recipientEmail,
-      summaryLine,
-      amount: params.amount.toFixed(2),
-      currencyCode: params.currencyCode,
-      reasonLine,
-      paymentRequestLink,
-    });
-
-    const subject = `Wirebill. Chargeback update`;
-    await this.sendEmailOrThrow(`sendPaymentChargebackEmail`, {
-      to: params.recipientEmail,
-      subject,
-      html,
-    });
+  async sendPaymentChargebackEmailRequired(params: PaymentReversalEmailParams) {
+    return this.paymentMailingService.sendPaymentChargebackEmailRequired(params);
   }
 
-  async sendInvitationEmail(params: { email: string; signupLink: string }) {
-    const html = invitation.processor(params);
-    const subject = `Wirebill. Invitation`;
-    await this.sendEmailWithErrorHandling(`sendInvitationEmail`, { to: params.email, subject, html });
+  async sendInvitationEmail(params: InvitationEmailParams) {
+    return this.signupMailingService.sendInvitationEmail(params);
   }
 
-  async sendConsumerForgotPasswordEmail(params: { email: string; forgotPasswordLink: string }) {
-    const html = forgotPassword.processor(params.forgotPasswordLink);
-    const subject = `Wirebill – Reset your password`;
-    await this.sendEmailWithErrorHandling(`sendConsumerForgotPasswordEmail`, {
-      to: params.email,
-      subject,
-      html,
-    });
+  async sendConsumerForgotPasswordEmail(params: PasswordResetEmailParams) {
+    return this.recoveryMailingService.sendConsumerForgotPasswordEmail(params);
   }
 
-  async sendConsumerForgotPasswordEmailSafe(params: { email: string; forgotPasswordLink: string }): Promise<boolean> {
-    const html = forgotPassword.processor(params.forgotPasswordLink);
-    const subject = `Wirebill – Reset your password`;
-    return this.trySendEmail(`sendConsumerForgotPasswordEmail`, {
-      to: params.email,
-      subject,
-      html,
-    });
+  async sendConsumerForgotPasswordEmailSafe(params: PasswordResetEmailParams): Promise<boolean> {
+    return this.recoveryMailingService.sendConsumerForgotPasswordEmailSafe(params);
   }
 
-  async sendAdminV2PasswordResetEmail(params: { email: string; forgotPasswordLink: string }): Promise<boolean> {
-    const html = forgotPassword.processor(params.forgotPasswordLink);
-    const subject = `Wirebill. Admin password reset`;
-    return this.trySendEmail(`sendAdminV2PasswordResetEmail`, {
-      to: params.email,
-      subject,
-      html,
-    });
+  async sendAdminV2PasswordResetEmail(params: PasswordResetEmailParams): Promise<boolean> {
+    return this.recoveryMailingService.sendAdminV2PasswordResetEmail(params);
   }
 
-  async sendConsumerPasswordlessRecoveryEmail(params: { email: string; loginUrl: string }) {
-    const html = googleSignInRecovery.processor(params.loginUrl);
-    const subject = `Wirebill – Sign in with Google`;
-    await this.sendEmailWithErrorHandling(`sendConsumerPasswordlessRecoveryEmail`, {
-      to: params.email,
-      subject,
-      html,
-    });
+  async sendConsumerPasswordlessRecoveryEmail(params: PasswordlessRecoveryEmailParams) {
+    return this.recoveryMailingService.sendConsumerPasswordlessRecoveryEmail(params);
   }
 
-  async sendConsumerPasswordlessRecoveryEmailSafe(params: { email: string; loginUrl: string }): Promise<boolean> {
-    const html = googleSignInRecovery.processor(params.loginUrl);
-    const subject = `Wirebill – Sign in with Google`;
-    return this.trySendEmail(`sendConsumerPasswordlessRecoveryEmail`, {
-      to: params.email,
-      subject,
-      html,
-    });
+  async sendConsumerPasswordlessRecoveryEmailSafe(params: PasswordlessRecoveryEmailParams): Promise<boolean> {
+    return this.recoveryMailingService.sendConsumerPasswordlessRecoveryEmailSafe(params);
   }
 
-  async sendAdminV2ConsumerSuspensionEmail(params: { email: string; reason: string }): Promise<boolean> {
-    const escapedEmail = escapeHtml(params.email);
-    const escapedReason = escapeHtml(params.reason.trim());
-    return this.trySendEmail(`sendAdminV2ConsumerSuspensionEmail`, {
-      to: params.email,
-      subject: `Wirebill. Account suspended`,
-      html: `
-        <p>Hello ${escapedEmail},</p>
-        <p>Your account has been suspended by the operations team.</p>
-        <p>Reason: ${escapedReason}</p>
-        <p>Please contact support if you need clarification.</p>
-      `,
-    });
+  async sendAdminV2ConsumerSuspensionEmail(params: ConsumerSuspensionEmailParams): Promise<boolean> {
+    return this.adminNotificationMailingService.sendAdminV2ConsumerSuspensionEmail(params);
   }
 
-  async sendAdminV2VerificationDecisionEmail(params: {
-    email: string;
-    decision: `approve` | `reject` | `request-info`;
-    reason?: string | null;
-  }): Promise<boolean> {
-    const escapedEmail = escapeHtml(params.email);
-    const escapedReason = params.reason?.trim() ? escapeHtml(params.reason.trim()) : null;
-
-    let subject: string;
-    let html: string;
-
-    switch (params.decision) {
-      case `approve`:
-        subject = `Wirebill. Verification approved`;
-        html = `
-          <p>Hello ${escapedEmail},</p>
-          <p>Your verification has been approved.</p>
-          <p>You can continue using the consumer app with the updated verification status.</p>
-        `;
-        break;
-      case `reject`:
-        subject = `Wirebill. Verification update`;
-        html = `
-          <p>Hello ${escapedEmail},</p>
-          <p>Your verification was rejected.</p>
-          <p>${escapedReason ? `Reason: ${escapedReason}` : `Please contact support if you need clarification.`}</p>
-        `;
-        break;
-      case `request-info`:
-        subject = `Wirebill. Additional verification information required`;
-        html = `
-          <p>Hello ${escapedEmail},</p>
-          <p>We need additional information to complete your verification review.</p>
-          <p>${
-            escapedReason
-              ? `Reviewer note: ${escapedReason}`
-              : `Please review your submitted information and provide the missing details.`
-          }</p>
-        `;
-        break;
-    }
-
-    return this.trySendEmail(`sendAdminV2VerificationDecisionEmail:${params.decision}`, {
-      to: params.email,
-      subject,
-      html,
-    });
+  async sendAdminV2VerificationDecisionEmail(params: VerificationDecisionEmailParams): Promise<boolean> {
+    return this.adminNotificationMailingService.sendAdminV2VerificationDecisionEmail(params);
   }
 }

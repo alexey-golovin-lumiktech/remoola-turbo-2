@@ -1,7 +1,9 @@
 import { AdminV2OperationalAlertsEvaluatorQuery } from './admin-v2-operational-alerts-evaluator.query';
 import { AdminV2OperationalAlertsEvaluatorRepository } from './admin-v2-operational-alerts-evaluator.repository';
 import { AdminV2OperationalAlertsEvaluatorService } from './admin-v2-operational-alerts-evaluator.service';
+import { DEFAULT_OPERATIONAL_ALERT_THRESHOLD_EVALUATORS } from './admin-v2-operational-alerts-thresholds';
 import { type OperationalAlertWorkspaceEvaluator } from './admin-v2-operational-alerts-workspace-evaluators';
+import { OPERATIONAL_ALERT_WORKSPACES } from './admin-v2-operational-alerts.dto';
 
 const EVALUATOR_TICK_MAX_ALERTS = 100;
 const EVALUATOR_PER_ALERT_TIMEOUT_MS = 10_000;
@@ -65,9 +67,12 @@ function buildHarness(opts: {
   const service = new AdminV2OperationalAlertsEvaluatorService(
     query as never,
     repository as never,
-    ledgerAnomaliesEvaluator as never,
-    verificationQueueEvaluator as never,
-    authRefreshReuseEvaluator as never,
+    Object.freeze({
+      ledger_anomalies: ledgerAnomaliesEvaluator,
+      verification_queue: verificationQueueEvaluator,
+      auth_refresh_reuse: authRefreshReuseEvaluator,
+    }),
+    DEFAULT_OPERATIONAL_ALERT_THRESHOLD_EVALUATORS,
   );
   return {
     service,
@@ -110,9 +115,7 @@ describe(`AdminV2OperationalAlertsEvaluatorService`, () => {
 
   describe(`runTick — fired path`, () => {
     it(`writes last_fired_at, last_fire_reason and clears last_evaluation_error when fired=true`, async () => {
-      const evaluator = jest
-        .fn()
-        .mockResolvedValue({ fired: true, reason: `count=8 exceeded threshold=5 (count_gt)`, observedValue: 8 });
+      const evaluator = jest.fn().mockResolvedValue({ observedValue: 8, reasonSubject: `count` });
       const { service, operationalAlertModel } = buildHarness({ due: [dueRow()], evaluator });
       await service.runTick(Date.now());
       expect(operationalAlertModel.update).toHaveBeenCalledTimes(1);
@@ -129,7 +132,7 @@ describe(`AdminV2OperationalAlertsEvaluatorService`, () => {
 
     it(`truncates very long fire reason to 500 chars`, async () => {
       const huge = `x`.repeat(1500);
-      const evaluator = jest.fn().mockResolvedValue({ fired: true, reason: huge });
+      const evaluator = jest.fn().mockResolvedValue({ observedValue: 6, reasonSubject: huge });
       const { service, operationalAlertModel } = buildHarness({ due: [dueRow()], evaluator });
       await service.runTick(Date.now());
       const args = operationalAlertModel.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
@@ -139,7 +142,7 @@ describe(`AdminV2OperationalAlertsEvaluatorService`, () => {
 
   describe(`runTick — not fired path`, () => {
     it(`writes last_evaluated_at and clears last_evaluation_error but does NOT touch last_fired_at`, async () => {
-      const evaluator = jest.fn().mockResolvedValue({ fired: false, reason: null, observedValue: 0 });
+      const evaluator = jest.fn().mockResolvedValue({ observedValue: 0, reasonSubject: `count` });
       const { service, operationalAlertModel } = buildHarness({ due: [dueRow()], evaluator });
       await service.runTick(Date.now());
       const args = operationalAlertModel.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
@@ -199,9 +202,9 @@ describe(`AdminV2OperationalAlertsEvaluatorService`, () => {
       const due = [dueRow({ id: `a` }), dueRow({ id: `b` }), dueRow({ id: `c` })];
       const evaluator = jest
         .fn()
-        .mockResolvedValueOnce({ fired: true, reason: `r-a` })
+        .mockResolvedValueOnce({ observedValue: 6, reasonSubject: `r-a` })
         .mockRejectedValueOnce(new Error(`boom`))
-        .mockResolvedValueOnce({ fired: false, reason: null });
+        .mockResolvedValueOnce({ observedValue: 0, reasonSubject: `count` });
       const { service, operationalAlertModel } = buildHarness({ due, evaluator });
       await service.runTick(Date.now());
       expect(operationalAlertModel.update).toHaveBeenCalledTimes(3);
@@ -218,7 +221,7 @@ describe(`AdminV2OperationalAlertsEvaluatorService`, () => {
       const dateNow = jest.spyOn(Date, `now`).mockImplementation(() => nowValue);
       const evaluator = jest.fn().mockImplementation(async () => {
         nowValue += EVALUATOR_TICK_WALL_BUDGET_MS / 2 + 1;
-        return { fired: false, reason: null };
+        return { observedValue: 0, reasonSubject: `count` };
       });
       const { service, operationalAlertModel } = buildHarness({ due, evaluator });
       await service.runTick(tickStart);
@@ -236,8 +239,14 @@ describe(`AdminV2OperationalAlertsEvaluatorService`, () => {
   });
 
   describe(`workspace evaluator registry`, () => {
+    it(`covers all known operational alert workspaces`, () => {
+      const { service } = buildHarness({});
+      const registry = (service as unknown as { evaluators: Record<string, unknown> }).evaluators;
+      expect(Object.keys(registry).sort()).toEqual([...OPERATIONAL_ALERT_WORKSPACES].sort());
+    });
+
     it(`routes auth_refresh_reuse workspace to AuthRefreshReuseAlertEvaluator`, async () => {
-      const authRefreshReuseEvaluate = jest.fn().mockResolvedValue({ fired: false, reason: null });
+      const authRefreshReuseEvaluate = jest.fn().mockResolvedValue({ observedValue: 0, reasonSubject: `count` });
       const authRefreshReuseEvaluator: OperationalAlertWorkspaceEvaluator = {
         evaluate: authRefreshReuseEvaluate as unknown as OperationalAlertWorkspaceEvaluator[`evaluate`],
       };

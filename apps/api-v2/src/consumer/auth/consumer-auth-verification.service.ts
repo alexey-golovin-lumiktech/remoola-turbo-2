@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
@@ -7,10 +7,15 @@ import { errorCodes } from '@remoola/shared-constants';
 import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { type IJwtTokenPayload } from '../../dtos/consumer';
 import { envs } from '../../envs';
-import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
+import { SignupMailingService } from '../../shared/signup-mailing.service';
 
 import type express from 'express';
+
+type SignupVerificationEmailer = Pick<
+  SignupMailingService,
+  `sendConsumerSignupVerificationEmailSafe` | `sendConsumerSignupVerificationEmail`
+>;
 
 @Injectable()
 export class ConsumerAuthVerificationService {
@@ -19,7 +24,8 @@ export class ConsumerAuthVerificationService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly consumerIdentityRepository: ConsumerIdentityRepository,
-    private readonly mailingService: MailingService,
+    @Inject(SignupMailingService)
+    private readonly signupMailingService: SignupVerificationEmailer,
     private readonly originResolver: OriginResolverService,
   ) {}
 
@@ -80,7 +86,7 @@ export class ConsumerAuthVerificationService {
     }
 
     const token = await this.getSignupVerificationToken(consumer.id, validatedAppScope);
-    return this.mailingService.sendConsumerSignupVerificationEmailSafe({
+    return this.signupMailingService.sendConsumerSignupVerificationEmailSafe({
       email: consumer.email,
       token,
     });
@@ -102,7 +108,7 @@ export class ConsumerAuthVerificationService {
       return;
     }
     const token = await this.getSignupVerificationToken(consumer.id, validatedAppScope);
-    await this.mailingService.sendConsumerSignupVerificationEmail({
+    await this.signupMailingService.sendConsumerSignupVerificationEmail({
       email: consumer.email,
       token,
     });

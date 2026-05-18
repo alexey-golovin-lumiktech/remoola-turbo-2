@@ -9,8 +9,12 @@ import express from 'express';
 import { IDENTITY } from '../../src/common';
 import { configureApp } from '../../src/configure-app';
 import { envs } from '../../src/envs';
+import { AuthAdminSessionValidatorService } from '../../src/guards/auth-admin-session-validator.service';
+import { AuthConsumerSessionValidatorService } from '../../src/guards/auth-consumer-session-validator.service';
 import { AuthIdentityRepository } from '../../src/guards/auth-identity.repository';
+import { AuthRequestContextService } from '../../src/guards/auth-request-context.service';
 import { AuthSessionRepository } from '../../src/guards/auth-session.repository';
+import { AuthTokenVerifierService } from '../../src/guards/auth-token-verifier.service';
 import { AuthGuard } from '../../src/guards/auth.guard';
 import { OriginResolverService } from '../../src/shared/origin-resolver.service';
 import { PrismaService } from '../../src/shared/prisma.service';
@@ -103,26 +107,38 @@ function applyOverrides(
   return nextBuilder;
 }
 
-export function createManualAuthGuard(moduleFixture: TestingModule): AuthGuard {
+export async function createManualAuthGuard(moduleFixture: TestingModule): Promise<AuthGuard> {
   const reflector = moduleFixture.get(Reflector);
   const jwtService = moduleFixture.get(JwtService);
   const prismaService = moduleFixture.get(PrismaService);
   const originResolver = moduleFixture.get(OriginResolverService, { strict: false });
 
-  return new AuthGuard(
-    reflector,
-    jwtService,
-    new AuthSessionRepository(prismaService),
-    new AuthIdentityRepository(prismaService),
-    originResolver,
-  );
+  const authGuardModule = await Test.createTestingModule({
+    providers: [
+      AuthGuard,
+      AuthRequestContextService,
+      AuthTokenVerifierService,
+      AuthConsumerSessionValidatorService,
+      AuthAdminSessionValidatorService,
+      AuthSessionRepository,
+      AuthIdentityRepository,
+      { provide: Reflector, useValue: reflector },
+      { provide: JwtService, useValue: jwtService },
+      { provide: PrismaService, useValue: prismaService },
+      { provide: OriginResolverService, useValue: originResolver },
+    ],
+  }).compile();
+  return authGuardModule.get(AuthGuard);
 }
 
-export function applyManualAuthGuard(app: Pick<INestApplication, `useGlobalGuards`>, moduleFixture: TestingModule) {
-  app.useGlobalGuards(createManualAuthGuard(moduleFixture));
+export async function applyManualAuthGuard(
+  app: Pick<INestApplication, `useGlobalGuards`>,
+  moduleFixture: TestingModule,
+) {
+  app.useGlobalGuards(await createManualAuthGuard(moduleFixture));
 }
 
-function configureManualAuthContractApp(
+async function configureManualAuthContractApp(
   app: NestExpressApplication,
   moduleFixture: TestingModule,
   cookieSecret: string,
@@ -132,7 +148,7 @@ function configureManualAuthContractApp(
   app.use(express.json({ limit: jsonLimit }));
   app.use(cookieParser(cookieSecret));
   app.useGlobalPipes(createAuthContractValidationPipe());
-  applyManualAuthGuard(app, moduleFixture);
+  await applyManualAuthGuard(app, moduleFixture);
 }
 
 function configureValidationOnlyApp(
@@ -205,7 +221,7 @@ export async function bootstrapApiTestApp<TApp extends INestApplication = NestEx
       configureApp(app);
       break;
     case `authContract`:
-      configureManualAuthContractApp(app, moduleFixture, cookieSecret, jsonLimit);
+      await configureManualAuthContractApp(app, moduleFixture, cookieSecret, jsonLimit);
       break;
     case `validationOnly`:
       configureValidationOnlyApp(app, cookieSecret, jsonLimit, identity);

@@ -5,11 +5,14 @@ import { type Response } from 'express';
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { ConsumerAuthService } from './auth.service.spec-wrapper';
+import { ConsumerAuthService } from './auth.service';
+import { consumerAuthServiceTestProviders } from './consumer-auth-testing.providers';
+import { AdminNotificationMailingService } from '../../shared/admin-notification-mailing.service';
 import { AuthAuditService } from '../../shared/auth-audit.service';
-import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { PrismaService } from '../../shared/prisma.service';
+import { RecoveryMailingService } from '../../shared/recovery-mailing.service';
+import { SignupMailingService } from '../../shared/signup-mailing.service';
 
 describe(`ConsumerAuthService.signupVerification`, () => {
   let service: ConsumerAuthService;
@@ -43,14 +46,15 @@ describe(`ConsumerAuthService.signupVerification`, () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ConsumerAuthService,
+      providers: consumerAuthServiceTestProviders([
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwtService },
-        { provide: MailingService, useValue: {} },
+        { provide: RecoveryMailingService, useValue: {} },
+        { provide: AdminNotificationMailingService, useValue: {} },
+        { provide: SignupMailingService, useValue: {} },
         { provide: AuthAuditService, useValue: { recordAudit: jest.fn() } },
         { provide: OriginResolverService, useValue: originResolver },
-      ],
+      ]),
     }).compile();
 
     service = module.get(ConsumerAuthService);

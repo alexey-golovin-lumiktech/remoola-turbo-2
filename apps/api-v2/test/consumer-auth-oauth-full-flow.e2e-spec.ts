@@ -124,7 +124,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
         },
       }),
     );
-    applyManualAuthGuard(app, moduleFixture);
+    await applyManualAuthGuard(app, moduleFixture);
     await app.init();
   });
 

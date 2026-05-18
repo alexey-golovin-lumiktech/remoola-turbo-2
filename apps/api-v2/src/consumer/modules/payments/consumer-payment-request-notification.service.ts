@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
-import { MailingService } from '../../../shared/mailing.service';
+import { PaymentMailingService } from '../../../shared/payment-mailing.service';
+
+type PaymentRequestEmailer = Pick<PaymentMailingService, `sendPaymentRequestEmail`>;
 
 type PaymentRequestEmailPayload = {
   payerEmail: string;
@@ -17,11 +19,14 @@ type PaymentRequestEmailPayload = {
 
 @Injectable()
 export class ConsumerPaymentRequestNotificationService {
-  constructor(private readonly mailingService: MailingService) {}
+  constructor(
+    @Inject(PaymentMailingService)
+    private readonly paymentMailingService: PaymentRequestEmailer,
+  ) {}
 
   async sendPaymentRequest(payload: PaymentRequestEmailPayload, consumerAppScope?: ConsumerAppScope) {
     if (!payload.payerEmail) return;
-    await this.mailingService.sendPaymentRequestEmail({
+    await this.paymentMailingService.sendPaymentRequestEmail({
       ...payload,
       consumerAppScope,
     });

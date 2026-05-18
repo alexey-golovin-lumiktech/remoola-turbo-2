@@ -24,6 +24,7 @@ describe(`AdminV2AdminAuditTrail`, () => {
       auditTrail: new AdminV2AdminAuditTrail(
         repository as unknown as AdminV2AdminAuditTrailRepository,
         mailingService as never,
+        mailingService as never,
         links as never,
       ),
     };

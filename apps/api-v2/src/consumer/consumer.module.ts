@@ -1,29 +1,7 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 
-import { envs } from '../envs';
-import { ConsumerActionLogPartitionMaintenanceScheduler, ConsumerActionLogRetentionScheduler } from './auth';
-import { InfrastructureModule } from '../infrastructure/infrastructure.module';
-import { ConsumerActionLogMaintenanceRepository } from '../shared/consumer-action-log-maintenance.repository';
-import { ConsumerAuthController } from './auth/auth.controller';
-import { ConsumerAuthService } from './auth/auth.service';
-import { ConsumerAuthControllerSupportService } from './auth/consumer-auth-controller-support.service';
-import { ConsumerAuthRecoveryService } from './auth/consumer-auth-recovery.service';
-import { ConsumerAuthSessionRepository } from './auth/consumer-auth-session.repository';
-import { ConsumerAuthSessionService } from './auth/consumer-auth-session.service';
-import { ConsumerAuthSignupService } from './auth/consumer-auth-signup.service';
-import { ConsumerAuthVerificationService } from './auth/consumer-auth-verification.service';
-import { ConsumerGoogleProfileQuery } from './auth/consumer-google-profile.query';
-import { ConsumerGoogleProfileRepository } from './auth/consumer-google-profile.repository';
-import { ConsumerIdentityRepository } from './auth/consumer-identity.repository';
-import { GoogleOAuthService } from './auth/google-oauth.service';
-import { OauthStateCleanupScheduler } from './auth/oauth-state-cleanup.scheduler';
-import { OAuthStateStoreQuery } from './auth/oauth-state-store.query';
-import { OAuthStateStoreRepository } from './auth/oauth-state-store.repository';
-import { OAuthStateStoreService } from './auth/oauth-state-store.service';
-import { PasswordResetRepository } from './auth/password-reset.repository';
-import { ResetPasswordCleanupScheduler } from './auth/reset-password-cleanup.scheduler';
-import { MailingModule } from '../shared/mailing.module';
+import { ConsumerAuthMaintenanceModule } from './auth/consumer-auth-maintenance.module';
+import { ConsumerAuthModule } from './auth/consumer-auth.module';
 import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-dashboard.module';
 import { ConsumerContactsModule } from './modules/contacts/consumer-contacts.module';
 import { ConsumerContractsModule } from './modules/contracts/consumer-contracts.module';
@@ -36,12 +14,8 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret: envs.JWT_ACCESS_SECRET!,
-      signOptions: { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
-    }),
-    InfrastructureModule,
-    MailingModule,
+    ConsumerAuthModule,
+    ConsumerAuthMaintenanceModule,
     ConsumerDashboardModule,
     ConsumerContactsModule,
     ConsumerContractsModule,
@@ -52,29 +26,6 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
     ConsumerProfileModule,
     ConsumerSettingsModule,
   ],
-  controllers: [ConsumerAuthController],
-  providers: [
-    GoogleOAuthService,
-    ConsumerAuthControllerSupportService,
-    ConsumerIdentityRepository,
-    ConsumerGoogleProfileQuery,
-    ConsumerGoogleProfileRepository,
-    PasswordResetRepository,
-    ConsumerAuthSessionRepository,
-    ConsumerAuthSessionService,
-    ConsumerAuthRecoveryService,
-    ConsumerAuthSignupService,
-    ConsumerAuthVerificationService,
-    ConsumerAuthService,
-    OAuthStateStoreQuery,
-    OAuthStateStoreRepository,
-    OAuthStateStoreService,
-    ConsumerActionLogMaintenanceRepository,
-    OauthStateCleanupScheduler,
-    ResetPasswordCleanupScheduler,
-    ConsumerActionLogPartitionMaintenanceScheduler,
-    ConsumerActionLogRetentionScheduler,
-  ],
-  exports: [ConsumerAuthService],
+  exports: [ConsumerAuthModule],
 })
 export class ConsumerModule {}

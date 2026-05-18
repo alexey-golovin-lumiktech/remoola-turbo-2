@@ -3,18 +3,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { isValidEmail } from '@remoola/api-types';
 
 import { envs } from '../envs';
+import {
+  type MailTransportAttachment,
+  type MailTransportPort,
+  type MailTransportSendOptions,
+} from './mail-transport.port';
 
-export type BrevoAttachment = {
-  filename: string;
-  content: Buffer | Uint8Array | string;
-};
-
-export type BrevoSendMailOptions = {
-  to: string | string[];
-  subject: string;
-  html: string;
-  attachments?: BrevoAttachment[];
-};
+export type BrevoAttachment = MailTransportAttachment;
+export type BrevoSendMailOptions = MailTransportSendOptions;
 
 type BrevoSendEmailRequest = {
   sender: {
@@ -55,7 +51,7 @@ function isTransientSocketError(error: unknown): boolean {
 }
 
 @Injectable()
-export class BrevoMailService {
+export class BrevoMailService implements MailTransportPort {
   private readonly logger = new Logger(BrevoMailService.name);
   private readonly baseUrl = envs.BREVO_API_BASE_URL.replace(/\/+$/, ``);
   private readonly legacyBaseUrl = `https://api.sendinblue.com/v3`;

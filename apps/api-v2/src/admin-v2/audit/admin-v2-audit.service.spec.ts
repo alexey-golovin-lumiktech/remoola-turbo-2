@@ -1,5 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
+import { AdminActionAuditQuery, AuthAuditQuery, ConsumerActionAuditQuery } from './admin-v2-audit.dto';
 import { AdminV2AuditService } from './admin-v2-audit.service';
 
 // Minimum bounded-query merge-gate coverage for admin-v2 audit surface.
@@ -13,6 +16,8 @@ import { AdminV2AuditService } from './admin-v2-audit.service';
 describe(`AdminV2AuditService — bounded-query merge gate`, () => {
   function makeService() {
     const query = {
+      listAuthAudit: jest.fn(async () => [[], 0] as const),
+      listAdminActionAudit: jest.fn(async () => [[], 0] as const),
       listConsumerActionAudit: jest.fn(async () => [[], 0] as const),
     };
     return {
@@ -49,5 +54,70 @@ describe(`AdminV2AuditService — bounded-query merge gate`, () => {
     expect(result.dateFrom).toEqual(dateFrom);
     expect(result.dateTo).toEqual(dateTo);
     expect(query.listConsumerActionAudit).toHaveBeenCalledTimes(1);
+  });
+
+  it(`normalizes auth audit pagination independently of consumer audit range requirements`, async () => {
+    const { service, query } = makeService();
+
+    await service.getAuthAudit({ page: 0, pageSize: 500 });
+
+    expect(query.listAuthAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 0,
+        take: 200,
+      }),
+    );
+    expect(query.listConsumerActionAudit).not.toHaveBeenCalled();
+  });
+
+  it(`normalizes admin action audit pagination independently of consumer audit range requirements`, async () => {
+    const { service, query } = makeService();
+
+    await service.getAdminActionAudit({ page: -2, pageSize: 0 });
+
+    expect(query.listAdminActionAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 0,
+        take: 1,
+      }),
+    );
+    expect(query.listConsumerActionAudit).not.toHaveBeenCalled();
+  });
+});
+
+describe(`Admin v2 audit DTO contracts`, () => {
+  it(`keeps auth audit date fields optional`, async () => {
+    const query = plainToInstance(AuthAuditQuery, { email: `admin@example.com` }, { excludeExtraneousValues: true });
+
+    await expect(validate(query)).resolves.toHaveLength(0);
+  });
+
+  it(`keeps admin action audit date fields optional`, async () => {
+    const query = plainToInstance(AdminActionAuditQuery, { action: `admin_invite` }, { excludeExtraneousValues: true });
+
+    await expect(validate(query)).resolves.toHaveLength(0);
+  });
+
+  it(`requires dateFrom for consumer action audit`, async () => {
+    const query = plainToInstance(
+      ConsumerActionAuditQuery,
+      { action: `PAYMENT_CREATED` },
+      { excludeExtraneousValues: true },
+    );
+
+    const errors = await validate(query);
+
+    expect(errors.some((error) => error.property === `dateFrom`)).toBe(true);
+  });
+
+  it(`accepts explicit consumer action audit date bounds`, async () => {
+    const query = plainToInstance(
+      ConsumerActionAuditQuery,
+      { action: `PAYMENT_CREATED`, dateFrom: `2026-05-01T00:00:00.000Z`, dateTo: `2026-05-02T00:00:00.000Z` },
+      { excludeExtraneousValues: true },
+    );
+
+    await expect(validate(query)).resolves.toHaveLength(0);
+    expect(query.dateFrom).toEqual(new Date(`2026-05-01T00:00:00.000Z`));
   });
 });

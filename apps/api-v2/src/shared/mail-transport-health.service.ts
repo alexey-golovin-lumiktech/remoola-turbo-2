@@ -1,13 +1,16 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 
 import { envs } from '../envs';
-import { BrevoMailService } from './brevo-mail.service';
+import { MAIL_TRANSPORT, type MailTransportPort } from './mail-transport.port';
 
 @Injectable()
 export class MailTransportHealthService implements OnApplicationBootstrap {
   private readonly logger = new Logger(MailTransportHealthService.name);
 
-  constructor(private readonly brevoMailService: BrevoMailService) {}
+  constructor(
+    @Inject(MAIL_TRANSPORT)
+    private readonly mailTransport: MailTransportPort,
+  ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     if (!envs.BREVO_VERIFY_ON_BOOT) {
@@ -25,7 +28,7 @@ export class MailTransportHealthService implements OnApplicationBootstrap {
 
   private async verify(): Promise<void> {
     try {
-      await this.brevoMailService.verify();
+      await this.mailTransport.verify();
       this.logger.debug(`Brevo transport verified successfully`);
     } catch (error) {
       if (error instanceof Error) {

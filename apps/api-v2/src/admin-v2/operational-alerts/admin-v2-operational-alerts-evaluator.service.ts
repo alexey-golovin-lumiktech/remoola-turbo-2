@@ -1,20 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
+import {
+  ADMIN_V2_OPERATIONAL_ALERTS_EVALUATOR_REGISTRY,
+  type OperationalAlertsEvaluatorRegistry,
+} from './admin-v2-operational-alerts-evaluator-registry';
 import {
   AdminV2OperationalAlertsEvaluatorQuery,
   type DueAlertRow,
 } from './admin-v2-operational-alerts-evaluator.query';
 import { AdminV2OperationalAlertsEvaluatorRepository } from './admin-v2-operational-alerts-evaluator.repository';
-import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
 import {
-  LedgerAnomaliesAlertEvaluator,
-  type EvaluationResult,
-  type OperationalAlertWorkspaceEvaluator,
-  type WorkspaceEvaluatorRegistry,
-} from './admin-v2-operational-alerts-workspace-evaluators';
-import { AuthRefreshReuseAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-auth-refresh-reuse';
-import { VerificationQueueAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-verification';
+  OPERATIONAL_ALERT_THRESHOLD_EVALUATOR_REGISTRY,
+  type OperationalAlertThreshold,
+  type OperationalAlertThresholdEvaluatorRegistry,
+} from './admin-v2-operational-alerts-thresholds';
+import { type EvaluationResult } from './admin-v2-operational-alerts-workspace-evaluators';
 import { OPERATIONAL_ALERT_WORKSPACES, type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 
 const EVALUATOR_TICK_MAX_ALERTS = 100;
@@ -46,21 +47,15 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 @Injectable()
 export class AdminV2OperationalAlertsEvaluatorService {
   private readonly logger = new Logger(AdminV2OperationalAlertsEvaluatorService.name);
-  private readonly evaluators: WorkspaceEvaluatorRegistry;
 
   constructor(
     private readonly query: AdminV2OperationalAlertsEvaluatorQuery,
     private readonly repository: AdminV2OperationalAlertsEvaluatorRepository,
-    private readonly ledgerAnomaliesEvaluator: LedgerAnomaliesAlertEvaluator,
-    private readonly verificationQueueEvaluator: VerificationQueueAlertEvaluator,
-    private readonly authRefreshReuseEvaluator: AuthRefreshReuseAlertEvaluator,
-  ) {
-    this.evaluators = Object.freeze({
-      ledger_anomalies: this.ledgerAnomaliesEvaluator,
-      verification_queue: this.verificationQueueEvaluator,
-      auth_refresh_reuse: this.authRefreshReuseEvaluator,
-    } satisfies Record<OperationalAlertWorkspace, OperationalAlertWorkspaceEvaluator>);
-  }
+    @Inject(ADMIN_V2_OPERATIONAL_ALERTS_EVALUATOR_REGISTRY)
+    private readonly evaluators: OperationalAlertsEvaluatorRegistry,
+    @Inject(OPERATIONAL_ALERT_THRESHOLD_EVALUATOR_REGISTRY)
+    private readonly thresholdEvaluators: OperationalAlertThresholdEvaluatorRegistry,
+  ) {}
 
   @Cron(`*/5 * * * *`)
   async evaluateDueAlerts(): Promise<void> {
@@ -113,10 +108,14 @@ export class AdminV2OperationalAlertsEvaluatorService {
 
     let result: EvaluationResult;
     try {
-      result = await withTimeout(
-        evaluator.evaluate(alert.query_payload, alert.threshold_payload as OperationalAlertThreshold),
-        EVALUATOR_PER_ALERT_TIMEOUT_MS,
-      );
+      const threshold = alert.threshold_payload as OperationalAlertThreshold;
+      const observation = await withTimeout(evaluator.evaluate(alert.query_payload), EVALUATOR_PER_ALERT_TIMEOUT_MS);
+      const thresholdEvaluator = this.thresholdEvaluators[threshold.type];
+      if (!thresholdEvaluator) {
+        throw new Error(`Unhandled threshold type: ${String(threshold.type)}`);
+      }
+      thresholdEvaluator.validate(threshold as unknown as Record<string, unknown>);
+      result = thresholdEvaluator.evaluate(observation, threshold);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.warn(

@@ -1,9 +1,13 @@
 import { Logger } from '@nestjs/common';
 
+import { DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditPolicyService } from './admin-action-audit-policy.service';
 import { type AdminActionAuditRepository } from './admin-action-audit.repository';
 import { AdminActionAuditService } from './admin-action-audit.service';
 
 describe(`AdminActionAuditService`, () => {
+  const createService = (repository: AdminActionAuditRepository) =>
+    new AdminActionAuditService(repository, new AdminActionAuditPolicyService(DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS));
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -13,7 +17,7 @@ describe(`AdminActionAuditService`, () => {
     const repository = {
       createAuditEntry: jest.fn().mockRejectedValue(new Error(`database unavailable`)),
     } as unknown as AdminActionAuditRepository;
-    const service = new AdminActionAuditService(repository);
+    const service = createService(repository);
 
     await expect(
       service.record({
@@ -28,7 +32,7 @@ describe(`AdminActionAuditService`, () => {
     const repository = {
       createAuditEntry: jest.fn().mockRejectedValue(new Error(`database unavailable`)),
     } as unknown as AdminActionAuditRepository;
-    const service = new AdminActionAuditService(repository);
+    const service = createService(repository);
 
     await expect(
       service.recordRequired({
@@ -43,7 +47,7 @@ describe(`AdminActionAuditService`, () => {
     const repository = {
       createAuditEntry: jest.fn().mockResolvedValue(undefined),
     } as unknown as AdminActionAuditRepository;
-    const service = new AdminActionAuditService(repository);
+    const service = createService(repository);
     const tx = {
       adminActionAuditLogModel: {
         create: jest.fn().mockResolvedValue({ id: `audit-1` }),
@@ -73,7 +77,7 @@ describe(`AdminActionAuditService`, () => {
     const repository = {
       createAuditEntry: jest.fn().mockRejectedValue(new Error(`tx failed`)),
     } as unknown as AdminActionAuditRepository;
-    const service = new AdminActionAuditService(repository);
+    const service = createService(repository);
     const tx = {
       adminActionAuditLogModel: {
         create: jest.fn().mockRejectedValue(new Error(`tx failed`)),
@@ -87,5 +91,14 @@ describe(`AdminActionAuditService`, () => {
         resource: `payment_request`,
       }),
     ).rejects.toThrow(`tx failed`);
+  });
+
+  it(`exposes action names from the injected policy`, () => {
+    const repository = {
+      createAuditEntry: jest.fn(),
+    } as unknown as AdminActionAuditRepository;
+    const service = createService(repository);
+
+    expect(service.actions.payment_refund).toBe(`payment_refund`);
   });
 });

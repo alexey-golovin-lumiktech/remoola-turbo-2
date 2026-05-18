@@ -1,8 +1,8 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
 
 import { envs } from '../envs';
 import { HealthDatabaseProbe } from './health-database.probe';
-import { BrevoMailService } from '../shared/brevo-mail.service';
+import { MAIL_TRANSPORT, type MailTransportPort } from '../shared/mail-transport.port';
 
 @Injectable()
 export class HealthService {
@@ -10,7 +10,8 @@ export class HealthService {
 
   constructor(
     private readonly databaseProbe: HealthDatabaseProbe,
-    private readonly brevoMailService: BrevoMailService,
+    @Inject(MAIL_TRANSPORT)
+    private readonly mailTransport: MailTransportPort,
   ) {}
 
   private assertPublicEndpointEnabled(enabled: boolean, endpointName: string): void {
@@ -59,7 +60,7 @@ export class HealthService {
   async getMailTransportStatus() {
     this.assertPublicEndpointEnabled(envs.PUBLIC_MAIL_TRANSPORT_HEALTH_ENABLED, `Mail transport health`);
     try {
-      await this.brevoMailService.verify();
+      await this.mailTransport.verify();
       return {
         status: `ok`,
         timestamp: new Date().toISOString(),
@@ -98,7 +99,7 @@ export class HealthService {
     }
 
     try {
-      await this.brevoMailService.sendMail({
+      await this.mailTransport.sendMail({
         to: recipient,
         subject: `Wirebill test email`,
         html: `<p>Test email sent at ${new Date().toISOString()}</p>`,

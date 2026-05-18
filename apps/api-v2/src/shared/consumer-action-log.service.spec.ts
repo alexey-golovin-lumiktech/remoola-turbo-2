@@ -1,3 +1,7 @@
+import {
+  DEFAULT_CONSUMER_ACTION_LOG_CRITICAL_ACTION_PREFIXES,
+  ConsumerActionLogPolicyService,
+} from './consumer-action-log-policy.service';
 import { type ConsumerActionLogQuery } from './consumer-action-log.query';
 import { type ConsumerActionLogRepository } from './consumer-action-log.repository';
 import { ConsumerActionLogService } from './consumer-action-log.service';
@@ -33,6 +37,7 @@ describe(`ConsumerActionLogService`, () => {
     service = new ConsumerActionLogService(
       query as unknown as ConsumerActionLogQuery,
       repository as unknown as ConsumerActionLogRepository,
+      new ConsumerActionLogPolicyService(DEFAULT_CONSUMER_ACTION_LOG_CRITICAL_ACTION_PREFIXES),
     );
     warnSpy = jest
       .spyOn((service as unknown as { logger: { warn: (...args: unknown[]) => void } }).logger, `warn`)
@@ -143,6 +148,27 @@ describe(`ConsumerActionLogService`, () => {
         resource: `payments`,
       });
     }
+    expect(repository.createActionLog).toHaveBeenCalledTimes(300);
+    randomSpy.mockRestore();
+  });
+
+  it(`uses injected policy prefixes for critical action classification`, async () => {
+    const policyService = new ConsumerActionLogPolicyService([`consumer.custom.critical`]);
+    service = new ConsumerActionLogService(
+      query as unknown as ConsumerActionLogQuery,
+      repository as unknown as ConsumerActionLogRepository,
+      policyService,
+    );
+    const randomSpy = jest.spyOn(Math, `random`).mockReturnValue(0.99);
+
+    for (let i = 0; i < 300; i += 1) {
+      await service.record({
+        deviceId: `d`,
+        action: `consumer.custom.critical_success`,
+        resource: `custom`,
+      });
+    }
+
     expect(repository.createActionLog).toHaveBeenCalledTimes(300);
     randomSpy.mockRestore();
   });

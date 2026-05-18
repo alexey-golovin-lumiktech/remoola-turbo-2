@@ -6,8 +6,8 @@ import request from 'supertest';
 
 import { HealthModule } from './health.module';
 import { bootstrapApiTestApp } from '../../test/helpers/bootstrap-api-test-app';
-import { BrevoMailService } from '../shared/brevo-mail.service';
 import { DatabaseModule } from '../shared/database.module';
+import { MAIL_TRANSPORT } from '../shared/mail-transport.port';
 
 describe(`HealthController integration`, () => {
   let app: INestApplication;
@@ -18,7 +18,7 @@ describe(`HealthController integration`, () => {
       imports: [DatabaseModule, HealthModule],
       providerOverrides: [
         {
-          provide: BrevoMailService,
+          provide: MAIL_TRANSPORT,
           useValue: {
             verify: jest.fn(async () => undefined),
             sendMail: jest.fn(async () => undefined),

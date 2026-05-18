@@ -13,7 +13,7 @@ import { mapConsumerDisplayName, mapPaymentMethodStatus } from './admin-v2-consu
 import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
 import { AdminV2ConsumersModule } from './admin-v2-consumers.module';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
-import { ConsumerAuthService } from '../../consumer/auth/auth.service';
+import { CONSUMER_ADMIN_AUTH_ACTIONS } from '../../consumer/auth/consumer-admin-auth-actions.port';
 import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
 import { AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
@@ -159,7 +159,7 @@ describe(`AdminV2ConsumersService`, () => {
         { provide: PrismaTransactionRunner, useValue: { run: jest.fn() } },
         { provide: ConsumerContractsService, useValue: {} },
         { provide: AdminActionAuditService, useValue: {} },
-        { provide: ConsumerAuthService, useValue: {} },
+        { provide: CONSUMER_ADMIN_AUTH_ACTIONS, useValue: {} },
         { provide: AdminV2IdempotencyService, useValue: {} },
       ],
     }).compile();

@@ -16,7 +16,7 @@ import { configureApp } from '../src/configure-app';
 import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
-import { MailingService } from '../src/shared/mailing.service';
+import { RecoveryMailingService } from '../src/shared/recovery-mailing.service';
 import {
   getApiConsumerAccessTokenCookieKey,
   getApiConsumerCsrfTokenCookieKeysForRead,
@@ -46,7 +46,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   let settingsConsumerEmail: string;
   let googleOnlyConsumerEmail: string;
   let googleOnlyConsumerId: string;
-  let mailingService: MailingService;
+  let recoveryMailingService: RecoveryMailingService;
   let initialConsumerCssGridOrigin: string;
   const initialPassword = `ForgotReset1!`;
   const updatedPassword = `ForgotReset2!`;
@@ -135,12 +135,12 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
     app = moduleFixture.createNestApplication<NestExpressApplication>();
     configureApp(app);
-    applyManualAuthGuard(app, moduleFixture);
+    await applyManualAuthGuard(app, moduleFixture);
     await app.init();
     authService = app.get(ConsumerAuthService);
-    mailingService = app.get(MailingService);
-    jest.spyOn(mailingService, `sendConsumerForgotPasswordEmail`).mockResolvedValue(undefined);
-    jest.spyOn(mailingService, `sendConsumerPasswordlessRecoveryEmail`).mockResolvedValue(undefined);
+    recoveryMailingService = app.get(RecoveryMailingService);
+    jest.spyOn(recoveryMailingService, `sendConsumerForgotPasswordEmail`).mockResolvedValue(undefined);
+    jest.spyOn(recoveryMailingService, `sendConsumerPasswordlessRecoveryEmail`).mockResolvedValue(undefined);
   });
 
   beforeEach(() => {
@@ -205,11 +205,11 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
       .send({ email: googleOnlyConsumerEmail })
       .expect(200);
 
-    expect(mailingService.sendConsumerPasswordlessRecoveryEmail).toHaveBeenCalledWith({
+    expect(recoveryMailingService.sendConsumerPasswordlessRecoveryEmail).toHaveBeenCalledWith({
       email: googleOnlyConsumerEmail,
       loginUrl: `${origin}/login?auth_notice=google_signin_required`,
     });
-    expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalledWith(
+    expect(recoveryMailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalledWith(
       expect.objectContaining({ email: googleOnlyConsumerEmail }),
     );
     const googleOnlyResetRows = await prisma.resetPasswordModel.count({
@@ -228,7 +228,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
       .send({ email: consumerEmail })
       .expect(200);
 
-    const mailPayload = (mailingService.sendConsumerForgotPasswordEmail as jest.Mock).mock.calls[0]?.[0] as
+    const mailPayload = (recoveryMailingService.sendConsumerForgotPasswordEmail as jest.Mock).mock.calls[0]?.[0] as
       | { forgotPasswordLink: string }
       | undefined;
     expect(mailPayload?.forgotPasswordLink).toBeTruthy();

@@ -15,8 +15,12 @@ import {
 import { DeviceIdMiddleware } from './common/middleware/device-id.middleware';
 import { ConsumerModule } from './consumer/consumer.module';
 import { AuthGuard } from './guards';
+import { AuthAdminSessionValidatorService } from './guards/auth-admin-session-validator.service';
+import { AuthConsumerSessionValidatorService } from './guards/auth-consumer-session-validator.service';
 import { AuthIdentityRepository } from './guards/auth-identity.repository';
+import { AuthRequestContextService } from './guards/auth-request-context.service';
 import { AuthSessionRepository } from './guards/auth-session.repository';
+import { AuthTokenVerifierService } from './guards/auth-token-verifier.service';
 import { HealthModule } from './health/health.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { TransformResponseInterceptor } from './interceptors';
@@ -43,6 +47,10 @@ import { DatabaseModule } from './shared/database.module';
     DeviceIdMiddleware,
     AuthSessionRepository,
     AuthIdentityRepository,
+    AuthRequestContextService,
+    AuthTokenVerifierService,
+    AuthConsumerSessionValidatorService,
+    AuthAdminSessionValidatorService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

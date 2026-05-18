@@ -1,13 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { envs } from '../envs';
-import { BrevoMailService, type BrevoSendMailOptions } from './brevo-mail.service';
+import { MAIL_TRANSPORT, type MailTransportPort, type MailTransportSendOptions } from './mail-transport.port';
 
 @Injectable()
 export class MailTransportSenderService {
   private readonly logger = new Logger(MailTransportSenderService.name);
 
-  constructor(private readonly brevoMailService: BrevoMailService) {}
+  constructor(
+    @Inject(MAIL_TRANSPORT)
+    private readonly mailTransport: MailTransportPort,
+  ) {}
 
   private formatUnknownError(error: unknown): string {
     if (error instanceof Error) {
@@ -57,14 +60,14 @@ export class MailTransportSenderService {
     );
   }
 
-  async trySendEmail(context: string, options: BrevoSendMailOptions): Promise<boolean> {
+  async trySendEmail(context: string, options: MailTransportSendOptions): Promise<boolean> {
     if (!this.isEmailTransportConfigured()) {
       this.logger.warn(`[${context}] Email transport is not configured - skipping email send`);
       return false;
     }
 
     try {
-      await this.brevoMailService.sendMail(options);
+      await this.mailTransport.sendMail(options);
       this.logger.verbose(`[${context}] Email sent successfully`);
       return true;
     } catch (error) {
@@ -73,11 +76,11 @@ export class MailTransportSenderService {
     }
   }
 
-  async sendEmailWithErrorHandling(context: string, options: BrevoSendMailOptions): Promise<void> {
+  async sendEmailWithErrorHandling(context: string, options: MailTransportSendOptions): Promise<void> {
     await this.trySendEmail(context, options);
   }
 
-  async sendEmailOrThrow(context: string, options: BrevoSendMailOptions): Promise<void> {
+  async sendEmailOrThrow(context: string, options: MailTransportSendOptions): Promise<void> {
     const sent = await this.trySendEmail(context, options);
     if (!sent) {
       throw new Error(`[${context}] Email delivery failed`);

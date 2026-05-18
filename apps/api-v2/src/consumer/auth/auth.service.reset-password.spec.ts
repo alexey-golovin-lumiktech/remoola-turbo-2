@@ -6,11 +6,14 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { hashTokenToHex } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { ConsumerAuthService } from './auth.service.spec-wrapper';
+import { ConsumerAuthService } from './auth.service';
+import { consumerAuthServiceTestProviders } from './consumer-auth-testing.providers';
+import { AdminNotificationMailingService } from '../../shared/admin-notification-mailing.service';
 import { AuthAuditService } from '../../shared/auth-audit.service';
-import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { PrismaService } from '../../shared/prisma.service';
+import { RecoveryMailingService } from '../../shared/recovery-mailing.service';
+import { SignupMailingService } from '../../shared/signup-mailing.service';
 
 jest.mock(`@remoola/security-utils`, () => ({
   hashTokenToHex: jest.fn((t: string) => `hash-${t}`),
@@ -35,7 +38,7 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
   let prisma: {
     resetPasswordModel: { findFirst: jest.Mock; updateMany: jest.Mock };
     consumerModel: { findFirst: jest.Mock; update: jest.Mock };
-    authSessionModel: { count: jest.Mock };
+    authSessionModel: { count: jest.Mock; updateMany: jest.Mock };
     $transaction: jest.Mock;
   };
   let authAudit: { recordAudit: jest.Mock };
@@ -71,6 +74,7 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
       },
       authSessionModel: {
         count: jest.fn().mockResolvedValue(2),
+        updateMany: jest.fn().mockResolvedValue({ count: 2 }),
       },
       $transaction: jest.fn().mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => {
         const tx = {
@@ -86,11 +90,12 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ConsumerAuthService,
+      providers: consumerAuthServiceTestProviders([
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: { signAsync: jest.fn(), verify: jest.fn(), decode: jest.fn() } },
-        { provide: MailingService, useValue: { sendConsumerForgotPasswordEmail: jest.fn() } },
+        { provide: RecoveryMailingService, useValue: {} },
+        { provide: AdminNotificationMailingService, useValue: {} },
+        { provide: SignupMailingService, useValue: {} },
         { provide: AuthAuditService, useValue: authAudit },
         {
           provide: OriginResolverService,
@@ -98,7 +103,7 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
             getAllowedOrigins: jest.fn(),
           },
         },
-      ],
+      ]),
     }).compile();
 
     service = module.get(ConsumerAuthService);
@@ -135,8 +140,6 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
   });
 
   it(`consumes token, updates password, revokes sessions and records audit on success`, async () => {
-    const revokeSpy = jest.spyOn(service, `revokeAllSessionsByConsumerIdAndAudit`).mockResolvedValue(undefined);
-
     await service.resetPasswordWithToken(`token`, `newPassword8`);
 
     expect(mockHashTokenToHex).toHaveBeenCalledWith(`token`);
@@ -158,7 +161,10 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
       where: { id: validConsumer.id },
       data: { password: `newHash`, salt: `newSalt` },
     });
-    expect(revokeSpy).toHaveBeenCalledWith(validConsumer.id);
+    expect(prisma.authSessionModel.updateMany).toHaveBeenCalledWith({
+      where: { consumerId: validConsumer.id, revokedAt: null },
+      data: { revokedAt: expect.any(Date), invalidatedReason: `logout_all`, lastUsedAt: expect.any(Date) },
+    });
     expect(authAudit.recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({
         identityType: `consumer`,

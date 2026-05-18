@@ -1,17 +1,21 @@
-import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 
 import { AUTH_NOTICE_QUERY, type ConsumerAppScope } from '@remoola/api-types';
 import { oauthCrypto, hashTokenToHex } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthSessionRepository } from './consumer-auth-session.repository';
-import { ConsumerAuthSessionService } from './consumer-auth-session.service';
 import { ConsumerIdentityRepository } from './consumer-identity.repository';
+import {
+  CONSUMER_SESSION_REVOCATION_PORT,
+  type ConsumerSessionRevocationPort,
+} from './consumer-session-revocation.port';
 import { PasswordResetRepository } from './password-reset.repository';
 import { type CONSUMER } from '../../dtos';
+import { AdminNotificationMailingService } from '../../shared/admin-notification-mailing.service';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
-import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
+import { RecoveryMailingService } from '../../shared/recovery-mailing.service';
 import { resolveEmailApiBaseUrl } from '../../shared/resolve-email-api-base-url';
 import { passwordUtils, secureCompare } from '../../shared-common';
 
@@ -22,6 +26,14 @@ type ForgotPasswordOutcome =
   | `password_reset_email_sent`
   | `provider_guidance_email_sent`
   | `cooldown_noop`;
+type ConsumerRecoveryEmailer = Pick<
+  RecoveryMailingService,
+  | `sendConsumerPasswordlessRecoveryEmailSafe`
+  | `sendConsumerForgotPasswordEmailSafe`
+  | `sendConsumerPasswordlessRecoveryEmail`
+  | `sendConsumerForgotPasswordEmail`
+>;
+type ConsumerSuspensionEmailer = Pick<AdminNotificationMailingService, `sendAdminV2ConsumerSuspensionEmail`>;
 
 @Injectable()
 export class ConsumerAuthRecoveryService {
@@ -29,10 +41,14 @@ export class ConsumerAuthRecoveryService {
   private static readonly forgotPasswordCooldownMs = 60_000;
 
   constructor(
-    private readonly mailingService: MailingService,
+    @Inject(RecoveryMailingService)
+    private readonly recoveryMailingService: ConsumerRecoveryEmailer,
+    @Inject(AdminNotificationMailingService)
+    private readonly adminNotificationMailingService: ConsumerSuspensionEmailer,
     private readonly originResolver: OriginResolverService,
     private readonly authAudit: AuthAuditService,
-    private readonly sessionService: ConsumerAuthSessionService,
+    @Inject(CONSUMER_SESSION_REVOCATION_PORT)
+    private readonly sessionRevocation: ConsumerSessionRevocationPort,
     private readonly consumerIdentityRepository: ConsumerIdentityRepository,
     private readonly passwordResetRepository: PasswordResetRepository,
     private readonly sessionRepository: ConsumerAuthSessionRepository,
@@ -56,7 +72,7 @@ export class ConsumerAuthRecoveryService {
     if (consumer.password == null || consumer.salt == null) {
       const loginUrl = new URL(`/login`, origin);
       loginUrl.searchParams.set(AUTH_NOTICE_QUERY, `google_signin_required`);
-      const sent = await this.mailingService.sendConsumerPasswordlessRecoveryEmailSafe({
+      const sent = await this.recoveryMailingService.sendConsumerPasswordlessRecoveryEmailSafe({
         email: consumer.email,
         loginUrl: loginUrl.toString(),
       });
@@ -83,7 +99,7 @@ export class ConsumerAuthRecoveryService {
     const backendBaseURL = resolveEmailApiBaseUrl();
     const verifyUrl = new URL(`${backendBaseURL}/consumer/auth/forgot-password/verify`);
     verifyUrl.searchParams.set(`token`, token);
-    const sent = await this.mailingService.sendConsumerForgotPasswordEmailSafe({
+    const sent = await this.recoveryMailingService.sendConsumerForgotPasswordEmailSafe({
       email: consumer.email,
       forgotPasswordLink: verifyUrl.toString(),
     });
@@ -102,7 +118,7 @@ export class ConsumerAuthRecoveryService {
       throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
     }
 
-    return this.mailingService.sendAdminV2ConsumerSuspensionEmail({
+    return this.adminNotificationMailingService.sendAdminV2ConsumerSuspensionEmail({
       email: consumer.email,
       reason,
     });
@@ -120,7 +136,7 @@ export class ConsumerAuthRecoveryService {
     if (consumer.password == null || consumer.salt == null) {
       const loginUrl = new URL(`/login`, origin);
       loginUrl.searchParams.set(AUTH_NOTICE_QUERY, `google_signin_required`);
-      await this.mailingService.sendConsumerPasswordlessRecoveryEmail({
+      await this.recoveryMailingService.sendConsumerPasswordlessRecoveryEmail({
         email: consumer.email,
         loginUrl: loginUrl.toString(),
       });
@@ -158,7 +174,7 @@ export class ConsumerAuthRecoveryService {
     const backendBaseURL = resolveEmailApiBaseUrl();
     const verifyUrl = new URL(`${backendBaseURL}/consumer/auth/forgot-password/verify`);
     verifyUrl.searchParams.set(`token`, token);
-    await this.mailingService.sendConsumerForgotPasswordEmail({
+    await this.recoveryMailingService.sendConsumerForgotPasswordEmail({
       email: consumer.email,
       forgotPasswordLink: verifyUrl.toString(),
     });
@@ -178,13 +194,7 @@ export class ConsumerAuthRecoveryService {
     res.redirect(confirmUrl.toString());
   }
 
-  async resetPasswordWithToken(
-    token: string,
-    newPassword: string,
-    handlers?: {
-      revokeAllSessionsByConsumerIdAndAudit?: (consumerId: string) => Promise<unknown> | unknown;
-    },
-  ): Promise<void> {
+  async resetPasswordWithToken(token: string, newPassword: string): Promise<void> {
     const tokenHash = hashTokenToHex(token);
     const row = await this.passwordResetRepository.findActiveTokenByHash(tokenHash);
     if (!row) {
@@ -216,10 +226,7 @@ export class ConsumerAuthRecoveryService {
       throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
     }
 
-    const revokeAllSessionsByConsumerIdAndAudit =
-      handlers?.revokeAllSessionsByConsumerIdAndAudit ??
-      ((consumerId: string) => this.sessionService.revokeAllSessionsByConsumerIdAndAudit(consumerId));
-    await revokeAllSessionsByConsumerIdAndAudit(consumer.id);
+    await this.sessionRevocation.revokeAllSessionsByConsumerIdAndAudit(consumer.id);
     this.logger.log({
       event: `consumer_auth_password_reset_succeeded`,
       consumerId: consumer.id,

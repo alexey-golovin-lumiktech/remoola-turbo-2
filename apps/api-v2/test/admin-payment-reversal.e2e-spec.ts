@@ -194,7 +194,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
         },
       }),
     );
-    applyManualAuthGuard(app, moduleFixture);
+    await applyManualAuthGuard(app, moduleFixture);
     await app.init();
   });
 

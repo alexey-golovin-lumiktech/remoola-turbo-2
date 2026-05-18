@@ -1,5 +1,6 @@
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { AdminV2PaymentReversalPolicyProvider } from './admin-v2-payment-reversal-policy';
 import { AdminV2PaymentReversalWorkflowService } from './admin-v2-payment-reversal-workflow.service';
 import { type AdminV2PaymentReversalRepository } from './admin-v2-payment-reversal.repository';
 import { type AdminActionAuditService } from '../../shared/admin-action-audit.service';
@@ -37,6 +38,7 @@ describe(`AdminV2PaymentReversalWorkflowService`, () => {
       repository as unknown as AdminV2PaymentReversalRepository,
       balanceService as unknown as BalanceCalculationService,
       adminActionAudit as unknown as AdminActionAuditService,
+      new AdminV2PaymentReversalPolicyProvider(),
     );
 
     return { workflow, transactions, tx, repository, balanceService, adminActionAudit };
@@ -92,7 +94,10 @@ describe(`AdminV2PaymentReversalWorkflowService`, () => {
         type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
         amount: new Prisma.Decimal(25),
         metadata: expect.objectContaining({
+          rail: $Enums.PaymentRail.STRIPE_CHARGEBACK,
+          reversalKind: `CHARGEBACK`,
           reversalOfLedgerId: `payer-ledger`,
+          stripeObjectType: `manual_chargeback`,
         }),
       }),
     );
@@ -104,7 +109,10 @@ describe(`AdminV2PaymentReversalWorkflowService`, () => {
         type: $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL,
         amount: new Prisma.Decimal(-25),
         metadata: expect.objectContaining({
+          rail: $Enums.PaymentRail.STRIPE_CHARGEBACK,
+          reversalKind: `CHARGEBACK`,
           reversalOfLedgerId: `requester-ledger`,
+          stripeObjectType: `manual_chargeback`,
         }),
       }),
     );

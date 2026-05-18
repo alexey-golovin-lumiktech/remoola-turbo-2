@@ -8,12 +8,12 @@ import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.reposi
 import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
 import { AdminV2ConsumersController } from './admin-v2-consumers.controller';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
-import { ConsumerModule } from '../../consumer/consumer.module';
+import { ConsumerAuthModule } from '../../consumer/auth/consumer-auth.module';
 import { ConsumerContractsModule } from '../../consumer/modules/contracts/consumer-contracts.module';
 import { AdminV2SharedModule } from '../admin-v2-shared.module';
 
 @Module({
-  imports: [ConsumerContractsModule, ConsumerModule, AdminV2SharedModule],
+  imports: [ConsumerContractsModule, ConsumerAuthModule, AdminV2SharedModule],
   controllers: [AdminV2ConsumersController],
   providers: [
     AdminV2ConsumerRepository,

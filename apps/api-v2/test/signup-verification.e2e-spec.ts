@@ -15,12 +15,12 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/configure-app';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
-import { MailingService } from '../src/shared/mailing.service';
+import { SignupMailingService } from '../src/shared/signup-mailing.service';
 
 describe(`Signup verification cutover (e2e, isolated DB)`, () => {
   let app: NestExpressApplication;
   let prisma: PrismaClient;
-  let mailingService: MailingService;
+  let signupMailingService: SignupMailingService;
   let jwtService: JwtService;
   let consumerId: string;
   let consumerEmail: string;
@@ -62,9 +62,9 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
     configureApp(app);
     await app.init();
 
-    mailingService = app.get(MailingService);
+    signupMailingService = app.get(SignupMailingService);
     jwtService = app.get(JwtService);
-    jest.spyOn(mailingService, `sendConsumerSignupVerificationEmail`).mockResolvedValue(undefined);
+    jest.spyOn(signupMailingService, `sendConsumerSignupVerificationEmail`).mockResolvedValue(undefined);
   });
 
   beforeEach(async () => {
@@ -99,13 +99,13 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
     expect(completeRes.text).toBe(`success`);
 
     for (let attempt = 0; attempt < 20; attempt += 1) {
-      if ((mailingService.sendConsumerSignupVerificationEmail as jest.Mock).mock.calls.length > 0) {
+      if ((signupMailingService.sendConsumerSignupVerificationEmail as jest.Mock).mock.calls.length > 0) {
         break;
       }
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
 
-    const mailCall = (mailingService.sendConsumerSignupVerificationEmail as jest.Mock).mock.calls[0]?.[0] as
+    const mailCall = (signupMailingService.sendConsumerSignupVerificationEmail as jest.Mock).mock.calls[0]?.[0] as
       | { email: string; token: string }
       | undefined;
     expect(mailCall).toEqual({

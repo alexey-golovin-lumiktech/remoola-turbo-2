@@ -3,7 +3,7 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { type GoogleSignupPayload } from './auth.service';
+import { type GoogleSignupPayload } from './consumer-auth.types';
 import { ConsumerGoogleProfileRepository } from './consumer-google-profile.repository';
 import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { type ConsumerSignup } from './dto';

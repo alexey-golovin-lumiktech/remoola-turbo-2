@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
 import { AdminV2OperationalAlertsAuthRefreshReuseQuery } from './admin-v2-operational-alerts-auth-refresh-reuse.query';
-import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
-import {
-  type EvaluationResult,
-  type OperationalAlertWorkspaceEvaluator,
-} from './admin-v2-operational-alerts-workspace-evaluators';
+import { type OperationalAlertObservation } from './admin-v2-operational-alerts-thresholds';
+import { type OperationalAlertWorkspaceEvaluator } from './admin-v2-operational-alerts-workspace-evaluators';
 
 type AuthRefreshReuseQuery = { windowMinutes: number };
 
@@ -38,22 +35,14 @@ function parseQueryPayload(raw: unknown): AuthRefreshReuseQuery {
 export class AuthRefreshReuseAlertEvaluator implements OperationalAlertWorkspaceEvaluator {
   constructor(private readonly query: AdminV2OperationalAlertsAuthRefreshReuseQuery) {}
 
-  async evaluate(queryPayload: unknown, threshold: OperationalAlertThreshold): Promise<EvaluationResult> {
+  async evaluate(queryPayload: unknown): Promise<OperationalAlertObservation> {
     const { windowMinutes } = parseQueryPayload(queryPayload);
     const since = new Date(Date.now() - windowMinutes * 60 * 1000);
     const count = await this.query.countRefreshReuseSince(since);
-
-    if (threshold.type === `count_gt`) {
-      const fired = count > threshold.value;
-      return {
-        fired,
-        reason: fired
-          ? `refresh_reuse count=${count} in last ${windowMinutes}m exceeded threshold=${threshold.value} (count_gt)`
-          : null,
-        observedValue: count,
-      };
-    }
-    const _exhaustive: never = threshold.type as never;
-    throw new Error(`Unhandled threshold type for auth_refresh_reuse: ${String(_exhaustive)}`);
+    return {
+      observedValue: count,
+      reasonSubject: `refresh_reuse count`,
+      reasonDetail: `in last ${windowMinutes}m`,
+    };
   }
 }

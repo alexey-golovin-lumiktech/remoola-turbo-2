@@ -1,16 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
 import { StripeWebhookReversalNotificationRepository } from './stripe-webhook-reversal-notification.repository';
 import { type StripeReversalEmailOutboxPayload } from './stripe-webhook-reversal-outbox';
-import { MailingService } from '../../../shared/mailing.service';
+import { PaymentMailingService } from '../../../shared/payment-mailing.service';
+
+type PaymentReversalEmailer = Pick<
+  PaymentMailingService,
+  | `sendPaymentRefundEmail`
+  | `sendPaymentRefundEmailRequired`
+  | `sendPaymentChargebackEmail`
+  | `sendPaymentChargebackEmailRequired`
+>;
 
 @Injectable()
 export class StripeWebhookReversalNotificationService {
   constructor(
     private readonly notificationRepository: StripeWebhookReversalNotificationRepository,
-    private readonly mailingService: MailingService,
+    @Inject(PaymentMailingService)
+    private readonly paymentMailingService: PaymentReversalEmailer,
   ) {}
 
   async sendReversalEmails(params: {
@@ -35,7 +44,7 @@ export class StripeWebhookReversalNotificationService {
     if (!payer?.email) return;
 
     if (kind === `REFUND`) {
-      await this.mailingService.sendPaymentRefundEmail({
+      await this.paymentMailingService.sendPaymentRefundEmail({
         recipientEmail: payer.email,
         counterpartyEmail: requesterEmailResolved,
         amount,
@@ -46,7 +55,7 @@ export class StripeWebhookReversalNotificationService {
         consumerAppScope,
       });
       if (requesterEmailResolved) {
-        await this.mailingService.sendPaymentRefundEmail({
+        await this.paymentMailingService.sendPaymentRefundEmail({
           recipientEmail: requesterEmailResolved,
           counterpartyEmail: payer.email,
           amount,
@@ -60,7 +69,7 @@ export class StripeWebhookReversalNotificationService {
       return;
     }
 
-    await this.mailingService.sendPaymentChargebackEmail({
+    await this.paymentMailingService.sendPaymentChargebackEmail({
       recipientEmail: payer.email,
       counterpartyEmail: requesterEmailResolved,
       amount,
@@ -71,7 +80,7 @@ export class StripeWebhookReversalNotificationService {
       consumerAppScope,
     });
     if (requesterEmailResolved) {
-      await this.mailingService.sendPaymentChargebackEmail({
+      await this.paymentMailingService.sendPaymentChargebackEmail({
         recipientEmail: requesterEmailResolved,
         counterpartyEmail: payer.email,
         amount,
@@ -116,10 +125,10 @@ export class StripeWebhookReversalNotificationService {
     };
 
     if (payload.kind === `REFUND`) {
-      await this.mailingService.sendPaymentRefundEmailRequired(params);
+      await this.paymentMailingService.sendPaymentRefundEmailRequired(params);
       return;
     }
 
-    await this.mailingService.sendPaymentChargebackEmailRequired(params);
+    await this.paymentMailingService.sendPaymentChargebackEmailRequired(params);
   }
 }

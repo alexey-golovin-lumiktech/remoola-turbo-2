@@ -1,4 +1,3 @@
-import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
 import { VerificationQueueAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-verification';
 
 type GetQueueCountFilters = {
@@ -22,14 +21,12 @@ function buildEvaluator(
   return { evaluator, getQueueCount };
 }
 
-const COUNT_GT_FIVE: OperationalAlertThreshold = { type: `count_gt`, value: 5 };
-
 describe(`VerificationQueueAlertEvaluator`, () => {
   describe(`payload parsing`, () => {
     it(`treats null payload as empty filters`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate(null, COUNT_GT_FIVE);
+      await evaluator.evaluate(null);
 
       expect(getQueueCount).toHaveBeenCalledWith({});
     });
@@ -37,7 +34,7 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`treats undefined payload as empty filters`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate(undefined, COUNT_GT_FIVE);
+      await evaluator.evaluate(undefined);
 
       expect(getQueueCount).toHaveBeenCalledWith({});
     });
@@ -45,7 +42,7 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`treats empty object payload as empty filters`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate({}, COUNT_GT_FIVE);
+      await evaluator.evaluate({});
 
       expect(getQueueCount).toHaveBeenCalledWith({});
     });
@@ -53,7 +50,7 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`forwards a single supported filter to getQueueCount`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate({ status: `PENDING` }, COUNT_GT_FIVE);
+      await evaluator.evaluate({ status: `PENDING` });
 
       expect(getQueueCount).toHaveBeenCalledWith({ status: `PENDING` });
     });
@@ -61,15 +58,12 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`forwards all four supported filters together`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate(
-        {
-          status: `MORE_INFO`,
-          stripeIdentityStatus: `requires_input`,
-          country: `DE`,
-          contractorKind: `BUSINESS`,
-        },
-        COUNT_GT_FIVE,
-      );
+      await evaluator.evaluate({
+        status: `MORE_INFO`,
+        stripeIdentityStatus: `requires_input`,
+        country: `DE`,
+        contractorKind: `BUSINESS`,
+      });
 
       expect(getQueueCount).toHaveBeenCalledWith({
         status: `MORE_INFO`,
@@ -82,7 +76,7 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`trims whitespace from string filters`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate({ status: `  PENDING  `, country: `  US  ` }, COUNT_GT_FIVE);
+      await evaluator.evaluate({ status: `  PENDING  `, country: `  US  ` });
 
       expect(getQueueCount).toHaveBeenCalledWith({ status: `PENDING`, country: `US` });
     });
@@ -90,7 +84,7 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`drops empty / whitespace-only string filters silently`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate({ status: ``, country: `   `, stripeIdentityStatus: `\t` }, COUNT_GT_FIVE);
+      await evaluator.evaluate({ status: ``, country: `   `, stripeIdentityStatus: `\t` });
 
       expect(getQueueCount).toHaveBeenCalledWith({});
     });
@@ -98,7 +92,7 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`forwards missingProfileData to getQueueCount`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate({ missingProfileData: true }, COUNT_GT_FIVE);
+      await evaluator.evaluate({ missingProfileData: true });
 
       expect(getQueueCount).toHaveBeenCalledWith({ missingProfileData: true });
     });
@@ -106,7 +100,7 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`forwards missingDocuments to getQueueCount`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate({ missingDocuments: true }, COUNT_GT_FIVE);
+      await evaluator.evaluate({ missingDocuments: true });
 
       expect(getQueueCount).toHaveBeenCalledWith({ missingDocuments: true });
     });
@@ -114,17 +108,14 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`forwards all supported filters including saved-view parity booleans`, async () => {
       const { evaluator, getQueueCount } = buildEvaluator({ countResult: 0 });
 
-      await evaluator.evaluate(
-        {
-          status: `MORE_INFO`,
-          stripeIdentityStatus: `requires_input`,
-          country: `DE`,
-          contractorKind: `BUSINESS`,
-          missingProfileData: true,
-          missingDocuments: true,
-        },
-        COUNT_GT_FIVE,
-      );
+      await evaluator.evaluate({
+        status: `MORE_INFO`,
+        stripeIdentityStatus: `requires_input`,
+        country: `DE`,
+        contractorKind: `BUSINESS`,
+        missingProfileData: true,
+        missingDocuments: true,
+      });
 
       expect(getQueueCount).toHaveBeenCalledWith({
         status: `MORE_INFO`,
@@ -139,7 +130,7 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`rejects payloads containing page (pagination is not part of an alert query)`, async () => {
       const { evaluator } = buildEvaluator();
 
-      await expect(evaluator.evaluate({ page: 2 }, COUNT_GT_FIVE)).rejects.toThrow(
+      await expect(evaluator.evaluate({ page: 2 })).rejects.toThrow(
         /page[\s\S]*not supported by verification_queue evaluator/,
       );
     });
@@ -147,63 +138,41 @@ describe(`VerificationQueueAlertEvaluator`, () => {
     it(`rejects payloads containing unknown keys`, async () => {
       const { evaluator } = buildEvaluator();
 
-      await expect(evaluator.evaluate({ foo: `bar` }, COUNT_GT_FIVE)).rejects.toThrow(/key "foo" is not recognized/);
+      await expect(evaluator.evaluate({ foo: `bar` })).rejects.toThrow(/key "foo" is not recognized/);
     });
 
     it(`rejects primitive payloads`, async () => {
       const { evaluator } = buildEvaluator();
 
-      await expect(evaluator.evaluate(`pending`, COUNT_GT_FIVE)).rejects.toThrow(/queryPayload must be an object/);
-      await expect(evaluator.evaluate(7, COUNT_GT_FIVE)).rejects.toThrow(/queryPayload must be an object/);
-      await expect(evaluator.evaluate(true, COUNT_GT_FIVE)).rejects.toThrow(/queryPayload must be an object/);
+      await expect(evaluator.evaluate(`pending`)).rejects.toThrow(/queryPayload must be an object/);
+      await expect(evaluator.evaluate(7)).rejects.toThrow(/queryPayload must be an object/);
+      await expect(evaluator.evaluate(true)).rejects.toThrow(/queryPayload must be an object/);
     });
 
     it(`rejects array payloads`, async () => {
       const { evaluator } = buildEvaluator();
 
-      await expect(evaluator.evaluate([{ status: `PENDING` }], COUNT_GT_FIVE)).rejects.toThrow(
-        /queryPayload must be an object/,
-      );
+      await expect(evaluator.evaluate([{ status: `PENDING` }])).rejects.toThrow(/queryPayload must be an object/);
     });
   });
 
-  describe(`threshold dispatch (count_gt)`, () => {
-    it(`fires when count strictly exceeds threshold and includes observedValue`, async () => {
+  describe(`observation`, () => {
+    it(`returns the queue count observation`, async () => {
       const { evaluator } = buildEvaluator({ countResult: 7 });
 
-      const result = await evaluator.evaluate({ status: `PENDING` }, COUNT_GT_FIVE);
+      const result = await evaluator.evaluate({ status: `PENDING` });
 
-      expect(result.fired).toBe(true);
       expect(result.observedValue).toBe(7);
-      expect(result.reason).toMatch(/queue count=7 exceeded threshold=5 \(count_gt\)/);
+      expect(result.reasonSubject).toBe(`queue count`);
     });
 
-    it(`does NOT fire when count equals threshold (strict greater-than)`, async () => {
+    it(`returns observations when count is zero`, async () => {
       const { evaluator } = buildEvaluator({ countResult: 5 });
 
-      const result = await evaluator.evaluate({}, COUNT_GT_FIVE);
+      const result = await evaluator.evaluate({});
 
-      expect(result.fired).toBe(false);
-      expect(result.reason).toBeNull();
       expect(result.observedValue).toBe(5);
-    });
-
-    it(`does NOT fire when count is below threshold`, async () => {
-      const { evaluator } = buildEvaluator({ countResult: 0 });
-
-      const result = await evaluator.evaluate({}, COUNT_GT_FIVE);
-
-      expect(result.fired).toBe(false);
-      expect(result.reason).toBeNull();
-      expect(result.observedValue).toBe(0);
-    });
-
-    it(`throws on unknown threshold type via TypeScript exhaustiveness assertion`, async () => {
-      const { evaluator } = buildEvaluator({ countResult: 0 });
-
-      await expect(
-        evaluator.evaluate({}, { type: `unknown_type`, value: 1 } as unknown as OperationalAlertThreshold),
-      ).rejects.toThrow(/Unhandled threshold type for verification_queue/);
+      expect(result.reasonSubject).toBe(`queue count`);
     });
   });
 
@@ -212,7 +181,7 @@ describe(`VerificationQueueAlertEvaluator`, () => {
       const getQueueCount: GetQueueCountFilters extends never ? never : jest.Mock = jest.fn().mockResolvedValue(3);
       const { evaluator } = buildEvaluator({ countImpl: getQueueCount as jest.Mock });
 
-      await evaluator.evaluate({ status: `FLAGGED`, country: `US` }, COUNT_GT_FIVE);
+      await evaluator.evaluate({ status: `FLAGGED`, country: `US` });
 
       expect(getQueueCount).toHaveBeenCalledTimes(1);
       const arg = getQueueCount.mock.calls[0]?.[0] as GetQueueCountFilters;

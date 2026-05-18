@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { envs } from '../envs';
+import { ConsumerActionLogPolicyService } from './consumer-action-log-policy.service';
 import { ConsumerActionLogQuery } from './consumer-action-log.query';
 import { ConsumerActionLogRepository } from './consumer-action-log.repository';
 
@@ -35,11 +36,6 @@ const METADATA_ALLOWLIST = new Set<string>([
   `path`,
 ]);
 
-const CRITICAL_ACTION_PREFIXES = [
-  `consumer.payments.withdraw`,
-  `consumer.payments.transfer`,
-  `consumer.exchange.convert`,
-] as const;
 const CALLBACK_FAILURE_ACTION = `consumer.auth.oauth_callback_failure`;
 
 type BackpressureDecision = `record` | `drop` | `sampled_overflow`;
@@ -120,10 +116,11 @@ export class ConsumerActionLogService {
   constructor(
     private readonly query: ConsumerActionLogQuery,
     private readonly repository: ConsumerActionLogRepository,
+    private readonly policy: ConsumerActionLogPolicyService,
   ) {}
 
   private isCriticalAction(action: string): boolean {
-    return CRITICAL_ACTION_PREFIXES.some((prefix) => action.startsWith(prefix));
+    return this.policy.isCriticalAction(action);
   }
 
   private isFailureAction(action: string): boolean {

@@ -182,7 +182,7 @@ describe(`Consumer WAITING status compatibility (e2e, isolated DB)`, () => {
         },
       }),
     );
-    applyManualAuthGuard(app, moduleFixture);
+    await applyManualAuthGuard(app, moduleFixture);
     await app.init();
   });
 

@@ -1,20 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { type OperationalAlertThreshold } from './admin-v2-operational-alerts-thresholds';
+import { type OperationalAlertObservation } from './admin-v2-operational-alerts-thresholds';
+import { type OperationalAlertWorkspaceEvaluator } from './admin-v2-operational-alerts-workspace-evaluators';
 import {
-  type EvaluationResult,
-  type OperationalAlertWorkspaceEvaluator,
-} from './admin-v2-operational-alerts-workspace-evaluators';
-import { AdminV2VerificationService } from '../verification/admin-v2-verification.service';
+  ADMIN_V2_VERIFICATION_QUEUE_COUNTER,
+  type AdminV2VerificationQueueCounterPort,
+  type AdminV2VerificationQueueCountFilters,
+} from '../verification/admin-v2-verification-queue-counter.port';
 
-type VerificationQueueQuery = {
-  status?: string;
-  stripeIdentityStatus?: string;
-  country?: string;
-  contractorKind?: string;
-  missingProfileData?: boolean;
-  missingDocuments?: boolean;
-};
+type VerificationQueueQuery = AdminV2VerificationQueueCountFilters;
 
 const SUPPORTED_PAYLOAD_KEYS = new Set([
   `status`,
@@ -79,21 +73,17 @@ function parseVerificationQueuePayload(raw: unknown): VerificationQueueQuery {
 
 @Injectable()
 export class VerificationQueueAlertEvaluator implements OperationalAlertWorkspaceEvaluator {
-  constructor(private readonly verification: AdminV2VerificationService) {}
+  constructor(
+    @Inject(ADMIN_V2_VERIFICATION_QUEUE_COUNTER)
+    private readonly verificationQueueCounter: AdminV2VerificationQueueCounterPort,
+  ) {}
 
-  async evaluate(queryPayload: unknown, threshold: OperationalAlertThreshold): Promise<EvaluationResult> {
+  async evaluate(queryPayload: unknown): Promise<OperationalAlertObservation> {
     const filters = parseVerificationQueuePayload(queryPayload);
-    const count = await this.verification.getQueueCount(filters);
-
-    if (threshold.type === `count_gt`) {
-      const fired = count > threshold.value;
-      return {
-        fired,
-        reason: fired ? `queue count=${count} exceeded threshold=${threshold.value} (count_gt)` : null,
-        observedValue: count,
-      };
-    }
-    const _exhaustive: never = threshold.type as never;
-    throw new Error(`Unhandled threshold type for verification_queue: ${String(_exhaustive)}`);
+    const count = await this.verificationQueueCounter.getQueueCount(filters);
+    return {
+      observedValue: count,
+      reasonSubject: `queue count`,
+    };
   }
 }

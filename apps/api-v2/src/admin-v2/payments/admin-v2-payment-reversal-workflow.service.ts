@@ -6,12 +6,13 @@ import { type TPaymentReversalKind } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
+import { AdminV2PaymentReversalPolicyProvider } from './admin-v2-payment-reversal-policy';
 import {
   type PaymentReversalPaymentRequest,
   type PaymentReversalRequesterSettlementEntry,
 } from './admin-v2-payment-reversal.query';
 import { AdminV2PaymentReversalRepository, type ExistingReversalRow } from './admin-v2-payment-reversal.repository';
-import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
+import { AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { toMoneyDecimal, type MoneyDecimalInput } from '../../shared/money-decimal.utils';
 import {
@@ -53,6 +54,7 @@ export class AdminV2PaymentReversalWorkflowService {
     private readonly repository: AdminV2PaymentReversalRepository,
     private readonly balanceService: BalanceCalculationService,
     private readonly adminActionAudit: AdminActionAuditService,
+    private readonly policyProvider: AdminV2PaymentReversalPolicyProvider,
   ) {}
 
   private getExistingReversalStatus(existingReversal: ExistingReversalRow): $Enums.TransactionStatus | null {
@@ -69,11 +71,6 @@ export class AdminV2PaymentReversalWorkflowService {
       status === $Enums.TransactionStatus.PENDING ||
       status === $Enums.TransactionStatus.DENIED
     );
-  }
-
-  private shouldFinalizeExistingRefund(existingReversal: ExistingReversalRow): boolean {
-    const status = this.getExistingReversalStatus(existingReversal);
-    return status === $Enums.TransactionStatus.PENDING || status === $Enums.TransactionStatus.DENIED;
   }
 
   async executeReversal(params: {
@@ -100,6 +97,7 @@ export class AdminV2PaymentReversalWorkflowService {
       requesterSettlementEntry,
       requesterReversalType,
     } = params;
+    const policy = this.policyProvider.get(body.kind);
 
     return this.transactions.runLedgerMutation(async (tx) => {
       await acquireTransactionAdvisoryLock(
@@ -152,8 +150,9 @@ export class AdminV2PaymentReversalWorkflowService {
         if (amountResolution.ok === false) {
           const existing = await findExistingReversal(requestAmountDecimal);
           if (existing.existingReversal && this.isReusableExistingReversal(existing.existingReversal)) {
-            const needsRefundFinalize =
-              body.kind === `REFUND` && this.shouldFinalizeExistingRefund(existing.existingReversal);
+            const needsRefundFinalize = policy.shouldFinalizeExistingStatus(
+              this.getExistingReversalStatus(existing.existingReversal),
+            );
             if (needsRefundFinalize && stripePaymentIntentId) {
               await this.repository.queueRefundFinalization(tx, {
                 paymentRequestId,
@@ -191,7 +190,9 @@ export class AdminV2PaymentReversalWorkflowService {
       }
 
       if (existingReversal && this.isReusableExistingReversal(existingReversal)) {
-        const needsRefundFinalize = body.kind === `REFUND` && this.shouldFinalizeExistingRefund(existingReversal);
+        const needsRefundFinalize = policy.shouldFinalizeExistingStatus(
+          this.getExistingReversalStatus(existingReversal),
+        );
         if (needsRefundFinalize && stripePaymentIntentId) {
           await this.repository.queueRefundFinalization(tx, {
             paymentRequestId,
@@ -235,13 +236,9 @@ export class AdminV2PaymentReversalWorkflowService {
       remainingBefore = amountResolution.remainingBefore;
 
       const ledgerId = randomUUID();
-      const auditAction =
-        body.kind === `REFUND`
-          ? ADMIN_ACTION_AUDIT_ACTIONS.payment_refund
-          : ADMIN_ACTION_AUDIT_ACTIONS.payment_chargeback;
       await this.adminActionAudit.recordRequiredWithClient(tx, {
         adminId,
-        action: auditAction,
+        action: policy.auditAction,
         resource: `payment_request`,
         resourceId: paymentRequestId,
         metadata: {
@@ -253,13 +250,12 @@ export class AdminV2PaymentReversalWorkflowService {
       });
 
       const stripeRefundId: string | null = null;
-      let reversalStatus: $Enums.TransactionStatus = $Enums.TransactionStatus.COMPLETED;
-      if (body.kind === `REFUND`) {
+      const reversalStatus = policy.initialLedgerStatus;
+      if (policy.requiresStripePaymentIntent) {
         if (!stripePaymentIntentId) {
           throw new BadRequestException(adminErrorCodes.ADMIN_STRIPE_PAYMENT_INTENT_NOT_FOUND_FOR_REFUND);
         }
-        reversalStatus = $Enums.TransactionStatus.PENDING;
-      } else if (paymentRequest.requesterId) {
+      } else if (policy.requiresRequesterBalanceCheck && paymentRequest.requesterId) {
         const requesterBalance = await this.balanceService.calculateInTransaction(
           tx,
           paymentRequest.requesterId,
@@ -271,12 +267,11 @@ export class AdminV2PaymentReversalWorkflowService {
         }
       }
 
-      const rail = body.kind === `CHARGEBACK` ? $Enums.PaymentRail.STRIPE_CHARGEBACK : $Enums.PaymentRail.STRIPE_REFUND;
       const baseMetadata = {
-        rail,
+        rail: policy.paymentRail,
         reversalKind: body.kind,
         source: `admin`,
-        stripeObjectType: body.kind === `REFUND` ? `refund` : `manual_chargeback`,
+        stripeObjectType: policy.stripeObjectType,
         reason: body.reason ?? null,
         stripePaymentIntentId,
         stripeRefundId,
@@ -323,7 +318,7 @@ export class AdminV2PaymentReversalWorkflowService {
         });
       }
 
-      if (body.kind === `REFUND` && stripePaymentIntentId) {
+      if (policy.queuesRefundFinalization && stripePaymentIntentId) {
         await this.repository.queueRefundFinalization(tx, {
           paymentRequestId,
           ledgerId,

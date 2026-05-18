@@ -74,7 +74,7 @@ describe(`Admin auth lifecycle (e2e, isolated DB)`, () => {
         },
       }),
     );
-    applyManualAuthGuard(app, moduleFixture);
+    await applyManualAuthGuard(app, moduleFixture);
     await app.init();
   });
 

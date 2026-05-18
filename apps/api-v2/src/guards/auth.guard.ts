@@ -5,29 +5,19 @@ import {
   Inject,
   Injectable,
   Logger,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 import { type Request as TExpressRequest } from 'express';
 
-import { CONSUMER_APP_SCOPE_HEADER, isAdminApiPath, type ConsumerAppScope } from '@remoola/api-types';
-import { oauthCrypto } from '@remoola/security-utils';
-import { errorCodes } from '@remoola/shared-constants';
+import { isAdminApiPath } from '@remoola/api-types';
 
 import { IDENTITY, type IIdentity, type IIdentityContext, IS_PUBLIC } from '../common';
-import { type IJwtTokenPayload } from '../dtos/consumer';
-import { envs } from '../envs';
-import {
-  CONSUMER_API_PATH_PREFIX,
-  getAccessTokenCookieKeysForPath,
-  getRequestPath,
-  GuardMessage,
-} from './auth-guard-boundary';
-import { AuthIdentityRepository } from './auth-identity.repository';
-import { AuthSessionRepository } from './auth-session.repository';
+import { AuthAdminSessionValidatorService } from './auth-admin-session-validator.service';
+import { AuthConsumerSessionValidatorService } from './auth-consumer-session-validator.service';
+import { CONSUMER_API_PATH_PREFIX, GuardMessage } from './auth-guard-boundary';
+import { AuthRequestContextService } from './auth-request-context.service';
+import { AuthTokenVerifierService } from './auth-token-verifier.service';
 import { OriginResolverService } from '../shared/origin-resolver.service';
-import { secureCompare } from '../shared-common';
 import { ensureAuthenticatedMutationCsrf } from '../shared-common/csrf-protection';
 
 @Injectable()
@@ -37,10 +27,10 @@ export class AuthGuard implements CanActivate {
   constructor(
     @Inject(Reflector)
     private readonly reflector: Reflector,
-    @Inject(JwtService)
-    private readonly jwtService: JwtService,
-    private readonly authSessionRepository: AuthSessionRepository,
-    private readonly authIdentityRepository: AuthIdentityRepository,
+    private readonly requestContextService: AuthRequestContextService,
+    private readonly tokenVerifier: AuthTokenVerifierService,
+    private readonly consumerSessionValidator: AuthConsumerSessionValidatorService,
+    private readonly adminSessionValidator: AuthAdminSessionValidatorService,
     private readonly originResolver: OriginResolverService,
   ) {}
 
@@ -49,128 +39,38 @@ export class AuthGuard implements CanActivate {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [context.getHandler(), context.getClass()]);
     if (isPublic) return true;
 
-    const path = getRequestPath(request);
-    const isConsumerPath = path.startsWith(CONSUMER_API_PATH_PREFIX);
-    const consumerScope = isConsumerPath
-      ? this.originResolver.validateConsumerAppScopeHeader(request.headers?.[CONSUMER_APP_SCOPE_HEADER])
-      : undefined;
-    if (isConsumerPath && !consumerScope) {
-      throw new UnauthorizedException(`Invalid app scope`);
-    }
-    const cookieAccessToken = getAccessTokenCookieKeysForPath(path, consumerScope)
-      .map((key) => request.cookies[key])
-      .find((value): value is string => typeof value === `string` && value.length > 0);
-    if (!cookieAccessToken) {
-      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-    }
-    await this.processAccessToken(cookieAccessToken, request, consumerScope);
-    ensureAuthenticatedMutationCsrf(request, this.originResolver);
-    return true;
-  }
+    const requestContext = this.requestContextService.getContext(request);
+    const { payload: verified, identityId } = this.tokenVerifier.verify(requestContext.accessToken);
 
-  private async processAccessToken(accessToken: string, request: TExpressRequest, requestAppScope?: ConsumerAppScope) {
-    let verified: IJwtTokenPayload;
-    const path = getRequestPath(request);
-    try {
-      verified = this.jwtService.verify<IJwtTokenPayload>(accessToken, { secret: envs.JWT_ACCESS_SECRET });
-    } catch {
-      this.logger.warn(`AuthGuard: JWT verification failed`);
-      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-    }
-
-    if (verified.typ !== undefined && verified.typ !== `access`) {
-      this.logger.warn(`AuthGuard: token typ is not access`);
-      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-    }
-    if (verified.scope !== `consumer` && verified.scope !== `admin`) {
-      this.logger.warn(`AuthGuard: token missing or has invalid scope`);
-      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-    }
-
-    if (verified.scope === `admin` && path.startsWith(CONSUMER_API_PATH_PREFIX)) {
+    if (verified.scope === `admin` && requestContext.path.startsWith(CONSUMER_API_PATH_PREFIX)) {
       this.logger.warn(`AuthGuard: admin token used on consumer path`);
       throw new ForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);
     }
-    if (verified.scope === `consumer` && isAdminApiPath(path)) {
+    if (verified.scope === `consumer` && isAdminApiPath(requestContext.path)) {
       this.logger.warn(`AuthGuard: consumer token used on admin path`);
       throw new ForbiddenException(GuardMessage.ONLY_FOR_ADMINS);
     }
 
-    const identityId = verified.identityId ?? verified.sub;
-    if (!identityId) {
-      this.logger.warn(`AuthGuard: token missing identityId`);
-      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-    }
-
-    const isConsumerPath = path.startsWith(CONSUMER_API_PATH_PREFIX);
-    if (isConsumerPath) {
-      const tokenAppScope = this.originResolver.validateConsumerAppScope(verified.appScope);
-      if (!requestAppScope || !tokenAppScope || tokenAppScope !== requestAppScope) {
-        this.logger.warn(`AuthGuard: consumer access token app scope mismatch`);
-        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-      }
-      if (!verified.sid) {
-        this.logger.warn(`AuthGuard: consumer access token missing sid`);
-        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-      }
-      const session = await this.authSessionRepository.findActiveConsumerSession(
-        verified.sid,
-        identityId,
-        requestAppScope,
-      );
-      if (session == null || session.expiresAt < new Date()) {
-        this.logger.warn(`AuthGuard: consumer session not found or expired`);
-        throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
-      }
-      if (session.appScope !== requestAppScope) {
-        this.logger.warn(`AuthGuard: consumer session app scope mismatch`);
-        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-      }
-      if (!secureCompare(session.accessTokenHash, oauthCrypto.hashOAuthState(accessToken))) {
-        this.logger.warn(`AuthGuard: consumer access token mismatch with stored value`);
-        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-      }
-    } else {
-      if (!verified.sid) {
-        this.logger.warn(`AuthGuard: admin access token missing sid`);
-        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-      }
-      const session = await this.authSessionRepository.findActiveAdminSession(verified.sid, identityId);
-      if (session == null || session.expiresAt < new Date()) {
-        this.logger.warn(`AuthGuard: admin session not found or expired`);
-        throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
-      }
-      if (!secureCompare(session.accessTokenHash, oauthCrypto.hashOAuthState(accessToken))) {
-        this.logger.warn(`AuthGuard: admin access token mismatch with stored value`);
-        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-      }
-    }
-
-    const admin = await this.authIdentityRepository.findActiveAdminById(identityId);
-    const consumer = await this.authIdentityRepository.findConsumerById(identityId);
-    const identity = admin ?? consumer;
-
-    if (identity == null) {
-      this.logger.warn(`AuthGuard: no identity for verified identityId`);
-      throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
-    }
-
-    if (isAdminApiPath(path) && !admin) {
-      this.logger.warn(`AuthGuard: consumer attempted admin path`);
-      throw new ForbiddenException(GuardMessage.ONLY_FOR_ADMINS);
-    }
-
-    if (path.startsWith(CONSUMER_API_PATH_PREFIX) && !consumer) {
-      this.logger.warn(`AuthGuard: admin attempted consumer path`);
-      throw new ForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);
-    }
-
-    if (path.startsWith(CONSUMER_API_PATH_PREFIX) && consumer?.suspendedAt != null) {
-      this.logger.warn(`AuthGuard: suspended consumer attempted consumer path`);
-      throw new ForbiddenException(errorCodes.ACCOUNT_SUSPENDED);
-    }
-
-    this.assignRequestIdentity(request, identity, admin?.type ?? `consumer`, verified.sid);
+    const identityContext =
+      verified.scope === `admin`
+        ? await this.adminSessionValidator.validate({
+            accessToken: requestContext.accessToken,
+            verified,
+            identityId,
+          })
+        : await this.consumerSessionValidator.validate({
+            accessToken: requestContext.accessToken,
+            verified,
+            identityId,
+            requestAppScope: requestContext.consumerScope,
+          });
+    this.assignRequestIdentity(
+      request,
+      identityContext.identity,
+      identityContext.identityType,
+      identityContext.sessionId,
+    );
+    ensureAuthenticatedMutationCsrf(request, this.originResolver);
     return true;
   }
 

@@ -1,7 +1,7 @@
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { type ExecutionContext } from '@nestjs/common/interfaces/features/execution-context.interface';
 import { Reflector } from '@nestjs/core';
-import { type JwtService } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 
 import { CONSUMER_APP_SCOPE_HEADER, COOKIE_KEYS, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
@@ -10,8 +10,12 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { JwtPassportModule } from '../auth/jwt-passport.module';
 import { type IDENTITY } from '../common';
+import { AuthAdminSessionValidatorService } from './auth-admin-session-validator.service';
+import { AuthConsumerSessionValidatorService } from './auth-consumer-session-validator.service';
 import { AuthIdentityRepository } from './auth-identity.repository';
+import { AuthRequestContextService } from './auth-request-context.service';
 import { AuthSessionRepository } from './auth-session.repository';
+import { AuthTokenVerifierService } from './auth-token-verifier.service';
 import { AuthGuard } from './auth.guard';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 import { getApiConsumerAccessTokenCookieKeysForRead, getApiConsumerCsrfTokenCookieKeysForRead } from '../shared-common';
@@ -63,7 +67,7 @@ describe(`AuthGuard`, () => {
       getClass: () => undefined,
     }) as unknown as ExecutionContext;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     reflector.get.mockReturnValue(false);
     reflector.getAllAndOverride.mockReturnValue(false);
@@ -74,13 +78,21 @@ describe(`AuthGuard`, () => {
       const headerValue = Array.isArray(value) ? value[0] : value;
       return headerValue === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined;
     });
-    guard = new AuthGuard(
-      reflector as unknown as Reflector,
-      jwtService as unknown as JwtService,
-      new AuthSessionRepository(prisma as never),
-      new AuthIdentityRepository(prisma as never),
-      originResolver as never,
-    );
+    const module = await Test.createTestingModule({
+      providers: [
+        AuthGuard,
+        AuthRequestContextService,
+        AuthTokenVerifierService,
+        AuthConsumerSessionValidatorService,
+        AuthAdminSessionValidatorService,
+        { provide: Reflector, useValue: reflector },
+        { provide: JwtService, useValue: jwtService },
+        { provide: AuthSessionRepository, useValue: new AuthSessionRepository(prisma as never) },
+        { provide: AuthIdentityRepository, useValue: new AuthIdentityRepository(prisma as never) },
+        { provide: OriginResolverService, useValue: originResolver },
+      ],
+    }).compile();
+    guard = module.get(AuthGuard);
   });
 
   it(`resolves JwtService for the app-level auth guard via JwtPassportModule`, async () => {
@@ -88,6 +100,10 @@ describe(`AuthGuard`, () => {
       imports: [JwtPassportModule],
       providers: [
         AuthGuard,
+        AuthRequestContextService,
+        AuthTokenVerifierService,
+        AuthConsumerSessionValidatorService,
+        AuthAdminSessionValidatorService,
         { provide: Reflector, useValue: reflector },
         { provide: AuthSessionRepository, useValue: new AuthSessionRepository(prisma as never) },
         { provide: AuthIdentityRepository, useValue: new AuthIdentityRepository(prisma as never) },
@@ -181,13 +197,14 @@ describe(`AuthGuard`, () => {
       expiresAt: new Date(Date.now() + 60_000),
       accessTokenHash: oauthCrypto.hashOAuthState(token),
     });
-    prisma.adminModel.findFirst.mockResolvedValue(null);
     prisma.consumerModel.findFirst.mockResolvedValue({
       id: `consumer-1`,
       email: `consumer@example.com`,
     });
 
     await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
+    expect(prisma.adminModel.findFirst).not.toHaveBeenCalled();
+    expect(prisma.consumerModel.findFirst).toHaveBeenCalledWith({ where: { id: `consumer-1` } });
   });
 
   it(`rejects consumer token when stored access hash does not match`, async () => {
@@ -336,7 +353,6 @@ describe(`AuthGuard`, () => {
       expiresAt: new Date(Date.now() + 60_000),
       accessTokenHash: oauthCrypto.hashOAuthState(`token`),
     });
-    prisma.adminModel.findFirst.mockResolvedValue(null);
     prisma.consumerModel.findFirst.mockResolvedValue({
       id: `consumer-1`,
       email: `consumer@example.com`,
@@ -344,6 +360,7 @@ describe(`AuthGuard`, () => {
 
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid CSRF token`);
+    expect(prisma.adminModel.findFirst).not.toHaveBeenCalled();
   });
 
   it(`does not require csrf for authenticated consumer reads`, async () => {
@@ -375,13 +392,13 @@ describe(`AuthGuard`, () => {
       expiresAt: new Date(Date.now() + 60_000),
       accessTokenHash: oauthCrypto.hashOAuthState(`token`),
     });
-    prisma.adminModel.findFirst.mockResolvedValue(null);
     prisma.consumerModel.findFirst.mockResolvedValue({
       id: `consumer-1`,
       email: `consumer@example.com`,
     });
 
     await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
+    expect(prisma.adminModel.findFirst).not.toHaveBeenCalled();
   });
 
   it(`rejects suspended consumers on consumer routes even with a valid session`, async () => {
@@ -414,7 +431,6 @@ describe(`AuthGuard`, () => {
       expiresAt: new Date(Date.now() + 60_000),
       accessTokenHash: oauthCrypto.hashOAuthState(token),
     });
-    prisma.adminModel.findFirst.mockResolvedValue(null);
     prisma.consumerModel.findFirst.mockResolvedValue({
       id: `consumer-1`,
       email: `consumer@example.com`,
@@ -423,6 +439,7 @@ describe(`AuthGuard`, () => {
 
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(ForbiddenException);
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(errorCodes.ACCOUNT_SUSPENDED);
+    expect(prisma.adminModel.findFirst).not.toHaveBeenCalled();
   });
 
   it(`rejects admin access tokens that are missing a sid claim`, async () => {
@@ -524,9 +541,9 @@ describe(`AuthGuard`, () => {
       accessTokenHash: oauthCrypto.hashOAuthState(token),
     });
     prisma.adminModel.findFirst.mockResolvedValue({ id: `admin-1`, email: `admin@example.com`, type: `ADMIN` });
-    prisma.consumerModel.findFirst.mockResolvedValue(null);
 
     await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
+    expect(prisma.consumerModel.findFirst).not.toHaveBeenCalled();
   });
 
   it(`rejects admin access tokens when the resolved admin has been deactivated`, async () => {
@@ -558,6 +575,7 @@ describe(`AuthGuard`, () => {
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Authentication record not found`);
     expect(prisma.adminModel.findFirst).toHaveBeenCalledWith({ where: { id: `admin-1`, deletedAt: null } });
+    expect(prisma.consumerModel.findFirst).not.toHaveBeenCalled();
   });
 
   it(`uses the mobile consumer namespace selected by explicit app scope`, async () => {
@@ -592,12 +610,12 @@ describe(`AuthGuard`, () => {
       expiresAt: new Date(Date.now() + 60_000),
       accessTokenHash: oauthCrypto.hashOAuthState(`token`),
     });
-    prisma.adminModel.findFirst.mockResolvedValue(null);
     prisma.consumerModel.findFirst.mockResolvedValue({
       id: `consumer-1`,
       email: `consumer@example.com`,
     });
 
     await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
+    expect(prisma.adminModel.findFirst).not.toHaveBeenCalled();
   });
 });

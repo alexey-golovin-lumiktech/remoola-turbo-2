@@ -1,6 +1,12 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
+import { $Enums } from '@remoola/database-2';
+
+import { AdminV2VerificationCaseService } from './admin-v2-verification-case.service';
+import { AdminV2VerificationDecisionService } from './admin-v2-verification-decision.service';
+import { AdminV2VerificationQueueService } from './admin-v2-verification-queue.service';
 import { AdminV2VerificationService } from './admin-v2-verification.service';
+import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 
 function buildQueueRow(id: string, overrides: Record<string, unknown> = {}) {
   return {
@@ -51,16 +57,26 @@ function buildService() {
     getActiveAssigneesForResource: jest.fn(),
   };
 
+  const queueService = new AdminV2VerificationQueueService(
+    query as never,
+    slaService as never,
+    assignmentsService as never,
+  );
+  const caseService = new AdminV2VerificationCaseService(
+    consumersService as never,
+    query as never,
+    slaService as never,
+    assignmentsService as never,
+  );
+  const decisionService = new AdminV2VerificationDecisionService(
+    repository as never,
+    slaService as never,
+    idempotency as never,
+    mailingService as never,
+  );
+
   return {
-    service: new AdminV2VerificationService(
-      query as never,
-      repository as never,
-      consumersService as never,
-      slaService as never,
-      idempotency as never,
-      mailingService as never,
-      assignmentsService as never,
-    ),
+    service: new AdminV2VerificationService(queueService, caseService, decisionService),
     query,
     repository,
     consumersService,
@@ -271,11 +287,81 @@ describe(`AdminV2VerificationService`, () => {
         notificationSent: true,
       }),
     );
+    expect(repository.applyDecision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionName: ADMIN_ACTION_AUDIT_ACTIONS.verification_approve,
+        notificationType: `email`,
+        nextState: {
+          verificationStatus: $Enums.VerificationStatus.APPROVED,
+          verified: true,
+          legalVerified: true,
+        },
+      }),
+    );
     expect(slaService.refreshBreaches).toHaveBeenCalled();
     expect(result).toEqual(
       expect.objectContaining({
         verificationStatus: `APPROVED`,
         notification: { type: `email`, sent: true },
+      }),
+    );
+  });
+
+  it(`applies flag decisions without sending consumer-visible email`, async () => {
+    const { service, repository, mailingService, slaService } = buildService();
+    repository.applyDecision.mockResolvedValueOnce({
+      consumerEmail: `user@example.com`,
+      auditEntryId: `audit-flag-1`,
+      auditMetadata: {
+        fromStatus: `PENDING`,
+        toStatus: `FLAGGED`,
+        reason: `Manual review`,
+        expectedVersion: new Date(`2026-04-15T10:00:00.000Z`).getTime(),
+      },
+      updatedConsumer: {
+        id: `consumer-1`,
+        verificationStatus: `FLAGGED`,
+        verificationReason: `Manual review`,
+        verificationUpdatedAt: new Date(`2026-04-15T10:05:00.000Z`),
+        updatedAt: new Date(`2026-04-15T10:05:00.000Z`),
+      },
+    });
+    slaService.refreshBreaches.mockResolvedValueOnce(undefined);
+
+    const result = await service.applyDecision(
+      `consumer-1`,
+      `admin-1`,
+      `flag`,
+      {
+        confirmed: true,
+        reason: `Manual review`,
+        version: new Date(`2026-04-15T10:00:00.000Z`).getTime(),
+      },
+      { ipAddress: `127.0.0.1`, userAgent: `jest`, idempotencyKey: `idem-flag-1` },
+    );
+
+    expect(repository.applyDecision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionName: ADMIN_ACTION_AUDIT_ACTIONS.verification_flag,
+        notificationType: null,
+        nextState: {
+          verificationStatus: $Enums.VerificationStatus.FLAGGED,
+          verified: false,
+          legalVerified: false,
+        },
+      }),
+    );
+    expect(mailingService.sendAdminV2VerificationDecisionEmail).not.toHaveBeenCalled();
+    expect(repository.updateAuditNotificationStatus).not.toHaveBeenCalled();
+    expect(result).toEqual(
+      expect.not.objectContaining({
+        notification: expect.anything(),
+      }),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        verificationStatus: `FLAGGED`,
+        verificationReason: `Manual review`,
       }),
     );
   });

@@ -11,8 +11,13 @@ jest.mock(`../envs`, () => ({
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
+import { AdminNotificationMailingService } from './admin-notification-mailing.service';
 import { type BrevoSendMailOptions } from './brevo-mail.service';
+import { InvoiceMailingService } from './invoice-mailing.service';
 import { MailingService } from './mailing.service';
+import { PaymentMailingService } from './payment-mailing.service';
+import { RecoveryMailingService } from './recovery-mailing.service';
+import { SignupMailingService } from './signup-mailing.service';
 
 describe(`MailingService signup verification links`, () => {
   function makeService() {
@@ -38,7 +43,19 @@ describe(`MailingService signup verification links`, () => {
       }),
     };
 
-    const service = new MailingService(mailTransportSender as any, originResolver as any);
+    const paymentMailingService = new PaymentMailingService(mailTransportSender as any, originResolver as any);
+    const recoveryMailingService = new RecoveryMailingService(mailTransportSender as any);
+    const signupMailingService = new SignupMailingService(mailTransportSender as any);
+    const invoiceMailingService = new InvoiceMailingService(mailTransportSender as any);
+    const adminNotificationMailingService = new AdminNotificationMailingService(mailTransportSender as any);
+    const service = new MailingService(
+      mailTransportSender as any,
+      paymentMailingService,
+      recoveryMailingService,
+      signupMailingService,
+      invoiceMailingService,
+      adminNotificationMailingService,
+    );
     return { service, brevoMailService, mailTransportSender, originResolver };
   }
 
@@ -159,5 +176,126 @@ describe(`MailingService signup verification links`, () => {
 
     expect(originResolver.resolveConsumerOriginByScope).not.toHaveBeenCalled();
     expect(brevoMailService.sendMail).not.toHaveBeenCalled();
+  });
+
+  it(`delegates consumer password reset emails through the recovery mailer`, async () => {
+    const { service, brevoMailService } = makeService();
+
+    await service.sendConsumerForgotPasswordEmail({
+      email: `user@example.com`,
+      forgotPasswordLink: `https://grid.example.com/forgot-password/confirm?token=reset-token`,
+    });
+
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `user@example.com`,
+        subject: `Wirebill – Reset your password`,
+        html: expect.stringContaining(`https://grid.example.com/forgot-password/confirm?token=reset-token`),
+      }),
+    );
+  });
+
+  it(`delegates admin password reset emails through the recovery mailer`, async () => {
+    const { service, brevoMailService } = makeService();
+
+    await service.sendAdminV2PasswordResetEmail({
+      email: `admin@example.com`,
+      forgotPasswordLink: `https://admin.example.com/reset?token=admin-token`,
+    });
+
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `admin@example.com`,
+        subject: `Wirebill. Admin password reset`,
+        html: expect.stringContaining(`https://admin.example.com/reset?token=admin-token`),
+      }),
+    );
+  });
+
+  it(`delegates passwordless recovery emails through the recovery mailer`, async () => {
+    const { service, brevoMailService } = makeService();
+
+    await service.sendConsumerPasswordlessRecoveryEmail({
+      email: `google-user@example.com`,
+      loginUrl: `https://grid.example.com/login/google`,
+    });
+
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `google-user@example.com`,
+        subject: `Wirebill – Sign in with Google`,
+        html: expect.stringContaining(`https://grid.example.com/login/google`),
+      }),
+    );
+  });
+
+  it(`delegates invitation emails through the signup mailer`, async () => {
+    const { service, brevoMailService } = makeService();
+
+    await service.sendInvitationEmail({
+      email: `admin@example.com`,
+      signupLink: `https://admin.example.com/invitations/accept?token=invite-token`,
+    });
+
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `admin@example.com`,
+        subject: `Wirebill. Invitation`,
+        html: expect.stringContaining(`https://admin.example.com/invitations/accept?token=invite-token`),
+      }),
+    );
+  });
+
+  it(`delegates pay-to-contact payment info emails through the invoice mailer`, async () => {
+    const { service, brevoMailService } = makeService();
+
+    await service.sendPayToContactPaymentInfoEmail({
+      contactEmail: `contact@example.com`,
+      payerEmail: `payer@example.com`,
+      paymentDetailsLink: `https://grid.example.com/payments/details`,
+    });
+
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `contact@example.com`,
+        subject: `Wirebill. Payment`,
+        html: expect.stringContaining(`https://grid.example.com/payments/details`),
+      }),
+    );
+  });
+
+  it(`delegates suspension emails through the admin notification mailer`, async () => {
+    const { service, brevoMailService } = makeService();
+
+    await service.sendAdminV2ConsumerSuspensionEmail({
+      email: `consumer@example.com`,
+      reason: `<policy violation>`,
+    });
+
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `consumer@example.com`,
+        subject: `Wirebill. Account suspended`,
+        html: expect.stringContaining(`&lt;policy violation&gt;`),
+      }),
+    );
+  });
+
+  it(`delegates verification decision emails through the admin notification mailer`, async () => {
+    const { service, brevoMailService } = makeService();
+
+    await service.sendAdminV2VerificationDecisionEmail({
+      email: `consumer@example.com`,
+      decision: `request-info`,
+      reason: `Upload <passport>`,
+    });
+
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `consumer@example.com`,
+        subject: `Wirebill. Additional verification information required`,
+        html: expect.stringContaining(`Reviewer note: Upload &lt;passport&gt;`),
+      }),
+    );
   });
 });

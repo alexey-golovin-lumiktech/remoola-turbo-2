@@ -1,16 +1,19 @@
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { AdminV2PaymentReversalNotificationService } from './admin-v2-payment-reversal-notification.service';
+import { AdminV2PaymentReversalPolicyProvider } from './admin-v2-payment-reversal-policy';
 import { AdminV2PaymentReversalRefundFinalizerService } from './admin-v2-payment-reversal-refund-finalizer.service';
 import { buildAdminRefundFinalizationOutboxIdempotencyKey } from './admin-v2-payment-reversal-refund-outbox';
 /* eslint-disable-next-line max-len */
 import { type AdminV2PaymentReversalRefundOutboxRepository } from './admin-v2-payment-reversal-refund-outbox.repository';
+import { AdminV2PaymentReversalRequestPreparerService } from './admin-v2-payment-reversal-request-preparer.service';
 import { type AdminV2PaymentReversalWorkflowService } from './admin-v2-payment-reversal-workflow.service';
 import { type AdminV2PaymentReversalQuery } from './admin-v2-payment-reversal.query';
 import { type AdminV2PaymentReversalRepository } from './admin-v2-payment-reversal.repository';
 import { AdminV2PaymentReversalService } from './admin-v2-payment-reversal.service';
 import { type AdminActionAuditService } from '../../shared/admin-action-audit.service';
-import { type MailingService } from '../../shared/mailing.service';
+import { type PaymentMailingService } from '../../shared/payment-mailing.service';
 import {
   buildAdminPaymentReversalIdempotencyKey,
   buildStripeReversalLedgerIdempotencyKeys,
@@ -229,11 +232,21 @@ function buildService(options: BuildServiceOptions = {}) {
     transactions as unknown as PrismaTransactionRunner,
     stripe,
   );
-  const service = new AdminV2PaymentReversalService(
+  const policyProvider = new AdminV2PaymentReversalPolicyProvider();
+  const requestPreparer = new AdminV2PaymentReversalRequestPreparerService(
     query as unknown as AdminV2PaymentReversalQuery,
+  );
+  const notificationService = new AdminV2PaymentReversalNotificationService(
+    query as unknown as AdminV2PaymentReversalQuery,
+    policyProvider,
+    mailingService as unknown as PaymentMailingService,
+  );
+  const service = new AdminV2PaymentReversalService(
+    requestPreparer,
     workflow as unknown as AdminV2PaymentReversalWorkflowService,
     refundFinalizer,
-    mailingService as unknown as MailingService,
+    notificationService,
+    policyProvider,
   );
 
   return {
@@ -322,6 +335,7 @@ describe(`AdminV2PaymentReversalService`, () => {
       }),
     );
     expect(mailingService.sendPaymentChargebackEmail).toHaveBeenCalledTimes(2);
+    expect(mailingService.sendPaymentRefundEmail).not.toHaveBeenCalled();
   });
 
   it(`creates a Stripe refund and finalizes the persisted reversal`, async () => {
@@ -397,6 +411,7 @@ describe(`AdminV2PaymentReversalService`, () => {
         consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
       }),
     );
+    expect(mailingService.sendPaymentChargebackEmail).not.toHaveBeenCalled();
   });
 
   it(`marks the refund reversal denied when Stripe refund creation fails`, async () => {

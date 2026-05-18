@@ -1,97 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Expose, Transform, Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { AdminActionAuditQuery, AuthAuditQuery, ConsumerActionAuditQuery } from './admin-v2-audit.dto';
 import { AdminV2AuditService } from './admin-v2-audit.service';
-
-function transformDate(value: unknown): Date | undefined {
-  if (typeof value !== `string` || value.trim().length === 0) {
-    return undefined;
-  }
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-}
-
-class AdminAuditBaseQuery {
-  @Expose()
-  @Transform(({ value }) => transformDate(value))
-  @IsOptional()
-  dateFrom?: Date;
-
-  @Expose()
-  @Transform(({ value }) => transformDate(value))
-  @IsOptional()
-  dateTo?: Date;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-}
-
-class AuthAuditQuery extends AdminAuditBaseQuery {
-  @Expose()
-  @IsString()
-  @IsOptional()
-  email?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  event?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  ipAddress?: string;
-}
-
-class AdminActionAuditQuery extends AdminAuditBaseQuery {
-  @Expose()
-  @IsString()
-  @IsOptional()
-  action?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  adminId?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  email?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  resourceId?: string;
-}
-
-class ConsumerActionAuditQuery extends AdminAuditBaseQuery {
-  @Expose()
-  @IsString()
-  @IsOptional()
-  consumerId?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  action?: string;
-}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Audit`)
