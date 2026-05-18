@@ -11,6 +11,7 @@ import { ConsumerAuthSessionRepository } from './consumer-auth-session.repositor
 import { ConsumerAuthSessionService } from './consumer-auth-session.service';
 import { ConsumerAuthSignupService } from './consumer-auth-signup.service';
 import { ConsumerAuthVerificationService } from './consumer-auth-verification.service';
+import { ConsumerGoogleOAuthController } from './consumer-google-oauth.controller';
 import { ConsumerGoogleProfileQuery } from './consumer-google-profile.query';
 import { ConsumerGoogleProfileRepository } from './consumer-google-profile.repository';
 import { ConsumerIdentityRepository } from './consumer-identity.repository';
@@ -35,7 +36,12 @@ import { MailingModule } from '../../shared/mailing.module';
     InfrastructureModule,
     MailingModule,
   ],
-  controllers: [ConsumerAuthController, ConsumerPasswordController, ConsumerSignupController],
+  controllers: [
+    ConsumerAuthController,
+    ConsumerGoogleOAuthController,
+    ConsumerPasswordController,
+    ConsumerSignupController,
+  ],
   providers: [
     GoogleOAuthService,
     ConsumerAuthControllerSupportService,

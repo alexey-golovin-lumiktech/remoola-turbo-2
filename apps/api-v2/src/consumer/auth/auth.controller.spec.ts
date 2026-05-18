@@ -14,6 +14,7 @@ import {
 import { ConsumerAuthController } from './auth.controller';
 import { type ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
+import { ConsumerGoogleOAuthController } from './consumer-google-oauth.controller';
 import { ConsumerPasswordController } from './consumer-password.controller';
 import { ConsumerSignupController } from './consumer-signup.controller';
 import { type GoogleOAuthService } from './google-oauth.service';
@@ -28,6 +29,7 @@ const GOOGLE_OAUTH_STATE_COOKIE_KEY = constants.GOOGLE_OAUTH_STATE_COOKIE_KEY;
 
 describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   let controller: ConsumerAuthController;
+  let googleOAuthController: ConsumerGoogleOAuthController;
   let passwordController: ConsumerPasswordController;
   let signupController: ConsumerSignupController;
   let service: Partial<ConsumerAuthService>;
@@ -168,6 +170,11 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const supportService = new ConsumerAuthControllerSupportService(originResolver as OriginResolverService);
     controller = new ConsumerAuthController(
       service as ConsumerAuthService,
+      oauthStateStore as OAuthStateStoreService,
+      supportService,
+    );
+    googleOAuthController = new ConsumerGoogleOAuthController(
+      service as ConsumerAuthService,
       googleOAuthService as GoogleOAuthService,
       oauthStateStore as OAuthStateStoreService,
       originResolver as OriginResolverService,
@@ -186,6 +193,23 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   });
 
   it(`keeps auth route and decorator contracts stable while splitting controllers`, () => {
+    expect(getRouteMetadata(ConsumerGoogleOAuthController, `googleOAuthStart`)).toMatchObject({
+      path: `google/start`,
+      method: RequestMethod.GET,
+      isPublic: true,
+      trackConsumerAction: { action: `consumer.auth.oauth_start`, resource: `auth` },
+      throttlerLimit: 20,
+      throttlerTtl: 60000,
+    });
+    expect(getRouteMetadata(ConsumerGoogleOAuthController, `googleOAuthCallback`)).toMatchObject({
+      path: `google/callback`,
+      method: RequestMethod.GET,
+      isPublic: true,
+      trackConsumerAction: { action: `consumer.auth.oauth_callback`, resource: `auth` },
+      throttlerLimit: 30,
+      throttlerTtl: 60000,
+    });
+
     expect(getRouteMetadata(ConsumerSignupController, `signupVerification`)).toMatchObject({
       path: `signup/verification`,
       method: RequestMethod.GET,
@@ -298,7 +322,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
-    await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
+    await googleOAuthController.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
 
     expect(oauthStateStore.read).toHaveBeenCalledWith(`state-token`);
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
@@ -316,7 +340,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
-    await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
+    await googleOAuthController.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
 
     expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
@@ -345,7 +369,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
-    await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
+    await googleOAuthController.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
 
     expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(res.clearCookie).toHaveBeenCalledWith(cssGridOauthCookieKey, expect.any(Object));
@@ -364,7 +388,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`error=invalid_state`));
   });
@@ -393,7 +417,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     });
     const req = makeReq({ cookies: {} });
     const res = makeRes();
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(oauthStateStore.consume).toHaveBeenCalledWith(`state-token`);
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`oauthHandoff=handoff-token`));
@@ -424,7 +448,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
 
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(service.issueTokensForConsumer).not.toHaveBeenCalled();
     expect(res.cookie).not.toHaveBeenCalled();
@@ -463,7 +487,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
 
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(res.redirect).toHaveBeenCalledWith(
       `https://grid.example.com/auth/callback?next=%2Fdashboard&oauthHandoff=handoff-token`,
@@ -489,7 +513,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
 
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(oauthStateStore.saveSignupHandoff).toHaveBeenCalledWith(
       `handoff-token`,
@@ -520,7 +544,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
 
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(res.redirect).toHaveBeenCalledWith(
       `https://grid.example.com/signup/start?googleSignupHandoff=handoff-token&accountType=BUSINESS`,
@@ -551,7 +575,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
 
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(oauthStateStore.saveSignupHandoff).toHaveBeenCalledWith(
       `handoff-token`,
@@ -573,7 +597,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`error=invalid_state`));
@@ -591,7 +615,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
 
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`error=invalid_state`));
@@ -698,7 +722,15 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq();
     const res = makeRes();
 
-    await controller.googleOAuthStart(req, res, CURRENT_CONSUMER_APP_SCOPE, undefined, undefined, undefined, undefined);
+    await googleOAuthController.googleOAuthStart(
+      req,
+      res,
+      CURRENT_CONSUMER_APP_SCOPE,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
 
     expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(oauthStateStore.save).toHaveBeenCalledWith(
@@ -719,7 +751,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq();
     const res = makeRes();
 
-    await controller.googleOAuthStart(
+    await googleOAuthController.googleOAuthStart(
       req,
       res,
       CURRENT_CONSUMER_APP_SCOPE,
@@ -752,7 +784,15 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq();
     const res = makeRes();
 
-    await controller.googleOAuthStart(req, res, CURRENT_CONSUMER_APP_SCOPE, undefined, undefined, undefined, undefined);
+    await googleOAuthController.googleOAuthStart(
+      req,
+      res,
+      CURRENT_CONSUMER_APP_SCOPE,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
 
     expect(res.cookie).toHaveBeenCalledWith(
       mobileOauthCookieKey,
@@ -803,7 +843,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   it(`google start preserves normalized signup next paths without a separate signup entry field`, async () => {
     const req = makeReq();
     const res = makeRes();
-    await controller.googleOAuthStart(
+    await googleOAuthController.googleOAuthStart(
       req,
       res,
       CURRENT_CONSUMER_APP_SCOPE,
@@ -826,7 +866,15 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq();
     const res = makeRes();
 
-    await controller.googleOAuthStart(req, res, CURRENT_CONSUMER_APP_SCOPE, undefined, undefined, undefined, undefined);
+    await googleOAuthController.googleOAuthStart(
+      req,
+      res,
+      CURRENT_CONSUMER_APP_SCOPE,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
 
     expect(oauthStateStore.save).toHaveBeenCalledWith(
       `state-token`,
