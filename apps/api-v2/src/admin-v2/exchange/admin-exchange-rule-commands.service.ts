@@ -5,14 +5,17 @@ import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import {
-  AdminV2ExchangePersistenceRepository,
-  type ExchangeExecutionSummary,
+  AdminExchangeRulePersistenceRepository,
   type ExchangeRuleExecutionResult,
   type LockedRuleExecutionRow,
-} from './admin-v2-exchange-persistence.repository';
+} from './admin-exchange-rule-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { ExchangeConversionExecutor } from './exchange-conversion-executor';
-import { buildExchangeExecutionSummary, mapExchangeExecutionFailureReason } from './exchange-execution-summary';
+import {
+  buildExchangeExecutionSummary,
+  type ExchangeExecutionSummary,
+  mapExchangeExecutionFailureReason,
+} from './exchange-execution-summary';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { getCurrencyFractionDigits } from '../../shared-common';
@@ -51,7 +54,7 @@ export class AdminExchangeRuleCommandsService {
     private readonly conversionExecutor: ExchangeConversionExecutor,
     private readonly preflightRepository: AdminV2ExchangePreflightRepository,
     private readonly actionLockRepository: AdminExchangeActionLockRepository,
-    private readonly persistenceRepository: AdminV2ExchangePersistenceRepository,
+    private readonly persistenceRepository: AdminExchangeRulePersistenceRepository,
     private readonly transactions: PrismaTransactionRunner,
   ) {}
 

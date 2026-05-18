@@ -3,7 +3,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import { $Enums } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
-import { type AdminExchangeRateApprovalPersistenceRepository } from './admin-exchange-rate-approval-persistence.repository';
+import { type AdminExchangeRateApprovalPersistenceRepository } from './admin-exchange-rate-approval-persistence.repository'; // eslint-disable-line
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
 import { type AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { type PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';

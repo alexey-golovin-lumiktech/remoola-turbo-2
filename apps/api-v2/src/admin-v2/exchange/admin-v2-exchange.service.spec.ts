@@ -8,12 +8,12 @@ import { AdminExchangeRateApprovalPersistenceRepository } from './admin-exchange
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
 import { AdminExchangeRateQueriesService } from './admin-exchange-rate-queries.service';
 import { AdminExchangeRuleCommandsService } from './admin-exchange-rule-commands.service';
+import { AdminExchangeRulePersistenceRepository } from './admin-exchange-rule-persistence.repository';
 import { AdminExchangeRuleQueriesService } from './admin-exchange-rule-queries.service';
 import { AdminExchangeScheduledConversionQueriesService } from './admin-exchange-scheduled-conversion-queries.service';
 import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
 import { AdminScheduledConversionPersistenceRepository } from './admin-scheduled-conversion-persistence.repository';
 import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.service';
-import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { AdminV2ExchangeQueriesService } from './admin-v2-exchange-queries.service';
 import { AdminV2ExchangeRateQuery } from './admin-v2-exchange-rate.query';
@@ -94,8 +94,8 @@ describe(`AdminV2ExchangeService`, () => {
     const actionLockRepository = new AdminExchangeActionLockRepository(prisma);
     const conversionPersistenceRepository = new AdminExchangeConversionPersistenceRepository(prisma);
     const rateApprovalPersistenceRepository = new AdminExchangeRateApprovalPersistenceRepository(prisma);
+    const rulePersistenceRepository = new AdminExchangeRulePersistenceRepository(prisma);
     const scheduledConversionPersistenceRepository = new AdminScheduledConversionPersistenceRepository(prisma);
-    const persistenceRepository = new AdminV2ExchangePersistenceRepository(prisma);
     const transactions = new PrismaTransactionRunner(prisma);
     const preflightRepository = new AdminV2ExchangePreflightRepository(prisma);
     const conversionExecutor = new ExchangeConversionExecutor(conversionPersistenceRepository, balanceService);
@@ -128,7 +128,7 @@ describe(`AdminV2ExchangeService`, () => {
             conversionExecutor,
             preflightRepository,
             actionLockRepository,
-            persistenceRepository,
+            rulePersistenceRepository,
             transactions,
           ),
         ),

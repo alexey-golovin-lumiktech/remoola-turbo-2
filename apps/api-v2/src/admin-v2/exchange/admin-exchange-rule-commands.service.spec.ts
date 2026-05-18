@@ -5,7 +5,7 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { type AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import { AdminExchangeRuleCommandsService } from './admin-exchange-rule-commands.service';
-import { type AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
+import { type AdminExchangeRulePersistenceRepository } from './admin-exchange-rule-persistence.repository';
 import { type AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { type ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { BalanceCalculationMode, type BalanceCalculationService } from '../../shared/balance-calculation.service';
@@ -99,7 +99,7 @@ describe(`AdminExchangeRuleCommandsService`, () => {
         conversionExecutor as unknown as ExchangeConversionExecutor,
         preflightRepository as unknown as AdminV2ExchangePreflightRepository,
         actionLockRepository as unknown as AdminExchangeActionLockRepository,
-        persistenceRepository as unknown as AdminV2ExchangePersistenceRepository,
+        persistenceRepository as unknown as AdminExchangeRulePersistenceRepository,
         transactions as unknown as PrismaTransactionRunner,
       ),
       transactions,

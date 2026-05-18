@@ -5,7 +5,7 @@ import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { type AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
-import { type AdminScheduledConversionPersistenceRepository } from './admin-scheduled-conversion-persistence.repository';
+import { type AdminScheduledConversionPersistenceRepository } from './admin-scheduled-conversion-persistence.repository'; // eslint-disable-line
 import { type AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { type ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { type PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';

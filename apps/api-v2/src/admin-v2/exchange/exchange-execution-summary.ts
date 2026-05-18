@@ -1,8 +1,18 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
-import { type ExchangeExecutionSummary } from './admin-v2-exchange-persistence.repository';
-
 export type ExchangeExecutionState = `executed` | `failed`;
+
+export type ExchangeExecutionSummary = {
+  status: `executed` | `failed`;
+  reason: string;
+  executedAt: string;
+  ledgerId?: string | null;
+  targetAmount?: string | null;
+  sourceAmount?: string | null;
+  idempotencyKey?: string | null;
+  source: string;
+  actorId?: string | null;
+};
 
 export function buildExchangeExecutionSummary(params: {
   status: ExchangeExecutionState;

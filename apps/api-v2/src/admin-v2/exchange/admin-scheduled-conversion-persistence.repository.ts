@@ -3,7 +3,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
-import { ExchangeExecutionState } from './exchange-execution-summary';
+import { type ExchangeExecutionState, type ExchangeExecutionSummary } from './exchange-execution-summary';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
@@ -11,18 +11,6 @@ import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-uti
 type RequestMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
-};
-
-type ExchangeExecutionSummary = {
-  status: `executed` | `failed`;
-  reason: string;
-  executedAt: string;
-  ledgerId?: string | null;
-  targetAmount?: string | null;
-  sourceAmount?: string | null;
-  idempotencyKey?: string | null;
-  source: string;
-  actorId?: string | null;
 };
 
 export type ExchangeScheduledExecutionResult = {
