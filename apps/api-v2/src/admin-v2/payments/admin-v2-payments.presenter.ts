@@ -1,0 +1,400 @@
+import { Injectable } from '@nestjs/common';
+
+import { type AdminV2AdminRef as AdminRef, type AdminV2AssignmentContext } from '@remoola/api-types';
+import { $Enums, Prisma } from '@remoola/database-2';
+
+import {
+  AdminV2PaymentsQuery,
+  type AdminV2PaymentsListRow,
+  type AdminV2PaymentsQueueRow,
+} from './admin-v2-payments.query';
+import { parseLedgerMetadata } from '../../shared/json-metadata.utils';
+import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
+
+const PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES = [
+  $Enums.LedgerEntryType.USER_PAYMENT,
+  $Enums.LedgerEntryType.USER_DEPOSIT,
+] as const;
+const PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET = 25;
+const OVERDUE_OPERATOR_PROMPT = [
+  `Review overdue payment requests and continue investigation`,
+  `from the payment detail view.`,
+].join(` `);
+const MISSING_ATTACHMENT_OPERATOR_PROMPT = [
+  `Review cases with missing supporting attachments`,
+  `or missing invoice-tagged attachment links.`,
+].join(` `);
+const UNCOLLECTIBLE_OPERATOR_PROMPT = [
+  `Review UNCOLLECTIBLE payment requests as a separate collections outcome`,
+  `before continuing from the payment detail view.`,
+].join(` `);
+const STALE_WAITING_RECIPIENT_APPROVAL_OPERATOR_PROMPT = [
+  `Review payment requests that remain in WAITING_RECIPIENT_APPROVAL`,
+  `beyond the current review window.`,
+].join(` `);
+
+type PaymentRequestCaseRow = NonNullable<Awaited<ReturnType<AdminV2PaymentsQuery[`getPaymentRequestCase`]>>>;
+type PaymentAuditContextRow = Awaited<ReturnType<AdminV2PaymentsQuery[`getPaymentRequestAuditContext`]>>[number];
+
+@Injectable()
+export class AdminV2PaymentsPresenter {
+  private isInvoiceTaggedResource(
+    resource: { resourceTags?: Array<{ tag: { name: string } }> } | null | undefined,
+  ): boolean {
+    return resource?.resourceTags?.some((resourceTag) => resourceTag.tag.name.startsWith(`INVOICE-`)) ?? false;
+  }
+
+  private getLatestSettlementEntry(
+    paymentRequest:
+      | {
+          ledgerEntries?: Array<{
+            status: $Enums.TransactionStatus;
+            createdAt: Date;
+            type: $Enums.LedgerEntryType;
+            outcomes?: Array<{ status: $Enums.TransactionStatus }>;
+          }>;
+        }
+      | null
+      | undefined,
+  ) {
+    return [...(paymentRequest?.ledgerEntries ?? [])]
+      .filter((entry) =>
+        PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES.includes(
+          entry.type as (typeof PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES)[number],
+        ),
+      )
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())[0];
+  }
+
+  getEffectivePaymentStatus(
+    paymentRequest:
+      | {
+          status: $Enums.TransactionStatus;
+          ledgerEntries?: Array<{
+            status: $Enums.TransactionStatus;
+            createdAt: Date;
+            type: $Enums.LedgerEntryType;
+            outcomes?: Array<{ status: $Enums.TransactionStatus }>;
+          }>;
+        }
+      | null
+      | undefined,
+  ): $Enums.TransactionStatus | null {
+    if (!paymentRequest) {
+      return null;
+    }
+
+    const latestEntry = this.getLatestSettlementEntry(paymentRequest);
+    return latestEntry ? getEffectiveLedgerStatus(latestEntry) : paymentRequest.status;
+  }
+
+  derivePaymentRail(
+    paymentRequest:
+      | {
+          paymentRail?: $Enums.PaymentRail | null;
+          ledgerEntries?: Array<{
+            type: $Enums.LedgerEntryType;
+            metadata?: Prisma.JsonValue | null;
+          }>;
+        }
+      | null
+      | undefined,
+  ): $Enums.PaymentRail | null {
+    if (!paymentRequest) {
+      return null;
+    }
+
+    if (paymentRequest.paymentRail) {
+      return paymentRequest.paymentRail;
+    }
+
+    for (const entry of paymentRequest.ledgerEntries ?? []) {
+      const metadata = parseLedgerMetadata(entry.metadata);
+      if (metadata.rail) {
+        return metadata.rail;
+      }
+    }
+
+    return null;
+  }
+
+  mapPaymentListItem(row: AdminV2PaymentsListRow) {
+    const effectiveStatus = this.getEffectivePaymentStatus(row) ?? row.status;
+
+    return {
+      id: row.id,
+      amount: row.amount.toString(),
+      currencyCode: row.currencyCode,
+      persistedStatus: row.status,
+      effectiveStatus,
+      staleWarning: effectiveStatus !== row.status,
+      paymentRail: this.derivePaymentRail(row),
+      payer: {
+        id: row.payer?.id ?? null,
+        email: row.payer?.email ?? row.payerEmail ?? null,
+      },
+      requester: {
+        id: row.requester?.id ?? null,
+        email: row.requester?.email ?? row.requesterEmail ?? null,
+      },
+      dueDate: row.dueDate,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      attachmentsCount: row.attachments.length,
+      dataFreshnessClass: `bounded-snapshot`,
+    };
+  }
+
+  mapPaymentRequestCase(
+    paymentRequest: PaymentRequestCaseRow,
+    auditContext: PaymentAuditContextRow[],
+    assignment: AdminV2AssignmentContext,
+  ) {
+    const effectiveStatus = this.getEffectivePaymentStatus(paymentRequest) ?? paymentRequest.status;
+    const timeline = [
+      {
+        event: `payment_request_created`,
+        timestamp: paymentRequest.createdAt,
+        metadata: {
+          persistedStatus: paymentRequest.status,
+          amount: paymentRequest.amount.toString(),
+          currencyCode: paymentRequest.currencyCode,
+        },
+      },
+      ...(paymentRequest.sentDate
+        ? [
+            {
+              event: `payment_request_sent`,
+              timestamp: paymentRequest.sentDate,
+              metadata: null,
+            },
+          ]
+        : []),
+      ...(paymentRequest.dueDate
+        ? [
+            {
+              event: `payment_request_due`,
+              timestamp: paymentRequest.dueDate,
+              metadata: null,
+            },
+          ]
+        : []),
+      ...paymentRequest.attachments.map((attachment) => ({
+        event: `attachment_added`,
+        timestamp: attachment.createdAt,
+        metadata: {
+          attachmentId: attachment.id,
+          resourceId: attachment.resource.id,
+          name: attachment.resource.originalName,
+          deletedAt: attachment.deletedAt,
+          resourceDeletedAt: attachment.resource.deletedAt,
+        },
+      })),
+      ...paymentRequest.ledgerEntries.flatMap((entry) => [
+        {
+          event: `ledger_entry_created`,
+          timestamp: entry.createdAt,
+          metadata: {
+            ledgerEntryId: entry.id,
+            ledgerId: entry.ledgerId,
+            type: entry.type,
+            amount: entry.amount.toString(),
+            currencyCode: entry.currencyCode,
+            deletedAt: entry.deletedAt,
+          },
+        },
+        ...entry.outcomes.map((outcome) => ({
+          event: `ledger_outcome_recorded`,
+          timestamp: outcome.createdAt,
+          metadata: {
+            ledgerEntryId: entry.id,
+            outcomeId: outcome.id,
+            status: outcome.status,
+            source: outcome.source,
+            externalId: outcome.externalId,
+          },
+        })),
+      ]),
+    ].sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime());
+
+    return {
+      id: paymentRequest.id,
+      core: {
+        id: paymentRequest.id,
+        amount: paymentRequest.amount.toString(),
+        currencyCode: paymentRequest.currencyCode,
+        persistedStatus: paymentRequest.status,
+        effectiveStatus,
+        paymentRail: this.derivePaymentRail(paymentRequest),
+        description: paymentRequest.description,
+        dueDate: paymentRequest.dueDate,
+        sentDate: paymentRequest.sentDate,
+        createdAt: paymentRequest.createdAt,
+        deletedAt: paymentRequest.deletedAt,
+      },
+      payer: {
+        id: paymentRequest.payer?.id ?? null,
+        email: paymentRequest.payer?.email ?? paymentRequest.payerEmail ?? null,
+      },
+      requester: {
+        id: paymentRequest.requester?.id ?? null,
+        email: paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? null,
+      },
+      attachments: paymentRequest.attachments.map((attachment) => ({
+        id: attachment.id,
+        resourceId: attachment.resource.id,
+        name: attachment.resource.originalName,
+        size: attachment.resource.size,
+        mimetype: attachment.resource.mimetype,
+        downloadUrl: attachment.resource.downloadUrl,
+        createdAt: attachment.resource.createdAt,
+        deletedAt: attachment.deletedAt,
+        resourceDeletedAt: attachment.resource.deletedAt,
+      })),
+      ledgerEntries: paymentRequest.ledgerEntries.map((entry) => ({
+        id: entry.id,
+        ledgerId: entry.ledgerId,
+        type: entry.type,
+        amount: entry.amount.toString(),
+        currencyCode: entry.currencyCode,
+        effectiveStatus: getEffectiveLedgerStatus(entry),
+        createdAt: entry.createdAt,
+        deletedAt: entry.deletedAt,
+      })),
+      timeline,
+      auditContext: auditContext.map((row) => ({
+        id: row.id,
+        action: row.action,
+        resource: row.resource,
+        resourceId: row.resourceId,
+        adminEmail: row.admin?.email ?? null,
+        createdAt: row.createdAt,
+      })),
+      assignment,
+      version: paymentRequest.updatedAt.getTime(),
+      updatedAt: paymentRequest.updatedAt,
+      staleWarning: effectiveStatus !== paymentRequest.status,
+      dataFreshnessClass: `exact`,
+    };
+  }
+
+  mapPaymentOperationsQueueItem(row: AdminV2PaymentsQueueRow, assignedTo: AdminRef | null = null) {
+    const effectiveStatus = this.getEffectivePaymentStatus(row) ?? row.status;
+    const invoiceTaggedAttachmentsCount = row.attachments.filter((attachment) =>
+      this.isInvoiceTaggedResource(attachment.resource),
+    ).length;
+
+    return {
+      id: row.id,
+      amount: row.amount.toString(),
+      currencyCode: row.currencyCode,
+      persistedStatus: row.status,
+      effectiveStatus,
+      staleWarning: effectiveStatus !== row.status,
+      paymentRail: this.derivePaymentRail(row),
+      payer: {
+        id: row.payer?.id ?? null,
+        email: row.payer?.email ?? row.payerEmail ?? null,
+      },
+      requester: {
+        id: row.requester?.id ?? null,
+        email: row.requester?.email ?? row.requesterEmail ?? null,
+      },
+      dueDate: row.dueDate,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      attachmentsCount: row.attachments.length,
+      invoiceTaggedAttachmentsCount,
+      dataFreshnessClass: `bounded-snapshot`,
+      assignedTo,
+    };
+  }
+
+  mapPaymentOperationsQueue(params: {
+    now: Date;
+    overdueRows: AdminV2PaymentsQueueRow[];
+    uncollectibleRows: AdminV2PaymentsQueueRow[];
+    staleApprovalRows: AdminV2PaymentsQueueRow[];
+    inconsistentRows: AdminV2PaymentsQueueRow[];
+    missingAttachmentRows: AdminV2PaymentsQueueRow[];
+    assigneeMap: Map<string, AdminRef>;
+  }) {
+    const { now, overdueRows, uncollectibleRows, staleApprovalRows, inconsistentRows, missingAttachmentRows } = params;
+    const assigneeMap = params.assigneeMap;
+    const inconsistentItems = inconsistentRows
+      .map((row) => this.mapPaymentOperationsQueueItem(row))
+      .filter((row) => row.effectiveStatus !== row.persistedStatus)
+      .slice(0, PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET)
+      .map((row) => ({
+        ...row,
+        followUpReason: `Persisted payment status diverges from the latest settlement status`,
+      }));
+
+    const missingAttachmentItems = missingAttachmentRows
+      .map((row) => this.mapPaymentOperationsQueueItem(row))
+      .filter((row) => row.attachmentsCount === 0 || row.invoiceTaggedAttachmentsCount === 0)
+      .slice(0, PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET)
+      .map((row) => ({
+        ...row,
+        followUpReason:
+          row.attachmentsCount === 0
+            ? `Payment request has no supporting attachment`
+            : `Payment request has no invoice-tagged attachment linkage`,
+      }));
+
+    return {
+      generatedAt: now,
+      posture: {
+        kind: `non_sla_follow_up_queue`,
+        wording: `Manual review queue`,
+      },
+      buckets: [
+        {
+          key: `overdue_requests`,
+          label: `Overdue requests`,
+          operatorPrompt: OVERDUE_OPERATOR_PROMPT,
+          items: overdueRows.map((row) => ({
+            ...this.mapPaymentOperationsQueueItem(row, assigneeMap.get(row.id) ?? null),
+            followUpReason: `Due date passed while the payment request remains in an active review status`,
+          })),
+        },
+        {
+          key: `uncollectible_requests`,
+          label: `UNCOLLECTIBLE requests`,
+          operatorPrompt: UNCOLLECTIBLE_OPERATOR_PROMPT,
+          items: uncollectibleRows.map((row) => ({
+            ...this.mapPaymentOperationsQueueItem(row, assigneeMap.get(row.id) ?? null),
+            followUpReason: `Payment request is marked UNCOLLECTIBLE and requires collections-focused review`,
+          })),
+        },
+        {
+          key: `stale_waiting_recipient_approval`,
+          label: `Stale WAITING_RECIPIENT_APPROVAL`,
+          operatorPrompt: STALE_WAITING_RECIPIENT_APPROVAL_OPERATOR_PROMPT,
+          items: staleApprovalRows.map((row) => ({
+            ...this.mapPaymentOperationsQueueItem(row, assigneeMap.get(row.id) ?? null),
+            followUpReason: `Payment request remains in WAITING_RECIPIENT_APPROVAL beyond the current review window`,
+          })),
+        },
+        {
+          key: `inconsistent_status`,
+          label: `Inconsistent status cases`,
+          operatorPrompt: `Review cases where persisted request status and latest settlement status disagree.`,
+          items: inconsistentItems.map((item) => ({
+            ...item,
+            assignedTo: assigneeMap.get(item.id) ?? null,
+          })),
+        },
+        {
+          key: `missing_attachment_or_invoice_linkage`,
+          label: `Missing attachment or invoice linkage`,
+          operatorPrompt: MISSING_ATTACHMENT_OPERATOR_PROMPT,
+          items: missingAttachmentItems.map((item) => ({
+            ...item,
+            assignedTo: assigneeMap.get(item.id) ?? null,
+          })),
+        },
+      ],
+    };
+  }
+}

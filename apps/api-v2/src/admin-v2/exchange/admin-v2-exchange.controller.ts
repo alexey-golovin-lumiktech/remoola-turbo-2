@@ -1,145 +1,32 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { Expose, Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-
-import { type AdminV2ApproveRateBody } from '@remoola/api-types';
 
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
-import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
+import {
+  AdminV2ReadThrottle,
+  Identity,
+  type IIdentityContext,
+  PlainObjectResponseContract,
+  RequestMeta,
+  type RequestMeta as RequestMetaPayload,
+  UuidParam,
+} from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import {
-  StepUpConfirmedVersionedMutationBody,
-  StepUpVersionedMutationBody,
-  VersionedMutationBody,
-} from '../admin-v2-common.dto';
+  ApproveRateBody,
+  ConfirmedVersionBody,
+  ExchangeListRatesQuery,
+  ExchangeListRulesQuery,
+  ExchangeListScheduledConversionsQuery,
+  StepUpVersionBody,
+  VersionBody,
+} from './admin-v2-exchange.dto';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
-
-class VersionBody extends VersionedMutationBody {}
-
-class StepUpVersionBody extends StepUpVersionedMutationBody {}
-
-class ConfirmedVersionBody extends StepUpConfirmedVersionedMutationBody {}
-
-class ApproveRateBody extends ConfirmedVersionBody implements AdminV2ApproveRateBody {
-  @Expose()
-  @IsString()
-  reason!: string;
-}
-
-class ExchangeListRatesQuery {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  fromCurrency?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  toCurrency?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  provider?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  status?: string;
-
-  @Expose()
-  @Transform(({ value }) =>
-    value === true || value === `true` ? true : value === false || value === `false` ? false : undefined,
-  )
-  @IsBoolean()
-  @IsOptional()
-  stale?: boolean;
-}
-
-class ExchangeListRulesQuery {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  q?: string;
-
-  @Expose()
-  @Transform(({ value }) =>
-    value === true || value === `true` ? true : value === false || value === `false` ? false : undefined,
-  )
-  @IsBoolean()
-  @IsOptional()
-  enabled?: boolean;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  fromCurrency?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  toCurrency?: string;
-}
-
-class ExchangeListScheduledConversionsQuery {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  q?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  status?: string;
-}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Exchange`)
-@Throttle({ default: { limit: 500, ttl: 60000 } })
+@PlainObjectResponseContract(`Admin v2 exchange routes return plain objects governed by @remoola/api-types contracts.`)
+@AdminV2ReadThrottle()
 @Controller(`admin-v2/exchange`)
 export class AdminV2ExchangeController {
   constructor(
@@ -155,7 +42,7 @@ export class AdminV2ExchangeController {
   }
 
   @Get(`rates/:id`)
-  async getRateCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+  async getRateCase(@Identity() admin: IIdentityContext, @UuidParam(`id`) id: string) {
     await this.accessService.assertCapability(admin, `exchange.read`);
     return this.service.getRateCase(id);
   }
@@ -163,7 +50,7 @@ export class AdminV2ExchangeController {
   @Post(`rates/:id/approve`)
   async approveRate(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @UuidParam(`id`) id: string,
     @Body() body: ApproveRateBody,
     @RequestMeta() meta: RequestMetaPayload,
   ) {
@@ -179,7 +66,7 @@ export class AdminV2ExchangeController {
   }
 
   @Get(`rules/:id`)
-  async getRuleCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+  async getRuleCase(@Identity() admin: IIdentityContext, @UuidParam(`id`) id: string) {
     await this.accessService.assertCapability(admin, `exchange.read`);
     return this.service.getRuleCase(id);
   }
@@ -187,7 +74,7 @@ export class AdminV2ExchangeController {
   @Post(`rules/:id/pause`)
   async pauseRule(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @UuidParam(`id`) id: string,
     @Body() body: VersionBody,
     @RequestMeta() meta: RequestMetaPayload,
   ) {
@@ -198,7 +85,7 @@ export class AdminV2ExchangeController {
   @Post(`rules/:id/resume`)
   async resumeRule(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @UuidParam(`id`) id: string,
     @Body() body: VersionBody,
     @RequestMeta() meta: RequestMetaPayload,
   ) {
@@ -209,7 +96,7 @@ export class AdminV2ExchangeController {
   @Post(`rules/:id/run-now`)
   async runRuleNow(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @UuidParam(`id`) id: string,
     @Body() body: StepUpVersionBody,
     @RequestMeta() meta: RequestMetaPayload,
   ) {
@@ -228,7 +115,7 @@ export class AdminV2ExchangeController {
   }
 
   @Get(`scheduled/:id`)
-  async getScheduledConversionCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+  async getScheduledConversionCase(@Identity() admin: IIdentityContext, @UuidParam(`id`) id: string) {
     await this.accessService.assertCapability(admin, `exchange.read`);
     return this.service.getScheduledConversionCase(id);
   }
@@ -236,7 +123,7 @@ export class AdminV2ExchangeController {
   @Post(`scheduled/:id/force-execute`)
   async forceExecuteScheduledConversion(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @UuidParam(`id`) id: string,
     @Body() body: ConfirmedVersionBody,
     @RequestMeta() meta: RequestMetaPayload,
   ) {
@@ -248,7 +135,7 @@ export class AdminV2ExchangeController {
   @Post(`scheduled/:id/cancel`)
   async cancelScheduledConversion(
     @Identity() admin: IIdentityContext,
-    @Param(`id`) id: string,
+    @UuidParam(`id`) id: string,
     @Body() body: ConfirmedVersionBody,
     @RequestMeta() meta: RequestMetaPayload,
   ) {

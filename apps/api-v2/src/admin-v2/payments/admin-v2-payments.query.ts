@@ -184,7 +184,7 @@ const paymentOperationsQueueSelect = Prisma.validator<Prisma.PaymentRequestModel
   },
 });
 
-type AdminV2PaymentsListRow = Prisma.PaymentRequestModelGetPayload<{
+export type AdminV2PaymentsListRow = Prisma.PaymentRequestModelGetPayload<{
   select: typeof paymentListSelect;
 }>;
 

@@ -1,126 +1,26 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { Expose } from 'class-transformer';
-import { IsBoolean, IsDate, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiCookieAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { PAYMENT_REVERSAL_KIND, type AdminV2PaymentReversalBody } from '@remoola/api-types';
+import { PAYMENT_REVERSAL_KIND } from '@remoola/api-types';
 
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
-import { Identity, type IIdentityContext } from '../../common';
-import { AdminV2AccessService } from '../admin-v2-access.service';
 import {
-  OptionalBooleanQuery,
-  OptionalDateQuery,
-  OptionalNumberQuery,
-  OptionalStringQuery,
-} from '../admin-v2-query-transforms';
+  AdminV2ReadThrottle,
+  ApiUuidParam,
+  Identity,
+  type IIdentityContext,
+  PlainObjectResponseContract,
+  UuidParam,
+} from '../../common';
+import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2PaymentReversalService } from './admin-v2-payment-reversal.service';
+import { PaymentRequestsQuery, PaymentReversalBody } from './admin-v2-payments.dto';
 import { AdminV2PaymentsService } from './admin-v2-payments.service';
-
-class PaymentRequestsQuery {
-  @Expose()
-  @OptionalStringQuery()
-  @IsOptional()
-  @IsString()
-  cursor?: string;
-
-  @Expose()
-  @OptionalNumberQuery()
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  limit?: number;
-
-  @Expose()
-  @OptionalStringQuery()
-  @IsOptional()
-  @IsString()
-  q?: string;
-
-  @Expose()
-  @OptionalStringQuery()
-  @IsOptional()
-  @IsString()
-  status?: string;
-
-  @Expose()
-  @OptionalStringQuery()
-  @IsOptional()
-  @IsString()
-  paymentRail?: string;
-
-  @Expose()
-  @OptionalStringQuery()
-  @IsOptional()
-  @IsString()
-  currencyCode?: string;
-
-  @Expose()
-  @OptionalNumberQuery()
-  @IsOptional()
-  @IsNumber()
-  amountMin?: number;
-
-  @Expose()
-  @OptionalNumberQuery()
-  @IsOptional()
-  @IsNumber()
-  amountMax?: number;
-
-  @Expose()
-  @OptionalDateQuery()
-  @IsOptional()
-  @IsDate()
-  dueDateFrom?: Date;
-
-  @Expose()
-  @OptionalDateQuery()
-  @IsOptional()
-  @IsDate()
-  dueDateTo?: Date;
-
-  @Expose()
-  @OptionalDateQuery()
-  @IsOptional()
-  @IsDate()
-  createdFrom?: Date;
-
-  @Expose()
-  @OptionalDateQuery()
-  @IsOptional()
-  @IsDate()
-  createdTo?: Date;
-
-  @Expose()
-  @OptionalBooleanQuery()
-  @IsOptional()
-  @IsBoolean()
-  overdue?: boolean;
-}
-
-class PaymentReversalBody implements AdminV2PaymentReversalBody {
-  @Expose()
-  @IsOptional()
-  @IsNumber()
-  @Min(0.01)
-  amount?: number;
-
-  @Expose()
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  reason?: string;
-
-  @Expose()
-  @IsString()
-  @MaxLength(256)
-  passwordConfirmation!: string;
-}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Payments`)
-@Throttle({ default: { limit: 500, ttl: 60000 } })
+@PlainObjectResponseContract(`Admin v2 payments routes return plain objects governed by @remoola/api-types contracts.`)
+@AdminV2ReadThrottle()
 @Controller(`admin-v2/payments`)
 export class AdminV2PaymentsController {
   constructor(
@@ -171,19 +71,19 @@ export class AdminV2PaymentsController {
   }
 
   @Get(`:id`)
-  @ApiParam({ name: `id`, format: `uuid`, description: `Payment request id` })
+  @ApiUuidParam(`id`, `Payment request id`)
   @ApiBadRequestResponse({ description: `Invalid payment request id.` })
-  async getPaymentRequestCase(@Identity() admin: IIdentityContext, @Param(`id`, ParseUUIDPipe) id: string) {
+  async getPaymentRequestCase(@Identity() admin: IIdentityContext, @UuidParam(`id`) id: string) {
     await this.accessService.assertCapability(admin, `payments.read`);
     return this.service.getPaymentRequestCase(id);
   }
 
   @Post(`:id/refund`)
-  @ApiParam({ name: `id`, format: `uuid`, description: `Payment request id` })
+  @ApiUuidParam(`id`, `Payment request id`)
   @ApiBadRequestResponse({ description: `Invalid payment request id or refund body.` })
   async createRefund(
     @Identity() admin: IIdentityContext,
-    @Param(`id`, ParseUUIDPipe) id: string,
+    @UuidParam(`id`) id: string,
     @Body() body: PaymentReversalBody,
   ) {
     await this.accessService.assertCapability(admin, `payments.reverse`);
@@ -196,11 +96,11 @@ export class AdminV2PaymentsController {
   }
 
   @Post(`:id/chargeback`)
-  @ApiParam({ name: `id`, format: `uuid`, description: `Payment request id` })
+  @ApiUuidParam(`id`, `Payment request id`)
   @ApiBadRequestResponse({ description: `Invalid payment request id or chargeback body.` })
   async createChargeback(
     @Identity() admin: IIdentityContext,
-    @Param(`id`, ParseUUIDPipe) id: string,
+    @UuidParam(`id`) id: string,
     @Body() body: PaymentReversalBody,
   ) {
     await this.accessService.assertCapability(admin, `payments.reverse`);

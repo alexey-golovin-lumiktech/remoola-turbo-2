@@ -19,6 +19,7 @@ import { AdminV2PaymentReversalQuery } from './admin-v2-payment-reversal.query';
 import { AdminV2PaymentReversalRepository } from './admin-v2-payment-reversal.repository';
 import { AdminV2PaymentReversalService } from './admin-v2-payment-reversal.service';
 import { AdminV2PaymentsController } from './admin-v2-payments.controller';
+import { AdminV2PaymentsPresenter } from './admin-v2-payments.presenter';
 import { AdminV2PaymentsQuery } from './admin-v2-payments.query';
 import { AdminV2PaymentsService } from './admin-v2-payments.service';
 import { AdminAuthModule } from '../../admin-auth/admin-auth.module';
@@ -33,6 +34,7 @@ import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.mo
   controllers: [AdminV2PaymentsController],
   providers: [
     AdminV2PaymentsService,
+    AdminV2PaymentsPresenter,
     AdminV2PaymentsQuery,
     AdminV2PaymentReversalService,
     AdminV2PaymentReversalRequestPreparerService,

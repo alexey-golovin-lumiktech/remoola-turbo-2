@@ -1,5 +1,6 @@
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { AdminV2PaymentsPresenter } from './admin-v2-payments.presenter';
 import { AdminV2PaymentsService } from './admin-v2-payments.service';
 
 function buildService() {
@@ -13,11 +14,13 @@ function buildService() {
     getActiveAssigneesForResource: jest.fn(),
     getAssignmentContextForResource: jest.fn(),
   } as any;
+  const presenter = new AdminV2PaymentsPresenter();
 
   return {
-    service: new AdminV2PaymentsService(query, assignmentsService),
+    service: new AdminV2PaymentsService(query, assignmentsService, presenter),
     query,
     assignmentsService,
+    presenter,
   };
 }
 

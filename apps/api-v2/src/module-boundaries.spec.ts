@@ -17,14 +17,18 @@ import { AdminV2AdminsModule } from './admin-v2/admins/admin-v2-admins.module';
 import { AdminV2AdminsService } from './admin-v2/admins/admin-v2-admins.service';
 import { AdminV2AssignmentsModule } from './admin-v2/assignments/admin-v2-assignments.module';
 import { AdminV2AssignmentsService } from './admin-v2/assignments/admin-v2-assignments.service';
+import { AdminV2ConsumersController } from './admin-v2/consumers/admin-v2-consumers.controller';
+import { AdminV2ExchangeController } from './admin-v2/exchange/admin-v2-exchange.controller';
 import { AdminV2LedgerModule } from './admin-v2/ledger/admin-v2-ledger.module';
 import { AdminV2LedgerService } from './admin-v2/ledger/admin-v2-ledger.service';
 import { AdminV2LedgerAnomaliesService } from './admin-v2/ledger/anomalies/admin-v2-ledger-anomalies.service';
 // eslint-disable-next-line max-len
 import { AdminV2PaymentReversalRefundFinalizerService } from './admin-v2/payments/admin-v2-payment-reversal-refund-finalizer.service';
 import { AdminV2PaymentReversalWorkflowService } from './admin-v2/payments/admin-v2-payment-reversal-workflow.service';
+import { AdminV2PaymentsController } from './admin-v2/payments/admin-v2-payments.controller';
 import { AdminV2PaymentsModule } from './admin-v2/payments/admin-v2-payments.module';
 import { AdminV2PaymentsService } from './admin-v2/payments/admin-v2-payments.service';
+import { RESPONSE_CONTRACT_METADATA } from './common';
 import { AdminActionAuditRepository } from './shared/admin-action-audit.repository';
 import { AdminActionAuditService } from './shared/admin-action-audit.service';
 import { AuthAuditModule } from './shared/auth-audit.module';
@@ -88,6 +92,18 @@ function listSourceFiles(directory: string): string[] {
 function sourceFileCounts(directory: string, pattern: RegExp): Map<string, number> {
   const counts = new Map<string, number>();
   for (const file of listSourceFiles(directory)) {
+    const source = readFileSync(file, `utf8`);
+    const count = source.match(pattern)?.length ?? 0;
+    if (count > 0) {
+      counts.set(relative(directory, file).replace(/\\/g, `/`), count);
+    }
+  }
+  return counts;
+}
+
+function controllerFileCounts(directory: string, pattern: RegExp): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const file of listSourceFiles(directory).filter((path) => path.endsWith(`.controller.ts`))) {
     const source = readFileSync(file, `utf8`);
     const count = source.match(pattern)?.length ?? 0;
     if (count > 0) {
@@ -197,6 +213,43 @@ describe(`Nest module provider boundaries`, () => {
     expect(controllerSource).not.toMatch(/class .*Query/);
     expect(dtoSource).toMatch(/export class InviteAdminBody/);
     expect(dtoSource).toMatch(/export class ListAdminsQuery/);
+  });
+
+  it(`keeps new admin-v2 bare route id params from expanding`, () => {
+    const adminV2Dir = join(__dirname, `admin-v2`);
+
+    expect(sourceFileCounts(adminV2Dir, /@Param\(`[^`]+`\)\s+\w+:\s+string/g)).toEqual(
+      new Map([
+        [`admins/admin-v2-admins.controller.ts`, 11],
+        [`documents/admin-v2-documents.controller.ts`, 5],
+        [`operational-alerts/admin-v2-operational-alerts.controller.ts`, 2],
+        [`quickstarts/admin-v2-quickstarts.controller.ts`, 1],
+        [`saved-views/admin-v2-saved-views.controller.ts`, 2],
+      ]),
+    );
+  });
+
+  it(`keeps new large inline admin-v2 controller DTOs from expanding`, () => {
+    const adminV2Dir = join(__dirname, `admin-v2`);
+
+    expect(controllerFileCounts(adminV2Dir, /^class .*{/gm)).toEqual(
+      new Map([
+        [`auth/admin-v2-auth.controller.ts`, 4],
+        [`documents/admin-v2-documents.controller.ts`, 7],
+        [`ledger/admin-v2-ledger.controller.ts`, 2],
+        [`ledger/anomalies/admin-v2-ledger-anomalies.controller.ts`, 1],
+        [`payment-methods/admin-v2-payment-methods.controller.ts`, 3],
+        [`payouts/admin-v2-payouts.controller.ts`, 2],
+        [`verification/admin-v2-verification.controller.ts`, 2],
+      ]),
+    );
+  });
+
+  it(`marks migrated admin-v2 plain-object response contracts explicitly`, () => {
+    for (const controller of [AdminV2ConsumersController, AdminV2ExchangeController, AdminV2PaymentsController]) {
+      const metadata = Reflect.getMetadata(RESPONSE_CONTRACT_METADATA, controller);
+      expect(metadata).toMatchObject({ kind: `plain-object` });
+    }
   });
 
   it(`keeps admin-v2 idempotency transaction posture explicit`, () => {
