@@ -1,14 +1,10 @@
 import { $Enums } from '@remoola/database-2';
 
+import { getEffectivePaymentRequestStatus, type LedgerStatusCarrier } from '../../../shared/transaction-status.utils';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
 const OPERATING_STATUS_PRIORITY = [`draft`, `pending`, `waiting`] as const;
-
-type LedgerStatusCarrier = {
-  status: $Enums.TransactionStatus;
-  outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-};
 
 type ContractPaymentRequest = {
   id: string;
@@ -63,23 +59,7 @@ export function normalizeEmail(value: string | null | undefined): string {
   return value?.trim().toLowerCase() ?? ``;
 }
 
-export function getEffectiveLedgerStatus(
-  entry: LedgerStatusCarrier | null | undefined,
-): $Enums.TransactionStatus | null {
-  if (!entry) {
-    return null;
-  }
-  return entry.outcomes?.[0]?.status ?? entry.status;
-}
-
-export function getEffectivePaymentRequestStatus(
-  paymentRequestStatus: $Enums.TransactionStatus,
-  entry: LedgerStatusCarrier | null | undefined,
-): $Enums.TransactionStatus {
-  return getEffectiveLedgerStatus(entry) ?? paymentRequestStatus;
-}
-
-export function sortContractPaymentsByUpdatedAt<T extends { updatedAt: Date }>(payments: T[]): T[] {
+function sortContractPaymentsByUpdatedAt<T extends { updatedAt: Date }>(payments: T[]): T[] {
   return [...payments].sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime());
 }
 

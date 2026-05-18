@@ -1,6 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerContactsRepository } from './consumer-contacts.repository';
@@ -11,25 +10,13 @@ import {
   ConsumerCreateContact,
   ConsumerUpdateContact,
 } from './dto/consumer-contact.dto';
+import { getEffectiveLedgerStatusOrNull } from '../../../shared/transaction-status.utils';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
 @Injectable()
 export class ConsumerContactsService {
   constructor(private readonly contactsRepository: ConsumerContactsRepository) {}
-
-  private getEffectiveLedgerStatus(
-    entry:
-      | {
-          status: $Enums.TransactionStatus;
-          outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-        }
-      | null
-      | undefined,
-  ): $Enums.TransactionStatus | null {
-    if (!entry) return null;
-    return entry.outcomes?.[0]?.status ?? entry.status;
-  }
 
   async get(id: string, consumerId: string): Promise<ConsumerContact> {
     const contact = await this.contactsRepository.findByIdForConsumer(id, consumerId);
@@ -97,7 +84,7 @@ export class ConsumerContactsService {
         id: paymentRequest.id,
         amount: paymentRequest.amount.toString(),
         status: normalizeConsumerFacingTransactionStatus(
-          this.getEffectiveLedgerStatus(paymentRequest.ledgerEntries[0]) ?? paymentRequest.status,
+          getEffectiveLedgerStatusOrNull(paymentRequest.ledgerEntries[0]) ?? paymentRequest.status,
         ),
         createdAt: paymentRequest.createdAt.toISOString(),
       })),

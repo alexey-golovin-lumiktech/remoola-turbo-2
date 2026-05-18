@@ -8,6 +8,7 @@ import {
   type MoneyDecimalInput,
   toMoneyDecimal,
 } from './money-decimal.utils';
+import { getEffectiveLedgerStatus } from './transaction-status.utils';
 
 type PaymentReversalKind = `REFUND` | `CHARGEBACK`;
 
@@ -22,13 +23,6 @@ type StrictReversalDecimalAmountResolution =
       reason: `ALREADY_FULLY_REVERSED` | `EXCEEDS_REMAINING_BALANCE`;
       remainingBefore: Prisma.Decimal;
     };
-
-export function getEffectiveLedgerStatus(entry: {
-  status: $Enums.TransactionStatus;
-  outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-}): $Enums.TransactionStatus {
-  return entry.outcomes?.[0]?.status ?? entry.status;
-}
 
 export function deriveEffectivePaymentRequestStatus(
   paymentRequest:

@@ -12,9 +12,9 @@ import { type PaymentReversalCreateInput } from './admin-v2-payment-reversal.typ
 import { moneyDecimalToNumber, toPositiveMoneyDecimal } from '../../shared/money-decimal.utils';
 import {
   deriveEffectivePaymentRequestStatus,
-  getEffectiveLedgerStatus,
   getRequesterReversalEntryType,
 } from '../../shared/payment-reversal-calculator';
+import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
 
 type PreparedPaymentReversal = {
   paymentRequest: PaymentReversalPaymentRequest;

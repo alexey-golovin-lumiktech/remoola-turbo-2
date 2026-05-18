@@ -14,6 +14,10 @@ import { type PaymentsHistoryQuery } from './dto';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
+import {
+  getEffectiveLedgerStatusOrNull,
+  getEffectivePaymentRequestStatus,
+} from '../../../shared/transaction-status.utils';
 import { normalizeConsumerFacingTransactionStatus, buildConsumerStatusFilter } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
@@ -27,32 +31,6 @@ export class ConsumerPaymentsQueriesRepository {
     private readonly prisma: PrismaService,
     private readonly balanceService: BalanceCalculationService,
   ) {}
-
-  private getEffectiveLedgerStatus(
-    entry:
-      | {
-          status: $Enums.TransactionStatus;
-          outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-        }
-      | null
-      | undefined,
-  ): $Enums.TransactionStatus | null {
-    if (!entry) return null;
-    return entry.outcomes?.[0]?.status ?? entry.status;
-  }
-
-  private getEffectivePaymentRequestStatus(
-    paymentRequestStatus: $Enums.TransactionStatus,
-    entry:
-      | {
-          status: $Enums.TransactionStatus;
-          outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-        }
-      | null
-      | undefined,
-  ): $Enums.TransactionStatus {
-    return this.getEffectiveLedgerStatus(entry) ?? paymentRequestStatus;
-  }
 
   private normalizeProductLedgerType(
     type: $Enums.LedgerEntryType,
@@ -138,7 +116,7 @@ export class ConsumerPaymentsQueriesRepository {
       id: row.id,
       ledgerId: row.ledgerId,
       type: this.normalizeProductLedgerType(row.type, row.paymentRequestId),
-      status: normalizeConsumerFacingTransactionStatus(this.getEffectiveLedgerStatus(row)!),
+      status: normalizeConsumerFacingTransactionStatus(getEffectiveLedgerStatusOrNull(row)!),
       currencyCode: row.currencyCode,
       amount,
       direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
@@ -316,8 +294,8 @@ export class ConsumerPaymentsQueriesRepository {
       const latestTx =
         paymentRequest.ledgerEntries.find((entry) => entry.consumerId === consumerId) ??
         paymentRequest.ledgerEntries[0];
-      const latestTxStatus = this.getEffectiveLedgerStatus(latestTx);
-      const effectivePaymentStatus = this.getEffectivePaymentRequestStatus(paymentRequest.status, latestTx);
+      const latestTxStatus = getEffectiveLedgerStatusOrNull(latestTx);
+      const effectivePaymentStatus = getEffectivePaymentRequestStatus(paymentRequest.status, latestTx);
       const paymentRole =
         paymentRequest.payerId === consumerId ||
         (!paymentRequest.payerId &&
@@ -447,7 +425,7 @@ export class ConsumerPaymentsQueriesRepository {
       amount: Number(paymentRequest.amount),
       currencyCode: paymentRequest.currencyCode,
       status: normalizeConsumerFacingTransactionStatus(
-        this.getEffectivePaymentRequestStatus(paymentRequest.status, consumerLedgerEntry),
+        getEffectivePaymentRequestStatus(paymentRequest.status, consumerLedgerEntry),
       ),
       description: paymentRequest.description,
       dueDate: paymentRequest.dueDate?.toISOString() ?? null,
@@ -469,7 +447,7 @@ export class ConsumerPaymentsQueriesRepository {
             currencyCode: entry.currencyCode,
             amount,
             direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
-            status: normalizeConsumerFacingTransactionStatus(this.getEffectiveLedgerStatus(entry)!),
+            status: normalizeConsumerFacingTransactionStatus(getEffectiveLedgerStatusOrNull(entry)!),
             type: this.normalizeProductLedgerType(entry.type, entry.paymentRequestId),
             createdAt: entry.createdAt.toISOString(),
             rail: metadata.rail ?? paymentRequest.paymentRail ?? null,

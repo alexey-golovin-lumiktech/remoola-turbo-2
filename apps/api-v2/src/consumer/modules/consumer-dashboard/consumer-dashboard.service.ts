@@ -5,6 +5,10 @@ import { $Enums } from '@remoola/database-2';
 import { ConsumerDashboardQuery, type DashboardActivityLedgerRow } from './consumer-dashboard.query';
 import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { BalanceCalculationService, BalanceCalculationMode } from '../../../shared/balance-calculation.service';
+import {
+  getEffectiveLedgerStatusOrNull,
+  getEffectivePaymentRequestStatus as getEffectivePaymentRequestStatusForEntry,
+} from '../../../shared/transaction-status.utils';
 import { buildConsumerVerificationState } from '../../../shared-common';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 
@@ -15,19 +19,6 @@ export class ConsumerDashboardService {
     private readonly dashboardQuery: ConsumerDashboardQuery,
     private readonly balanceService: BalanceCalculationService,
   ) {}
-
-  private getEffectiveLedgerStatus(
-    entry:
-      | {
-          status: $Enums.TransactionStatus;
-          outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-        }
-      | null
-      | undefined,
-  ): $Enums.TransactionStatus | null {
-    if (!entry) return null;
-    return entry.outcomes?.[0]?.status ?? entry.status;
-  }
 
   private getEffectivePaymentRequestStatus(
     paymentRequest:
@@ -42,7 +33,7 @@ export class ConsumerDashboardService {
       | undefined,
   ): $Enums.TransactionStatus | null {
     if (!paymentRequest) return null;
-    return this.getEffectiveLedgerStatus(paymentRequest.ledgerEntries?.[0]) ?? paymentRequest.status;
+    return getEffectivePaymentRequestStatusForEntry(paymentRequest.status, paymentRequest.ledgerEntries?.[0]);
   }
 
   private isActiveDashboardPaymentRequest(
@@ -161,7 +152,7 @@ export class ConsumerDashboardService {
     };
     const normalizedType = this.normalizeDashboardActivityType(row.type, row.paymentRequestId);
     const amount = Number(row.amount);
-    const status = this.getEffectiveLedgerStatus(row) ?? row.status;
+    const status = getEffectiveLedgerStatusOrNull(row) ?? row.status;
     const statusLabel = this.formatDashboardStatus(status);
     const rail = metadata.rail ?? row.paymentRequest?.paymentRail ?? null;
     const paymentMethodLabel =

@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { buildDateRangeFilter } from '../admin-v2-query.utils';
 import { AdminV2LedgerQuery, type AdminV2LedgerListItemRecord } from './admin-v2-ledger.query';
@@ -47,13 +48,6 @@ export class AdminV2LedgerService {
     private readonly assignmentsService: AdminV2AssignmentsService,
   ) {}
 
-  private getEffectiveLedgerStatus(entry: {
-    status: $Enums.TransactionStatus;
-    outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-  }): $Enums.TransactionStatus {
-    return entry.outcomes?.[0]?.status ?? entry.status;
-  }
-
   private parseMetadata(metadata: Prisma.JsonValue | null | undefined): Record<string, unknown> {
     return JSON.parse(JSON.stringify(metadata ?? {})) as Record<string, unknown>;
   }
@@ -67,7 +61,7 @@ export class AdminV2LedgerService {
   }
 
   private mapLedgerRow(entry: AdminV2LedgerListItemRecord) {
-    const effectiveStatus = this.getEffectiveLedgerStatus(entry);
+    const effectiveStatus = getEffectiveLedgerStatus(entry);
     return {
       id: entry.id,
       ledgerId: entry.ledgerId,
@@ -159,7 +153,7 @@ export class AdminV2LedgerService {
 
     const assignment = await this.assignmentsService.getAssignmentContextForResource(`ledger_entry`, entry.id);
 
-    const effectiveStatus = this.getEffectiveLedgerStatus(entry);
+    const effectiveStatus = getEffectiveLedgerStatus(entry);
 
     return {
       id: entry.id,
@@ -216,7 +210,7 @@ export class AdminV2LedgerService {
         type: item.type,
         amount: item.amount.toString(),
         currencyCode: item.currencyCode,
-        effectiveStatus: this.getEffectiveLedgerStatus(item),
+        effectiveStatus: getEffectiveLedgerStatus(item),
         createdAt: item.createdAt,
       })),
       auditContext: auditContext.map((row) => ({

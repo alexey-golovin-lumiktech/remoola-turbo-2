@@ -18,7 +18,6 @@ import { toMoneyDecimal, type MoneyDecimalInput } from '../../shared/money-decim
 import {
   buildAdminPaymentReversalIdempotencyKey,
   calculateAlreadyReversedDecimalAmount,
-  getEffectiveLedgerStatus,
   resolveStrictReversalDecimalAmount,
 } from '../../shared/payment-reversal-calculator';
 import {
@@ -28,6 +27,7 @@ import {
   buildPaymentRequestOperationLockName,
 } from '../../shared/prisma-advisory-locks';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
+import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
 
 export type PaymentReversalExecutionResult = {
   ledgerId: string;

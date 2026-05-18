@@ -1,5 +1,7 @@
 import { $Enums } from '@remoola/database-2';
 
+import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
+
 export const PAYOUT_STUCK_THRESHOLD_HOURS = 24;
 
 const PENDING_LIKE_STATUSES = [
@@ -9,11 +11,6 @@ const PENDING_LIKE_STATUSES = [
 ] as const;
 
 export type PayoutDerivedStatus = `pending` | `processing` | `completed` | `failed` | `stuck` | `reversed`;
-
-type PayoutLedgerStatusInput = {
-  status: $Enums.TransactionStatus;
-  outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-};
 
 type PayoutOutcomeTimestampInput = {
   createdAt: Date;
@@ -32,9 +29,7 @@ type PayoutEscalationBlockParams = {
   escalation?: { id: string } | null;
 };
 
-export function getEffectiveLedgerStatus(entry: PayoutLedgerStatusInput): $Enums.TransactionStatus {
-  return entry.outcomes?.[0]?.status ?? entry.status;
-}
+export { getEffectiveLedgerStatus };
 
 export function getLatestOutcomeTimestamp(entry: PayoutOutcomeTimestampInput): Date {
   return entry.outcomes?.[0]?.createdAt ?? entry.createdAt;
