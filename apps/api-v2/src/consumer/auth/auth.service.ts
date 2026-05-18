@@ -16,6 +16,8 @@ import { ConsumerSignup } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
 
+export type { GoogleSignupPayload } from './consumer-auth.types';
+
 @Injectable()
 export class ConsumerAuthService {
   constructor(

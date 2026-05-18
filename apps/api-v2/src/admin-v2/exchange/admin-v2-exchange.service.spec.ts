@@ -3,7 +3,10 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
+import { AdminExchangeRateQueriesService } from './admin-exchange-rate-queries.service';
 import { AdminExchangeRuleCommandsService } from './admin-exchange-rule-commands.service';
+import { AdminExchangeRuleQueriesService } from './admin-exchange-rule-queries.service';
+import { AdminExchangeScheduledConversionQueriesService } from './admin-exchange-scheduled-conversion-queries.service';
 import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
 import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.service';
 import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
@@ -88,6 +91,9 @@ describe(`AdminV2ExchangeService`, () => {
     const transactions = new PrismaTransactionRunner(prisma);
     const preflightRepository = new AdminV2ExchangePreflightRepository(prisma);
     const conversionExecutor = new ExchangeConversionExecutor(persistenceRepository, balanceService);
+    const rateQuery = new AdminV2ExchangeRateQuery(prisma);
+    const ruleQuery = new AdminV2ExchangeRuleQuery(prisma);
+    const scheduledConversionQuery = new AdminV2ExchangeScheduledConversionQuery(prisma);
 
     return {
       service: new AdminV2ExchangeService(
@@ -112,10 +118,9 @@ describe(`AdminV2ExchangeService`, () => {
           ),
         ),
         new AdminV2ExchangeQueriesService(
-          new AdminV2ExchangeRateQuery(prisma),
-          new AdminV2ExchangeRuleQuery(prisma),
-          new AdminV2ExchangeScheduledConversionQuery(prisma),
-          assignmentsService,
+          new AdminExchangeRateQueriesService(rateQuery),
+          new AdminExchangeRuleQueriesService(ruleQuery),
+          new AdminExchangeScheduledConversionQueriesService(scheduledConversionQuery, assignmentsService),
         ),
       ),
       prisma,

@@ -4,7 +4,10 @@ import { AdminAuthModule } from '../../admin-auth/admin-auth.module';
 import { BalanceCalculationModule } from '../../shared/balance-calculation.module';
 import { AdminV2SharedModule } from '../admin-v2-shared.module';
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
+import { AdminExchangeRateQueriesService } from './admin-exchange-rate-queries.service';
 import { AdminExchangeRuleCommandsService } from './admin-exchange-rule-commands.service';
+import { AdminExchangeRuleQueriesService } from './admin-exchange-rule-queries.service';
+import { AdminExchangeScheduledConversionQueriesService } from './admin-exchange-scheduled-conversion-queries.service';
 import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
 import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.service';
 import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
@@ -27,6 +30,9 @@ import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.mo
     AdminV2ExchangeRateQuery,
     AdminV2ExchangeRuleQuery,
     AdminV2ExchangeScheduledConversionQuery,
+    AdminExchangeRateQueriesService,
+    AdminExchangeRuleQueriesService,
+    AdminExchangeScheduledConversionQueriesService,
     AdminV2ExchangeQueriesService,
     AdminExchangeRuleCommandsService,
     AdminExchangeRateApprovalService,
