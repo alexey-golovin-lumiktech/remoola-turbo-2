@@ -154,9 +154,12 @@ const runtimePolicy = {
   NGROK_ENABLED: zOptionalBoolean(),
 };
 
-const common = {
+const businessPolicy = {
   EXCHANGE_RATE_MAX_AGE_HOURS: z.coerce.number().optional().default(24),
   ADMIN_V2_PAYOUT_HIGH_VALUE_THRESHOLDS: z.string().optional().default(``),
+};
+
+const consumerActionLog = {
   CONSUMER_ACTION_LOG_RETENTION_DAYS: z.coerce.number().min(7).max(3650).default(30),
   CONSUMER_ACTION_LOG_PARTITION_PRECREATE_MONTHS: z.coerce.number().min(1).max(12).default(2),
   CONSUMER_ACTION_LOG_MAINTENANCE_CRON: z.string().default(`17 */6 * * *`),
@@ -188,7 +191,8 @@ const schema = z.object({
   ...vercel,
   ...security,
   ...runtimePolicy,
-  ...common,
+  ...businessPolicy,
+  ...consumerActionLog,
 });
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) throw new Error(JSON.stringify(parsed.error, null, 2));
