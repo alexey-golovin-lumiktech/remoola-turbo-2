@@ -10,6 +10,7 @@ import { AdminV2ExchangeRateQuery } from './admin-v2-exchange-rate.query';
 import { AdminV2ExchangeRuleQuery } from './admin-v2-exchange-rule.query';
 import { AdminV2ExchangeScheduledConversionQuery } from './admin-v2-exchange-scheduled-conversion.query';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
+import { ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 
 describe(`AdminV2ExchangeService`, () => {
@@ -89,6 +90,7 @@ describe(`AdminV2ExchangeService`, () => {
           idempotency,
           domainEvents,
           balanceService,
+          new ExchangeConversionExecutor(persistenceRepository, balanceService),
           new AdminV2ExchangePreflightRepository(prisma),
           persistenceRepository,
           transactions,

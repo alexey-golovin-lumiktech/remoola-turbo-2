@@ -1,5 +1,3 @@
-import { randomUUID } from 'crypto';
-
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { $Enums, type Prisma } from '@remoola/database-2';
@@ -14,7 +12,7 @@ import {
   type LockedScheduledExecutionRow,
 } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
-import { envs } from '../../envs';
+import { ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { getCurrencyFractionDigits } from '../../shared-common';
@@ -30,22 +28,12 @@ type RequestMeta = {
 
 type ExchangeExecutionState = `executed` | `failed`;
 
-type ExchangeConversionResult = {
-  ledgerId: string;
-  entryId: string;
-  targetAmount: number;
-};
-
 function parseOptionalString(value: unknown) {
   return typeof value === `string` && value.trim().length > 0 ? value.trim() : null;
 }
 
 function asRecord(value: Prisma.JsonValue | Record<string, unknown> | null | undefined): Record<string, unknown> {
   return value && typeof value === `object` && !Array.isArray(value) ? { ...value } : {};
-}
-
-function getRateReferenceAt(rate: { fetchedAt?: Date | null; effectiveAt: Date; createdAt: Date }) {
-  return rate.fetchedAt ?? rate.effectiveAt ?? rate.createdAt;
 }
 
 function adminIdOrConsumer(consumerId: string, adminId: string | null | undefined) {
@@ -70,6 +58,7 @@ export class AdminV2ExchangeCommandsService {
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly domainEvents: AdminV2DomainEventsService,
     private readonly balanceService: BalanceCalculationService,
+    private readonly conversionExecutor: ExchangeConversionExecutor,
     private readonly preflightRepository: AdminV2ExchangePreflightRepository,
     private readonly persistenceRepository: AdminV2ExchangePersistenceRepository,
     private readonly transactions: PrismaTransactionRunner,
@@ -485,7 +474,7 @@ export class AdminV2ExchangeCommandsService {
     }
 
     try {
-      const conversion = await this.executeConversionInTransaction(tx, {
+      const conversion = await this.conversionExecutor.executeInTransaction(tx, {
         consumerId: rule.consumer_id,
         fromCurrency: rule.from_currency,
         toCurrency: rule.to_currency,
@@ -536,7 +525,7 @@ export class AdminV2ExchangeCommandsService {
     params: { adminId: string; idempotencyKey: string; now: Date },
   ) {
     try {
-      const result = await this.executeConversionInTransaction(tx, {
+      const result = await this.conversionExecutor.executeInTransaction(tx, {
         consumerId: conversion.consumer_id,
         fromCurrency: conversion.from_currency,
         toCurrency: conversion.to_currency,
@@ -606,83 +595,6 @@ export class AdminV2ExchangeCommandsService {
     };
   }
 
-  private async executeConversionInTransaction(
-    tx: Prisma.TransactionClient,
-    params: {
-      consumerId: string;
-      fromCurrency: $Enums.CurrencyCode;
-      toCurrency: $Enums.CurrencyCode;
-      amount: number;
-      now: Date;
-      createdBy: string;
-      updatedBy: string;
-      idempotencyKeyPrefix: string;
-      metadata: Record<string, unknown>;
-    },
-  ): Promise<ExchangeConversionResult> {
-    if (params.fromCurrency === params.toCurrency) {
-      throw new BadRequestException(errorCodes.CANNOT_CONVERT_SAME_CURRENCY);
-    }
-
-    if (!Number.isFinite(params.amount) || params.amount <= 0) {
-      throw new BadRequestException(errorCodes.INVALID_AMOUNT_CONVERT);
-    }
-
-    await this.persistenceRepository.acquireConversionAdvisoryLock(tx, params.consumerId);
-
-    const rateRow = await this.persistenceRepository.findApprovedRateForConversion(
-      tx,
-      params.fromCurrency,
-      params.toCurrency,
-      params.now,
-    );
-    if (!rateRow) {
-      throw new NotFoundException(errorCodes.RATE_NOT_AVAILABLE);
-    }
-
-    const referenceAt = getRateReferenceAt(rateRow);
-    if (referenceAt.getTime() < this.getRateStaleCutoff(params.now).getTime()) {
-      throw new BadRequestException(errorCodes.RATE_STALE);
-    }
-
-    const available = await this.lockedBalance(tx, params.consumerId, params.fromCurrency);
-    if (params.amount > available) {
-      throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
-    }
-
-    const rate = Number(rateRow.rate);
-    const converted = this.roundToCurrency(params.amount * rate, params.toCurrency);
-    const ledgerId = randomUUID();
-    const sourceKey = `${params.idempotencyKeyPrefix}:source`;
-    const targetKey = `${params.idempotencyKeyPrefix}:target`;
-    const metadata = {
-      from: params.fromCurrency,
-      to: params.toCurrency,
-      rate,
-      rateId: rateRow.id,
-      ...params.metadata,
-    };
-    const { entryId } = await this.persistenceRepository.createConversionLedgerEntries(tx, {
-      ledgerId,
-      consumerId: params.consumerId,
-      fromCurrency: params.fromCurrency,
-      toCurrency: params.toCurrency,
-      sourceAmount: params.amount,
-      targetAmount: converted,
-      createdBy: params.createdBy,
-      updatedBy: params.updatedBy,
-      sourceIdempotencyKey: sourceKey,
-      targetIdempotencyKey: targetKey,
-      metadata,
-    });
-
-    return {
-      ledgerId,
-      entryId,
-      targetAmount: converted,
-    };
-  }
-
   private mapExecutionFailureReason(error: unknown) {
     if (error instanceof NotFoundException || error instanceof BadRequestException) {
       const response = error.getResponse();
@@ -714,23 +626,6 @@ export class AdminV2ExchangeCommandsService {
     return (
       status === $Enums.ScheduledFxConversionStatus.PENDING || status === $Enums.ScheduledFxConversionStatus.FAILED
     );
-  }
-
-  private roundToCurrency(amount: number, currency: $Enums.CurrencyCode) {
-    const digits = getCurrencyFractionDigits(currency);
-    return Number(amount.toFixed(digits));
-  }
-
-  private getMaxRateAgeMs() {
-    const hours = envs.EXCHANGE_RATE_MAX_AGE_HOURS;
-    if (!Number.isFinite(hours) || hours <= 0) {
-      return 24 * 60 * 60 * 1000;
-    }
-    return hours * 60 * 60 * 1000;
-  }
-
-  private getRateStaleCutoff(now: Date) {
-    return new Date(now.getTime() - this.getMaxRateAgeMs());
   }
 
   private async publishRuleEvent(adminId: string, ruleId: string, version: number, summary: ExchangeExecutionSummary) {

@@ -12,6 +12,7 @@ import { AdminV2ExchangeRuleQuery } from './admin-v2-exchange-rule.query';
 import { AdminV2ExchangeScheduledConversionQuery } from './admin-v2-exchange-scheduled-conversion.query';
 import { AdminV2ExchangeController } from './admin-v2-exchange.controller';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
+import { ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.mo
     AdminV2ExchangeRuleQuery,
     AdminV2ExchangeScheduledConversionQuery,
     AdminV2ExchangeQueriesService,
+    ExchangeConversionExecutor,
     AdminV2ExchangeCommandsService,
     AdminV2ExchangeService,
   ],
