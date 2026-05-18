@@ -6,6 +6,7 @@ jest.mock(`../envs`, () => ({
   envs: {
     BREVO_API_KEY: `test-api-key`,
     BREVO_DEFAULT_FROM_EMAIL: `noreply@example.com`,
+    DEFAULT_ADMIN_EMAIL: `ops@example.com`,
   },
 }));
 
@@ -14,6 +15,7 @@ import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { AdminNotificationMailingService } from './admin-notification-mailing.service';
 import { type BrevoSendMailOptions } from './brevo-mail.service';
 import { InvoiceMailingService } from './invoice-mailing.service';
+import { LogMailingService } from './log-mailing.service';
 import { MailingService } from './mailing.service';
 import { PaymentMailingService } from './payment-mailing.service';
 import { RecoveryMailingService } from './recovery-mailing.service';
@@ -49,7 +51,6 @@ describe(`MailingService signup verification links`, () => {
     const invoiceMailingService = new InvoiceMailingService(mailTransportSender as any);
     const adminNotificationMailingService = new AdminNotificationMailingService(mailTransportSender as any);
     const service = new MailingService(
-      mailTransportSender as any,
       paymentMailingService,
       recoveryMailingService,
       signupMailingService,
@@ -58,6 +59,21 @@ describe(`MailingService signup verification links`, () => {
     );
     return { service, brevoMailService, mailTransportSender, originResolver };
   }
+
+  it(`routes logs email through the focused log mailer`, async () => {
+    const { brevoMailService, mailTransportSender } = makeService();
+    const service = new LogMailingService(mailTransportSender as any);
+
+    await service.sendLogsEmail({ event: `smoke`, ok: true });
+
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `ops@example.com`,
+        subject: `WB Logs`,
+        html: expect.stringContaining(`"event": "smoke"`),
+      }),
+    );
+  });
 
   it(`builds token-only signup verification links without email or referer query params`, async () => {
     const { service, brevoMailService } = makeService();

@@ -4,11 +4,11 @@ import { Prisma } from '@remoola/database-2';
 
 import { AdminDocumentTagService } from './admin-document-tag.service';
 import { AdminDocumentTaggerService } from './admin-document-tagger.service';
+import { AdminDocumentService as AdminDocumentServiceBase } from './admin-document.service';
 import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
-import { AdminV2DocumentsService as AdminV2DocumentsServiceClass } from './admin-v2-documents.service';
 
-class AdminV2DocumentsService extends AdminV2DocumentsServiceClass {
+class TestAdminDocumentService extends AdminDocumentServiceBase {
   constructor(prisma: any, storage: any, idempotency: any, assignmentsService: any) {
     const documentsQuery = new AdminV2DocumentsRepository(prisma, {
       run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
@@ -40,9 +40,9 @@ function createAssignmentsService() {
   };
 }
 
-describe(`AdminV2DocumentsService`, () => {
+describe(`AdminDocumentService`, () => {
   it(`returns the canonical list contract with singular consumer linkage and linked payment ids`, async () => {
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       {
         resourceModel: {
           findMany: jest.fn(async () => [
@@ -120,7 +120,7 @@ describe(`AdminV2DocumentsService`, () => {
     assignmentsService.getActiveAssigneesForResource.mockResolvedValueOnce(
       new Map([[`doc-1`, { id: `admin-9`, name: null, email: `ops9@example.com` }]]),
     );
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       {
         resourceModel: {
           findMany: jest.fn(async () => [
@@ -167,7 +167,7 @@ describe(`AdminV2DocumentsService`, () => {
   });
 
   it(`keeps the canonical singular list contract by degrading ambiguous multi-owner linkage to null`, async () => {
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       {
         resourceModel: {
           findMany: jest.fn(async () => [
@@ -232,7 +232,7 @@ describe(`AdminV2DocumentsService`, () => {
   });
 
   it(`returns the canonical case contract with singular consumer linkage`, async () => {
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       {
         resourceModel: {
           findFirst: jest.fn(async () => ({
@@ -320,7 +320,7 @@ describe(`AdminV2DocumentsService`, () => {
   });
 
   it(`keeps the canonical detail contract by degrading ambiguous multi-owner linkage to null`, async () => {
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       {
         resourceModel: {
           findFirst: jest.fn(async () => ({
@@ -406,7 +406,7 @@ describe(`AdminV2DocumentsService`, () => {
         },
       ],
     });
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       {
         resourceModel: {
           findFirst: jest.fn(async () => ({
@@ -443,7 +443,7 @@ describe(`AdminV2DocumentsService`, () => {
   });
 
   it(`returns exact tag usage stats and marks reserved invoice tags as read-only`, async () => {
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       {
         documentTagModel: {
           findMany: jest.fn(async () => [
@@ -510,7 +510,7 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       prisma as never,
       {} as never,
       createIdempotency() as never,
@@ -555,7 +555,7 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       prisma as never,
       {} as never,
       createIdempotency() as never,
@@ -604,7 +604,7 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       prisma as never,
       {} as never,
       createIdempotency() as never,
@@ -655,7 +655,7 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       prisma as never,
       {} as never,
       createIdempotency() as never,
@@ -703,7 +703,7 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       prisma as never,
       {} as never,
       createIdempotency() as never,
@@ -769,7 +769,7 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       prisma as never,
       {} as never,
       createIdempotency() as never,
@@ -839,7 +839,7 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       prisma as never,
       {} as never,
       createIdempotency() as never,
@@ -906,7 +906,7 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       prisma as never,
       {} as never,
       createIdempotency() as never,
@@ -969,7 +969,7 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       prisma as never,
       {} as never,
       createIdempotency() as never,
@@ -1020,7 +1020,7 @@ describe(`AdminV2DocumentsService`, () => {
         mimetype: `application/pdf`,
       })),
     };
-    const service = new AdminV2DocumentsService(
+    const service = new TestAdminDocumentService(
       {
         resourceModel,
       } as never,

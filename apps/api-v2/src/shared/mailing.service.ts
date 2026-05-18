@@ -1,14 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { envs } from '../envs';
 import {
   AdminNotificationMailingService,
   type ConsumerSuspensionEmailParams,
   type VerificationDecisionEmailParams,
 } from './admin-notification-mailing.service';
-import { type BrevoSendMailOptions } from './brevo-mail.service';
 import { InvoiceMailingService, type PayToContactPaymentInfoEmailParams } from './invoice-mailing.service';
-import { MailTransportSenderService } from './mail-transport-sender.service';
 import { type InvoiceForTemplate } from './mailing-utils';
 import {
   PaymentMailingService,
@@ -28,34 +25,13 @@ import {
 
 @Injectable()
 export class MailingService {
-  private readonly logger = new Logger(MailingService.name);
-
   constructor(
-    private mailTransportSender: MailTransportSenderService,
     private paymentMailingService: PaymentMailingService,
     private recoveryMailingService: RecoveryMailingService,
     private signupMailingService: SignupMailingService,
     private invoiceMailingService: InvoiceMailingService,
     private adminNotificationMailingService: AdminNotificationMailingService,
   ) {}
-
-  private async trySendEmail(context: string, options: BrevoSendMailOptions): Promise<boolean> {
-    return this.mailTransportSender.trySendEmail(context, options);
-  }
-
-  private async sendEmailWithErrorHandling(context: string, options: BrevoSendMailOptions): Promise<void> {
-    await this.mailTransportSender.sendEmailWithErrorHandling(context, options);
-  }
-
-  async sendLogsEmail(data: unknown = null, email?: string) {
-    const html = `<pre><code>${JSON.stringify(data ?? {}, null, 2)}</code></pre>`;
-    const subject = `WB Logs`;
-    await this.sendEmailWithErrorHandling(`sendLogsEmail`, {
-      to: email ?? envs.DEFAULT_ADMIN_EMAIL!,
-      subject,
-      html,
-    });
-  }
 
   async sendConsumerSignupVerificationEmail(params: SignupVerificationEmailParams) {
     return this.signupMailingService.sendConsumerSignupVerificationEmail(params);

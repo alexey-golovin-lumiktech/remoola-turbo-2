@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AdminNotificationMailingService } from './admin-notification-mailing.service';
 import { BrevoMailService } from './brevo-mail.service';
 import { InvoiceMailingService } from './invoice-mailing.service';
+import { LogMailingService } from './log-mailing.service';
 import { MailTransportHealthService } from './mail-transport-health.service';
 import { MailTransportSenderService } from './mail-transport-sender.service';
 import { MAIL_TRANSPORT } from './mail-transport.port';
@@ -22,6 +23,7 @@ import { SignupMailingService } from './signup-mailing.service';
     AdminNotificationMailingService,
     MailTransportHealthService,
     InvoiceMailingService,
+    LogMailingService,
     MailTransportSenderService,
     MailingService,
     OriginResolverService,
@@ -34,6 +36,7 @@ import { SignupMailingService } from './signup-mailing.service';
     AdminNotificationMailingService,
     BrevoMailService,
     InvoiceMailingService,
+    LogMailingService,
     OriginResolverService,
     PaymentMailingService,
     RecoveryMailingService,

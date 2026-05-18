@@ -18,7 +18,7 @@ import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as Reque
 import { resolveRequestBaseUrl } from '../../shared/request-base-url';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { ConfirmedVersionedMutationBody, VersionedMutationBody } from '../admin-v2-common.dto';
-import { AdminV2DocumentsService } from './admin-v2-documents.service';
+import { AdminDocumentService } from './admin-document.service';
 
 class DocumentTagCreateBody implements AdminV2DocumentTagCreateBody {
   @Expose()
@@ -145,7 +145,7 @@ class AdminDocumentsListQuery {
 @Controller(`admin-v2/documents`)
 export class AdminV2DocumentsController {
   constructor(
-    private readonly service: AdminV2DocumentsService,
+    private readonly service: AdminDocumentService,
     private readonly accessService: AdminV2AccessService,
   ) {}
 

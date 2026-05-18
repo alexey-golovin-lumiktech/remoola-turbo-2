@@ -32,7 +32,7 @@ function normalizePageSize(value?: number): number {
 }
 
 @Injectable()
-export class AdminV2DocumentsService {
+export class AdminDocumentService {
   constructor(
     private readonly storage: FileStorageService,
     private readonly assignmentsService: AdminV2AssignmentsService,
