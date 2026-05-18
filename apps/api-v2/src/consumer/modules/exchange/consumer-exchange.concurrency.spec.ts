@@ -4,6 +4,7 @@
  */
 import { $Enums } from '@remoola/database-2';
 
+import { ConsumerCurrencyConversionService } from './consumer-currency-conversion.service';
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
 import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
@@ -99,10 +100,12 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
   function createService(prisma: any) {
     const balanceService = new BalanceCalculationService(new BalanceCalculationRepository(prisma));
     const rateReader = new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma));
+    const rateService = new ConsumerExchangeRateService(rateReader);
+    const executionRepository = new ConsumerExchangeExecutionRepository(prisma);
     return new ConsumerExchangeService(
       balanceService,
-      new ConsumerExchangeRateService(rateReader),
-      new ConsumerExchangeExecutionRepository(prisma),
+      rateService,
+      new ConsumerCurrencyConversionService(balanceService, rateService, executionRepository),
       new ConsumerExchangeAutomationRepository(prisma),
     );
   }

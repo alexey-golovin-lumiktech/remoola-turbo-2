@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerCurrencyConversionService } from './consumer-currency-conversion.service';
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
 import {
@@ -22,10 +23,12 @@ function buildRateReader(prisma: any) {
 
 function buildService(prisma: any, balanceService: any) {
   const rateReader = buildRateReader(prisma);
+  const rateService = new ConsumerExchangeRateService(rateReader);
+  const executionRepository = new ConsumerExchangeExecutionRepository(prisma);
   return new ConsumerExchangeService(
     balanceService,
-    new ConsumerExchangeRateService(rateReader),
-    new ConsumerExchangeExecutionRepository(prisma),
+    rateService,
+    new ConsumerCurrencyConversionService(balanceService, rateService, executionRepository),
     new ConsumerExchangeAutomationRepository(prisma),
   );
 }

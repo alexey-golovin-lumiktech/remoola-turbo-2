@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerCurrencyConversionService } from './consumer-currency-conversion.service';
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
 import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
@@ -34,12 +35,14 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
     } as any;
     const balanceService = {} as any;
     const rateReader = new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma));
+    const rateService = new ConsumerExchangeRateService(rateReader);
+    const executionRepository = new ConsumerExchangeExecutionRepository(prisma);
 
     return {
       service: new ConsumerExchangeService(
         balanceService,
-        new ConsumerExchangeRateService(rateReader),
-        new ConsumerExchangeExecutionRepository(prisma),
+        rateService,
+        new ConsumerCurrencyConversionService(balanceService, rateService, executionRepository),
         new ConsumerExchangeAutomationRepository(prisma),
       ),
       prisma,

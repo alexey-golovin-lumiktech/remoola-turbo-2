@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { ConsumerCurrencyConversionService } from './consumer-currency-conversion.service';
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
 import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
@@ -15,6 +16,7 @@ import { ConsumerExchangeService } from './consumer-exchange.service';
     ConsumerExchangeRateQuery,
     ConsumerExchangeRateReader,
     ConsumerExchangeRateService,
+    ConsumerCurrencyConversionService,
     ConsumerExchangeExecutionRepository,
     ConsumerExchangeAutomationRepository,
     ConsumerExchangeService,
