@@ -2,22 +2,26 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
 
+import { AdminDocumentTagService } from './admin-document-tag.service';
 import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 import { AdminV2DocumentsService as AdminV2DocumentsServiceClass } from './admin-v2-documents.service';
 
 class AdminV2DocumentsService extends AdminV2DocumentsServiceClass {
   constructor(prisma: any, storage: any, idempotency: any, assignmentsService: any) {
+    const documentsQuery = new AdminV2DocumentsRepository(prisma, {
+      run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
+    } as never);
+    const documentsCommands = new AdminV2DocumentsCommandsRepository(prisma, {
+      run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
+    } as never);
     super(
       storage,
       idempotency,
       assignmentsService,
-      new AdminV2DocumentsRepository(prisma, {
-        run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
-      } as never),
-      new AdminV2DocumentsCommandsRepository(prisma, {
-        run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
-      } as never),
+      documentsQuery,
+      documentsCommands,
+      new AdminDocumentTagService(idempotency, documentsQuery, documentsCommands),
     );
   }
 }

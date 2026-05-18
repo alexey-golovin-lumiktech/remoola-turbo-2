@@ -176,7 +176,8 @@ describe(`Nest module provider boundaries`, () => {
       ]),
       [`legacy-db-only`]: new Map([
         [`assignments/admin-v2-assignments.service.ts`, 3],
-        [`documents/admin-v2-documents.service.ts`, 5],
+        [`documents/admin-document-tag.service.ts`, 3],
+        [`documents/admin-v2-documents.service.ts`, 2],
         [`exchange/admin-exchange-rate-approval.service.ts`, 1],
         [`exchange/admin-scheduled-conversion-commands.service.ts`, 2],
         [`operational-alerts/admin-v2-operational-alerts.service.ts`, 3],

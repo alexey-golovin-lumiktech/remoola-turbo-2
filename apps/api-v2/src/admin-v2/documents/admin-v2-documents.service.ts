@@ -2,8 +2,15 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { AdminDocumentTagService } from './admin-document-tag.service';
 import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
+import {
+  buildDocumentDownloadUrl,
+  buildDocumentEvidenceScopeWhere,
+  resolveCanonicalConsumer,
+  uniqueIds,
+} from './document-query-helpers';
 import { FileStorageService } from '../../consumer/modules/files/file-storage.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion, toNullableIso } from '../admin-v2-version-utils';
@@ -12,7 +19,6 @@ import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.s
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
-const RESERVED_TAG_PREFIX = `INVOICE-`;
 
 type RequestMeta = {
   ipAddress?: string | null;
@@ -32,49 +38,6 @@ function normalizePageSize(value?: number): number {
   return Math.min(MAX_PAGE_SIZE, Math.max(1, Math.floor(value)));
 }
 
-function buildDocumentDownloadUrl(resourceId: string, backendBaseUrl?: string) {
-  if (!backendBaseUrl) {
-    return `/api/admin-v2/documents/${resourceId}/download`;
-  }
-  return new URL(`/api/admin-v2/documents/${resourceId}/download`, backendBaseUrl).toString();
-}
-
-function normalizeTagName(value: string | null | undefined) {
-  const normalized = value?.trim().toLowerCase() ?? ``;
-  if (!normalized) {
-    throw new BadRequestException(`Tag name is required`);
-  }
-  if (normalized.startsWith(RESERVED_TAG_PREFIX.toLowerCase())) {
-    throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
-  }
-  return normalized;
-}
-
-function uniqueIds(values: readonly string[] | null | undefined) {
-  return Array.from(new Set((values ?? []).map((value) => value.trim()).filter(Boolean)));
-}
-
-function resolveCanonicalConsumer(
-  consumerResources: Array<{
-    consumer: {
-      id: string;
-      email: string | null;
-      deletedAt: Date | null;
-    };
-  }>,
-) {
-  const relation = consumerResources[0];
-  if (!relation || consumerResources.length !== 1) {
-    return null;
-  }
-
-  return {
-    id: relation.consumer.id,
-    email: relation.consumer.email,
-    deletedAt: toNullableIso(relation.consumer.deletedAt),
-  };
-}
-
 @Injectable()
 export class AdminV2DocumentsService {
   constructor(
@@ -83,6 +46,7 @@ export class AdminV2DocumentsService {
     private readonly assignmentsService: AdminV2AssignmentsService,
     private readonly documentsQuery: AdminV2DocumentsRepository,
     private readonly documentsCommands: AdminV2DocumentsCommandsRepository,
+    private readonly tagService: AdminDocumentTagService,
   ) {}
 
   async listDocuments(params?: {
@@ -113,7 +77,7 @@ export class AdminV2DocumentsService {
     const where: Prisma.ResourceModelWhereInput = {
       ...(params?.includeDeleted ? {} : { deletedAt: null }),
       AND: [
-        this.evidenceScopeWhere(),
+        buildDocumentEvidenceScopeWhere(),
         ...(q
           ? [
               {
@@ -231,7 +195,7 @@ export class AdminV2DocumentsService {
     const [resource, assignment] = await Promise.all([
       this.documentsQuery.findCaseResource({
         id: resourceId,
-        AND: [this.evidenceScopeWhere()],
+        AND: [buildDocumentEvidenceScopeWhere()],
       }),
       this.assignmentsService.getAssignmentContextForResource(`document`, resourceId),
     ]);
@@ -273,25 +237,13 @@ export class AdminV2DocumentsService {
   }
 
   async listTags() {
-    const tags = await this.documentsQuery.listTags();
-
-    return {
-      items: tags.map((tag) => ({
-        id: tag.id,
-        name: tag.name,
-        reserved: this.isReservedTag(tag.name),
-        usageCount: tag._count.resourceTags,
-        createdAt: tag.createdAt.toISOString(),
-        updatedAt: tag.updatedAt.toISOString(),
-        version: deriveVersion(tag.updatedAt),
-      })),
-    };
+    return this.tagService.listTags();
   }
 
   async openDownload(resourceId: string) {
     const resource = await this.documentsQuery.findDownloadResource({
       id: resourceId,
-      AND: [this.evidenceScopeWhere()],
+      AND: [buildDocumentEvidenceScopeWhere()],
     });
 
     if (!resource) {
@@ -302,41 +254,7 @@ export class AdminV2DocumentsService {
   }
 
   async createTag(adminId: string, body: { name?: string | null }, meta?: RequestMeta) {
-    const name = normalizeTagName(body.name);
-
-    return this.idempotency.execute({
-      adminId,
-      scope: `document-tag-create:${name}`,
-      key: meta?.idempotencyKey,
-      payload: { name },
-      execute: async () => {
-        const existing = await this.documentsQuery.findTagByName(name);
-
-        if (existing) {
-          return {
-            tagId: existing.id,
-            name: existing.name,
-            version: deriveVersion(existing.updatedAt),
-            updatedAt: existing.updatedAt.toISOString(),
-            alreadyExists: true,
-          };
-        }
-
-        const created = await this.documentsCommands.createTagWithAudit({
-          adminId,
-          name,
-          meta,
-        });
-
-        return {
-          tagId: created.id,
-          name: created.name,
-          version: deriveVersion(created.updatedAt),
-          updatedAt: created.updatedAt.toISOString(),
-          alreadyExists: false,
-        };
-      },
-    });
+    return this.tagService.createTag(adminId, body, meta);
   }
 
   async updateTag(
@@ -345,97 +263,11 @@ export class AdminV2DocumentsService {
     body: { name?: string | null; version?: number },
     meta?: RequestMeta,
   ) {
-    const name = normalizeTagName(body.name);
-    const expectedVersion = this.parseVersion(body.version, `Tag version is required`);
-
-    return this.idempotency.execute({
-      adminId,
-      scope: `document-tag-update:${tagId}`,
-      key: meta?.idempotencyKey,
-      payload: { tagId, name, expectedVersion },
-      execute: async () => {
-        const tag = await this.documentsQuery.findTagById(tagId);
-
-        if (!tag) {
-          throw new NotFoundException(`Document tag not found`);
-        }
-        if (this.isReservedTag(tag.name)) {
-          throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
-        }
-        if (deriveVersion(tag.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(`Document tag`, tag.updatedAt));
-        }
-
-        const duplicate = await this.documentsQuery.findTagByName(name);
-        if (duplicate && duplicate.id !== tag.id) {
-          throw new ConflictException(`Document tag name is already in use`);
-        }
-
-        if (tag.name === name) {
-          return {
-            tagId: tag.id,
-            name: tag.name,
-            version: deriveVersion(tag.updatedAt),
-            updatedAt: tag.updatedAt.toISOString(),
-            unchanged: true,
-          };
-        }
-
-        const fresh = await this.documentsCommands.updateTagWithAudit({
-          tag,
-          adminId,
-          nextName: name,
-          meta,
-        });
-
-        return {
-          tagId: fresh.id,
-          name: fresh.name,
-          version: deriveVersion(fresh.updatedAt),
-          updatedAt: fresh.updatedAt.toISOString(),
-          unchanged: false,
-        };
-      },
-    });
+    return this.tagService.updateTag(tagId, adminId, body, meta);
   }
 
   async deleteTag(tagId: string, adminId: string, body: { version?: number; confirmed?: boolean }, meta?: RequestMeta) {
-    const expectedVersion = this.parseVersion(body.version, `Tag version is required`);
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for tag deletion`);
-    }
-
-    return this.idempotency.execute({
-      adminId,
-      scope: `document-tag-delete:${tagId}`,
-      key: meta?.idempotencyKey,
-      payload: { tagId, expectedVersion, confirmed: true },
-      execute: async () => {
-        const tag = await this.documentsQuery.findTagById(tagId);
-
-        if (!tag) {
-          throw new NotFoundException(`Document tag not found`);
-        }
-        if (this.isReservedTag(tag.name)) {
-          throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
-        }
-        if (deriveVersion(tag.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(`Document tag`, tag.updatedAt));
-        }
-
-        const result = await this.documentsCommands.deleteTagWithAudit({
-          tag,
-          adminId,
-          meta,
-        });
-
-        return {
-          tagId: result.tagId,
-          deleted: true,
-          affectedResourceCount: result.affectedResourceCount,
-        };
-      },
-    });
+    return this.tagService.deleteTag(tagId, adminId, body, meta);
   }
 
   async retagDocument(
@@ -455,7 +287,7 @@ export class AdminV2DocumentsService {
       execute: async () => {
         const resource = await this.documentsQuery.findResourceForRetag({
           id: resourceId,
-          AND: [this.evidenceScopeWhere()],
+          AND: [buildDocumentEvidenceScopeWhere()],
         });
 
         if (!resource) {
@@ -468,8 +300,8 @@ export class AdminV2DocumentsService {
           throw new ConflictException(buildStaleVersionPayload(`Document`, resource.updatedAt));
         }
 
-        const allowedTags = await this.loadTagSelection(tagIds);
-        if (allowedTags.some((tag) => this.isReservedTag(tag.name))) {
+        const allowedTags = await this.tagService.loadTagSelection(tagIds);
+        if (allowedTags.some((tag) => this.tagService.isReservedTag(tag.name))) {
           throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
         }
 
@@ -519,15 +351,15 @@ export class AdminV2DocumentsService {
       key: meta?.idempotencyKey,
       payload: { tagIds, resources },
       execute: async () => {
-        const allowedTags = await this.loadTagSelection(tagIds);
-        if (allowedTags.some((tag) => this.isReservedTag(tag.name))) {
+        const allowedTags = await this.tagService.loadTagSelection(tagIds);
+        if (allowedTags.some((tag) => this.tagService.isReservedTag(tag.name))) {
           throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
         }
 
         const resourceIds = resources.map((resource) => resource.resourceId);
         const documents = await this.documentsQuery.findBulkTagDocuments({
           id: { in: resourceIds },
-          AND: [this.evidenceScopeWhere()],
+          AND: [buildDocumentEvidenceScopeWhere()],
         });
 
         if (documents.length !== resourceIds.length) {
@@ -645,44 +477,5 @@ export class AdminV2DocumentsService {
       throw new BadRequestException(errorMessage);
     }
     return version;
-  }
-
-  private evidenceScopeWhere(): Prisma.ResourceModelWhereInput {
-    return {
-      OR: [
-        {
-          consumerResources: {
-            some: {
-              deletedAt: null,
-            },
-          },
-        },
-        {
-          attachments: {
-            some: {
-              deletedAt: null,
-            },
-          },
-        },
-      ],
-    };
-  }
-
-  private async loadTagSelection(tagIds: string[]) {
-    if (tagIds.length === 0) {
-      return [] as Array<{ id: string; name: string }>;
-    }
-
-    const tags = await this.documentsQuery.loadTagSelection(tagIds);
-
-    if (tags.length !== tagIds.length) {
-      throw new NotFoundException(`One or more document tags were not found`);
-    }
-
-    return tags;
-  }
-
-  private isReservedTag(name: string) {
-    return name.startsWith(RESERVED_TAG_PREFIX);
   }
 }
