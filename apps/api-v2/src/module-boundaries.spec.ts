@@ -184,7 +184,7 @@ describe(`Nest module provider boundaries`, () => {
         [`payouts/admin-v2-payout-escalation.service.ts`, 1],
         [`saved-views/admin-v2-saved-views.service.ts`, 3],
       ]),
-      [`post-commit-event`]: new Map([[`exchange/admin-v2-exchange-commands.service.ts`, 3]]),
+      [`post-commit-event`]: new Map([[`exchange/admin-exchange-rule-commands.service.ts`, 3]]),
     };
 
     expect(sourceFileCounts(adminV2Dir, /idempotency\.executeInTransaction\s*\(/g)).toEqual(
