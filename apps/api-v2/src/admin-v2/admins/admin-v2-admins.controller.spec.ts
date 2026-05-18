@@ -71,10 +71,11 @@ describe(`AdminV2AdminsController`, () => {
     }
 
     const actor = { id: `admin-1`, email: `admin@example.com`, type: `SUPER`, sessionId: `session-self` } as never;
-    const buildReq = () =>
+    const buildMeta = () =>
       ({
-        ip: `203.0.113.5`,
-        headers: { 'user-agent': `jest`, 'idempotency-key': `idem-7` },
+        ipAddress: `203.0.113.5`,
+        userAgent: `jest`,
+        idempotencyKey: `idem-7`,
       }) as never;
 
     it(`listAdminSessions: requires admins.read and delegates to sessions service`, async () => {
@@ -99,7 +100,7 @@ describe(`AdminV2AdminsController`, () => {
 
     it(`revokeAdminSession: requires admins.manage and delegates with normalized request meta`, async () => {
       const { controller, assertCapability, revokeSessionAsManager } = buildSessionsHarness();
-      const result = await controller.revokeAdminSession(actor, `admin-2`, `session-foo`, buildReq());
+      const result = await controller.revokeAdminSession(actor, `admin-2`, `session-foo`, buildMeta());
       expect(assertCapability).toHaveBeenCalledWith(actor, `admins.manage`);
       expect(revokeSessionAsManager).toHaveBeenCalledWith(`admin-2`, `session-foo`, `admin-1`, {
         ipAddress: `203.0.113.5`,
@@ -114,7 +115,7 @@ describe(`AdminV2AdminsController`, () => {
           throw new ForbiddenException(`forbidden`);
         },
       });
-      await expect(controller.revokeAdminSession(actor, `admin-2`, `session-foo`, buildReq())).rejects.toThrow(
+      await expect(controller.revokeAdminSession(actor, `admin-2`, `session-foo`, buildMeta())).rejects.toThrow(
         ForbiddenException,
       );
       expect(revokeSessionAsManager).not.toHaveBeenCalled();
@@ -122,7 +123,7 @@ describe(`AdminV2AdminsController`, () => {
 
     it(`revokeAdminSession: rejects self-target with BadRequestException`, async () => {
       const { controller, revokeSessionAsManager } = buildSessionsHarness();
-      await expect(controller.revokeAdminSession(actor, `admin-1`, `session-self`, buildReq())).rejects.toThrow(
+      await expect(controller.revokeAdminSession(actor, `admin-1`, `session-self`, buildMeta())).rejects.toThrow(
         BadRequestException,
       );
       expect(revokeSessionAsManager).not.toHaveBeenCalled();
@@ -136,7 +137,7 @@ describe(`AdminV2AdminsController`, () => {
         actor,
         `admin-2`,
         { password: `NewValid1!@#abc`, passwordConfirmation: `Current1!@#abc` } as never,
-        buildReq(),
+        buildMeta(),
       );
 
       expect(assertCapability).toHaveBeenCalledWith(actor, `admins.manage`);
@@ -159,7 +160,7 @@ describe(`AdminV2AdminsController`, () => {
           actor,
           `admin-2`,
           { password: `NewValid1!@#abc`, passwordConfirmation: `WrongPassword1!@#` } as never,
-          buildReq(),
+          buildMeta(),
         ),
       ).rejects.toThrow(UnauthorizedException);
 
@@ -174,7 +175,7 @@ describe(`AdminV2AdminsController`, () => {
         controller.inviteAdmin(
           actor,
           { email: `new-admin@example.com`, roleKey: `OPS_ADMIN`, passwordConfirmation: `Current1!@#abc` } as never,
-          buildReq(),
+          buildMeta(),
         ),
       ).resolves.toEqual({ invitationId: `inv-1` });
 
@@ -194,7 +195,7 @@ describe(`AdminV2AdminsController`, () => {
             actor,
             `admin-2`,
             { version: 1, confirmed: true, passwordConfirmation: `Current1!@#abc` } as never,
-            buildReq(),
+            buildMeta(),
           ),
         `deactivateAdmin`,
       ],
@@ -205,7 +206,7 @@ describe(`AdminV2AdminsController`, () => {
             actor,
             `admin-2`,
             { version: 1, passwordConfirmation: `Current1!@#abc` } as never,
-            buildReq(),
+            buildMeta(),
           ),
         `restoreAdmin`,
       ],
@@ -216,7 +217,7 @@ describe(`AdminV2AdminsController`, () => {
             actor,
             `admin-2`,
             { version: 1, confirmed: true, roleKey: `OPS_ADMIN`, passwordConfirmation: `Current1!@#abc` } as never,
-            buildReq(),
+            buildMeta(),
           ),
         `changeAdminRole`,
       ],
@@ -231,7 +232,7 @@ describe(`AdminV2AdminsController`, () => {
               capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
               passwordConfirmation: `Current1!@#abc`,
             } as never,
-            buildReq(),
+            buildMeta(),
           ),
         `changeAdminPermissions`,
       ],
@@ -242,7 +243,7 @@ describe(`AdminV2AdminsController`, () => {
             actor,
             `admin-2`,
             { version: 1, passwordConfirmation: `Current1!@#abc` } as never,
-            buildReq(),
+            buildMeta(),
           ),
         `resetAdminPassword`,
       ],
@@ -260,7 +261,7 @@ describe(`AdminV2AdminsController`, () => {
       const { controller, adminsService, verifyStepUp } = buildSessionsHarness();
 
       await expect(
-        controller.updateAdminStatus(actor, `admin-2`, { action: `delete` } as never, buildReq()),
+        controller.updateAdminStatus(actor, `admin-2`, { action: `delete` } as never, buildMeta()),
       ).rejects.toThrow(BadRequestException);
 
       expect(verifyStepUp).not.toHaveBeenCalled();
@@ -276,7 +277,7 @@ describe(`AdminV2AdminsController`, () => {
           actor,
           `admin-2`,
           { action: `delete`, passwordConfirmation: `  Current1!@#abc  ` } as never,
-          buildReq(),
+          buildMeta(),
         ),
       ).resolves.toEqual({ ok: true });
 
@@ -298,7 +299,7 @@ describe(`AdminV2AdminsController`, () => {
           actor,
           `admin-2`,
           { action: `delete`, passwordConfirmation: `WrongPassword1!@#` } as never,
-          buildReq(),
+          buildMeta(),
         ),
       ).rejects.toThrow(UnauthorizedException);
 

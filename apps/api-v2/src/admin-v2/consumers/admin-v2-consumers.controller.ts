@@ -1,27 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-import express from 'express';
 
 import { CONSUMER_APP_SCOPES } from '@remoola/api-types';
 
-import { Identity, type IIdentityContext } from '../../common';
+import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
-
-function requestMeta(req: express.Request) {
-  const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
-  const userAgent = req.headers[`user-agent`];
-  const idempotencyKey = req.headers[`idempotency-key`];
-  return {
-    ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
-    userAgent: typeof userAgent === `string` ? userAgent : null,
-    idempotencyKey:
-      typeof idempotencyKey === `string` ? idempotencyKey : Array.isArray(idempotencyKey) ? idempotencyKey[0] : null,
-  };
-}
 
 class ForceLogoutBody {
   @Expose()
@@ -240,10 +227,10 @@ export class AdminV2ConsumersController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: ConsumerNoteBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `consumers.notes`);
-    return this.service.createNote(id, admin.id, body.content, requestMeta(req));
+    return this.service.createNote(id, admin.id, body.content, meta);
   }
 
   @Post(`:id/flags`)
@@ -251,10 +238,10 @@ export class AdminV2ConsumersController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: ConsumerFlagBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `consumers.flags`);
-    return this.service.addFlag(id, admin.id, body.flag, body.reason, requestMeta(req));
+    return this.service.addFlag(id, admin.id, body.flag, body.reason, meta);
   }
 
   @Patch(`:id/flags/:flagId/remove`)
@@ -263,10 +250,10 @@ export class AdminV2ConsumersController {
     @Param(`id`) id: string,
     @Param(`flagId`) flagId: string,
     @Body() body: ConsumerFlagRemoveBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `consumers.flags`);
-    return this.service.removeFlag(id, flagId, admin.id, body.version, requestMeta(req));
+    return this.service.removeFlag(id, flagId, admin.id, body.version, meta);
   }
 
   @Post(`:id/force-logout`)
@@ -274,10 +261,10 @@ export class AdminV2ConsumersController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: ForceLogoutBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `consumers.force_logout`);
-    return this.service.forceLogout(id, admin.id, body, requestMeta(req));
+    return this.service.forceLogout(id, admin.id, body, meta);
   }
 
   @Post(`:id/suspend`)
@@ -285,10 +272,10 @@ export class AdminV2ConsumersController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: SuspendConsumerBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `consumers.suspend`);
-    return this.service.suspendConsumer(id, admin.id, body, requestMeta(req));
+    return this.service.suspendConsumer(id, admin.id, body, meta);
   }
 
   @Post(`:id/email-resend`)
@@ -296,9 +283,9 @@ export class AdminV2ConsumersController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: EmailResendBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `consumers.email_resend`);
-    return this.service.resendConsumerEmail(id, admin.id, body, requestMeta(req));
+    return this.service.resendConsumerEmail(id, admin.id, body, meta);
   }
 }

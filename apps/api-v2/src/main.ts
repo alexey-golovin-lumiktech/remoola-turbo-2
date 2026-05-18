@@ -1,18 +1,11 @@
 import { type IncomingMessage, type ServerResponse } from 'node:http';
 
 import { Logger, type INestApplication } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
-import { ExpressAdapter, type NestExpressApplication } from '@nestjs/platform-express';
 import express, { type Express } from 'express';
 
-import { AppModule } from './app.module';
-import { configureApp } from './configure-app';
-import { devBootstrapSeed } from './devBootstrapSeed';
+import { createApiApp } from './bootstrap/create-api-app';
 import { envs } from './envs';
 import { NgrokIngressService } from './infrastructure/ngrok/ngrok-ingress.service';
-import { OriginResolverService } from './shared/origin-resolver.service';
-import { PrismaService } from './shared/prisma.service';
-import { waitForDatabase } from './waitForDatabase';
 
 const logger = new Logger(`Bootstrap`);
 
@@ -84,15 +77,7 @@ async function bootstrap(): Promise<INestApplication> {
     logger.warn(`VERCEL=1 detected. This bootstrap is designed for a persistent Node server.`);
   }
 
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    rawBody: true,
-  });
-  const originResolver = app.get(OriginResolverService);
-  configureApp(app, originResolver);
-  const prisma = app.get(PrismaService);
-
-  await waitForDatabase(logger, prisma);
-  await devBootstrapSeed(logger, prisma);
+  const app = await createApiApp({ logger });
 
   const port = envs.PORT || 3000;
   await app.listen(port);
@@ -122,15 +107,7 @@ async function bootstrap(): Promise<INestApplication> {
 
 async function createVercelServer(): Promise<Express> {
   const server = express();
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter(server), {
-    rawBody: true,
-  });
-  const originResolver = app.get(OriginResolverService);
-  configureApp(app, originResolver);
-  const prisma = app.get(PrismaService);
-
-  await waitForDatabase(logger, prisma);
-  await devBootstrapSeed(logger, prisma);
+  const app = await createApiApp({ logger, server });
   await app.init();
 
   return server;

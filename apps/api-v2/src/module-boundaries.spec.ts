@@ -165,6 +165,40 @@ describe(`Nest module provider boundaries`, () => {
     }
   });
 
+  it(`keeps api bootstrap creation centralized`, () => {
+    const mainSource = readFileSync(join(__dirname, `main.ts`), `utf8`);
+    const factorySource = readFileSync(join(__dirname, `bootstrap/create-api-app.ts`), `utf8`);
+
+    expect(mainSource).toContain(`createApiApp`);
+    expect(mainSource).not.toMatch(/NestFactory\.create/);
+    expect(mainSource).not.toMatch(/waitForDatabase\(/);
+    expect(mainSource).not.toMatch(/devBootstrapSeed\(/);
+    expect(factorySource).toMatch(/NestFactory\.create/);
+    expect(factorySource).toMatch(/configureApp\(/);
+    expect(factorySource).toMatch(/waitForDatabase\(/);
+    expect(factorySource).toMatch(/devBootstrapSeed\(/);
+  });
+
+  it(`keeps admin-v2 request metadata extraction in the shared decorator`, () => {
+    const adminV2Dir = join(__dirname, `admin-v2`);
+    const decoratorSource = readFileSync(join(__dirname, `common/decorators/request-meta.decorator.ts`), `utf8`);
+
+    expect(sourceFileCounts(adminV2Dir, /function requestMeta\s*\(/g)).toEqual(new Map());
+    expect(sourceFileCounts(adminV2Dir, /@RequestMeta\(\)/g).size).toBeGreaterThan(0);
+    expect(decoratorSource).toMatch(/idempotency-key/);
+    expect(decoratorSource).toMatch(/x-forwarded-for/);
+  });
+
+  it(`keeps large admin-v2 admins DTOs out of the controller`, () => {
+    const controllerSource = readFileSync(join(__dirname, `admin-v2/admins/admin-v2-admins.controller.ts`), `utf8`);
+    const dtoSource = readFileSync(join(__dirname, `admin-v2/admins/admin-v2-admins.dto.ts`), `utf8`);
+
+    expect(controllerSource).not.toMatch(/class .*Body/);
+    expect(controllerSource).not.toMatch(/class .*Query/);
+    expect(dtoSource).toMatch(/export class InviteAdminBody/);
+    expect(dtoSource).toMatch(/export class ListAdminsQuery/);
+  });
+
   it(`keeps admin-v2 idempotency transaction posture explicit`, () => {
     const adminV2Dir = join(__dirname, `admin-v2`);
     const nonTransactionalExecuteAllowlist = {

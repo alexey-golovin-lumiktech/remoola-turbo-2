@@ -1,26 +1,13 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-import express from 'express';
 
-import { Identity, type IIdentityContext } from '../../common';
+import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
 import { AdminV2PaymentMethodsService } from './admin-v2-payment-methods.service';
-
-function requestMeta(req: express.Request) {
-  const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
-  const userAgent = req.headers[`user-agent`];
-  const idempotencyKey = req.headers[`idempotency-key`];
-  return {
-    ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
-    userAgent: typeof userAgent === `string` ? userAgent : null,
-    idempotencyKey:
-      typeof idempotencyKey === `string` ? idempotencyKey : Array.isArray(idempotencyKey) ? idempotencyKey[0] : null,
-  };
-}
 
 class PaymentMethodsListQuery {
   @Expose()
@@ -144,10 +131,10 @@ export class AdminV2PaymentMethodsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`, ParseUUIDPipe) id: string,
     @Body() body: DisablePaymentMethodBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `payment_methods.manage`);
-    return this.service.disablePaymentMethod(id, admin.id, body, requestMeta(req));
+    return this.service.disablePaymentMethod(id, admin.id, body, meta);
   }
 
   @Post(`:id/remove-default`)
@@ -157,10 +144,10 @@ export class AdminV2PaymentMethodsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`, ParseUUIDPipe) id: string,
     @Body() body: RemoveDefaultPaymentMethodBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `payment_methods.manage`);
-    return this.service.removeDefaultPaymentMethod(id, admin.id, body, requestMeta(req));
+    return this.service.removeDefaultPaymentMethod(id, admin.id, body, meta);
   }
 
   @Post(`:id/duplicate-escalate`)
@@ -170,9 +157,9 @@ export class AdminV2PaymentMethodsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`, ParseUUIDPipe) id: string,
     @Body() body: DuplicateEscalatePaymentMethodBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `payment_methods.manage`);
-    return this.service.escalateDuplicatePaymentMethod(id, admin.id, body, requestMeta(req));
+    return this.service.escalateDuplicatePaymentMethod(id, admin.id, body, meta);
   }
 }

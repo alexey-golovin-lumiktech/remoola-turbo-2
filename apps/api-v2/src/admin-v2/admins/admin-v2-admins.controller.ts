@@ -1,159 +1,24 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Expose, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsBoolean,
-  IsEmail,
-  IsIn,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-  Min,
-  ValidateNested,
-} from 'class-validator';
-import express from 'express';
 
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
-import { Identity, type IIdentityContext } from '../../common';
-import { constants } from '../../shared-common';
+import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2AdminSessionsService } from './admin-v2-admin-sessions.service';
+import {
+  AdminPasswordPatchBody,
+  ChangeAdminPermissionsBody,
+  ChangeAdminRoleBody,
+  DeactivateAdminBody,
+  InviteAdminBody,
+  LegacyAdminStatusBody,
+  ListAdminsQuery,
+  VersionedAdminMutationBody,
+} from './admin-v2-admins.dto';
 import { AdminV2AdminsService } from './admin-v2-admins.service';
-
-function requestMeta(req: express.Request) {
-  const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
-  const userAgent = req.headers[`user-agent`];
-  const idempotencyKey = req.headers[`idempotency-key`];
-  return {
-    ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
-    userAgent: typeof userAgent === `string` ? userAgent : null,
-    idempotencyKey:
-      typeof idempotencyKey === `string` ? idempotencyKey : Array.isArray(idempotencyKey) ? idempotencyKey[0] : null,
-  };
-}
-
-class InviteAdminBody {
-  @Expose()
-  @IsEmail()
-  email!: string;
-
-  @Expose()
-  @IsString()
-  roleKey!: string;
-
-  @Expose()
-  @IsString()
-  @MaxLength(256)
-  passwordConfirmation!: string;
-}
-
-class VersionedAdminMutationBody {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
-
-  @Expose()
-  @IsString()
-  @MaxLength(256)
-  passwordConfirmation!: string;
-}
-
-class DeactivateAdminBody extends VersionedAdminMutationBody {
-  @Expose()
-  @IsBoolean()
-  confirmed!: boolean;
-
-  @Expose()
-  @IsOptional()
-  @IsString()
-  reason?: string;
-}
-
-class ChangeAdminRoleBody extends VersionedAdminMutationBody {
-  @Expose()
-  @IsBoolean()
-  confirmed!: boolean;
-
-  @Expose()
-  @IsString()
-  roleKey!: string;
-}
-
-class PermissionOverride {
-  @Expose()
-  @IsString()
-  capability!: string;
-
-  @Expose()
-  @IsString()
-  @IsIn([`inherit`, `grant`, `deny`])
-  mode!: `inherit` | `grant` | `deny`;
-}
-
-class ChangeAdminPermissionsBody extends VersionedAdminMutationBody {
-  @Expose()
-  @Type(() => PermissionOverride)
-  @IsArray()
-  @ValidateNested({ each: true })
-  capabilityOverrides!: PermissionOverride[];
-}
-
-class ListAdminsQuery {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  q?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  status?: string;
-}
-
-class AdminPasswordPatchBody {
-  @Expose()
-  @IsString()
-  @Matches(constants.PASSWORD_RE, { message: constants.INVALID_PASSWORD })
-  password!: string;
-
-  @Expose()
-  @IsString()
-  @MaxLength(256)
-  passwordConfirmation!: string;
-}
-
-class LegacyAdminStatusBody {
-  @Expose()
-  @IsIn([`delete`, `restore`])
-  action!: `delete` | `restore`;
-
-  @Expose()
-  @IsOptional()
-  @IsString()
-  @MaxLength(256)
-  passwordConfirmation?: string;
-}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Admins`)
@@ -180,10 +45,14 @@ export class AdminV2AdminsController {
   }
 
   @Post(`invite`)
-  async inviteAdmin(@Identity() admin: IIdentityContext, @Body() body: InviteAdminBody, @Req() req: express.Request) {
+  async inviteAdmin(
+    @Identity() admin: IIdentityContext,
+    @Body() body: InviteAdminBody,
+    @RequestMeta() meta: RequestMetaPayload,
+  ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
-    return this.service.inviteAdmin(admin.id, body, requestMeta(req));
+    return this.service.inviteAdmin(admin.id, body, meta);
   }
 
   @Post(`:id/deactivate`)
@@ -191,11 +60,11 @@ export class AdminV2AdminsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: DeactivateAdminBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
-    return this.service.deactivateAdmin(id, admin.id, body, requestMeta(req));
+    return this.service.deactivateAdmin(id, admin.id, body, meta);
   }
 
   @Post(`:id/restore`)
@@ -203,11 +72,11 @@ export class AdminV2AdminsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: VersionedAdminMutationBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
-    return this.service.restoreAdmin(id, admin.id, body, requestMeta(req));
+    return this.service.restoreAdmin(id, admin.id, body, meta);
   }
 
   @Post(`:id/role-change`)
@@ -215,11 +84,11 @@ export class AdminV2AdminsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: ChangeAdminRoleBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
-    return this.service.changeAdminRole(id, admin.id, body, requestMeta(req));
+    return this.service.changeAdminRole(id, admin.id, body, meta);
   }
 
   @Post(`:id/permissions-change`)
@@ -227,11 +96,11 @@ export class AdminV2AdminsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: ChangeAdminPermissionsBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
-    return this.service.changeAdminPermissions(id, admin.id, body, requestMeta(req));
+    return this.service.changeAdminPermissions(id, admin.id, body, meta);
   }
 
   @Post(`:id/password-reset`)
@@ -239,11 +108,11 @@ export class AdminV2AdminsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: VersionedAdminMutationBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
-    return this.service.resetAdminPassword(id, admin.id, body, requestMeta(req));
+    return this.service.resetAdminPassword(id, admin.id, body, meta);
   }
 
   @Patch(`:id/password`)
@@ -251,14 +120,14 @@ export class AdminV2AdminsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: AdminPasswordPatchBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     if (admin.type !== `SUPER`) {
       throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_SUPER_CAN_CHANGE_PASSWORDS);
     }
     await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
-    return this.service.patchAdminPassword(id, body.password, admin.id, requestMeta(req));
+    return this.service.patchAdminPassword(id, body.password, admin.id, meta);
   }
 
   @Patch(`:id`)
@@ -266,7 +135,7 @@ export class AdminV2AdminsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: LegacyAdminStatusBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     if (admin.type !== `SUPER`) {
@@ -282,7 +151,7 @@ export class AdminV2AdminsController {
       }
       await this.adminAuthService.verifyStepUp(admin.id, confirmation);
     }
-    return this.service.updateAdminStatus(id, body.action, admin.id, requestMeta(req));
+    return this.service.updateAdminStatus(id, body.action, admin.id, meta);
   }
 
   @Get(`:id/sessions`)
@@ -296,13 +165,12 @@ export class AdminV2AdminsController {
     @Identity() actor: IIdentityContext,
     @Param(`id`) targetAdminId: string,
     @Param(`sessionId`) sessionId: string,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(actor, `admins.manage`);
     if (actor.id === targetAdminId) {
       throw new BadRequestException(`Use /api/admin-v2/auth/revoke-session for own sessions`);
     }
-    const meta = requestMeta(req);
     return this.adminSessionsService.revokeSessionAsManager(targetAdminId, sessionId, actor.id, {
       ipAddress: meta.ipAddress,
       userAgent: meta.userAgent,

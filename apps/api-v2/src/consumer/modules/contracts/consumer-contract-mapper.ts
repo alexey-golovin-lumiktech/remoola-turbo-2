@@ -3,7 +3,7 @@ import { $Enums } from '@remoola/database-2';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
-export const OPERATING_STATUS_PRIORITY = [`draft`, `pending`, `waiting`] as const;
+const OPERATING_STATUS_PRIORITY = [`draft`, `pending`, `waiting`] as const;
 
 type LedgerStatusCarrier = {
   status: $Enums.TransactionStatus;

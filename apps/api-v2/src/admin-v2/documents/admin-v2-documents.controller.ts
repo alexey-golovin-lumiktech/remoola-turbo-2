@@ -5,22 +5,10 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import express from 'express';
 
-import { Identity, type IIdentityContext } from '../../common';
+import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { resolveRequestBaseUrl } from '../../shared/request-base-url';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2DocumentsService } from './admin-v2-documents.service';
-
-function requestMeta(req: express.Request) {
-  const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
-  const userAgent = req.headers[`user-agent`];
-  const idempotencyKey = req.headers[`idempotency-key`];
-  return {
-    ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
-    userAgent: typeof userAgent === `string` ? userAgent : null,
-    idempotencyKey:
-      typeof idempotencyKey === `string` ? idempotencyKey : Array.isArray(idempotencyKey) ? idempotencyKey[0] : null,
-  };
-}
 
 class DocumentTagCreateBody {
   @Expose()
@@ -227,10 +215,10 @@ export class AdminV2DocumentsController {
   async createTag(
     @Identity() admin: IIdentityContext,
     @Body() body: DocumentTagCreateBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.createTag(admin.id, body, requestMeta(req));
+    return this.service.createTag(admin.id, body, meta);
   }
 
   @Patch(`tags/:id`)
@@ -238,10 +226,10 @@ export class AdminV2DocumentsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: DocumentTagUpdateBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.updateTag(id, admin.id, body, requestMeta(req));
+    return this.service.updateTag(id, admin.id, body, meta);
   }
 
   @Delete(`tags/:id`)
@@ -249,10 +237,10 @@ export class AdminV2DocumentsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: DocumentTagDeleteBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.deleteTag(id, admin.id, body, requestMeta(req));
+    return this.service.deleteTag(id, admin.id, body, meta);
   }
 
   @Post(`:id/retag`)
@@ -260,19 +248,19 @@ export class AdminV2DocumentsController {
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
     @Body() body: DocumentRetagBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.retagDocument(id, admin.id, body, requestMeta(req));
+    return this.service.retagDocument(id, admin.id, body, meta);
   }
 
   @Post(`bulk-tag`)
   async bulkTagDocuments(
     @Identity() admin: IIdentityContext,
     @Body() body: DocumentBulkTagBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.bulkTagDocuments(admin.id, body, requestMeta(req));
+    return this.service.bulkTagDocuments(admin.id, body, meta);
   }
 }

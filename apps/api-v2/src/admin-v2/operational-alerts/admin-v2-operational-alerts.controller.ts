@@ -1,9 +1,8 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import express from 'express';
 
-import { Identity, type IIdentityContext } from '../../common';
+import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import {
   OperationalAlertCreateBody,
@@ -11,18 +10,6 @@ import {
   OperationalAlertUpdateBody,
 } from './admin-v2-operational-alerts.dto';
 import { AdminV2OperationalAlertsService } from './admin-v2-operational-alerts.service';
-
-function requestMeta(req: express.Request) {
-  const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
-  const userAgent = req.headers[`user-agent`];
-  const idempotencyKey = req.headers[`idempotency-key`];
-  return {
-    ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
-    userAgent: typeof userAgent === `string` ? userAgent : null,
-    idempotencyKey:
-      typeof idempotencyKey === `string` ? idempotencyKey : Array.isArray(idempotencyKey) ? idempotencyKey[0] : null,
-  };
-}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Operational Alerts`)
@@ -47,10 +34,10 @@ export class AdminV2OperationalAlertsController {
   async create(
     @Identity() admin: IIdentityContext,
     @Body() body: OperationalAlertCreateBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `alerts.manage`);
-    return this.service.create(admin, body, requestMeta(req));
+    return this.service.create(admin, body, meta);
   }
 
   @Patch(`:operationalAlertId`)
@@ -58,10 +45,10 @@ export class AdminV2OperationalAlertsController {
     @Identity() admin: IIdentityContext,
     @Param(`operationalAlertId`) operationalAlertId: string,
     @Body() body: OperationalAlertUpdateBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `alerts.manage`);
-    return this.service.update(admin, operationalAlertId, body, requestMeta(req));
+    return this.service.update(admin, operationalAlertId, body, meta);
   }
 
   @Delete(`:operationalAlertId`)
@@ -69,9 +56,9 @@ export class AdminV2OperationalAlertsController {
     @Identity() admin: IIdentityContext,
     @Param(`operationalAlertId`) operationalAlertId: string,
     @Body() body: OperationalAlertDeleteBody,
-    @Req() req: express.Request,
+    @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `alerts.manage`);
-    return this.service.delete(admin, operationalAlertId, body, requestMeta(req));
+    return this.service.delete(admin, operationalAlertId, body, meta);
   }
 }
