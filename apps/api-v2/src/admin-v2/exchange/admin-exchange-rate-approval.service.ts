@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 
 import { adminErrorCodes } from '@remoola/shared-constants';
 
-import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
+import { AdminExchangeRateApprovalPersistenceRepository } from './admin-exchange-rate-approval-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
@@ -23,7 +23,7 @@ export class AdminExchangeRateApprovalService {
   constructor(
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly preflightRepository: AdminV2ExchangePreflightRepository,
-    private readonly persistenceRepository: AdminV2ExchangePersistenceRepository,
+    private readonly persistenceRepository: AdminExchangeRateApprovalPersistenceRepository,
     private readonly transactions: PrismaTransactionRunner,
   ) {}
 

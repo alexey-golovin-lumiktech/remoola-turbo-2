@@ -3,8 +3,8 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import { $Enums } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
+import { type AdminExchangeRateApprovalPersistenceRepository } from './admin-exchange-rate-approval-persistence.repository';
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
-import { type AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { type AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { type PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { type AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
@@ -48,7 +48,7 @@ describe(`AdminExchangeRateApprovalService`, () => {
       service: new AdminExchangeRateApprovalService(
         idempotency as unknown as AdminV2IdempotencyService,
         preflightRepository as unknown as AdminV2ExchangePreflightRepository,
-        persistenceRepository as unknown as AdminV2ExchangePersistenceRepository,
+        persistenceRepository as unknown as AdminExchangeRateApprovalPersistenceRepository,
         transactions as unknown as PrismaTransactionRunner,
       ),
       transactions,
