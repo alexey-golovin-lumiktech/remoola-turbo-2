@@ -4,6 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
 import { AdminV2PayoutEscalationService } from './admin-v2-payout-escalation.service';
+import { AdminV2PayoutQueryService } from './admin-v2-payout-query.service';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
 import { PayoutHighValuePolicyService } from './payout-high-value-policy.service';
@@ -59,16 +60,20 @@ function buildService() {
   const payoutsRepository = new AdminV2PayoutsRepository(prismaService);
   const transactionRunner = new PrismaTransactionRunner(prismaService);
   const payoutEscalationRepository = new AdminV2PayoutEscalationRepository(prismaService);
+  const highValuePolicy = new PayoutHighValuePolicyService();
+  const paymentMethodResolver = new PayoutPaymentMethodResolverService(payoutsRepository);
   const service = new AdminV2PayoutsService(
-    assignmentsService as unknown as AdminV2AssignmentsService,
-    payoutsRepository,
+    new AdminV2PayoutQueryService(
+      assignmentsService as unknown as AdminV2AssignmentsService,
+      payoutsRepository,
+      highValuePolicy,
+      paymentMethodResolver,
+    ),
     new AdminV2PayoutEscalationService(
       transactionRunner,
       idempotency as unknown as AdminV2IdempotencyService,
       payoutEscalationRepository,
     ),
-    new PayoutHighValuePolicyService(),
-    new PayoutPaymentMethodResolverService(payoutsRepository),
   );
 
   return {
