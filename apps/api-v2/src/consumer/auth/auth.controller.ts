@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
-  Param,
   Post,
   Query,
   Res,
@@ -13,7 +12,7 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiBody, ApiCookieAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
@@ -24,7 +23,6 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
-import { ConsumerSignup } from './dto';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreService } from './oauth-state-store.service';
 import { LoginBody } from '../../auth/dto/login.dto';
@@ -34,7 +32,7 @@ import { HandoffTokenRequest } from '../../dtos/consumer';
 import { envs } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
-import { getApiOAuthStateCookieKey, removeNil } from '../../shared-common';
+import { getApiOAuthStateCookieKey } from '../../shared-common';
 
 @ApiTags(`Consumer: Auth`)
 @Controller(`consumer/auth`)
@@ -577,60 +575,5 @@ export class ConsumerAuthController {
   @ApiCookieAuth()
   me(@Identity() identity: IIdentityContext) {
     return identity;
-  }
-
-  @PublicEndpoint()
-  @TrackConsumerAction({ action: `consumer.auth.signup`, resource: `auth` })
-  @Post(`signup`)
-  @Throttle({ default: { limit: 15, ttl: 60000 } })
-  @HttpCode(HttpStatus.CREATED)
-  @ApiCreatedResponse({ type: CONSUMER.SignupResponse })
-  @TransformResponse(CONSUMER.SignupResponse)
-  async signup(
-    @Req() req: express.Request,
-    @Res({ passthrough: true }) res,
-    @Body() body: ConsumerSignup,
-    @Query(`appScope`) appScope?: string,
-  ) {
-    const payload = removeNil(body);
-    const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
-    const googleSignupPayload = await this.getGoogleSignupPayloadFromSession(req, appScope);
-    const consumer = await this.service.signup(payload, googleSignupPayload);
-    if (!googleSignupPayload) {
-      return { consumer };
-    }
-
-    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id, consumerScope);
-    this.setAuthCookies(req, res, accessToken, refreshToken, consumerScope);
-    this.clearGoogleSignupSessionCookie(req, res, consumerScope);
-    return {
-      consumer,
-      next: this.normalizeSignupCompletionPath(googleSignupPayload.nextPath ?? undefined),
-    };
-  }
-
-  @PublicEndpoint()
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @Get(`signup/:consumerId/complete-profile-creation`)
-  completeProfileCreation(
-    @Req() req: express.Request,
-    @Param(`consumerId`) consumerId: string,
-    @Query(`appScope`) appScope?: string,
-  ) {
-    const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
-    void this.service.completeProfileCreationAndSendVerificationEmail(consumerId, consumerScope).catch((error) =>
-      this.logger.warn({
-        event: `signup_complete_profile_creation_email_failed`,
-        consumerId,
-        errorClass: error instanceof Error ? error.constructor.name : `UnknownError`,
-      }),
-    );
-    return `success`;
-  }
-
-  @PublicEndpoint()
-  @Get(`signup/verification`)
-  signupVerification(@Query(`token`) token: string, @Res() res: express.Response) {
-    return this.service.signupVerification(token, res);
   }
 }

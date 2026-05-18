@@ -16,6 +16,7 @@ import { ConsumerGoogleProfileRepository } from './consumer-google-profile.repos
 import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { ConsumerPasswordController } from './consumer-password.controller';
 import { CONSUMER_SESSION_REVOCATION_PORT } from './consumer-session-revocation.port';
+import { ConsumerSignupController } from './consumer-signup.controller';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreQuery } from './oauth-state-store.query';
 import { OAuthStateStoreRepository } from './oauth-state-store.repository';
@@ -34,7 +35,7 @@ import { MailingModule } from '../../shared/mailing.module';
     InfrastructureModule,
     MailingModule,
   ],
-  controllers: [ConsumerAuthController, ConsumerPasswordController],
+  controllers: [ConsumerAuthController, ConsumerPasswordController, ConsumerSignupController],
   providers: [
     GoogleOAuthService,
     ConsumerAuthControllerSupportService,

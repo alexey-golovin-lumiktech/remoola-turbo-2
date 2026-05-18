@@ -15,6 +15,7 @@ import { ConsumerAuthController } from './auth.controller';
 import { type ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
 import { ConsumerPasswordController } from './consumer-password.controller';
+import { ConsumerSignupController } from './consumer-signup.controller';
 import { type GoogleOAuthService } from './google-oauth.service';
 import { type OAuthStateStoreService } from './oauth-state-store.service';
 import { IS_PUBLIC, TRACK_CONSUMER_ACTION } from '../../common';
@@ -28,6 +29,7 @@ const GOOGLE_OAUTH_STATE_COOKIE_KEY = constants.GOOGLE_OAUTH_STATE_COOKIE_KEY;
 describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   let controller: ConsumerAuthController;
   let passwordController: ConsumerPasswordController;
+  let signupController: ConsumerSignupController;
   let service: Partial<ConsumerAuthService>;
   let initialNodeEnv: typeof envs.NODE_ENV;
 
@@ -172,6 +174,11 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       supportService,
     );
     passwordController = new ConsumerPasswordController(service as ConsumerAuthService, supportService);
+    signupController = new ConsumerSignupController(
+      service as ConsumerAuthService,
+      oauthStateStore as OAuthStateStoreService,
+      supportService,
+    );
   });
 
   afterEach(() => {
@@ -179,12 +186,12 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   });
 
   it(`keeps auth route and decorator contracts stable while splitting controllers`, () => {
-    expect(getRouteMetadata(ConsumerAuthController, `signupVerification`)).toMatchObject({
+    expect(getRouteMetadata(ConsumerSignupController, `signupVerification`)).toMatchObject({
       path: `signup/verification`,
       method: RequestMethod.GET,
       isPublic: true,
     });
-    expect(getRouteMetadata(ConsumerAuthController, `completeProfileCreation`)).toMatchObject({
+    expect(getRouteMetadata(ConsumerSignupController, `completeProfileCreation`)).toMatchObject({
       path: `signup/:consumerId/complete-profile-creation`,
       method: RequestMethod.GET,
       isPublic: true,
@@ -868,7 +875,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       },
     });
 
-    const result = controller.completeProfileCreation(req, `consumer-id`, CURRENT_CONSUMER_APP_SCOPE);
+    const result = signupController.completeProfileCreation(req, `consumer-id`, CURRENT_CONSUMER_APP_SCOPE);
 
     expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(CURRENT_CONSUMER_APP_SCOPE);
     expect(service.completeProfileCreationAndSendVerificationEmail).toHaveBeenCalledWith(
@@ -885,7 +892,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       },
     });
 
-    expect(() => controller.completeProfileCreation(req, `consumer-id`, `unknown-scope` as never)).toThrow(
+    expect(() => signupController.completeProfileCreation(req, `consumer-id`, `unknown-scope` as never)).toThrow(
       BadRequestException,
     );
     expect(service.completeProfileCreationAndSendVerificationEmail).not.toHaveBeenCalled();
@@ -894,7 +901,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   it(`signup verification delegates using token only`, async () => {
     const res = makeRes();
 
-    await controller.signupVerification(`signup-token`, res);
+    await signupController.signupVerification(`signup-token`, res);
 
     expect(service.signupVerification).toHaveBeenCalledWith(`signup-token`, res);
   });
@@ -914,7 +921,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     });
 
     await expect(
-      controller.signup(
+      signupController.signup(
         req,
         makeRes(),
         {
