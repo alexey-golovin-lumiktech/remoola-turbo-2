@@ -2876,7 +2876,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-15</summary>
 
 - **2026-05-15:**
@@ -2894,6 +2894,26 @@
 
   ### 🛠 DevEx
   - **Shared helpers and API type reuse:** Add shared Decimal money and Prisma raw SQL helpers, extend module-boundary guardrails, and reuse shared admin API types in admin-v2 UI/server code to reduce duplicate contracts.
+
+</details>
+
+<details open>
+<summary>2026-05-18</summary>
+
+- **2026-05-18:**
+
+  ### 🔐 Security / Production Safety
+  - **Admin document mutation boundaries:** Extract document tag management, retagging, and query helpers into focused services while preserving reserved invoice-tag guards, idempotency scopes, optimistic version checks, soft-delete protection, and evidence-scope filtering behavior.
+  - **Admin request metadata extraction:** Centralize admin-v2 `ipAddress`, `userAgent`, and `idempotencyKey` extraction behind `@RequestMeta()` across admin controllers while preserving audit metadata and idempotency header semantics.
+
+  ### 🧪 Testing
+  - **Contract and document parity coverage:** Add focused specs for document query helpers, consumer contract mappers/normalizers, raw-SQL versus in-memory contract fallback parity, request metadata extraction, bootstrap creation, and module-boundary expectations.
+
+  ### 🛠 DevEx
+  - **API service-boundary cleanup:** Move consumer contract mapping/fallback logic, admin document tag flows, admin DTO definitions, common env groups, and Nest app bootstrap setup into smaller reusable modules without changing public service signatures.
+
+  ### 📄 Documentation
+  - **NestJS best-practice audit:** Add the `api-v2` NestJS best-practice audit document for the refactor wave.
 
 </details>
 
