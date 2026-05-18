@@ -1,13 +1,15 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
-import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
-import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
+import { deriveVersion } from '../admin-v2-version-utils';
+import {
+  AdminV2PayoutEscalationService,
+  type PayoutEscalationRequestBody,
+  type PayoutEscalationRequestMeta,
+} from './admin-v2-payout-escalation.service';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { PayoutHighValuePolicyService } from './payout-high-value-policy.service';
 import {
@@ -25,14 +27,7 @@ import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.s
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
-const REASON_MAX_LENGTH = 500;
 const PAYOUT_TYPES = [$Enums.LedgerEntryType.USER_PAYOUT, $Enums.LedgerEntryType.USER_PAYOUT_REVERSAL] as const;
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
 
 type PayoutListRow = {
   id: string;
@@ -87,32 +82,18 @@ function buildCreatedAtCursorWhere(cursor: { createdAt: Date; id: string } | nul
   };
 }
 
-function buildPayoutStaleVersionPayload(currentUpdatedAt: Date) {
-  return buildStaleVersionPayload(`Payout case`, currentUpdatedAt);
-}
-
 @Injectable()
 export class AdminV2PayoutsService {
   constructor(
-    private readonly transactions: PrismaTransactionRunner,
-    private readonly idempotency: AdminV2IdempotencyService,
     private readonly assignmentsService: AdminV2AssignmentsService,
     private readonly payoutsQuery: AdminV2PayoutsRepository,
-    private readonly payoutEscalationRepository: AdminV2PayoutEscalationRepository,
+    private readonly payoutEscalationService: AdminV2PayoutEscalationService,
     private readonly highValuePolicy: PayoutHighValuePolicyService,
     private readonly paymentMethodResolver: PayoutPaymentMethodResolverService,
   ) {}
 
   private parseMetadata(metadata: Prisma.JsonValue | null | undefined): Record<string, unknown> {
     return JSON.parse(JSON.stringify(metadata ?? {})) as Record<string, unknown>;
-  }
-
-  private normalizeEscalationReason(reason: string | null | undefined) {
-    const normalized = reason?.trim() || null;
-    if (normalized && normalized.length > REASON_MAX_LENGTH) {
-      throw new BadRequestException(`Escalation reason is too long`);
-    }
-    return normalized;
   }
 
   private getExternalReference(entry: {
@@ -365,114 +346,9 @@ export class AdminV2PayoutsService {
   async escalatePayout(
     payoutId: string,
     adminId: string,
-    body: { confirmed?: boolean; version?: number; reason?: string | null },
-    meta: RequestMeta,
+    body: PayoutEscalationRequestBody,
+    meta: PayoutEscalationRequestMeta,
   ) {
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for payout escalation`);
-    }
-
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
-
-    const reason = this.normalizeEscalationReason(body.reason);
-
-    return this.idempotency.execute({
-      adminId,
-      scope: `payout-escalate:${payoutId}`,
-      key: meta.idempotencyKey,
-      payload: {
-        payoutId,
-        expectedVersion,
-        confirmed: true,
-        reason,
-      },
-      execute: async () => {
-        const payout = await this.payoutEscalationRepository.findEscalationPreflight(payoutId);
-
-        if (!payout || !PAYOUT_TYPES.includes(payout.type as (typeof PAYOUT_TYPES)[number])) {
-          throw new NotFoundException(`Payout not found`);
-        }
-
-        if (deriveVersion(payout.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildPayoutStaleVersionPayload(payout.updatedAt));
-        }
-
-        return this.transactions.runLedgerMutation(async (tx) => {
-          const locked = await this.payoutEscalationRepository.lockPayoutForEscalation(tx, payoutId);
-          if (!locked || !PAYOUT_TYPES.includes(locked.type as (typeof PAYOUT_TYPES)[number])) {
-            throw new NotFoundException(`Payout not found`);
-          }
-          if (deriveVersion(locked.updated_at) !== expectedVersion) {
-            throw new ConflictException(buildPayoutStaleVersionPayload(locked.updated_at));
-          }
-          if (locked.deleted_at) {
-            throw new ConflictException(`Soft-deleted payouts remain investigation-only`);
-          }
-
-          const latestOutcome = await this.payoutEscalationRepository.findLatestOutcome(tx, locked.id);
-
-          const effectiveStatus = latestOutcome?.status ?? locked.status;
-          const derivedStatus = derivePayoutStatus({
-            type: locked.type,
-            status: locked.status,
-            createdAt: locked.created_at,
-            outcomes: latestOutcome
-              ? [
-                  {
-                    status: latestOutcome.status,
-                    createdAt: latestOutcome.createdAt,
-                  },
-                ]
-              : [],
-          });
-
-          if (derivedStatus !== `failed` && derivedStatus !== `stuck`) {
-            throw new ConflictException(`Only failed or stuck payouts can be escalated`);
-          }
-
-          const existingEscalation = await this.payoutEscalationRepository.findExistingEscalation(tx, locked.id);
-
-          if (existingEscalation) {
-            return {
-              payoutId: locked.id,
-              escalationId: existingEscalation.id,
-              createdAt: existingEscalation.createdAt.toISOString(),
-              reason: existingEscalation.reason,
-              effectiveStatus,
-              derivedStatus,
-              version: deriveVersion(locked.updated_at),
-              alreadyEscalated: true,
-            };
-          }
-
-          const escalation = await this.payoutEscalationRepository.createEscalationWithAudit(tx, {
-            payoutId: locked.id,
-            adminId,
-            reason,
-            expectedVersion,
-            derivedStatus,
-            effectiveStatus,
-            persistedStatus: locked.status,
-            payoutType: locked.type,
-            paymentRequestId: locked.payment_request_id,
-            meta,
-          });
-
-          return {
-            payoutId: locked.id,
-            escalationId: escalation.id,
-            createdAt: escalation.createdAt.toISOString(),
-            reason: escalation.reason,
-            effectiveStatus,
-            derivedStatus,
-            version: deriveVersion(locked.updated_at),
-            alreadyEscalated: false,
-          };
-        });
-      },
-    });
+    return this.payoutEscalationService.escalatePayout(payoutId, adminId, body, meta);
   }
 }

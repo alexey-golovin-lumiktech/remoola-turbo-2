@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
+import { AdminV2PayoutEscalationService } from './admin-v2-payout-escalation.service';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
 import { PayoutHighValuePolicyService } from './payout-high-value-policy.service';
@@ -56,12 +57,16 @@ function buildService() {
   };
   const prismaService = prisma as unknown as PrismaService;
   const payoutsRepository = new AdminV2PayoutsRepository(prismaService);
+  const transactionRunner = new PrismaTransactionRunner(prismaService);
+  const payoutEscalationRepository = new AdminV2PayoutEscalationRepository(prismaService);
   const service = new AdminV2PayoutsService(
-    new PrismaTransactionRunner(prismaService),
-    idempotency as unknown as AdminV2IdempotencyService,
     assignmentsService as unknown as AdminV2AssignmentsService,
     payoutsRepository,
-    new AdminV2PayoutEscalationRepository(prismaService),
+    new AdminV2PayoutEscalationService(
+      transactionRunner,
+      idempotency as unknown as AdminV2IdempotencyService,
+      payoutEscalationRepository,
+    ),
     new PayoutHighValuePolicyService(),
     new PayoutPaymentMethodResolverService(payoutsRepository),
   );
