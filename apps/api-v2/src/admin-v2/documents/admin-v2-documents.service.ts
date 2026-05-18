@@ -6,6 +6,7 @@ import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-command
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 import { FileStorageService } from '../../consumer/modules/files/file-storage.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { buildStaleVersionPayload, deriveVersion, toNullableIso } from '../admin-v2-version-utils';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_PAGE = 1;
@@ -31,29 +32,11 @@ function normalizePageSize(value?: number): number {
   return Math.min(MAX_PAGE_SIZE, Math.max(1, Math.floor(value)));
 }
 
-function toNullableIso(value: Date | null | undefined) {
-  return value?.toISOString() ?? null;
-}
-
-function deriveVersion(updatedAt: Date) {
-  return updatedAt.getTime();
-}
-
 function buildDocumentDownloadUrl(resourceId: string, backendBaseUrl?: string) {
   if (!backendBaseUrl) {
     return `/api/admin-v2/documents/${resourceId}/download`;
   }
   return new URL(`/api/admin-v2/documents/${resourceId}/download`, backendBaseUrl).toString();
-}
-
-function buildStaleVersionPayload(resourceLabel: string, currentUpdatedAt: Date) {
-  return {
-    error: `STALE_VERSION`,
-    message: `${resourceLabel} has been modified by another operator`,
-    currentVersion: deriveVersion(currentUpdatedAt),
-    currentUpdatedAt: currentUpdatedAt.toISOString(),
-    recommendedAction: `reload`,
-  };
 }
 
 function normalizeTagName(value: string | null | undefined) {

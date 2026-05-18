@@ -7,6 +7,7 @@ import { envs } from '../../envs';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
@@ -101,10 +102,6 @@ function normalizeLimit(limit?: number): number {
   return Math.min(MAX_LIMIT, Math.max(1, limit ?? DEFAULT_LIMIT));
 }
 
-function deriveVersion(updatedAt: Date) {
-  return updatedAt.getTime();
-}
-
 function buildCreatedAtCursorWhere(cursor: { createdAt: Date; id: string } | null): Prisma.LedgerEntryModelWhereInput {
   if (!cursor) {
     return {};
@@ -121,13 +118,7 @@ function buildCreatedAtCursorWhere(cursor: { createdAt: Date; id: string } | nul
 }
 
 function buildPayoutStaleVersionPayload(currentUpdatedAt: Date) {
-  return {
-    error: `STALE_VERSION`,
-    message: `Payout case has been modified by another operator`,
-    currentVersion: deriveVersion(currentUpdatedAt),
-    currentUpdatedAt: currentUpdatedAt.toISOString(),
-    recommendedAction: `reload`,
-  };
+  return buildStaleVersionPayload(`Payout case`, currentUpdatedAt);
 }
 
 @Injectable()

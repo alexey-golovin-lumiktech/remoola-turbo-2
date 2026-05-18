@@ -5,12 +5,6 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { $Enums, type Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
-import { envs } from '../../envs';
-import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
-import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
-import { getCurrencyFractionDigits } from '../../shared-common';
-import { type AdminV2DomainEvent, AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
-import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import {
   AdminV2ExchangePersistenceRepository,
   type ExchangeExecutionSummary,
@@ -20,6 +14,13 @@ import {
   type LockedScheduledExecutionRow,
 } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
+import { envs } from '../../envs';
+import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
+import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
+import { getCurrencyFractionDigits } from '../../shared-common';
+import { type AdminV2DomainEvent, AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
+import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 
 type RequestMeta = {
   ipAddress?: string | null;
@@ -34,20 +35,6 @@ type ExchangeConversionResult = {
   entryId: string;
   targetAmount: number;
 };
-
-function deriveVersion(updatedAt: Date) {
-  return updatedAt.getTime();
-}
-
-function buildStaleVersionPayload(resourceLabel: string, currentUpdatedAt: Date) {
-  return {
-    error: `STALE_VERSION`,
-    message: `${resourceLabel} has been modified by another operator`,
-    currentVersion: deriveVersion(currentUpdatedAt),
-    currentUpdatedAt: currentUpdatedAt.toISOString(),
-    recommendedAction: `reload`,
-  };
-}
 
 function parseOptionalString(value: unknown) {
   return typeof value === `string` && value.trim().length > 0 ? value.trim() : null;

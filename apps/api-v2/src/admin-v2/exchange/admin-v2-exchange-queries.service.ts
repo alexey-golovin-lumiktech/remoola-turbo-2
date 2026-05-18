@@ -8,6 +8,7 @@ import { AdminV2ExchangeRateQuery } from './admin-v2-exchange-rate.query';
 import { AdminV2ExchangeRuleQuery } from './admin-v2-exchange-rule.query';
 import { AdminV2ExchangeScheduledConversionQuery } from './admin-v2-exchange-scheduled-conversion.query';
 import { envs } from '../../envs';
+import { deriveVersion, toNullableIso } from '../admin-v2-version-utils';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_PAGE = 1;
@@ -25,16 +26,8 @@ function normalizePageSize(value?: number) {
   return Math.min(MAX_PAGE_SIZE, Math.max(1, Math.floor(value)));
 }
 
-function toNullableIso(value: Date | null | undefined) {
-  return value?.toISOString() ?? null;
-}
-
 function asRecord(value: Prisma.JsonValue | Record<string, unknown> | null | undefined): Record<string, unknown> {
   return value && typeof value === `object` && !Array.isArray(value) ? { ...value } : {};
-}
-
-function deriveVersion(updatedAt: Date) {
-  return updatedAt.getTime();
 }
 
 function parseOptionalString(value: unknown) {

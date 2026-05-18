@@ -5,6 +5,7 @@ import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
+import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 
 type RequestMeta = {
   ipAddress?: string | null;
@@ -90,22 +91,8 @@ export type LockedScheduledExecutionRow = {
   deleted_at: Date | null;
 };
 
-function deriveVersion(updatedAt: Date) {
-  return updatedAt.getTime();
-}
-
 function asRecord(value: Prisma.JsonValue | Record<string, unknown> | null | undefined): Record<string, unknown> {
   return value && typeof value === `object` && !Array.isArray(value) ? { ...value } : {};
-}
-
-function buildStaleVersionPayload(resourceLabel: string, currentUpdatedAt: Date) {
-  return {
-    error: `STALE_VERSION`,
-    message: `${resourceLabel} has been modified by another operator`,
-    currentVersion: deriveVersion(currentUpdatedAt),
-    currentUpdatedAt: currentUpdatedAt.toISOString(),
-    recommendedAction: `reload`,
-  };
 }
 
 function mergeMetadata(base: Prisma.JsonValue | null | undefined, patch: Record<string, unknown>) {

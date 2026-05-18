@@ -3,25 +3,12 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
+import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 
 type RequestMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
 };
-
-function deriveVersion(updatedAt: Date) {
-  return updatedAt.getTime();
-}
-
-function buildStaleVersionPayload(resourceLabel: string, currentUpdatedAt: Date) {
-  return {
-    error: `STALE_VERSION`,
-    message: `${resourceLabel} has been modified by another operator`,
-    currentVersion: deriveVersion(currentUpdatedAt),
-    currentUpdatedAt: currentUpdatedAt.toISOString(),
-    recommendedAction: `reload`,
-  };
-}
 
 @Injectable()
 export class AdminV2DocumentsCommandsRepository {
