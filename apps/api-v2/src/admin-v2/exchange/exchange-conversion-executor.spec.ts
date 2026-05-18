@@ -3,7 +3,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { type AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
+import { type AdminExchangeConversionPersistenceRepository } from './admin-exchange-conversion-persistence.repository';
 import { ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { envs } from '../../envs';
 import { BalanceCalculationMode, type BalanceCalculationService } from '../../shared/balance-calculation.service';
@@ -49,7 +49,7 @@ describe(`ExchangeConversionExecutor`, () => {
       balanceService,
       calls,
       executor: new ExchangeConversionExecutor(
-        persistenceRepository as unknown as AdminV2ExchangePersistenceRepository,
+        persistenceRepository as unknown as AdminExchangeConversionPersistenceRepository,
         balanceService as unknown as BalanceCalculationService,
       ),
       persistenceRepository,

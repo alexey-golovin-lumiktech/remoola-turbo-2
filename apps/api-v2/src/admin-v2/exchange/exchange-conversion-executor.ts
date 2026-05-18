@@ -5,7 +5,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { $Enums, type Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
+import { AdminExchangeConversionPersistenceRepository } from './admin-exchange-conversion-persistence.repository';
 import { envs } from '../../envs';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { getCurrencyFractionDigits } from '../../shared-common';
@@ -35,7 +35,7 @@ function getRateReferenceAt(rate: { fetchedAt?: Date | null; effectiveAt: Date; 
 @Injectable()
 export class ExchangeConversionExecutor {
   constructor(
-    private readonly persistenceRepository: AdminV2ExchangePersistenceRepository,
+    private readonly persistenceRepository: AdminExchangeConversionPersistenceRepository,
     private readonly balanceService: BalanceCalculationService,
   ) {}
 
