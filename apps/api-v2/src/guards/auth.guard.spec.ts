@@ -17,6 +17,7 @@ import { AuthRequestContextService } from './auth-request-context.service';
 import { AuthSessionRepository } from './auth-session.repository';
 import { AuthTokenVerifierService } from './auth-token-verifier.service';
 import { AuthGuard } from './auth.guard';
+import { TokenValidationService } from './token-validation.service';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 import { getApiConsumerAccessTokenCookieKeysForRead, getApiConsumerCsrfTokenCookieKeysForRead } from '../shared-common';
 
@@ -85,6 +86,7 @@ describe(`AuthGuard`, () => {
         AuthTokenVerifierService,
         AuthConsumerSessionValidatorService,
         AuthAdminSessionValidatorService,
+        TokenValidationService,
         { provide: Reflector, useValue: reflector },
         { provide: JwtService, useValue: jwtService },
         { provide: AuthSessionRepository, useValue: new AuthSessionRepository(prisma as never) },
@@ -104,6 +106,7 @@ describe(`AuthGuard`, () => {
         AuthTokenVerifierService,
         AuthConsumerSessionValidatorService,
         AuthAdminSessionValidatorService,
+        TokenValidationService,
         { provide: Reflector, useValue: reflector },
         { provide: AuthSessionRepository, useValue: new AuthSessionRepository(prisma as never) },
         { provide: AuthIdentityRepository, useValue: new AuthIdentityRepository(prisma as never) },

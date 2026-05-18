@@ -1,3 +1,4 @@
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -21,6 +22,7 @@ import { AuthIdentityRepository } from './guards/auth-identity.repository';
 import { AuthRequestContextService } from './guards/auth-request-context.service';
 import { AuthSessionRepository } from './guards/auth-session.repository';
 import { AuthTokenVerifierService } from './guards/auth-token-verifier.service';
+import { TokenValidationService } from './guards/token-validation.service';
 import { HealthModule } from './health/health.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { TransformResponseInterceptor } from './interceptors';
@@ -29,6 +31,10 @@ import { DatabaseModule } from './shared/database.module';
 
 @Module({
   imports: [
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 0,
+    }),
     DatabaseModule,
     AuthAuditModule,
     JwtPassportModule,
@@ -51,6 +57,7 @@ import { DatabaseModule } from './shared/database.module';
     AuthTokenVerifierService,
     AuthConsumerSessionValidatorService,
     AuthAdminSessionValidatorService,
+    TokenValidationService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

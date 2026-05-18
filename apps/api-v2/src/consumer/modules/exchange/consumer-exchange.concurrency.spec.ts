@@ -101,7 +101,8 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
 
   function createService(prisma: any) {
     const balanceService = new BalanceCalculationService(new BalanceCalculationRepository(prisma));
-    const rateReader = new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma));
+    const cacheManager = { get: jest.fn().mockResolvedValue(undefined), set: jest.fn() };
+    const rateReader = new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(cacheManager as never, prisma));
     const rateService = new ConsumerExchangeRateService(rateReader);
     const executionRepository = new ConsumerExchangeExecutionRepository(prisma);
     const conversionService = new ConsumerCurrencyConversionService(balanceService, rateService, executionRepository);

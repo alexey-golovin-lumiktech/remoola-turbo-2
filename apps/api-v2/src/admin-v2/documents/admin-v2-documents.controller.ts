@@ -18,6 +18,8 @@ import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as Reque
 import { resolveRequestBaseUrl } from '../../shared/request-base-url';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { ConfirmedVersionedMutationBody, VersionedMutationBody } from '../admin-v2-common.dto';
+import { AdminDocumentTagService } from './admin-document-tag.service';
+import { AdminDocumentTaggerService } from './admin-document-tagger.service';
 import { AdminDocumentService } from './admin-document.service';
 
 class DocumentTagCreateBody implements AdminV2DocumentTagCreateBody {
@@ -146,6 +148,8 @@ class AdminDocumentsListQuery {
 export class AdminV2DocumentsController {
   constructor(
     private readonly service: AdminDocumentService,
+    private readonly tagService: AdminDocumentTagService,
+    private readonly taggerService: AdminDocumentTaggerService,
     private readonly accessService: AdminV2AccessService,
   ) {}
 
@@ -165,7 +169,7 @@ export class AdminV2DocumentsController {
   @Get(`tags`)
   async listTags(@Identity() admin: IIdentityContext) {
     await this.accessService.assertCapability(admin, `documents.read`);
-    return this.service.listTags();
+    return this.tagService.listTags();
   }
 
   @Get(`:id/download`)
@@ -203,7 +207,7 @@ export class AdminV2DocumentsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.createTag(admin.id, body, meta);
+    return this.tagService.createTag(admin.id, body, meta);
   }
 
   @Patch(`tags/:id`)
@@ -214,7 +218,7 @@ export class AdminV2DocumentsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.updateTag(id, admin.id, body, meta);
+    return this.tagService.updateTag(id, admin.id, body, meta);
   }
 
   @Delete(`tags/:id`)
@@ -225,7 +229,7 @@ export class AdminV2DocumentsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.deleteTag(id, admin.id, body, meta);
+    return this.tagService.deleteTag(id, admin.id, body, meta);
   }
 
   @Post(`:id/retag`)
@@ -236,7 +240,7 @@ export class AdminV2DocumentsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.retagDocument(id, admin.id, body, meta);
+    return this.taggerService.retagDocument(id, admin.id, body, meta);
   }
 
   @Post(`bulk-tag`)
@@ -246,6 +250,6 @@ export class AdminV2DocumentsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `documents.manage`);
-    return this.service.bulkTagDocuments(admin.id, body, meta);
+    return this.taggerService.bulkTagDocuments(admin.id, body, meta);
   }
 }

@@ -2,18 +2,19 @@ import { Module } from '@nestjs/common';
 
 import { AdminNotificationMailingService } from './admin-notification-mailing.service';
 import { BrevoMailService } from './brevo-mail.service';
+import { DatabaseModule } from './database.module';
 import { InvoiceMailingService } from './invoice-mailing.service';
 import { LogMailingService } from './log-mailing.service';
 import { MailTransportHealthService } from './mail-transport-health.service';
 import { MailTransportSenderService } from './mail-transport-sender.service';
 import { MAIL_TRANSPORT } from './mail-transport.port';
 import { MailingService } from './mailing.service';
-import { OriginResolverService } from './origin-resolver.service';
 import { PaymentMailingService } from './payment-mailing.service';
 import { RecoveryMailingService } from './recovery-mailing.service';
 import { SignupMailingService } from './signup-mailing.service';
 
 @Module({
+  imports: [DatabaseModule],
   providers: [
     BrevoMailService,
     {
@@ -26,7 +27,6 @@ import { SignupMailingService } from './signup-mailing.service';
     LogMailingService,
     MailTransportSenderService,
     MailingService,
-    OriginResolverService,
     PaymentMailingService,
     RecoveryMailingService,
     SignupMailingService,
@@ -37,7 +37,6 @@ import { SignupMailingService } from './signup-mailing.service';
     BrevoMailService,
     InvoiceMailingService,
     LogMailingService,
-    OriginResolverService,
     PaymentMailingService,
     RecoveryMailingService,
     SignupMailingService,

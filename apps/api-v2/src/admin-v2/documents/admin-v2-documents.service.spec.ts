@@ -9,6 +9,9 @@ import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-command
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 
 class TestAdminDocumentService extends AdminDocumentServiceBase {
+  readonly tagService: AdminDocumentTagService;
+  readonly taggerService: AdminDocumentTaggerService;
+
   constructor(prisma: any, storage: any, idempotency: any, assignmentsService: any) {
     const documentsQuery = new AdminV2DocumentsRepository(prisma, {
       run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
@@ -17,13 +20,10 @@ class TestAdminDocumentService extends AdminDocumentServiceBase {
       run: (callback: (tx: unknown) => Promise<unknown>) => prisma.$transaction(callback as never),
     } as never);
     const tagService = new AdminDocumentTagService(idempotency, documentsQuery, documentsCommands);
-    super(
-      storage,
-      assignmentsService,
-      documentsQuery,
-      tagService,
-      new AdminDocumentTaggerService(idempotency, documentsQuery, documentsCommands, tagService),
-    );
+    const taggerService = new AdminDocumentTaggerService(idempotency, documentsQuery, documentsCommands, tagService);
+    super(storage, assignmentsService, documentsQuery);
+    this.tagService = tagService;
+    this.taggerService = taggerService;
   }
 }
 
@@ -469,7 +469,7 @@ describe(`AdminDocumentService`, () => {
       createAssignmentsService() as never,
     );
 
-    await expect(service.listTags()).resolves.toEqual({
+    await expect(service.tagService.listTags()).resolves.toEqual({
       items: [
         {
           id: `tag-1`,
@@ -518,7 +518,7 @@ describe(`AdminDocumentService`, () => {
     );
 
     await expect(
-      service.createTag(`admin-1`, { name: `evidence` }, { idempotencyKey: `idem-1`, userAgent: `jest` }),
+      service.tagService.createTag(`admin-1`, { name: `evidence` }, { idempotencyKey: `idem-1`, userAgent: `jest` }),
     ).resolves.toEqual({
       tagId: `tag-1`,
       name: `evidence`,
@@ -563,7 +563,11 @@ describe(`AdminDocumentService`, () => {
     );
 
     await expect(
-      service.createTag(`admin-1`, { name: `evidence` }, { idempotencyKey: `idem-duplicate`, userAgent: `jest` }),
+      service.tagService.createTag(
+        `admin-1`,
+        { name: `evidence` },
+        { idempotencyKey: `idem-duplicate`, userAgent: `jest` },
+      ),
     ).resolves.toEqual({
       tagId: `tag-1`,
       name: `evidence`,
@@ -612,7 +616,7 @@ describe(`AdminDocumentService`, () => {
     );
 
     await expect(
-      service.updateTag(
+      service.tagService.updateTag(
         `tag-1`,
         `admin-1`,
         { name: `verified`, version: originalUpdatedAt.getTime() },
@@ -663,7 +667,7 @@ describe(`AdminDocumentService`, () => {
     );
 
     await expect(
-      service.updateTag(
+      service.tagService.updateTag(
         `tag-1`,
         `admin-1`,
         { name: `evidence`, version: updatedAt.getTime() },
@@ -711,7 +715,7 @@ describe(`AdminDocumentService`, () => {
     );
 
     await expect(
-      service.deleteTag(
+      service.tagService.deleteTag(
         `tag-1`,
         `admin-1`,
         { version: updatedAt.getTime(), confirmed: false },
@@ -720,7 +724,12 @@ describe(`AdminDocumentService`, () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     await expect(
-      service.deleteTag(`tag-1`, `admin-1`, { version: updatedAt.getTime(), confirmed: true }, { idempotencyKey: `x` }),
+      service.tagService.deleteTag(
+        `tag-1`,
+        `admin-1`,
+        { version: updatedAt.getTime(), confirmed: true },
+        { idempotencyKey: `x` },
+      ),
     ).resolves.toEqual({
       tagId: `tag-1`,
       deleted: true,
@@ -777,7 +786,7 @@ describe(`AdminDocumentService`, () => {
     );
 
     await expect(
-      service.retagDocument(
+      service.taggerService.retagDocument(
         `doc-1`,
         `admin-1`,
         { version: updatedAt.getTime(), tagIds: [`tag-reserved`] },
@@ -786,7 +795,7 @@ describe(`AdminDocumentService`, () => {
     ).rejects.toBeInstanceOf(ConflictException);
 
     await expect(
-      service.retagDocument(
+      service.taggerService.retagDocument(
         `doc-1`,
         `admin-1`,
         { version: updatedAt.getTime(), tagIds: [`tag-1`] },
@@ -847,7 +856,7 @@ describe(`AdminDocumentService`, () => {
     );
 
     await expect(
-      service.retagDocument(
+      service.taggerService.retagDocument(
         `doc-1`,
         `admin-1`,
         { version: updatedAt.getTime(), tagIds: [] },
@@ -914,7 +923,7 @@ describe(`AdminDocumentService`, () => {
     );
 
     await expect(
-      service.bulkTagDocuments(
+      service.taggerService.bulkTagDocuments(
         `admin-1`,
         {
           tagIds: [`tag-1`],
@@ -977,7 +986,7 @@ describe(`AdminDocumentService`, () => {
     );
 
     await expect(
-      service.bulkTagDocuments(
+      service.taggerService.bulkTagDocuments(
         `admin-1`,
         {
           tagIds: [`tag-1`],

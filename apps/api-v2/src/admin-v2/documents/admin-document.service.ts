@@ -2,8 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { AdminDocumentTagService } from './admin-document-tag.service';
-import { AdminDocumentTaggerService } from './admin-document-tagger.service';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 import {
   buildDocumentDownloadUrl,
@@ -11,7 +9,6 @@ import {
   resolveCanonicalConsumer,
 } from './document-query-helpers';
 import { FileStorageService } from '../../consumer/modules/files/file-storage.service';
-import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { deriveVersion, toNullableIso } from '../admin-v2-version-utils';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
@@ -37,8 +34,6 @@ export class AdminDocumentService {
     private readonly storage: FileStorageService,
     private readonly assignmentsService: AdminV2AssignmentsService,
     private readonly documentsQuery: AdminV2DocumentsRepository,
-    private readonly tagService: AdminDocumentTagService,
-    private readonly taggerService: AdminDocumentTaggerService,
   ) {}
 
   async listDocuments(params?: {
@@ -228,10 +223,6 @@ export class AdminDocumentService {
     };
   }
 
-  async listTags() {
-    return this.tagService.listTags();
-  }
-
   async openDownload(resourceId: string) {
     const resource = await this.documentsQuery.findDownloadResource({
       id: resourceId,
@@ -243,43 +234,6 @@ export class AdminDocumentService {
     }
 
     return this.storage.openDownloadStream(resource);
-  }
-
-  async createTag(adminId: string, body: { name?: string | null }, meta?: RequestMeta) {
-    return this.tagService.createTag(adminId, body, meta);
-  }
-
-  async updateTag(
-    tagId: string,
-    adminId: string,
-    body: { name?: string | null; version?: number },
-    meta?: RequestMeta,
-  ) {
-    return this.tagService.updateTag(tagId, adminId, body, meta);
-  }
-
-  async deleteTag(tagId: string, adminId: string, body: { version?: number; confirmed?: boolean }, meta?: RequestMeta) {
-    return this.tagService.deleteTag(tagId, adminId, body, meta);
-  }
-
-  async retagDocument(
-    resourceId: string,
-    adminId: string,
-    body: { version?: number; tagIds?: string[] | null },
-    meta?: RequestMeta,
-  ) {
-    return this.taggerService.retagDocument(resourceId, adminId, body, meta);
-  }
-
-  async bulkTagDocuments(
-    adminId: string,
-    body: {
-      tagIds?: string[] | null;
-      resources?: Array<{ resourceId: string; version: number }> | null;
-    },
-    meta?: RequestMeta,
-  ) {
-    return this.taggerService.bulkTagDocuments(adminId, body, meta);
   }
 
   private mapLinkedPaymentRequestIds(

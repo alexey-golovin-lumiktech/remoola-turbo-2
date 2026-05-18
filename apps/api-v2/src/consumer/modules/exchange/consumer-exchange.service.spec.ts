@@ -20,7 +20,8 @@ import { ConsumerScheduledConversionService } from './consumer-scheduled-convers
 import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 
 function buildRateReader(prisma: any) {
-  return new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma));
+  const cacheManager = { get: jest.fn().mockResolvedValue(undefined), set: jest.fn() };
+  return new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(cacheManager as never, prisma));
 }
 
 function buildService(prisma: any, balanceService: any) {

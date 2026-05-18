@@ -16,6 +16,7 @@ import { AuthRequestContextService } from '../../src/guards/auth-request-context
 import { AuthSessionRepository } from '../../src/guards/auth-session.repository';
 import { AuthTokenVerifierService } from '../../src/guards/auth-token-verifier.service';
 import { AuthGuard } from '../../src/guards/auth.guard';
+import { TokenValidationService } from '../../src/guards/token-validation.service';
 import { OriginResolverService } from '../../src/shared/origin-resolver.service';
 import { PrismaService } from '../../src/shared/prisma.service';
 
@@ -120,6 +121,7 @@ export async function createManualAuthGuard(moduleFixture: TestingModule): Promi
       AuthTokenVerifierService,
       AuthConsumerSessionValidatorService,
       AuthAdminSessionValidatorService,
+      TokenValidationService,
       AuthSessionRepository,
       AuthIdentityRepository,
       { provide: Reflector, useValue: reflector },
