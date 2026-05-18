@@ -9,6 +9,7 @@ import { ConsumerExchangeRateService } from './consumer-exchange-rate.service';
 import { ConsumerExchangeController } from './consumer-exchange.controller';
 import { ConsumerExchangeScheduler } from './consumer-exchange.scheduler';
 import { ConsumerExchangeService } from './consumer-exchange.service';
+import { ConsumerScheduledConversionService } from './consumer-scheduled-conversion.service';
 
 @Module({
   controllers: [ConsumerExchangeController],
@@ -17,6 +18,7 @@ import { ConsumerExchangeService } from './consumer-exchange.service';
     ConsumerExchangeRateReader,
     ConsumerExchangeRateService,
     ConsumerCurrencyConversionService,
+    ConsumerScheduledConversionService,
     ConsumerExchangeExecutionRepository,
     ConsumerExchangeAutomationRepository,
     ConsumerExchangeService,

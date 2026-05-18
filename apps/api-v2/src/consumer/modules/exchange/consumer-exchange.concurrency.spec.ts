@@ -11,6 +11,7 @@ import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
 import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
 import { ConsumerExchangeRateService } from './consumer-exchange-rate.service';
 import { ConsumerExchangeService } from './consumer-exchange.service';
+import { ConsumerScheduledConversionService } from './consumer-scheduled-conversion.service';
 import { BalanceCalculationRepository } from '../../../shared/balance-calculation.repository';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
@@ -102,11 +103,14 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
     const rateReader = new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma));
     const rateService = new ConsumerExchangeRateService(rateReader);
     const executionRepository = new ConsumerExchangeExecutionRepository(prisma);
+    const conversionService = new ConsumerCurrencyConversionService(balanceService, rateService, executionRepository);
+    const automationRepository = new ConsumerExchangeAutomationRepository(prisma);
     return new ConsumerExchangeService(
       balanceService,
       rateService,
-      new ConsumerCurrencyConversionService(balanceService, rateService, executionRepository),
-      new ConsumerExchangeAutomationRepository(prisma),
+      conversionService,
+      new ConsumerScheduledConversionService(conversionService, automationRepository),
+      automationRepository,
     );
   }
 
