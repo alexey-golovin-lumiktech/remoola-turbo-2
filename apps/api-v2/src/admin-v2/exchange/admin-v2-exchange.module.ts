@@ -12,6 +12,7 @@ import { AdminExchangeRuleCommandsService } from './admin-exchange-rule-commands
 import { AdminExchangeRuleQueriesService } from './admin-exchange-rule-queries.service';
 import { AdminExchangeScheduledConversionQueriesService } from './admin-exchange-scheduled-conversion-queries.service';
 import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
+import { AdminScheduledConversionPersistenceRepository } from './admin-scheduled-conversion-persistence.repository';
 import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.service';
 import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
@@ -31,6 +32,7 @@ import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.mo
     AdminExchangeActionLockRepository,
     AdminExchangeConversionPersistenceRepository,
     AdminExchangeRateApprovalPersistenceRepository,
+    AdminScheduledConversionPersistenceRepository,
     AdminV2ExchangePersistenceRepository,
     AdminV2ExchangePreflightRepository,
     AdminV2ExchangeRateQuery,

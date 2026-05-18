@@ -11,6 +11,7 @@ import { AdminExchangeRuleCommandsService } from './admin-exchange-rule-commands
 import { AdminExchangeRuleQueriesService } from './admin-exchange-rule-queries.service';
 import { AdminExchangeScheduledConversionQueriesService } from './admin-exchange-scheduled-conversion-queries.service';
 import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
+import { AdminScheduledConversionPersistenceRepository } from './admin-scheduled-conversion-persistence.repository';
 import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.service';
 import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
@@ -93,6 +94,7 @@ describe(`AdminV2ExchangeService`, () => {
     const actionLockRepository = new AdminExchangeActionLockRepository(prisma);
     const conversionPersistenceRepository = new AdminExchangeConversionPersistenceRepository(prisma);
     const rateApprovalPersistenceRepository = new AdminExchangeRateApprovalPersistenceRepository(prisma);
+    const scheduledConversionPersistenceRepository = new AdminScheduledConversionPersistenceRepository(prisma);
     const persistenceRepository = new AdminV2ExchangePersistenceRepository(prisma);
     const transactions = new PrismaTransactionRunner(prisma);
     const preflightRepository = new AdminV2ExchangePreflightRepository(prisma);
@@ -116,7 +118,7 @@ describe(`AdminV2ExchangeService`, () => {
             conversionExecutor,
             preflightRepository,
             actionLockRepository,
-            persistenceRepository,
+            scheduledConversionPersistenceRepository,
             transactions,
           ),
           new AdminExchangeRuleCommandsService(

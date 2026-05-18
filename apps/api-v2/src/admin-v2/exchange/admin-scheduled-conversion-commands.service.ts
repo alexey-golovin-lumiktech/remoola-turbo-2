@@ -5,10 +5,10 @@ import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import {
-  AdminV2ExchangePersistenceRepository,
+  AdminScheduledConversionPersistenceRepository,
   type ExchangeScheduledExecutionResult,
   type LockedScheduledExecutionRow,
-} from './admin-v2-exchange-persistence.repository';
+} from './admin-scheduled-conversion-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { buildExchangeExecutionSummary, mapExchangeExecutionFailureReason } from './exchange-execution-summary';
@@ -51,7 +51,7 @@ export class AdminScheduledConversionCommandsService {
     private readonly conversionExecutor: ExchangeConversionExecutor,
     private readonly preflightRepository: AdminV2ExchangePreflightRepository,
     private readonly actionLockRepository: AdminExchangeActionLockRepository,
-    private readonly persistenceRepository: AdminV2ExchangePersistenceRepository,
+    private readonly persistenceRepository: AdminScheduledConversionPersistenceRepository,
     private readonly transactions: PrismaTransactionRunner,
   ) {}
 

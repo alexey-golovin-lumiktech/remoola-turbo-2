@@ -5,7 +5,7 @@ import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { type AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
-import { type AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
+import { type AdminScheduledConversionPersistenceRepository } from './admin-scheduled-conversion-persistence.repository';
 import { type AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { type ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { type PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
@@ -93,7 +93,7 @@ describe(`AdminScheduledConversionCommandsService`, () => {
         conversionExecutor as unknown as ExchangeConversionExecutor,
         preflightRepository as unknown as AdminV2ExchangePreflightRepository,
         actionLockRepository as unknown as AdminExchangeActionLockRepository,
-        persistenceRepository as unknown as AdminV2ExchangePersistenceRepository,
+        persistenceRepository as unknown as AdminScheduledConversionPersistenceRepository,
         transactions as unknown as PrismaTransactionRunner,
       ),
       transactions,
