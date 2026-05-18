@@ -1,4 +1,6 @@
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, RequestMethod, UnauthorizedException } from '@nestjs/common';
+import { HTTP_CODE_METADATA, METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import { THROTTLER_LIMIT, THROTTLER_TTL } from '@nestjs/throttler/dist/throttler.constants';
 
 import {
   CONSUMER_APP_SCOPE_HEADER,
@@ -12,8 +14,10 @@ import {
 import { ConsumerAuthController } from './auth.controller';
 import { type ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
+import { ConsumerPasswordController } from './consumer-password.controller';
 import { type GoogleOAuthService } from './google-oauth.service';
 import { type OAuthStateStoreService } from './oauth-state-store.service';
+import { IS_PUBLIC, TRACK_CONSUMER_ACTION } from '../../common';
 import { envs } from '../../envs';
 import { type OriginResolverService } from '../../shared/origin-resolver.service';
 import { constants, getApiConsumerGoogleSignupSessionCookieKey } from '../../shared-common';
@@ -23,6 +27,7 @@ const GOOGLE_OAUTH_STATE_COOKIE_KEY = constants.GOOGLE_OAUTH_STATE_COOKIE_KEY;
 
 describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   let controller: ConsumerAuthController;
+  let passwordController: ConsumerPasswordController;
   let service: Partial<ConsumerAuthService>;
   let initialNodeEnv: typeof envs.NODE_ENV;
 
@@ -100,6 +105,23 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       redirect: jest.fn(),
     }) as any;
 
+  const getRouteMetadata = (controllerClass: new (...args: never[]) => unknown, methodName: string) => {
+    const handler = controllerClass.prototype[methodName];
+    const metadataKeys = Reflect.getMetadataKeys(handler);
+    const throttlerLimitKey = metadataKeys.find((key) => String(key).startsWith(THROTTLER_LIMIT));
+    const throttlerTtlKey = metadataKeys.find((key) => String(key).startsWith(THROTTLER_TTL));
+
+    return {
+      path: Reflect.getMetadata(PATH_METADATA, handler),
+      method: Reflect.getMetadata(METHOD_METADATA, handler),
+      httpCode: Reflect.getMetadata(HTTP_CODE_METADATA, handler),
+      isPublic: Reflect.getMetadata(IS_PUBLIC, handler),
+      trackConsumerAction: Reflect.getMetadata(TRACK_CONSUMER_ACTION, handler),
+      throttlerLimit: throttlerLimitKey ? Reflect.getMetadata(throttlerLimitKey, handler) : undefined,
+      throttlerTtl: throttlerTtlKey ? Reflect.getMetadata(throttlerTtlKey, handler) : undefined,
+    };
+  };
+
   const mockOAuthStatePreviewAndConsume = (record: Record<string, unknown>) => {
     (oauthStateStore.read as jest.Mock).mockResolvedValueOnce(record);
     (oauthStateStore.consume as jest.Mock).mockResolvedValueOnce(record);
@@ -141,17 +163,59 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       signupVerification: jest.fn().mockResolvedValue(undefined),
     };
 
+    const supportService = new ConsumerAuthControllerSupportService(originResolver as OriginResolverService);
     controller = new ConsumerAuthController(
       service as ConsumerAuthService,
       googleOAuthService as GoogleOAuthService,
       oauthStateStore as OAuthStateStoreService,
       originResolver as OriginResolverService,
-      new ConsumerAuthControllerSupportService(originResolver as OriginResolverService),
+      supportService,
     );
+    passwordController = new ConsumerPasswordController(service as ConsumerAuthService, supportService);
   });
 
   afterEach(() => {
     envs.NODE_ENV = initialNodeEnv;
+  });
+
+  it(`keeps auth route and decorator contracts stable while splitting controllers`, () => {
+    expect(getRouteMetadata(ConsumerAuthController, `signupVerification`)).toMatchObject({
+      path: `signup/verification`,
+      method: RequestMethod.GET,
+      isPublic: true,
+    });
+    expect(getRouteMetadata(ConsumerAuthController, `completeProfileCreation`)).toMatchObject({
+      path: `signup/:consumerId/complete-profile-creation`,
+      method: RequestMethod.GET,
+      isPublic: true,
+      throttlerLimit: 10,
+      throttlerTtl: 60000,
+    });
+
+    expect(getRouteMetadata(ConsumerPasswordController, `forgotPasswordVerify`)).toMatchObject({
+      path: `forgot-password/verify`,
+      method: RequestMethod.GET,
+      isPublic: true,
+      throttlerLimit: 30,
+      throttlerTtl: 60000,
+    });
+    expect(getRouteMetadata(ConsumerPasswordController, `forgotPassword`)).toMatchObject({
+      path: `forgot-password`,
+      method: RequestMethod.POST,
+      httpCode: HttpStatus.OK,
+      isPublic: true,
+      trackConsumerAction: { action: `consumer.auth.forgot_password_request`, resource: `auth` },
+      throttlerLimit: 5,
+      throttlerTtl: 60000,
+    });
+    expect(getRouteMetadata(ConsumerPasswordController, `resetPassword`)).toMatchObject({
+      path: `password/reset`,
+      method: RequestMethod.POST,
+      httpCode: HttpStatus.OK,
+      isPublic: true,
+      throttlerLimit: 10,
+      throttlerTtl: 60000,
+    });
   });
 
   it(`rejects refresh without CSRF token`, async () => {
@@ -769,7 +833,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     async (expectedScope, headers) => {
       const req = makeReq({ headers });
 
-      const result = await controller.forgotPassword(req, { email: `user@example.com` } as any, expectedScope);
+      const result = await passwordController.forgotPassword(req, { email: `user@example.com` } as any, expectedScope);
 
       expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(expectedScope);
       expect(service.requestPasswordReset).toHaveBeenCalledWith(`user@example.com`, expectedScope);
@@ -784,7 +848,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
 
     await expect(
-      controller.forgotPassword(req, { email: `user@example.com` } as any, `unknown-scope` as never),
+      passwordController.forgotPassword(req, { email: `user@example.com` } as any, `unknown-scope` as never),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(service.requestPasswordReset).not.toHaveBeenCalled();
   });
@@ -792,7 +856,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   it(`forgot password verify delegates using token only`, async () => {
     const res = makeRes();
 
-    await controller.forgotPasswordVerify(`reset-token`, res);
+    await passwordController.forgotPasswordVerify(`reset-token`, res);
 
     expect(service.validateForgotPasswordTokenAndRedirect).toHaveBeenCalledWith(`reset-token`, res);
   });
@@ -866,7 +930,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
   it(`resetPassword delegates to service and returns success`, async () => {
     const body = { token: `reset-token`, password: `newPassword8` };
-    const result = await controller.resetPassword(body);
+    const result = await passwordController.resetPassword(body);
 
     expect(service.resetPasswordWithToken).toHaveBeenCalledWith(`reset-token`, `newPassword8`);
     expect(result).toEqual({ success: true });
@@ -878,6 +942,6 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     );
     const body = { token: `bad-token`, password: `newPassword8` };
 
-    await expect(controller.resetPassword(body)).rejects.toThrow(BadRequestException);
+    await expect(passwordController.resetPassword(body)).rejects.toThrow(BadRequestException);
   });
 });

@@ -30,7 +30,7 @@ import { OAuthStateStoreService } from './oauth-state-store.service';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { Identity, type IIdentityContext, PublicEndpoint, TrackConsumerAction } from '../../common';
 import { CONSUMER } from '../../dtos';
-import { ForgotPasswordBody, HandoffTokenRequest, ResetPassword } from '../../dtos/consumer';
+import { HandoffTokenRequest } from '../../dtos/consumer';
 import { envs } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
@@ -626,40 +626,6 @@ export class ConsumerAuthController {
       }),
     );
     return `success`;
-  }
-
-  @PublicEndpoint()
-  @Throttle({ default: { limit: 30, ttl: 60000 } })
-  @Get(`forgot-password/verify`)
-  async forgotPasswordVerify(@Query(`token`) token: string, @Res() res: express.Response) {
-    await this.service.validateForgotPasswordTokenAndRedirect(token ?? ``, res);
-  }
-
-  @PublicEndpoint()
-  @TrackConsumerAction({ action: `consumer.auth.forgot_password_request`, resource: `auth` })
-  @Post(`forgot-password`)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @HttpCode(HttpStatus.OK)
-  async forgotPassword(
-    @Req() req: express.Request,
-    @Body() body: ForgotPasswordBody,
-    @Query(`appScope`) appScope?: string,
-  ) {
-    const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
-    await this.service.requestPasswordReset(body.email, consumerScope);
-    return {
-      message: `If an account exists, we sent recovery instructions.`,
-      recoveryMode: `provider_aware`,
-    };
-  }
-
-  @PublicEndpoint()
-  @Post(`password/reset`)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() body: ResetPassword) {
-    await this.service.resetPasswordWithToken(body.token, body.password);
-    return { success: true };
   }
 
   @PublicEndpoint()

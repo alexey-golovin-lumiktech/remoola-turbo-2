@@ -3,7 +3,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
-import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
+import { buildStaleVersionPayload } from '../admin-v2-version-utils';
 
 type RequestMeta = {
   ipAddress?: string | null;
