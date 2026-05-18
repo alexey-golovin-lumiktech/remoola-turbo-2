@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 
 import { $Enums } from '@remoola/database-2';
 
+import { ConsumerContractsInMemoryQuery } from './consumer-contracts-in-memory.query';
 import { ConsumerContractsQuery } from './consumer-contracts.query';
 import { ConsumerContractsService } from './consumer-contracts.service';
 import { type ConsumerContractItem } from './dto';
@@ -59,8 +60,13 @@ function normalizeContractsResult(result: ContractListResult): NormalizedContrac
 describe(`ConsumerContractsService DB smoke`, () => {
   const prismaContext = createPrismaTestContext();
   const { prisma } = prismaContext;
-  const rawService = new ConsumerContractsService(new ConsumerContractsQuery(prisma as any));
-  const fallbackService = new ConsumerContractsService(new RawDisabledConsumerContractsQuery(prisma as any));
+  const rawQuery = new ConsumerContractsQuery(prisma as any);
+  const fallbackQuery = new RawDisabledConsumerContractsQuery(prisma as any);
+  const rawService = new ConsumerContractsService(rawQuery, new ConsumerContractsInMemoryQuery(rawQuery));
+  const fallbackService = new ConsumerContractsService(
+    fallbackQuery,
+    new ConsumerContractsInMemoryQuery(fallbackQuery),
+  );
 
   let ownerId = ``;
   const paymentIdsByContactEmail = new Map<string, string[]>();

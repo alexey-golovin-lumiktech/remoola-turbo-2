@@ -1,4 +1,5 @@
 import { buildConsumerContractPaymentsWhere } from './consumer-contract-query-helpers';
+import { ConsumerContractsInMemoryQuery } from './consumer-contracts-in-memory.query';
 import { type ConsumerContractsQuery } from './consumer-contracts.query';
 import { ConsumerContractsService } from './consumer-contracts.service';
 
@@ -114,6 +115,11 @@ function createContractsQueryMock(prisma: any): ConsumerContractsQuery {
   } as unknown as ConsumerContractsQuery;
 }
 
+function createContractsService(prisma: any) {
+  const contractsQuery = createContractsQueryMock(prisma);
+  return new ConsumerContractsService(contractsQuery, new ConsumerContractsInMemoryQuery(contractsQuery));
+}
+
 describe(`consumer contract query helpers`, () => {
   it(`builds participant and counterparty relationship filters`, () => {
     expect(buildConsumerContractPaymentsWhere(`consumer-1`, [`vendor@example.com`], `owner@example.com`)).toEqual({
@@ -175,7 +181,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     const result = await service.getContracts(`consumer-1`);
 
     expect(prisma.paymentRequestModel.findMany).toHaveBeenCalledWith({
@@ -283,7 +289,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     const result = await service.getContracts(`consumer-1`);
 
     expect(result).toEqual({
@@ -316,7 +322,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     const result = await service.getContracts(`consumer-1`);
 
     expect(result).toEqual({
@@ -347,7 +353,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     const result = await service.getContracts(`consumer-1`, 2, 25, `search hit`);
 
     expect(prisma.contactModel.findMany).toHaveBeenCalledWith({
@@ -379,7 +385,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     await service.getContracts(`consumer-1`, 1, 10, `   `);
 
     expect(prisma.contactModel.findMany).toHaveBeenCalledWith({
@@ -471,7 +477,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
 
     await expect(service.getContracts(`consumer-1`, 1, 10, undefined, `completed`)).resolves.toEqual({
       items: [
@@ -600,7 +606,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     const result = await service.getContracts(`consumer-1`, 2, 1, undefined, `completed`);
 
     expect(result).toEqual({
@@ -692,7 +698,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
 
     await expect(
       service.getContracts(`consumer-1`, 1, 10, undefined, undefined, `yes`, `yes`, `payments_count`),
@@ -773,7 +779,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
 
     await expect(service.getContracts(`consumer-1`)).resolves.toEqual({
       items: [
@@ -840,7 +846,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
 
     await expect(service.getContracts(`consumer-1`, 1, 10, undefined, `draft`)).resolves.toEqual({
       items: [
@@ -894,7 +900,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     const result = await service.getContracts(`consumer-1`, 1, 10, undefined, undefined, undefined, undefined, `name`);
 
     expect(result).toEqual({
@@ -991,7 +997,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     const result = await service.getContracts(
       `consumer-1`,
       1,
@@ -1083,7 +1089,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     const result = await service.getDetails(`contact-1`, `consumer-1`, `http://localhost:3334`);
 
     expect(prisma.contactModel.findFirst).toHaveBeenCalledWith({
@@ -1243,7 +1249,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     const result = await service.getDetails(`contact-2`, `consumer-1`, `http://localhost:3334`);
 
     expect(result.summary).toEqual({
@@ -1285,7 +1291,7 @@ describe(`ConsumerContractsService`, () => {
         },
       } as any;
 
-      const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+      const service = createContractsService(prisma);
 
       await service.getDetails(`contact-tenant-safe`, `consumer-1`, `http://localhost:3334`);
 
@@ -1359,7 +1365,7 @@ describe(`ConsumerContractsService`, () => {
       },
     } as any;
 
-    const service = new ConsumerContractsService(createContractsQueryMock(prisma));
+    const service = createContractsService(prisma);
     await service.getContracts(`consumer-1`);
 
     expect(prisma.contactModel.findMany).toHaveBeenCalledWith({
