@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { type TPaymentReversalKind } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
@@ -9,18 +8,13 @@ import {
   type PaymentReversalRequesterSettlementEntry,
   AdminV2PaymentReversalQuery,
 } from './admin-v2-payment-reversal.query';
+import { type PaymentReversalCreateInput } from './admin-v2-payment-reversal.types';
 import { moneyDecimalToNumber, toPositiveMoneyDecimal } from '../../shared/money-decimal.utils';
 import {
   deriveEffectivePaymentRequestStatus,
   getEffectiveLedgerStatus,
   getRequesterReversalEntryType,
 } from '../../shared/payment-reversal-calculator';
-
-export type PaymentReversalCreateInput = {
-  kind: TPaymentReversalKind;
-  amount?: number;
-  reason?: string;
-};
 
 type PreparedPaymentReversal = {
   paymentRequest: PaymentReversalPaymentRequest;

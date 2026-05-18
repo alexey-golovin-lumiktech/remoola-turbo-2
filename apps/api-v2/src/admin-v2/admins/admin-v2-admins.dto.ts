@@ -13,9 +13,20 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { constants } from '../../shared-common';
+import {
+  type AdminV2AdminPasswordPatchBody,
+  type AdminV2ChangeAdminPermissionsBody,
+  type AdminV2ChangeAdminRoleBody,
+  type AdminV2DeactivateAdminBody,
+  type AdminV2InviteAdminBody,
+  type AdminV2LegacyAdminStatusBody,
+  type AdminV2PermissionOverride,
+} from '@remoola/api-types';
 
-export class InviteAdminBody {
+import { constants } from '../../shared-common';
+import { StepUpVersionedMutationBody } from '../admin-v2-common.dto';
+
+export class InviteAdminBody implements AdminV2InviteAdminBody {
   @Expose()
   @IsEmail()
   email!: string;
@@ -30,19 +41,9 @@ export class InviteAdminBody {
   passwordConfirmation!: string;
 }
 
-export class VersionedAdminMutationBody {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
+export class VersionedAdminMutationBody extends StepUpVersionedMutationBody {}
 
-  @Expose()
-  @IsString()
-  @MaxLength(256)
-  passwordConfirmation!: string;
-}
-
-export class DeactivateAdminBody extends VersionedAdminMutationBody {
+export class DeactivateAdminBody extends VersionedAdminMutationBody implements AdminV2DeactivateAdminBody {
   @Expose()
   @IsBoolean()
   confirmed!: boolean;
@@ -53,7 +54,7 @@ export class DeactivateAdminBody extends VersionedAdminMutationBody {
   reason?: string;
 }
 
-export class ChangeAdminRoleBody extends VersionedAdminMutationBody {
+export class ChangeAdminRoleBody extends VersionedAdminMutationBody implements AdminV2ChangeAdminRoleBody {
   @Expose()
   @IsBoolean()
   confirmed!: boolean;
@@ -63,7 +64,7 @@ export class ChangeAdminRoleBody extends VersionedAdminMutationBody {
   roleKey!: string;
 }
 
-export class PermissionOverride {
+class PermissionOverride implements AdminV2PermissionOverride {
   @Expose()
   @IsString()
   capability!: string;
@@ -74,7 +75,10 @@ export class PermissionOverride {
   mode!: `inherit` | `grant` | `deny`;
 }
 
-export class ChangeAdminPermissionsBody extends VersionedAdminMutationBody {
+export class ChangeAdminPermissionsBody
+  extends VersionedAdminMutationBody
+  implements AdminV2ChangeAdminPermissionsBody
+{
   @Expose()
   @Type(() => PermissionOverride)
   @IsArray()
@@ -108,7 +112,7 @@ export class ListAdminsQuery {
   status?: string;
 }
 
-export class AdminPasswordPatchBody {
+export class AdminPasswordPatchBody implements AdminV2AdminPasswordPatchBody {
   @Expose()
   @IsString()
   @Matches(constants.PASSWORD_RE, { message: constants.INVALID_PASSWORD })
@@ -120,7 +124,7 @@ export class AdminPasswordPatchBody {
   passwordConfirmation!: string;
 }
 
-export class LegacyAdminStatusBody {
+export class LegacyAdminStatusBody implements AdminV2LegacyAdminStatusBody {
   @Expose()
   @IsIn([`delete`, `restore`])
   action!: `delete` | `restore`;

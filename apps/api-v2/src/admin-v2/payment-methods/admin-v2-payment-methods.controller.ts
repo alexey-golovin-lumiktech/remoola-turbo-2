@@ -1,11 +1,18 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+
+import {
+  type AdminV2DisablePaymentMethodBody,
+  type AdminV2DuplicateEscalatePaymentMethodBody,
+  type AdminV2RemoveDefaultPaymentMethodBody,
+} from '@remoola/api-types';
 
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { ConfirmedVersionedMutationBody, VersionedMutationBody } from '../admin-v2-common.dto';
 import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
 import { AdminV2PaymentMethodsService } from './admin-v2-payment-methods.service';
 
@@ -55,34 +62,17 @@ class PaymentMethodsListQuery {
   includeDeleted?: boolean;
 }
 
-class DisablePaymentMethodBody {
-  @Expose()
-  @IsBoolean()
-  confirmed!: boolean;
-
+class DisablePaymentMethodBody extends ConfirmedVersionedMutationBody implements AdminV2DisablePaymentMethodBody {
   @Expose()
   @IsString()
   reason!: string;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
 }
 
-class RemoveDefaultPaymentMethodBody {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
-}
+class RemoveDefaultPaymentMethodBody extends VersionedMutationBody implements AdminV2RemoveDefaultPaymentMethodBody {}
 
-class DuplicateEscalatePaymentMethodBody {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
-}
+class DuplicateEscalatePaymentMethodBody
+  extends VersionedMutationBody
+  implements AdminV2DuplicateEscalatePaymentMethodBody {}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Payment Methods`)

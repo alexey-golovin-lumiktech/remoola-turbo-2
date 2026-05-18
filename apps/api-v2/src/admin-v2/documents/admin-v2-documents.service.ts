@@ -11,18 +11,13 @@ import {
   resolveCanonicalConsumer,
 } from './document-query-helpers';
 import { FileStorageService } from '../../consumer/modules/files/file-storage.service';
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { deriveVersion, toNullableIso } from '../admin-v2-version-utils';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
 
 function normalizePage(value?: number): number {
   return Number.isFinite(value) && value && value > 0 ? Math.floor(value) : DEFAULT_PAGE;

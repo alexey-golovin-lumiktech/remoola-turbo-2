@@ -6,11 +6,7 @@ import { AdminV2AdminSessionsQuery } from './admin-v2-admin-sessions.query';
 import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin-auth/admin-auth-session-reasons';
 import { AdminAuthService, type AdminAuthSessionView } from '../../admin-auth/admin-auth.service';
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
-
-type CrossAdminRevokeContext = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-};
+import { type AdminV2RequestAuditMeta as CrossAdminRevokeContext } from '../admin-v2-context.types';
 
 type CrossAdminRevokeResult = {
   ok: true;

@@ -4,14 +4,9 @@ import { AdminDocumentTagService } from './admin-document-tag.service';
 import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 import { buildDocumentEvidenceScopeWhere, uniqueIds } from './document-query-helpers';
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
 
 function parseVersion(value: number | undefined, errorMessage: string) {
   const version = Number(value);

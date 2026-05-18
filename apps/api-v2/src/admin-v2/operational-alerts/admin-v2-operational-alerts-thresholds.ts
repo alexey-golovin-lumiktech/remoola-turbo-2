@@ -23,6 +23,8 @@ type ThresholdEvaluationResult = {
   reason: string | null;
   observedValue?: number;
 };
+export type OperationalAlertEvaluationResult = ThresholdEvaluationResult;
+
 export interface OperationalAlertThresholdEvaluator<T extends OperationalAlertThreshold = OperationalAlertThreshold> {
   readonly type: T[`type`];
   validate(raw: Record<string, unknown>): void;

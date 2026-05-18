@@ -2,35 +2,27 @@ import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+
+import { type AdminV2ApproveRateBody } from '@remoola/api-types';
 
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import {
+  StepUpConfirmedVersionedMutationBody,
+  StepUpVersionedMutationBody,
+  VersionedMutationBody,
+} from '../admin-v2-common.dto';
 import { AdminV2ExchangeService } from './admin-v2-exchange.service';
 
-class VersionBody {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
-}
+class VersionBody extends VersionedMutationBody {}
 
-class StepUpVersionBody extends VersionBody {
-  @Expose()
-  @IsString()
-  @MaxLength(256)
-  passwordConfirmation!: string;
-}
+class StepUpVersionBody extends StepUpVersionedMutationBody {}
 
-class ConfirmedVersionBody extends StepUpVersionBody {
-  @Expose()
-  @Transform(({ value }) => value === true || value === `true`)
-  @IsBoolean()
-  confirmed!: boolean;
-}
+class ConfirmedVersionBody extends StepUpConfirmedVersionedMutationBody {}
 
-class ApproveRateBody extends ConfirmedVersionBody {
+class ApproveRateBody extends ConfirmedVersionBody implements AdminV2ApproveRateBody {
   @Expose()
   @IsString()
   reason!: string;

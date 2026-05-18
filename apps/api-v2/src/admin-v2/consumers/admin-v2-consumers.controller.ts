@@ -4,29 +4,30 @@ import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-import { CONSUMER_APP_SCOPES } from '@remoola/api-types';
+import {
+  CONSUMER_APP_SCOPES,
+  type AdminV2AddConsumerFlagBody,
+  type AdminV2CreateConsumerNoteBody,
+  type AdminV2ForceLogoutConsumerBody,
+  type AdminV2RemoveConsumerFlagBody,
+  type AdminV2ResendConsumerEmailBody,
+  type AdminV2SuspendConsumerBody,
+} from '@remoola/api-types';
 
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { ConfirmedMutationBody, VersionedMutationBody } from '../admin-v2-common.dto';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
 
-class ForceLogoutBody {
-  @Expose()
-  @IsBoolean()
-  confirmed!: boolean;
-}
+class ForceLogoutBody extends ConfirmedMutationBody implements AdminV2ForceLogoutConsumerBody {}
 
-class SuspendConsumerBody {
-  @Expose()
-  @IsBoolean()
-  confirmed!: boolean;
-
+class SuspendConsumerBody extends ConfirmedMutationBody implements AdminV2SuspendConsumerBody {
   @Expose()
   @IsString()
   reason!: string;
 }
 
-class EmailResendBody {
+class EmailResendBody implements AdminV2ResendConsumerEmailBody {
   @Expose()
   @IsIn([`signup_verification`, `password_recovery`])
   emailKind!: `signup_verification` | `password_recovery`;
@@ -140,13 +141,13 @@ class AdminConsumerActionLogQuery extends AdminConsumerDateRangeQuery {
   action?: string;
 }
 
-class ConsumerNoteBody {
+class ConsumerNoteBody implements AdminV2CreateConsumerNoteBody {
   @Expose()
   @IsString()
   content!: string;
 }
 
-class ConsumerFlagBody {
+class ConsumerFlagBody implements AdminV2AddConsumerFlagBody {
   @Expose()
   @IsString()
   flag!: string;
@@ -157,12 +158,7 @@ class ConsumerFlagBody {
   reason?: string | null;
 }
 
-class ConsumerFlagRemoveBody {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
-}
+class ConsumerFlagRemoveBody extends VersionedMutationBody implements AdminV2RemoveConsumerFlagBody {}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Consumers`)

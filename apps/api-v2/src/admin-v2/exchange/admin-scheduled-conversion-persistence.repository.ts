@@ -6,12 +6,8 @@ import { adminErrorCodes } from '@remoola/shared-constants';
 import { type ExchangeExecutionState, type ExchangeExecutionSummary } from './exchange-execution-summary';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
+import { type AdminV2RequestAuditMeta as RequestMeta } from '../admin-v2-context.types';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-};
 
 export type ExchangeScheduledExecutionResult = {
   conversionId: string;

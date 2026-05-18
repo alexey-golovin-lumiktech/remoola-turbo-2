@@ -23,18 +23,10 @@ import {
 } from './admin-v2-operational-alerts.dto';
 import { AdminV2OperationalAlertsQuery } from './admin-v2-operational-alerts.query';
 import { AdminV2OperationalAlertsRepository } from './admin-v2-operational-alerts.repository';
-
-type OperationalAlertRequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
-
-type OperationalAlertActorContext = {
-  id: string;
-  email?: string;
-  type: string;
-};
+import {
+  type AdminV2ActorContext as OperationalAlertActorContext,
+  type AdminV2RequestMeta as OperationalAlertRequestMeta,
+} from '../admin-v2-context.types';
 
 type OperationalAlertSummary = AdminV2OperationalAlertSummary;
 

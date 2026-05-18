@@ -4,6 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 
 function deriveVersion(updatedAt: Date): number {
   return updatedAt.getTime();
@@ -23,12 +24,6 @@ export type AdminV2VerificationDecisionState = {
   verificationStatus: $Enums.VerificationStatus;
   verified: boolean;
   legalVerified: boolean;
-};
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
 };
 
 @Injectable()

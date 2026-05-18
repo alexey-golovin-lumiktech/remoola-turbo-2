@@ -3,12 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
 import { AdminExchangeRuleCommandsService } from './admin-exchange-rule-commands.service';
 import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 
 @Injectable()
 export class AdminV2ExchangeCommandsService {

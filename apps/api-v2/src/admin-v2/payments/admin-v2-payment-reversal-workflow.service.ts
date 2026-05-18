@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto';
 
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { type TPaymentReversalKind } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
@@ -12,6 +11,7 @@ import {
   type PaymentReversalRequesterSettlementEntry,
 } from './admin-v2-payment-reversal.query';
 import { AdminV2PaymentReversalRepository, type ExistingReversalRow } from './admin-v2-payment-reversal.repository';
+import { type PaymentReversalCreateInput } from './admin-v2-payment-reversal.types';
 import { AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { toMoneyDecimal, type MoneyDecimalInput } from '../../shared/money-decimal.utils';
@@ -28,12 +28,6 @@ import {
   buildPaymentRequestOperationLockName,
 } from '../../shared/prisma-advisory-locks';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
-
-type PaymentReversalCreateInput = {
-  kind: TPaymentReversalKind;
-  amount?: number;
-  reason?: string;
-};
 
 export type PaymentReversalExecutionResult = {
   ledgerId: string;

@@ -15,18 +15,10 @@ import {
 } from './admin-v2-saved-views.dto';
 import { AdminV2SavedViewsQuery } from './admin-v2-saved-views.query';
 import { AdminV2SavedViewsRepository } from './admin-v2-saved-views.repository';
-
-type SavedViewRequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
-
-type SavedViewActorContext = {
-  id: string;
-  email?: string;
-  type: string;
-};
+import {
+  type AdminV2ActorContext as SavedViewActorContext,
+  type AdminV2RequestMeta as SavedViewRequestMeta,
+} from '../admin-v2-context.types';
 
 type SavedViewSummary = AdminV2SavedViewSummary;
 

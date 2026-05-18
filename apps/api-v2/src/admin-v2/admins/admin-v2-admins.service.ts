@@ -4,12 +4,7 @@ import { AdminV2AdminInvitationsService } from './admin-v2-admin-invitations.ser
 import { AdminV2AdminMutationsService } from './admin-v2-admin-mutations.service';
 import { AdminV2AdminPasswordFlowsService } from './admin-v2-admin-password-flows.service';
 import { AdminV2AdminsQueriesService } from './admin-v2-admins-queries.service';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 
 @Injectable()
 export class AdminV2AdminsService {

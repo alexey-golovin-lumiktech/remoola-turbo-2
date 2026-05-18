@@ -2,16 +2,11 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 
 import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 
 const RESERVED_TAG_PREFIX = `INVOICE-`;
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
 
 function normalizeTagName(value: string | null | undefined) {
   const normalized = value?.trim().toLowerCase() ?? ``;

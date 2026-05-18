@@ -2,12 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.service';
 import { AdminV2ExchangeQueriesService } from './admin-v2-exchange-queries.service';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 
 @Injectable()
 export class AdminV2ExchangeService {

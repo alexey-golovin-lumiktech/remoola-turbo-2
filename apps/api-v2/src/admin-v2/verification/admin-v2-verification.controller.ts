@@ -1,11 +1,14 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+
+import { type AdminV2VerificationDecisionBody } from '@remoola/api-types';
 
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { ConfirmedVersionedMutationBody } from '../admin-v2-common.dto';
 import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
 import { AdminV2VerificationService } from './admin-v2-verification.service';
 
@@ -61,20 +64,11 @@ class VerificationQueueQuery {
   missingDocuments?: boolean;
 }
 
-class VerificationDecisionBody {
-  @Expose()
-  @IsBoolean()
-  confirmed!: boolean;
-
+class VerificationDecisionBody extends ConfirmedVersionedMutationBody implements AdminV2VerificationDecisionBody {
   @Expose()
   @IsOptional()
   @IsString()
   reason?: string;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
 }
 
 @ApiCookieAuth()

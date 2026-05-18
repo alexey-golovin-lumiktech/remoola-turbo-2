@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import { Expose, Transform, Type } from 'class-transformer';
-import { Allow, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Expose, Transform } from 'class-transformer';
+import { Allow, IsOptional, IsString } from 'class-validator';
 
 import {
   ADMIN_V2_MAX_SAVED_VIEW_DESCRIPTION_LENGTH,
@@ -9,8 +9,13 @@ import {
   ADMIN_V2_MIN_SAVED_VIEW_NAME_LENGTH,
   getAdminV2JsonPayloadBytes,
   isAdminV2SavedViewWorkspace,
+  type AdminV2SavedViewCreateBody,
+  type AdminV2SavedViewDeleteBody,
+  type AdminV2SavedViewUpdateBody,
   type AdminV2SavedViewWorkspace,
 } from '@remoola/api-types';
+
+import { ExpectedDeletedAtNullBody } from '../admin-v2-common.dto';
 
 export type SavedViewWorkspace = AdminV2SavedViewWorkspace;
 
@@ -45,10 +50,10 @@ export function assertValidPayload(value: unknown): asserts value is Record<stri
   }
 }
 
-export class SavedViewCreateBody {
+export class SavedViewCreateBody implements AdminV2SavedViewCreateBody {
   @Expose()
   @IsString()
-  workspace!: string;
+  workspace!: SavedViewWorkspace;
 
   @Expose()
   @IsString()
@@ -65,7 +70,7 @@ export class SavedViewCreateBody {
   queryPayload!: unknown;
 }
 
-export class SavedViewUpdateBody {
+export class SavedViewUpdateBody extends ExpectedDeletedAtNullBody implements AdminV2SavedViewUpdateBody {
   @Expose()
   @IsOptional()
   @IsString()
@@ -80,16 +85,6 @@ export class SavedViewUpdateBody {
   @Transform(({ obj }) => obj.queryPayload)
   @IsOptional()
   queryPayload?: unknown;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  expectedDeletedAtNull!: number;
 }
 
-export class SavedViewDeleteBody {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  expectedDeletedAtNull!: number;
-}
+export class SavedViewDeleteBody extends ExpectedDeletedAtNullBody implements AdminV2SavedViewDeleteBody {}

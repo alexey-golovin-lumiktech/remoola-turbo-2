@@ -4,6 +4,8 @@ import { $Enums } from '@remoola/database-2';
 
 import { ADMIN_V2_SCHEMA_ROLES, OVERRIDABLE_ADMIN_V2_CAPABILITIES } from '../admin-v2-access';
 
+export type { AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
+
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
@@ -16,12 +18,6 @@ export const ADMIN_PERMISSION_OVERRIDE_CAPABILITIES = new Set<string>(OVERRIDABL
 export const ADMIN_PERMISSION_OVERRIDE_MODES = new Set<string>([`inherit`, `grant`, `deny`]);
 
 export type AdminPermissionOverrideMode = `inherit` | `grant` | `deny`;
-
-export type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
 
 export type AdminInvitationTokenPayload = {
   sub: string;

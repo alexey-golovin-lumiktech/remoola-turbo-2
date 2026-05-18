@@ -3,11 +3,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-};
+import { type AdminV2RequestAuditMeta as RequestMeta } from '../admin-v2-context.types';
 
 @Injectable()
 export class AdminV2ConsumerFlagsRepository {

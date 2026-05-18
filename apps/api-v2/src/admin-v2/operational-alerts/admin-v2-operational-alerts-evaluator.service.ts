@@ -12,10 +12,10 @@ import {
 import { AdminV2OperationalAlertsEvaluatorRepository } from './admin-v2-operational-alerts-evaluator.repository';
 import {
   OPERATIONAL_ALERT_THRESHOLD_EVALUATOR_REGISTRY,
+  type OperationalAlertEvaluationResult,
   type OperationalAlertThreshold,
   type OperationalAlertThresholdEvaluatorRegistry,
 } from './admin-v2-operational-alerts-thresholds';
-import { type EvaluationResult } from './admin-v2-operational-alerts-workspace-evaluators';
 import { OPERATIONAL_ALERT_WORKSPACES, type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 
 const EVALUATOR_TICK_MAX_ALERTS = 100;
@@ -106,7 +106,7 @@ export class AdminV2OperationalAlertsEvaluatorService {
       return `error`;
     }
 
-    let result: EvaluationResult;
+    let result: OperationalAlertEvaluationResult;
     try {
       const threshold = alert.threshold_payload as OperationalAlertThreshold;
       const observation = await withTimeout(evaluator.evaluate(alert.query_payload), EVALUATOR_PER_ALERT_TIMEOUT_MS);

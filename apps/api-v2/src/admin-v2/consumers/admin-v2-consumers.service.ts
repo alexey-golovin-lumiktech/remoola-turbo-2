@@ -20,15 +20,10 @@ import {
 } from '../../consumer/auth/consumer-admin-auth-actions.port';
 import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
 const NOTE_MAX_LEN = 4000;
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
 
 type SuspendConsumerBody = {
   confirmed?: boolean;

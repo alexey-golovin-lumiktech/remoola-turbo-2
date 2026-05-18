@@ -5,14 +5,12 @@ import { Prisma } from '@remoola/database-2';
 import { AdminV2PaymentReversalNotificationService } from './admin-v2-payment-reversal-notification.service';
 import { AdminV2PaymentReversalPolicyProvider } from './admin-v2-payment-reversal-policy';
 import { AdminV2PaymentReversalRefundFinalizerService } from './admin-v2-payment-reversal-refund-finalizer.service';
-import {
-  type PaymentReversalCreateInput,
-  AdminV2PaymentReversalRequestPreparerService,
-} from './admin-v2-payment-reversal-request-preparer.service';
+import { AdminV2PaymentReversalRequestPreparerService } from './admin-v2-payment-reversal-request-preparer.service';
 import {
   type PaymentReversalExecutionResult,
   AdminV2PaymentReversalWorkflowService,
 } from './admin-v2-payment-reversal-workflow.service';
+import { type PaymentReversalCreateInput } from './admin-v2-payment-reversal.types';
 import { moneyDecimalToNumber } from '../../shared/money-decimal.utils';
 
 @Injectable()

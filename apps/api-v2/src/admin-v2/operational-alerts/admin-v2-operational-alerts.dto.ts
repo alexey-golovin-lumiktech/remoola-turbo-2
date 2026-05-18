@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Expose, Transform, Type } from 'class-transformer';
-import { Allow, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Allow, IsInt, IsOptional, IsString } from 'class-validator';
 
 import {
   ADMIN_V2_DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES,
@@ -14,8 +14,13 @@ import {
   ADMIN_V2_OPERATIONAL_ALERT_WORKSPACES,
   getAdminV2JsonPayloadBytes,
   isAdminV2OperationalAlertWorkspace,
+  type AdminV2OperationalAlertCreateBody,
+  type AdminV2OperationalAlertDeleteBody,
+  type AdminV2OperationalAlertUpdateBody,
   type AdminV2OperationalAlertWorkspace,
 } from '@remoola/api-types';
+
+import { ExpectedDeletedAtNullBody } from '../admin-v2-common.dto';
 
 export const OPERATIONAL_ALERT_WORKSPACES = ADMIN_V2_OPERATIONAL_ALERT_WORKSPACES;
 export type OperationalAlertWorkspace = AdminV2OperationalAlertWorkspace;
@@ -55,10 +60,10 @@ export function assertValidQueryPayload(value: unknown): asserts value is Record
   }
 }
 
-export class OperationalAlertCreateBody {
+export class OperationalAlertCreateBody implements AdminV2OperationalAlertCreateBody {
   @Expose()
   @IsString()
-  workspace!: string;
+  workspace!: OperationalAlertWorkspace;
 
   @Expose()
   @IsString()
@@ -86,7 +91,7 @@ export class OperationalAlertCreateBody {
   evaluationIntervalMinutes?: number;
 }
 
-export class OperationalAlertUpdateBody {
+export class OperationalAlertUpdateBody extends ExpectedDeletedAtNullBody implements AdminV2OperationalAlertUpdateBody {
   @Expose()
   @IsOptional()
   @IsString()
@@ -112,16 +117,8 @@ export class OperationalAlertUpdateBody {
   @Type(() => Number)
   @IsInt()
   evaluationIntervalMinutes?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  expectedDeletedAtNull!: number;
 }
 
-export class OperationalAlertDeleteBody {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  expectedDeletedAtNull!: number;
-}
+export class OperationalAlertDeleteBody
+  extends ExpectedDeletedAtNullBody
+  implements AdminV2OperationalAlertDeleteBody {}

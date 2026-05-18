@@ -19,15 +19,10 @@ import {
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { getCurrencyFractionDigits } from '../../shared-common';
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { type AdminV2DomainEvent, AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
 
 function adminIdOrConsumer(consumerId: string, adminId: string | null | undefined) {
   return adminId ?? consumerId;

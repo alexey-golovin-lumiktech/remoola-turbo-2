@@ -1,7 +1,6 @@
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import Stripe from 'stripe';
 
-import { type TPaymentReversalKind } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
@@ -23,14 +22,9 @@ import {
 } from './admin-v2-payment-reversal-refund-outbox';
 import { type PaymentReversalExecutionResult } from './admin-v2-payment-reversal-workflow.service';
 import { type PaymentReversalPaymentRequest } from './admin-v2-payment-reversal.query';
+import { type PaymentReversalCreateInput } from './admin-v2-payment-reversal.types';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { moneyDecimalToNumber, moneyDecimalToStripeMinorUnits } from '../../shared/money-decimal.utils';
-
-type PaymentReversalCreateInput = {
-  kind: TPaymentReversalKind;
-  amount?: number;
-  reason?: string;
-};
 
 @Injectable()
 export class AdminV2PaymentReversalRefundFinalizerService {

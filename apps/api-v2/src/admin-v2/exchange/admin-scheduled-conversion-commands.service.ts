@@ -13,15 +13,10 @@ import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-prefligh
 import { ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { buildExchangeExecutionSummary, mapExchangeExecutionFailureReason } from './exchange-execution-summary';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { type AdminV2DomainEvent, AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
 
 function asRecord(value: Prisma.JsonValue | Record<string, unknown> | null | undefined): Record<string, unknown> {
   return value && typeof value === `object` && !Array.isArray(value) ? { ...value } : {};

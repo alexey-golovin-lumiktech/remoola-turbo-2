@@ -5,64 +5,49 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import express from 'express';
 
+import {
+  type AdminV2DocumentBulkTagBody,
+  type AdminV2DocumentBulkTagResource,
+  type AdminV2DocumentRetagBody,
+  type AdminV2DocumentTagCreateBody,
+  type AdminV2DocumentTagDeleteBody,
+  type AdminV2DocumentTagUpdateBody,
+} from '@remoola/api-types';
+
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { resolveRequestBaseUrl } from '../../shared/request-base-url';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { ConfirmedVersionedMutationBody, VersionedMutationBody } from '../admin-v2-common.dto';
 import { AdminV2DocumentsService } from './admin-v2-documents.service';
 
-class DocumentTagCreateBody {
+class DocumentTagCreateBody implements AdminV2DocumentTagCreateBody {
   @Expose()
   @IsString()
   name!: string;
 }
 
-class DocumentTagUpdateBody {
+class DocumentTagUpdateBody extends VersionedMutationBody implements AdminV2DocumentTagUpdateBody {
   @Expose()
   @IsString()
   name!: string;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
 }
 
-class DocumentTagDeleteBody {
-  @Expose()
-  @Transform(({ value }) => value === true || value === `true`)
-  @IsBoolean()
-  confirmed!: boolean;
+class DocumentTagDeleteBody extends ConfirmedVersionedMutationBody implements AdminV2DocumentTagDeleteBody {}
 
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
-}
-
-class DocumentRetagBody {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
-
+class DocumentRetagBody extends VersionedMutationBody implements AdminV2DocumentRetagBody {
   @Expose()
   @IsArray()
   @IsString({ each: true })
   tagIds!: string[];
 }
 
-class BulkTagResource {
+class BulkTagResource extends VersionedMutationBody implements AdminV2DocumentBulkTagResource {
   @Expose()
   @IsString()
   resourceId!: string;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  version!: number;
 }
 
-class DocumentBulkTagBody {
+class DocumentBulkTagBody implements AdminV2DocumentBulkTagBody {
   @Expose()
   @IsArray()
   @IsString({ each: true })

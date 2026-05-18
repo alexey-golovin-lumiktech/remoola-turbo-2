@@ -7,12 +7,7 @@ import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../share
 import { sqlRequiredUuid } from '../../shared/prisma-raw.utils';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
-
-type AssignmentRequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
+import { type AdminV2RequestMeta as AssignmentRequestMeta } from '../admin-v2-context.types';
 
 type AssignmentRow = {
   id: string;

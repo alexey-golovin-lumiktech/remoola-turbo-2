@@ -3,12 +3,8 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
+import { type AdminV2RequestAuditMeta as RequestMeta } from '../admin-v2-context.types';
 import { buildStaleVersionPayload } from '../admin-v2-version-utils';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-};
 
 @Injectable()
 export class AdminV2DocumentsCommandsRepository {

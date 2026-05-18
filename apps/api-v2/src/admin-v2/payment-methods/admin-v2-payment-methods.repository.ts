@@ -6,12 +6,9 @@ import { buildStaleVersionPayload, deriveStatus, deriveVersion } from './admin-v
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../shared/prisma.service';
+import { type AdminV2RequestMeta } from '../admin-v2-context.types';
 
-export type AdminV2PaymentMethodsRequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
+export type AdminV2PaymentMethodsRequestMeta = AdminV2RequestMeta;
 
 type AdminV2PaymentMethodMutationRecord = {
   id: string;

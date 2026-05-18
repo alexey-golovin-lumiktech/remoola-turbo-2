@@ -5,14 +5,9 @@ import { adminErrorCodes } from '@remoola/shared-constants';
 import { AdminExchangeRateApprovalPersistenceRepository } from './admin-exchange-rate-approval-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
+import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
-
-type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
 
 function parseOptionalString(value: unknown) {
   return typeof value === `string` && value.trim().length > 0 ? value.trim() : null;

@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Expose, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Equals, IsBoolean, IsIn, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 
 import {
   ADMIN_V2_ASSIGNABLE_RESOURCE_TYPES,
@@ -8,6 +8,9 @@ import {
   ADMIN_V2_MIN_ASSIGNMENT_REASON_LENGTH,
   isAdminV2AssignableResourceType,
   type AdminV2AssignableResourceType,
+  type AdminV2AssignmentClaimBody,
+  type AdminV2AssignmentReassignBody,
+  type AdminV2AssignmentReleaseBody,
 } from '@remoola/api-types';
 
 export const ASSIGNABLE_RESOURCE_TYPES = ADMIN_V2_ASSIGNABLE_RESOURCE_TYPES;
@@ -26,10 +29,10 @@ export function assertResourceType(value: string): asserts value is AssignableRe
   }
 }
 
-export class AssignmentClaimBody {
+export class AssignmentClaimBody implements AdminV2AssignmentClaimBody {
   @Expose()
-  @IsString()
-  resourceType!: string;
+  @IsIn(ASSIGNABLE_RESOURCE_TYPES)
+  resourceType!: AssignableResourceType;
 
   @Expose()
   @IsUUID()
@@ -38,10 +41,11 @@ export class AssignmentClaimBody {
   @Expose()
   @IsOptional()
   @IsString()
+  @MaxLength(MAX_ASSIGNMENT_REASON_LENGTH)
   reason?: string;
 }
 
-export class AssignmentReleaseBody {
+export class AssignmentReleaseBody implements AdminV2AssignmentReleaseBody {
   @Expose()
   @IsUUID()
   assignmentId!: string;
@@ -49,15 +53,16 @@ export class AssignmentReleaseBody {
   @Expose()
   @IsOptional()
   @IsString()
+  @MaxLength(MAX_ASSIGNMENT_REASON_LENGTH)
   reason?: string;
 
   @Expose()
   @Type(() => Number)
-  @IsNumber()
+  @Equals(0)
   expectedReleasedAtNull!: number;
 }
 
-export class AssignmentReassignBody {
+export class AssignmentReassignBody implements AdminV2AssignmentReassignBody {
   @Expose()
   @IsUUID()
   assignmentId!: string;
@@ -72,10 +77,12 @@ export class AssignmentReassignBody {
 
   @Expose()
   @IsString()
+  @MinLength(MIN_ASSIGNMENT_REASON_LENGTH)
+  @MaxLength(MAX_ASSIGNMENT_REASON_LENGTH)
   reason!: string;
 
   @Expose()
   @Type(() => Number)
-  @IsNumber()
+  @Equals(0)
   expectedReleasedAtNull!: number;
 }

@@ -2,6 +2,7 @@ import { $Enums } from '@remoola/database-2';
 
 import { type AdminV2VerificationDecisionState } from './admin-v2-verification.repository';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
+import { type AdminV2RequestMeta } from '../admin-v2-context.types';
 
 export const ACTIVE_VERIFICATION_STATUSES = [
   $Enums.VerificationStatus.PENDING,
@@ -13,11 +14,7 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 const REASON_MAX_LENGTH = 500;
 
-export type RequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
+export type RequestMeta = AdminV2RequestMeta;
 
 export type DecisionControls = {
   canForceLogout: boolean;

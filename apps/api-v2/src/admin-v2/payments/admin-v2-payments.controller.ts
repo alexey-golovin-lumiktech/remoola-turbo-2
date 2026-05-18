@@ -4,7 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform } from 'class-transformer';
 import { IsBoolean, IsDate, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
-import { PAYMENT_REVERSAL_KIND } from '@remoola/api-types';
+import { PAYMENT_REVERSAL_KIND, type AdminV2PaymentReversalBody } from '@remoola/api-types';
 
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { Identity, type IIdentityContext } from '../../common';
@@ -99,7 +99,7 @@ class PaymentRequestsQuery {
   overdue?: boolean;
 }
 
-class PaymentReversalBody {
+class PaymentReversalBody implements AdminV2PaymentReversalBody {
   @Expose()
   @IsOptional()
   @IsNumber()

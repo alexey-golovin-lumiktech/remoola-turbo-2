@@ -14,18 +14,10 @@ import {
 import { ASSIGNABLE_RESOURCE_TYPES, AssignableResourceType, assertResourceType } from './admin-v2-assignments.dto';
 import { AdminV2AssignmentsQuery } from './admin-v2-assignments.query';
 import { AdminV2AssignmentsRepository } from './admin-v2-assignments.repository';
-
-type AssignmentRequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
-
-type AssignmentActorContext = {
-  id: string;
-  email?: string;
-  type: string;
-};
+import {
+  type AdminV2ActorContext as AssignmentActorContext,
+  type AdminV2RequestMeta as AssignmentRequestMeta,
+} from '../admin-v2-context.types';
 
 @Injectable()
 export class AdminV2AssignmentsService {

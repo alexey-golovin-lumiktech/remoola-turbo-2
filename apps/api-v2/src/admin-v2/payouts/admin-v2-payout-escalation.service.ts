@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { $Enums } from '@remoola/database-2';
 
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
+import { type AdminV2RequestMeta } from '../admin-v2-context.types';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
@@ -17,11 +18,7 @@ export type PayoutEscalationRequestBody = {
   reason?: string | null;
 };
 
-export type PayoutEscalationRequestMeta = {
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  idempotencyKey?: string | null;
-};
+export type PayoutEscalationRequestMeta = AdminV2RequestMeta;
 
 type PayoutEscalationResult = {
   payoutId: string;

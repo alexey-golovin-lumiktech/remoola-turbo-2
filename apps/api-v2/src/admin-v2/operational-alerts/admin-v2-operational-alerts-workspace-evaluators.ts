@@ -4,12 +4,6 @@ import { type OperationalAlertObservation } from './admin-v2-operational-alerts-
 import { LEDGER_ANOMALY_CLASSES, type LedgerAnomalyClass } from '../ledger/anomalies/admin-v2-ledger-anomalies.dto';
 import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
 
-export type EvaluationResult = {
-  fired: boolean;
-  reason: string | null;
-  observedValue?: number;
-};
-
 export interface OperationalAlertWorkspaceEvaluator {
   evaluate(queryPayload: unknown): Promise<OperationalAlertObservation>;
 }
