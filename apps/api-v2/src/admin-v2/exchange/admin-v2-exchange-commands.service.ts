@@ -4,16 +4,16 @@ import { $Enums, type Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
+import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
 import {
   AdminV2ExchangePersistenceRepository,
   type ExchangeExecutionSummary,
   type ExchangeRuleExecutionResult,
-  type ExchangeScheduledExecutionResult,
   type LockedRuleExecutionRow,
-  type LockedScheduledExecutionRow,
 } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { ExchangeConversionExecutor } from './exchange-conversion-executor';
+import { buildExchangeExecutionSummary, mapExchangeExecutionFailureReason } from './exchange-execution-summary';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { getCurrencyFractionDigits } from '../../shared-common';
@@ -26,16 +26,6 @@ type RequestMeta = {
   userAgent?: string | null;
   idempotencyKey?: string | null;
 };
-
-type ExchangeExecutionState = `executed` | `failed`;
-
-function parseOptionalString(value: unknown) {
-  return typeof value === `string` && value.trim().length > 0 ? value.trim() : null;
-}
-
-function asRecord(value: Prisma.JsonValue | Record<string, unknown> | null | undefined): Record<string, unknown> {
-  return value && typeof value === `object` && !Array.isArray(value) ? { ...value } : {};
-}
 
 function adminIdOrConsumer(consumerId: string, adminId: string | null | undefined) {
   return adminId ?? consumerId;
@@ -59,6 +49,7 @@ export class AdminV2ExchangeCommandsService {
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly domainEvents: AdminV2DomainEventsService,
     private readonly rateApprovalService: AdminExchangeRateApprovalService,
+    private readonly scheduledCommandsService: AdminScheduledConversionCommandsService,
     private readonly balanceService: BalanceCalculationService,
     private readonly conversionExecutor: ExchangeConversionExecutor,
     private readonly preflightRepository: AdminV2ExchangePreflightRepository,
@@ -175,57 +166,7 @@ export class AdminV2ExchangeCommandsService {
     body: { confirmed?: boolean; version?: number },
     meta: RequestMeta,
   ) {
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for scheduled FX execution`);
-    }
-
-    const idempotencyKey = parseUuidOrThrow(meta.idempotencyKey, `Idempotency-Key`);
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
-
-    const result = await this.idempotency.execute({
-      adminId,
-      scope: `exchange-scheduled-force-execute:${conversionId}`,
-      key: idempotencyKey,
-      payload: {
-        conversionId,
-        expectedVersion,
-        confirmed: true,
-      },
-      execute: async () => {
-        await this.assertActiveScheduledConversionVersion(conversionId, expectedVersion);
-
-        return this.transactions.runLedgerMutation((tx) =>
-          this.forceExecuteScheduledConversionInTransaction(tx, {
-            conversionId,
-            expectedVersion,
-            adminId,
-            idempotencyKey,
-            meta,
-          }),
-        );
-      },
-    });
-
-    if (result.summary.status === `executed`) {
-      await this.domainEvents.publishAfterCommit({
-        eventType: `exchange.executed`,
-        timestamp: new Date().toISOString(),
-        actorId: adminId,
-        resourceType: `scheduled_fx_conversion`,
-        resourceId: conversionId,
-        producerVersion: result.version,
-        metadata: {
-          status: result.summary.status,
-          reason: result.summary.reason,
-          ledgerId: result.summary.ledgerId ?? null,
-        },
-      });
-    }
-
-    return result;
+    return this.scheduledCommandsService.forceExecuteScheduledConversion(conversionId, adminId, body, meta);
   }
 
   async cancelScheduledConversion(
@@ -234,37 +175,7 @@ export class AdminV2ExchangeCommandsService {
     body: { confirmed?: boolean; version?: number },
     meta: RequestMeta,
   ) {
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for scheduled FX cancellation`);
-    }
-
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
-
-    return this.idempotency.execute({
-      adminId,
-      scope: `exchange-scheduled-cancel:${conversionId}`,
-      key: meta.idempotencyKey,
-      payload: {
-        conversionId,
-        expectedVersion,
-        confirmed: true,
-      },
-      execute: async () => {
-        await this.assertActiveScheduledConversionVersion(conversionId, expectedVersion);
-
-        return this.transactions.runLedgerMutation((tx) =>
-          this.persistenceRepository.cancelScheduledConversion(tx, {
-            conversionId,
-            expectedVersion,
-            adminId,
-            meta,
-          }),
-        );
-      },
-    });
+    return this.scheduledCommandsService.cancelScheduledConversion(conversionId, adminId, body, meta);
   }
 
   private async assertActiveRuleVersion(ruleId: string, expectedVersion: number) {
@@ -274,16 +185,6 @@ export class AdminV2ExchangeCommandsService {
     }
     if (deriveVersion(rule.updatedAt) !== expectedVersion) {
       throw new ConflictException(buildStaleVersionPayload(`Exchange rule`, rule.updatedAt));
-    }
-  }
-
-  private async assertActiveScheduledConversionVersion(conversionId: string, expectedVersion: number) {
-    const conversion = await this.preflightRepository.findActiveScheduledConversionById(conversionId);
-    if (!conversion) {
-      throw new NotFoundException(adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND);
-    }
-    if (deriveVersion(conversion.updatedAt) !== expectedVersion) {
-      throw new ConflictException(buildStaleVersionPayload(`Scheduled FX conversion`, conversion.updatedAt));
     }
   }
 
@@ -332,61 +233,6 @@ export class AdminV2ExchangeCommandsService {
     };
   }
 
-  private async forceExecuteScheduledConversionInTransaction(
-    tx: Prisma.TransactionClient,
-    params: {
-      conversionId: string;
-      expectedVersion: number;
-      adminId: string;
-      idempotencyKey: string;
-      meta: RequestMeta;
-    },
-  ): Promise<ExchangeScheduledExecutionResult> {
-    const locked = await this.persistenceRepository.lockScheduledExecutionRow(tx, params.conversionId);
-    if (!locked || locked.deleted_at) {
-      throw new NotFoundException(adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND);
-    }
-    if (deriveVersion(locked.updated_at) !== params.expectedVersion) {
-      throw new ConflictException(buildStaleVersionPayload(`Scheduled FX conversion`, locked.updated_at));
-    }
-    if (!this.isScheduledForceExecutable(locked.status)) {
-      if (locked.status === $Enums.ScheduledFxConversionStatus.EXECUTED) {
-        throw new ConflictException(adminErrorCodes.ADMIN_CONVERSION_ALREADY_EXECUTED);
-      }
-      if (locked.status === $Enums.ScheduledFxConversionStatus.CANCELLED) {
-        throw new ConflictException(adminErrorCodes.ADMIN_CONVERSION_ALREADY_CANCELLED);
-      }
-      throw new ConflictException(errorCodes.CONVERSION_ALREADY_PROCESSING);
-    }
-    if (
-      !(await this.persistenceRepository.tryActionLock(tx, `exchange_scheduled_force_execute:${params.conversionId}`))
-    ) {
-      throw new ConflictException(errorCodes.CONVERSION_ALREADY_PROCESSING);
-    }
-
-    const now = new Date();
-    const execution = await this.executeScheduledConversion(tx, locked, {
-      adminId: params.adminId,
-      idempotencyKey: params.idempotencyKey,
-      now,
-    });
-
-    const finalized = await this.persistenceRepository.finalizeScheduledExecution(tx, {
-      locked,
-      summary: execution.summary,
-      expectedVersion: params.expectedVersion,
-      adminId: params.adminId,
-      idempotencyKey: params.idempotencyKey,
-      meta: params.meta,
-      now,
-    });
-
-    return {
-      ...finalized,
-      ...execution,
-    };
-  }
-
   private async executeRuleConversion(
     tx: Prisma.TransactionClient,
     rule: LockedRuleExecutionRow,
@@ -399,7 +245,7 @@ export class AdminV2ExchangeCommandsService {
     if (available <= targetBalance) {
       return {
         executionState: `failed` as const,
-        summary: this.buildExecutionSummary({
+        summary: buildExchangeExecutionSummary({
           status: `failed`,
           reason: `balance_below_target`,
           executedAt: params.now,
@@ -417,7 +263,7 @@ export class AdminV2ExchangeCommandsService {
     if (!Number.isFinite(amountToConvert) || amountToConvert <= 0) {
       return {
         executionState: `failed` as const,
-        summary: this.buildExecutionSummary({
+        summary: buildExchangeExecutionSummary({
           status: `failed`,
           reason: `no_amount_to_convert`,
           executedAt: params.now,
@@ -447,7 +293,7 @@ export class AdminV2ExchangeCommandsService {
 
       return {
         executionState: `executed` as const,
-        summary: this.buildExecutionSummary({
+        summary: buildExchangeExecutionSummary({
           status: `executed`,
           reason: `conversion_executed`,
           executedAt: params.now,
@@ -462,9 +308,9 @@ export class AdminV2ExchangeCommandsService {
     } catch (error) {
       return {
         executionState: `failed` as const,
-        summary: this.buildExecutionSummary({
+        summary: buildExchangeExecutionSummary({
           status: `failed`,
-          reason: this.mapExecutionFailureReason(error),
+          reason: mapExchangeExecutionFailureReason(error),
           executedAt: params.now,
           source: params.source,
           actorId: params.actorId,
@@ -474,113 +320,10 @@ export class AdminV2ExchangeCommandsService {
     }
   }
 
-  private async executeScheduledConversion(
-    tx: Prisma.TransactionClient,
-    conversion: LockedScheduledExecutionRow,
-    params: { adminId: string; idempotencyKey: string; now: Date },
-  ) {
-    try {
-      const result = await this.conversionExecutor.executeInTransaction(tx, {
-        consumerId: conversion.consumer_id,
-        fromCurrency: conversion.from_currency,
-        toCurrency: conversion.to_currency,
-        amount: Number(conversion.amount),
-        now: params.now,
-        createdBy: params.adminId,
-        updatedBy: params.adminId,
-        idempotencyKeyPrefix: params.idempotencyKey,
-        metadata: {
-          source: `admin_scheduled_force_execute`,
-          initiatedBy: params.adminId,
-          scheduledConversionId: conversion.id,
-          ruleId: parseOptionalString(asRecord(conversion.metadata).ruleId),
-        },
-      });
-
-      return {
-        executionState: `executed` as const,
-        summary: this.buildExecutionSummary({
-          status: `executed`,
-          reason: `conversion_executed`,
-          executedAt: params.now,
-          ledgerId: result.ledgerId,
-          targetAmount: result.targetAmount.toString(),
-          sourceAmount: conversion.amount.toString(),
-          source: `admin_scheduled_force_execute`,
-          actorId: params.adminId,
-          idempotencyKey: params.idempotencyKey,
-        }),
-      };
-    } catch (error) {
-      return {
-        executionState: `failed` as const,
-        summary: this.buildExecutionSummary({
-          status: `failed`,
-          reason: this.mapExecutionFailureReason(error),
-          executedAt: params.now,
-          source: `admin_scheduled_force_execute`,
-          actorId: params.adminId,
-          idempotencyKey: params.idempotencyKey,
-        }),
-      };
-    }
-  }
-
-  private buildExecutionSummary(params: {
-    status: ExchangeExecutionState;
-    reason: string;
-    executedAt: Date;
-    ledgerId?: string | null;
-    targetAmount?: string | null;
-    sourceAmount?: string | null;
-    source: string;
-    actorId?: string | null;
-    idempotencyKey?: string | null;
-  }): ExchangeExecutionSummary {
-    return {
-      status: params.status,
-      reason: params.reason,
-      executedAt: params.executedAt.toISOString(),
-      ledgerId: params.ledgerId ?? null,
-      targetAmount: params.targetAmount ?? null,
-      sourceAmount: params.sourceAmount ?? null,
-      source: params.source,
-      actorId: params.actorId ?? null,
-      idempotencyKey: params.idempotencyKey ?? null,
-    };
-  }
-
-  private mapExecutionFailureReason(error: unknown) {
-    if (error instanceof NotFoundException || error instanceof BadRequestException) {
-      const response = error.getResponse();
-      if (typeof response === `string`) {
-        return response;
-      }
-      if (response && typeof response === `object` && `message` in response) {
-        const message = (response as { message?: unknown }).message;
-        if (typeof message === `string`) {
-          return message;
-        }
-        if (Array.isArray(message) && typeof message[0] === `string`) {
-          return message[0];
-        }
-      }
-      return error.message;
-    }
-
-    return error instanceof Error ? error.message : `Unknown error`;
-  }
-
   private async lockedBalance(tx: Prisma.TransactionClient, consumerId: string, currency: $Enums.CurrencyCode) {
     return this.balanceService.calculateInTransaction(tx, consumerId, currency, {
       mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
     });
-  }
-
-  private isScheduledForceExecutable(status: $Enums.ScheduledFxConversionStatus) {
-    return (
-      status === $Enums.ScheduledFxConversionStatus.PENDING || status === $Enums.ScheduledFxConversionStatus.FAILED
-    );
   }
 
   private async publishRuleEvent(adminId: string, ruleId: string, version: number, summary: ExchangeExecutionSummary) {

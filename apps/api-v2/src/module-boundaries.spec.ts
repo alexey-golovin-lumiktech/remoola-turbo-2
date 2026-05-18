@@ -178,12 +178,13 @@ describe(`Nest module provider boundaries`, () => {
         [`assignments/admin-v2-assignments.service.ts`, 3],
         [`documents/admin-v2-documents.service.ts`, 5],
         [`exchange/admin-exchange-rate-approval.service.ts`, 1],
+        [`exchange/admin-scheduled-conversion-commands.service.ts`, 2],
         [`operational-alerts/admin-v2-operational-alerts.service.ts`, 3],
         [`payment-methods/admin-v2-payment-methods.service.ts`, 3],
         [`payouts/admin-v2-payout-escalation.service.ts`, 1],
         [`saved-views/admin-v2-saved-views.service.ts`, 3],
       ]),
-      [`post-commit-event`]: new Map([[`exchange/admin-v2-exchange-commands.service.ts`, 5]]),
+      [`post-commit-event`]: new Map([[`exchange/admin-v2-exchange-commands.service.ts`, 3]]),
     };
 
     expect(sourceFileCounts(adminV2Dir, /idempotency\.executeInTransaction\s*\(/g)).toEqual(

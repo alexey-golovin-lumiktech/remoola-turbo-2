@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
+import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
 import { AdminV2ExchangeCommandsService } from './admin-v2-exchange-commands.service';
 import { AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
@@ -84,21 +85,26 @@ describe(`AdminV2ExchangeService`, () => {
 
     const persistenceRepository = new AdminV2ExchangePersistenceRepository(prisma);
     const transactions = new PrismaTransactionRunner(prisma);
+    const preflightRepository = new AdminV2ExchangePreflightRepository(prisma);
+    const conversionExecutor = new ExchangeConversionExecutor(persistenceRepository, balanceService);
 
     return {
       service: new AdminV2ExchangeService(
         new AdminV2ExchangeCommandsService(
           idempotency,
           domainEvents,
-          new AdminExchangeRateApprovalService(
+          new AdminExchangeRateApprovalService(idempotency, preflightRepository, persistenceRepository, transactions),
+          new AdminScheduledConversionCommandsService(
             idempotency,
-            new AdminV2ExchangePreflightRepository(prisma),
+            domainEvents,
+            conversionExecutor,
+            preflightRepository,
             persistenceRepository,
             transactions,
           ),
           balanceService,
-          new ExchangeConversionExecutor(persistenceRepository, balanceService),
-          new AdminV2ExchangePreflightRepository(prisma),
+          conversionExecutor,
+          preflightRepository,
           persistenceRepository,
           transactions,
         ),
