@@ -6,6 +6,7 @@ import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
 import { PayoutHighValuePolicyService } from './payout-high-value-policy.service';
+import { PayoutPaymentMethodResolverService } from './payout-payment-method-resolver.service';
 import { envs } from '../../envs';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { type PrismaService } from '../../shared/prisma.service';
@@ -54,13 +55,15 @@ function buildService() {
     getActiveAssigneesForResource: jest.fn(async () => new Map()),
   };
   const prismaService = prisma as unknown as PrismaService;
+  const payoutsRepository = new AdminV2PayoutsRepository(prismaService);
   const service = new AdminV2PayoutsService(
     new PrismaTransactionRunner(prismaService),
     idempotency as unknown as AdminV2IdempotencyService,
     assignmentsService as unknown as AdminV2AssignmentsService,
-    new AdminV2PayoutsRepository(prismaService),
+    payoutsRepository,
     new AdminV2PayoutEscalationRepository(prismaService),
     new PayoutHighValuePolicyService(),
+    new PayoutPaymentMethodResolverService(payoutsRepository),
   );
 
   return {

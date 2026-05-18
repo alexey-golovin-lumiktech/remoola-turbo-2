@@ -11,6 +11,10 @@ import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { PayoutHighValuePolicyService } from './payout-high-value-policy.service';
 import {
+  PayoutPaymentMethodResolverService,
+  type PaymentMethodSummaryRow,
+} from './payout-payment-method-resolver.service';
+import {
   derivePayoutStatus,
   getEffectiveLedgerStatus,
   getEscalationBlockReason,
@@ -51,16 +55,6 @@ type PayoutListRow = {
     externalId: string | null;
     createdAt: Date;
   }>;
-};
-
-type PaymentMethodSummaryRow = {
-  id: string;
-  consumerId: string;
-  type: $Enums.PaymentMethodType;
-  brand: string | null;
-  last4: string | null;
-  bankLast4: string | null;
-  deletedAt: Date | null;
 };
 
 type PayoutEscalationState = {
@@ -106,6 +100,7 @@ export class AdminV2PayoutsService {
     private readonly payoutsQuery: AdminV2PayoutsRepository,
     private readonly payoutEscalationRepository: AdminV2PayoutEscalationRepository,
     private readonly highValuePolicy: PayoutHighValuePolicyService,
+    private readonly paymentMethodResolver: PayoutPaymentMethodResolverService,
   ) {}
 
   private parseMetadata(metadata: Prisma.JsonValue | null | undefined): Record<string, unknown> {
@@ -138,13 +133,6 @@ export class AdminV2PayoutsService {
     return entry.stripeId?.trim() || null;
   }
 
-  private getPaymentMethodId(metadata: Prisma.JsonValue | null | undefined): string | null {
-    const parsed = this.parseMetadata(metadata);
-    return typeof parsed.paymentMethodId === `string` && parsed.paymentMethodId.trim()
-      ? parsed.paymentMethodId.trim()
-      : null;
-  }
-
   private mapEscalationState(
     escalation:
       | {
@@ -174,58 +162,6 @@ export class AdminV2PayoutsService {
         email: escalation.escalatedByAdmin.email,
       },
     };
-  }
-
-  private mapDestinationPaymentMethod(
-    entry: { consumerId: string; metadata?: Prisma.JsonValue | null },
-    paymentMethodsById: Map<string, PaymentMethodSummaryRow>,
-  ) {
-    const paymentMethodId = this.getPaymentMethodId(entry.metadata);
-    if (!paymentMethodId) {
-      return {
-        destinationPaymentMethodSummary: null,
-        destinationAvailability: `unavailable` as const,
-        destinationLinkageSource: null,
-      };
-    }
-
-    const paymentMethod = paymentMethodsById.get(paymentMethodId);
-    if (!paymentMethod || paymentMethod.consumerId !== entry.consumerId) {
-      return {
-        destinationPaymentMethodSummary: null,
-        destinationAvailability: `unavailable` as const,
-        destinationLinkageSource: null,
-      };
-    }
-
-    return {
-      destinationPaymentMethodSummary: {
-        id: paymentMethod.id,
-        type: paymentMethod.type,
-        brand: paymentMethod.brand,
-        last4: paymentMethod.last4,
-        bankLast4: paymentMethod.bankLast4,
-        deletedAt: paymentMethod.deletedAt?.toISOString() ?? null,
-      },
-      destinationAvailability: `linked` as const,
-      destinationLinkageSource: `metadata.paymentMethodId` as const,
-    };
-  }
-
-  private async fetchPaymentMethodsById(entries: Array<{ consumerId: string; metadata?: Prisma.JsonValue | null }>) {
-    const paymentMethodIds = Array.from(
-      new Set(
-        entries.map((entry) => this.getPaymentMethodId(entry.metadata)).filter((id): id is string => Boolean(id)),
-      ),
-    );
-
-    if (paymentMethodIds.length === 0) {
-      return new Map<string, PaymentMethodSummaryRow>();
-    }
-
-    const paymentMethods = await this.payoutsQuery.fetchPaymentMethodsByIds(paymentMethodIds);
-
-    return new Map(paymentMethods.map((paymentMethod) => [paymentMethod.id, paymentMethod]));
   }
 
   private mapPayoutListItem(
@@ -261,7 +197,7 @@ export class AdminV2PayoutsService {
       slaBreachDetected: derivedStatus === `stuck`,
       highValue,
       hasActiveEscalation: Boolean(entry.payoutEscalation?.id),
-      ...this.mapDestinationPaymentMethod(entry, paymentMethodsById),
+      ...this.paymentMethodResolver.resolveDestination(entry, paymentMethodsById),
       assignedTo,
     };
   }
@@ -281,7 +217,7 @@ export class AdminV2PayoutsService {
     );
 
     const visibleRows = rows.slice(0, limit) as PayoutListRow[];
-    const paymentMethodsById = await this.fetchPaymentMethodsById(visibleRows);
+    const paymentMethodsById = await this.paymentMethodResolver.getPaymentMethodsById(visibleRows);
     const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
       `payout`,
       visibleRows.map((row) => row.id),
@@ -324,7 +260,7 @@ export class AdminV2PayoutsService {
       throw new NotFoundException(`Payout not found`);
     }
 
-    const paymentMethodsById = await this.fetchPaymentMethodsById([entry]);
+    const paymentMethodsById = await this.paymentMethodResolver.getPaymentMethodsById([entry]);
     const relatedEntries = await this.payoutsQuery.findRelatedEntries(entry.ledgerId);
 
     const [auditContext, assignment] = await Promise.all([
@@ -422,7 +358,7 @@ export class AdminV2PayoutsService {
       },
       staleWarning: effectiveStatus !== entry.status,
       dataFreshnessClass: `exact`,
-      ...this.mapDestinationPaymentMethod(entry, paymentMethodsById),
+      ...this.paymentMethodResolver.resolveDestination(entry, paymentMethodsById),
     };
   }
 

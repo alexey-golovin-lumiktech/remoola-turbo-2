@@ -6,6 +6,7 @@ import { AdminV2PayoutsController } from './admin-v2-payouts.controller';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
 import { PayoutHighValuePolicyService } from './payout-high-value-policy.service';
+import { PayoutPaymentMethodResolverService } from './payout-payment-method-resolver.service';
 import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.mo
     AdminV2PayoutsRepository,
     AdminV2PayoutsService,
     PayoutHighValuePolicyService,
+    PayoutPaymentMethodResolverService,
   ],
   exports: [AdminV2PayoutsService],
 })
