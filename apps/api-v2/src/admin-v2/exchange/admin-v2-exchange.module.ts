@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AdminAuthModule } from '../../admin-auth/admin-auth.module';
 import { BalanceCalculationModule } from '../../shared/balance-calculation.module';
 import { AdminV2SharedModule } from '../admin-v2-shared.module';
+import { AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import { AdminExchangeConversionPersistenceRepository } from './admin-exchange-conversion-persistence.repository';
 import { AdminExchangeRateApprovalPersistenceRepository } from './admin-exchange-rate-approval-persistence.repository';
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
@@ -27,6 +28,7 @@ import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.mo
   imports: [AdminAuthModule, AdminV2SharedModule, BalanceCalculationModule, AdminV2AssignmentsModule],
   controllers: [AdminV2ExchangeController],
   providers: [
+    AdminExchangeActionLockRepository,
     AdminExchangeConversionPersistenceRepository,
     AdminExchangeRateApprovalPersistenceRepository,
     AdminV2ExchangePersistenceRepository,

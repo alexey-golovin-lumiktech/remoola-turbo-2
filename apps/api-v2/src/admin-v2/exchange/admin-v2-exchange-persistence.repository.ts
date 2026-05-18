@@ -105,13 +105,6 @@ function mergeMetadata(base: Prisma.JsonValue | null | undefined, patch: Record<
 export class AdminV2ExchangePersistenceRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async tryActionLock(tx: Prisma.TransactionClient, lockKey: string) {
-    const rows = await tx.$queryRaw<Array<{ locked: boolean }>>(Prisma.sql`
-      SELECT pg_try_advisory_xact_lock(hashtext(${lockKey}::text)::bigint) AS locked
-    `);
-    return Boolean(rows[0]?.locked);
-  }
-
   async setRuleEnabled(
     tx: Prisma.TransactionClient,
     params: {

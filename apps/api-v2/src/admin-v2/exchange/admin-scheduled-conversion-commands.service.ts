@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { $Enums, type Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
+import { AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import {
   AdminV2ExchangePersistenceRepository,
   type ExchangeScheduledExecutionResult,
@@ -49,6 +50,7 @@ export class AdminScheduledConversionCommandsService {
     private readonly domainEvents: AdminV2DomainEventsService,
     private readonly conversionExecutor: ExchangeConversionExecutor,
     private readonly preflightRepository: AdminV2ExchangePreflightRepository,
+    private readonly actionLockRepository: AdminExchangeActionLockRepository,
     private readonly persistenceRepository: AdminV2ExchangePersistenceRepository,
     private readonly transactions: PrismaTransactionRunner,
   ) {}
@@ -176,7 +178,7 @@ export class AdminScheduledConversionCommandsService {
       throw new ConflictException(errorCodes.CONVERSION_ALREADY_PROCESSING);
     }
     if (
-      !(await this.persistenceRepository.tryActionLock(tx, `exchange_scheduled_force_execute:${params.conversionId}`))
+      !(await this.actionLockRepository.tryActionLock(tx, `exchange_scheduled_force_execute:${params.conversionId}`))
     ) {
       throw new ConflictException(errorCodes.CONVERSION_ALREADY_PROCESSING);
     }

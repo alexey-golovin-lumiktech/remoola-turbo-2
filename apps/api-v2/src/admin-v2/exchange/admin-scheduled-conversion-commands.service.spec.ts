@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
+import { type AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import { AdminScheduledConversionCommandsService } from './admin-scheduled-conversion-commands.service';
 import { type AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { type AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
@@ -60,9 +61,11 @@ describe(`AdminScheduledConversionCommandsService`, () => {
         updatedAt,
       })),
     };
+    const actionLockRepository = {
+      tryActionLock: jest.fn(async () => true),
+    };
     const persistenceRepository = {
       lockScheduledExecutionRow: jest.fn(async () => buildLockedConversion()),
-      tryActionLock: jest.fn(async () => true),
       finalizeScheduledExecution: jest.fn(async () => ({
         conversionId: `scheduled-1`,
         version: deriveVersion(updatedAt),
@@ -78,6 +81,7 @@ describe(`AdminScheduledConversionCommandsService`, () => {
     };
 
     return {
+      actionLockRepository,
       conversionExecutor,
       domainEvents,
       idempotency,
@@ -88,6 +92,7 @@ describe(`AdminScheduledConversionCommandsService`, () => {
         domainEvents as unknown as AdminV2DomainEventsService,
         conversionExecutor as unknown as ExchangeConversionExecutor,
         preflightRepository as unknown as AdminV2ExchangePreflightRepository,
+        actionLockRepository as unknown as AdminExchangeActionLockRepository,
         persistenceRepository as unknown as AdminV2ExchangePersistenceRepository,
         transactions as unknown as PrismaTransactionRunner,
       ),
@@ -117,8 +122,15 @@ describe(`AdminScheduledConversionCommandsService`, () => {
   });
 
   it(`preserves force-execute idempotency scope, action lock, summary, and event publish`, async () => {
-    const { conversionExecutor, domainEvents, idempotency, persistenceRepository, service, transactions } =
-      buildService();
+    const {
+      actionLockRepository,
+      conversionExecutor,
+      domainEvents,
+      idempotency,
+      persistenceRepository,
+      service,
+      transactions,
+    } = buildService();
 
     const result = await service.forceExecuteScheduledConversion(
       `scheduled-1`,
@@ -140,10 +152,7 @@ describe(`AdminScheduledConversionCommandsService`, () => {
       }),
     );
     expect(transactions.runLedgerMutation).toHaveBeenCalledTimes(1);
-    expect(persistenceRepository.tryActionLock).toHaveBeenCalledWith(
-      tx,
-      `exchange_scheduled_force_execute:scheduled-1`,
-    );
+    expect(actionLockRepository.tryActionLock).toHaveBeenCalledWith(tx, `exchange_scheduled_force_execute:scheduled-1`);
     expect(conversionExecutor.executeInTransaction).toHaveBeenCalledWith(
       tx,
       expect.objectContaining({
@@ -245,7 +254,7 @@ describe(`AdminScheduledConversionCommandsService`, () => {
   });
 
   it(`rejects terminal and concurrent force-execute states before conversion execution`, async () => {
-    const { conversionExecutor, persistenceRepository, service } = buildService();
+    const { actionLockRepository, conversionExecutor, persistenceRepository, service } = buildService();
     persistenceRepository.lockScheduledExecutionRow.mockResolvedValueOnce(
       buildLockedConversion({ status: $Enums.ScheduledFxConversionStatus.EXECUTED }),
     );
@@ -271,7 +280,7 @@ describe(`AdminScheduledConversionCommandsService`, () => {
       ),
     ).rejects.toMatchObject({ response: { message: adminErrorCodes.ADMIN_CONVERSION_ALREADY_CANCELLED } });
 
-    persistenceRepository.tryActionLock.mockResolvedValueOnce(false);
+    actionLockRepository.tryActionLock.mockResolvedValueOnce(false);
     await expect(
       service.forceExecuteScheduledConversion(
         `scheduled-1`,

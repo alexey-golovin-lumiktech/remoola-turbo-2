@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { type AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import { AdminExchangeRuleCommandsService } from './admin-exchange-rule-commands.service';
 import { type AdminV2ExchangePersistenceRepository } from './admin-v2-exchange-persistence.repository';
 import { type AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
@@ -62,6 +63,9 @@ describe(`AdminExchangeRuleCommandsService`, () => {
         updatedAt,
       })),
     };
+    const actionLockRepository = {
+      tryActionLock: jest.fn(async () => true),
+    };
     const persistenceRepository = {
       setRuleEnabled: jest.fn(async (_client, params: { enabled: boolean }) => ({
         ruleId: `rule-1`,
@@ -69,7 +73,6 @@ describe(`AdminExchangeRuleCommandsService`, () => {
         version: deriveVersion(updatedAt),
       })),
       lockRuleExecutionRow: jest.fn(async () => buildLockedRule()),
-      tryActionLock: jest.fn(async () => true),
       finalizeRuleExecution: jest.fn(async () => ({
         ruleId: `rule-1`,
         version: deriveVersion(updatedAt),
@@ -82,6 +85,7 @@ describe(`AdminExchangeRuleCommandsService`, () => {
     };
 
     return {
+      actionLockRepository,
       balanceService,
       conversionExecutor,
       domainEvents,
@@ -94,6 +98,7 @@ describe(`AdminExchangeRuleCommandsService`, () => {
         balanceService as unknown as BalanceCalculationService,
         conversionExecutor as unknown as ExchangeConversionExecutor,
         preflightRepository as unknown as AdminV2ExchangePreflightRepository,
+        actionLockRepository as unknown as AdminExchangeActionLockRepository,
         persistenceRepository as unknown as AdminV2ExchangePersistenceRepository,
         transactions as unknown as PrismaTransactionRunner,
       ),
@@ -175,8 +180,8 @@ describe(`AdminExchangeRuleCommandsService`, () => {
   });
 
   it(`rejects rule action lock conflicts before balance or conversion work`, async () => {
-    const { balanceService, conversionExecutor, persistenceRepository, service } = buildService();
-    persistenceRepository.tryActionLock.mockResolvedValueOnce(false);
+    const { actionLockRepository, balanceService, conversionExecutor, persistenceRepository, service } = buildService();
+    actionLockRepository.tryActionLock.mockResolvedValueOnce(false);
 
     await expect(
       service.runRuleNow(`rule-1`, `admin-1`, { version: deriveVersion(updatedAt) }, meta),
@@ -218,7 +223,7 @@ describe(`AdminExchangeRuleCommandsService`, () => {
   });
 
   it(`preserves successful run-now conversion summary and event publishing`, async () => {
-    const { balanceService, conversionExecutor, domainEvents, idempotency, persistenceRepository, service } =
+    const { actionLockRepository, balanceService, conversionExecutor, domainEvents, idempotency, service } =
       buildService();
 
     const result = await service.runRuleNow(`rule-1`, `admin-1`, { version: deriveVersion(updatedAt) }, meta);
@@ -231,7 +236,7 @@ describe(`AdminExchangeRuleCommandsService`, () => {
         payload: { ruleId: `rule-1`, expectedVersion: deriveVersion(updatedAt) },
       }),
     );
-    expect(persistenceRepository.tryActionLock).toHaveBeenCalledWith(tx, `exchange_rule_run_now:rule-1`);
+    expect(actionLockRepository.tryActionLock).toHaveBeenCalledWith(tx, `exchange_rule_run_now:rule-1`);
     expect(balanceService.calculateInTransaction).toHaveBeenCalledWith(tx, `consumer-1`, $Enums.CurrencyCode.USD, {
       mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
     });

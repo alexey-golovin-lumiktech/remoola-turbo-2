@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
+import { AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import { AdminExchangeConversionPersistenceRepository } from './admin-exchange-conversion-persistence.repository';
 import { AdminExchangeRateApprovalPersistenceRepository } from './admin-exchange-rate-approval-persistence.repository';
 import { AdminExchangeRateApprovalService } from './admin-exchange-rate-approval.service';
@@ -89,6 +90,7 @@ describe(`AdminV2ExchangeService`, () => {
       ...overrides?.assignmentsService,
     } as any;
 
+    const actionLockRepository = new AdminExchangeActionLockRepository(prisma);
     const conversionPersistenceRepository = new AdminExchangeConversionPersistenceRepository(prisma);
     const rateApprovalPersistenceRepository = new AdminExchangeRateApprovalPersistenceRepository(prisma);
     const persistenceRepository = new AdminV2ExchangePersistenceRepository(prisma);
@@ -113,6 +115,7 @@ describe(`AdminV2ExchangeService`, () => {
             domainEvents,
             conversionExecutor,
             preflightRepository,
+            actionLockRepository,
             persistenceRepository,
             transactions,
           ),
@@ -122,6 +125,7 @@ describe(`AdminV2ExchangeService`, () => {
             balanceService,
             conversionExecutor,
             preflightRepository,
+            actionLockRepository,
             persistenceRepository,
             transactions,
           ),
