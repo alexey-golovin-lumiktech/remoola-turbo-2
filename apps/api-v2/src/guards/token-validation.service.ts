@@ -10,7 +10,7 @@ import { AuthRequestContextService } from './auth-request-context.service';
 import { AuthTokenVerifierService } from './auth-token-verifier.service';
 import { type IIdentity } from '../common';
 
-export type TokenValidationResult = {
+type TokenValidationResult = {
   identity: IIdentity;
   identityType: string;
   sessionId?: string;

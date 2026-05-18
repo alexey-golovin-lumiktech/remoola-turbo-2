@@ -1,20 +1,39 @@
-import { Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable } from '@nestjs/common';
+import { type Cache } from 'cache-manager';
 
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 
 import { type CreateManualPaymentMethod, type UpdatePaymentMethod } from './dto/payment-method.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
+const PAYMENT_METHODS_LIST_CACHE_TTL_MS = 30_000;
+
+type ConsumerPaymentMethodList = Prisma.PaymentMethodModelGetPayload<{ include: { billingDetails: true } }>[];
+
 @Injectable()
 export class ConsumerPaymentMethodsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async listForConsumer(consumerId: string) {
-    return this.prisma.paymentMethodModel.findMany({
+    const cacheKey = this.buildListCacheKey(consumerId);
+    const cached = await this.cacheManager.get<ConsumerPaymentMethodList>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const paymentMethods = await this.prisma.paymentMethodModel.findMany({
       where: { consumerId, deletedAt: null },
       include: { billingDetails: true },
       orderBy: { createdAt: `desc` },
     });
+
+    await this.cacheManager.set(cacheKey, paymentMethods, PAYMENT_METHODS_LIST_CACHE_TTL_MS);
+    return paymentMethods;
   }
 
   async createManualPaymentMethod(consumerId: string, body: CreateManualPaymentMethod) {
@@ -132,5 +151,9 @@ export class ConsumerPaymentMethodsRepository {
         data: { defaultSelected: true },
       });
     });
+  }
+
+  private buildListCacheKey(consumerId: string) {
+    return `consumer-payment-methods:list:${consumerId}`;
   }
 }

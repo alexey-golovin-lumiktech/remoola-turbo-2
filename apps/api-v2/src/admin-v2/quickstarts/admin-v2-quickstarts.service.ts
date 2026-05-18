@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { type Cache } from 'cache-manager';
 
 import {
   type IAdminV2QuickstartCard,
@@ -8,6 +10,8 @@ import {
 } from './admin-v2-quickstarts.dto';
 
 type QuickstartCatalogEntry = IAdminV2QuickstartResolvedPreset;
+
+const QUICKSTART_CACHE_TTL_MS = 300_000;
 
 const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
   {
@@ -127,29 +131,77 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
 
 @Injectable()
 export class AdminV2QuickstartsService {
-  list(surface: IAdminV2QuickstartSurface = `all`): IAdminV2QuickstartCard[] {
-    return QUICKSTART_CATALOG.filter((entry) => surface === `all` || entry.surfaces.includes(surface)).map((entry) => ({
-      id: entry.id,
-      label: entry.label,
-      description: entry.description,
-      eyebrow: entry.eyebrow,
-      operatorModel: entry.operatorModel,
-      targetPath: entry.targetPath,
-      surfaces: [...entry.surfaces],
-      ...(entry.requiredCapabilities ? { requiredCapabilities: [...entry.requiredCapabilities] } : {}),
-    }));
+  constructor(
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
+  ) {}
+
+  async list(surface: IAdminV2QuickstartSurface = `all`): Promise<IAdminV2QuickstartCard[]> {
+    const cacheKey = this.buildListCacheKey(surface);
+    const cached = await this.cacheManager.get<IAdminV2QuickstartCard[]>(cacheKey);
+    if (cached) {
+      return cached.map((card) => this.cloneCard(card));
+    }
+
+    const cards = QUICKSTART_CATALOG.filter((entry) => surface === `all` || entry.surfaces.includes(surface)).map(
+      (entry) => ({
+        id: entry.id,
+        label: entry.label,
+        description: entry.description,
+        eyebrow: entry.eyebrow,
+        operatorModel: entry.operatorModel,
+        targetPath: entry.targetPath,
+        surfaces: [...entry.surfaces],
+        ...(entry.requiredCapabilities ? { requiredCapabilities: [...entry.requiredCapabilities] } : {}),
+      }),
+    );
+    await this.cacheManager.set(cacheKey, cards, QUICKSTART_CACHE_TTL_MS);
+    return cards.map((card) => this.cloneCard(card));
   }
 
-  get(quickstartId: IAdminV2QuickstartId): IAdminV2QuickstartResolvedPreset {
+  async get(quickstartId: IAdminV2QuickstartId): Promise<IAdminV2QuickstartResolvedPreset> {
+    const cacheKey = this.buildGetCacheKey(quickstartId);
+    const cached = await this.cacheManager.get<IAdminV2QuickstartResolvedPreset>(cacheKey);
+    if (cached) {
+      return this.clonePreset(cached);
+    }
+
     const match = QUICKSTART_CATALOG.find((entry) => entry.id === quickstartId);
     if (!match) {
       throw new NotFoundException(`Unknown admin-v2 quickstart`);
     }
-    return {
+    const preset = {
       ...match,
       filters: { ...match.filters },
       surfaces: [...match.surfaces],
       ...(match.requiredCapabilities ? { requiredCapabilities: [...match.requiredCapabilities] } : {}),
+    } as IAdminV2QuickstartResolvedPreset;
+    await this.cacheManager.set(cacheKey, preset, QUICKSTART_CACHE_TTL_MS);
+    return this.clonePreset(preset);
+  }
+
+  private buildListCacheKey(surface: IAdminV2QuickstartSurface) {
+    return `admin-v2-quickstarts:list:${surface}`;
+  }
+
+  private buildGetCacheKey(quickstartId: IAdminV2QuickstartId) {
+    return `admin-v2-quickstarts:get:${quickstartId}`;
+  }
+
+  private cloneCard(card: IAdminV2QuickstartCard): IAdminV2QuickstartCard {
+    return {
+      ...card,
+      surfaces: [...card.surfaces],
+      ...(card.requiredCapabilities ? { requiredCapabilities: [...card.requiredCapabilities] } : {}),
+    };
+  }
+
+  private clonePreset(preset: IAdminV2QuickstartResolvedPreset): IAdminV2QuickstartResolvedPreset {
+    return {
+      ...preset,
+      filters: { ...preset.filters },
+      surfaces: [...preset.surfaces],
+      ...(preset.requiredCapabilities ? { requiredCapabilities: [...preset.requiredCapabilities] } : {}),
     } as IAdminV2QuickstartResolvedPreset;
   }
 }

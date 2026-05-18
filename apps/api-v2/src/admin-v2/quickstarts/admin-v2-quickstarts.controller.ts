@@ -28,7 +28,7 @@ export class AdminV2QuickstartsController {
       requestedSurface = surface;
     }
     return {
-      items: this.service.list(requestedSurface),
+      items: await this.service.list(requestedSurface),
     };
   }
 

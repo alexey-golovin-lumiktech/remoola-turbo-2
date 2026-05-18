@@ -1,3 +1,5 @@
+import { type Cache } from 'cache-manager';
+
 import { $Enums, type Prisma } from '@remoola/database-2';
 
 import { AdminV2OverviewQuery } from './admin-v2-overview.query';
@@ -20,6 +22,10 @@ function queryToString(query: unknown): string {
 
 describe(`AdminV2OverviewQuery`, () => {
   function makeQuery() {
+    const cacheManager = {
+      get: jest.fn(),
+      set: jest.fn(),
+    };
     const prisma = {
       $queryRaw: jest.fn<Promise<unknown[]>, [Prisma.Sql]>(async () => [{ count: 0 }]),
       consumerModel: { count: jest.fn(async () => 0) },
@@ -30,13 +36,14 @@ describe(`AdminV2OverviewQuery`, () => {
     };
 
     return {
+      cacheManager,
       prisma,
-      query: new AdminV2OverviewQuery(prisma as never),
+      query: new AdminV2OverviewQuery(cacheManager as unknown as Cache, prisma as never),
     };
   }
 
   it(`counts pending verifications with the active review statuses`, async () => {
-    const { prisma, query } = makeQuery();
+    const { cacheManager, prisma, query } = makeQuery();
 
     await query.countPendingVerifications();
 
@@ -52,10 +59,22 @@ describe(`AdminV2OverviewQuery`, () => {
         },
       },
     });
+    expect(cacheManager.set).toHaveBeenCalledWith(`admin-v2-overview:pending-verifications`, 0, 30_000);
+  });
+
+  it(`returns cached overview counts without hitting the database`, async () => {
+    const { cacheManager, prisma, query } = makeQuery();
+    cacheManager.get.mockResolvedValue(7);
+
+    await expect(query.countPendingVerifications()).resolves.toBe(7);
+
+    expect(cacheManager.get).toHaveBeenCalledWith(`admin-v2-overview:pending-verifications`);
+    expect(prisma.consumerModel.count).not.toHaveBeenCalled();
+    expect(cacheManager.set).not.toHaveBeenCalled();
   });
 
   it(`counts suspicious auth events inside the requested window`, async () => {
-    const { prisma, query } = makeQuery();
+    const { cacheManager, prisma, query } = makeQuery();
     const authWindowStart = new Date(`2026-04-14T10:00:00.000Z`);
 
     await query.countSuspiciousAuthEvents(authWindowStart);
@@ -67,10 +86,15 @@ describe(`AdminV2OverviewQuery`, () => {
         createdAt: { gte: authWindowStart },
       },
     });
+    expect(cacheManager.set).toHaveBeenCalledWith(
+      `admin-v2-overview:suspicious-auth:2026-04-14T10:00:00.000Z`,
+      0,
+      30_000,
+    );
   });
 
   it(`loads recent admin actions ordered newest-first`, async () => {
-    const { prisma, query } = makeQuery();
+    const { cacheManager, prisma, query } = makeQuery();
 
     await query.listRecentAdminActions(5);
 
@@ -90,10 +114,11 @@ describe(`AdminV2OverviewQuery`, () => {
         },
       },
     });
+    expect(cacheManager.set).toHaveBeenCalledWith(`admin-v2-overview:recent-admin-actions:5`, [], 30_000);
   });
 
   it(`uses dedicated count filters for payment request and scheduled FX signals`, async () => {
-    const { prisma, query } = makeQuery();
+    const { cacheManager, prisma, query } = makeQuery();
     const now = new Date(`2026-04-15T10:00:00.000Z`);
 
     await query.countOverduePaymentRequests(now);
@@ -125,10 +150,17 @@ describe(`AdminV2OverviewQuery`, () => {
         status: $Enums.ScheduledFxConversionStatus.FAILED,
       },
     });
+    expect(cacheManager.set).toHaveBeenCalledWith(
+      `admin-v2-overview:overdue-payment-requests:2026-04-15T10:00:00.000Z`,
+      0,
+      30_000,
+    );
+    expect(cacheManager.set).toHaveBeenCalledWith(`admin-v2-overview:uncollectible-payment-requests`, 0, 30_000);
+    expect(cacheManager.set).toHaveBeenCalledWith(`admin-v2-overview:failed-scheduled-conversions`, 0, 30_000);
   });
 
   it(`counts open disputes through the raw SQL probe`, async () => {
-    const { prisma, query } = makeQuery();
+    const { cacheManager, prisma, query } = makeQuery();
     prisma.$queryRaw.mockResolvedValueOnce([{ count: 4 }]);
 
     const result = await query.countOpenDisputes();
@@ -138,10 +170,11 @@ describe(`AdminV2OverviewQuery`, () => {
     expect(sql).toContain(`SELECT COUNT(*)::int AS count`);
     expect(sql).toContain(`FROM ledger_entry_dispute led`);
     expect(sql).toContain(`COALESCE(led.metadata->>'status', led.metadata->>'disputeStatus', '') IN`);
+    expect(cacheManager.set).toHaveBeenCalledWith(`admin-v2-overview:open-disputes`, 4, 30_000);
   });
 
   it(`counts stale approved exchange rates with the supplied cutoff window`, async () => {
-    const { prisma, query } = makeQuery();
+    const { cacheManager, prisma, query } = makeQuery();
     const now = new Date(`2026-04-15T10:00:00.000Z`);
     const staleCutoff = new Date(`2026-04-14T10:00:00.000Z`);
     prisma.$queryRaw.mockResolvedValueOnce([{ count: 9 }]);
@@ -153,5 +186,10 @@ describe(`AdminV2OverviewQuery`, () => {
     expect(sql).toContain(`FROM exchange_rate rate`);
     expect(sql).toContain(`rate.status = ?::exchange_rate_status_enum`);
     expect(sql).toContain(`COALESCE(rate.fetched_at, rate.effective_at, rate.created_at) < ?`);
+    expect(cacheManager.set).toHaveBeenCalledWith(
+      `admin-v2-overview:stale-exchange-rates:2026-04-15T10:00:00.000Z:2026-04-14T10:00:00.000Z`,
+      9,
+      30_000,
+    );
   });
 });
