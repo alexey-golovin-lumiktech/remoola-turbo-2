@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 /** Action names for admin action audit (fintech compliance). */
-export const DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS = {
+export const ADMIN_ACTION_AUDIT_ACTIONS = {
   consumer_note_create: `consumer_note_create`,
   consumer_flag_add: `consumer_flag_add`,
   consumer_flag_remove: `consumer_flag_remove`,
@@ -56,10 +56,7 @@ export const DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS = {
   alert_delete: `alert_delete`,
 } as const;
 
-export const ADMIN_ACTION_AUDIT_ACTIONS = DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS;
-
-export type AdminActionAuditActions = typeof DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS;
-export type AdminActionAuditAction = AdminActionAuditActions[keyof AdminActionAuditActions];
+type AdminActionAuditActions = typeof ADMIN_ACTION_AUDIT_ACTIONS;
 
 export const ADMIN_ACTION_AUDIT_ACTIONS_TOKEN = Symbol(`ADMIN_ACTION_AUDIT_ACTIONS_TOKEN`);
 

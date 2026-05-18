@@ -4,7 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
 
-export type PayoutPaymentMethodEntry = {
+type PayoutPaymentMethodEntry = {
   consumerId: string;
   metadata?: Prisma.JsonValue | null;
 };
@@ -19,7 +19,7 @@ export type PaymentMethodSummaryRow = {
   deletedAt: Date | null;
 };
 
-export type DestinationPaymentMethodOverlay =
+type DestinationPaymentMethodOverlay =
   | {
       destinationPaymentMethodSummary: null;
       destinationAvailability: `unavailable`;

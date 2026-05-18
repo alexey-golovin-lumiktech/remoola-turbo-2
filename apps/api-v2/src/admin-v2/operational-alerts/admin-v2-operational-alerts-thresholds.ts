@@ -18,7 +18,7 @@ export type OperationalAlertObservation = {
   reasonSubject: string;
   reasonDetail?: string;
 };
-export type ThresholdEvaluationResult = {
+type ThresholdEvaluationResult = {
   fired: boolean;
   reason: string | null;
   observedValue?: number;

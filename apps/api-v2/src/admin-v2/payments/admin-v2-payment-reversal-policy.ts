@@ -9,7 +9,7 @@ import { type PaymentMailingService } from '../../shared/payment-mailing.service
 type ReversalEmailParams = Parameters<PaymentMailingService[`sendPaymentRefundEmail`]>[0];
 type ReversalEmailer = Pick<PaymentMailingService, `sendPaymentRefundEmail` | `sendPaymentChargebackEmail`>;
 
-export type PaymentReversalPolicy = {
+type PaymentReversalPolicy = {
   auditAction: (typeof ADMIN_ACTION_AUDIT_ACTIONS)[keyof typeof ADMIN_ACTION_AUDIT_ACTIONS];
   initialLedgerStatus: $Enums.TransactionStatus;
   paymentRail: $Enums.PaymentRail;

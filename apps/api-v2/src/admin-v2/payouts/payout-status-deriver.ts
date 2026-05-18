@@ -10,24 +10,24 @@ const PENDING_LIKE_STATUSES = [
 
 export type PayoutDerivedStatus = `pending` | `processing` | `completed` | `failed` | `stuck` | `reversed`;
 
-export type PayoutLedgerStatusInput = {
+type PayoutLedgerStatusInput = {
   status: $Enums.TransactionStatus;
   outcomes?: Array<{ status: $Enums.TransactionStatus }>;
 };
 
-export type PayoutOutcomeTimestampInput = {
+type PayoutOutcomeTimestampInput = {
   createdAt: Date;
   outcomes?: Array<{ createdAt: Date }>;
 };
 
-export type PayoutStatusInput = {
+type PayoutStatusInput = {
   type: $Enums.LedgerEntryType;
   status: $Enums.TransactionStatus;
   createdAt: Date;
   outcomes?: Array<{ status: $Enums.TransactionStatus; createdAt: Date }>;
 };
 
-export type PayoutEscalationBlockParams = {
+type PayoutEscalationBlockParams = {
   derivedStatus: PayoutDerivedStatus;
   escalation?: { id: string } | null;
 };

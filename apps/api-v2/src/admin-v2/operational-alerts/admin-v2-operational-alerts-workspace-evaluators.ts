@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
 import { type OperationalAlertObservation } from './admin-v2-operational-alerts-thresholds';
-import { type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 import { LEDGER_ANOMALY_CLASSES, type LedgerAnomalyClass } from '../ledger/anomalies/admin-v2-ledger-anomalies.dto';
 import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
 
@@ -60,7 +59,3 @@ export class LedgerAnomaliesAlertEvaluator implements OperationalAlertWorkspaceE
     };
   }
 }
-
-export type WorkspaceEvaluatorRegistry = Readonly<
-  Record<OperationalAlertWorkspace, OperationalAlertWorkspaceEvaluator>
->;

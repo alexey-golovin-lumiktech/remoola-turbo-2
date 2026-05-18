@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerAutoConversionRuleService } from './consumer-auto-conversion-rule.service';
 import { ConsumerCurrencyConversionService } from './consumer-currency-conversion.service';
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
@@ -47,7 +48,7 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
         rateService,
         conversionService,
         new ConsumerScheduledConversionService(conversionService, automationRepository),
-        automationRepository,
+        new ConsumerAutoConversionRuleService(balanceService, conversionService, automationRepository),
       ),
       prisma,
     };
@@ -74,7 +75,7 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
 
   it(`claims the rule by matching its previously read nextRunAt value`, async () => {
     const { service, prisma } = createService();
-    jest.spyOn(service as any, `executeAutoConversionRule`).mockResolvedValue({
+    jest.spyOn((service as any).autoConversionRuleService, `executeAutoConversionRule`).mockResolvedValue({
       ruleId: rule.id,
       converted: false,
       reason: `balance_below_target`,
@@ -110,11 +111,13 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
         update: jest.fn(),
       },
     });
-    const executeSpy = jest.spyOn(service as any, `executeAutoConversionRule`).mockResolvedValue({
-      ruleId: rule.id,
-      converted: false,
-      reason: `balance_below_target`,
-    });
+    const executeSpy = jest
+      .spyOn((service as any).autoConversionRuleService, `executeAutoConversionRule`)
+      .mockResolvedValue({
+        ruleId: rule.id,
+        converted: false,
+        reason: `balance_below_target`,
+      });
 
     await service.runAutoConversionRuleNow(rule.id, { source: `manual` });
 
@@ -138,7 +141,9 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
   it(`reschedules a failed manual run for a near-term retry`, async () => {
     const conversionError = new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
     const { service, prisma } = createService();
-    jest.spyOn(service as any, `executeAutoConversionRule`).mockRejectedValue(conversionError);
+    jest
+      .spyOn((service as any).autoConversionRuleService, `executeAutoConversionRule`)
+      .mockRejectedValue(conversionError);
 
     await expect(service.runAutoConversionRuleNow(rule.id, { source: `manual` })).rejects.toBe(conversionError);
     expect(prisma.walletAutoConversionRuleModel.update).toHaveBeenCalledWith({

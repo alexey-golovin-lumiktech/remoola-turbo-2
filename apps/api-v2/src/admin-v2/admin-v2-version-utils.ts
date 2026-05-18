@@ -1,4 +1,4 @@
-export type StaleVersionPayload = {
+type StaleVersionPayload = {
   error: `STALE_VERSION`;
   message: string;
   currentVersion: number;

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { ConsumerAutoConversionRuleService } from './consumer-auto-conversion-rule.service';
 import { ConsumerCurrencyConversionService } from './consumer-currency-conversion.service';
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
@@ -19,6 +20,7 @@ import { ConsumerScheduledConversionService } from './consumer-scheduled-convers
     ConsumerExchangeRateService,
     ConsumerCurrencyConversionService,
     ConsumerScheduledConversionService,
+    ConsumerAutoConversionRuleService,
     ConsumerExchangeExecutionRepository,
     ConsumerExchangeAutomationRepository,
     ConsumerExchangeService,

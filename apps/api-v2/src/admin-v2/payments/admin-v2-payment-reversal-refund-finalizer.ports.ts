@@ -33,11 +33,3 @@ export type PaymentReversalAuditPort = Pick<AdminActionAuditService, `recordRequ
 export type PaymentReversalLedgerTransactionPort = {
   runLedgerMutation<T>(callback: (client: Prisma.TransactionClient) => Promise<T>): Promise<T>;
 };
-
-export type PaymentReversalRefundFinalizerPorts = {
-  ledgerFinalization: PaymentReversalLedgerFinalizationPort;
-  refundOutbox: PaymentReversalRefundOutboxPort;
-  audit: PaymentReversalAuditPort;
-  transactions: PaymentReversalLedgerTransactionPort;
-  stripe: PaymentReversalStripeRefundPort;
-};

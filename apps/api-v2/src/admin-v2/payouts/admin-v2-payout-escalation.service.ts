@@ -23,7 +23,7 @@ export type PayoutEscalationRequestMeta = {
   idempotencyKey?: string | null;
 };
 
-export type PayoutEscalationResult = {
+type PayoutEscalationResult = {
   payoutId: string;
   escalationId: string;
   createdAt: string;

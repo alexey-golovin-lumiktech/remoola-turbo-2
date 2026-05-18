@@ -22,7 +22,7 @@ export type PaymentReversalCreateInput = {
   reason?: string;
 };
 
-export type PreparedPaymentReversal = {
+type PreparedPaymentReversal = {
   paymentRequest: PaymentReversalPaymentRequest;
   requestAmount: Prisma.Decimal;
   requestedAmount?: Prisma.Decimal;

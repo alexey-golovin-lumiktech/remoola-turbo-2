@@ -10,7 +10,7 @@ import { envs } from '../../envs';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { getCurrencyFractionDigits } from '../../shared-common';
 
-export type ExchangeConversionParams = {
+type ExchangeConversionParams = {
   consumerId: string;
   fromCurrency: $Enums.CurrencyCode;
   toCurrency: $Enums.CurrencyCode;
@@ -22,7 +22,7 @@ export type ExchangeConversionParams = {
   metadata: Record<string, unknown>;
 };
 
-export type ExchangeConversionResult = {
+type ExchangeConversionResult = {
   ledgerId: string;
   entryId: string;
   targetAmount: number;

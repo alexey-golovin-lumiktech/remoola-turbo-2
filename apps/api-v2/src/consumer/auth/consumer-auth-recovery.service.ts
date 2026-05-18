@@ -5,6 +5,7 @@ import { oauthCrypto, hashTokenToHex } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthSessionRepository } from './consumer-auth-session.repository';
+import { ForgotPasswordOutcome } from './consumer-auth.types';
 import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import {
   CONSUMER_SESSION_REVOCATION_PORT,
@@ -21,11 +22,6 @@ import { passwordUtils, secureCompare } from '../../shared-common';
 
 import type express from 'express';
 
-type ForgotPasswordOutcome =
-  | `unknown_or_unsupported`
-  | `password_reset_email_sent`
-  | `provider_guidance_email_sent`
-  | `cooldown_noop`;
 type ConsumerRecoveryEmailer = Pick<
   RecoveryMailingService,
   | `sendConsumerPasswordlessRecoveryEmailSafe`

@@ -5,7 +5,7 @@ import { type IJwtTokenPayload } from '../dtos/consumer';
 import { envs } from '../envs';
 import { GuardMessage } from './auth-guard-boundary';
 
-export type VerifiedAccessToken = {
+type VerifiedAccessToken = {
   payload: IJwtTokenPayload;
   identityId: string;
 };

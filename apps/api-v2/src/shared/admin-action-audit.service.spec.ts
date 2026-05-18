@@ -1,12 +1,12 @@
 import { Logger } from '@nestjs/common';
 
-import { DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditPolicyService } from './admin-action-audit-policy.service';
+import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditPolicyService } from './admin-action-audit-policy.service';
 import { type AdminActionAuditRepository } from './admin-action-audit.repository';
 import { AdminActionAuditService } from './admin-action-audit.service';
 
 describe(`AdminActionAuditService`, () => {
   const createService = (repository: AdminActionAuditRepository) =>
-    new AdminActionAuditService(repository, new AdminActionAuditPolicyService(DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS));
+    new AdminActionAuditService(repository, new AdminActionAuditPolicyService(ADMIN_ACTION_AUDIT_ACTIONS));
 
   afterEach(() => {
     jest.restoreAllMocks();

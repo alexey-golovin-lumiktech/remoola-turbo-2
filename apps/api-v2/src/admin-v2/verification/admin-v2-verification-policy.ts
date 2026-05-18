@@ -29,7 +29,7 @@ export type DecisionControls = {
 
 export type VerificationDecision = `approve` | `reject` | `request-info` | `flag`;
 
-export type VerificationDecisionConfig = {
+type VerificationDecisionConfig = {
   nextState: AdminV2VerificationDecisionState;
   actionName: (typeof ADMIN_ACTION_AUDIT_ACTIONS)[keyof typeof ADMIN_ACTION_AUDIT_ACTIONS];
   notificationType: `email` | null;

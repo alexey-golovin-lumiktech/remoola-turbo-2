@@ -11,7 +11,7 @@ import {
 } from './auth-guard-boundary';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 
-export type AuthRequestContext = {
+type AuthRequestContext = {
   path: string;
   isConsumerPath: boolean;
   consumerScope?: ConsumerAppScope;

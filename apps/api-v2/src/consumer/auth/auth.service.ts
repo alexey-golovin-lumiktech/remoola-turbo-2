@@ -175,5 +175,3 @@ export class ConsumerAuthService {
     return this.recoveryService.resetPasswordWithToken(token, newPassword);
   }
 }
-
-export type { ForgotPasswordOutcome, GoogleSignupPayload, LoginContext };

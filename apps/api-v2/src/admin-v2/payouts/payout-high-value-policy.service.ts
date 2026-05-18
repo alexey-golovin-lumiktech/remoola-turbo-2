@@ -6,10 +6,10 @@ import { envs } from '../../envs';
 
 const PAYOUT_HIGH_VALUE_THRESHOLD_SOURCE = `env.ADMIN_V2_PAYOUT_HIGH_VALUE_THRESHOLDS`;
 
-export type PayoutHighValueEligibility = `high-value` | `below-threshold` | `not-configured`;
-export type PayoutHighValuePolicyAvailability = `configured` | `partially-configured` | `unconfigured`;
+type PayoutHighValueEligibility = `high-value` | `below-threshold` | `not-configured`;
+type PayoutHighValuePolicyAvailability = `configured` | `partially-configured` | `unconfigured`;
 
-export type PayoutHighValuePolicy = {
+type PayoutHighValuePolicy = {
   availability: PayoutHighValuePolicyAvailability;
   source: string;
   wording: string;
@@ -19,13 +19,13 @@ export type PayoutHighValuePolicy = {
   }>;
 };
 
-export type PayoutHighValueAssessment = {
+type PayoutHighValueAssessment = {
   eligibility: PayoutHighValueEligibility;
   thresholdAmount: string | null;
   thresholdCurrency: $Enums.CurrencyCode;
 };
 
-export type PayoutHighValueConfig = {
+type PayoutHighValueConfig = {
   policy: PayoutHighValuePolicy;
   thresholds: Map<$Enums.CurrencyCode, Prisma.Decimal>;
 };

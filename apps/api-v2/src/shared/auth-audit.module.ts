@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 
 import {
   ADMIN_ACTION_AUDIT_ACTIONS_TOKEN,
-  DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS,
+  ADMIN_ACTION_AUDIT_ACTIONS,
   AdminActionAuditPolicyService,
 } from './admin-action-audit-policy.service';
 import { AdminActionAuditRepository } from './admin-action-audit.repository';
@@ -30,7 +30,7 @@ import { PrismaModule } from './prisma.module';
     AuthAuditService,
     {
       provide: ADMIN_ACTION_AUDIT_ACTIONS_TOKEN,
-      useValue: DEFAULT_ADMIN_ACTION_AUDIT_ACTIONS,
+      useValue: ADMIN_ACTION_AUDIT_ACTIONS,
     },
     AdminActionAuditPolicyService,
     AdminActionAuditService,

@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { ConsumerAutoConversionRuleService } from './consumer-auto-conversion-rule.service';
 import { ConsumerCurrencyConversionService } from './consumer-currency-conversion.service';
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
@@ -33,7 +34,7 @@ function buildService(prisma: any, balanceService: any) {
     rateService,
     conversionService,
     new ConsumerScheduledConversionService(conversionService, automationRepository),
-    automationRepository,
+    new ConsumerAutoConversionRuleService(balanceService, conversionService, automationRepository),
   );
 }
 
