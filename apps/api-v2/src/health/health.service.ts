@@ -51,9 +51,6 @@ export class HealthService {
     return {
       ...health,
       uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      version: process.version,
-      environment: envs.NODE_ENV || `development`,
     };
   }
 

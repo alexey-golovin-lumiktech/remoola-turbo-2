@@ -6,6 +6,7 @@ import request from 'supertest';
 
 import { HealthModule } from './health.module';
 import { bootstrapApiTestApp } from '../../test/helpers/bootstrap-api-test-app';
+import { envs } from '../envs';
 import { DatabaseModule } from '../shared/database.module';
 import { MAIL_TRANSPORT } from '../shared/mail-transport.port';
 
@@ -49,6 +50,27 @@ describe(`HealthController integration`, () => {
             services: expect.objectContaining({ database: `ok` }),
           }),
         );
+      });
+  });
+
+  it(`rejects detailed health without the internal bearer secret`, () => {
+    return request(app.getHttpServer()).get(`/health/detailed`).expect(403);
+  });
+
+  it(`allows detailed health with the internal bearer secret`, () => {
+    return request(app.getHttpServer())
+      .get(`/health/detailed`)
+      .set(`Authorization`, `Bearer ${envs.CRON_SECRET}`)
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toEqual(
+          expect.objectContaining({
+            status: `ok`,
+            uptime: expect.any(Number),
+          }),
+        );
+        expect(body).not.toHaveProperty(`memory`);
+        expect(body).not.toHaveProperty(`version`);
       });
   });
 });

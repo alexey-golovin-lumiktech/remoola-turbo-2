@@ -2,15 +2,16 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
+import {
+  formatDashboardStatus,
+  getDashboardPaymentMethodIds,
+  mapFinancialActivityItem,
+} from './consumer-dashboard-activity.mapper';
 import { ConsumerDashboardQuery, type DashboardActivityLedgerRow } from './consumer-dashboard.query';
 import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { BalanceCalculationService, BalanceCalculationMode } from '../../../shared/balance-calculation.service';
-import {
-  getEffectiveLedgerStatusOrNull,
-  getEffectivePaymentRequestStatus as getEffectivePaymentRequestStatusForEntry,
-} from '../../../shared/transaction-status.utils';
+import { getEffectivePaymentRequestStatus as getEffectivePaymentRequestStatusForEntry } from '../../../shared/transaction-status.utils'; // eslint-disable-line
 import { buildConsumerVerificationState } from '../../../shared-common';
-import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 
 @Injectable()
 export class ConsumerDashboardService {
@@ -82,30 +83,6 @@ export class ConsumerDashboardService {
     return $Enums.CurrencyCode.USD;
   }
 
-  private formatDashboardStatus(status: $Enums.TransactionStatus | null | undefined): string {
-    const normalizedStatus = status ? normalizeConsumerFacingTransactionStatus(status) : status;
-    switch (normalizedStatus) {
-      case $Enums.TransactionStatus.COMPLETED:
-        return `Completed`;
-      case $Enums.TransactionStatus.PENDING:
-        return `Pending`;
-      case $Enums.TransactionStatus.WAITING:
-        return `Waiting for confirmation`;
-      case $Enums.TransactionStatus.DENIED:
-        return `Denied`;
-      case $Enums.TransactionStatus.UNCOLLECTIBLE:
-        return `Failed to collect`;
-      case $Enums.TransactionStatus.DRAFT:
-        return `Draft`;
-      default:
-        return `Status updated`;
-    }
-  }
-
-  private formatDashboardAmount(amount: number, currencyCode: $Enums.CurrencyCode): string {
-    return `${Math.abs(amount).toFixed(2)} ${currencyCode}`;
-  }
-
   private getPendingRequestLastActivityAt(
     paymentRequest:
       | {
@@ -124,118 +101,6 @@ export class ConsumerDashboardService {
     return latestOutcomeAt ?? latestConsumerEntry?.createdAt ?? paymentRequest.updatedAt;
   }
 
-  private formatDashboardRail(rail: $Enums.PaymentRail | null | undefined): string | null {
-    if (!rail) return null;
-    if ([`CARD`, `CARD_3DS`, `CARD_TOKENIZED`].includes(rail)) {
-      return `via card`;
-    }
-    if ([`BANK_TRANSFER`, `SEPA_TRANSFER`, `SEPA_INSTANT`, `SWIFT_TRANSFER`, `ACH`, `WIRE`].includes(rail)) {
-      return `via bank transfer`;
-    }
-    return null;
-  }
-
-  private buildActivityDescription(parts: Array<string | null | undefined>): string | undefined {
-    const value = parts.filter((part): part is string => Boolean(part && part.trim())).join(` • `);
-    return value || undefined;
-  }
-
-  private mapFinancialActivityItem(
-    row: DashboardActivityLedgerRow,
-    paymentMethodLabelById: Map<string, string>,
-  ): ActivityItem | null {
-    const metadata = JSON.parse(JSON.stringify(row.metadata || {})) as {
-      rail?: $Enums.PaymentRail;
-      paymentMethodId?: string;
-      from?: string;
-      to?: string;
-    };
-    const normalizedType = this.normalizeDashboardActivityType(row.type, row.paymentRequestId);
-    const amount = Number(row.amount);
-    const status = getEffectiveLedgerStatusOrNull(row) ?? row.status;
-    const statusLabel = this.formatDashboardStatus(status);
-    const rail = metadata.rail ?? row.paymentRequest?.paymentRail ?? null;
-    const paymentMethodLabel =
-      typeof metadata.paymentMethodId === `string`
-        ? (paymentMethodLabelById.get(metadata.paymentMethodId) ?? null)
-        : null;
-
-    switch (normalizedType) {
-      case $Enums.LedgerEntryType.USER_PAYMENT:
-        return {
-          id: row.ledgerId,
-          label: amount >= 0 ? `Payment received` : `Payment sent`,
-          description: this.buildActivityDescription([
-            statusLabel,
-            this.formatDashboardAmount(amount, row.currencyCode),
-            this.formatDashboardRail(rail),
-          ]),
-          createdAt: row.createdAt.toISOString(),
-          kind: amount >= 0 ? `payment_received` : `payment_sent`,
-        };
-      case $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL:
-        return {
-          id: row.ledgerId,
-          label: `Payment reversal`,
-          description: this.buildActivityDescription([
-            statusLabel,
-            this.formatDashboardAmount(amount, row.currencyCode),
-          ]),
-          createdAt: row.createdAt.toISOString(),
-          kind: `payment_reversal`,
-        };
-      case $Enums.LedgerEntryType.USER_PAYOUT:
-        return {
-          id: row.ledgerId,
-          label: `Withdrawal`,
-          description: this.buildActivityDescription([
-            statusLabel,
-            this.formatDashboardAmount(amount, row.currencyCode),
-            paymentMethodLabel ? `to ${paymentMethodLabel}` : this.formatDashboardRail(rail),
-          ]),
-          createdAt: row.createdAt.toISOString(),
-          kind: `withdrawal`,
-        };
-      case $Enums.LedgerEntryType.USER_PAYOUT_REVERSAL:
-        return {
-          id: row.ledgerId,
-          label: `Withdrawal reversal`,
-          description: this.buildActivityDescription([
-            statusLabel,
-            this.formatDashboardAmount(amount, row.currencyCode),
-          ]),
-          createdAt: row.createdAt.toISOString(),
-          kind: `withdrawal_reversal`,
-        };
-      case $Enums.LedgerEntryType.CURRENCY_EXCHANGE: {
-        const from = typeof metadata.from === `string` ? metadata.from : null;
-        const to = typeof metadata.to === `string` ? metadata.to : null;
-        return {
-          id: row.ledgerId,
-          label: from && to ? `Exchange ${from} to ${to}` : `Currency exchange`,
-          description: this.buildActivityDescription([
-            statusLabel,
-            this.formatDashboardAmount(amount, row.currencyCode),
-          ]),
-          createdAt: row.createdAt.toISOString(),
-          kind: `currency_exchange`,
-        };
-      }
-      default:
-        return null;
-    }
-  }
-
-  private normalizeDashboardActivityType(
-    type: $Enums.LedgerEntryType,
-    paymentRequestId: string | null | undefined,
-  ): $Enums.LedgerEntryType {
-    if (!paymentRequestId) return type;
-    if (type === $Enums.LedgerEntryType.USER_DEPOSIT) return $Enums.LedgerEntryType.USER_PAYMENT;
-    if (type === $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL) return $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL;
-    return type;
-  }
-
   private async buildFinancialActivity(consumerId: string): Promise<ActivityItem[]> {
     const rows = await this.dashboardQuery.findFinancialActivityRows(consumerId);
 
@@ -250,16 +115,7 @@ export class ConsumerDashboardService {
       }
     }
 
-    const paymentMethodIds = Array.from(
-      new Set(
-        Array.from(latestEntryByLedgerId.values())
-          .map((row) => {
-            const metadata = JSON.parse(JSON.stringify(row.metadata || {})) as { paymentMethodId?: string };
-            return typeof metadata.paymentMethodId === `string` ? metadata.paymentMethodId : null;
-          })
-          .filter((paymentMethodId): paymentMethodId is string => Boolean(paymentMethodId)),
-      ),
-    );
+    const paymentMethodIds = getDashboardPaymentMethodIds(Array.from(latestEntryByLedgerId.values()));
     const paymentMethodLabelById = new Map<string, string>();
 
     if (paymentMethodIds.length > 0) {
@@ -273,7 +129,7 @@ export class ConsumerDashboardService {
     }
 
     return Array.from(latestEntryByLedgerId.values())
-      .map((row) => this.mapFinancialActivityItem(row, paymentMethodLabelById))
+      .map((row) => mapFinancialActivityItem(row, paymentMethodLabelById))
       .filter((item): item is ActivityItem => Boolean(item))
       .sort((a, b) => new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf())
       .slice(0, 8);
@@ -434,7 +290,7 @@ export class ConsumerDashboardService {
           amount: Number(paymentRequest.amount),
           currencyCode: paymentRequest.currencyCode,
           effectiveStatus,
-          status: this.formatDashboardStatus(effectiveStatus),
+          status: formatDashboardStatus(effectiveStatus),
           lastActivityAt,
           lastActivityTime: lastActivityAt?.getTime() ?? 0,
         };

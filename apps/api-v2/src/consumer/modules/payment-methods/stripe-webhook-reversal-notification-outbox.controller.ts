@@ -1,8 +1,8 @@
-import { Controller, ForbiddenException, Get, Headers, Post, Query } from '@nestjs/common';
+import { Controller, Get, Headers, Post, Query, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 
 import { StripeWebhookReversalNotificationOutboxService } from './stripe-webhook-reversal-notification-outbox.service';
-import { PublicEndpoint } from '../../../common';
-import { envs } from '../../../envs';
+import { assertInternalCronAuthorization, InternalCronGuard, PublicEndpoint } from '../../../common';
 
 const MIN_DRAIN_LIMIT = 1;
 const MAX_DRAIN_LIMIT = 25;
@@ -19,12 +19,12 @@ export class StripeWebhookReversalNotificationOutboxController {
   constructor(private readonly outbox: StripeWebhookReversalNotificationOutboxService) {}
 
   @PublicEndpoint()
+  @UseGuards(InternalCronGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Get()
   @Post()
   async drain(@Headers(`authorization`) authorization?: string, @Query(`limit`) limit?: string) {
-    if (authorization !== `Bearer ${envs.CRON_SECRET}`) {
-      throw new ForbiddenException(`Invalid job authorization`);
-    }
+    assertInternalCronAuthorization(authorization);
 
     const drainLimit = parseDrainLimit(limit);
     return drainLimit == null ? this.outbox.processDueRows() : this.outbox.processDueRows(drainLimit);

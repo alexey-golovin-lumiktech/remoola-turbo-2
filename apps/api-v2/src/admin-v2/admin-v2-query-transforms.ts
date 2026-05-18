@@ -1,3 +1,11 @@
+import { Transform } from 'class-transformer';
+
+type QueryTransform = () => PropertyDecorator;
+
+function optionalQueryTransform(mapValue: (value: unknown) => unknown): QueryTransform {
+  return () => Transform(({ obj, key }) => mapValue((obj as Record<string, unknown>)[key]));
+}
+
 export function optionalStringQuery(value: unknown): unknown {
   if (typeof value !== `string`) return value;
   const trimmed = value.trim();
@@ -27,3 +35,8 @@ export function optionalBooleanQuery(value: unknown): unknown {
   if (trimmed === `false`) return false;
   return value;
 }
+
+export const OptionalStringQuery = optionalQueryTransform(optionalStringQuery);
+export const OptionalNumberQuery = optionalQueryTransform(optionalNumberQuery);
+export const OptionalDateQuery = optionalQueryTransform(optionalDateQuery);
+export const OptionalBooleanQuery = optionalQueryTransform(optionalBooleanQuery);

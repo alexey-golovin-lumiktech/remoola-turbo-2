@@ -4,6 +4,7 @@ import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2PaymentsQuery, type AdminV2PaymentsQueueRow } from './admin-v2-payments.query';
+import { parseLedgerMetadata } from '../../shared/json-metadata.utils';
 import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
@@ -164,7 +165,7 @@ export class AdminV2PaymentsService {
     }
 
     for (const entry of paymentRequest.ledgerEntries ?? []) {
-      const metadata = JSON.parse(JSON.stringify(entry.metadata ?? {})) as { rail?: $Enums.PaymentRail | null };
+      const metadata = parseLedgerMetadata(entry.metadata);
       if (metadata.rail) {
         return metadata.rail;
       }

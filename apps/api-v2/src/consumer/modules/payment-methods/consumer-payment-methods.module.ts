@@ -6,6 +6,7 @@ import { providers } from './providers';
 import { StripeWebhookReversalNotificationOutboxController } from './stripe-webhook-reversal-notification-outbox.controller'; // eslint-disable-line max-len
 import { StripeWebhookController } from './stripe-webhook.controller';
 import { ConsumerStripeController } from './stripe.controller';
+import { InternalCronGuard } from '../../../common';
 import { MailingModule } from '../../../shared/mailing.module';
 import { ConsumerPaymentsModule } from '../payments/consumer-payments.module';
 
@@ -18,6 +19,6 @@ import { ConsumerPaymentsModule } from '../payments/consumer-payments.module';
     ConsumerVerificationController,
     StripeWebhookReversalNotificationOutboxController,
   ],
-  providers: [...providers],
+  providers: [...providers, InternalCronGuard],
 })
 export class ConsumerPaymentMethodsModule {}

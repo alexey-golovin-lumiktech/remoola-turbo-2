@@ -12,6 +12,7 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { type PaymentsHistoryQuery } from './dto';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
+import { parseLedgerMetadata } from '../../../shared/json-metadata.utils';
 import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 import {
@@ -110,7 +111,7 @@ export class ConsumerPaymentsQueriesRepository {
     paymentRequest?: { paymentRail: $Enums.PaymentRail | null } | null;
   }) {
     const amount = Number(row.amount);
-    const metadata = JSON.parse(JSON.stringify(row.metadata || {}));
+    const metadata = parseLedgerMetadata(row.metadata);
 
     return {
       id: row.id,
@@ -122,7 +123,7 @@ export class ConsumerPaymentsQueriesRepository {
       direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
       createdAt: row.createdAt.toISOString(),
       rail: metadata.rail ?? row.paymentRequest?.paymentRail ?? null,
-      paymentMethodId: metadata.paymentMethodId ?? null,
+      paymentMethodId: metadata.paymentMethodId,
       paymentRequestId: row.paymentRequestId ?? null,
     };
   }
@@ -438,7 +439,7 @@ export class ConsumerPaymentsQueriesRepository {
       ledgerEntries: paymentRequest.ledgerEntries
         .filter((entry) => entry.consumerId === consumerId)
         .map((entry) => {
-          const metadata = JSON.parse(JSON.stringify(entry.metadata || {}));
+          const metadata = parseLedgerMetadata(entry.metadata);
           const amount = Number(entry.amount);
 
           return {
@@ -451,7 +452,7 @@ export class ConsumerPaymentsQueriesRepository {
             type: this.normalizeProductLedgerType(entry.type, entry.paymentRequestId),
             createdAt: entry.createdAt.toISOString(),
             rail: metadata.rail ?? paymentRequest.paymentRail ?? null,
-            counterpartyId: metadata.counterpartyId ?? null,
+            counterpartyId: metadata.counterpartyId,
           };
         })
         .filter(
