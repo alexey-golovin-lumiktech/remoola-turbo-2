@@ -12,6 +12,7 @@ import {
 } from './consumer-exchange-normalizers';
 import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
 import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
+import { ConsumerExchangeRateService } from './consumer-exchange-rate.service';
 import { ConsumerExchangeService } from './consumer-exchange.service';
 import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 
@@ -20,9 +21,10 @@ function buildRateReader(prisma: any) {
 }
 
 function buildService(prisma: any, balanceService: any) {
+  const rateReader = buildRateReader(prisma);
   return new ConsumerExchangeService(
     balanceService,
-    buildRateReader(prisma),
+    new ConsumerExchangeRateService(rateReader),
     new ConsumerExchangeExecutionRepository(prisma),
     new ConsumerExchangeAutomationRepository(prisma),
   );

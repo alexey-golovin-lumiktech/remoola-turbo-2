@@ -8,6 +8,7 @@ import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automa
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
 import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
 import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
+import { ConsumerExchangeRateService } from './consumer-exchange-rate.service';
 import { ConsumerExchangeService } from './consumer-exchange.service';
 import { BalanceCalculationRepository } from '../../../shared/balance-calculation.repository';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
@@ -97,9 +98,10 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
 
   function createService(prisma: any) {
     const balanceService = new BalanceCalculationService(new BalanceCalculationRepository(prisma));
+    const rateReader = new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma));
     return new ConsumerExchangeService(
       balanceService,
-      new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma)),
+      new ConsumerExchangeRateService(rateReader),
       new ConsumerExchangeExecutionRepository(prisma),
       new ConsumerExchangeAutomationRepository(prisma),
     );

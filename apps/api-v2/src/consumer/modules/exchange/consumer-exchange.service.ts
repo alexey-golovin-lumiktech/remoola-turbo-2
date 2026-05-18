@@ -6,14 +6,11 @@ import { errorCodes } from '@remoola/shared-constants';
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
 import {
-  getConsumerExchangeCurrencySymbol,
-  getConsumerExchangeRateBatchErrorCode,
   mergeConsumerExchangeRuleExecutionMetadata,
   normalizeConsumerExchangeRule,
   normalizeConsumerScheduledConversion,
-  roundConsumerExchangeAmountToCurrency,
 } from './consumer-exchange-normalizers';
-import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
+import { ConsumerExchangeRateService } from './consumer-exchange-rate.service';
 import { ConvertCurrencyBody } from './dto/convert.dto';
 import { CreateAutoConversionRuleBody } from './dto/create-auto-conversion-rule.dto';
 import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
@@ -26,13 +23,13 @@ export class ConsumerExchangeService {
 
   constructor(
     private readonly balanceService: BalanceCalculationService,
-    private readonly rateReader: ConsumerExchangeRateReader,
+    private readonly rateService: ConsumerExchangeRateService,
     private readonly executionRepository: ConsumerExchangeExecutionRepository,
     private readonly automationRepository: ConsumerExchangeAutomationRepository,
   ) {}
 
   async getRate(from: $Enums.CurrencyCode, to: $Enums.CurrencyCode) {
-    return this.rateReader.getRate(from, to);
+    return this.rateService.getRate(from, to);
   }
 
   async getBalanceByCurrency(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
@@ -61,36 +58,11 @@ export class ConsumerExchangeService {
   }
 
   async quote(body: ConvertCurrencyBody) {
-    const rate = await this.getRate(body.from, body.to);
-    const targetAmount = roundConsumerExchangeAmountToCurrency(body.amount * rate.rate, body.to);
-    return {
-      from: body.from,
-      to: body.to,
-      rate: rate.rate,
-      sourceAmount: body.amount,
-      targetAmount,
-    };
+    return this.rateService.quote(body);
   }
 
   async getRatesBatch(pairs: { from: $Enums.CurrencyCode; to: $Enums.CurrencyCode }[]) {
-    const results = await Promise.all(
-      pairs.map(async (pair) => {
-        try {
-          const rate = await this.getRate(pair.from, pair.to);
-          return { from: pair.from, to: pair.to, rate: rate.rate };
-        } catch (error) {
-          if (error instanceof BadRequestException || error instanceof NotFoundException) {
-            return {
-              from: pair.from,
-              to: pair.to,
-              code: getConsumerExchangeRateBatchErrorCode(error),
-            };
-          }
-          throw error;
-        }
-      }),
-    );
-    return { data: results };
+    return this.rateService.getRatesBatch(pairs);
   }
 
   async listAutoConversionRules(
@@ -552,10 +524,7 @@ export class ConsumerExchangeService {
   }
 
   getCurrencies() {
-    return Object.values($Enums.CurrencyCode).map((code) => ({
-      code,
-      symbol: getConsumerExchangeCurrencySymbol(code),
-    }));
+    return this.rateService.getCurrencies();
   }
 
   private async convertInternal(

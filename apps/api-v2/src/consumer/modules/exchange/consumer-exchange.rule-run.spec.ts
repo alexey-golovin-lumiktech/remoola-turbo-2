@@ -7,6 +7,7 @@ import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automa
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
 import { ConsumerExchangeRateQuery } from './consumer-exchange-rate.query';
 import { ConsumerExchangeRateReader } from './consumer-exchange-rate.reader';
+import { ConsumerExchangeRateService } from './consumer-exchange-rate.service';
 import { ConsumerExchangeService } from './consumer-exchange.service';
 
 describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
@@ -32,11 +33,12 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
       ...prismaOverrides,
     } as any;
     const balanceService = {} as any;
+    const rateReader = new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma));
 
     return {
       service: new ConsumerExchangeService(
         balanceService,
-        new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(prisma)),
+        new ConsumerExchangeRateService(rateReader),
         new ConsumerExchangeExecutionRepository(prisma),
         new ConsumerExchangeAutomationRepository(prisma),
       ),
