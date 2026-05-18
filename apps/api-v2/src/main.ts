@@ -1,6 +1,7 @@
 import { type IncomingMessage, type ServerResponse } from 'node:http';
 
 import { Logger, type INestApplication } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import express, { type Express } from 'express';
 
 import { createApiApp } from './bootstrap/create-api-app';
@@ -8,6 +9,9 @@ import { envs } from './envs';
 import { NgrokIngressService } from './infrastructure/ngrok/ngrok-ingress.service';
 
 const logger = new Logger(`Bootstrap`);
+
+// Vercel's NestJS detector requires the entrypoint file itself to import @nestjs/core.
+export const vercelNestEntrypointDetector = NestFactory;
 
 let isShuttingDown = false;
 let vercelServer: Express | undefined;
