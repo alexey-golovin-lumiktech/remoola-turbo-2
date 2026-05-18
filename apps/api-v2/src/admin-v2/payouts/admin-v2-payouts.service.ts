@@ -10,21 +10,21 @@ import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 import { AdminV2PayoutEscalationRepository } from './admin-v2-payout-escalation.repository';
 import { AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
+import {
+  derivePayoutStatus,
+  getEffectiveLedgerStatus,
+  getEscalationBlockReason,
+  getOutcomeAgeHours,
+  PAYOUT_STUCK_THRESHOLD_HOURS,
+} from './payout-status-deriver';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
-const PAYOUT_STUCK_THRESHOLD_HOURS = 24;
 const REASON_MAX_LENGTH = 500;
 const PAYOUT_TYPES = [$Enums.LedgerEntryType.USER_PAYOUT, $Enums.LedgerEntryType.USER_PAYOUT_REVERSAL] as const;
-const PENDING_LIKE_STATUSES = [
-  $Enums.TransactionStatus.WAITING,
-  $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
-  $Enums.TransactionStatus.PENDING,
-] as const;
 const PAYOUT_HIGH_VALUE_THRESHOLD_SOURCE = `env.ADMIN_V2_PAYOUT_HIGH_VALUE_THRESHOLDS`;
 
-type PayoutDerivedStatus = `pending` | `processing` | `completed` | `failed` | `stuck` | `reversed`;
 type PayoutHighValueEligibility = `high-value` | `below-threshold` | `not-configured`;
 type PayoutHighValuePolicyAvailability = `configured` | `partially-configured` | `unconfigured`;
 type RequestMeta = {
@@ -135,59 +135,12 @@ export class AdminV2PayoutsService {
     return JSON.parse(JSON.stringify(metadata ?? {})) as Record<string, unknown>;
   }
 
-  private getEffectiveLedgerStatus(entry: {
-    status: $Enums.TransactionStatus;
-    outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-  }): $Enums.TransactionStatus {
-    return entry.outcomes?.[0]?.status ?? entry.status;
-  }
-
-  private getLatestOutcomeTimestamp(entry: { createdAt: Date; outcomes?: Array<{ createdAt: Date }> }): Date {
-    return entry.outcomes?.[0]?.createdAt ?? entry.createdAt;
-  }
-
-  private getOutcomeAgeHours(entry: { createdAt: Date; outcomes?: Array<{ createdAt: Date }> }): number {
-    return Math.max(0, (Date.now() - this.getLatestOutcomeTimestamp(entry).getTime()) / (60 * 60 * 1000));
-  }
-
   private normalizeEscalationReason(reason: string | null | undefined) {
     const normalized = reason?.trim() || null;
     if (normalized && normalized.length > REASON_MAX_LENGTH) {
       throw new BadRequestException(`Escalation reason is too long`);
     }
     return normalized;
-  }
-
-  private derivePayoutStatus(entry: {
-    type: $Enums.LedgerEntryType;
-    status: $Enums.TransactionStatus;
-    createdAt: Date;
-    outcomes?: Array<{ status: $Enums.TransactionStatus; createdAt: Date }>;
-  }): PayoutDerivedStatus {
-    if (entry.type === $Enums.LedgerEntryType.USER_PAYOUT_REVERSAL) {
-      return `reversed`;
-    }
-
-    const effectiveStatus = this.getEffectiveLedgerStatus(entry);
-    if (effectiveStatus === $Enums.TransactionStatus.COMPLETED) {
-      return `completed`;
-    }
-    if (effectiveStatus === $Enums.TransactionStatus.DENIED) {
-      return `failed`;
-    }
-
-    const outcomeAgeHours = this.getOutcomeAgeHours(entry);
-    if (PENDING_LIKE_STATUSES.includes(effectiveStatus as (typeof PENDING_LIKE_STATUSES)[number])) {
-      if (outcomeAgeHours >= PAYOUT_STUCK_THRESHOLD_HOURS) {
-        return `stuck`;
-      }
-      if (effectiveStatus === $Enums.TransactionStatus.WAITING) {
-        return `pending`;
-      }
-      return `processing`;
-    }
-
-    return `processing`;
   }
 
   private getExternalReference(entry: {
@@ -322,21 +275,6 @@ export class AdminV2PayoutsService {
     };
   }
 
-  private getEscalationBlockReason(params: {
-    derivedStatus: PayoutDerivedStatus;
-    escalation: { id: string } | null | undefined;
-  }) {
-    if (params.escalation?.id) {
-      return `Payout already has an active escalation marker`;
-    }
-
-    if (params.derivedStatus !== `failed` && params.derivedStatus !== `stuck`) {
-      return `Only failed or stuck payouts can receive an escalation marker in the current operator slice`;
-    }
-
-    return null;
-  }
-
   private mapEscalationState(
     escalation:
       | {
@@ -426,9 +364,9 @@ export class AdminV2PayoutsService {
     highValueConfig: PayoutHighValueConfig,
     assignedTo: AdminRef | null = null,
   ) {
-    const effectiveStatus = this.getEffectiveLedgerStatus(entry);
-    const derivedStatus = this.derivePayoutStatus(entry);
-    const outcomeAgeHours = this.getOutcomeAgeHours(entry);
+    const effectiveStatus = getEffectiveLedgerStatus(entry);
+    const derivedStatus = derivePayoutStatus(entry);
+    const outcomeAgeHours = getOutcomeAgeHours(entry);
     const highValue = this.assessHighValue(entry, highValueConfig);
 
     return {
@@ -529,9 +467,9 @@ export class AdminV2PayoutsService {
       this.assignmentsService.getAssignmentContextForResource(`payout`, entry.id),
     ]);
 
-    const effectiveStatus = this.getEffectiveLedgerStatus(entry);
-    const derivedStatus = this.derivePayoutStatus(entry);
-    const escalationBlockReason = this.getEscalationBlockReason({
+    const effectiveStatus = getEffectiveLedgerStatus(entry);
+    const derivedStatus = derivePayoutStatus(entry);
+    const escalationBlockReason = getEscalationBlockReason({
       derivedStatus,
       escalation: entry.payoutEscalation,
     });
@@ -582,7 +520,7 @@ export class AdminV2PayoutsService {
         type: item.type,
         amount: item.amount.toString(),
         currencyCode: item.currencyCode,
-        effectiveStatus: this.getEffectiveLedgerStatus(item),
+        effectiveStatus: getEffectiveLedgerStatus(item),
         createdAt: item.createdAt,
       })),
       auditContext: auditContext.map((row) => ({
@@ -594,7 +532,7 @@ export class AdminV2PayoutsService {
         createdAt: row.createdAt,
       })),
       assignment,
-      outcomeAgeHours: this.getOutcomeAgeHours(entry),
+      outcomeAgeHours: getOutcomeAgeHours(entry),
       slaBreachDetected: derivedStatus === `stuck`,
       stuckPolicy: {
         thresholdHours: PAYOUT_STUCK_THRESHOLD_HOURS,
@@ -674,7 +612,7 @@ export class AdminV2PayoutsService {
           const latestOutcome = await this.payoutEscalationRepository.findLatestOutcome(tx, locked.id);
 
           const effectiveStatus = latestOutcome?.status ?? locked.status;
-          const derivedStatus = this.derivePayoutStatus({
+          const derivedStatus = derivePayoutStatus({
             type: locked.type,
             status: locked.status,
             createdAt: locked.created_at,
