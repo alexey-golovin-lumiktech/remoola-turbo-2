@@ -168,11 +168,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     };
 
     const supportService = new ConsumerAuthControllerSupportService(originResolver as OriginResolverService);
-    controller = new ConsumerAuthController(
-      service as ConsumerAuthService,
-      oauthStateStore as OAuthStateStoreService,
-      supportService,
-    );
+    controller = new ConsumerAuthController(service as ConsumerAuthService, supportService);
     googleOAuthController = new ConsumerGoogleOAuthController(
       service as ConsumerAuthService,
       googleOAuthService as GoogleOAuthService,
@@ -207,6 +203,29 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       isPublic: true,
       trackConsumerAction: { action: `consumer.auth.oauth_callback`, resource: `auth` },
       throttlerLimit: 30,
+      throttlerTtl: 60000,
+    });
+    expect(getRouteMetadata(ConsumerGoogleOAuthController, `googleSignupSession`)).toMatchObject({
+      path: `google/signup-session`,
+      method: RequestMethod.GET,
+      isPublic: true,
+    });
+    expect(getRouteMetadata(ConsumerGoogleOAuthController, `establishGoogleSignupSession`)).toMatchObject({
+      path: `google/signup-session/establish`,
+      method: RequestMethod.POST,
+      httpCode: HttpStatus.OK,
+      isPublic: true,
+      trackConsumerAction: { action: `consumer.auth.google_signup_session_establish`, resource: `auth` },
+      throttlerLimit: 20,
+      throttlerTtl: 60000,
+    });
+    expect(getRouteMetadata(ConsumerGoogleOAuthController, `oauthComplete`)).toMatchObject({
+      path: `oauth/complete`,
+      method: RequestMethod.POST,
+      httpCode: HttpStatus.OK,
+      isPublic: true,
+      trackConsumerAction: { action: `consumer.auth.oauth_complete`, resource: `auth` },
+      throttlerLimit: 20,
       throttlerTtl: 60000,
     });
 
@@ -634,7 +653,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       cookies: { consumer_css_grid_google_signup_session: `signup-session-token` },
     });
 
-    await expect(controller.googleSignupSession(req, `unknown-scope` as never)).rejects.toBeInstanceOf(
+    await expect(googleOAuthController.googleSignupSession(req, `unknown-scope` as never)).rejects.toBeInstanceOf(
       BadRequestException,
     );
   });
@@ -650,7 +669,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
 
     await expect(
-      controller.establishGoogleSignupSession(
+      googleOAuthController.establishGoogleSignupSession(
         req,
         makeRes(),
         { handoffToken: `handoff-token` },
@@ -679,7 +698,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
     const res = makeRes();
 
-    const result = await controller.establishGoogleSignupSession(
+    const result = await googleOAuthController.establishGoogleSignupSession(
       req,
       res,
       { handoffToken: `handoff-token` },
@@ -713,7 +732,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
 
     await expect(
-      controller.oauthComplete(req, makeRes(), { handoffToken: `handoff-token` }, `unknown-scope` as never),
+      googleOAuthController.oauthComplete(req, makeRes(), { handoffToken: `handoff-token` }, `unknown-scope` as never),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(service.issueTokensForConsumer).not.toHaveBeenCalled();
   });

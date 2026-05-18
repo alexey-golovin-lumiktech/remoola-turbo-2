@@ -1,5 +1,18 @@
-import { BadRequestException, Controller, Get, Logger, Query, Req, Res, UnauthorizedException } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  Post,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ApiBody, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
@@ -13,6 +26,8 @@ import { ConsumerAuthControllerSupportService } from './consumer-auth-controller
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreService } from './oauth-state-store.service';
 import { PublicEndpoint, TrackConsumerAction } from '../../common';
+import { CONSUMER } from '../../dtos';
+import { HandoffTokenRequest } from '../../dtos/consumer';
 import { envs } from '../../envs';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { getApiOAuthStateCookieKey } from '../../shared-common';
@@ -38,8 +53,44 @@ export class ConsumerGoogleOAuthController {
     return this.supportService.requireConsumerAppScope(appScope);
   }
 
+  private requireClaimedConsumerAppScope(req: express.Request, appScope?: string | null): ConsumerAppScope {
+    return this.supportService.requireClaimedConsumerAppScope(req, appScope);
+  }
+
   private getOAuthStateCookieFromRequest(req: express.Request, appScope: ConsumerAppScope): string | undefined {
     return this.supportService.getOAuthStateCookieFromRequest(req, appScope);
+  }
+
+  private getGoogleSignupSessionTokenFromRequest(
+    req: express.Request,
+    consumerScope: ConsumerAppScope,
+  ): string | undefined {
+    return this.supportService.getGoogleSignupSessionTokenFromRequest(req, consumerScope);
+  }
+
+  private setAuthCookies(
+    req: express.Request,
+    res: express.Response,
+    accessToken: string,
+    refreshToken: string,
+    consumerScope: ConsumerAppScope,
+  ) {
+    return this.supportService.setAuthCookies(req, res, accessToken, refreshToken, consumerScope);
+  }
+
+  private setGoogleSignupSessionCookie(
+    req: express.Request,
+    res: express.Response,
+    token: string,
+    consumerScope: ConsumerAppScope,
+  ) {
+    return this.supportService.setGoogleSignupSessionCookie(
+      req,
+      res,
+      token,
+      consumerScope,
+      this.googleSignupSessionTtlMs,
+    );
   }
 
   private getOAuthCookieOptions(req?: express.Request) {
@@ -64,6 +115,26 @@ export class ConsumerGoogleOAuthController {
 
   private isOAuthStateCookieFallbackAllowedInEnv(): boolean {
     return this.supportService.isOAuthStateCookieFallbackAllowedInEnv();
+  }
+
+  private requireStoredConsumerAppScopeMatchesRequest(
+    req: express.Request,
+    storedAppScope?: string | null,
+  ): ConsumerAppScope {
+    return this.supportService.requireStoredConsumerAppScopeMatchesRequest(req, storedAppScope);
+  }
+
+  private async getGoogleSignupPayloadFromSession(req: express.Request, appScope?: string | null) {
+    const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
+    const token = this.getGoogleSignupSessionTokenFromRequest(req, claimedAppScope);
+    if (!token) return undefined;
+    const record = await this.oauthStateStore.readSignupSession(token);
+    if (!record) return undefined;
+    const storedAppScope = this.requireStoredConsumerAppScopeMatchesRequest(req, record.appScope);
+    if (storedAppScope !== claimedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+    return this.service.validateGoogleSignupPayload(this.service.createGoogleSignupPayload(record));
   }
 
   private buildConsumerRedirect(appScope: ConsumerAppScope, nextPath: string, extraParams?: Record<string, string>) {
@@ -290,5 +361,94 @@ export class ConsumerGoogleOAuthController {
       });
       return failureRedirect(`login_failed`, stateAppScope);
     }
+  }
+
+  @PublicEndpoint()
+  @Get(`google/signup-session`)
+  @ApiOkResponse({ type: CONSUMER.GoogleSignupSessionResponse })
+  async googleSignupSession(@Req() req: express.Request, @Query(`appScope`) appScope?: string) {
+    const payload = await this.getGoogleSignupPayloadFromSession(req, appScope);
+    if (!payload) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
+
+    return {
+      email: payload.email,
+      givenName: payload.givenName,
+      familyName: payload.familyName,
+      picture: payload.picture,
+      accountType: payload.accountType,
+      contractorKind: payload.contractorKind,
+      nextPath: payload.nextPath,
+      signupEntryPath: payload.signupEntryPath,
+    };
+  }
+
+  @PublicEndpoint()
+  @TrackConsumerAction({ action: `consumer.auth.google_signup_session_establish`, resource: `auth` })
+  @Post(`google/signup-session/establish`)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: CONSUMER.HandoffTokenRequest })
+  @ApiOkResponse({ type: CONSUMER.GoogleSignupSessionResponse })
+  async establishGoogleSignupSession(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res,
+    @Body() body: HandoffTokenRequest,
+    @Query(`appScope`) appScope?: string,
+  ) {
+    const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
+    const handoffToken = body.handoffToken;
+    if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
+    const payload = await this.oauthStateStore.consumeSignupHandoff(handoffToken);
+    if (!payload) throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
+    const storedAppScope = this.requireStoredConsumerAppScopeMatchesRequest(req, payload.appScope);
+    if (storedAppScope !== claimedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+
+    const validatedPayload = this.service.validateGoogleSignupPayload(this.service.createGoogleSignupPayload(payload));
+    const signupSessionToken = this.oauthStateStore.createEphemeralToken();
+    await this.oauthStateStore.saveSignupSession(signupSessionToken, payload, this.googleSignupSessionTtlMs);
+    this.setGoogleSignupSessionCookie(req, res, signupSessionToken, claimedAppScope);
+
+    return {
+      email: validatedPayload.email,
+      givenName: validatedPayload.givenName,
+      familyName: validatedPayload.familyName,
+      picture: validatedPayload.picture,
+      accountType: validatedPayload.accountType,
+      contractorKind: validatedPayload.contractorKind,
+      nextPath: validatedPayload.nextPath,
+      signupEntryPath: validatedPayload.signupEntryPath,
+    };
+  }
+
+  @PublicEndpoint()
+  @TrackConsumerAction({ action: `consumer.auth.oauth_complete`, resource: `auth` })
+  @Post(`oauth/complete`)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: CONSUMER.HandoffTokenRequest })
+  @ApiOkResponse({ type: CONSUMER.OAuthCompleteResponse })
+  async oauthComplete(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res,
+    @Body() body: HandoffTokenRequest,
+    @Query(`appScope`) appScope?: string,
+  ) {
+    const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
+    const handoffToken = body.handoffToken;
+    if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_EXCHANGE_TOKEN);
+    const decoded = await this.oauthStateStore.consumeLoginHandoff(handoffToken);
+    if (!decoded) throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
+    const storedAppScope = this.requireStoredConsumerAppScopeMatchesRequest(req, decoded.appScope);
+    if (storedAppScope !== claimedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(
+      decoded.identityId,
+      claimedAppScope,
+    );
+    this.setAuthCookies(req, res, accessToken, refreshToken, claimedAppScope);
+    return { ok: true, next: decoded.nextPath };
   }
 }

@@ -4,16 +4,16 @@ import request from 'supertest';
 
 import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import { ConsumerAuthController } from './auth.controller';
 import { ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
+import { ConsumerGoogleOAuthController } from './consumer-google-oauth.controller';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreService } from './oauth-state-store.service';
 import { bootstrapApiTestApp } from '../../../test/helpers/bootstrap-api-test-app';
 import { extractMessage } from '../../../test/helpers/http-test-helpers';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 
-describe(`ConsumerAuthController integration`, () => {
+describe(`Consumer auth controller integration`, () => {
   let app: INestApplication;
   let close: (() => Promise<void>) | undefined;
 
@@ -60,7 +60,7 @@ describe(`ConsumerAuthController integration`, () => {
 
   beforeAll(async () => {
     const harness = await bootstrapApiTestApp({
-      controllers: [ConsumerAuthController],
+      controllers: [ConsumerGoogleOAuthController],
       providers: [
         ConsumerAuthControllerSupportService,
         { provide: ConsumerAuthService, useValue: service },
