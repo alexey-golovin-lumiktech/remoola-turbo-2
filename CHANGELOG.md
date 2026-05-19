@@ -2903,17 +2903,29 @@
 - **2026-05-18:**
 
   ### 🔐 Security / Production Safety
+  - **Auth, verification, audit, and reversal boundaries:** Split large admin-v2 and consumer auth/payment services into focused Nest modules while preserving token-scope enforcement, session validation, CSRF checks, suspended-account blocking, append-only ledger reversal flow, Stripe refund idempotency, and outbox-based finalization behavior.
+  - **Health and cron endpoint protection:** Add `InternalCronGuard` with timing-safe bearer-token comparison, apply it to detailed health and mail-test endpoints, and require internal cron authorization for the webhook reversal notification outbox controller.
+  - **Exchange and payout invariants:** Extract payout query/escalation/status/high-value/payment-method services and admin/consumer exchange command/query services while preserving optimistic and pessimistic locking, advisory locks, idempotency scopes, transaction-scoped ledger writes, audit-log atomicity, execution summaries, and response contracts.
   - **Admin document mutation boundaries:** Extract document tag management, retagging, and query helpers into focused services while preserving reserved invoice-tag guards, idempotency scopes, optimistic version checks, soft-delete protection, and evidence-scope filtering behavior.
   - **Admin request metadata extraction:** Centralize admin-v2 `ipAddress`, `userAgent`, and `idempotencyKey` extraction behind `@RequestMeta()` across admin controllers while preserving audit metadata and idempotency header semantics.
+  - **Shared status and metadata helpers:** Consolidate ledger status resolution and typed ledger metadata parsing into shared utilities so payment display, payout derivation, dashboard activity, contacts, contracts, and reversal flows use one preserved status calculation path.
 
   ### 🧪 Testing
-  - **Contract and document parity coverage:** Add focused specs for document query helpers, consumer contract mappers/normalizers, raw-SQL versus in-memory contract fallback parity, request metadata extraction, bootstrap creation, and module-boundary expectations.
+  - **Safety-sensitive service coverage:** Add focused unit and integration coverage for auth route metadata, OAuth handoff/session flows, guarded health endpoints, payout escalation and query assembly, exchange command execution, document tagging, payment reversal, verification, mailing, audit DTO validation, and module-boundary expectations.
+  - **Contract and cache parity coverage:** Add specs for consumer contract mappers/normalizers, raw-SQL versus in-memory contract fallback parity, exchange-rate caching, overview and quickstart cache hits, and consumer payment-method cache hit/miss behavior.
+
+  ### ⚡️ Performance
+  - **Bounded in-process caching:** Add `CACHE_MANAGER` caching for approved consumer exchange rates, admin overview queries, admin quickstarts, and consumer payment-method lists with bounded TTLs, defensive cloning on quickstart cache paths, and exchange-rate TTLs capped by rate expiry.
 
   ### 🛠 DevEx
-  - **API service-boundary cleanup:** Move consumer contract mapping/fallback logic, admin document tag flows, admin DTO definitions, common env groups, and Nest app bootstrap setup into smaller reusable modules without changing public service signatures.
+  - **API service-boundary cleanup:** Move admin-v2 auth/audit/verification/payment/payout/exchange/document flows, consumer auth/exchange/contract logic, mailing subdomains, admin DTO definitions, common env groups, Nest app bootstrap setup, and shared context DTO bases into smaller reusable modules without changing public service signatures.
+  - **Boundary enforcement and deployment compatibility:** Add no-restricted-imports enforcement for direct `MailingService` usage, extend module-boundary guardrails for Nest controller conventions, and keep the API Vercel entrypoint compatible with Vercel's NestJS detector.
 
   ### 📄 Documentation
-  - **NestJS best-practice audit:** Add the `api-v2` NestJS best-practice audit document for the refactor wave.
+  - **API-v2 guardrails:** Add the `api-v2` NestJS best-practice audit, versioning policy, and NestJS conventions documents for the refactor wave.
+
+  ### ⚠️ Notes
+  - **No schema migration:** The May 18 refactor and cache wave did not include database schema or Prisma migration changes.
 
 </details>
 
