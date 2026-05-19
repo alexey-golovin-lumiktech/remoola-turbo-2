@@ -5,7 +5,6 @@ export * from './google-profile-details.dto';
 export * from './organization-details.dto';
 export * from './payment-request.dto';
 export * from './personal-details.dto';
-export * from './admin.dto';
 export * from './basic-auth-credentials.dto';
 export * from './contact.dto';
 export * from './resource.dto';
