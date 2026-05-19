@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
 import { OAuthStateStoreRepository } from './oauth-state-store.repository';
+import { SCHEDULER_CRON } from '../../shared/scheduler-policy';
 
 @Injectable()
 export class OauthStateCleanupScheduler {
@@ -9,7 +10,7 @@ export class OauthStateCleanupScheduler {
 
   constructor(private readonly oauthStateStoreRepository: OAuthStateStoreRepository) {}
 
-  @Cron(`*/10 * * * *`)
+  @Cron(SCHEDULER_CRON.oauthStateCleanup)
   async deleteExpiredOauthState() {
     try {
       const deletedCount = await this.oauthStateStoreRepository.deleteExpiredStates();

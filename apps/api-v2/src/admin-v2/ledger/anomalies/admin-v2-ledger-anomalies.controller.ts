@@ -1,48 +1,17 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { Expose, Transform } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
+import { LedgerAnomaliesListQuery } from './admin-v2-ledger-anomalies.dto';
 import { AdminV2LedgerAnomaliesService } from './admin-v2-ledger-anomalies.service';
-import { Identity, type IIdentityContext } from '../../../common';
-import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../../common/query-transforms';
+import { AdminV2ReadThrottle, Identity, type IIdentityContext, PlainObjectResponseContract } from '../../../common';
 import { AdminV2AccessService } from '../../admin-v2-access.service';
-
-class LedgerAnomaliesListQuery {
-  @Expose({ name: `class` })
-  @Transform(({ obj }) => optionalStringQuery((obj as Record<string, unknown>)[`class`]))
-  @IsString()
-  className!: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
-  @IsDate()
-  dateFrom!: Date;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
-  @IsDate()
-  @IsOptional()
-  dateTo?: Date;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  cursor?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  limit?: number;
-}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Ledger anomalies`)
-@Throttle({ default: { limit: 500, ttl: 60000 } })
+@PlainObjectResponseContract(
+  `Admin v2 ledger anomaly routes return plain objects governed by @remoola/api-types contracts.`,
+)
+@AdminV2ReadThrottle()
 @Controller(`admin-v2/ledger/anomalies`)
 export class AdminV2LedgerAnomaliesController {
   constructor(

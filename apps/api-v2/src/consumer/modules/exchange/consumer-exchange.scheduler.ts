@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
 import { ConsumerExchangeService } from './consumer-exchange.service';
+import { SCHEDULER_CRON } from '../../../shared/scheduler-policy';
 
 @Injectable()
 export class ConsumerExchangeScheduler {
@@ -11,7 +12,7 @@ export class ConsumerExchangeScheduler {
 
   constructor(private readonly exchangeService: ConsumerExchangeService) {}
 
-  @Cron(`*/1 * * * *`)
+  @Cron(SCHEDULER_CRON.consumerScheduledConversions)
   async processScheduledConversions() {
     try {
       await this.exchangeService.processDueScheduledConversions();
@@ -34,7 +35,7 @@ export class ConsumerExchangeScheduler {
     }
   }
 
-  @Cron(`*/5 * * * *`)
+  @Cron(SCHEDULER_CRON.consumerAutoConversionRules)
   async processAutoConversionRules() {
     try {
       await this.exchangeService.processDueAutoConversionRules();

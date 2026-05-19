@@ -17,10 +17,7 @@ import {
   type OperationalAlertThresholdEvaluatorRegistry,
 } from './admin-v2-operational-alerts-thresholds';
 import { OPERATIONAL_ALERT_WORKSPACES, type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
-
-const EVALUATOR_TICK_MAX_ALERTS = 100;
-const EVALUATOR_PER_ALERT_TIMEOUT_MS = 10_000;
-const EVALUATOR_TICK_WALL_BUDGET_MS = 240_000;
+import { SCHEDULER_BATCH_LIMITS, SCHEDULER_CRON, SCHEDULER_TIMEOUT_MS } from '../../shared/scheduler-policy';
 
 class EvaluatorTimeoutError extends Error {
   constructor(timeoutMs: number) {
@@ -57,7 +54,7 @@ export class AdminV2OperationalAlertsEvaluatorService {
     private readonly thresholdEvaluators: OperationalAlertThresholdEvaluatorRegistry,
   ) {}
 
-  @Cron(`*/5 * * * *`)
+  @Cron(SCHEDULER_CRON.operationalAlertsEvaluator)
   async evaluateDueAlerts(): Promise<void> {
     const tickStartedAt = Date.now();
     try {
@@ -77,7 +74,7 @@ export class AdminV2OperationalAlertsEvaluatorService {
     let fired = 0;
     let errored = 0;
     for (const alert of due) {
-      if (Date.now() - tickStartedAt > EVALUATOR_TICK_WALL_BUDGET_MS) {
+      if (Date.now() - tickStartedAt > SCHEDULER_TIMEOUT_MS.operationalAlertsTickWallBudget) {
         this.logger.warn(`Operational alerts evaluator: wall budget reached after ${processed}/${due.length} alerts`);
         break;
       }
@@ -92,7 +89,7 @@ export class AdminV2OperationalAlertsEvaluatorService {
   }
 
   async selectDueAlerts(): Promise<DueAlertRow[]> {
-    return this.query.selectDueAlerts(EVALUATOR_TICK_MAX_ALERTS);
+    return this.query.selectDueAlerts(SCHEDULER_BATCH_LIMITS.operationalAlertsEvaluator);
   }
 
   private async evaluateOne(alert: DueAlertRow): Promise<`fired` | `not_fired` | `error`> {
@@ -109,7 +106,10 @@ export class AdminV2OperationalAlertsEvaluatorService {
     let result: OperationalAlertEvaluationResult;
     try {
       const threshold = alert.threshold_payload as OperationalAlertThreshold;
-      const observation = await withTimeout(evaluator.evaluate(alert.query_payload), EVALUATOR_PER_ALERT_TIMEOUT_MS);
+      const observation = await withTimeout(
+        evaluator.evaluate(alert.query_payload),
+        SCHEDULER_TIMEOUT_MS.operationalAlertsPerAlert,
+      );
       const thresholdEvaluator = this.thresholdEvaluators[threshold.type];
       if (!thresholdEvaluator) {
         throw new Error(`Unhandled threshold type: ${String(threshold.type)}`);

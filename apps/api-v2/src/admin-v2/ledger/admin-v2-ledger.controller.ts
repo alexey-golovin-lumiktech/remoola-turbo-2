@@ -1,131 +1,15 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { Expose, Transform } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-import { Identity, type IIdentityContext } from '../../common';
-import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../common/query-transforms';
+import { AdminV2ReadThrottle, Identity, type IIdentityContext, PlainObjectResponseContract } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { LedgerDisputesQuery, LedgerEntriesQuery } from './admin-v2-ledger.dto';
 import { AdminV2LedgerService } from './admin-v2-ledger.service';
-
-class LedgerEntriesQuery {
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  cursor?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  limit?: number;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  q?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  type?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  status?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  currencyCode?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  paymentRequestId?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  consumerId?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  amountSign?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
-  @IsOptional()
-  @IsDate()
-  dateFrom?: Date;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
-  @IsOptional()
-  @IsDate()
-  dateTo?: Date;
-}
-
-class LedgerDisputesQuery {
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  cursor?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  limit?: number;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  paymentRequestId?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  consumerId?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  q?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
-  @IsOptional()
-  @IsDate()
-  dateFrom?: Date;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
-  @IsOptional()
-  @IsDate()
-  dateTo?: Date;
-}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Ledger`)
-@Throttle({ default: { limit: 500, ttl: 60000 } })
+@PlainObjectResponseContract(`Admin v2 ledger routes return plain objects governed by @remoola/api-types contracts.`)
+@AdminV2ReadThrottle()
 @Controller(`admin-v2/ledger`)
 export class AdminV2LedgerController {
   constructor(

@@ -9,6 +9,7 @@ import {
   ConsumerPaymentsPolicyRepository,
 } from './consumer-payments-policy.repository';
 import { type TransferBody } from './dto';
+import { toMoneyDecimal, type MoneyDecimalInput } from '../../../shared/money-decimal.utils';
 import { appendConsumerAppScopeToMetadata } from '../../../shared/payment-link-metadata';
 import { isConsumerProfileCompleteForVerification, isConsumerVerificationEffective } from '../../../shared-common';
 
@@ -87,18 +88,19 @@ export class ConsumerPaymentsPoliciesService {
 
   async ensureLimits(
     consumerId: string,
-    amount: number,
+    amount: MoneyDecimalInput,
     currencyCode: $Enums.CurrencyCode,
     db?: ConsumerPaymentsPolicyReadClient,
   ) {
     const { maxPerOperation, dailyLimit } = await this.getKycLimits(consumerId, db);
+    const amountDecimal = toMoneyDecimal(amount, `payment amount`);
 
-    if (amount > maxPerOperation) {
+    if (amountDecimal.gt(maxPerOperation)) {
       throw new BadRequestException(errorCodes.AMOUNT_EXCEEDS_PER_OPERATION_LIMIT);
     }
 
     const todayTotal = await this.getTodayOutgoingTotal(consumerId, currencyCode, db);
-    if (todayTotal + amount > dailyLimit) {
+    if (toMoneyDecimal(todayTotal, `today outgoing total`).plus(amountDecimal).gt(dailyLimit)) {
       throw new BadRequestException(errorCodes.AMOUNT_EXCEEDS_DAILY_LIMIT);
     }
   }

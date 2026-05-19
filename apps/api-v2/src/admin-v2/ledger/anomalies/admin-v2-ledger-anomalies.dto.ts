@@ -1,3 +1,6 @@
+import { Expose, Transform } from 'class-transformer';
+import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+
 import {
   ADMIN_V2_DEFAULT_ANOMALY_LIMIT,
   ADMIN_V2_DUPLICATE_RISK_WINDOW_DAYS,
@@ -16,6 +19,39 @@ import {
   type AdminV2LedgerAnomalySummaryResponse,
 } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
+
+import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../../common/query-transforms';
+
+export class LedgerAnomaliesListQuery {
+  @Expose({ name: `class` })
+  @Transform(({ obj }) => optionalStringQuery((obj as Record<string, unknown>)[`class`]))
+  @IsString()
+  className!: string;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
+  @IsDate()
+  dateFrom!: Date;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalDateQuery((obj as Record<string, unknown>)[key]))
+  @IsDate()
+  @IsOptional()
+  dateTo?: Date;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
+  @IsString()
+  @IsOptional()
+  cursor?: string;
+
+  @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  limit?: number;
+}
 
 export const STALE_PENDING_HOURS = ADMIN_V2_STALE_PENDING_HOURS;
 export const INCONSISTENT_CHAIN_GRACE_MINUTES = ADMIN_V2_INCONSISTENT_CHAIN_GRACE_MINUTES;

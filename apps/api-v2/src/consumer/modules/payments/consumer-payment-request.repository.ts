@@ -5,6 +5,7 @@ import { $Enums, type Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { type CreatePaymentRequest } from './dto';
+import { moneyDecimalToNumber, toPositiveMoneyDecimal } from '../../../shared/money-decimal.utils';
 import { appendConsumerAppScopeToMetadata } from '../../../shared/payment-link-metadata';
 import { PrismaService } from '../../../shared/prisma.service';
 
@@ -19,6 +20,7 @@ export class ConsumerPaymentRequestRepository {
     normalizedEmail: string;
     recipient: { id: string; email: string | null } | null;
     body: CreatePaymentRequest;
+    amount: Prisma.Decimal;
     dueDate: Date | null;
   }) {
     return this.prisma.paymentRequestModel.create({
@@ -27,7 +29,7 @@ export class ConsumerPaymentRequestRepository {
         payerEmail: params.recipient?.email ?? params.normalizedEmail,
         requesterId: params.consumerId,
         currencyCode: params.body.currencyCode ?? $Enums.CurrencyCode.USD,
-        amount: Number(params.body.amount),
+        amount: params.amount,
         description: params.body.description ?? null,
         dueDate: params.dueDate,
         status: $Enums.TransactionStatus.DRAFT,
@@ -46,7 +48,7 @@ export class ConsumerPaymentRequestRepository {
       recipient: { id: string; email: string | null } | null;
       paymentCurrency: $Enums.CurrencyCode;
       paymentRail: $Enums.PaymentRail;
-      amount: number;
+      amount: Prisma.Decimal;
       description?: string | null;
       payerMetadata: Prisma.InputJsonValue;
       requesterMetadata: Prisma.InputJsonValue;
@@ -76,7 +78,7 @@ export class ConsumerPaymentRequestRepository {
         type: $Enums.LedgerEntryType.USER_PAYMENT,
         currencyCode: params.paymentCurrency,
         status: $Enums.TransactionStatus.PENDING,
-        amount: -params.amount,
+        amount: params.amount.negated(),
         createdBy: params.consumerId,
         updatedBy: params.consumerId,
         idempotencyKey: `pr:${paymentRequest.id}:payer`,
@@ -143,8 +145,10 @@ export class ConsumerPaymentRequestRepository {
       throw new BadRequestException(errorCodes.ONLY_DRAFT_REQUESTS_CAN_BE_SENT);
     }
 
-    const amount = Number(paymentRequest.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
+    let amount: Prisma.Decimal;
+    try {
+      amount = toPositiveMoneyDecimal(paymentRequest.amount, `payment request amount`);
+    } catch {
       throw new BadRequestException(errorCodes.INVALID_AMOUNT_SEND_DRAFT);
     }
 
@@ -196,7 +200,7 @@ export class ConsumerPaymentRequestRepository {
           type: $Enums.LedgerEntryType.USER_PAYMENT,
           currencyCode: paymentRequest.currencyCode,
           status: $Enums.TransactionStatus.PENDING,
-          amount: -amount,
+          amount: amount.negated(),
           createdBy: params.consumerId,
           updatedBy: params.consumerId,
           idempotencyKey: `pr:${paymentRequest.id}:payer`,
@@ -236,7 +240,7 @@ export class ConsumerPaymentRequestRepository {
       email: {
         payerEmail: paymentRequest.payer?.email ?? paymentRequest.payerEmail ?? ``,
         requesterEmail: paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? ``,
-        amount,
+        amount: moneyDecimalToNumber(amount),
         currencyCode: paymentRequest.currencyCode,
         description: paymentRequest.description,
         dueDate: paymentRequest.dueDate,

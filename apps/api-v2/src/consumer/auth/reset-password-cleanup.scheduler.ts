@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
 import { PasswordResetRepository } from './password-reset.repository';
+import { SCHEDULER_CRON } from '../../shared/scheduler-policy';
 
 @Injectable()
 export class ResetPasswordCleanupScheduler {
@@ -9,7 +10,7 @@ export class ResetPasswordCleanupScheduler {
 
   constructor(private readonly passwordResetRepository: PasswordResetRepository) {}
 
-  @Cron(`0 */6 * * *`)
+  @Cron(SCHEDULER_CRON.resetPasswordCleanup)
   async deleteExpiredResetPasswordRows() {
     try {
       const deletedCount = await this.passwordResetRepository.deleteExpiredTokens();

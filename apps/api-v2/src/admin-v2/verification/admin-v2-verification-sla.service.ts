@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
 import { AdminV2VerificationQuery } from './admin-v2-verification.query';
+import { SCHEDULER_CRON } from '../../shared/scheduler-policy';
 
 const VERIFICATION_SLA_MS = 24 * 60 * 60 * 1000;
 
@@ -17,7 +18,7 @@ export class AdminV2VerificationSlaService implements OnModuleInit {
     await this.refreshBreaches();
   }
 
-  @Cron(`*/5 * * * *`)
+  @Cron(SCHEDULER_CRON.verificationSlaRefresh)
   async refreshBreaches(): Promise<void> {
     try {
       const now = Date.now();

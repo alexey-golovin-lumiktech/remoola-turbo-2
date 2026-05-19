@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { $Enums } from '@remoola/database-2';
 
 import { StripeReversalSchedulerRepository } from './stripe-reversal-scheduler.repository';
+import { SCHEDULER_CRON } from '../../../shared/scheduler-policy';
 import { STRIPE_CLIENT } from '../../../shared/stripe-client';
 
 @Injectable()
@@ -16,7 +17,7 @@ export class StripeReversalScheduler {
     @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
   ) {}
 
-  @Cron(`*/10 * * * *`)
+  @Cron(SCHEDULER_CRON.stripeReversalReconcile)
   async reconcilePendingRefunds() {
     try {
       const selection = await this.reversalSchedulerRepository.selectPendingStripeIdsForRun();

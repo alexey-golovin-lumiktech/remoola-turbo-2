@@ -4,10 +4,11 @@ import { Cron } from '@nestjs/schedule';
 import { AdminV2PaymentReversalRefundFinalizerService } from './admin-v2-payment-reversal-refund-finalizer.service';
 import { parseAdminRefundFinalizationOutboxPayload } from './admin-v2-payment-reversal-refund-outbox';
 import { AdminV2PaymentReversalRefundOutboxRepository } from './admin-v2-payment-reversal-refund-outbox.repository';
+import { SCHEDULER_BATCH_LIMITS, SCHEDULER_CRON } from '../../shared/scheduler-policy';
 
 @Injectable()
 export class AdminV2PaymentReversalRefundOutboxService {
-  private static readonly MAX_BATCH_SIZE = 25;
+  private static readonly MAX_BATCH_SIZE: number = SCHEDULER_BATCH_LIMITS.adminRefundFinalizationOutbox;
 
   private readonly logger = new Logger(AdminV2PaymentReversalRefundOutboxService.name);
 
@@ -16,7 +17,7 @@ export class AdminV2PaymentReversalRefundOutboxService {
     private readonly refundFinalizer: AdminV2PaymentReversalRefundFinalizerService,
   ) {}
 
-  @Cron(`*/5 * * * *`)
+  @Cron(SCHEDULER_CRON.adminRefundFinalizationOutbox)
   async processDueRows(limit = AdminV2PaymentReversalRefundOutboxService.MAX_BATCH_SIZE) {
     const claimed = await this.outboxRepository.claimDueRows({ limit });
     let finalized = 0;

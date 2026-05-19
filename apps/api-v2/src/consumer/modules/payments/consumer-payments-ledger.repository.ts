@@ -47,7 +47,7 @@ export class ConsumerPaymentsLedgerRepository {
       ledgerId: string;
       consumerId: string;
       currencyCode: $Enums.CurrencyCode;
-      amount: number;
+      amount: Prisma.Decimal;
       idempotencyKey: string;
       paymentMethodId?: string;
       note?: string;
@@ -60,7 +60,7 @@ export class ConsumerPaymentsLedgerRepository {
         type: $Enums.LedgerEntryType.USER_PAYOUT,
         currencyCode: params.currencyCode,
         status: $Enums.TransactionStatus.PENDING,
-        amount: -params.amount,
+        amount: params.amount.negated(),
         createdBy: params.consumerId,
         updatedBy: params.consumerId,
         idempotencyKey: `withdraw:${params.idempotencyKey}`,
@@ -81,7 +81,7 @@ export class ConsumerPaymentsLedgerRepository {
       consumerId: string;
       recipientId: string;
       currencyCode: $Enums.CurrencyCode;
-      amount: number;
+      amount: Prisma.Decimal;
       idempotencyKey: string;
     },
   ) {
@@ -92,7 +92,7 @@ export class ConsumerPaymentsLedgerRepository {
         type: $Enums.LedgerEntryType.USER_PAYMENT,
         currencyCode: params.currencyCode,
         status: $Enums.TransactionStatus.COMPLETED,
-        amount: -params.amount,
+        amount: params.amount.negated(),
         createdBy: params.consumerId,
         updatedBy: params.consumerId,
         idempotencyKey: `transfer:${params.idempotencyKey}:sender`,

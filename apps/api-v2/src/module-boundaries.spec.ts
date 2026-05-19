@@ -18,16 +18,22 @@ import { AdminV2AdminsService } from './admin-v2/admins/admin-v2-admins.service'
 import { AdminV2AssignmentsModule } from './admin-v2/assignments/admin-v2-assignments.module';
 import { AdminV2AssignmentsService } from './admin-v2/assignments/admin-v2-assignments.service';
 import { AdminV2ConsumersController } from './admin-v2/consumers/admin-v2-consumers.controller';
+import { AdminV2DocumentsController } from './admin-v2/documents/admin-v2-documents.controller';
 import { AdminV2ExchangeController } from './admin-v2/exchange/admin-v2-exchange.controller';
+import { AdminV2LedgerController } from './admin-v2/ledger/admin-v2-ledger.controller';
 import { AdminV2LedgerModule } from './admin-v2/ledger/admin-v2-ledger.module';
 import { AdminV2LedgerService } from './admin-v2/ledger/admin-v2-ledger.service';
+import { AdminV2LedgerAnomaliesController } from './admin-v2/ledger/anomalies/admin-v2-ledger-anomalies.controller';
 import { AdminV2LedgerAnomaliesService } from './admin-v2/ledger/anomalies/admin-v2-ledger-anomalies.service';
+import { AdminV2PaymentMethodsController } from './admin-v2/payment-methods/admin-v2-payment-methods.controller';
 // eslint-disable-next-line max-len
 import { AdminV2PaymentReversalRefundFinalizerService } from './admin-v2/payments/admin-v2-payment-reversal-refund-finalizer.service';
 import { AdminV2PaymentReversalWorkflowService } from './admin-v2/payments/admin-v2-payment-reversal-workflow.service';
 import { AdminV2PaymentsController } from './admin-v2/payments/admin-v2-payments.controller';
 import { AdminV2PaymentsModule } from './admin-v2/payments/admin-v2-payments.module';
 import { AdminV2PaymentsService } from './admin-v2/payments/admin-v2-payments.service';
+import { AdminV2PayoutsController } from './admin-v2/payouts/admin-v2-payouts.controller';
+import { AdminV2VerificationController } from './admin-v2/verification/admin-v2-verification.controller';
 import { RESPONSE_CONTRACT_METADATA } from './common';
 import { AdminActionAuditRepository } from './shared/admin-action-audit.repository';
 import { AdminActionAuditService } from './shared/admin-action-audit.service';
@@ -221,7 +227,6 @@ describe(`Nest module provider boundaries`, () => {
     expect(sourceFileCounts(adminV2Dir, /@Param\(`[^`]+`\)\s+\w+:\s+string/g)).toEqual(
       new Map([
         [`admins/admin-v2-admins.controller.ts`, 11],
-        [`documents/admin-v2-documents.controller.ts`, 5],
         [`operational-alerts/admin-v2-operational-alerts.controller.ts`, 2],
         [`quickstarts/admin-v2-quickstarts.controller.ts`, 1],
         [`saved-views/admin-v2-saved-views.controller.ts`, 2],
@@ -233,23 +238,29 @@ describe(`Nest module provider boundaries`, () => {
     const adminV2Dir = join(__dirname, `admin-v2`);
 
     expect(controllerFileCounts(adminV2Dir, /^class .*{/gm)).toEqual(
-      new Map([
-        [`auth/admin-v2-auth.controller.ts`, 4],
-        [`documents/admin-v2-documents.controller.ts`, 7],
-        [`ledger/admin-v2-ledger.controller.ts`, 2],
-        [`ledger/anomalies/admin-v2-ledger-anomalies.controller.ts`, 1],
-        [`payment-methods/admin-v2-payment-methods.controller.ts`, 3],
-        [`payouts/admin-v2-payouts.controller.ts`, 2],
-        [`verification/admin-v2-verification.controller.ts`, 2],
-      ]),
+      new Map([[`auth/admin-v2-auth.controller.ts`, 4]]),
     );
   });
 
   it(`marks migrated admin-v2 plain-object response contracts explicitly`, () => {
-    for (const controller of [AdminV2ConsumersController, AdminV2ExchangeController, AdminV2PaymentsController]) {
+    for (const controller of [
+      AdminV2ConsumersController,
+      AdminV2DocumentsController,
+      AdminV2ExchangeController,
+      AdminV2LedgerController,
+      AdminV2LedgerAnomaliesController,
+      AdminV2PaymentMethodsController,
+      AdminV2PaymentsController,
+      AdminV2PayoutsController,
+      AdminV2VerificationController,
+    ]) {
       const metadata = Reflect.getMetadata(RESPONSE_CONTRACT_METADATA, controller);
       expect(metadata).toMatchObject({ kind: `plain-object` });
     }
+  });
+
+  it(`keeps fixed scheduler cron expressions behind the shared scheduler policy`, () => {
+    expect(sourceFileCounts(__dirname, /@Cron\(`[^`]+`\)/g)).toEqual(new Map());
   });
 
   it(`keeps admin-v2 idempotency transaction posture explicit`, () => {

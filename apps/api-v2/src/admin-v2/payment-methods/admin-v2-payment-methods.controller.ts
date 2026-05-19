@@ -1,82 +1,29 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { Expose, Transform } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 import {
-  type AdminV2DisablePaymentMethodBody,
-  type AdminV2DuplicateEscalatePaymentMethodBody,
-  type AdminV2RemoveDefaultPaymentMethodBody,
-} from '@remoola/api-types';
-
-import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
-import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../../common/query-transforms';
+  AdminV2ReadThrottle,
+  Identity,
+  type IIdentityContext,
+  PlainObjectResponseContract,
+  RequestMeta,
+  type RequestMeta as RequestMetaPayload,
+} from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
-import { ConfirmedVersionedMutationBody, VersionedMutationBody } from '../admin-v2-common.dto';
+import {
+  DisablePaymentMethodBody,
+  DuplicateEscalatePaymentMethodBody,
+  PaymentMethodsListQuery,
+  RemoveDefaultPaymentMethodBody,
+} from './admin-v2-payment-methods.dto';
 import { AdminV2PaymentMethodsService } from './admin-v2-payment-methods.service';
-
-class PaymentMethodsListQuery {
-  @Expose()
-  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  consumerId?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  type?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalBooleanQuery((obj as Record<string, unknown>)[key]))
-  @IsBoolean()
-  @IsOptional()
-  defaultSelected?: boolean;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  fingerprint?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalBooleanQuery((obj as Record<string, unknown>)[key]))
-  @IsBoolean()
-  @IsOptional()
-  includeDeleted?: boolean;
-}
-
-class DisablePaymentMethodBody extends ConfirmedVersionedMutationBody implements AdminV2DisablePaymentMethodBody {
-  @Expose()
-  @IsString()
-  reason!: string;
-}
-
-class RemoveDefaultPaymentMethodBody extends VersionedMutationBody implements AdminV2RemoveDefaultPaymentMethodBody {}
-
-class DuplicateEscalatePaymentMethodBody
-  extends VersionedMutationBody
-  implements AdminV2DuplicateEscalatePaymentMethodBody {}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Payment Methods`)
-@Throttle({ default: { limit: 500, ttl: 60000 } })
+@PlainObjectResponseContract(
+  `Admin v2 payment method routes return plain objects governed by @remoola/api-types contracts.`,
+)
+@AdminV2ReadThrottle()
 @Controller(`admin-v2/payment-methods`)
 export class AdminV2PaymentMethodsController {
   constructor(

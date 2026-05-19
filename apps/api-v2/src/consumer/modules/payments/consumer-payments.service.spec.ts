@@ -273,10 +273,11 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           requesterEmail: `recipient@example.com`,
           currencyCode: $Enums.CurrencyCode.EUR,
           paymentRail: $Enums.PaymentRail.CARD,
-          amount: 50,
+          amount: expect.anything(),
         }),
       }),
     );
+    expect(String(tx.paymentRequestModel.create.mock.calls[0][0].data.amount)).toBe(`50`);
     expect(tx.ledgerEntryModel.create).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
@@ -284,7 +285,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           consumerId,
           type: $Enums.LedgerEntryType.USER_PAYMENT,
           currencyCode: $Enums.CurrencyCode.EUR,
-          amount: -50,
+          amount: expect.anything(),
           metadata: expect.objectContaining({
             rail: $Enums.PaymentRail.CARD,
             counterpartyId: `recipient-1`,
@@ -293,6 +294,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
         }),
       }),
     );
+    expect(String(tx.ledgerEntryModel.create.mock.calls[0][0].data.amount)).toBe(`-50`);
     expect(tx.ledgerEntryModel.create).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
@@ -300,7 +302,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           consumerId: `recipient-1`,
           type: $Enums.LedgerEntryType.USER_DEPOSIT,
           currencyCode: $Enums.CurrencyCode.EUR,
-          amount: 50,
+          amount: expect.anything(),
           metadata: expect.objectContaining({
             rail: $Enums.PaymentRail.CARD,
             counterpartyId: consumerId,
@@ -309,6 +311,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
         }),
       }),
     );
+    expect(String(tx.ledgerEntryModel.create.mock.calls[1][0].data.amount)).toBe(`50`);
   });
 
   it(`keeps requester leg as user payment for non-USD bank-transfer funded start payment`, async () => {
@@ -342,10 +345,11 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           consumerId: `recipient-1`,
           type: $Enums.LedgerEntryType.USER_PAYMENT,
           currencyCode: $Enums.CurrencyCode.GBP,
-          amount: 20,
+          amount: expect.anything(),
         }),
       }),
     );
+    expect(String(tx.ledgerEntryModel.create.mock.calls[1][0].data.amount)).toBe(`20`);
   });
 
   it(`creates payment with unregistered recipient when recipient not found`, async () => {
@@ -366,10 +370,11 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           requesterId: null,
           requesterEmail: `unknown@example.com`,
           paymentRail: $Enums.PaymentRail.BANK_TRANSFER,
-          amount: 10,
+          amount: expect.anything(),
         }),
       }),
     );
+    expect(String(tx.paymentRequestModel.create.mock.calls[0][0].data.amount)).toBe(`10`);
     expect(tx.ledgerEntryModel.create).toHaveBeenCalledTimes(1);
   });
 
@@ -438,6 +443,13 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
         method: $Enums.PaymentMethodType.CREDIT_CARD,
       }),
     ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.startPayment(consumerId, {
+        email: `r@example.com`,
+        amount: `not-a-decimal`,
+        method: $Enums.PaymentMethodType.CREDIT_CARD,
+      }),
+    ).rejects.toThrow(errorCodes.INVALID_AMOUNT_START_PAYMENT);
   });
 });
 
@@ -529,7 +541,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
         data: expect.objectContaining({
           paymentRequestId: `pr-1`,
           consumerId: `payer-1`,
-          amount: -55.25,
+          amount: expect.anything(),
           metadata: expect.objectContaining({
             counterpartyId: consumerId,
             consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
@@ -537,13 +549,14 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
         }),
       }),
     );
+    expect(String(tx.ledgerEntryModel.create.mock.calls[0][0].data.amount)).toBe(`-55.25`);
     expect(tx.ledgerEntryModel.create).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         data: expect.objectContaining({
           paymentRequestId: `pr-1`,
           consumerId,
-          amount: 55.25,
+          amount: expect.anything(),
           metadata: expect.objectContaining({
             counterpartyId: `payer-1`,
             consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
@@ -551,6 +564,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
         }),
       }),
     );
+    expect(String(tx.ledgerEntryModel.create.mock.calls[1][0].data.amount)).toBe(`55.25`);
     expect((tx.ledgerEntryModel.create as jest.Mock).mock.calls[0]?.[0]?.data?.metadata).toEqual(
       expect.not.objectContaining({
         rail: expect.anything(),
@@ -1619,7 +1633,7 @@ describe(`ConsumerPaymentsService.transfer`, () => {
     const receiverData = receiverCall[0].data;
 
     expect(senderData.consumerId).toBe(consumerId);
-    expect(senderData.amount).toBe(-2);
+    expect(String(senderData.amount)).toBe(`-2`);
     expect(senderData.idempotencyKey).toBe(`transfer:idem-key-1:sender`);
     expect(senderData.ledgerId).toBe(result.ledgerId);
     expect(senderData.status).toBe($Enums.TransactionStatus.COMPLETED);
@@ -1630,7 +1644,7 @@ describe(`ConsumerPaymentsService.transfer`, () => {
     });
 
     expect(receiverData.consumerId).toBe(recipientId);
-    expect(receiverData.amount).toBe(2);
+    expect(String(receiverData.amount)).toBe(`2`);
     expect(receiverData.idempotencyKey).toBe(`transfer:idem-key-1:recipient`);
     expect(receiverData.ledgerId).toBe(result.ledgerId);
     expect(receiverData.status).toBe($Enums.TransactionStatus.COMPLETED);

@@ -1,79 +1,24 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { Expose, Transform } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-import { type AdminV2VerificationDecisionBody } from '@remoola/api-types';
-
-import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
-import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../../common/query-transforms';
+import {
+  AdminV2ReadThrottle,
+  Identity,
+  type IIdentityContext,
+  PlainObjectResponseContract,
+  RequestMeta,
+  type RequestMeta as RequestMetaPayload,
+} from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
-import { ConfirmedVersionedMutationBody } from '../admin-v2-common.dto';
+import { VerificationDecisionBody, VerificationQueueQuery } from './admin-v2-verification.dto';
 import { AdminV2VerificationService } from './admin-v2-verification.service';
-
-class VerificationQueueQuery {
-  @Expose()
-  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  status?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  stripeIdentityStatus?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  country?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalStringQuery((obj as Record<string, unknown>)[key]))
-  @IsString()
-  @IsOptional()
-  contractorKind?: string;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalBooleanQuery((obj as Record<string, unknown>)[key]))
-  @IsBoolean()
-  @IsOptional()
-  missingProfileData?: boolean;
-
-  @Expose()
-  @Transform(({ obj, key }) => optionalBooleanQuery((obj as Record<string, unknown>)[key]))
-  @IsBoolean()
-  @IsOptional()
-  missingDocuments?: boolean;
-}
-
-class VerificationDecisionBody extends ConfirmedVersionedMutationBody implements AdminV2VerificationDecisionBody {
-  @Expose()
-  @IsOptional()
-  @IsString()
-  reason?: string;
-}
 
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Verification`)
-@Throttle({ default: { limit: 500, ttl: 60000 } })
+@PlainObjectResponseContract(
+  `Admin v2 verification routes return plain objects governed by @remoola/api-types contracts.`,
+)
+@AdminV2ReadThrottle()
 @Controller(`admin-v2/verification`)
 export class AdminV2VerificationController {
   constructor(

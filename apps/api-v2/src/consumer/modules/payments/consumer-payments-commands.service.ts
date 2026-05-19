@@ -20,6 +20,7 @@ import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.se
 import { type CreatePaymentRequest, type TransferBody, type WithdrawBody } from './dto';
 import { type StartPayment } from './dto/start-payment.dto';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
+import { toMoneyDecimal, toPositiveMoneyDecimal, type MoneyDecimalInput } from '../../../shared/money-decimal.utils';
 import { acquireTransactionAdvisoryLock, buildConsumerOperationLockName } from '../../../shared/prisma-advisory-locks';
 import { PrismaTransactionRunner } from '../../../shared/prisma-transaction.runner';
 
@@ -47,6 +48,14 @@ export class ConsumerPaymentsCommandsService {
     return this.paymentsIdentityRepository.findConsumerEmailById(consumerId);
   }
 
+  private parsePositiveAmount(value: MoneyDecimalInput, errorCode: string): Prisma.Decimal {
+    try {
+      return toPositiveMoneyDecimal(value, `payment amount`);
+    } catch {
+      throw new BadRequestException(errorCode);
+    }
+  }
+
   async startPayment(consumerId: string, body: StartPayment, consumerAppScope?: ConsumerAppScope) {
     await this.policiesService.ensureProfileComplete(consumerId);
 
@@ -63,10 +72,7 @@ export class ConsumerPaymentsCommandsService {
       throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_START_PAYMENT);
     }
 
-    const amount = Number(body.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(errorCodes.INVALID_AMOUNT_START_PAYMENT);
-    }
+    const amount = this.parsePositiveAmount(body.amount, errorCodes.INVALID_AMOUNT_START_PAYMENT);
 
     const paymentRail =
       body.method === PAYMENT_METHOD.CREDIT_CARD ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
@@ -129,10 +135,7 @@ export class ConsumerPaymentsCommandsService {
       throw new BadRequestException(errorCodes.REQUEST_FROM_SELF_BY_EMAIL);
     }
 
-    const amount = Number(body.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(errorCodes.INVALID_AMOUNT_CREATE_REQUEST);
-    }
+    const amount = this.parsePositiveAmount(body.amount, errorCodes.INVALID_AMOUNT_CREATE_REQUEST);
 
     const parseDate = (value?: string) => {
       if (!value) return null;
@@ -148,6 +151,7 @@ export class ConsumerPaymentsCommandsService {
       normalizedEmail,
       recipient,
       body,
+      amount,
       dueDate: parseDate(body.dueDate),
     });
 
@@ -181,10 +185,7 @@ export class ConsumerPaymentsCommandsService {
   }
 
   async withdraw(consumerId: string, body: WithdrawBody, idempotencyKey: string | undefined) {
-    const amount = Number(body.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(errorCodes.INVALID_AMOUNT_WITHDRAW);
-    }
+    const amount = this.parsePositiveAmount(body.amount, errorCodes.INVALID_AMOUNT_WITHDRAW);
     if (!idempotencyKey?.trim()) {
       throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_WITHDRAW);
     }
@@ -217,7 +218,7 @@ export class ConsumerPaymentsCommandsService {
         const balance = await this.balanceService.calculateInTransaction(tx, consumerId, withdrawCurrency, {
           mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
         });
-        if (amount > balance) {
+        if (amount.gt(toMoneyDecimal(balance, `available balance`))) {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
         }
 
@@ -245,10 +246,7 @@ export class ConsumerPaymentsCommandsService {
   }
 
   async transfer(consumerId: string, body: TransferBody, idempotencyKey: string | undefined) {
-    const amount = Number(body.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(errorCodes.INVALID_AMOUNT_TRANSFER);
-    }
+    const amount = this.parsePositiveAmount(body.amount, errorCodes.INVALID_AMOUNT_TRANSFER);
     if (!idempotencyKey?.trim()) {
       throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_TRANSFER);
     }
@@ -282,7 +280,7 @@ export class ConsumerPaymentsCommandsService {
         const balance = await this.balanceService.calculateInTransaction(tx, consumerId, transferCurrency, {
           mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
         });
-        if (amount > balance) {
+        if (amount.gt(toMoneyDecimal(balance, `available balance`))) {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_TRANSFER);
         }
 

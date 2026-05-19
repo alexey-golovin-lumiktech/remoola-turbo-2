@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 
 import { StripeCheckoutSchedulerRepository } from './stripe-checkout-scheduler.repository';
 import { StripeWebhookService } from './stripe-webhook.service';
+import { SCHEDULER_CRON } from '../../../shared/scheduler-policy';
 import { STRIPE_CLIENT } from '../../../shared/stripe-client';
 
 @Injectable()
@@ -16,7 +17,7 @@ export class StripeCheckoutScheduler {
     @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
   ) {}
 
-  @Cron(`* * * * *`)
+  @Cron(SCHEDULER_CRON.stripeCheckoutReconcile)
   async reconcileWaitingCheckouts() {
     try {
       const selection = await this.checkoutSchedulerRepository.selectWaitingSessionIdsForRun();

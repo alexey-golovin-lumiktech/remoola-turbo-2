@@ -4,6 +4,7 @@ import express from 'express';
 import { Prisma } from '@remoola/database-2';
 
 import { extractPrismaValidationDetails, mapPrismaKnownError } from './utils';
+import { envs } from '../../envs';
 import { type RequestWithCorrelationId } from '../middleware/correlation-id.middleware';
 
 @Catch(Prisma.PrismaClientKnownRequestError, Prisma.PrismaClientValidationError)
@@ -22,7 +23,9 @@ export class PrismaExceptionFilter implements ExceptionFilter {
       status = HttpStatus.BAD_REQUEST;
       // In production, keep validation errors generic to avoid exposing query/schema internals.
       message =
-        process.env.NODE_ENV === `production` ? `Invalid request data` : extractPrismaValidationDetails(exception);
+        envs.NODE_ENV === envs.ENVIRONMENT.PRODUCTION
+          ? `Invalid request data`
+          : extractPrismaValidationDetails(exception);
     } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       const known = mapPrismaKnownError(exception);
       status = known.status;
