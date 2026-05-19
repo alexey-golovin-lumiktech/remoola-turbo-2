@@ -2897,7 +2897,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-18</summary>
 
 - **2026-05-18:**
@@ -2926,6 +2926,22 @@
 
   ### ⚠️ Notes
   - **No schema migration:** The May 18 refactor and cache wave did not include database schema or Prisma migration changes.
+
+</details>
+
+<details open>
+<summary>2026-05-19</summary>
+
+- **2026-05-19:**
+
+  ### 🔐 Security / Production Safety
+  - **Consumer session and redirect invariants:** Preserve cookie forwarding, session-expired handling, unauthorized redirects, and PII-bearing settings/profile flow behavior while refactoring consumer auth, payments, settings, and profile paths.
+
+  ### 🧪 Testing
+  - **Consumer module-boundary coverage:** Update affected mocks for the new settings, help, action, and query module boundaries; the commit records lint, build, typecheck, tests, and e2e as green.
+
+  ### 🛠 DevEx
+  - **Consumer UI and data-access modularization:** Split settings panels into focused UI modules, move help guide content, registry, and source-map data into domain files, move consumer query helpers under `lib/queries/*`, and isolate payment server actions in `lib/actions/payments.server.ts` without changing backend contracts.
 
 </details>
 
