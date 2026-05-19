@@ -6,6 +6,7 @@ import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/
 
 import { ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
+import { ConsumerGoogleOAuthFlowService } from './consumer-google-oauth-flow.service';
 import { ConsumerGoogleOAuthController } from './consumer-google-oauth.controller';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreService } from './oauth-state-store.service';
@@ -63,6 +64,7 @@ describe(`Consumer auth controller integration`, () => {
       controllers: [ConsumerGoogleOAuthController],
       providers: [
         ConsumerAuthControllerSupportService,
+        ConsumerGoogleOAuthFlowService,
         { provide: ConsumerAuthService, useValue: service },
         { provide: GoogleOAuthService, useValue: googleOAuthService },
         { provide: OAuthStateStoreService, useValue: oauthStateStore },

@@ -17,6 +17,7 @@ describe(`ConsumerPaymentMethodsService`, () => {
       updateBillingDetails: jest.fn(),
       updatePaymentMethodDefault: jest.fn(),
       softDeleteAndPromoteFallback: jest.fn(),
+      invalidateListForConsumer: jest.fn(),
     } as unknown as jest.Mocked<ConsumerPaymentMethodsRepository>;
   }
 
@@ -100,6 +101,7 @@ describe(`ConsumerPaymentMethodsService`, () => {
     await expect(service.createManual(consumerId, body)).resolves.toEqual({ id: `pm-2`, defaultSelected: true });
 
     expect(paymentMethodsRepository.createManualPaymentMethod).toHaveBeenCalledWith(consumerId, body);
+    expect(paymentMethodsRepository.invalidateListForConsumer).toHaveBeenCalledWith(consumerId);
   });
 
   it(`promotes a fallback method when deleting the current default`, async () => {
@@ -122,6 +124,7 @@ describe(`ConsumerPaymentMethodsService`, () => {
       type: $Enums.PaymentMethodType.BANK_ACCOUNT,
       wasDefault: true,
     });
+    expect(paymentMethodsRepository.invalidateListForConsumer).toHaveBeenCalledWith(consumerId);
   });
 
   it(`keeps bank default when a card becomes default`, async () => {
@@ -140,6 +143,7 @@ describe(`ConsumerPaymentMethodsService`, () => {
     await service.createManual(consumerId, body);
 
     expect(paymentMethodsRepository.createManualPaymentMethod).toHaveBeenCalledWith(consumerId, body);
+    expect(paymentMethodsRepository.invalidateListForConsumer).toHaveBeenCalledWith(consumerId);
   });
 
   it(`clears same-type defaults when updating a method to default`, async () => {
@@ -160,5 +164,6 @@ describe(`ConsumerPaymentMethodsService`, () => {
       $Enums.PaymentMethodType.CREDIT_CARD,
     );
     expect(paymentMethodsRepository.updatePaymentMethodDefault).toHaveBeenCalledWith(`pm-card`, true);
+    expect(paymentMethodsRepository.invalidateListForConsumer).toHaveBeenCalledWith(consumerId);
   });
 });

@@ -45,7 +45,9 @@ export class ConsumerPaymentMethodsService {
   }
 
   async createManual(consumerId: string, body: CreateManualPaymentMethod) {
-    return this.paymentMethodsRepository.createManualPaymentMethod(consumerId, body);
+    const paymentMethod = await this.paymentMethodsRepository.createManualPaymentMethod(consumerId, body);
+    await this.paymentMethodsRepository.invalidateListForConsumer(consumerId);
+    return paymentMethod;
   }
 
   async update(consumerId: string, id: string, body: UpdatePaymentMethod) {
@@ -66,10 +68,12 @@ export class ConsumerPaymentMethodsService {
       }
     }
 
-    return this.paymentMethodsRepository.updatePaymentMethodDefault(
+    const paymentMethod = await this.paymentMethodsRepository.updatePaymentMethodDefault(
       pm.id,
       body.defaultSelected !== undefined ? body.defaultSelected : pm.defaultSelected,
     );
+    await this.paymentMethodsRepository.invalidateListForConsumer(consumerId);
+    return paymentMethod;
   }
 
   async delete(consumerId: string, id: string) {
@@ -83,6 +87,7 @@ export class ConsumerPaymentMethodsService {
       type: pm.type,
       wasDefault: pm.defaultSelected,
     });
+    await this.paymentMethodsRepository.invalidateListForConsumer(consumerId);
 
     return { success: true };
   }

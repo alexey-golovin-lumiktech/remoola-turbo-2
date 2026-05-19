@@ -237,9 +237,7 @@ describe(`Nest module provider boundaries`, () => {
   it(`keeps new large inline admin-v2 controller DTOs from expanding`, () => {
     const adminV2Dir = join(__dirname, `admin-v2`);
 
-    expect(controllerFileCounts(adminV2Dir, /^class .*{/gm)).toEqual(
-      new Map([[`auth/admin-v2-auth.controller.ts`, 4]]),
-    );
+    expect(controllerFileCounts(adminV2Dir, /^class .*{/gm)).toEqual(new Map());
   });
 
   it(`marks migrated admin-v2 plain-object response contracts explicitly`, () => {

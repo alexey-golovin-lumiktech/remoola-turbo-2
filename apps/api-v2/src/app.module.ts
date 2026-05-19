@@ -6,13 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AdminV2Module } from './admin-v2/admin-v2.module';
 import { JwtPassportModule } from './auth/jwt-passport.module';
-import {
-  ConsumerActionInterceptor,
-  CorrelationIdMiddleware,
-  LoggingInterceptor,
-  PrismaExceptionFilter,
-  SqlValidationExceptionFilter,
-} from './common';
+import { ApiExceptionFilter, ConsumerActionInterceptor, CorrelationIdMiddleware, LoggingInterceptor } from './common';
 import { DeviceIdMiddleware } from './common/middleware/device-id.middleware';
 import { ConsumerModule } from './consumer/consumer.module';
 import { AuthGuard } from './guards';
@@ -80,11 +74,7 @@ import { DatabaseModule } from './shared/database.module';
     },
     {
       provide: APP_FILTER,
-      useClass: PrismaExceptionFilter,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: SqlValidationExceptionFilter,
+      useClass: ApiExceptionFilter,
     },
   ],
 })

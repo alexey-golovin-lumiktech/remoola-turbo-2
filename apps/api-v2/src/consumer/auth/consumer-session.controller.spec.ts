@@ -13,6 +13,7 @@ import {
 
 import { type ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
+import { ConsumerGoogleOAuthFlowService } from './consumer-google-oauth-flow.service';
 import { ConsumerGoogleOAuthController } from './consumer-google-oauth.controller';
 import { ConsumerPasswordController } from './consumer-password.controller';
 import { ConsumerSessionController } from './consumer-session.controller';
@@ -168,9 +169,16 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
     };
 
     const supportService = new ConsumerAuthControllerSupportService(originResolver as OriginResolverService);
+    const googleOAuthFlowService = new ConsumerGoogleOAuthFlowService(
+      service as ConsumerAuthService,
+      googleOAuthService as GoogleOAuthService,
+      oauthStateStore as OAuthStateStoreService,
+      supportService,
+    );
     controller = new ConsumerSessionController(service as ConsumerAuthService, supportService);
     googleOAuthController = new ConsumerGoogleOAuthController(
       service as ConsumerAuthService,
+      googleOAuthFlowService,
       googleOAuthService as GoogleOAuthService,
       oauthStateStore as OAuthStateStoreService,
       originResolver as OriginResolverService,

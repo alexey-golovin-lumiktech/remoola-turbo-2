@@ -17,12 +17,11 @@ import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
-import { $Enums } from '@remoola/database-2';
-import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
+import { CONSUMER_GOOGLE_OAUTH_POLICY, ConsumerGoogleOAuthFlowService } from './consumer-google-oauth-flow.service';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreService } from './oauth-state-store.service';
 import { PublicEndpoint, TrackConsumerAction } from '../../common';
@@ -36,61 +35,22 @@ import { getApiOAuthStateCookieKey } from '../../shared-common';
 @Controller(`consumer/auth`)
 export class ConsumerGoogleOAuthController {
   private readonly logger = new Logger(ConsumerGoogleOAuthController.name);
-  private readonly oauthStateTtlMs = 5 * 60 * 1000;
-  private readonly oauthLoginHandoffTtlMs = 2 * 60 * 1000;
-  private readonly googleSignupSessionTtlMs = 10 * 60 * 1000;
-  private readonly maxOAuthNextPathLength = 512;
+  private readonly oauthStateTtlMs = CONSUMER_GOOGLE_OAUTH_POLICY.oauthStateTtlMs;
+  private readonly oauthLoginHandoffTtlMs = CONSUMER_GOOGLE_OAUTH_POLICY.oauthLoginHandoffTtlMs;
+  private readonly googleSignupSessionTtlMs = CONSUMER_GOOGLE_OAUTH_POLICY.googleSignupSessionTtlMs;
+  private readonly maxOAuthNextPathLength = CONSUMER_GOOGLE_OAUTH_POLICY.maxNextPathLength;
 
   constructor(
     private readonly service: ConsumerAuthService,
+    private readonly flowService: ConsumerGoogleOAuthFlowService,
     private readonly googleOAuthService: GoogleOAuthService,
     private readonly oauthStateStore: OAuthStateStoreService,
     private readonly originResolver: OriginResolverService,
     private readonly supportService: ConsumerAuthControllerSupportService,
   ) {}
 
-  private requireConsumerAppScope(appScope?: string | null): ConsumerAppScope {
-    return this.supportService.requireConsumerAppScope(appScope);
-  }
-
-  private requireClaimedConsumerAppScope(req: express.Request, appScope?: string | null): ConsumerAppScope {
-    return this.supportService.requireClaimedConsumerAppScope(req, appScope);
-  }
-
   private getOAuthStateCookieFromRequest(req: express.Request, appScope: ConsumerAppScope): string | undefined {
     return this.supportService.getOAuthStateCookieFromRequest(req, appScope);
-  }
-
-  private getGoogleSignupSessionTokenFromRequest(
-    req: express.Request,
-    consumerScope: ConsumerAppScope,
-  ): string | undefined {
-    return this.supportService.getGoogleSignupSessionTokenFromRequest(req, consumerScope);
-  }
-
-  private setAuthCookies(
-    req: express.Request,
-    res: express.Response,
-    accessToken: string,
-    refreshToken: string,
-    consumerScope: ConsumerAppScope,
-  ) {
-    return this.supportService.setAuthCookies(req, res, accessToken, refreshToken, consumerScope);
-  }
-
-  private setGoogleSignupSessionCookie(
-    req: express.Request,
-    res: express.Response,
-    token: string,
-    consumerScope: ConsumerAppScope,
-  ) {
-    return this.supportService.setGoogleSignupSessionCookie(
-      req,
-      res,
-      token,
-      consumerScope,
-      this.googleSignupSessionTtlMs,
-    );
   }
 
   private getOAuthCookieOptions(req?: express.Request) {
@@ -122,19 +82,6 @@ export class ConsumerGoogleOAuthController {
     storedAppScope?: string | null,
   ): ConsumerAppScope {
     return this.supportService.requireStoredConsumerAppScopeMatchesRequest(req, storedAppScope);
-  }
-
-  private async getGoogleSignupPayloadFromSession(req: express.Request, appScope?: string | null) {
-    const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
-    const token = this.getGoogleSignupSessionTokenFromRequest(req, claimedAppScope);
-    if (!token) return undefined;
-    const record = await this.oauthStateStore.readSignupSession(token);
-    if (!record) return undefined;
-    const storedAppScope = this.requireStoredConsumerAppScopeMatchesRequest(req, record.appScope);
-    if (storedAppScope !== claimedAppScope) {
-      throw new UnauthorizedException(`Invalid app scope`);
-    }
-    return this.service.validateGoogleSignupPayload(this.service.createGoogleSignupPayload(record));
   }
 
   private buildConsumerRedirect(appScope: ConsumerAppScope, nextPath: string, extraParams?: Record<string, string>) {
@@ -174,43 +121,16 @@ export class ConsumerGoogleOAuthController {
     @Query(`accountType`) accountType?: string,
     @Query(`contractorKind`) contractorKind?: string,
   ) {
-    const validatedAccountType =
-      accountType === $Enums.AccountType.BUSINESS || accountType === $Enums.AccountType.CONTRACTOR
-        ? accountType
-        : undefined;
-    const validatedContractorKind =
-      contractorKind === $Enums.ContractorKind.INDIVIDUAL || contractorKind === $Enums.ContractorKind.ENTITY
-        ? contractorKind
-        : undefined;
+    const start = await this.flowService.start(req, {
+      accountType,
+      appScope,
+      contractorKind,
+      next,
+      signupPath,
+    });
 
-    const consumerScope = this.requireConsumerAppScope(appScope);
-
-    const nextPath = this.normalizeNextPath(next);
-    const signupEntryPath = signupPath === `/signup` ? `/signup` : this.getSignupEntryPathFromNext(next);
-    const nonce = oauthCrypto.generateOAuthNonce();
-    const codeVerifier = GoogleOAuthService.createCodeVerifier();
-    const codeChallenge = GoogleOAuthService.createCodeChallenge(codeVerifier);
-
-    const stateToken = this.oauthStateStore.createStateToken();
-    const createdAt = Date.now();
-    await this.oauthStateStore.save(
-      stateToken,
-      {
-        nonce,
-        codeVerifier,
-        nextPath,
-        createdAt,
-        appScope: consumerScope,
-        signupEntryPath,
-        accountType: validatedAccountType,
-        contractorKind: validatedContractorKind,
-      },
-      this.oauthStateTtlMs,
-    );
-
-    response.cookie(getApiOAuthStateCookieKey(req, consumerScope), stateToken, this.getOAuthCookieOptions(req));
-    const authUrl = this.googleOAuthService.buildAuthorizationUrl(stateToken, codeChallenge, nonce);
-    return response.redirect(authUrl);
+    response.cookie(getApiOAuthStateCookieKey(req, start.consumerScope), start.stateToken, start.oauthCookieOptions);
+    return response.redirect(start.authUrl);
   }
 
   @TrackConsumerAction({ action: `consumer.auth.oauth_callback`, resource: `auth` })
@@ -367,19 +287,7 @@ export class ConsumerGoogleOAuthController {
   @Get(`google/signup-session`)
   @ApiOkResponse({ type: CONSUMER.GoogleSignupSessionResponse })
   async googleSignupSession(@Req() req: express.Request, @Query(`appScope`) appScope?: string) {
-    const payload = await this.getGoogleSignupPayloadFromSession(req, appScope);
-    if (!payload) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
-
-    return {
-      email: payload.email,
-      givenName: payload.givenName,
-      familyName: payload.familyName,
-      picture: payload.picture,
-      accountType: payload.accountType,
-      contractorKind: payload.contractorKind,
-      nextPath: payload.nextPath,
-      signupEntryPath: payload.signupEntryPath,
-    };
+    return this.flowService.getSignupSession(req, appScope);
   }
 
   @PublicEndpoint()
@@ -395,31 +303,16 @@ export class ConsumerGoogleOAuthController {
     @Body() body: HandoffTokenRequest,
     @Query(`appScope`) appScope?: string,
   ) {
-    const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
-    const handoffToken = body.handoffToken;
-    if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
-    const payload = await this.oauthStateStore.consumeSignupHandoff(handoffToken);
-    if (!payload) throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
-    const storedAppScope = this.requireStoredConsumerAppScopeMatchesRequest(req, payload.appScope);
-    if (storedAppScope !== claimedAppScope) {
-      throw new UnauthorizedException(`Invalid app scope`);
-    }
+    const result = await this.flowService.establishSignupSession(req, body.handoffToken, appScope);
+    this.supportService.setGoogleSignupSessionCookie(
+      req,
+      res,
+      result.signupSessionToken,
+      result.claimedAppScope,
+      this.googleSignupSessionTtlMs,
+    );
 
-    const validatedPayload = this.service.validateGoogleSignupPayload(this.service.createGoogleSignupPayload(payload));
-    const signupSessionToken = this.oauthStateStore.createEphemeralToken();
-    await this.oauthStateStore.saveSignupSession(signupSessionToken, payload, this.googleSignupSessionTtlMs);
-    this.setGoogleSignupSessionCookie(req, res, signupSessionToken, claimedAppScope);
-
-    return {
-      email: validatedPayload.email,
-      givenName: validatedPayload.givenName,
-      familyName: validatedPayload.familyName,
-      picture: validatedPayload.picture,
-      accountType: validatedPayload.accountType,
-      contractorKind: validatedPayload.contractorKind,
-      nextPath: validatedPayload.nextPath,
-      signupEntryPath: validatedPayload.signupEntryPath,
-    };
+    return result.response;
   }
 
   @PublicEndpoint()
@@ -435,20 +328,8 @@ export class ConsumerGoogleOAuthController {
     @Body() body: HandoffTokenRequest,
     @Query(`appScope`) appScope?: string,
   ) {
-    const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
-    const handoffToken = body.handoffToken;
-    if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_EXCHANGE_TOKEN);
-    const decoded = await this.oauthStateStore.consumeLoginHandoff(handoffToken);
-    if (!decoded) throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
-    const storedAppScope = this.requireStoredConsumerAppScopeMatchesRequest(req, decoded.appScope);
-    if (storedAppScope !== claimedAppScope) {
-      throw new UnauthorizedException(`Invalid app scope`);
-    }
-    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(
-      decoded.identityId,
-      claimedAppScope,
-    );
-    this.setAuthCookies(req, res, accessToken, refreshToken, claimedAppScope);
-    return { ok: true, next: decoded.nextPath };
+    const result = await this.flowService.completeOAuth(req, body.handoffToken, appScope);
+    this.supportService.setAuthCookies(req, res, result.accessToken, result.refreshToken, result.claimedAppScope);
+    return { ok: true, next: result.next };
   }
 }

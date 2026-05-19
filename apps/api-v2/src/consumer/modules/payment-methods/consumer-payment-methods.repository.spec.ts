@@ -8,6 +8,7 @@ describe(`ConsumerPaymentMethodsRepository`, () => {
     const cacheManager = {
       get: jest.fn(),
       set: jest.fn(),
+      del: jest.fn(),
     };
     const prisma = {
       paymentMethodModel: {
@@ -50,5 +51,13 @@ describe(`ConsumerPaymentMethodsRepository`, () => {
       orderBy: { createdAt: `desc` },
     });
     expect(cacheManager.set).toHaveBeenCalledWith(`consumer-payment-methods:list:consumer-1`, paymentMethods, 30_000);
+  });
+
+  it(`invalidates the cached list for a consumer`, async () => {
+    const { cacheManager, repository } = buildRepository();
+
+    await repository.invalidateListForConsumer(`consumer-1`);
+
+    expect(cacheManager.del).toHaveBeenCalledWith(`consumer-payment-methods:list:consumer-1`);
   });
 });

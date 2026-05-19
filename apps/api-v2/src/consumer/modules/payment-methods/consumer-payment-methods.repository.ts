@@ -36,6 +36,10 @@ export class ConsumerPaymentMethodsRepository {
     return paymentMethods;
   }
 
+  async invalidateListForConsumer(consumerId: string): Promise<void> {
+    await this.cacheManager.del(this.buildListCacheKey(consumerId));
+  }
+
   async createManualPaymentMethod(consumerId: string, body: CreateManualPaymentMethod) {
     return this.prisma.$transaction(async (tx) => {
       const billingDetails = await tx.billingDetailsModel.create({

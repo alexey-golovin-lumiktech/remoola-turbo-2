@@ -10,6 +10,7 @@ import { ConsumerAuthSessionRepository } from './consumer-auth-session.repositor
 import { ConsumerAuthSessionService } from './consumer-auth-session.service';
 import { ConsumerAuthSignupService } from './consumer-auth-signup.service';
 import { ConsumerAuthVerificationService } from './consumer-auth-verification.service';
+import { ConsumerGoogleOAuthFlowService } from './consumer-google-oauth-flow.service';
 import { ConsumerGoogleOAuthController } from './consumer-google-oauth.controller';
 import { ConsumerGoogleProfileQuery } from './consumer-google-profile.query';
 import { ConsumerGoogleProfileRepository } from './consumer-google-profile.repository';
@@ -56,6 +57,7 @@ import { MailingModule } from '../../shared/mailing.module';
     ConsumerAuthSignupService,
     ConsumerAuthVerificationService,
     ConsumerAuthService,
+    ConsumerGoogleOAuthFlowService,
     OAuthStateStoreQuery,
     OAuthStateStoreRepository,
     OAuthStateStoreService,
