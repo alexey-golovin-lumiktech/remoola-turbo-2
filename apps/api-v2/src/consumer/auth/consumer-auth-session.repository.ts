@@ -3,7 +3,10 @@ import { Injectable } from '@nestjs/common';
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { type Prisma } from '@remoola/database-2';
 
+import { buildAuthSessionRevokePayload } from '../../guards/auth-session-revoke-payload';
 import { PrismaService } from '../../shared/prisma.service';
+
+export { ConsumerAuthSessionRotationConflictError } from '../../guards/auth-session-rotation-conflict.error';
 
 type PendingSessionParams = {
   sessionId?: string;
@@ -21,13 +24,6 @@ type FinalizedSessionParams = {
   refreshTokenHash: string;
   finalizedAt: Date;
 };
-
-export class ConsumerAuthSessionRotationConflictError extends Error {
-  constructor() {
-    super(`Consumer auth session rotation lost the compare-and-swap guard`);
-    this.name = `ConsumerAuthSessionRotationConflictError`;
-  }
-}
 
 @Injectable()
 export class ConsumerAuthSessionRepository {
@@ -52,7 +48,7 @@ export class ConsumerAuthSessionRepository {
   revokeSessionFamily(sessionFamilyId: string, reason: string) {
     return this.prisma.authSessionModel.updateMany({
       where: { sessionFamilyId, revokedAt: null },
-      data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
+      data: buildAuthSessionRevokePayload(reason),
     });
   }
 
@@ -70,7 +66,7 @@ export class ConsumerAuthSessionRepository {
         refreshTokenHash: params.refreshTokenHash,
         revokedAt: null,
       },
-      data: { revokedAt: new Date(), invalidatedReason: `logout`, lastUsedAt: new Date() },
+      data: buildAuthSessionRevokePayload(`logout`),
     });
   }
 
@@ -83,7 +79,7 @@ export class ConsumerAuthSessionRepository {
   revokeAllByConsumerId(consumerId: string, reason: string) {
     return this.prisma.authSessionModel.updateMany({
       where: { consumerId, revokedAt: null },
-      data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
+      data: buildAuthSessionRevokePayload(reason),
     });
   }
 

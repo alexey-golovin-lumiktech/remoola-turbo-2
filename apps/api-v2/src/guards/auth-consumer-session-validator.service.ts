@@ -1,16 +1,15 @@
 import { ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
-import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { type IIdentity } from '../common';
 import { GuardMessage } from './auth-guard-boundary';
 import { AuthIdentityRepository } from './auth-identity.repository';
+import { validateSessionTokenHash } from './auth-session-token-hash.validator';
 import { AuthSessionRepository } from './auth-session.repository';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { OriginResolverService } from '../shared/origin-resolver.service';
-import { secureCompare } from '../shared-common';
 
 @Injectable()
 export class AuthConsumerSessionValidatorService {
@@ -38,21 +37,14 @@ export class AuthConsumerSessionValidatorService {
       this.logger.warn(`AuthGuard: consumer access token missing sid`);
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
-    const session = await this.authSessionRepository.findActiveConsumerSession(
-      verified.sid,
-      identityId,
-      requestAppScope,
-    );
-    if (session == null || session.expiresAt < new Date()) {
-      this.logger.warn(`AuthGuard: consumer session not found or expired`);
-      throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
-    }
+    const session = validateSessionTokenHash({
+      logger: this.logger,
+      session: await this.authSessionRepository.findActiveConsumerSession(verified.sid, identityId, requestAppScope),
+      accessToken,
+      logPrefix: `consumer`,
+    });
     if (session.appScope !== requestAppScope) {
       this.logger.warn(`AuthGuard: consumer session app scope mismatch`);
-      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-    }
-    if (!secureCompare(session.accessTokenHash, oauthCrypto.hashOAuthState(accessToken))) {
-      this.logger.warn(`AuthGuard: consumer access token mismatch with stored value`);
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 

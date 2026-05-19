@@ -11,9 +11,9 @@ import {
 } from '@remoola/api-types';
 
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
+import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../../common/query-transforms';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { ConfirmedVersionedMutationBody, VersionedMutationBody } from '../admin-v2-common.dto';
-import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
 import { AdminV2PaymentMethodsService } from './admin-v2-payment-methods.service';
 
 class PaymentMethodsListQuery {

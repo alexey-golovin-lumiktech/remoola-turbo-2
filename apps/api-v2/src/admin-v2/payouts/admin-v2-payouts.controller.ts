@@ -7,9 +7,9 @@ import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { type AdminV2EscalatePayoutBody } from '@remoola/api-types';
 
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
+import { optionalNumberQuery, optionalStringQuery } from '../../common/query-transforms';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { ConfirmedVersionedMutationBody } from '../admin-v2-common.dto';
-import { optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
 import { AdminV2PayoutsService } from './admin-v2-payouts.service';
 
 class PayoutsListQuery {

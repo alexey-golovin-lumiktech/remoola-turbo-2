@@ -3,7 +3,10 @@ import { Injectable } from '@nestjs/common';
 import { type Prisma } from '@remoola/database-2';
 
 import { type AdminAuthSessionRevokeReason } from './admin-auth-session-reasons';
+import { buildAuthSessionRevokePayload } from '../guards/auth-session-revoke-payload';
 import { PrismaService } from '../shared/prisma.service';
+
+export { AdminAuthSessionRotationConflictError } from '../guards/auth-session-rotation-conflict.error';
 
 type CreateIssuedSessionParams = {
   sessionId: string;
@@ -14,13 +17,6 @@ type CreateIssuedSessionParams = {
   expiresAt: Date;
   issuedAt: Date;
 };
-
-export class AdminAuthSessionRotationConflictError extends Error {
-  constructor() {
-    super(`Admin auth session rotation lost the compare-and-swap guard`);
-    this.name = `AdminAuthSessionRotationConflictError`;
-  }
-}
 
 @Injectable()
 export class AdminAuthSessionRepository {
@@ -98,18 +94,14 @@ export class AdminAuthSessionRepository {
         refreshTokenHash: params.refreshTokenHash,
         revokedAt: null,
       },
-      data: {
-        revokedAt: new Date(),
-        invalidatedReason: params.reason,
-        lastUsedAt: new Date(),
-      },
+      data: buildAuthSessionRevokePayload(params.reason),
     });
   }
 
   revokeSessionFamily(sessionFamilyId: string, reason: AdminAuthSessionRevokeReason) {
     return this.prisma.adminAuthSessionModel.updateMany({
       where: { sessionFamilyId, revokedAt: null },
-      data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
+      data: buildAuthSessionRevokePayload(reason),
     });
   }
 
@@ -123,11 +115,7 @@ export class AdminAuthSessionRepository {
   markSessionRevokedById(sessionId: string, reason: AdminAuthSessionRevokeReason) {
     return this.prisma.adminAuthSessionModel.update({
       where: { id: sessionId },
-      data: {
-        revokedAt: new Date(),
-        invalidatedReason: reason,
-        lastUsedAt: new Date(),
-      },
+      data: buildAuthSessionRevokePayload(reason),
     });
   }
 

@@ -5,8 +5,8 @@ import { Expose, Transform } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 import { Identity, type IIdentityContext } from '../../common';
+import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../common/query-transforms';
 import { AdminV2AccessService } from '../admin-v2-access.service';
-import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
 import { AdminV2LedgerService } from './admin-v2-ledger.service';
 
 class LedgerEntriesQuery {

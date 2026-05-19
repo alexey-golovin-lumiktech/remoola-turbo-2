@@ -7,9 +7,9 @@ import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator'
 import { type AdminV2VerificationDecisionBody } from '@remoola/api-types';
 
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
+import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../../common/query-transforms';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { ConfirmedVersionedMutationBody } from '../admin-v2-common.dto';
-import { optionalBooleanQuery, optionalNumberQuery, optionalStringQuery } from '../admin-v2-query-transforms';
 import { AdminV2VerificationService } from './admin-v2-verification.service';
 
 class VerificationQueueQuery {

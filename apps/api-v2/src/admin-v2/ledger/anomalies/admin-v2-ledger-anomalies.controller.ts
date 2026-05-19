@@ -6,8 +6,8 @@ import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 import { AdminV2LedgerAnomaliesService } from './admin-v2-ledger-anomalies.service';
 import { Identity, type IIdentityContext } from '../../../common';
+import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../../common/query-transforms';
 import { AdminV2AccessService } from '../../admin-v2-access.service';
-import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../admin-v2-query-transforms';
 
 class LedgerAnomaliesListQuery {
   @Expose({ name: `class` })
