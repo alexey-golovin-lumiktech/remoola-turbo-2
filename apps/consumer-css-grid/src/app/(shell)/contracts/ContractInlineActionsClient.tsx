@@ -7,7 +7,7 @@ import {
   createPaymentCheckoutSessionMutation,
   generateInvoiceMutation,
   sendPaymentRequestMutation,
-} from '../../../lib/consumer-mutations.server';
+} from '../../../lib/actions/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { getPaymentDetailActionState } from '../payments/payment-detail-action-state';
 import { type PaymentFlowContext } from '../payments/payment-flow-context';

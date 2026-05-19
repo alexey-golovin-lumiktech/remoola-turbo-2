@@ -6,7 +6,7 @@ import { useState, useTransition } from 'react';
 import { THEME, THEMES, type TTheme } from '@remoola/api-types';
 
 import { useTheme } from './ThemeProvider';
-import { updateSettingsMutation } from '../../lib/consumer-mutations.server';
+import { updateSettingsMutation } from '../../lib/mutations/settings.server';
 import { handleSessionExpiredError } from '../../lib/session-expired';
 
 const THEME_LABELS: Record<TTheme, string> = {

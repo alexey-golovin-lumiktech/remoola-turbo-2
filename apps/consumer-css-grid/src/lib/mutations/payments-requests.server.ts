@@ -11,6 +11,7 @@ import {
   CURRENT_CONSUMER_APP_SCOPE,
 } from '@remoola/api-types';
 
+import { type DraftPaymentRequestsResult } from '../actions/payments.types';
 import { isDateInputTodayOrLater, normalizeDateInput } from '../date-input';
 import {
   configuredBaseUrl,
@@ -32,25 +33,6 @@ type PaymentRequestCreateResult =
 type StartPaymentResult =
   | { ok: true; paymentRequestId?: string; ledgerId?: string; message?: string }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
-
-type DraftPaymentRequestOption = {
-  id: string;
-  amount: number;
-  currencyCode: string;
-  createdAt: string;
-  description: string | null;
-  counterpartyEmail: string | null;
-};
-
-type DraftPaymentRequestsResult =
-  | {
-      ok: true;
-      items: DraftPaymentRequestOption[];
-      total: number;
-      page: number;
-      pageSize: number;
-    }
-  | { ok: false; error: { code: string; message: string } };
 
 type AttachDocumentToDraftPaymentsResult =
   | {

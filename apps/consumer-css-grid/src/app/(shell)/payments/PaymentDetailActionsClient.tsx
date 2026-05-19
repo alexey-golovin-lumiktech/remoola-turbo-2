@@ -10,7 +10,7 @@ import {
   generateInvoiceMutation,
   payWithSavedMethodMutation,
   sendPaymentRequestMutation,
-} from '../../../lib/consumer-mutations.server';
+} from '../../../lib/actions/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { Panel } from '../../../shared/ui/shell-primitives';
 

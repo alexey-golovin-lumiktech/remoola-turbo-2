@@ -6,7 +6,7 @@ import { useId, useMemo, useState, useTransition } from 'react';
 import { CURRENCY_CODES } from '@remoola/api-types';
 
 import { buildPaymentDetailHref, type PaymentFlowContext } from './payment-flow-context';
-import { createPaymentRequestMutation } from '../../../lib/consumer-mutations.server';
+import { createPaymentRequestMutation } from '../../../lib/actions/payments.server';
 import { getTodayDateInputValue, isDateInputTodayOrLater } from '../../../lib/date-input';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 

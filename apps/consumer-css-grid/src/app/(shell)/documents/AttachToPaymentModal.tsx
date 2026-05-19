@@ -7,7 +7,7 @@ import {
   attachDocumentToDraftPaymentRequestsMutation,
   getDraftPaymentRequestsAction,
   type DraftPaymentRequestOption,
-} from '../../../lib/consumer-mutations.server';
+} from '../../../lib/actions/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 
 const DEFAULT_PAGE_SIZE = 20;

@@ -28,7 +28,7 @@ jest.mock(`next/navigation`, () => ({
   useSearchParams: () => new URLSearchParams(mockedSearchParamsValue),
 }));
 
-jest.mock(`../../../lib/consumer-mutations.server`, () => ({
+jest.mock(`../../../lib/mutations/documents.server`, () => ({
   bulkDeleteDocumentsMutation: mockedBulkDeleteDocumentsMutation,
   deleteDocumentMutation: mockedDeleteDocumentMutation,
   updateDocumentTagsMutation: mockedUpdateDocumentTagsMutation,

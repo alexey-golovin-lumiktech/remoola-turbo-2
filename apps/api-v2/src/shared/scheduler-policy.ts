@@ -21,10 +21,3 @@ export const SCHEDULER_TIMEOUT_MS = {
   operationalAlertsPerAlert: 10_000,
   operationalAlertsTickWallBudget: 240_000,
 } as const;
-
-export type SchedulerRunSummary = {
-  event: string;
-  processed: number;
-  failed: number;
-  skipped?: number;
-};

@@ -9,7 +9,7 @@ import {
   createContactMutation,
   deleteContactMutation,
   updateContactMutation,
-} from '../../../lib/consumer-mutations.server';
+} from '../../../lib/mutations/contacts.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { ActionMini } from '../../../shared/ui/shell-primitives';
 

@@ -34,7 +34,7 @@ import {
   changePasswordMutation,
   updateProfileMutation,
   updateSettingsMutation,
-} from '../../../lib/consumer-mutations.server';
+} from '../../../lib/mutations/settings.server';
 import { submitPostNavigation } from '../../../lib/post-navigation';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { useTheme } from '../../../shared/theme/ThemeProvider';

@@ -18,7 +18,7 @@ import {
   bulkDeleteDocumentsMutation,
   deleteDocumentMutation,
   updateDocumentTagsMutation,
-} from '../../../lib/consumer-mutations.server';
+} from '../../../lib/mutations/documents.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { MetricLine } from '../../../shared/ui/shell-primitives';
 

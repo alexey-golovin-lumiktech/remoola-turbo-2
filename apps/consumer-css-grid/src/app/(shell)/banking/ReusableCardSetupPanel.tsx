@@ -9,7 +9,7 @@ import { isValidEmail, normalizeEmail, normalizePhone, phoneDigitsCount } from '
 import {
   confirmReusableCardSetupIntentMutation,
   createReusableCardSetupIntentMutation,
-} from '../../../lib/consumer-mutations.server';
+} from '../../../lib/mutations/banking.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
 

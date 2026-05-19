@@ -33,7 +33,7 @@ export class DocumentRetagBody extends VersionedMutationBody implements AdminV2D
   tagIds!: string[];
 }
 
-export class BulkTagResource extends VersionedMutationBody implements AdminV2DocumentBulkTagResource {
+class BulkTagResource extends VersionedMutationBody implements AdminV2DocumentBulkTagResource {
   @Expose()
   @IsString()
   resourceId!: string;

@@ -20,7 +20,7 @@ jest.mock(`../../../../lib/consumer-api.server`, () => ({
 const { getExchangeCurrencies: mockedGetExchangeCurrencies, getExchangeRules: mockedGetExchangeRules } =
   jest.requireMock(`../../../../lib/consumer-api.server`) as jest.Mocked<typeof ConsumerApi>;
 
-jest.mock(`../../../../lib/consumer-mutations.server`, () => ({
+jest.mock(`../../../../lib/mutations/exchange.server`, () => ({
   createExchangeRuleMutation: jest.fn(),
   updateExchangeRuleMutation: jest.fn(),
   deleteExchangeRuleMutation: jest.fn(),

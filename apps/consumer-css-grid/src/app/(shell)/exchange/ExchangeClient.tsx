@@ -28,7 +28,7 @@ import {
   refreshExchangeRatesMutation,
   scheduleExchangeMutation,
   updateExchangeRuleMutation,
-} from '../../../lib/consumer-mutations.server';
+} from '../../../lib/mutations/exchange.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { MetricLine, Panel } from '../../../shared/ui/shell-primitives';
 

@@ -8,14 +8,14 @@ import { THEME } from '@remoola/api-types';
 
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 
-import type * as ConsumerMutationsServer from '../../../lib/consumer-mutations.server';
+import type * as SettingsMutations from '../../../lib/mutations/settings.server';
 
 const mockedPush = jest.fn();
 const mockedRefresh = jest.fn();
 const mockedSetTheme = jest.fn();
-const mockedUpdateProfileMutation = jest.fn<typeof ConsumerMutationsServer.updateProfileMutation>();
-const mockedUpdateSettingsMutation = jest.fn<typeof ConsumerMutationsServer.updateSettingsMutation>();
-const mockedChangePasswordMutation = jest.fn<typeof ConsumerMutationsServer.changePasswordMutation>();
+const mockedUpdateProfileMutation = jest.fn<typeof SettingsMutations.updateProfileMutation>();
+const mockedUpdateSettingsMutation = jest.fn<typeof SettingsMutations.updateSettingsMutation>();
+const mockedChangePasswordMutation = jest.fn<typeof SettingsMutations.changePasswordMutation>();
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -39,7 +39,7 @@ jest.mock(`../../../shared/theme/ThemeProvider`, () => ({
   }),
 }));
 
-jest.mock(`../../../lib/consumer-mutations.server`, () => ({
+jest.mock(`../../../lib/mutations/settings.server`, () => ({
   updateProfileMutation: mockedUpdateProfileMutation,
   updateSettingsMutation: mockedUpdateSettingsMutation,
   changePasswordMutation: mockedChangePasswordMutation,

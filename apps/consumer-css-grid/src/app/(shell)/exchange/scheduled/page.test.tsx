@@ -24,7 +24,7 @@ const {
   getScheduledConversions: mockedGetScheduledConversions,
 } = jest.requireMock(`../../../../lib/consumer-api.server`) as jest.Mocked<typeof ConsumerApi>;
 
-jest.mock(`../../../../lib/consumer-mutations.server`, () => ({
+jest.mock(`../../../../lib/mutations/exchange.server`, () => ({
   scheduleExchangeMutation: jest.fn(),
   cancelScheduledExchangeMutation: jest.fn(),
 }));

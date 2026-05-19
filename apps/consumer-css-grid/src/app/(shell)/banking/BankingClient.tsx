@@ -21,7 +21,7 @@ import {
   addCardMutation,
   deletePaymentMethodMutation,
   setDefaultPaymentMethodMutation,
-} from '../../../lib/consumer-mutations.server';
+} from '../../../lib/mutations/banking.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { Panel } from '../../../shared/ui/shell-primitives';
 

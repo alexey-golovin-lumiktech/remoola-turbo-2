@@ -9,7 +9,7 @@ import {
   createExchangeRuleMutation,
   deleteExchangeRuleMutation,
   updateExchangeRuleMutation,
-} from '../../../../lib/consumer-mutations.server';
+} from '../../../../lib/mutations/exchange.server';
 import { ExchangeIcon } from '../../../../shared/ui/icons/ExchangeIcon';
 import { PageHeader } from '../../../../shared/ui/shell-primitives';
 import { type ExchangeSearchParams, parseExchangePaginationParams } from '../exchange-search-params';

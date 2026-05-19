@@ -8,12 +8,12 @@ import { createRoot } from 'react-dom/client';
 
 import { type PaymentFlowContext } from '../payments/payment-flow-context';
 
-import type * as ConsumerMutationsServer from '../../../lib/consumer-mutations.server';
+import type * as PaymentsActions from '../../../lib/actions/payments.server';
 
 const mockedCreatePaymentCheckoutSessionMutation =
-  jest.fn<typeof ConsumerMutationsServer.createPaymentCheckoutSessionMutation>();
-const mockedGenerateInvoiceMutation = jest.fn<typeof ConsumerMutationsServer.generateInvoiceMutation>();
-const mockedSendPaymentRequestMutation = jest.fn<typeof ConsumerMutationsServer.sendPaymentRequestMutation>();
+  jest.fn<typeof PaymentsActions.createPaymentCheckoutSessionMutation>();
+const mockedGenerateInvoiceMutation = jest.fn<typeof PaymentsActions.generateInvoiceMutation>();
+const mockedSendPaymentRequestMutation = jest.fn<typeof PaymentsActions.sendPaymentRequestMutation>();
 
 async function loadContractInlineActionsClient() {
   return (await import(`./ContractInlineActionsClient`)).ContractInlineActionsClient;
@@ -37,7 +37,7 @@ jest.mock(`next/link`, () => ({
     React.createElement(`a`, { href, ...props }, children),
 }));
 
-jest.mock(`../../../lib/consumer-mutations.server`, () => ({
+jest.mock(`../../../lib/actions/payments.server`, () => ({
   createPaymentCheckoutSessionMutation: mockedCreatePaymentCheckoutSessionMutation,
   generateInvoiceMutation: mockedGenerateInvoiceMutation,
   sendPaymentRequestMutation: mockedSendPaymentRequestMutation,
