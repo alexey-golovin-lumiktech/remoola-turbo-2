@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode }
 
 import { cn } from '@remoola/ui';
 
-import { normalizeActivePath } from '../app/(shell)/nav-state';
+import { normalizeActivePath } from '../lib/nav-state';
 import { getWorkspaceMeta } from '../lib/workspace-meta';
 
 type MobileShellDrawerProps = {

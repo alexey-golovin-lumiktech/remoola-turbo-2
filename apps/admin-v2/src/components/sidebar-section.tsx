@@ -5,7 +5,7 @@ import { cn } from '@remoola/ui';
 
 import { NavIcon, type NavIconName } from './nav-icon';
 import { TinyPill } from './tiny-pill';
-import { isNavItemActive } from '../app/(shell)/nav-state';
+import { isNavItemActive } from '../lib/nav-state';
 
 type NavTupleItem = {
   href: string;

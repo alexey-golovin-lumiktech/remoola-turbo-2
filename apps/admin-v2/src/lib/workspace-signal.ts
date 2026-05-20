@@ -5,7 +5,7 @@ import {
   financeBreadthItems,
   maturityItems,
   topLevelBreadthItems,
-} from '../app/(shell)/shell-nav';
+} from './shell-nav';
 
 export type SignalCount = { count: number; deferred: boolean };
 

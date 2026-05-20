@@ -1,14 +1,5 @@
 import { headers } from 'next/headers';
 
-import { getActivePathFromHeaders } from './nav-state';
-import {
-  administrationItems,
-  auditExplorerItems,
-  coreShellItems,
-  financeBreadthItems,
-  maturityItems,
-  topLevelBreadthItems,
-} from './shell-nav';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../components/admin-surface-state';
 import { MobileBottomNav } from '../../components/mobile-bottom-nav';
 import { MobilePageHeader } from '../../components/mobile-page-header';
@@ -25,7 +16,16 @@ import {
   type OverviewSummaryResponse,
   type QuickstartCard,
 } from '../../lib/admin-api.server';
+import { getActivePathFromHeaders } from '../../lib/nav-state';
 import { filterQuickstartsForWorkspaces } from '../../lib/quickstart-investigations';
+import {
+  administrationItems,
+  auditExplorerItems,
+  coreShellItems,
+  financeBreadthItems,
+  maturityItems,
+  topLevelBreadthItems,
+} from '../../lib/shell-nav';
 import { readCurrentWorkspaceSignalCount, type SignalCount } from '../../lib/workspace-signal';
 
 export {

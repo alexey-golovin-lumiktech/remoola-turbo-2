@@ -1,4 +1,4 @@
-import { type NavIconName } from '../../components/nav-icon';
+import { type NavIconName } from '../components/nav-icon';
 
 type NavTupleItem = {
   href: string;

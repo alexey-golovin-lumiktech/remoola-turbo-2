@@ -5,7 +5,7 @@ import { type ReactElement } from 'react';
 
 import { cn } from '@remoola/ui';
 
-import { normalizeActivePath } from '../app/(shell)/nav-state';
+import { normalizeActivePath } from '../lib/nav-state';
 import { getWorkspaceMeta } from '../lib/workspace-meta';
 import { readCurrentWorkspaceSignalCount, type SignalCount } from '../lib/workspace-signal';
 

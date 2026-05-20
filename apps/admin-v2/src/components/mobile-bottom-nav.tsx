@@ -7,9 +7,9 @@ import { type ReactElement } from 'react';
 import { cn } from '@remoola/ui';
 
 import { NavIcon } from './nav-icon';
-import { isNavItemActive, normalizeActivePath } from '../app/(shell)/nav-state';
-import { coreShellItems } from '../app/(shell)/shell-nav';
 import { type AdminIdentity } from '../lib/admin-api.server';
+import { isNavItemActive, normalizeActivePath } from '../lib/nav-state';
+import { coreShellItems } from '../lib/shell-nav';
 
 type MobileBottomNavProps = {
   identity: AdminIdentity | null;

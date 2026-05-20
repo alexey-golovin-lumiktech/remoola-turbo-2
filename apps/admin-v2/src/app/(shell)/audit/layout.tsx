@@ -4,7 +4,7 @@ import { type ReactElement, type ReactNode } from 'react';
 
 import { cn } from '@remoola/ui';
 
-import { getActivePathFromHeaders, isNavItemActive } from '../nav-state';
+import { getActivePathFromHeaders, isNavItemActive } from '../../../lib/nav-state';
 
 const AUDIT_TABS: ReadonlyArray<{ href: string; label: string; eyebrow: string }> = [
   { href: `/audit/auth`, label: `Auth events`, eyebrow: `AUTH` },

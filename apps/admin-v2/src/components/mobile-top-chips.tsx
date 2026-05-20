@@ -7,14 +7,9 @@ import { type ReactElement } from 'react';
 import { cn } from '@remoola/ui';
 
 import { NavIcon } from './nav-icon';
-import { isNavItemActive, normalizeActivePath } from '../app/(shell)/nav-state';
-import {
-  administrationItems,
-  financeBreadthItems,
-  maturityItems,
-  topLevelBreadthItems,
-} from '../app/(shell)/shell-nav';
 import { type AdminIdentity } from '../lib/admin-api.server';
+import { isNavItemActive, normalizeActivePath } from '../lib/nav-state';
+import { administrationItems, financeBreadthItems, maturityItems, topLevelBreadthItems } from '../lib/shell-nav';
 import { getWorkspaceMeta } from '../lib/workspace-meta';
 
 type MobileTopChipsProps = {

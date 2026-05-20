@@ -9,7 +9,14 @@ import { cn } from '@remoola/ui';
 import { ActionGhost } from '@/components/action-ghost';
 
 import { SidebarSection } from './sidebar-section';
-import { normalizeActivePath } from '../app/(shell)/nav-state';
+import { type AdminIdentity, type QuickstartCard } from '../lib/admin-api.server';
+import { normalizeActivePath } from '../lib/nav-state';
+import {
+  buildQuickstartHref,
+  describeQuickstartOperatorModel,
+  filterQuickstartsForWorkspaces,
+  normalizeQuickstartEyebrow,
+} from '../lib/quickstart-investigations';
 import {
   administrationItems,
   auditExplorerItems,
@@ -17,14 +24,7 @@ import {
   financeBreadthItems,
   maturityItems,
   topLevelBreadthItems,
-} from '../app/(shell)/shell-nav';
-import { type AdminIdentity, type QuickstartCard } from '../lib/admin-api.server';
-import {
-  buildQuickstartHref,
-  describeQuickstartOperatorModel,
-  filterQuickstartsForWorkspaces,
-  normalizeQuickstartEyebrow,
-} from '../lib/quickstart-investigations';
+} from '../lib/shell-nav';
 
 type SignalCount = { count: number; deferred: boolean };
 

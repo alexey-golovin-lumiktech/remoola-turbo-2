@@ -7,7 +7,7 @@ import { cn } from '@remoola/ui';
 
 import { Panel } from './panel';
 import { mutedTextClass } from './ui-classes';
-import { normalizeActivePath } from '../app/(shell)/nav-state';
+import { normalizeActivePath } from '../lib/nav-state';
 import { getWorkspaceMeta } from '../lib/workspace-meta';
 
 type MobileShellUtilityBarClientProps = {

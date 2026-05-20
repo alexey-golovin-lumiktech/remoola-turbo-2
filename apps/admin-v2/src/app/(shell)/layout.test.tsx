@@ -8,7 +8,7 @@ jest.mock(`next/headers`, () => ({
   headers: jest.fn(async () => new Headers()),
 }));
 
-jest.mock(`./nav-state`, () => ({
+jest.mock(`../../lib/nav-state`, () => ({
   getActivePathFromHeaders: jest.fn(() => `/overview`),
 }));
 

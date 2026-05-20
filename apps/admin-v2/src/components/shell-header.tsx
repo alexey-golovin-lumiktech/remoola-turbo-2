@@ -6,7 +6,7 @@ import { cn } from '@remoola/ui';
 import { ShellQuickActions } from './shell-quick-actions';
 import { ShellSearchForm } from './shell-search-form';
 import { panelPrimaryClass, panelSurfaceClass } from './ui-classes';
-import { getActivePathFromHeaders } from '../app/(shell)/nav-state';
+import { getActivePathFromHeaders } from '../lib/nav-state';
 import { getWorkspaceMeta } from '../lib/workspace-meta';
 
 async function safeGetActivePath(): Promise<string | null> {
