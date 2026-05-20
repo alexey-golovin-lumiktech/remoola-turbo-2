@@ -16,6 +16,7 @@ import {
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { type PaymentMethodsListResponse, getPaymentMethods } from '../../../lib/admin-api.server';
+import { formatDateTime } from '../../../lib/admin-format';
 import {
   booleanSearchParam,
   positiveIntegerSearchParam,
@@ -25,10 +26,7 @@ import {
 
 type PaymentMethodItem = PaymentMethodsListResponse[`items`][number];
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 function renderMethodLabel(item: {
   type: string;

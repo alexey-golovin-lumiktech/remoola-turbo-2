@@ -4,16 +4,14 @@ import { notFound } from 'next/navigation';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
 import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../components/ui-classes';
 import { getAdminIdentity, getExchangeRuleCaseResult } from '../../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import {
   pauseExchangeRuleAction,
   resumeExchangeRuleAction,
   runExchangeRuleNowAction,
 } from '../../../../../lib/admin-mutations.server';
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 function renderLastExecution(value: Record<string, unknown> | null) {
   if (!value) {

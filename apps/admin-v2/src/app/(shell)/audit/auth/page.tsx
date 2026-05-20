@@ -11,10 +11,11 @@ import {
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAuthAudit } from '../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../lib/admin-format';
 
 function formatDate(value: unknown): string {
   if (typeof value !== `string`) return `-`;
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 type AuthAuditRow = {

@@ -19,6 +19,7 @@ import {
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminCaseRecordResult, getAdminIdentity, getAdminSessionsResult } from '../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../lib/admin-format';
 import {
   changeAdminPermissionsAction,
   changeAdminRoleAction,
@@ -30,10 +31,7 @@ import {
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../../lib/admin-rbac';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 function renderJson(value: Record<string, unknown> | null) {
   if (!value) {

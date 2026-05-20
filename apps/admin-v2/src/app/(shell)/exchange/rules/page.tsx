@@ -5,13 +5,11 @@ import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { type ExchangeRulesListResponse, getExchangeRules } from '../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../lib/admin-format';
 
 type ExchangeRuleItem = ExchangeRulesListResponse[`items`][number];
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 function renderExecutionSummary(value: Record<string, unknown> | null) {
   if (!value) return `No persisted execution summary`;

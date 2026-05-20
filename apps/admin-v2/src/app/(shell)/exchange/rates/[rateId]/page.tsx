@@ -4,12 +4,10 @@ import { notFound } from 'next/navigation';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
 import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../components/ui-classes';
 import { getAdminIdentity, getExchangeRateCaseResult } from '../../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { approveExchangeRateAction } from '../../../../../lib/admin-mutations.server';
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 export default async function ExchangeRateCasePage({ params }: { params: Promise<{ rateId: string }> }) {
   const { rateId } = await params;

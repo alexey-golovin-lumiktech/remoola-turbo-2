@@ -11,13 +11,11 @@ import { TinyPill } from '../../../components/tiny-pill';
 import { buttonRowClass, emptyPanelClass, mutedTextClass, stackClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getPayouts, type PayoutsListResponse } from '../../../lib/admin-api.server';
+import { formatDateTime } from '../../../lib/admin-format';
 import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
 import { type SearchParamValue, trimmedSearchParam } from '../../../lib/query-contract';
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 type PayoutItem = PayoutsListResponse[`items`][number];
 

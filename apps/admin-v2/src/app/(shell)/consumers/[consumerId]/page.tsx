@@ -31,6 +31,7 @@ import {
   getConsumerContracts,
   getConsumerLedgerSummary,
 } from '../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../lib/admin-format';
 import {
   addConsumerFlagAction,
   createConsumerNoteAction,
@@ -45,10 +46,7 @@ function renderConsumerLabel(email: string | null | undefined, consumerId: strin
   return email ?? consumerId;
 }
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 function formatPreviewValue(value: unknown): string | null {
   if (value == null) {

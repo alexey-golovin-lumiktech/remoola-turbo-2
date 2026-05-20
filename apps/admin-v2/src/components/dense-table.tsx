@@ -1,4 +1,4 @@
-import { type ReactElement, type ReactNode } from 'react';
+import { Children, type ReactElement, type ReactNode } from 'react';
 
 type DenseTableProps = {
   headers: string[];
@@ -7,7 +7,7 @@ type DenseTableProps = {
 };
 
 export function DenseTable({ headers, children, emptyMessage }: DenseTableProps): ReactElement {
-  const isEmpty = !children || (Array.isArray(children) && children.length === 0);
+  const isEmpty = Children.count(children) === 0;
   const message = emptyMessage ?? `No items.`;
 
   return (

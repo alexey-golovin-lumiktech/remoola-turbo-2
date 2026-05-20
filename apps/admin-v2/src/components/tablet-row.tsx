@@ -7,13 +7,14 @@ type TabletRowProps = {
   primary: ReactNode;
   badges?: ReactNode;
   cells: ReactNode[];
+  maxCells?: number;
 };
 
 const MAX_CELLS = 4;
 
-export function TabletRow({ eyebrow, primary, badges, cells }: TabletRowProps): ReactElement {
+export function TabletRow({ eyebrow, primary, badges, cells, maxCells = MAX_CELLS }: TabletRowProps): ReactElement {
   const padded: ReactNode[] = [];
-  for (let index = 0; index < MAX_CELLS; index += 1) {
+  for (let index = 0; index < maxCells; index += 1) {
     padded.push(cells[index] ?? null);
   }
 

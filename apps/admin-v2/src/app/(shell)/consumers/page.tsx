@@ -17,11 +17,9 @@ import {
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getConsumers } from '../../../lib/admin-api.server';
+import { formatDateTime } from '../../../lib/admin-format';
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 type ConsumerItem = NonNullable<Awaited<ReturnType<typeof getConsumers>>>[`items`][number];
 

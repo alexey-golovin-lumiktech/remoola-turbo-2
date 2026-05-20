@@ -5,6 +5,7 @@ import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../.
 import { AssignmentCard } from '../../../../../components/assignment-card';
 import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../components/ui-classes';
 import { getAdminIdentity, getAdmins, getExchangeScheduledCaseResult } from '../../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import {
   cancelScheduledExchangeAction,
   claimFxConversionAssignmentAction,
@@ -13,10 +14,7 @@ import {
   releaseFxConversionAssignmentAction,
 } from '../../../../../lib/admin-mutations.server';
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 export default async function ExchangeScheduledCasePage({ params }: { params: Promise<{ conversionId: string }> }) {
   const { conversionId } = await params;

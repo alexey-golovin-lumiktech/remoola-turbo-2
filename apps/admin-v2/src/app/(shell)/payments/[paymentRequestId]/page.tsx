@@ -32,6 +32,7 @@ import {
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminIdentity, getAdmins, getPaymentCaseResult } from '../../../../lib/admin-api.server';
 import { getAdminDocumentDownloadHref } from '../../../../lib/admin-document-download';
+import { formatDateTime } from '../../../../lib/admin-format';
 import {
   chargebackPaymentAction,
   claimPaymentRequestAssignmentAction,
@@ -45,10 +46,7 @@ function renderActorLabel(actor: { email?: string | null; id?: string | null }):
   return actor.email ?? actor.id ?? `-`;
 }
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 function renderMetadata(value: Record<string, unknown> | null | undefined) {
   if (!value || Object.keys(value).length === 0) {

@@ -6,11 +6,9 @@ import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
 import { mutedTextClass, stackClass } from '../../../../components/ui-classes';
 import { getPaymentOperationsQueue, type PaymentOperationsQueueResponse } from '../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../lib/admin-format';
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 type QueueBucket = PaymentOperationsQueueResponse[`buckets`][number];
 type QueueItem = QueueBucket[`items`][number];

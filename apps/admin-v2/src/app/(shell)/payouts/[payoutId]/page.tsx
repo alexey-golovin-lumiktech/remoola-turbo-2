@@ -30,6 +30,7 @@ import {
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminIdentity, getAdmins, getPayoutCaseResult } from '../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../lib/admin-format';
 import {
   claimPayoutAssignmentAction,
   escalatePayoutAction,
@@ -38,10 +39,7 @@ import {
 } from '../../../../lib/admin-mutations.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 function renderMetadata(value: Record<string, unknown> | null | undefined) {
   if (!value || Object.keys(value).length === 0) {

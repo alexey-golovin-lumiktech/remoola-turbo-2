@@ -15,6 +15,17 @@ describe(`admin format helpers`, () => {
     expect(formatDateTime(`2026-04-20T12:34:56.000Z`)).toContain(`2026`);
   });
 
+  it(`formats datetimes in UTC to avoid operator-local date drift`, () => {
+    const formatted = formatDateTime(`2026-04-20T23:30:00.000Z`);
+    expect(formatted).toBe(
+      new Date(`2026-04-20T23:30:00.000Z`).toLocaleString(undefined, {
+        dateStyle: `medium`,
+        timeStyle: `short`,
+        timeZone: `UTC`,
+      }),
+    );
+  });
+
   it(`formats bytes into human readable units`, () => {
     expect(formatBytes(null)).toBe(`-`);
     expect(formatBytes(512)).toBe(`512 B`);

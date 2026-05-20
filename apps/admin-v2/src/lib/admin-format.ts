@@ -4,11 +4,17 @@ const MEBIBYTE = KIBIBYTE * KIBIBYTE;
 
 export const DEFAULT_LOOKBACK_DAYS = 7;
 
+const ADMIN_DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  dateStyle: `medium`,
+  timeStyle: `short`,
+  timeZone: `UTC`,
+};
+
 export function formatDateTime(value: string | null | undefined, emptyValue = `-`): string {
   if (!value) {
     return emptyValue;
   }
-  return new Date(value).toLocaleString();
+  return new Date(value).toLocaleString(undefined, ADMIN_DATE_TIME_FORMAT_OPTIONS);
 }
 
 export function formatBytes(value: number | null | undefined): string {

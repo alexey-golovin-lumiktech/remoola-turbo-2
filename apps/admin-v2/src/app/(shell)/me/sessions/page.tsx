@@ -4,11 +4,10 @@ import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
 import { type AdminSessionView, getAdminIdentity, getMyAdminSessionsResult } from '../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../lib/admin-format';
 import { revokeMyAdminSessionAction } from '../../../../lib/admin-mutations.server';
 
-function formatDate(value: string | null): string {
-  return value ? new Date(value).toLocaleString() : `-`;
-}
+const formatDate = formatDateTime;
 
 function statusLabel(s: AdminSessionView, current: boolean): string {
   if (current) return `Current`;

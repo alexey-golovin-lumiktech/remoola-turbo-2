@@ -17,12 +17,10 @@ import {
   type LedgerDisputesResponse,
   type LedgerEntriesListResponse,
 } from '../../../lib/admin-api.server';
+import { formatDateTime } from '../../../lib/admin-format';
 import { dateSearchParam, type SearchParamValue, trimmedSearchParam } from '../../../lib/query-contract';
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
+const formatDate = formatDateTime;
 
 function renderMetadata(value: Record<string, unknown>) {
   if (Object.keys(value).length === 0) {

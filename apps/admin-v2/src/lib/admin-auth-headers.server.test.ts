@@ -24,4 +24,16 @@ describe(`buildAdminMutationHeaders`, () => {
     expect(headers[`x-csrf-token`]).toBe(`csrf-token`);
     expect(headers[`content-type`]).toBe(`application/json`);
   });
+
+  it(`preserves csrf cookie values containing equals signs`, () => {
+    const headers = buildAdminMutationHeaders(`admin_csrf_token=csrf=token`, {});
+
+    expect(headers[`x-csrf-token`]).toBe(`csrf=token`);
+  });
+
+  it(`uses the first csrf cookie value when duplicate cookie names are present`, () => {
+    const headers = buildAdminMutationHeaders(`admin_csrf_token=expected; admin_csrf_token=stale`, {});
+
+    expect(headers[`x-csrf-token`]).toBe(`expected`);
+  });
 });

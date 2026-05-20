@@ -1,15 +1,7 @@
 import { getAdminCsrfTokenCookieKeysForRead } from '@remoola/api-types';
 
+import { getCookieValue } from './cookies';
 import { getBypassHeaders, getRequestOrigin } from './request-origin';
-
-function getCookieValue(cookieHeader: string, key: string): string | null {
-  const match = cookieHeader
-    .split(`;`)
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${key}=`));
-  if (!match) return null;
-  return match.split(`=`).slice(1).join(`=`);
-}
 
 function getAdminCsrfTokenFromCookieHeader(cookieHeader: string): string | null {
   if (!cookieHeader) return null;
