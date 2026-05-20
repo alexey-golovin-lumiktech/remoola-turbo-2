@@ -2929,7 +2929,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-19</summary>
 
 - **2026-05-19:**
@@ -2942,6 +2942,29 @@
 
   ### 🛠 DevEx
   - **Consumer UI and data-access modularization:** Split settings panels into focused UI modules, move help guide content, registry, and source-map data into domain files, move consumer query helpers under `lib/queries/*`, and isolate payment server actions in `lib/actions/payments.server.ts` without changing backend contracts.
+
+</details>
+
+<details open>
+<summary>2026-05-20</summary>
+
+- **2026-05-20:**
+
+  ### 🔐 Security / Production Safety
+  - **Admin-v2 CSRF cookie extraction hardening:** Preserve first-match CSRF cookie extraction for admin mutation headers, preventing stale duplicate-cookie values from producing invalid `x-csrf-token` forwarding in production; cookie/header forwarding, correlation IDs, and idempotency keys remain intact through the module decomposition.
+  - **Admin mutation safeguards preserved:** Refund, chargeback, role and permission change, and session revocation mutation contracts are unchanged across the new module boundaries.
+  - **UTC datetime rendering centralization:** Route all admin-v2 datetime rendering through a shared `formatDateTime` utility to eliminate operator-local date drift in audit and list views.
+
+  ### 🧪 Testing
+  - **CSRF cookie edge-case coverage:** Add tests for cookie values with embedded `=` characters and duplicate cookie-name scenarios in admin mutation header forwarding.
+  - **Admin mutation request-shape coverage:** Add tests for idempotency header presence, step-up password confirmation, and session revocation request shapes.
+  - **Module-boundary mock alignment:** Update shell page and server tests to mock domain-specific API and mutation modules instead of the monolithic barrel exports.
+
+  ### 🛠 DevEx
+  - **Admin-v2 shell navigation centralization:** Move `nav-state` and `shell-nav` from `app/(shell)` into `src/lib` and align shell layout, audit layout, mobile nav, and desktop sidebar imports with the new location.
+  - **Admin API client decomposition:** Split `admin-api.server.ts` into focused `admin-api/*` domain modules (admins, audit, consumers, documents, exchange, identity, ledger, overview, payments, verification) with shared fetch, cookie forwarding, auth redirect, and read-result handling centralized in `core.server.ts`; barrel exports preserved for existing consumers.
+  - **Admin mutations decomposition:** Split `admin-mutations.server.ts` into domain-focused modules (admins, consumers, documents, exchange, ledger, operational-alerts, payment-methods, payments, payouts, saved-views, verification) with shared transport, form-parsing, assignment body builders, and revalidation helpers centralized; barrel export path preserved.
+  - **Shell page import alignment:** Replace broad `admin-api.server` and `admin-mutations.server` barrel imports across shell pages with domain-specific module imports while keeping shared response and identity types sourced from `admin-api/types`.
 
 </details>
 
