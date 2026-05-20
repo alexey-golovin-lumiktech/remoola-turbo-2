@@ -2,8 +2,8 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type * as AdminApi from '../../../../../lib/admin-api.server';
-
+import { type getExchangeRateCaseResult } from '../../../../../lib/admin-api/exchange.server';
+import { type getAdminIdentity } from '../../../../../lib/admin-api/identity.server';
 const mockedNotFound = jest.fn(() => {
   throw new Error(`NEXT_NOT_FOUND`);
 });
@@ -18,17 +18,29 @@ jest.mock(`next/navigation`, () => ({
   notFound: mockedNotFound,
 }));
 
-jest.mock(`../../../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../../../lib/admin-api/exchange.server`, () => ({
   getExchangeRateCaseResult: jest.fn(),
 }));
 
-jest.mock(`../../../../../lib/admin-mutations.server`, () => ({
+jest.mock(`../../../../../lib/admin-mutations/exchange.server`, () => ({
   approveExchangeRateAction: jest.fn(),
 }));
 
-const { getAdminIdentity: mockedGetAdminIdentity, getExchangeRateCaseResult: mockedGetExchangeRateCaseResult } =
-  jest.requireMock(`../../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(
+  `../../../../../lib/admin-api/identity.server`,
+) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
+const { getExchangeRateCaseResult: mockedGetExchangeRateCaseResult } = jest.requireMock(
+  `../../../../../lib/admin-api/exchange.server`,
+) as {
+  getExchangeRateCaseResult: jest.MockedFunction<typeof getExchangeRateCaseResult>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;

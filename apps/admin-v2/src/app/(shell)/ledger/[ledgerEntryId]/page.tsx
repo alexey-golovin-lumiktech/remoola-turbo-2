@@ -8,13 +8,15 @@ import { ContextStat } from '../../../../components/context-stat';
 import { Panel } from '../../../../components/panel';
 import { nestedPanelClass, rawDataClass } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAdminIdentity, getAdmins, getLedgerEntryCaseResult } from '../../../../lib/admin-api.server';
+import { getAdmins } from '../../../../lib/admin-api/admins.server';
+import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { getLedgerEntryCaseResult } from '../../../../lib/admin-api/ledger.server';
 import { formatDateTime } from '../../../../lib/admin-format';
 import {
-  claimLedgerEntryAssignmentAction,
   reassignLedgerEntryAssignmentAction,
   releaseLedgerEntryAssignmentAction,
-} from '../../../../lib/admin-mutations.server';
+  claimLedgerEntryAssignmentAction,
+} from '../../../../lib/admin-mutations/ledger.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 const formatDate = formatDateTime;

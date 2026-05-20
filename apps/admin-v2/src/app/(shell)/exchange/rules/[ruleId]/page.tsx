@@ -3,13 +3,14 @@ import { notFound } from 'next/navigation';
 
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
 import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../components/ui-classes';
-import { getAdminIdentity, getExchangeRuleCaseResult } from '../../../../../lib/admin-api.server';
+import { getExchangeRuleCaseResult } from '../../../../../lib/admin-api/exchange.server';
+import { getAdminIdentity } from '../../../../../lib/admin-api/identity.server';
 import { formatDateTime } from '../../../../../lib/admin-format';
 import {
-  pauseExchangeRuleAction,
   resumeExchangeRuleAction,
   runExchangeRuleNowAction,
-} from '../../../../../lib/admin-mutations.server';
+  pauseExchangeRuleAction,
+} from '../../../../../lib/admin-mutations/exchange.server';
 
 const formatDate = formatDateTime;
 

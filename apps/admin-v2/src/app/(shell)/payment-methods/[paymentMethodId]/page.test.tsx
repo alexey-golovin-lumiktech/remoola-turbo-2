@@ -2,8 +2,8 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type * as AdminApi from '../../../../lib/admin-api.server';
-
+import { type getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { type getPaymentMethodCaseResult } from '../../../../lib/admin-api/payments.server';
 const mockedNotFound = jest.fn(() => {
   throw new Error(`NEXT_NOT_FOUND`);
 });
@@ -18,19 +18,29 @@ jest.mock(`next/navigation`, () => ({
   notFound: mockedNotFound,
 }));
 
-jest.mock(`../../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/payments.server`, () => ({
   getPaymentMethodCaseResult: jest.fn(),
 }));
 
-jest.mock(`../../../../lib/admin-mutations.server`, () => ({
+jest.mock(`../../../../lib/admin-mutations/payment-methods.server`, () => ({
   disablePaymentMethodAction: jest.fn(),
   removeDefaultPaymentMethodAction: jest.fn(),
   escalateDuplicatePaymentMethodAction: jest.fn(),
 }));
 
-const { getAdminIdentity: mockedGetAdminIdentity, getPaymentMethodCaseResult: mockedGetPaymentMethodCaseResult } =
-  jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(`../../../../lib/admin-api/identity.server`) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
+const { getPaymentMethodCaseResult: mockedGetPaymentMethodCaseResult } = jest.requireMock(
+  `../../../../lib/admin-api/payments.server`,
+) as {
+  getPaymentMethodCaseResult: jest.MockedFunction<typeof getPaymentMethodCaseResult>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;

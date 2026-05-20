@@ -20,9 +20,10 @@ import {
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import { getAdminIdentity, getDocuments, getDocumentTags } from '../../../lib/admin-api.server';
+import { getDocuments, getDocumentTags } from '../../../lib/admin-api/documents.server';
+import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
 import { formatBytes, formatDateTime } from '../../../lib/admin-format';
-import { bulkTagDocumentsAction } from '../../../lib/admin-mutations.server';
+import { bulkTagDocumentsAction } from '../../../lib/admin-mutations/documents.server';
 
 type DocumentsPageParams = Record<string, string | string[] | undefined>;
 

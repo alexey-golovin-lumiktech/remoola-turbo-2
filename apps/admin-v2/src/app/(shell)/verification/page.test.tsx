@@ -1,33 +1,51 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import React from 'react';
 
-import type * as AdminApi from '../../../lib/admin-api.server';
-
+import { type getAdminIdentity } from '../../../lib/admin-api/identity.server';
+import { type getQuickstart, type getSavedViews } from '../../../lib/admin-api/overview.server';
+import { type VerificationQueueResponse } from '../../../lib/admin-api/types';
+import { type getVerificationQueue } from '../../../lib/admin-api/verification.server';
 jest.mock(`next/link`, () => ({
   __esModule: true,
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
     React.createElement(`a`, { href, ...props }, children),
 }));
 
-jest.mock(`../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../lib/admin-api/overview.server`, () => ({
   getQuickstart: jest.fn(),
-  getVerificationQueue: jest.fn(),
   getSavedViews: jest.fn(),
 }));
 
-jest.mock(`../../../lib/admin-mutations.server`, () => ({
-  createSavedViewAction: jest.fn(async () => undefined),
-  updateSavedViewAction: jest.fn(async () => undefined),
-  deleteSavedViewAction: jest.fn(async () => undefined),
+jest.mock(`../../../lib/admin-api/verification.server`, () => ({
+  getVerificationQueue: jest.fn(),
 }));
 
-const {
-  getAdminIdentity: mockedGetAdminIdentity,
-  getQuickstart: mockedGetQuickstart,
-  getVerificationQueue: mockedGetVerificationQueue,
-  getSavedViews: mockedGetSavedViews,
-} = jest.requireMock(`../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+jest.mock(`../../../lib/admin-mutations/saved-views.server`, () => ({
+  createSavedViewAction: jest.fn(),
+  updateSavedViewAction: jest.fn(),
+  deleteSavedViewAction: jest.fn(),
+}));
+
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(`../../../lib/admin-api/identity.server`) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
+const { getQuickstart: mockedGetQuickstart, getSavedViews: mockedGetSavedViews } = jest.requireMock(
+  `../../../lib/admin-api/overview.server`,
+) as {
+  getQuickstart: jest.MockedFunction<typeof getQuickstart>;
+  getSavedViews: jest.MockedFunction<typeof getSavedViews>;
+};
+
+const { getVerificationQueue: mockedGetVerificationQueue } = jest.requireMock(
+  `../../../lib/admin-api/verification.server`,
+) as {
+  getVerificationQueue: jest.MockedFunction<typeof getVerificationQueue>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;
@@ -35,7 +53,7 @@ async function loadSubject() {
 
 let VerificationQueuePage: Awaited<ReturnType<typeof loadSubject>>;
 
-function emptyQueue(): NonNullable<AdminApi.VerificationQueueResponse> {
+function emptyQueue(): NonNullable<VerificationQueueResponse> {
   return {
     items: [],
     total: 0,

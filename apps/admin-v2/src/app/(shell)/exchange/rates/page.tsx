@@ -5,7 +5,8 @@ import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { StatusPill } from '../../../../components/status-pill';
 import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { type ExchangeRatesListResponse, getExchangeRates } from '../../../../lib/admin-api.server';
+import { getExchangeRates } from '../../../../lib/admin-api/exchange.server';
+import { type ExchangeRatesListResponse } from '../../../../lib/admin-api/types';
 import { formatDateTime } from '../../../../lib/admin-format';
 
 type ExchangeRateItem = ExchangeRatesListResponse[`items`][number];

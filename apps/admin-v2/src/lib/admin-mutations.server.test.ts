@@ -1,12 +1,11 @@
 import {
   changeAdminPermissionsAction,
   changeAdminRoleAction,
-  chargebackPaymentAction,
-  refundPaymentAction,
-  removeConsumerFlagAction,
   revokeAdminSessionAction,
   revokeMyAdminSessionAction,
-} from './admin-mutations.server';
+} from './admin-mutations/admins.server';
+import { removeConsumerFlagAction } from './admin-mutations/consumers.server';
+import { chargebackPaymentAction, refundPaymentAction } from './admin-mutations/payments.server';
 
 jest.mock(`next/cache`, () => ({
   revalidatePath: jest.fn(),

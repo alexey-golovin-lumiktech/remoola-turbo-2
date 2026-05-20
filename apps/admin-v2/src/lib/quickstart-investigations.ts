@@ -3,7 +3,7 @@ import {
   type QuickstartId,
   type QuickstartOperatorModel,
   type QuickstartTargetRoute,
-} from './admin-api.server';
+} from './admin-api/types';
 
 type QuickstartWorkspace =
   | `verification`

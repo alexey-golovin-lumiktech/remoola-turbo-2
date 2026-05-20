@@ -2,16 +2,19 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type * as AdminApi from '../../../lib/admin-api.server';
-
+import { type getAdminIdentity } from '../../../lib/admin-api/identity.server';
+import { type getOverviewSummary, type getQuickstarts } from '../../../lib/admin-api/overview.server';
 jest.mock(`next/link`, () => ({
   __esModule: true,
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
     React.createElement(`a`, { href, ...props }, children),
 }));
 
-jest.mock(`../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../lib/admin-api/overview.server`, () => ({
   getOverviewSummary: jest.fn(),
   getQuickstarts: jest.fn(),
 }));
@@ -25,9 +28,14 @@ jest.mock(`../../../lib/quickstart-investigations`, () => ({
   normalizeQuickstartEyebrow: jest.fn((value: string) => value),
 }));
 
-const { getAdminIdentity, getOverviewSummary, getQuickstarts } = jest.requireMock(
-  `../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentity } = jest.requireMock(`../../../lib/admin-api/identity.server`) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
+const { getOverviewSummary, getQuickstarts } = jest.requireMock(`../../../lib/admin-api/overview.server`) as {
+  getOverviewSummary: jest.MockedFunction<typeof getOverviewSummary>;
+  getQuickstarts: jest.MockedFunction<typeof getQuickstarts>;
+};
 
 describe(`admin-v2 overview page`, () => {
   beforeEach(() => {

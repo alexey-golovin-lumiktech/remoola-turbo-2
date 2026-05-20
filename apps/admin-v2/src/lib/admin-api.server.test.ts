@@ -37,7 +37,7 @@ describe(`admin api query serialization`, () => {
   });
 
   it(`omits empty, invalid, and false true-only payment filters before dispatch`, async () => {
-    const { getPayments } = await import(`./admin-api.server`);
+    const { getPayments } = await import(`./admin-api/payments.server`);
 
     await getPayments({
       q: `  invoice  `,
@@ -53,7 +53,7 @@ describe(`admin api query serialization`, () => {
   });
 
   it(`preserves explicit false boolean filters for payment methods`, async () => {
-    const { getPaymentMethods } = await import(`./admin-api.server`);
+    const { getPaymentMethods } = await import(`./admin-api/payments.server`);
 
     await getPaymentMethods({ defaultSelected: false });
 
@@ -63,7 +63,7 @@ describe(`admin api query serialization`, () => {
   });
 
   it(`omits false true-only boolean filters`, async () => {
-    const { getVerificationQueue } = await import(`./admin-api.server`);
+    const { getVerificationQueue } = await import(`./admin-api/verification.server`);
 
     await getVerificationQueue({ missingProfileData: false, missingDocuments: false });
 
@@ -73,7 +73,7 @@ describe(`admin api query serialization`, () => {
   });
 
   it(`omits false include-deleted filters for payment methods`, async () => {
-    const { getPaymentMethods } = await import(`./admin-api.server`);
+    const { getPaymentMethods } = await import(`./admin-api/payments.server`);
 
     await getPaymentMethods({ includeDeleted: false });
 
@@ -83,7 +83,7 @@ describe(`admin api query serialization`, () => {
   });
 
   it(`serializes ledger client fields and omits invalid dates`, async () => {
-    const { getLedgerEntries } = await import(`./admin-api.server`);
+    const { getLedgerEntries } = await import(`./admin-api/ledger.server`);
 
     await getLedgerEntries({
       paymentRequestId: `  payment-1  `,

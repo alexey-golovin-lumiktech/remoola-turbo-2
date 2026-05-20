@@ -7,7 +7,7 @@ import { type ReactElement } from 'react';
 import { cn } from '@remoola/ui';
 
 import { NavIcon } from './nav-icon';
-import { type AdminIdentity } from '../lib/admin-api.server';
+import { type AdminIdentity } from '../lib/admin-api/types';
 import { isNavItemActive, normalizeActivePath } from '../lib/nav-state';
 import { administrationItems, financeBreadthItems, maturityItems, topLevelBreadthItems } from '../lib/shell-nav';
 import { getWorkspaceMeta } from '../lib/workspace-meta';

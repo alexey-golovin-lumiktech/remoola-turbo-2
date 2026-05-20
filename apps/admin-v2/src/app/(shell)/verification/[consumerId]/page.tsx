@@ -30,18 +30,20 @@ import {
   textAreaClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAdminIdentity, getAdmins, getVerificationCaseResult } from '../../../../lib/admin-api.server';
+import { getAdmins } from '../../../../lib/admin-api/admins.server';
+import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { getVerificationCaseResult } from '../../../../lib/admin-api/verification.server';
 import { formatDateTime } from '../../../../lib/admin-format';
+import { forceLogoutConsumerAction } from '../../../../lib/admin-mutations/consumers.server';
 import {
   approveVerificationAction,
   claimVerificationAssignmentAction,
   flagVerificationAction,
-  forceLogoutConsumerAction,
   reassignVerificationAssignmentAction,
   rejectVerificationAction,
   releaseVerificationAssignmentAction,
   requestInfoVerificationAction,
-} from '../../../../lib/admin-mutations.server';
+} from '../../../../lib/admin-mutations/verification.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 const formatDate = formatDateTime;

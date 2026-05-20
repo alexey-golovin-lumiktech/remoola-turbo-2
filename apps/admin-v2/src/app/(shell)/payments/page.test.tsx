@@ -1,22 +1,29 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import React from 'react';
 
-import type * as AdminApi from '../../../lib/admin-api.server';
-
+import { type getQuickstart } from '../../../lib/admin-api/overview.server';
+import { type getPayments } from '../../../lib/admin-api/payments.server';
 jest.mock(`next/link`, () => ({
   __esModule: true,
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
     React.createElement(`a`, { href, ...props }, children),
 }));
 
-jest.mock(`../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../lib/admin-api/payments.server`, () => ({
   getPayments: jest.fn(),
+}));
+
+jest.mock(`../../../lib/admin-api/overview.server`, () => ({
   getQuickstart: jest.fn(),
 }));
 
-const { getPayments: mockedGetPayments, getQuickstart: mockedGetQuickstart } = jest.requireMock(
-  `../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+const { getPayments: mockedGetPayments } = jest.requireMock(`../../../lib/admin-api/payments.server`) as {
+  getPayments: jest.MockedFunction<typeof getPayments>;
+};
+
+const { getQuickstart: mockedGetQuickstart } = jest.requireMock(`../../../lib/admin-api/overview.server`) as {
+  getQuickstart: jest.MockedFunction<typeof getQuickstart>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;

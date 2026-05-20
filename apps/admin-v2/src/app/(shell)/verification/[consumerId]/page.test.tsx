@@ -2,8 +2,10 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type * as AdminApi from '../../../../lib/admin-api.server';
-
+import { type getAdmins } from '../../../../lib/admin-api/admins.server';
+import { type getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { type getVerificationCase } from '../../../../lib/admin-api/types';
+import { type getVerificationCaseResult } from '../../../../lib/admin-api/verification.server';
 jest.mock(`next/link`, () => ({
   __esModule: true,
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
@@ -16,28 +18,45 @@ jest.mock(`next/navigation`, () => ({
   },
 }));
 
-jest.mock(`../../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/admins.server`, () => ({
   getAdmins: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/verification.server`, () => ({
   getVerificationCaseResult: jest.fn(),
 }));
 
-jest.mock(`../../../../lib/admin-mutations.server`, () => ({
-  approveVerificationAction: jest.fn(async () => undefined),
-  claimVerificationAssignmentAction: jest.fn(async () => undefined),
-  flagVerificationAction: jest.fn(async () => undefined),
-  forceLogoutConsumerAction: jest.fn(async () => undefined),
-  reassignVerificationAssignmentAction: jest.fn(async () => undefined),
-  rejectVerificationAction: jest.fn(async () => undefined),
-  releaseVerificationAssignmentAction: jest.fn(async () => undefined),
-  requestInfoVerificationAction: jest.fn(async () => undefined),
+jest.mock(`../../../../lib/admin-mutations/verification.server`, () => ({
+  approveVerificationAction: jest.fn(),
+  claimVerificationAssignmentAction: jest.fn(),
+  flagVerificationAction: jest.fn(),
+  reassignVerificationAssignmentAction: jest.fn(),
+  rejectVerificationAction: jest.fn(),
+  releaseVerificationAssignmentAction: jest.fn(),
+  requestInfoVerificationAction: jest.fn(),
 }));
 
-const {
-  getAdminIdentity: mockedGetAdminIdentity,
-  getAdmins: mockedGetAdmins,
-  getVerificationCaseResult: mockedGetVerificationCaseResult,
-} = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+jest.mock(`../../../../lib/admin-mutations/consumers.server`, () => ({
+  forceLogoutConsumerAction: jest.fn(),
+}));
+
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(`../../../../lib/admin-api/identity.server`) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
+const { getAdmins: mockedGetAdmins } = jest.requireMock(`../../../../lib/admin-api/admins.server`) as {
+  getAdmins: jest.MockedFunction<typeof getAdmins>;
+};
+
+const { getVerificationCaseResult: mockedGetVerificationCaseResult } = jest.requireMock(
+  `../../../../lib/admin-api/verification.server`,
+) as {
+  getVerificationCaseResult: jest.MockedFunction<typeof getVerificationCaseResult>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;
@@ -45,7 +64,7 @@ async function loadSubject() {
 
 let VerificationCasePage: Awaited<ReturnType<typeof loadSubject>>;
 
-type VerificationCase = NonNullable<Awaited<ReturnType<typeof AdminApi.getVerificationCase>>>;
+type VerificationCase = NonNullable<Awaited<ReturnType<typeof getVerificationCase>>>;
 
 const EMPTY_CONSUMER_BASE = {
   accountType: `PERSONAL`,

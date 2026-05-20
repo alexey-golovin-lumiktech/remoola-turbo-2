@@ -4,7 +4,15 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import type * as AdminApi from '../../../../lib/admin-api.server';
+import {
+  type getConsumerCaseResult,
+  type getConsumerContracts,
+  type getConsumerLedgerSummary,
+  type getConsumerAuthHistory,
+  type getConsumerActionLog,
+} from '../../../../lib/admin-api/consumers.server';
+import { type getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { type ConsumerCaseResponse } from '../../../../lib/admin-api/types';
 
 jest.mock(`next/link`, () => ({
   __esModule: true,
@@ -18,8 +26,11 @@ jest.mock(`next/navigation`, () => ({
   },
 }));
 
-jest.mock(`../../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/consumers.server`, () => ({
   getConsumerCaseResult: jest.fn(),
   getConsumerContracts: jest.fn(),
   getConsumerLedgerSummary: jest.fn(),
@@ -27,7 +38,7 @@ jest.mock(`../../../../lib/admin-api.server`, () => ({
   getConsumerActionLog: jest.fn(),
 }));
 
-jest.mock(`../../../../lib/admin-mutations.server`, () => ({
+jest.mock(`../../../../lib/admin-mutations/consumers.server`, () => ({
   addConsumerFlagAction: jest.fn(),
   createConsumerNoteAction: jest.fn(),
   forceLogoutConsumerAction: jest.fn(),
@@ -36,14 +47,23 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
   suspendConsumerAction: jest.fn(),
 }));
 
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(`../../../../lib/admin-api/identity.server`) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
 const {
-  getAdminIdentity: mockedGetAdminIdentity,
   getConsumerCaseResult: mockedGetConsumerCaseResult,
   getConsumerContracts: mockedGetConsumerContracts,
   getConsumerLedgerSummary: mockedGetConsumerLedgerSummary,
   getConsumerAuthHistory: mockedGetConsumerAuthHistory,
   getConsumerActionLog: mockedGetConsumerActionLog,
-} = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+} = jest.requireMock(`../../../../lib/admin-api/consumers.server`) as {
+  getConsumerCaseResult: jest.MockedFunction<typeof getConsumerCaseResult>;
+  getConsumerContracts: jest.MockedFunction<typeof getConsumerContracts>;
+  getConsumerLedgerSummary: jest.MockedFunction<typeof getConsumerLedgerSummary>;
+  getConsumerAuthHistory: jest.MockedFunction<typeof getConsumerAuthHistory>;
+  getConsumerActionLog: jest.MockedFunction<typeof getConsumerActionLog>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;
@@ -51,7 +71,7 @@ async function loadSubject() {
 
 let ConsumerCasePage: Awaited<ReturnType<typeof loadSubject>>;
 
-function buildConsumerCase(): AdminApi.ConsumerCaseResponse {
+function buildConsumerCase(): ConsumerCaseResponse {
   return {
     id: `consumer-1`,
     email: `consumer@example.com`,

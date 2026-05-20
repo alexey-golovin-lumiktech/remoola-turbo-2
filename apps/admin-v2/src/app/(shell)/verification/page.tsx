@@ -29,19 +29,16 @@ import {
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import {
-  getAdminIdentity,
-  getQuickstart,
-  getSavedViews,
-  getVerificationQueue,
-  type SavedViewSummary,
-} from '../../../lib/admin-api.server';
+import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
+import { getQuickstart, getSavedViews } from '../../../lib/admin-api/overview.server';
+import { type SavedViewSummary } from '../../../lib/admin-api/types';
+import { getVerificationQueue } from '../../../lib/admin-api/verification.server';
 import { formatDateTime } from '../../../lib/admin-format';
 import {
-  createSavedViewAction,
   deleteSavedViewAction,
   updateSavedViewAction,
-} from '../../../lib/admin-mutations.server';
+  createSavedViewAction,
+} from '../../../lib/admin-mutations/saved-views.server';
 import { SHARED_DESCRIPTION_MAX_LENGTH, SHARED_NAME_MAX_LENGTH } from '../../../lib/admin-surface-meta';
 import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
 import {

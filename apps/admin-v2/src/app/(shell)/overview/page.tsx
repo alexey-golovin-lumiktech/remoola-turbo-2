@@ -8,12 +8,9 @@ import { DenseTable } from '../../../components/dense-table';
 import { Panel } from '../../../components/panel';
 import { SignalCard, type SignalCardAvailability, type SignalCardPhaseStatus } from '../../../components/signal-card';
 import { TinyPill } from '../../../components/tiny-pill';
-import {
-  getAdminIdentity,
-  getOverviewSummary,
-  getQuickstarts,
-  type OverviewSignalSummary,
-} from '../../../lib/admin-api.server';
+import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
+import { getOverviewSummary, getQuickstarts } from '../../../lib/admin-api/overview.server';
+import { type OverviewSignalSummary } from '../../../lib/admin-api/types';
 import { formatDateTime } from '../../../lib/admin-format';
 import {
   buildQuickstartHref,

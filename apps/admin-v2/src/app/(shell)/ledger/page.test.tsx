@@ -1,22 +1,24 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import React from 'react';
 
-import type * as AdminApi from '../../../lib/admin-api.server';
-
+import { type getLedgerDisputes, type getLedgerEntries } from '../../../lib/admin-api/ledger.server';
 jest.mock(`next/link`, () => ({
   __esModule: true,
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
     React.createElement(`a`, { href, ...props }, children),
 }));
 
-jest.mock(`../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../lib/admin-api/ledger.server`, () => ({
   getLedgerDisputes: jest.fn(),
   getLedgerEntries: jest.fn(),
 }));
 
 const { getLedgerDisputes: mockedGetLedgerDisputes, getLedgerEntries: mockedGetLedgerEntries } = jest.requireMock(
-  `../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+  `../../../lib/admin-api/ledger.server`,
+) as {
+  getLedgerDisputes: jest.MockedFunction<typeof getLedgerDisputes>;
+  getLedgerEntries: jest.MockedFunction<typeof getLedgerEntries>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;

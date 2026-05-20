@@ -1,21 +1,20 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import React from 'react';
 
-import type * as AdminApi from '../../../lib/admin-api.server';
-
+import { type getPaymentMethods } from '../../../lib/admin-api/payments.server';
 jest.mock(`next/link`, () => ({
   __esModule: true,
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
     React.createElement(`a`, { href, ...props }, children),
 }));
 
-jest.mock(`../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../lib/admin-api/payments.server`, () => ({
   getPaymentMethods: jest.fn(),
 }));
 
-const { getPaymentMethods: mockedGetPaymentMethods } = jest.requireMock(`../../../lib/admin-api.server`) as jest.Mocked<
-  typeof AdminApi
->;
+const { getPaymentMethods: mockedGetPaymentMethods } = jest.requireMock(`../../../lib/admin-api/payments.server`) as {
+  getPaymentMethods: jest.MockedFunction<typeof getPaymentMethods>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;

@@ -2,20 +2,23 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type * as AdminApi from '../../../../lib/admin-api.server';
-
+import { type getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { type getOperationalAlerts } from '../../../../lib/admin-api/overview.server';
 jest.mock(`next/link`, () => ({
   __esModule: true,
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
     React.createElement(`a`, { href, ...props }, children),
 }));
 
-jest.mock(`../../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/overview.server`, () => ({
   getOperationalAlerts: jest.fn(),
 }));
 
-jest.mock(`../../../../lib/admin-mutations.server`, () => ({
+jest.mock(`../../../../lib/admin-mutations/operational-alerts.server`, () => ({
   createOperationalAlertAction: jest.fn(),
   updateOperationalAlertAction: Object.assign(jest.fn(), {
     bind: () => () => Promise.resolve(),
@@ -25,9 +28,15 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
   }),
 }));
 
-const { getAdminIdentity: mockedGetAdminIdentity, getOperationalAlerts: mockedGetOperationalAlerts } = jest.requireMock(
-  `../../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(`../../../../lib/admin-api/identity.server`) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
+const { getOperationalAlerts: mockedGetOperationalAlerts } = jest.requireMock(
+  `../../../../lib/admin-api/overview.server`,
+) as {
+  getOperationalAlerts: jest.MockedFunction<typeof getOperationalAlerts>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;

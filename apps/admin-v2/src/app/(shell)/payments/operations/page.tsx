@@ -5,7 +5,8 @@ import { ActionGhost } from '../../../../components/action-ghost';
 import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
 import { mutedTextClass, stackClass } from '../../../../components/ui-classes';
-import { getPaymentOperationsQueue, type PaymentOperationsQueueResponse } from '../../../../lib/admin-api.server';
+import { getPaymentOperationsQueue } from '../../../../lib/admin-api/payments.server';
+import { type PaymentOperationsQueueResponse } from '../../../../lib/admin-api/types';
 import { formatDateTime } from '../../../../lib/admin-format';
 
 const formatDate = formatDateTime;

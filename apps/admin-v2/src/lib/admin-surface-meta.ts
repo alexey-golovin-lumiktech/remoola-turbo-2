@@ -1,4 +1,4 @@
-import { type LedgerAnomalyClass, type OperationalAlertWorkspace, type SavedViewWorkspace } from './admin-api.server';
+import { type LedgerAnomalyClass, type OperationalAlertWorkspace, type SavedViewWorkspace } from './admin-api/types';
 
 export const SHARED_NAME_MAX_LENGTH = 100;
 export const SHARED_DESCRIPTION_MAX_LENGTH = 500;

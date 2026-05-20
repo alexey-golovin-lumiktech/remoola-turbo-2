@@ -16,7 +16,7 @@ import {
   textAreaClass,
   textInputClass,
 } from './ui-classes';
-import { type AdminsListResponse, type AssignmentHistoryItem, type AssignmentSummary } from '../lib/admin-api.server';
+import { type AdminsListResponse, type AssignmentHistoryItem, type AssignmentSummary } from '../lib/admin-api/types';
 import { formatDateTime } from '../lib/admin-format';
 
 type ReassignCandidate = AdminsListResponse[`items`][number];

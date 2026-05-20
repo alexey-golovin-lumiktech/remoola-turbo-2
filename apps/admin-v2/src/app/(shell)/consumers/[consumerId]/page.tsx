@@ -24,22 +24,22 @@ import {
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import {
-  getAdminIdentity,
   getConsumerActionLog,
   getConsumerAuthHistory,
   getConsumerCaseResult,
   getConsumerContracts,
   getConsumerLedgerSummary,
-} from '../../../../lib/admin-api.server';
+} from '../../../../lib/admin-api/consumers.server';
+import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { formatDateTime } from '../../../../lib/admin-format';
 import {
-  addConsumerFlagAction,
   createConsumerNoteAction,
   forceLogoutConsumerAction,
   resendConsumerEmailAction,
   removeConsumerFlagAction,
   suspendConsumerAction,
-} from '../../../../lib/admin-mutations.server';
+  addConsumerFlagAction,
+} from '../../../../lib/admin-mutations/consumers.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 function renderConsumerLabel(email: string | null | undefined, consumerId: string): string {

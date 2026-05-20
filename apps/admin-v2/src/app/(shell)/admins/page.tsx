@@ -8,9 +8,11 @@ import { StatusPill } from '../../../components/status-pill';
 import { TabletRow } from '../../../components/tablet-row';
 import { buttonRowClass, fieldClass, fieldLabelClass, textInputClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import { type AdminsListResponse, getAdminIdentity, getAdmins } from '../../../lib/admin-api.server';
+import { getAdmins } from '../../../lib/admin-api/admins.server';
+import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
+import { type AdminsListResponse } from '../../../lib/admin-api/types';
 import { formatDateTime } from '../../../lib/admin-format';
-import { inviteAdminAction } from '../../../lib/admin-mutations.server';
+import { inviteAdminAction } from '../../../lib/admin-mutations/admins.server';
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../lib/admin-rbac';
 
 const formatDate = formatDateTime;

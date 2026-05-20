@@ -3,9 +3,10 @@ import { notFound } from 'next/navigation';
 
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
 import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../components/ui-classes';
-import { getAdminIdentity, getExchangeRateCaseResult } from '../../../../../lib/admin-api.server';
+import { getExchangeRateCaseResult } from '../../../../../lib/admin-api/exchange.server';
+import { getAdminIdentity } from '../../../../../lib/admin-api/identity.server';
 import { formatDateTime } from '../../../../../lib/admin-format';
-import { approveExchangeRateAction } from '../../../../../lib/admin-mutations.server';
+import { approveExchangeRateAction } from '../../../../../lib/admin-mutations/exchange.server';
 
 const formatDate = formatDateTime;
 

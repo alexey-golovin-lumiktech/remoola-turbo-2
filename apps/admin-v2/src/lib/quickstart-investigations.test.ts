@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { type QuickstartCard } from './admin-api.server';
+import { type QuickstartCard } from './admin-api/types';
 import { filterQuickstartsForWorkspaces } from './quickstart-investigations';
 
 describe(`quickstart investigations`, () => {

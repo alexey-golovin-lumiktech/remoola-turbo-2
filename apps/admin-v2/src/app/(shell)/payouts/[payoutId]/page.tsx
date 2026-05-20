@@ -29,14 +29,16 @@ import {
   textAreaClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAdminIdentity, getAdmins, getPayoutCaseResult } from '../../../../lib/admin-api.server';
+import { getAdmins } from '../../../../lib/admin-api/admins.server';
+import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { getPayoutCaseResult } from '../../../../lib/admin-api/payments.server';
 import { formatDateTime } from '../../../../lib/admin-format';
 import {
-  claimPayoutAssignmentAction,
   escalatePayoutAction,
   reassignPayoutAssignmentAction,
   releasePayoutAssignmentAction,
-} from '../../../../lib/admin-mutations.server';
+  claimPayoutAssignmentAction,
+} from '../../../../lib/admin-mutations/payouts.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 const formatDate = formatDateTime;

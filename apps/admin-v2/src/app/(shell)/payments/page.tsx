@@ -21,7 +21,9 @@ import {
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import { getPayments, getQuickstart, type PaymentsListResponse } from '../../../lib/admin-api.server';
+import { getQuickstart } from '../../../lib/admin-api/overview.server';
+import { getPayments } from '../../../lib/admin-api/payments.server';
+import { type PaymentsListResponse } from '../../../lib/admin-api/types';
 import { formatDateTime } from '../../../lib/admin-format';
 import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
 import {

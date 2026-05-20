@@ -12,7 +12,7 @@ import {
   textInputClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getConsumerActionAudit } from '../../../../lib/admin-api.server';
+import { getConsumerActionAudit } from '../../../../lib/admin-api/audit.server';
 import { formatDateTime, getDefaultLookbackIsoRange } from '../../../../lib/admin-format';
 
 type ConsumerActionRow = Record<string, unknown>;

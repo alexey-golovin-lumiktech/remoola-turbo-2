@@ -4,7 +4,8 @@ import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { type ExchangeRulesListResponse, getExchangeRules } from '../../../../lib/admin-api.server';
+import { getExchangeRules } from '../../../../lib/admin-api/exchange.server';
+import { type ExchangeRulesListResponse } from '../../../../lib/admin-api/types';
 import { formatDateTime } from '../../../../lib/admin-format';
 
 type ExchangeRuleItem = ExchangeRulesListResponse[`items`][number];

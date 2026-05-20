@@ -15,7 +15,8 @@ import {
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import { type PaymentMethodsListResponse, getPaymentMethods } from '../../../lib/admin-api.server';
+import { getPaymentMethods } from '../../../lib/admin-api/payments.server';
+import { type PaymentMethodsListResponse } from '../../../lib/admin-api/types';
 import { formatDateTime } from '../../../lib/admin-format';
 import {
   booleanSearchParam,

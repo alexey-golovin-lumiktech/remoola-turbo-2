@@ -5,7 +5,8 @@ import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { StatusPill } from '../../../../components/status-pill';
 import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { type ExchangeScheduledListResponse, getExchangeScheduledConversions } from '../../../../lib/admin-api.server';
+import { getExchangeScheduledConversions } from '../../../../lib/admin-api/exchange.server';
+import { type ExchangeScheduledListResponse } from '../../../../lib/admin-api/types';
 import { formatDateTime } from '../../../../lib/admin-format';
 
 type ScheduledConversionItem = ExchangeScheduledListResponse[`items`][number];

@@ -16,7 +16,7 @@ import {
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import { getConsumers } from '../../../lib/admin-api.server';
+import { getConsumers } from '../../../lib/admin-api/consumers.server';
 import { formatDateTime } from '../../../lib/admin-format';
 
 const formatDate = formatDateTime;

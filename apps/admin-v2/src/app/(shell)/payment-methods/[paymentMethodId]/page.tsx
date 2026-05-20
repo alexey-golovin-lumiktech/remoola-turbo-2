@@ -17,13 +17,14 @@ import {
   operatorFormSectionClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAdminIdentity, getPaymentMethodCaseResult } from '../../../../lib/admin-api.server';
+import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { getPaymentMethodCaseResult } from '../../../../lib/admin-api/payments.server';
 import { formatDateTime } from '../../../../lib/admin-format';
 import {
-  disablePaymentMethodAction,
   escalateDuplicatePaymentMethodAction,
   removeDefaultPaymentMethodAction,
-} from '../../../../lib/admin-mutations.server';
+  disablePaymentMethodAction,
+} from '../../../../lib/admin-mutations/payment-methods.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 const formatDate = formatDateTime;

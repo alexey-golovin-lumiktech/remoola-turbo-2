@@ -5,13 +5,15 @@ import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { type DocumentTagsResponse, getAdminIdentity, getDocumentTags } from '../../../../lib/admin-api.server';
+import { getDocumentTags } from '../../../../lib/admin-api/documents.server';
+import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { type DocumentTagsResponse } from '../../../../lib/admin-api/types';
 import { formatDateTime } from '../../../../lib/admin-format';
 import {
-  createDocumentTagAction,
   deleteDocumentTagAction,
   updateDocumentTagAction,
-} from '../../../../lib/admin-mutations.server';
+  createDocumentTagAction,
+} from '../../../../lib/admin-mutations/documents.server';
 
 type DocumentTag = DocumentTagsResponse[`items`][number];
 

@@ -16,15 +16,17 @@ import {
   operatorFormSectionClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAdminIdentity, getAdmins, getDocumentCaseResult, getDocumentTags } from '../../../../lib/admin-api.server';
+import { getAdmins } from '../../../../lib/admin-api/admins.server';
+import { getDocumentCaseResult, getDocumentTags } from '../../../../lib/admin-api/documents.server';
+import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { getAdminDocumentDownloadHref } from '../../../../lib/admin-document-download';
 import { formatBytes, formatDateTime } from '../../../../lib/admin-format';
 import {
-  claimDocumentAssignmentAction,
   reassignDocumentAssignmentAction,
   releaseDocumentAssignmentAction,
   retagDocumentAction,
-} from '../../../../lib/admin-mutations.server';
+  claimDocumentAssignmentAction,
+} from '../../../../lib/admin-mutations/documents.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 export default async function DocumentCasePage({

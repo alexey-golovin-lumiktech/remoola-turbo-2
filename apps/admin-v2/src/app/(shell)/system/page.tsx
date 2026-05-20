@@ -2,7 +2,8 @@ import { ActionGhost } from '../../../components/action-ghost';
 import { Panel } from '../../../components/panel';
 import { mutedTextClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import { getSystemSummary, type SystemSummaryCard } from '../../../lib/admin-api.server';
+import { getSystemSummary } from '../../../lib/admin-api/overview.server';
+import { type SystemSummaryCard } from '../../../lib/admin-api/types';
 import { formatDateTime } from '../../../lib/admin-format';
 
 const cardOrder = [

@@ -2,8 +2,9 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type * as AdminApi from '../../../../lib/admin-api.server';
-
+import { type getAdmins } from '../../../../lib/admin-api/admins.server';
+import { type getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { type getPayoutCaseResult } from '../../../../lib/admin-api/payments.server';
 const mockedNotFound = jest.fn(() => {
   throw new Error(`NEXT_NOT_FOUND`);
 });
@@ -18,24 +19,38 @@ jest.mock(`next/navigation`, () => ({
   notFound: mockedNotFound,
 }));
 
-jest.mock(`../../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/admins.server`, () => ({
   getAdmins: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/payments.server`, () => ({
   getPayoutCaseResult: jest.fn(),
 }));
 
-jest.mock(`../../../../lib/admin-mutations.server`, () => ({
+jest.mock(`../../../../lib/admin-mutations/payouts.server`, () => ({
   escalatePayoutAction: jest.fn(),
   claimPayoutAssignmentAction: jest.fn(),
   releasePayoutAssignmentAction: jest.fn(),
   reassignPayoutAssignmentAction: jest.fn(),
 }));
 
-const {
-  getAdminIdentity: mockedGetAdminIdentity,
-  getAdmins: mockedGetAdmins,
-  getPayoutCaseResult: mockedGetPayoutCaseResult,
-} = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(`../../../../lib/admin-api/identity.server`) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
+const { getAdmins: mockedGetAdmins } = jest.requireMock(`../../../../lib/admin-api/admins.server`) as {
+  getAdmins: jest.MockedFunction<typeof getAdmins>;
+};
+
+const { getPayoutCaseResult: mockedGetPayoutCaseResult } = jest.requireMock(
+  `../../../../lib/admin-api/payments.server`,
+) as {
+  getPayoutCaseResult: jest.MockedFunction<typeof getPayoutCaseResult>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;

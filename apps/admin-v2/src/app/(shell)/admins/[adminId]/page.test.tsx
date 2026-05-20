@@ -2,7 +2,9 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type * as AdminApi from '../../../../lib/admin-api.server';
+import { type getAdminCaseRecordResult, type getAdminSessionsResult } from '../../../../lib/admin-api/admins.server';
+import { type getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { type getAdminCaseRecord } from '../../../../lib/admin-api/types';
 
 const mockedNotFound = jest.fn(() => {
   throw new Error(`NEXT_NOT_FOUND`);
@@ -18,13 +20,16 @@ jest.mock(`next/navigation`, () => ({
   notFound: mockedNotFound,
 }));
 
-jest.mock(`../../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/admins.server`, () => ({
   getAdminCaseRecordResult: jest.fn(),
   getAdminSessionsResult: jest.fn(),
 }));
 
-jest.mock(`../../../../lib/admin-mutations.server`, () => ({
+jest.mock(`../../../../lib/admin-mutations/admins.server`, () => ({
   changeAdminPermissionsAction: jest.fn(),
   changeAdminRoleAction: jest.fn(),
   deactivateAdminAction: jest.fn(),
@@ -33,11 +38,17 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
   revokeAdminSessionAction: jest.fn(),
 }));
 
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(`../../../../lib/admin-api/identity.server`) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
 const {
-  getAdminIdentity: mockedGetAdminIdentity,
   getAdminCaseRecordResult: mockedGetAdminCaseRecordResult,
   getAdminSessionsResult: mockedGetAdminSessionsResult,
-} = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+} = jest.requireMock(`../../../../lib/admin-api/admins.server`) as {
+  getAdminCaseRecordResult: jest.MockedFunction<typeof getAdminCaseRecordResult>;
+  getAdminSessionsResult: jest.MockedFunction<typeof getAdminSessionsResult>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;
@@ -45,7 +56,7 @@ async function loadSubject() {
 
 let AdminCasePage: Awaited<ReturnType<typeof loadSubject>>;
 
-function buildAdminRecord(): NonNullable<Awaited<ReturnType<typeof AdminApi.getAdminCaseRecord>>> {
+function buildAdminRecord(): NonNullable<Awaited<ReturnType<typeof getAdminCaseRecord>>> {
   return {
     id: `admin-2`,
     core: {

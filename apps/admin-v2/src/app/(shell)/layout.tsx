@@ -8,14 +8,13 @@ import { MobileShellUtilityBar } from '../../components/mobile-shell-utility-bar
 import { MobileTopChips } from '../../components/mobile-top-chips';
 import { ShellHeader } from '../../components/shell-header';
 import { SidebarContents } from '../../components/sidebar-contents';
+import { getAdminIdentityResult } from '../../lib/admin-api/identity.server';
+import { getOverviewSummary, getQuickstarts } from '../../lib/admin-api/overview.server';
 import {
-  getAdminIdentityResult,
-  getOverviewSummary,
   type OverviewSignalSummary,
-  getQuickstarts,
   type OverviewSummaryResponse,
   type QuickstartCard,
-} from '../../lib/admin-api.server';
+} from '../../lib/admin-api/types';
 import { getActivePathFromHeaders } from '../../lib/nav-state';
 import { filterQuickstartsForWorkspaces } from '../../lib/quickstart-investigations';
 import {

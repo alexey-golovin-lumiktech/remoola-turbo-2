@@ -1,30 +1,48 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import React from 'react';
 
-import type * as AdminApi from '../../../../lib/admin-api.server';
-
+import { type getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { type getLedgerAnomaliesSummary, type getLedgerAnomalies } from '../../../../lib/admin-api/ledger.server';
+import { type getSavedViews } from '../../../../lib/admin-api/overview.server';
 jest.mock(`next/link`, () => ({
   __esModule: true,
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
     React.createElement(`a`, { href, ...props }, children),
 }));
 
-jest.mock(`../../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/ledger.server`, () => ({
   getLedgerAnomaliesSummary: jest.fn(),
   getLedgerAnomalies: jest.fn(),
+}));
+
+jest.mock(`../../../../lib/admin-api/overview.server`, () => ({
   getSavedViews: jest.fn(),
 }));
 
-jest.mock(`../../../../lib/admin-mutations.server`, () => ({
-  createSavedViewAction: jest.fn(async () => undefined),
-  updateSavedViewAction: jest.fn(async () => undefined),
-  deleteSavedViewAction: jest.fn(async () => undefined),
+jest.mock(`../../../../lib/admin-mutations/saved-views.server`, () => ({
+  createSavedViewAction: jest.fn(),
+  updateSavedViewAction: jest.fn(),
+  deleteSavedViewAction: jest.fn(),
 }));
 
-const { getAdminIdentity, getLedgerAnomaliesSummary, getLedgerAnomalies, getSavedViews } = jest.requireMock(
-  `../../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentity } = jest.requireMock(`../../../../lib/admin-api/identity.server`) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
+const { getLedgerAnomaliesSummary, getLedgerAnomalies } = jest.requireMock(
+  `../../../../lib/admin-api/ledger.server`,
+) as {
+  getLedgerAnomaliesSummary: jest.MockedFunction<typeof getLedgerAnomaliesSummary>;
+  getLedgerAnomalies: jest.MockedFunction<typeof getLedgerAnomalies>;
+};
+
+const { getSavedViews } = jest.requireMock(`../../../../lib/admin-api/overview.server`) as {
+  getSavedViews: jest.MockedFunction<typeof getSavedViews>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;

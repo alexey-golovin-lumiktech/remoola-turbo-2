@@ -10,7 +10,7 @@ import {
   textInputClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAuthAudit } from '../../../../lib/admin-api.server';
+import { getAuthAudit } from '../../../../lib/admin-api/audit.server';
 import { formatDateTime } from '../../../../lib/admin-format';
 
 function formatDate(value: unknown): string {

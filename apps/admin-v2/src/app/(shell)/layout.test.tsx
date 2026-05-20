@@ -2,8 +2,8 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type * as AdminApi from '../../lib/admin-api.server';
-
+import { type getAdminIdentityResult } from '../../lib/admin-api/identity.server';
+import { type getOverviewSummary, type getQuickstarts } from '../../lib/admin-api/overview.server';
 jest.mock(`next/headers`, () => ({
   headers: jest.fn(async () => new Headers()),
 }));
@@ -44,17 +44,27 @@ jest.mock(`../../lib/quickstart-investigations`, () => ({
   filterQuickstartsForWorkspaces: jest.fn((quickstarts) => quickstarts),
 }));
 
-jest.mock(`../../lib/admin-api.server`, () => ({
+jest.mock(`../../lib/admin-api/identity.server`, () => ({
   getAdminIdentityResult: jest.fn(),
+}));
+
+jest.mock(`../../lib/admin-api/overview.server`, () => ({
   getOverviewSummary: jest.fn(),
   getQuickstarts: jest.fn(),
 }));
 
-const {
-  getAdminIdentityResult: mockedGetAdminIdentityResult,
-  getOverviewSummary: mockedGetOverviewSummary,
-  getQuickstarts: mockedGetQuickstarts,
-} = jest.requireMock(`../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentityResult: mockedGetAdminIdentityResult } = jest.requireMock(
+  `../../lib/admin-api/identity.server`,
+) as {
+  getAdminIdentityResult: jest.MockedFunction<typeof getAdminIdentityResult>;
+};
+
+const { getOverviewSummary: mockedGetOverviewSummary, getQuickstarts: mockedGetQuickstarts } = jest.requireMock(
+  `../../lib/admin-api/overview.server`,
+) as {
+  getOverviewSummary: jest.MockedFunction<typeof getOverviewSummary>;
+  getQuickstarts: jest.MockedFunction<typeof getQuickstarts>;
+};
 
 async function loadSubject() {
   return (await import(`./layout`)).default;

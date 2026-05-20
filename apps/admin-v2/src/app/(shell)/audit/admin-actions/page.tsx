@@ -13,7 +13,8 @@ import {
   textInputClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAdminActionAudit, getQuickstart } from '../../../../lib/admin-api.server';
+import { getAdminActionAudit } from '../../../../lib/admin-api/audit.server';
+import { getQuickstart } from '../../../../lib/admin-api/overview.server';
 import { formatDateTime } from '../../../../lib/admin-format';
 import { parseQuickstartId } from '../../../../lib/quickstart-investigations';
 

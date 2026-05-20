@@ -30,16 +30,18 @@ import {
   textInputClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAdminIdentity, getAdmins, getPaymentCaseResult } from '../../../../lib/admin-api.server';
+import { getAdmins } from '../../../../lib/admin-api/admins.server';
+import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { getPaymentCaseResult } from '../../../../lib/admin-api/payments.server';
 import { getAdminDocumentDownloadHref } from '../../../../lib/admin-document-download';
 import { formatDateTime } from '../../../../lib/admin-format';
 import {
-  chargebackPaymentAction,
   claimPaymentRequestAssignmentAction,
   reassignPaymentRequestAssignmentAction,
   refundPaymentAction,
   releasePaymentRequestAssignmentAction,
-} from '../../../../lib/admin-mutations.server';
+  chargebackPaymentAction,
+} from '../../../../lib/admin-mutations/payments.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 function renderActorLabel(actor: { email?: string | null; id?: string | null }): string {

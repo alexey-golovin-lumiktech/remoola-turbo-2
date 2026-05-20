@@ -9,7 +9,7 @@ import { cn } from '@remoola/ui';
 import { ActionGhost } from '@/components/action-ghost';
 
 import { SidebarSection } from './sidebar-section';
-import { type AdminIdentity, type QuickstartCard } from '../lib/admin-api.server';
+import { type AdminIdentity, type QuickstartCard } from '../lib/admin-api/types';
 import { normalizeActivePath } from '../lib/nav-state';
 import {
   buildQuickstartHref,

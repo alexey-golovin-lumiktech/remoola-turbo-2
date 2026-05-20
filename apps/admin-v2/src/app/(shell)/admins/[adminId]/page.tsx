@@ -18,16 +18,17 @@ import {
   textInputClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAdminCaseRecordResult, getAdminIdentity, getAdminSessionsResult } from '../../../../lib/admin-api.server';
+import { getAdminSessionsResult, getAdminCaseRecordResult } from '../../../../lib/admin-api/admins.server';
+import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { formatDateTime } from '../../../../lib/admin-format';
 import {
-  changeAdminPermissionsAction,
   changeAdminRoleAction,
   deactivateAdminAction,
   resetAdminPasswordAction,
   restoreAdminAction,
   revokeAdminSessionAction,
-} from '../../../../lib/admin-mutations.server';
+  changeAdminPermissionsAction,
+} from '../../../../lib/admin-mutations/admins.server';
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../../lib/admin-rbac';
 import { readReturnTo } from '../../../../lib/navigation-context';
 

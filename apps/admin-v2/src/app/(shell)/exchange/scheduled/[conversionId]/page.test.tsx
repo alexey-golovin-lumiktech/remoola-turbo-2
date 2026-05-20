@@ -2,8 +2,9 @@ import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type * as AdminApi from '../../../../../lib/admin-api.server';
-
+import { type getAdmins } from '../../../../../lib/admin-api/admins.server';
+import { type getExchangeScheduledCaseResult } from '../../../../../lib/admin-api/exchange.server';
+import { type getAdminIdentity } from '../../../../../lib/admin-api/identity.server';
 const mockedNotFound = jest.fn(() => {
   throw new Error(`NEXT_NOT_FOUND`);
 });
@@ -18,13 +19,19 @@ jest.mock(`next/navigation`, () => ({
   notFound: mockedNotFound,
 }));
 
-jest.mock(`../../../../../lib/admin-api.server`, () => ({
+jest.mock(`../../../../../lib/admin-api/identity.server`, () => ({
   getAdminIdentity: jest.fn(),
+}));
+
+jest.mock(`../../../../../lib/admin-api/admins.server`, () => ({
   getAdmins: jest.fn(),
+}));
+
+jest.mock(`../../../../../lib/admin-api/exchange.server`, () => ({
   getExchangeScheduledCaseResult: jest.fn(),
 }));
 
-jest.mock(`../../../../../lib/admin-mutations.server`, () => ({
+jest.mock(`../../../../../lib/admin-mutations/exchange.server`, () => ({
   cancelScheduledExchangeAction: jest.fn(),
   claimFxConversionAssignmentAction: jest.fn(),
   forceExecuteScheduledExchangeAction: jest.fn(),
@@ -32,11 +39,21 @@ jest.mock(`../../../../../lib/admin-mutations.server`, () => ({
   releaseFxConversionAssignmentAction: jest.fn(),
 }));
 
-const {
-  getAdminIdentity: mockedGetAdminIdentity,
-  getAdmins: mockedGetAdmins,
-  getExchangeScheduledCaseResult: mockedGetExchangeScheduledCaseResult,
-} = jest.requireMock(`../../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(
+  `../../../../../lib/admin-api/identity.server`,
+) as {
+  getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
+};
+
+const { getAdmins: mockedGetAdmins } = jest.requireMock(`../../../../../lib/admin-api/admins.server`) as {
+  getAdmins: jest.MockedFunction<typeof getAdmins>;
+};
+
+const { getExchangeScheduledCaseResult: mockedGetExchangeScheduledCaseResult } = jest.requireMock(
+  `../../../../../lib/admin-api/exchange.server`,
+) as {
+  getExchangeScheduledCaseResult: jest.MockedFunction<typeof getExchangeScheduledCaseResult>;
+};
 
 async function loadSubject() {
   return (await import(`./page`)).default;

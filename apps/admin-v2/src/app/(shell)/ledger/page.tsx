@@ -11,12 +11,8 @@ import { TabletRow } from '../../../components/tablet-row';
 import { TinyPill } from '../../../components/tiny-pill';
 import { buttonRowClass, fieldClass, fieldLabelClass, textInputClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import {
-  getLedgerDisputes,
-  getLedgerEntries,
-  type LedgerDisputesResponse,
-  type LedgerEntriesListResponse,
-} from '../../../lib/admin-api.server';
+import { getLedgerEntries, getLedgerDisputes } from '../../../lib/admin-api/ledger.server';
+import { type LedgerDisputesResponse, type LedgerEntriesListResponse } from '../../../lib/admin-api/types';
 import { formatDateTime } from '../../../lib/admin-format';
 import { dateSearchParam, type SearchParamValue, trimmedSearchParam } from '../../../lib/query-contract';
 
