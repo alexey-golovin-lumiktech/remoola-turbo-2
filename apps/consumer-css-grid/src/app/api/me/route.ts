@@ -20,8 +20,21 @@ export async function GET(req: NextRequest) {
     cache: `no-store`,
   });
 
-  const data = await res.text();
   const responseHeaders = new Headers();
   appendSetCookies(responseHeaders, res.headers);
-  return new NextResponse(data, { status: res.status, headers: responseHeaders });
+
+  if (!res.ok) {
+    return NextResponse.json(
+      { code: `UPSTREAM_ERROR`, status: res.status },
+      { status: res.status, headers: responseHeaders },
+    );
+  }
+
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    return NextResponse.json({ code: `INVALID_RESPONSE` }, { status: 502, headers: responseHeaders });
+  }
+  return NextResponse.json(data, { status: res.status, headers: responseHeaders });
 }

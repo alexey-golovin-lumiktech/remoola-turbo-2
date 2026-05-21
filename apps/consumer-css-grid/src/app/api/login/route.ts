@@ -13,10 +13,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
   }
 
-  const raw = await req
-    .clone()
-    .json()
-    .catch(() => null);
+  const raw = await req.json().catch(() => null);
   const parsed = loginSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(

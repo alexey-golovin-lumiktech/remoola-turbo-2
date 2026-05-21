@@ -4,6 +4,7 @@ import { isSessionExpiredErrorCode } from './auth-failure';
 
 const CLEAR_COOKIES_URL = `/api/consumer/auth/clear-cookies`;
 
+// client-side dedup guard: one redirect per page lifecycle; resetSessionExpiredHandled exists for testing
 let handled = false;
 
 export function resetSessionExpiredHandled(): void {

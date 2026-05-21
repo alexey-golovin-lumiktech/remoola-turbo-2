@@ -1,5 +1,5 @@
 function isDevelopment(): boolean {
-  return process.env.NODE_ENV === `development`;
+  return process.env.NODE_ENV === `development` && process.env.VERCEL !== `1`;
 }
 
 export function getDevCredentials() {

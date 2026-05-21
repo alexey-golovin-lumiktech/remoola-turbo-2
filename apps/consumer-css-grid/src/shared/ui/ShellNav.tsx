@@ -12,6 +12,7 @@ import { CreditCardIcon } from './icons/CreditCardIcon';
 import { DocumentIcon } from './icons/DocumentIcon';
 import { ExchangeIcon } from './icons/ExchangeIcon';
 import { HomeIcon } from './icons/HomeIcon';
+import { LightningIcon } from './icons/LightningIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { UsersIcon } from './icons/UsersIcon';
@@ -26,6 +27,7 @@ const sidebarItems = [
   { href: `/withdraw`, label: `Withdraw`, Icon: ArrowDownIcon },
   { href: `/exchange`, label: `Exchange`, Icon: ExchangeIcon },
   { href: `/settings`, label: `Settings`, Icon: SettingsIcon },
+  { href: `/help`, label: `Help`, Icon: LightningIcon },
 ];
 
 const mobileNavItems = [

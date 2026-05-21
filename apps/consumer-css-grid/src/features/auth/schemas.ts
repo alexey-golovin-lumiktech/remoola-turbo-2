@@ -42,14 +42,30 @@ const sanitizeNextPath = (rawNext: string | undefined): string => {
   return decoded;
 };
 
+const searchParamsSchema = z
+  .object({
+    next: z.union([z.string(), z.array(z.string())]).optional(),
+    session_expired: z.union([z.string(), z.array(z.string())]).optional(),
+    [AUTH_NOTICE_QUERY]: z.union([z.string(), z.array(z.string())]).optional(),
+  })
+  .passthrough();
+
 export const parseSearchParams = (searchParams: Record<string, string | string[] | undefined>) => {
-  const next = searchParams.next;
+  const validated = searchParamsSchema.parse(searchParams);
+
+  const next = validated.next;
   const raw = typeof next === `string` ? next : Array.isArray(next) && next[0] ? next[0] : undefined;
   const nextPath = sanitizeNextPath(raw);
 
-  const sessionExpiredParam = searchParams.session_expired;
+  const rawSessionExpired = validated.session_expired;
+  const sessionExpiredParam =
+    typeof rawSessionExpired === `string`
+      ? rawSessionExpired
+      : Array.isArray(rawSessionExpired) && rawSessionExpired[0]
+        ? rawSessionExpired[0]
+        : undefined;
   const sessionExpired = sessionExpiredParam === `true` || sessionExpiredParam === `1`;
-  const authNoticeParam = searchParams[AUTH_NOTICE_QUERY];
+  const authNoticeParam = validated[AUTH_NOTICE_QUERY];
   const authNoticeRaw =
     typeof authNoticeParam === `string`
       ? authNoticeParam

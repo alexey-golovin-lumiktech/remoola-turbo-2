@@ -15,6 +15,8 @@ import {
   type OAuthCookieRuntime,
 } from '@remoola/api-types';
 
+import { getCookieValue } from './cookie-utils';
+
 function isSecureRequest(request: Request): boolean {
   const forwardedProto = request.headers.get(`x-forwarded-proto`);
   return new URL(request.url).protocol === `https:` || forwardedProto?.split(`,`)[0]?.trim() === `https`;
@@ -68,13 +70,8 @@ export function getCsrfTokenFromRequest(request: Request): string | null {
     ...getApiV2ConsumerCsrfTokenCookieKeysForRead().filter((key) => key !== preferredCsrfKey),
   ];
   for (const key of orderedCsrfKeys) {
-    const match = cookie
-      .split(`;`)
-      .map((part) => part.trim())
-      .find((part) => part.startsWith(`${key}=`));
-    if (match) {
-      return match.split(`=`).slice(1).join(`=`);
-    }
+    const value = getCookieValue(cookie, key);
+    if (value) return value;
   }
   return null;
 }

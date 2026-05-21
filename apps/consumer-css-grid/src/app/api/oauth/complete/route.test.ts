@@ -1,15 +1,15 @@
-import { afterEach, describe, expect, it, jest } from '@jest/globals';
-
-const mockGetEnv = jest.fn();
-
-jest.mock(`../../../../lib/env.server`, () => ({
-  getEnv: (...args: unknown[]) => mockGetEnv(...args),
-}));
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { CURRENT_CONSUMER_APP_SCOPE, getApiV2ConsumerCsrfTokenCookieKeyForRuntime } from '@remoola/api-types';
 
-import { POST } from './route';
 import { getSetCookieValues } from '../../../../lib/api-utils';
+
+const API_BASE_URL = `https://api.example.com`;
+const originalApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+async function loadSubject() {
+  return import(`./route`);
+}
 
 describe(`consumer-css-grid oauth complete route`, () => {
   const cssGridCsrfCookieKey = getApiV2ConsumerCsrfTokenCookieKeyForRuntime({
@@ -19,12 +19,22 @@ describe(`consumer-css-grid oauth complete route`, () => {
     isSecureRequest: false,
   });
 
+  beforeEach(() => {
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
+    if (originalApiBaseUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_API_BASE_URL = originalApiBaseUrl;
+    }
   });
 
   it(`forwards oauth completion with origin and inferred csrf`, async () => {
-    mockGetEnv.mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
+    const { POST } = await loadSubject();
     const fetchSpy = jest.spyOn(global, `fetch`).mockResolvedValueOnce(
       new Response(JSON.stringify({ ok: true, next: `/dashboard` }), {
         status: 200,
@@ -54,7 +64,7 @@ describe(`consumer-css-grid oauth complete route`, () => {
   });
 
   it(`rejects invalid json before proxying oauth completion`, async () => {
-    mockGetEnv.mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
+    const { POST } = await loadSubject();
     const fetchSpy = jest.spyOn(global, `fetch`);
 
     const req = new Request(`https://grid.example.com/api/oauth/complete`, {

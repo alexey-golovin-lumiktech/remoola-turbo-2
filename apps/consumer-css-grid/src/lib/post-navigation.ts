@@ -7,4 +7,5 @@ export function submitPostNavigation(action: string): void {
   form.style.display = `none`;
   document.body.appendChild(form);
   form.submit();
+  setTimeout(() => form.remove(), 0);
 }

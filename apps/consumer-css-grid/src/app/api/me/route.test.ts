@@ -52,4 +52,39 @@ describe(`me route`, () => {
     expect(forwardedHeaders?.get(`x-correlation-id`)).toBe(`corr-1`);
     expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`me_cookie=`))).toBe(true);
   });
+
+  it(`returns normalized upstream errors while preserving upstream cookies`, async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ code: `UNAUTHORIZED` }), {
+        status: 401,
+        headers: {
+          [`set-cookie`]: `me_cookie=expired; Path=/; HttpOnly`,
+        },
+      }),
+    );
+
+    const response = await GET(new Request(`https://app.example.com/api/me`) as unknown as NextRequest);
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ code: `UPSTREAM_ERROR`, status: 401 });
+    expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`me_cookie=`))).toBe(true);
+  });
+
+  it(`returns INVALID_RESPONSE when upstream success body is not valid json`, async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(`not-json`, {
+        status: 200,
+        headers: {
+          [`content-type`]: `text/plain`,
+          [`set-cookie`]: `me_cookie=ok; Path=/; HttpOnly`,
+        },
+      }),
+    );
+
+    const response = await GET(new Request(`https://app.example.com/api/me`) as unknown as NextRequest);
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toEqual({ code: `INVALID_RESPONSE` });
+    expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`me_cookie=`))).toBe(true);
+  });
 });

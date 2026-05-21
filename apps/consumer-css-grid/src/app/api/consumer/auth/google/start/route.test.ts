@@ -1,24 +1,33 @@
-import { afterEach, describe, expect, it, jest } from '@jest/globals';
-
-const mockGetEnv = jest.fn();
-
-jest.mock(`../../../../../../lib/env.server`, () => ({
-  getEnv: (...args: unknown[]) => mockGetEnv(...args),
-}));
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import { GET } from './route';
+const API_BASE_URL = `https://api.example.com`;
+const originalApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+async function loadSubject() {
+  return import(`./route`);
+}
 
 describe(`consumer-css-grid google start route`, () => {
   const legacyRedirectParam = `return${`Origin`}`;
 
+  beforeEach(() => {
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
+    if (originalApiBaseUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_API_BASE_URL = originalApiBaseUrl;
+    }
   });
 
   it(`redirects to backend oauth start while preserving supported params`, async () => {
-    mockGetEnv.mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
+    const { GET } = await loadSubject();
 
     const request = {
       nextUrl: new URL(

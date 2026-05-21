@@ -338,7 +338,7 @@ describe(`consumer-api SSR unauthorized redirects`, () => {
   async function loadSubject() {
     const redirect = jest.fn((url: string) => {
       const error = new Error(`NEXT_REDIRECT:${url}`) as Error & { digest?: string };
-      error.digest = `NEXT_REDIRECT;${url}`;
+      error.digest = `NEXT_REDIRECT;replace;${url};307;`;
       throw error;
     });
     const mockCookies = jest.fn(async () => ({

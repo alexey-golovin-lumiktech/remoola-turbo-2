@@ -45,14 +45,20 @@ export async function POST(req: NextRequest) {
             headers: forwardHeaders,
             cache: `no-store`,
           },
-        ).catch(() => null);
+        ).catch((err: unknown) => {
+          console.error(`[signup] complete-profile-creation network error`, err);
+          return null;
+        });
 
         if (completionRes) {
+          if (!completionRes.ok) {
+            console.error(`[signup] complete-profile-creation returned ${completionRes.status}`);
+          }
           appendSetCookies(responseHeaders, completionRes.headers);
         }
       }
-    } catch {
-      // Ignore follow-up completion failures and return the primary signup response.
+    } catch (err) {
+      console.error(`[signup] profile completion follow-up failed`, err);
     }
   }
 

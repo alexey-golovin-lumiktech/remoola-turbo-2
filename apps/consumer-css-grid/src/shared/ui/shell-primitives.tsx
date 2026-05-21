@@ -12,7 +12,6 @@ export function PageHeader({
   icon: ReactNode;
   action?: ReactNode;
 }) {
-  const sub = subtitle ?? `Mobile first workspace for finance operations`;
   return (
     <>
       <section className="mb-6 md:hidden">
@@ -22,7 +21,9 @@ export function PageHeader({
           </div>
           <div>
             <h1 className="text-5xl font-semibold tracking-tight text-(--app-text)">{title}</h1>
-            <p className="mt-2 text-lg text-(--app-text-muted)">{sub}</p>
+            <p className="mt-2 text-lg text-(--app-text-muted)">
+              {subtitle ?? `Mobile first workspace for finance operations`}
+            </p>
             {action ? <div className="mt-3">{action}</div> : null}
           </div>
         </div>
@@ -32,7 +33,7 @@ export function PageHeader({
         <div>
           <h1 className="text-4xl font-semibold tracking-tight text-(--app-text)">{title}</h1>
           <p className="mt-1 text-(--app-text-muted)">
-            Manage balances, payments, documents, compliance, and account settings.
+            {subtitle ?? `Manage balances, payments, documents, compliance, and account settings.`}
           </p>
         </div>
         {action ? <div>{action}</div> : null}

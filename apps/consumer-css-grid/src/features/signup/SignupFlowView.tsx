@@ -39,7 +39,7 @@ export function SignupFlowView() {
     if (redirectTarget) {
       router.replace(redirectTarget);
     }
-  }, [accountType, contractorKind, googleSignupToken, isContractor, router]);
+  }, [accountType, contractorKind, googleSignupToken, router]);
 
   if (!accountType || (isContractor && !contractorKind)) {
     return null;

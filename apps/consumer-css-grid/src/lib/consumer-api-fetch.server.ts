@@ -22,40 +22,33 @@ function redirectOnUnauthorized(options?: ConsumerApiRequestOptions): void {
   redirect(buildSessionExpiredLoginUrl(options.redirectTo));
 }
 
-function isRedirectControlFlow(error: unknown): boolean {
-  if (typeof error !== `object` || error === null) {
-    return false;
-  }
-  const digest = `digest` in error ? error.digest : undefined;
-  if (typeof digest === `string` && digest.startsWith(`NEXT_REDIRECT`)) {
-    return true;
-  }
-  const message = `message` in error ? error.message : undefined;
-  return typeof message === `string` && message.startsWith(`NEXT_REDIRECT`);
-}
-
 export async function fetchConsumerApi<T>(path: string, options?: ConsumerApiRequestOptions): Promise<T | null> {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) return null;
 
+  let response: Response;
   try {
     const cookieStore = await cookies();
-    const response = await fetch(`${baseUrl}${path}`, {
+    response = await fetch(`${baseUrl}${path}`, {
       method: `GET`,
       headers: buildConsumerReadHeaders(cookieStore.toString()),
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),
     });
+  } catch {
+    return null;
+  }
 
-    if (response.status === 401) {
-      redirectOnUnauthorized(options);
-      return null;
-    }
-    if (!response.ok) return null;
+  if (response.status === 401) {
+    redirectOnUnauthorized(options);
+    return null;
+  }
+  if (!response.ok) return null;
+
+  try {
     return (await response.json()) as T;
-  } catch (error) {
-    if (isRedirectControlFlow(error)) throw error;
+  } catch {
     return null;
   }
 }
@@ -69,10 +62,11 @@ export async function postConsumerApi<T>(
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) return null;
 
+  let response: Response;
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.toString();
-    const response = await fetch(`${baseUrl}${path}`, {
+    response = await fetch(`${baseUrl}${path}`, {
       method: `POST`,
       headers: buildConsumerMutationHeaders(cookieHeader, {
         'content-type': `application/json`,
@@ -81,15 +75,19 @@ export async function postConsumerApi<T>(
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),
     });
+  } catch {
+    return null;
+  }
 
-    if (response.status === 401) {
-      redirectOnUnauthorized(options);
-      return null;
-    }
-    if (!response.ok) return null;
+  if (response.status === 401) {
+    redirectOnUnauthorized(options);
+    return null;
+  }
+  if (!response.ok) return null;
+
+  try {
     return (await response.json()) as T;
-  } catch (error) {
-    if (isRedirectControlFlow(error)) throw error;
+  } catch {
     return null;
   }
 }
@@ -104,29 +102,33 @@ export async function fetchConsumerApiResult<T>(
     return { data: null, unavailable: true };
   }
 
+  let response: Response;
   try {
     const cookieStore = await cookies();
-    const response = await fetch(`${baseUrl}${path}`, {
+    response = await fetch(`${baseUrl}${path}`, {
       method: `GET`,
       headers: buildConsumerReadHeaders(cookieStore.toString()),
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),
     });
+  } catch {
+    return { data: null, unavailable: true };
+  }
 
-    if (response.status === 401) {
-      redirectOnUnauthorized(options);
-      return { data: null, unavailable: false };
-    }
-    if (!response.ok) {
-      return { data: null, unavailable: true };
-    }
+  if (response.status === 401) {
+    redirectOnUnauthorized(options);
+    return { data: null, unavailable: false };
+  }
+  if (!response.ok) {
+    return { data: null, unavailable: true };
+  }
 
+  try {
     return {
       data: (await response.json()) as T,
       unavailable: false,
     };
-  } catch (error) {
-    if (isRedirectControlFlow(error)) throw error;
+  } catch {
     return { data: null, unavailable: true };
   }
 }

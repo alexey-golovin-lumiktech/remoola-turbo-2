@@ -36,6 +36,7 @@ const COMMAND_ROUTES: CommandRoute[] = [
   },
   { label: `Withdraw`, href: `/withdraw`, keywords: [`withdraw`, `transfer`, `send money`], group: `Pages` },
   { label: `Exchange`, href: `/exchange`, keywords: [`fx`, `currency`, `convert`, `rate`], group: `Pages` },
+  { label: `Help`, href: `/help`, keywords: [`help`, `support`, `guide`, `docs`], group: `Pages` },
   {
     label: `Exchange Rules`,
     href: `/exchange/rules`,

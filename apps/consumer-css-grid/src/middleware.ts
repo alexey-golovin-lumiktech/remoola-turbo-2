@@ -13,6 +13,7 @@ import {
 
 import { appendSetCookies, getSetCookieValues } from './lib/api-utils';
 import { clearConsumerAuthCookies, getConsumerCssGridCookieRuntime } from './lib/auth-cookie-policy';
+import { parseCookieHeader } from './lib/cookie-utils';
 
 const AUTH_TELEMETRY_HEADERS_FLAG = `NEXT_PUBLIC_AUTH_TELEMETRY_HEADERS`;
 const REFRESH_PATH = `/api/consumer/auth/refresh`;
@@ -39,18 +40,6 @@ function isObviouslyInvalidCookieToken(token: string | undefined): boolean {
 
 function buildCookieHeader(parts: string[]): string {
   return parts.filter(Boolean).join(`; `);
-}
-
-function parseCookieHeader(header: string | null): Map<string, string> {
-  const cookies = new Map<string, string>();
-  for (const part of (header ?? ``).split(`;`)) {
-    const trimmed = part.trim();
-    if (!trimmed) continue;
-    const separatorIndex = trimmed.indexOf(`=`);
-    if (separatorIndex <= 0) continue;
-    cookies.set(trimmed.slice(0, separatorIndex), trimmed.slice(separatorIndex + 1));
-  }
-  return cookies;
 }
 
 function applySetCookieHeaders(cookieHeader: string | null, responseHeaders: Headers): string {

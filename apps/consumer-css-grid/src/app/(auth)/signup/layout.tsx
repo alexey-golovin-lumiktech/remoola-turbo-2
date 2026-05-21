@@ -31,7 +31,7 @@ export default function SignupLayout({ children }: { children: React.ReactNode }
   }, []);
 
   if (!mounted) {
-    return null;
+    return <div className="min-h-screen bg-(--app-bg)" aria-hidden />;
   }
 
   const querySeed = getQuerySeed(window.location.search);
