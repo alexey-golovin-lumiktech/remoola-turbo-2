@@ -5,6 +5,7 @@ import {
   AdminV2ReadThrottle,
   Identity,
   type IIdentityContext,
+  PagingQuery,
   PlainObjectResponseContract,
   RequestMeta,
   type RequestMeta as RequestMetaPayload,
@@ -13,8 +14,7 @@ import {
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import {
   AdminConsumerActionLogQuery,
-  AdminConsumerDateRangeQuery,
-  AdminConsumerPaginationQuery,
+  AdminConsumerDateRangeWithPagingQuery,
   AdminConsumersListQuery,
   ConsumerFlagBody,
   ConsumerFlagRemoveBody,
@@ -52,7 +52,7 @@ export class AdminV2ConsumersController {
   async getConsumerContracts(
     @Identity() admin: IIdentityContext,
     @UuidParam(`id`) id: string,
-    @Query() query: AdminConsumerPaginationQuery,
+    @Query() query: PagingQuery,
   ) {
     await this.accessService.assertCapability(admin, `consumers.read`);
     return this.service.getConsumerContracts(id, query);
@@ -68,7 +68,7 @@ export class AdminV2ConsumersController {
   async getConsumerAuthHistory(
     @Identity() admin: IIdentityContext,
     @UuidParam(`id`) id: string,
-    @Query() query: AdminConsumerDateRangeQuery,
+    @Query() query: AdminConsumerDateRangeWithPagingQuery,
   ) {
     await this.accessService.assertCapability(admin, `consumers.read`);
     return this.service.getConsumerAuthHistory(id, query);

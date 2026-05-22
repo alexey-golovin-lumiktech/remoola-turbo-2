@@ -111,7 +111,7 @@ export function revalidateSavedViewWorkspace(workspace: string) {
   }
 }
 
-export const OPERATIONAL_ALERTS_PATH = `/system/alerts`;
+const OPERATIONAL_ALERTS_PATH = `/system/alerts`;
 
 export function revalidateOperationalAlerts() {
   revalidatePath(OPERATIONAL_ALERTS_PATH);

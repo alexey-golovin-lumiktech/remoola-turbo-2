@@ -23,6 +23,7 @@ import {
   type AdminV2PermissionOverride,
 } from '@remoola/api-types';
 
+import { PagingQuery } from '../../common';
 import { constants } from '../../shared-common';
 import { StepUpVersionedMutationBody } from '../admin-v2-common.dto';
 
@@ -86,21 +87,7 @@ export class ChangeAdminPermissionsBody
   capabilityOverrides!: PermissionOverride[];
 }
 
-export class ListAdminsQuery {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-
+export class ListAdminsWithPagingQuery extends PagingQuery {
   @Expose()
   @IsString()
   @IsOptional()

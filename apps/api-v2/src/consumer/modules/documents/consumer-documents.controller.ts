@@ -15,47 +15,19 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBadRequestResponse, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
 import { ConsumerDocumentsService } from './consumer-documents.service';
-import { AttachDocuments, BulkDeleteDocuments, ConsumerDocumentsListResponse, SetTags } from './dto/document.dto';
+import {
+  AttachDocuments,
+  BulkDeleteDocuments,
+  ConsumerDocumentsListResponse,
+  ConsumerDocumentsListWithPagingQuery,
+  SetTags,
+  UploadDocumentsBody,
+} from './dto/document.dto';
 import { Identity, type IIdentityContext } from '../../../common';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
-
-class ConsumerDocumentsListQuery {
-  @Expose()
-  @IsString()
-  @IsOptional()
-  kind?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  contactId?: string;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-}
-
-class UploadDocumentsBody {
-  @Expose()
-  @IsString()
-  @IsOptional()
-  paymentRequestId?: string;
-}
 
 @ApiTags(`Consumer: documents`)
 @Controller(`consumer/documents`)
@@ -71,7 +43,7 @@ export class ConsumerDocumentsController {
   @ApiOkResponse({ type: ConsumerDocumentsListResponse })
   list(
     @Identity() consumer: IIdentityContext,
-    @Query() query: ConsumerDocumentsListQuery,
+    @Query() query: ConsumerDocumentsListWithPagingQuery,
     @Req() req?: express.Request,
   ) {
     return this.documents.getDocuments(

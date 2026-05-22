@@ -11,8 +11,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
 import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
@@ -21,47 +19,11 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerInvoiceService } from './consumer-invoice.service';
 import { ConsumerPaymentsService } from './consumer-payments.service';
-import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
+import { ConsumerPaymentsListWithPagingQuery, PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
 import { Identity, TrackConsumerAction } from '../../../common';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
-
-class ConsumerPaymentsListQuery {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  status?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  type?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  role?: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  search?: string;
-}
 
 @ApiTags(`Consumer: Payments`)
 @Controller(`consumer/payments`)
@@ -98,7 +60,7 @@ export class ConsumerPaymentsController {
   @ApiQuery({ name: `role`, required: false })
   @ApiQuery({ name: `search`, required: false })
   @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
-  async list(@Identity() consumer: ConsumerModel, @Query() query: ConsumerPaymentsListQuery) {
+  async list(@Identity() consumer: ConsumerModel, @Query() query: ConsumerPaymentsListWithPagingQuery) {
     return this.service.listPayments({
       consumerId: consumer.id,
       page: query.page ?? 1,

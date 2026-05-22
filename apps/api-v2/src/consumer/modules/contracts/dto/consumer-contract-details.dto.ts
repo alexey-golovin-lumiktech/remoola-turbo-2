@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+import { IsString, IsOptional, IsNumber, Min } from 'class-validator';
+
+import { PagingQuery } from '../../../../common';
 
 class ConsumerContractAddress {
   @Expose()
@@ -165,4 +168,35 @@ export class ConsumerContractDetails {
   @Type(() => ConsumerContractDocumentItem)
   @ApiProperty({ type: [ConsumerContractDocumentItem] })
   documents: ConsumerContractDocumentItem[];
+}
+
+export class ConsumerContractsListWithPagingQuery extends PagingQuery {
+  @Expose()
+  @IsString()
+  @IsOptional()
+  query?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @Expose()
+  @Transform(({ value }) =>
+    value === true || value === `true` ? `true` : value === false || value === `false` ? `false` : undefined,
+  )
+  @IsOptional()
+  hasDocuments?: string;
+
+  @Expose()
+  @Transform(({ value }) =>
+    value === true || value === `true` ? `true` : value === false || value === `false` ? `false` : undefined,
+  )
+  @IsOptional()
+  hasPayments?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  sort?: string;
 }

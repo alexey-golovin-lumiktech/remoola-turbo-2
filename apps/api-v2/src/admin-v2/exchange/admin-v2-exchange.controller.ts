@@ -15,7 +15,7 @@ import { AdminV2AccessService } from '../admin-v2-access.service';
 import {
   ApproveRateBody,
   ConfirmedVersionBody,
-  ExchangeListRatesQuery,
+  ExchangeListRatesWithPagingQuery,
   ExchangeListRulesQuery,
   ExchangeListScheduledConversionsQuery,
   StepUpVersionBody,
@@ -36,7 +36,7 @@ export class AdminV2ExchangeController {
   ) {}
 
   @Get(`rates`)
-  async listRates(@Identity() admin: IIdentityContext, @Query() query: ExchangeListRatesQuery) {
+  async listRates(@Identity() admin: IIdentityContext, @Query() query: ExchangeListRatesWithPagingQuery) {
     await this.accessService.assertCapability(admin, `exchange.read`);
     return this.service.listRates(query);
   }

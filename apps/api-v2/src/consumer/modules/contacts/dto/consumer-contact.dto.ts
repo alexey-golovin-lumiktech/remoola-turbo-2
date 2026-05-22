@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
-import { IsEmail, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsEmail, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 
 import {
   type ConsumerContactsResponse as ConsumerContactsResponseContract,
@@ -9,6 +9,8 @@ import {
   type ConsumerCreateContactPayload,
   ConsumerUpdateContactPayload,
 } from '@remoola/api-types';
+
+import { PagingQuery } from '../../../../common';
 
 const preserveRawField = (field: string) => Transform(({ obj }) => obj?.[field]);
 
@@ -142,4 +144,24 @@ export class ConsumerContactsResponse implements ConsumerContactsResponseContrac
   @Expose()
   @ApiProperty()
   pageSize: number;
+}
+
+export class ConsumerContactsListWithPagingQuery extends PagingQuery {
+  @Expose()
+  @IsString()
+  @IsOptional()
+  query?: string;
+
+  @Expose()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  limit?: number;
+}
+
+export class ConsumerContactLookupQuery {
+  @Expose()
+  @IsEmail()
+  email!: string;
 }

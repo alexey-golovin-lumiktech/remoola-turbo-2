@@ -3,7 +3,7 @@ import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 import { type AdminV2ApproveRateBody } from '@remoola/api-types';
 
-import { OptionalStringQuery, PaginationQueryDto, SearchPaginationQueryDto } from '../../common';
+import { OptionalStringQuery, PagingQuery, SearchWithPagingQuery } from '../../common';
 import {
   StepUpConfirmedVersionedMutationBody,
   StepUpVersionedMutationBody,
@@ -28,7 +28,7 @@ export class ApproveRateBody extends ConfirmedVersionBody implements AdminV2Appr
   reason!: string;
 }
 
-export class ExchangeListRatesQuery extends PaginationQueryDto {
+export class ExchangeListRatesWithPagingQuery extends PagingQuery {
   @Expose()
   @OptionalStringQuery()
   @IsOptional()
@@ -60,7 +60,7 @@ export class ExchangeListRatesQuery extends PaginationQueryDto {
   stale?: boolean;
 }
 
-export class ExchangeListRulesQuery extends SearchPaginationQueryDto {
+export class ExchangeListRulesQuery extends SearchWithPagingQuery {
   @Expose()
   @Transform(({ value }) => optionalLooseBoolean(value))
   @IsBoolean()
@@ -80,7 +80,7 @@ export class ExchangeListRulesQuery extends SearchPaginationQueryDto {
   toCurrency?: string;
 }
 
-export class ExchangeListScheduledConversionsQuery extends SearchPaginationQueryDto {
+export class ExchangeListScheduledConversionsQuery extends SearchWithPagingQuery {
   @Expose()
   @OptionalStringQuery()
   @IsOptional()

@@ -4,14 +4,14 @@ import { IsBoolean, IsDate, IsNumber, IsOptional, IsString, MaxLength, Min } fro
 import { type AdminV2PaymentReversalBody } from '@remoola/api-types';
 
 import {
-  CursorLimitQueryDto,
+  CursorLimitQuery,
   OptionalBooleanQuery,
   OptionalDateQuery,
   OptionalNumberQuery,
   OptionalStringQuery,
 } from '../../common';
 
-export class PaymentRequestsQuery extends CursorLimitQueryDto {
+export class PaymentRequestsQuery extends CursorLimitQuery {
   @Expose()
   @OptionalStringQuery()
   @IsOptional()

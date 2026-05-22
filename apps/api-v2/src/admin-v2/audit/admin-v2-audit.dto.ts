@@ -1,6 +1,8 @@
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
+import { PagingQuery } from '../../common';
+
 function transformDate(value: unknown): Date | undefined {
   if (typeof value !== `string` || value.trim().length === 0) {
     return undefined;
@@ -9,7 +11,7 @@ function transformDate(value: unknown): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
-export class AuthAuditQuery {
+export class AuthAuditWithPagingQuery extends PagingQuery {
   @Expose()
   @Transform(({ value }) => transformDate(value))
   @IsDate()
@@ -21,20 +23,6 @@ export class AuthAuditQuery {
   @IsDate()
   @IsOptional()
   dateTo?: Date;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
 
   @Expose()
   @IsString()
@@ -52,7 +40,7 @@ export class AuthAuditQuery {
   ipAddress?: string;
 }
 
-export class AdminActionAuditQuery {
+export class AdminActionAuditWithPagingQuery extends PagingQuery {
   @Expose()
   @Transform(({ value }) => transformDate(value))
   @IsDate()
@@ -64,20 +52,6 @@ export class AdminActionAuditQuery {
   @IsDate()
   @IsOptional()
   dateTo?: Date;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
 
   @Expose()
   @IsString()
@@ -100,7 +74,7 @@ export class AdminActionAuditQuery {
   resourceId?: string;
 }
 
-export class ConsumerActionAuditQuery {
+export class ConsumerActionAuditWithPagingQuery extends PagingQuery {
   @Expose()
   @Transform(({ value }) => transformDate(value))
   @IsDate()
@@ -111,20 +85,6 @@ export class ConsumerActionAuditQuery {
   @IsDate()
   @IsOptional()
   dateTo?: Date;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
 
   @Expose()
   @IsString()

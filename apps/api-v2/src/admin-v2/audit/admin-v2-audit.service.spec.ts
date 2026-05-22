@@ -2,7 +2,11 @@ import { BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
-import { AdminActionAuditQuery, AuthAuditQuery, ConsumerActionAuditQuery } from './admin-v2-audit.dto';
+import {
+  AdminActionAuditWithPagingQuery,
+  AuthAuditWithPagingQuery,
+  ConsumerActionAuditWithPagingQuery,
+} from './admin-v2-audit.dto';
 import { AdminV2AuditService } from './admin-v2-audit.service';
 
 // Minimum bounded-query merge-gate coverage for admin-v2 audit surface.
@@ -87,20 +91,28 @@ describe(`AdminV2AuditService — bounded-query merge gate`, () => {
 
 describe(`Admin v2 audit DTO contracts`, () => {
   it(`keeps auth audit date fields optional`, async () => {
-    const query = plainToInstance(AuthAuditQuery, { email: `admin@example.com` }, { excludeExtraneousValues: true });
+    const query = plainToInstance(
+      AuthAuditWithPagingQuery,
+      { email: `admin@example.com` },
+      { excludeExtraneousValues: true },
+    );
 
     await expect(validate(query)).resolves.toHaveLength(0);
   });
 
   it(`keeps admin action audit date fields optional`, async () => {
-    const query = plainToInstance(AdminActionAuditQuery, { action: `admin_invite` }, { excludeExtraneousValues: true });
+    const query = plainToInstance(
+      AdminActionAuditWithPagingQuery,
+      { action: `admin_invite` },
+      { excludeExtraneousValues: true },
+    );
 
     await expect(validate(query)).resolves.toHaveLength(0);
   });
 
   it(`requires dateFrom for consumer action audit`, async () => {
     const query = plainToInstance(
-      ConsumerActionAuditQuery,
+      ConsumerActionAuditWithPagingQuery,
       { action: `PAYMENT_CREATED` },
       { excludeExtraneousValues: true },
     );
@@ -112,7 +124,7 @@ describe(`Admin v2 audit DTO contracts`, () => {
 
   it(`accepts explicit consumer action audit date bounds`, async () => {
     const query = plainToInstance(
-      ConsumerActionAuditQuery,
+      ConsumerActionAuditWithPagingQuery,
       { action: `PAYMENT_CREATED`, dateFrom: `2026-05-01T00:00:00.000Z`, dateTo: `2026-05-02T00:00:00.000Z` },
       { excludeExtraneousValues: true },
     );

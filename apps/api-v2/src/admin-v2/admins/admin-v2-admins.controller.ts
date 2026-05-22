@@ -15,7 +15,7 @@ import {
   DeactivateAdminBody,
   InviteAdminBody,
   LegacyAdminStatusBody,
-  ListAdminsQuery,
+  ListAdminsWithPagingQuery,
   VersionedAdminMutationBody,
 } from './admin-v2-admins.dto';
 import { AdminV2AdminsService } from './admin-v2-admins.service';
@@ -33,7 +33,7 @@ export class AdminV2AdminsController {
   ) {}
 
   @Get()
-  async listAdmins(@Identity() admin: IIdentityContext, @Query() query: ListAdminsQuery) {
+  async listAdmins(@Identity() admin: IIdentityContext, @Query() query: ListAdminsWithPagingQuery) {
     await this.accessService.assertCapability(admin, `admins.read`);
     return this.service.listAdmins(query);
   }

@@ -1,7 +1,5 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
-import { IsNumber, IsOptional, Min } from 'class-validator';
 
 import { ConsumerExchangeService } from './consumer-exchange.service';
 import { ConvertCurrencyBody } from './dto/convert.dto';
@@ -10,23 +8,7 @@ import { ExchangeRateBatchBody } from './dto/rate-batch.dto';
 import { ExchangeRateQuery } from './dto/rate-query.dto';
 import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
 import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.dto';
-import { Identity, TrackConsumerAction, type IIdentityContext } from '../../../common';
-
-class ConsumerExchangePaginationQuery {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-}
+import { Identity, PagingQuery, TrackConsumerAction, type IIdentityContext } from '../../../common';
 
 @ApiTags(`Consumer Exchange`)
 @ApiCookieAuth()
@@ -60,7 +42,7 @@ export class ConsumerExchangeController {
   @ApiQuery({ name: `page`, required: false, type: Number })
   @ApiQuery({ name: `pageSize`, required: false, type: Number })
   @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
-  listRules(@Identity() consumer: IIdentityContext, @Query() query: ConsumerExchangePaginationQuery) {
+  listRules(@Identity() consumer: IIdentityContext, @Query() query: PagingQuery) {
     return this.service.listAutoConversionRules(consumer.id, query.page, query.pageSize);
   }
 
@@ -91,7 +73,7 @@ export class ConsumerExchangeController {
   @ApiQuery({ name: `page`, required: false, type: Number })
   @ApiQuery({ name: `pageSize`, required: false, type: Number })
   @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
-  listScheduled(@Identity() consumer: IIdentityContext, @Query() query: ConsumerExchangePaginationQuery) {
+  listScheduled(@Identity() consumer: IIdentityContext, @Query() query: PagingQuery) {
     return this.service.listScheduledConversions(consumer.id, query.page, query.pageSize);
   }
 

@@ -18,7 +18,7 @@ import { AdminDocumentTagService } from './admin-document-tag.service';
 import { AdminDocumentTaggerService } from './admin-document-tagger.service';
 import { AdminDocumentService } from './admin-document.service';
 import {
-  AdminDocumentsListQuery,
+  AdminDocumentsListWithPagingQuery,
   DocumentBulkTagBody,
   DocumentRetagBody,
   DocumentTagCreateBody,
@@ -42,7 +42,7 @@ export class AdminV2DocumentsController {
   @Get()
   async listDocuments(
     @Identity() admin: IIdentityContext,
-    @Query() query: AdminDocumentsListQuery,
+    @Query() query: AdminDocumentsListWithPagingQuery,
     @Req() req: express.Request,
   ) {
     await this.accessService.assertCapability(admin, `documents.read`);

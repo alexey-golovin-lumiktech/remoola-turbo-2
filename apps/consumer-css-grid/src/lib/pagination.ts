@@ -1,6 +1,6 @@
-export type SearchParamValue = string | string[] | undefined;
+type SearchParamValue = string | string[] | undefined;
 
-export const MAX_CONSUMER_LIST_PAGE_SIZE = 100;
+const MAX_CONSUMER_LIST_PAGE_SIZE = 100;
 
 function getSingleValue(value: SearchParamValue): string {
   return typeof value === `string` ? value : Array.isArray(value) ? (value[0] ?? ``) : ``;

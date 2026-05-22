@@ -11,7 +11,7 @@ import {
   type AdminV2SuspendConsumerBody,
 } from '@remoola/api-types';
 
-import { OptionalStringQuery, PaginationQueryDto, SearchPaginationQueryDto } from '../../common';
+import { OptionalStringQuery, PagingQuery, SearchWithPagingQuery } from '../../common';
 import { ConfirmedMutationBody, VersionedMutationBody } from '../admin-v2-common.dto';
 
 function transformDate(value: unknown): Date | undefined {
@@ -40,7 +40,7 @@ export class EmailResendBody implements AdminV2ResendConsumerEmailBody {
   appScope!: (typeof CONSUMER_APP_SCOPES)[number];
 }
 
-export class AdminConsumersListQuery extends SearchPaginationQueryDto {
+export class AdminConsumersListQuery extends SearchWithPagingQuery {
   @Expose()
   @OptionalStringQuery()
   @IsOptional()
@@ -66,9 +66,7 @@ export class AdminConsumersListQuery extends SearchPaginationQueryDto {
   includeDeleted?: boolean;
 }
 
-export class AdminConsumerPaginationQuery extends SearchPaginationQueryDto {}
-
-export class AdminConsumerDateRangeQuery extends PaginationQueryDto {
+export class AdminConsumerDateRangeWithPagingQuery extends PagingQuery {
   @Expose()
   @Transform(({ value }) => transformDate(value))
   @IsOptional()
@@ -80,7 +78,7 @@ export class AdminConsumerDateRangeQuery extends PaginationQueryDto {
   dateTo?: Date;
 }
 
-export class AdminConsumerActionLogQuery extends AdminConsumerDateRangeQuery {
+export class AdminConsumerActionLogQuery extends AdminConsumerDateRangeWithPagingQuery {
   @Expose()
   @OptionalStringQuery()
   @IsOptional()

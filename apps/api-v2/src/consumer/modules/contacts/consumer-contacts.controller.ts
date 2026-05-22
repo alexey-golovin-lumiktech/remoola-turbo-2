@@ -1,7 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
-import { IsEmail, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import express from 'express';
 
 import { ConsumerContactsService } from './consumer-contacts.service';
@@ -10,43 +8,11 @@ import {
   ConsumerContactsResponse,
   ConsumerCreateContact,
   ConsumerUpdateContact,
+  ConsumerContactsListWithPagingQuery,
+  ConsumerContactLookupQuery,
 } from './dto/consumer-contact.dto';
 import { Identity, type IIdentityContext } from '../../../common';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
-
-class ConsumerContactsListQuery {
-  @Expose()
-  @IsString()
-  @IsOptional()
-  query?: string;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  limit?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-}
-
-class ConsumerContactLookupQuery {
-  @Expose()
-  @IsEmail()
-  email!: string;
-}
 
 @ApiTags(`Consumer: Contacts`)
 @Controller(`consumer/contacts`)
@@ -56,7 +22,7 @@ export class ConsumerContactsController {
   @Get()
   async list(
     @Identity() consumer: IIdentityContext,
-    @Query() query: ConsumerContactsListQuery,
+    @Query() query: ConsumerContactsListWithPagingQuery,
   ): Promise<ConsumerContactsResponse | ConsumerContactSearchItem[]> {
     if (query.query != null && query.query.trim() !== ``) {
       return this.service.search(consumer.id, query.query, query.limit ?? 10);

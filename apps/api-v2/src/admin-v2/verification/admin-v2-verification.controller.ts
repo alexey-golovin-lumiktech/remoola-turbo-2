@@ -10,7 +10,7 @@ import {
   type RequestMeta as RequestMetaPayload,
 } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
-import { VerificationDecisionBody, VerificationQueueQuery } from './admin-v2-verification.dto';
+import { VerificationDecisionBody, VerificationQueueWithPagingQuery } from './admin-v2-verification.dto';
 import { AdminV2VerificationService } from './admin-v2-verification.service';
 
 @ApiCookieAuth()
@@ -36,7 +36,7 @@ export class AdminV2VerificationController {
   @ApiQuery({ name: `missingProfileData`, required: false, type: Boolean })
   @ApiQuery({ name: `missingDocuments`, required: false, type: Boolean })
   @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
-  async getQueue(@Identity() admin: IIdentityContext, @Query() query: VerificationQueueQuery) {
+  async getQueue(@Identity() admin: IIdentityContext, @Query() query: VerificationQueueWithPagingQuery) {
     await this.accessService.assertCapability(admin, `verification.read`);
     return this.service.getQueue({
       page: query.page,

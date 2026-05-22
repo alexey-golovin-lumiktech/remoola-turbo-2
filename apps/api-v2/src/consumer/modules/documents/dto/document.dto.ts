@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+
+import { PagingQuery } from '../../../../common';
 
 export class ConsumerDocument {
   @Expose()
@@ -70,6 +72,25 @@ export class ConsumerDocumentsListResponse {
   @Expose()
   @ApiProperty({ type: Number, isArray: false })
   pageSize: number;
+}
+
+export class ConsumerDocumentsListWithPagingQuery extends PagingQuery {
+  @Expose()
+  @IsString()
+  @IsOptional()
+  kind?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  contactId?: string;
+}
+
+export class UploadDocumentsBody {
+  @Expose()
+  @IsString()
+  @IsOptional()
+  paymentRequestId?: string;
 }
 
 export class BulkDeleteDocuments {

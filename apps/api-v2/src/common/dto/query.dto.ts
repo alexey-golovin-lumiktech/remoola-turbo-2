@@ -1,10 +1,11 @@
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-import { OptionalDateQuery, OptionalNumberQuery, OptionalStringQuery } from '../query-transforms';
+import { OptionalDateQuery, optionalNumberQuery, OptionalNumberQuery, OptionalStringQuery } from '../query-transforms';
 
-export class PaginationQueryDto {
+export class PagingQuery {
   @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
   @OptionalNumberQuery()
   @IsOptional()
   @IsNumber()
@@ -12,6 +13,7 @@ export class PaginationQueryDto {
   page?: number;
 
   @Expose()
+  @Transform(({ obj, key }) => optionalNumberQuery((obj as Record<string, unknown>)[key]))
   @OptionalNumberQuery()
   @IsOptional()
   @IsNumber()
@@ -19,7 +21,7 @@ export class PaginationQueryDto {
   pageSize?: number;
 }
 
-export class CursorLimitQueryDto {
+export class CursorLimitQuery {
   @Expose()
   @OptionalStringQuery()
   @IsOptional()
@@ -34,7 +36,7 @@ export class CursorLimitQueryDto {
   limit?: number;
 }
 
-export class SearchPaginationQueryDto extends PaginationQueryDto {
+export class SearchWithPagingQuery extends PagingQuery {
   @Expose()
   @OptionalStringQuery()
   @IsOptional()
@@ -42,7 +44,7 @@ export class SearchPaginationQueryDto extends PaginationQueryDto {
   q?: string;
 }
 
-export class DateRangePaginationQueryDto extends PaginationQueryDto {
+export class DateRangePaginationWithPagingQuery extends PagingQuery {
   @Expose()
   @OptionalDateQuery()
   @IsOptional()

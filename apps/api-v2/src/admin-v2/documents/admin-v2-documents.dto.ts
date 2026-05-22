@@ -10,6 +10,7 @@ import {
   type AdminV2DocumentTagUpdateBody,
 } from '@remoola/api-types';
 
+import { PagingQuery } from '../../common';
 import { ConfirmedVersionedMutationBody, VersionedMutationBody } from '../admin-v2-common.dto';
 
 export class DocumentTagCreateBody implements AdminV2DocumentTagCreateBody {
@@ -52,21 +53,7 @@ export class DocumentBulkTagBody implements AdminV2DocumentBulkTagBody {
   resources!: BulkTagResource[];
 }
 
-export class AdminDocumentsListQuery {
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number;
-
-  @Expose()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  pageSize?: number;
-
+export class AdminDocumentsListWithPagingQuery extends PagingQuery {
   @Expose()
   @IsString()
   @IsOptional()

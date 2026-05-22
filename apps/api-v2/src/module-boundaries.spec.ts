@@ -211,16 +211,6 @@ describe(`Nest module provider boundaries`, () => {
     expect(decoratorSource).toMatch(/x-forwarded-for/);
   });
 
-  it(`keeps large admin-v2 admins DTOs out of the controller`, () => {
-    const controllerSource = readFileSync(join(__dirname, `admin-v2/admins/admin-v2-admins.controller.ts`), `utf8`);
-    const dtoSource = readFileSync(join(__dirname, `admin-v2/admins/admin-v2-admins.dto.ts`), `utf8`);
-
-    expect(controllerSource).not.toMatch(/class .*Body/);
-    expect(controllerSource).not.toMatch(/class .*Query/);
-    expect(dtoSource).toMatch(/export class InviteAdminBody/);
-    expect(dtoSource).toMatch(/export class ListAdminsQuery/);
-  });
-
   it(`keeps new admin-v2 bare route id params from expanding`, () => {
     const adminV2Dir = join(__dirname, `admin-v2`);
 

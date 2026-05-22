@@ -4,7 +4,11 @@ import { Throttle } from '@nestjs/throttler';
 
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
-import { AdminActionAuditQuery, AuthAuditQuery, ConsumerActionAuditQuery } from './admin-v2-audit.dto';
+import {
+  AdminActionAuditWithPagingQuery,
+  AuthAuditWithPagingQuery,
+  ConsumerActionAuditWithPagingQuery,
+} from './admin-v2-audit.dto';
 import { AdminV2AuditService } from './admin-v2-audit.service';
 
 @ApiCookieAuth()
@@ -18,7 +22,7 @@ export class AdminV2AuditController {
   ) {}
 
   @Get(`auth`)
-  async getAuthAudit(@Identity() admin: IIdentityContext, @Query() query: AuthAuditQuery) {
+  async getAuthAudit(@Identity() admin: IIdentityContext, @Query() query: AuthAuditWithPagingQuery) {
     await this.accessService.assertCapability(admin, `audit.read`);
     return this.service.getAuthAudit({
       ...query,
@@ -28,7 +32,7 @@ export class AdminV2AuditController {
   }
 
   @Get(`admin-actions`)
-  async getAdminActionAudit(@Identity() admin: IIdentityContext, @Query() query: AdminActionAuditQuery) {
+  async getAdminActionAudit(@Identity() admin: IIdentityContext, @Query() query: AdminActionAuditWithPagingQuery) {
     await this.accessService.assertCapability(admin, `audit.read`);
     return this.service.getAdminActionAudit({
       ...query,
@@ -38,7 +42,10 @@ export class AdminV2AuditController {
   }
 
   @Get(`consumer-actions`)
-  async getConsumerActionAudit(@Identity() admin: IIdentityContext, @Query() query: ConsumerActionAuditQuery) {
+  async getConsumerActionAudit(
+    @Identity() admin: IIdentityContext,
+    @Query() query: ConsumerActionAuditWithPagingQuery,
+  ) {
     await this.accessService.assertCapability(admin, `audit.read`);
     return this.service.getConsumerActionAudit({
       ...query,
