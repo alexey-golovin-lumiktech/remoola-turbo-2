@@ -13,19 +13,19 @@ jest.mock(`next/link`, () => ({
 }));
 
 jest.mock(`../../../lib/consumer-api.server`, () => ({
-  getAvailableBalances: jest.fn(),
-  getExchangeCurrencies: jest.fn(),
+  getAvailableBalancesResult: jest.fn(),
+  getExchangeCurrenciesResult: jest.fn(),
   getExchangeRatesBatch: jest.fn(),
-  getExchangeRules: jest.fn(),
-  getScheduledConversions: jest.fn(),
+  getExchangeRulesResult: jest.fn(),
+  getScheduledConversionsResult: jest.fn(),
 }));
 
 const {
-  getAvailableBalances: mockedGetAvailableBalances,
-  getExchangeCurrencies: mockedGetExchangeCurrencies,
+  getAvailableBalancesResult: mockedGetAvailableBalancesResult,
+  getExchangeCurrenciesResult: mockedGetExchangeCurrenciesResult,
   getExchangeRatesBatch: mockedGetExchangeRatesBatch,
-  getExchangeRules: mockedGetExchangeRules,
-  getScheduledConversions: mockedGetScheduledConversions,
+  getExchangeRulesResult: mockedGetExchangeRulesResult,
+  getScheduledConversionsResult: mockedGetScheduledConversionsResult,
 } = jest.requireMock(`../../../lib/consumer-api.server`) as jest.Mocked<typeof ConsumerApi>;
 
 jest.mock(`./ExchangeClient`, () => ({
@@ -44,27 +44,39 @@ describe(`consumer-css-grid exchange route contextual help`, () => {
   });
 
   beforeEach(() => {
-    mockedGetAvailableBalances.mockReset();
-    mockedGetExchangeCurrencies.mockReset();
+    mockedGetAvailableBalancesResult.mockReset();
+    mockedGetExchangeCurrenciesResult.mockReset();
     mockedGetExchangeRatesBatch.mockReset();
-    mockedGetExchangeRules.mockReset();
-    mockedGetScheduledConversions.mockReset();
+    mockedGetExchangeRulesResult.mockReset();
+    mockedGetScheduledConversionsResult.mockReset();
 
-    mockedGetExchangeCurrencies.mockResolvedValue([
-      { code: `USD`, symbol: `$`, name: `US Dollar` },
-      { code: `EUR`, symbol: `EUR`, name: `Euro` },
-    ]);
-    mockedGetAvailableBalances.mockResolvedValue({
-      USD: 500000,
-      EUR: 250000,
+    mockedGetExchangeCurrenciesResult.mockResolvedValue({
+      data: [
+        { code: `USD`, symbol: `$`, name: `US Dollar` },
+        { code: `EUR`, symbol: `EUR`, name: `Euro` },
+      ],
+      unavailable: false,
     });
-    mockedGetExchangeRules.mockResolvedValue({
-      items: [],
-      total: 0,
+    mockedGetAvailableBalancesResult.mockResolvedValue({
+      data: {
+        USD: 500000,
+        EUR: 250000,
+      },
+      unavailable: false,
     });
-    mockedGetScheduledConversions.mockResolvedValue({
-      items: [],
-      total: 0,
+    mockedGetExchangeRulesResult.mockResolvedValue({
+      data: {
+        items: [],
+        total: 0,
+      },
+      unavailable: false,
+    });
+    mockedGetScheduledConversionsResult.mockResolvedValue({
+      data: {
+        items: [],
+        total: 0,
+      },
+      unavailable: false,
     });
     mockedGetExchangeRatesBatch.mockResolvedValue({
       items: [],

@@ -14,14 +14,14 @@ jest.mock(`next/link`, () => ({
 
 jest.mock(`../../../lib/consumer-api.server`, () => ({
   getContact: jest.fn(),
-  getContacts: jest.fn(),
-  searchContacts: jest.fn(),
+  getContactsResult: jest.fn(),
+  searchContactsResult: jest.fn(),
 }));
 
 const {
   getContact: mockedGetContact,
-  getContacts: mockedGetContacts,
-  searchContacts: mockedSearchContacts,
+  getContactsResult: mockedGetContactsResult,
+  searchContactsResult: mockedSearchContactsResult,
 } = jest.requireMock(`../../../lib/consumer-api.server`) as jest.Mocked<typeof ConsumerApi>;
 
 jest.mock(`./ContactsClient`, () => ({
@@ -41,14 +41,17 @@ describe(`consumer-css-grid contacts route contextual help`, () => {
 
   beforeEach(() => {
     mockedGetContact.mockReset();
-    mockedGetContacts.mockReset();
-    mockedSearchContacts.mockReset();
+    mockedGetContactsResult.mockReset();
+    mockedSearchContactsResult.mockReset();
 
-    mockedGetContacts.mockResolvedValue({
-      items: [],
-      total: 0,
-      page: 1,
-      pageSize: 20,
+    mockedGetContactsResult.mockResolvedValue({
+      data: {
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: 20,
+      },
+      unavailable: false,
     });
   });
 

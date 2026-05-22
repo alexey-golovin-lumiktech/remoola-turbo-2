@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 
 import { DocumentsWorkspaceSection } from './DocumentsWorkspaceSection';
+import { parseListPagination } from '../../../lib/pagination';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { PageHeader } from '../../../shared/ui/shell-primitives';
 import { sanitizeContactsReturnTo } from '../contacts/contacts-return-to';
@@ -20,8 +21,7 @@ function getSafeContractsReturnTo(value: string | null | undefined) {
 
 export default async function DocumentsPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const page = Math.max(1, Number(getSingleValue(resolvedSearchParams?.page)) || 1);
-  const pageSize = Math.max(1, Number(getSingleValue(resolvedSearchParams?.pageSize)) || 20);
+  const { page, pageSize } = parseListPagination(resolvedSearchParams, { pageSize: 20 });
   const contactId = getSingleValue(resolvedSearchParams?.contactId).trim();
   const returnTo = getSafeContractsReturnTo(sanitizeContactsReturnTo(getSingleValue(resolvedSearchParams?.returnTo)));
 

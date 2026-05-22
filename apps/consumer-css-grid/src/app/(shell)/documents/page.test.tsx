@@ -19,13 +19,13 @@ type MockDocumentsClientProps = {
   } | null;
 };
 
-const mockedGetDocuments = jest.fn<typeof ConsumerApiServer.getDocuments>();
+const mockedGetDocumentsResult = jest.fn<typeof ConsumerApiServer.getDocumentsResult>();
 const mockedGetContractDetails = jest.fn<typeof ConsumerApiServer.getContractDetails>();
 
 let capturedDocumentsClientProps: MockDocumentsClientProps | null = null;
 
 jest.mock(`../../../lib/consumer-api.server`, () => ({
-  getDocuments: mockedGetDocuments,
+  getDocumentsResult: mockedGetDocumentsResult,
   getContractDetails: mockedGetContractDetails,
 }));
 
@@ -58,32 +58,35 @@ describe(`DocumentsPage`, () => {
   });
 
   beforeEach(() => {
-    mockedGetDocuments.mockReset();
+    mockedGetDocumentsResult.mockReset();
     mockedGetContractDetails.mockReset();
     capturedDocumentsClientProps = null;
   });
 
   it(`builds contract mode context with only draft payment ids and preserved safe return path`, async () => {
-    mockedGetDocuments.mockResolvedValue({
-      items: [
-        {
-          id: `document-1`,
-          name: `invoice.pdf`,
-          kind: `PAYMENT`,
-          createdAt: `2026-04-01T10:00:00.000Z`,
-          size: 2048,
-          downloadUrl: `https://example.com/invoice.pdf`,
-          mimetype: `application/pdf`,
-          tags: [`invoice`],
-          isAttachedToDraftPaymentRequest: true,
-          attachedDraftPaymentRequestIds: [`payment-draft-1`],
-          isAttachedToNonDraftPaymentRequest: false,
-          attachedNonDraftPaymentRequestIds: [],
-        },
-      ],
-      total: 1,
-      page: 1,
-      pageSize: 20,
+    mockedGetDocumentsResult.mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: `document-1`,
+            name: `invoice.pdf`,
+            kind: `PAYMENT`,
+            createdAt: `2026-04-01T10:00:00.000Z`,
+            size: 2048,
+            downloadUrl: `https://example.com/invoice.pdf`,
+            mimetype: `application/pdf`,
+            tags: [`invoice`],
+            isAttachedToDraftPaymentRequest: true,
+            attachedDraftPaymentRequestIds: [`payment-draft-1`],
+            isAttachedToNonDraftPaymentRequest: false,
+            attachedNonDraftPaymentRequestIds: [],
+          },
+        ],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      },
+      unavailable: false,
     });
     mockedGetContractDetails.mockResolvedValue({
       id: `contract-1`,
@@ -152,7 +155,7 @@ describe(`DocumentsPage`, () => {
       }),
     );
 
-    expect(mockedGetDocuments).toHaveBeenCalledWith(1, 20, undefined, { contactId: `contract-1` });
+    expect(mockedGetDocumentsResult).toHaveBeenCalledWith(1, 20, undefined, { contactId: `contract-1` });
     expect(mockedGetContractDetails).toHaveBeenCalledWith(`contract-1`);
     expect(capturedDocumentsClientProps).toMatchObject({
       documents: [
@@ -174,11 +177,14 @@ describe(`DocumentsPage`, () => {
   });
 
   it(`falls back to the contract detail page when returnTo is unsafe`, async () => {
-    mockedGetDocuments.mockResolvedValue({
-      items: [],
-      total: 0,
-      page: 1,
-      pageSize: 20,
+    mockedGetDocumentsResult.mockResolvedValue({
+      data: {
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: 20,
+      },
+      unavailable: false,
     });
     mockedGetContractDetails.mockResolvedValue({
       id: `contract-1`,
@@ -220,11 +226,14 @@ describe(`DocumentsPage`, () => {
   });
 
   it(`falls back to the contract detail page when returnTo stays internal but leaves the contracts workspace`, async () => {
-    mockedGetDocuments.mockResolvedValue({
-      items: [],
-      total: 0,
-      page: 1,
-      pageSize: 20,
+    mockedGetDocumentsResult.mockResolvedValue({
+      data: {
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: 20,
+      },
+      unavailable: false,
     });
     mockedGetContractDetails.mockResolvedValue({
       id: `contract-1`,

@@ -2,13 +2,14 @@ import { PaymentsClient } from './PaymentsClient';
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
-import { getContacts, getExchangeCurrencies, getPayments, getSettings } from '../../../lib/consumer-api.server';
+import { getContacts, getExchangeCurrencies, getPaymentsResult, getSettings } from '../../../lib/consumer-api.server';
+import { parseListPagination } from '../../../lib/pagination';
 import {
   normalizePaymentRequestContacts,
   normalizePaymentRequestCurrencies,
 } from '../../../lib/payment-request-normalizers';
 import { CreditCardIcon } from '../../../shared/ui/icons/CreditCardIcon';
-import { PageHeader } from '../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-primitives';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -35,15 +36,14 @@ function buildCurrentPaymentsPath(searchParams: SearchParams | undefined): strin
 
 export default async function PaymentsPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const page = Math.max(1, Number(getSingleValue(resolvedSearchParams?.page)) || 1);
-  const pageSize = Math.max(1, Number(getSingleValue(resolvedSearchParams?.pageSize)) || 20);
+  const { page, pageSize } = parseListPagination(resolvedSearchParams, { pageSize: 20 });
   const status = getSingleValue(resolvedSearchParams?.status);
   const type = getSingleValue(resolvedSearchParams?.type);
   const role = getSingleValue(resolvedSearchParams?.role);
   const search = getSingleValue(resolvedSearchParams?.search);
   const currentPath = buildCurrentPaymentsPath(resolvedSearchParams);
-  const [paymentsResponse, settings, contactsResponse, exchangeCurrencies] = await Promise.all([
-    getPayments(
+  const [paymentsResult, settings, contactsResponse, exchangeCurrencies] = await Promise.all([
+    getPaymentsResult(
       {
         page,
         pageSize,
@@ -58,6 +58,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams?: Pr
     getContacts(1, 100),
     getExchangeCurrencies({ redirectTo: currentPath }),
   ]);
+  const paymentsResponse = paymentsResult.data;
   const paymentRequestContacts = normalizePaymentRequestContacts(contactsResponse);
   const paymentRequestCurrencies = normalizePaymentRequestCurrencies(exchangeCurrencies);
   const paymentsHelpGuides = getContextualHelpGuides({
@@ -80,6 +81,12 @@ export default async function PaymentsPage({ searchParams }: { searchParams?: Pr
         description="These guides help you choose between request, payer-side start, and status-review workflows before you dig into a specific payment."
         className="mb-5"
       />
+      {paymentsResult.unavailable ? (
+        <WorkspaceUnavailableBanner
+          title="Payments data is temporarily unavailable"
+          text="The payments workspace could not load live payment data from the backend right now. Payment creation and navigation are still available."
+        />
+      ) : null}
       <PaymentsClient
         payments={paymentsResponse?.items ?? []}
         total={paymentsResponse?.total ?? 0}

@@ -5,9 +5,10 @@ import { ContactsClient } from './ContactsClient';
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
-import { getContact, getContacts, searchContacts } from '../../../lib/consumer-api.server';
+import { getContact, getContactsResult, searchContactsResult } from '../../../lib/consumer-api.server';
+import { parseListPagination } from '../../../lib/pagination';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
-import { PageHeader } from '../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-primitives';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -19,8 +20,7 @@ export default async function ContactsPage({ searchParams }: { searchParams?: Pr
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const query = getSingleValue(resolvedSearchParams?.query).trim();
   const searchMode = query.length > 0;
-  const page = Math.max(1, Number(getSingleValue(resolvedSearchParams?.page)) || 1);
-  const pageSize = Math.max(1, Number(getSingleValue(resolvedSearchParams?.pageSize)) || 20);
+  const { page, pageSize } = parseListPagination(resolvedSearchParams, { pageSize: 20 });
   const createMode = getSingleValue(resolvedSearchParams?.create) === `1`;
   const editContactId = getSingleValue(resolvedSearchParams?.edit).trim();
   const initialEmail = getSingleValue(resolvedSearchParams?.email);
@@ -85,25 +85,36 @@ async function ContactsWorkspaceSection({
   returnTo: string | null;
   searchMode: boolean;
 }) {
-  const [contactsResponse, searchResults, initialEditingContact] = await Promise.all([
-    searchMode ? Promise.resolve(null) : getContacts(page, pageSize),
-    searchMode ? searchContacts(query) : Promise.resolve(null),
+  const [contactsResult, searchResult, initialEditingContact] = await Promise.all([
+    searchMode ? Promise.resolve({ data: null, unavailable: false }) : getContactsResult(page, pageSize),
+    searchMode ? searchContactsResult(query) : Promise.resolve({ data: null, unavailable: false }),
     editContactId ? getContact(editContactId) : Promise.resolve(null),
   ]);
+  const activeResult = searchMode ? searchResult : contactsResult;
+  const contactsResponse = contactsResult.data;
+  const searchResults = searchResult.data;
   const contacts = searchMode ? (searchResults ?? []) : (contactsResponse?.items ?? []);
 
   return (
-    <ContactsClient
-      contacts={contacts}
-      createMode={createMode}
-      initialEmail={initialEmail}
-      initialEditingContact={initialEditingContact}
-      returnTo={returnTo ?? undefined}
-      initialQuery={query}
-      searchMode={searchMode}
-      totalContacts={contactsResponse?.total ?? contacts.length}
-      page={contactsResponse?.page ?? page}
-      pageSize={contactsResponse?.pageSize ?? pageSize}
-    />
+    <>
+      {activeResult.unavailable ? (
+        <WorkspaceUnavailableBanner
+          title="Contacts data is temporarily unavailable"
+          text="The contacts workspace could not load live contact data from the backend right now. You can still use the surrounding workspace navigation."
+        />
+      ) : null}
+      <ContactsClient
+        contacts={contacts}
+        createMode={createMode}
+        initialEmail={initialEmail}
+        initialEditingContact={initialEditingContact}
+        returnTo={returnTo ?? undefined}
+        initialQuery={query}
+        searchMode={searchMode}
+        totalContacts={contactsResponse?.total ?? contacts.length}
+        page={contactsResponse?.page ?? page}
+        pageSize={contactsResponse?.pageSize ?? pageSize}
+      />
+    </>
   );
 }

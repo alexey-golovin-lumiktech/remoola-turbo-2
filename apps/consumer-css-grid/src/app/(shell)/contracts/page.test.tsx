@@ -13,12 +13,12 @@ jest.mock(`next/link`, () => ({
 }));
 
 jest.mock(`../../../lib/consumer-api.server`, () => ({
-  getContracts: jest.fn(),
+  getContractsResult: jest.fn(),
 }));
 
-const { getContracts: mockedGetContracts } = jest.requireMock(`../../../lib/consumer-api.server`) as jest.Mocked<
-  typeof ConsumerApi
->;
+const { getContractsResult: mockedGetContractsResult } = jest.requireMock(
+  `../../../lib/consumer-api.server`,
+) as jest.Mocked<typeof ConsumerApi>;
 
 jest.mock(`./ContractsClient`, () => ({
   ContractsClient: () => React.createElement(`section`, null, `Contracts client loaded`),
@@ -36,12 +36,15 @@ describe(`consumer-css-grid contracts route contextual help`, () => {
   });
 
   beforeEach(() => {
-    mockedGetContracts.mockReset();
-    mockedGetContracts.mockResolvedValue({
-      items: [],
-      total: 0,
-      page: 1,
-      pageSize: 20,
+    mockedGetContractsResult.mockReset();
+    mockedGetContractsResult.mockResolvedValue({
+      data: {
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: 20,
+      },
+      unavailable: false,
     });
   });
 

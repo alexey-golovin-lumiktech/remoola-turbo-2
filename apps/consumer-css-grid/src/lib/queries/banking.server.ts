@@ -1,6 +1,11 @@
 import 'server-only';
 
-import { fetchConsumerApi, type ConsumerApiRequestOptions } from '../consumer-api-fetch.server';
+import {
+  fetchConsumerApi,
+  fetchConsumerApiResult,
+  type ConsumerApiRequestOptions,
+  type ConsumerApiResult,
+} from '../consumer-api-fetch.server';
 import { type BalanceResponse, type PaymentMethodsResponse } from '../consumer-api.types';
 function majorBalanceToMinorUnits(amount: number): number {
   return Math.round(amount * 100);
@@ -26,4 +31,15 @@ export async function getAvailableBalances(options?: ConsumerApiRequestOptions):
   const raw = await fetchConsumerApi<BalanceResponse>(`/consumer/payments/balance/available`, options);
   if (!raw) return null;
   return normalizeBalanceResponse(raw);
+}
+
+export async function getAvailableBalancesResult(
+  options?: ConsumerApiRequestOptions,
+): Promise<ConsumerApiResult<BalanceResponse>> {
+  const result = await fetchConsumerApiResult<BalanceResponse>(`/consumer/payments/balance/available`, options);
+  if (!result.data) return result;
+  return {
+    ...result,
+    data: normalizeBalanceResponse(result.data),
+  };
 }

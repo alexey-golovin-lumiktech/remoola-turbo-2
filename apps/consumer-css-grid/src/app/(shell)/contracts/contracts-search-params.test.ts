@@ -35,7 +35,7 @@ describe(`contracts search params helpers`, () => {
     });
   });
 
-  it(`clamps invalid pagination values`, () => {
+  it(`falls back for invalid pagination values`, () => {
     expect(
       parseContractsSearchParams({
         page: `0`,
@@ -43,12 +43,24 @@ describe(`contracts search params helpers`, () => {
       }),
     ).toEqual({
       page: 1,
-      pageSize: 1,
+      pageSize: 10,
       query: ``,
       status: `all`,
       hasDocuments: `all`,
       hasPayments: `all`,
       sort: `recent_activity`,
+    });
+  });
+
+  it(`floors decimals and caps oversized page sizes`, () => {
+    expect(
+      parseContractsSearchParams({
+        page: `2.9`,
+        pageSize: `1000000000`,
+      }),
+    ).toMatchObject({
+      page: 2,
+      pageSize: 100,
     });
   });
 

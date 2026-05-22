@@ -13,12 +13,14 @@ jest.mock(`next/link`, () => ({
 }));
 
 jest.mock(`../../../../lib/consumer-api.server`, () => ({
-  getExchangeCurrencies: jest.fn(),
-  getExchangeRules: jest.fn(),
+  getExchangeCurrenciesResult: jest.fn(),
+  getExchangeRulesResult: jest.fn(),
 }));
 
-const { getExchangeCurrencies: mockedGetExchangeCurrencies, getExchangeRules: mockedGetExchangeRules } =
-  jest.requireMock(`../../../../lib/consumer-api.server`) as jest.Mocked<typeof ConsumerApi>;
+const {
+  getExchangeCurrenciesResult: mockedGetExchangeCurrenciesResult,
+  getExchangeRulesResult: mockedGetExchangeRulesResult,
+} = jest.requireMock(`../../../../lib/consumer-api.server`) as jest.Mocked<typeof ConsumerApi>;
 
 jest.mock(`../../../../lib/mutations/exchange.server`, () => ({
   createExchangeRuleMutation: jest.fn(),
@@ -42,16 +44,22 @@ describe(`consumer-css-grid exchange rules contextual help`, () => {
   });
 
   beforeEach(() => {
-    mockedGetExchangeCurrencies.mockReset();
-    mockedGetExchangeRules.mockReset();
+    mockedGetExchangeCurrenciesResult.mockReset();
+    mockedGetExchangeRulesResult.mockReset();
 
-    mockedGetExchangeCurrencies.mockResolvedValue([
-      { code: `USD`, symbol: `$`, name: `US Dollar` },
-      { code: `EUR`, symbol: `EUR`, name: `Euro` },
-    ]);
-    mockedGetExchangeRules.mockResolvedValue({
-      items: [],
-      total: 0,
+    mockedGetExchangeCurrenciesResult.mockResolvedValue({
+      data: [
+        { code: `USD`, symbol: `$`, name: `US Dollar` },
+        { code: `EUR`, symbol: `EUR`, name: `Euro` },
+      ],
+      unavailable: false,
+    });
+    mockedGetExchangeRulesResult.mockResolvedValue({
+      data: {
+        items: [],
+        total: 0,
+      },
+      unavailable: false,
     });
   });
 

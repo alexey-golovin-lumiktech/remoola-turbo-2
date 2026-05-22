@@ -13,14 +13,14 @@ jest.mock(`next/link`, () => ({
 }));
 
 jest.mock(`../../../lib/consumer-api.server`, () => ({
-  getPayments: jest.fn(),
+  getPaymentsResult: jest.fn(),
   getSettings: jest.fn(),
   getContacts: jest.fn(),
   getExchangeCurrencies: jest.fn(),
 }));
 
 const {
-  getPayments: mockedGetPayments,
+  getPaymentsResult: mockedGetPaymentsResult,
   getSettings: mockedGetSettings,
   getContacts: mockedGetContacts,
   getExchangeCurrencies: mockedGetExchangeCurrencies,
@@ -42,16 +42,19 @@ describe(`consumer-css-grid payments route contextual help`, () => {
   });
 
   beforeEach(() => {
-    mockedGetPayments.mockReset();
+    mockedGetPaymentsResult.mockReset();
     mockedGetSettings.mockReset();
     mockedGetContacts.mockReset();
     mockedGetExchangeCurrencies.mockReset();
 
-    mockedGetPayments.mockResolvedValue({
-      items: [],
-      total: 0,
-      page: 1,
-      pageSize: 20,
+    mockedGetPaymentsResult.mockResolvedValue({
+      data: {
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: 20,
+      },
+      unavailable: false,
     });
     mockedGetSettings.mockResolvedValue({
       preferredCurrency: `USD`,
@@ -77,5 +80,55 @@ describe(`consumer-css-grid payments route contextual help`, () => {
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.PAYMENTS_OVERVIEW}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.PAYMENTS_CREATE_REQUEST}`);
     expect(markup).toContain(`/help/${HELP_GUIDE_SLUG.PAYMENTS_START_PAYMENT}`);
+  });
+
+  it(`normalizes unsafe pagination before loading payments`, async () => {
+    await PaymentsPage({
+      searchParams: Promise.resolve({
+        page: `2.9`,
+        pageSize: `1000000000`,
+      }),
+    });
+
+    expect(mockedGetPaymentsResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page: 2,
+        pageSize: 100,
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it.each([[`Infinity`], [`NaN`], [`0`], [`-5`], [`not-a-number`]])(
+    `falls back for invalid pageSize value %s`,
+    async (pageSize) => {
+      await PaymentsPage({
+        searchParams: Promise.resolve({ pageSize }),
+      });
+
+      expect(mockedGetPaymentsResult).toHaveBeenCalledWith(
+        expect.objectContaining({
+          page: 1,
+          pageSize: 20,
+        }),
+        expect.any(Object),
+      );
+    },
+  );
+
+  it(`renders an unavailable banner without hiding the workspace`, async () => {
+    mockedGetPaymentsResult.mockResolvedValue({
+      data: null,
+      unavailable: true,
+    });
+
+    const markup = renderToStaticMarkup(
+      await PaymentsPage({
+        searchParams: Promise.resolve({}),
+      }),
+    );
+
+    expect(markup).toContain(`Payments data is temporarily unavailable`);
+    expect(markup).toContain(`Payments client loaded`);
   });
 });

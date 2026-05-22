@@ -13,15 +13,15 @@ jest.mock(`next/link`, () => ({
 }));
 
 jest.mock(`../../../../lib/consumer-api.server`, () => ({
-  getExchangeCurrencies: jest.fn(),
-  getAvailableBalances: jest.fn(),
-  getScheduledConversions: jest.fn(),
+  getExchangeCurrenciesResult: jest.fn(),
+  getAvailableBalancesResult: jest.fn(),
+  getScheduledConversionsResult: jest.fn(),
 }));
 
 const {
-  getExchangeCurrencies: mockedGetExchangeCurrencies,
-  getAvailableBalances: mockedGetAvailableBalances,
-  getScheduledConversions: mockedGetScheduledConversions,
+  getExchangeCurrenciesResult: mockedGetExchangeCurrenciesResult,
+  getAvailableBalancesResult: mockedGetAvailableBalancesResult,
+  getScheduledConversionsResult: mockedGetScheduledConversionsResult,
 } = jest.requireMock(`../../../../lib/consumer-api.server`) as jest.Mocked<typeof ConsumerApi>;
 
 jest.mock(`../../../../lib/mutations/exchange.server`, () => ({
@@ -45,21 +45,30 @@ describe(`consumer-css-grid exchange scheduled contextual help`, () => {
   });
 
   beforeEach(() => {
-    mockedGetExchangeCurrencies.mockReset();
-    mockedGetAvailableBalances.mockReset();
-    mockedGetScheduledConversions.mockReset();
+    mockedGetExchangeCurrenciesResult.mockReset();
+    mockedGetAvailableBalancesResult.mockReset();
+    mockedGetScheduledConversionsResult.mockReset();
 
-    mockedGetExchangeCurrencies.mockResolvedValue([
-      { code: `USD`, symbol: `$`, name: `US Dollar` },
-      { code: `EUR`, symbol: `EUR`, name: `Euro` },
-    ]);
-    mockedGetAvailableBalances.mockResolvedValue({
-      USD: 500000,
-      EUR: 250000,
+    mockedGetExchangeCurrenciesResult.mockResolvedValue({
+      data: [
+        { code: `USD`, symbol: `$`, name: `US Dollar` },
+        { code: `EUR`, symbol: `EUR`, name: `Euro` },
+      ],
+      unavailable: false,
     });
-    mockedGetScheduledConversions.mockResolvedValue({
-      items: [],
-      total: 0,
+    mockedGetAvailableBalancesResult.mockResolvedValue({
+      data: {
+        USD: 500000,
+        EUR: 250000,
+      },
+      unavailable: false,
+    });
+    mockedGetScheduledConversionsResult.mockResolvedValue({
+      data: {
+        items: [],
+        total: 0,
+      },
+      unavailable: false,
     });
   });
 

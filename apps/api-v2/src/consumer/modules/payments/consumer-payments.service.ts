@@ -9,6 +9,13 @@ import { ConsumerPaymentsWriteService } from './consumer-payments-write.service'
 import { CreatePaymentRequest, PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
 
+const MAX_CONSUMER_PAYMENTS_PAGE_SIZE = 100;
+
+function normalizePositiveInteger(value: number | undefined, fallback: number): number {
+  if (!Number.isFinite(value) || value == null || value < 1) return fallback;
+  return Math.floor(value);
+}
+
 @Injectable()
 export class ConsumerPaymentsService {
   constructor(
@@ -30,7 +37,11 @@ export class ConsumerPaymentsService {
     role?: string;
     search?: string;
   }) {
-    return this.readService.listPayments(params);
+    return this.readService.listPayments({
+      ...params,
+      page: normalizePositiveInteger(params.page, 1),
+      pageSize: Math.min(MAX_CONSUMER_PAYMENTS_PAGE_SIZE, normalizePositiveInteger(params.pageSize, 20)),
+    });
   }
 
   async getPaymentView(consumerId: string, paymentRequestId: string, backendBaseUrl?: string) {

@@ -5,13 +5,13 @@ import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../../feature
 import { HELP_GUIDE_SLUG } from '../../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../../features/help/ui';
 import {
-  getAvailableBalances,
-  getExchangeCurrencies,
-  getScheduledConversions,
+  getAvailableBalancesResult,
+  getExchangeCurrenciesResult,
+  getScheduledConversionsResult,
 } from '../../../../lib/consumer-api.server';
 import { cancelScheduledExchangeMutation, scheduleExchangeMutation } from '../../../../lib/mutations/exchange.server';
 import { ExchangeIcon } from '../../../../shared/ui/icons/ExchangeIcon';
-import { PageHeader } from '../../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../../shared/ui/shell-primitives';
 import { type ExchangeSearchParams, parseExchangePaginationParams } from '../exchange-search-params';
 import { pickTopCurrencies } from '../exchange-shared';
 import { ExchangeScheduledSection } from '../ExchangeScheduledSection';
@@ -71,26 +71,37 @@ async function ExchangeScheduledWorkspaceSection({
   scheduledPage: number;
   scheduledPageSize: number;
 }) {
-  const [currencies, balances, scheduledResponse] = await Promise.all([
-    getExchangeCurrencies({ redirectTo: `/exchange/scheduled` }),
-    getAvailableBalances({ redirectTo: `/exchange/scheduled` }),
-    getScheduledConversions(scheduledPage, scheduledPageSize, { redirectTo: `/exchange/scheduled` }),
+  const [currenciesResult, balancesResult, scheduledResult] = await Promise.all([
+    getExchangeCurrenciesResult({ redirectTo: `/exchange/scheduled` }),
+    getAvailableBalancesResult({ redirectTo: `/exchange/scheduled` }),
+    getScheduledConversionsResult(scheduledPage, scheduledPageSize, { redirectTo: `/exchange/scheduled` }),
   ]);
+  const currencies = currenciesResult.data;
+  const balances = balancesResult.data;
+  const scheduledResponse = scheduledResult.data;
   const currencyCodes = (currencies ?? []).map((currency) => currency.code);
   const [fromCurrency = `USD`, toCurrency = `EUR`] = pickTopCurrencies(currencyCodes);
 
   return (
-    <ExchangeScheduledSection
-      scheduled={scheduledResponse?.items ?? []}
-      currencies={currencies ?? []}
-      balances={balances}
-      scheduledTotal={scheduledResponse?.total ?? 0}
-      scheduledPage={scheduledPage}
-      scheduledPageSize={scheduledPageSize}
-      initialFromCurrency={fromCurrency}
-      initialToCurrency={toCurrency}
-      onSchedule={scheduleExchangeMutation}
-      onCancel={cancelScheduledExchangeMutation}
-    />
+    <>
+      {currenciesResult.unavailable || balancesResult.unavailable || scheduledResult.unavailable ? (
+        <WorkspaceUnavailableBanner
+          title="Scheduled conversions data is temporarily unavailable"
+          text="The scheduled conversions workspace could not load live conversion, currency, or balance data from the backend right now."
+        />
+      ) : null}
+      <ExchangeScheduledSection
+        scheduled={scheduledResponse?.items ?? []}
+        currencies={currencies ?? []}
+        balances={balances}
+        scheduledTotal={scheduledResponse?.total ?? 0}
+        scheduledPage={scheduledPage}
+        scheduledPageSize={scheduledPageSize}
+        initialFromCurrency={fromCurrency}
+        initialToCurrency={toCurrency}
+        onSchedule={scheduleExchangeMutation}
+        onCancel={cancelScheduledExchangeMutation}
+      />
+    </>
   );
 }

@@ -76,6 +76,47 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
   }
 }
 
+describe(`ConsumerPaymentsService.listPayments`, () => {
+  it.each([
+    [
+      { page: 2.9, pageSize: 1000000000 },
+      { page: 2, pageSize: 100 },
+    ],
+    [
+      { page: Number.POSITIVE_INFINITY, pageSize: Number.POSITIVE_INFINITY },
+      { page: 1, pageSize: 20 },
+    ],
+    [
+      { page: Number.NaN, pageSize: Number.NaN },
+      { page: 1, pageSize: 20 },
+    ],
+    [
+      { page: 0, pageSize: 0 },
+      { page: 1, pageSize: 20 },
+    ],
+    [
+      { page: -5, pageSize: -5 },
+      { page: 1, pageSize: 20 },
+    ],
+  ])(`normalizes unsafe pagination before delegating`, async (input, expected) => {
+    const readService = {
+      listPayments: jest.fn().mockResolvedValue({ items: [], total: 0, ...expected }),
+    };
+    const service = new ConsumerPaymentsServiceClass({} as any, readService as any, {} as any);
+
+    await service.listPayments({
+      consumerId: `consumer-1`,
+      page: input.page,
+      pageSize: input.pageSize,
+    });
+
+    expect(readService.listPayments).toHaveBeenCalledWith({
+      consumerId: `consumer-1`,
+      ...expected,
+    });
+  });
+});
+
 describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
   const consumerId = `consumer-1`;
   const requesterEmail = `requester@example.com`;

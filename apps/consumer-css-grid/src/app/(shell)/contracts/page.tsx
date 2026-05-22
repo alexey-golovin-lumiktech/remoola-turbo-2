@@ -5,9 +5,9 @@ import { ContractsClient } from './ContractsClient';
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
-import { getContracts } from '../../../lib/consumer-api.server';
+import { getContractsResult } from '../../../lib/consumer-api.server';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
-import { PageHeader } from '../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-primitives';
 
 export default async function ContractsPage({ searchParams }: { searchParams?: Promise<ContractsSearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
@@ -62,20 +62,29 @@ async function ContractsWorkspaceSection({
   sort,
   status,
 }: ReturnType<typeof parseContractsSearchParams>) {
-  const contractsResponse = await getContracts({ page, pageSize, query, status, hasDocuments, hasPayments, sort });
+  const contractsResult = await getContractsResult({ page, pageSize, query, status, hasDocuments, hasPayments, sort });
+  const contractsResponse = contractsResult.data;
   const contracts = contractsResponse?.items ?? [];
 
   return (
-    <ContractsClient
-      contracts={contracts}
-      total={contractsResponse?.total ?? contracts.length}
-      page={contractsResponse?.page ?? page}
-      pageSize={contractsResponse?.pageSize ?? pageSize}
-      initialQuery={query}
-      initialStatus={status}
-      initialHasDocuments={hasDocuments}
-      initialHasPayments={hasPayments}
-      initialSort={sort}
-    />
+    <>
+      {contractsResult.unavailable ? (
+        <WorkspaceUnavailableBanner
+          title="Contracts data is temporarily unavailable"
+          text="The contracts workspace could not load live relationship data from the backend right now. You can still use navigation and retry the workspace later."
+        />
+      ) : null}
+      <ContractsClient
+        contracts={contracts}
+        total={contractsResponse?.total ?? contracts.length}
+        page={contractsResponse?.page ?? page}
+        pageSize={contractsResponse?.pageSize ?? pageSize}
+        initialQuery={query}
+        initialStatus={status}
+        initialHasDocuments={hasDocuments}
+        initialHasPayments={hasPayments}
+        initialSort={sort}
+      />
+    </>
   );
 }

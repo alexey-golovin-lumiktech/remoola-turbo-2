@@ -1,6 +1,12 @@
 import 'server-only';
 
-import { fetchConsumerApi, postConsumerApi, type ConsumerApiRequestOptions } from '../consumer-api-fetch.server';
+import {
+  fetchConsumerApi,
+  fetchConsumerApiResult,
+  postConsumerApi,
+  type ConsumerApiRequestOptions,
+  type ConsumerApiResult,
+} from '../consumer-api-fetch.server';
 import {
   type ExchangeCurrency,
   type ExchangeRateCard,
@@ -18,6 +24,12 @@ interface ExchangeRateBatchItem {
 
 export async function getExchangeCurrencies(options?: ConsumerApiRequestOptions): Promise<ExchangeCurrency[] | null> {
   return fetchConsumerApi<ExchangeCurrency[]>(`/consumer/exchange/currencies`, options);
+}
+
+export async function getExchangeCurrenciesResult(
+  options?: ConsumerApiRequestOptions,
+): Promise<ConsumerApiResult<ExchangeCurrency[]>> {
+  return fetchConsumerApiResult<ExchangeCurrency[]>(`/consumer/exchange/currencies`, options);
 }
 
 function normalizeExchangeRateBatchItem(
@@ -87,12 +99,34 @@ export async function getExchangeRules(
   );
 }
 
+export async function getExchangeRulesResult(
+  page = 1,
+  pageSize = 10,
+  options?: ConsumerApiRequestOptions,
+): Promise<ConsumerApiResult<{ items: ExchangeRule[]; total: number }>> {
+  return fetchConsumerApiResult<{ items: ExchangeRule[]; total: number }>(
+    `/consumer/exchange/rules?page=${page}&pageSize=${pageSize}`,
+    options,
+  );
+}
+
 export async function getScheduledConversions(
   page = 1,
   pageSize = 10,
   options?: ConsumerApiRequestOptions,
 ): Promise<{ items: ScheduledConversion[]; total: number } | null> {
   return fetchConsumerApi<{ items: ScheduledConversion[]; total: number }>(
+    `/consumer/exchange/scheduled?page=${page}&pageSize=${pageSize}`,
+    options,
+  );
+}
+
+export async function getScheduledConversionsResult(
+  page = 1,
+  pageSize = 10,
+  options?: ConsumerApiRequestOptions,
+): Promise<ConsumerApiResult<{ items: ScheduledConversion[]; total: number }>> {
+  return fetchConsumerApiResult<{ items: ScheduledConversion[]; total: number }>(
     `/consumer/exchange/scheduled?page=${page}&pageSize=${pageSize}`,
     options,
   );

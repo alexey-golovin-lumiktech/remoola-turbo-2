@@ -12,7 +12,7 @@ describe(`parseExchangePaginationParams`, () => {
     });
   });
 
-  it(`clamps invalid values and preserves each list independently`, () => {
+  it(`falls back for invalid values and preserves each list independently`, () => {
     expect(
       parseExchangePaginationParams({
         rulesPage: `3`,
@@ -24,7 +24,23 @@ describe(`parseExchangePaginationParams`, () => {
       rulesPage: 3,
       rulesPageSize: 25,
       scheduledPage: 1,
-      scheduledPageSize: 1,
+      scheduledPageSize: EXCHANGE_PAGE_SIZE_DEFAULT,
+    });
+  });
+
+  it(`floors decimals and caps oversized page sizes`, () => {
+    expect(
+      parseExchangePaginationParams({
+        rulesPage: `2.9`,
+        rulesPageSize: `1000000000`,
+        scheduledPage: `Infinity`,
+        scheduledPageSize: `NaN`,
+      }),
+    ).toEqual({
+      rulesPage: 2,
+      rulesPageSize: 100,
+      scheduledPage: 1,
+      scheduledPageSize: EXCHANGE_PAGE_SIZE_DEFAULT,
     });
   });
 });

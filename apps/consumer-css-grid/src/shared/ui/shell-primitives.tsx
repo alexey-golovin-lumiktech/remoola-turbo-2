@@ -42,6 +42,16 @@ export function PageHeader({
   );
 }
 
+export function WorkspaceUnavailableBanner({ title, text }: { title: string; text: string }) {
+  return (
+    <section className="mb-5 rounded-[28px] border border-transparent bg-(--app-warning-soft) p-5">
+      <div className="text-sm uppercase tracking-[0.3em] text-(--app-warning-text)">Workspace sync</div>
+      <h2 className="mt-1 text-2xl font-semibold text-(--app-text)">{title}</h2>
+      <p className="mt-2 max-w-2xl text-sm leading-7 text-(--app-text-soft)">{text}</p>
+    </section>
+  );
+}
+
 export function Panel({
   title,
   aside,

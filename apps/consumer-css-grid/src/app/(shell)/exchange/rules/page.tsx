@@ -4,14 +4,14 @@ import { Suspense } from 'react';
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../../features/help/ui';
-import { getExchangeCurrencies, getExchangeRules } from '../../../../lib/consumer-api.server';
+import { getExchangeCurrenciesResult, getExchangeRulesResult } from '../../../../lib/consumer-api.server';
 import {
   createExchangeRuleMutation,
   deleteExchangeRuleMutation,
   updateExchangeRuleMutation,
 } from '../../../../lib/mutations/exchange.server';
 import { ExchangeIcon } from '../../../../shared/ui/icons/ExchangeIcon';
-import { PageHeader } from '../../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../../shared/ui/shell-primitives';
 import { type ExchangeSearchParams, parseExchangePaginationParams } from '../exchange-search-params';
 import { pickTopCurrencies } from '../exchange-shared';
 import { ExchangeRulesSection } from '../ExchangeRulesSection';
@@ -64,25 +64,35 @@ async function ExchangeRulesWorkspaceSection({
   rulesPage: number;
   rulesPageSize: number;
 }) {
-  const [currencies, rulesResponse] = await Promise.all([
-    getExchangeCurrencies({ redirectTo: `/exchange/rules` }),
-    getExchangeRules(rulesPage, rulesPageSize, { redirectTo: `/exchange/rules` }),
+  const [currenciesResult, rulesResult] = await Promise.all([
+    getExchangeCurrenciesResult({ redirectTo: `/exchange/rules` }),
+    getExchangeRulesResult(rulesPage, rulesPageSize, { redirectTo: `/exchange/rules` }),
   ]);
+  const currencies = currenciesResult.data;
+  const rulesResponse = rulesResult.data;
   const currencyCodes = (currencies ?? []).map((currency) => currency.code);
   const [fromCurrency = `USD`, toCurrency = `EUR`] = pickTopCurrencies(currencyCodes);
 
   return (
-    <ExchangeRulesSection
-      rules={rulesResponse?.items ?? []}
-      currencies={currencies ?? []}
-      rulesTotal={rulesResponse?.total ?? 0}
-      rulesPage={rulesPage}
-      rulesPageSize={rulesPageSize}
-      initialFromCurrency={fromCurrency}
-      initialToCurrency={toCurrency}
-      onCreateRule={createExchangeRuleMutation}
-      onUpdateRule={updateExchangeRuleMutation}
-      onDeleteRule={deleteExchangeRuleMutation}
-    />
+    <>
+      {currenciesResult.unavailable || rulesResult.unavailable ? (
+        <WorkspaceUnavailableBanner
+          title="Exchange rules data is temporarily unavailable"
+          text="The exchange rules workspace could not load live rule or currency data from the backend right now."
+        />
+      ) : null}
+      <ExchangeRulesSection
+        rules={rulesResponse?.items ?? []}
+        currencies={currencies ?? []}
+        rulesTotal={rulesResponse?.total ?? 0}
+        rulesPage={rulesPage}
+        rulesPageSize={rulesPageSize}
+        initialFromCurrency={fromCurrency}
+        initialToCurrency={toCurrency}
+        onCreateRule={createExchangeRuleMutation}
+        onUpdateRule={updateExchangeRuleMutation}
+        onDeleteRule={deleteExchangeRuleMutation}
+      />
+    </>
   );
 }

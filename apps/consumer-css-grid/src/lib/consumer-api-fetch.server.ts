@@ -12,6 +12,8 @@ export interface ConsumerApiRequestOptions {
   redirectTo?: string;
 }
 
+export type ConsumerApiResult<T> = { data: T | null; unavailable: boolean };
+
 function buildSessionExpiredLoginUrl(redirectTo: string): string {
   const safeNext = encodeURIComponent(sanitizeNextForRedirect(redirectTo, `/dashboard`));
   return `/login?${SESSION_EXPIRED_QUERY}=1&next=${safeNext}`;
@@ -95,7 +97,7 @@ export async function postConsumerApi<T>(
 export async function fetchConsumerApiResult<T>(
   path: string,
   options?: ConsumerApiRequestOptions,
-): Promise<{ data: T | null; unavailable: boolean }> {
+): Promise<ConsumerApiResult<T>> {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {

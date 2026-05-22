@@ -1,3 +1,5 @@
+import { parseListPagination } from '../../../lib/pagination';
+
 export type ContractsSearchParams = Record<string, string | string[] | undefined>;
 export const CONTRACT_STATUS_FILTERS = [`all`, `draft`, `pending`, `waiting`, `completed`, `no_activity`] as const;
 export type ContractStatusFilter = (typeof CONTRACT_STATUS_FILTERS)[number];
@@ -27,9 +29,10 @@ export function parseContractsSearchParams(searchParams?: ContractsSearchParams)
   const rawHasDocuments = getSingleValue(searchParams?.hasDocuments).trim().toLowerCase();
   const rawHasPayments = getSingleValue(searchParams?.hasPayments).trim().toLowerCase();
   const rawSort = getSingleValue(searchParams?.sort).trim().toLowerCase();
+  const { page, pageSize } = parseListPagination(searchParams, { pageSize: 10 });
   return {
-    page: Math.max(1, Number(getSingleValue(searchParams?.page)) || 1),
-    pageSize: Math.max(1, Number(getSingleValue(searchParams?.pageSize)) || 10),
+    page,
+    pageSize,
     query: getSingleValue(searchParams?.query).trim(),
     status: isContractStatusFilter(rawStatus) ? rawStatus : `all`,
     hasDocuments: isContractPresenceFilter(rawHasDocuments) ? rawHasDocuments : `all`,

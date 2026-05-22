@@ -25,22 +25,32 @@ export type {
   SettingsResponse,
 } from './consumer-api.types';
 
-export { getDocuments } from './queries/documents.server';
-export { getAvailableBalances, getBalances, getPaymentMethods } from './queries/banking.server';
+export { getDocuments, getDocumentsResult } from './queries/documents.server';
+export {
+  getAvailableBalances,
+  getAvailableBalancesResult,
+  getBalances,
+  getPaymentMethods,
+} from './queries/banking.server';
 export {
   findContactByExactEmail,
   getContact,
   getContactDetails,
   getContacts,
+  getContactsResult,
   searchContacts,
+  searchContactsResult,
 } from './queries/contacts.server';
-export { getContractDetails, getContracts } from './queries/contracts.server';
+export { getContractDetails, getContracts, getContractsResult } from './queries/contracts.server';
 export { getDashboardData } from './queries/dashboard.server';
 export {
   getExchangeCurrencies,
+  getExchangeCurrenciesResult,
   getExchangeRatesBatch,
   getExchangeRules,
+  getExchangeRulesResult,
   getScheduledConversions,
+  getScheduledConversionsResult,
 } from './queries/exchange.server';
-export { getPaymentHistory, getPayments, getPaymentView } from './queries/payments.server';
+export { getPaymentHistory, getPayments, getPaymentsResult, getPaymentView } from './queries/payments.server';
 export { getProfile, getSettings } from './queries/settings.server';

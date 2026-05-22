@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { encodeApiPathSegment } from '../api-path';
-import { fetchConsumerApi } from '../consumer-api-fetch.server';
+import { fetchConsumerApi, fetchConsumerApiResult, type ConsumerApiResult } from '../consumer-api-fetch.server';
 import {
   type ContactDetailsResponse,
   type ContactResponse,
@@ -14,11 +14,24 @@ export async function getContacts(page = 1, pageSize = 20): Promise<ContactsResp
   return fetchConsumerApi<ContactsResponse>(`/consumer/contacts?page=${page}&pageSize=${pageSize}`);
 }
 
+export async function getContactsResult(page = 1, pageSize = 20): Promise<ConsumerApiResult<ContactsResponse>> {
+  return fetchConsumerApiResult<ContactsResponse>(`/consumer/contacts?page=${page}&pageSize=${pageSize}`);
+}
+
 export async function searchContacts(query: string, limit = 20): Promise<ContactSearchItem[] | null> {
   const trimmedQuery = query.trim();
   if (!trimmedQuery) return [];
   const safeLimit = Math.min(20, Math.max(1, Math.floor(limit) || 20));
   return fetchConsumerApi<ContactSearchItem[]>(
+    `/consumer/contacts?query=${encodeURIComponent(trimmedQuery)}&limit=${safeLimit}`,
+  );
+}
+
+export async function searchContactsResult(query: string, limit = 20): Promise<ConsumerApiResult<ContactSearchItem[]>> {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) return { data: [], unavailable: false };
+  const safeLimit = Math.min(20, Math.max(1, Math.floor(limit) || 20));
+  return fetchConsumerApiResult<ContactSearchItem[]>(
     `/consumer/contacts?query=${encodeURIComponent(trimmedQuery)}&limit=${safeLimit}`,
   );
 }
