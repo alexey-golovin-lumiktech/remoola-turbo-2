@@ -2945,7 +2945,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-20</summary>
 
 - **2026-05-20:**
@@ -2965,6 +2965,64 @@
   - **Admin API client decomposition:** Split `admin-api.server.ts` into focused `admin-api/*` domain modules (admins, audit, consumers, documents, exchange, identity, ledger, overview, payments, verification) with shared fetch, cookie forwarding, auth redirect, and read-result handling centralized in `core.server.ts`; barrel exports preserved for existing consumers.
   - **Admin mutations decomposition:** Split `admin-mutations.server.ts` into domain-focused modules (admins, consumers, documents, exchange, ledger, operational-alerts, payment-methods, payments, payouts, saved-views, verification) with shared transport, form-parsing, assignment body builders, and revalidation helpers centralized; barrel export path preserved.
   - **Shell page import alignment:** Replace broad `admin-api.server` and `admin-mutations.server` barrel imports across shell pages with domain-specific module imports while keeping shared response and identity types sourced from `admin-api/types`.
+
+</details>
+
+<details>
+<summary>2026-05-21</summary>
+
+- **2026-05-21:**
+
+  ### 🚀 Feature
+  - **Shell Help surface:** Add Help to the consumer shell navigation and command palette, and preserve the signup layout background during client mount instead of flashing a blank screen.
+
+  ### 🔐 Security / Production Safety
+  - **Consumer auth session hardening for Vercel:** Normalize `/api/me` upstream failures to structured JSON while preserving upstream `Set-Cookie`, and keep OAuth, Google signup, login, and signup proxy flows on the cookie-based auth context.
+  - **Session-expiry redirect on public API:** Drop the private `next/dist` redirect detection in favor of keeping `redirect()` outside `try/catch`, using the supported Next.js control-flow pattern.
+  - **Dev credential lockout on Vercel:** Expand consumer env validation for Vercel, cookie, bypass, and dev-credential variables so dev login credentials cannot be enabled on Vercel production/runtime.
+  - **Mutation boundary preservation:** Mark payment mutation modules as server actions while keeping payment, Stripe, and wallet mutation boundaries server-only.
+
+  ### 🧪 Testing
+  - **Auth and shell coverage:** Add tests for command palette keyboard navigation, shell route coverage, auth search params, and `/api/me` response normalization; update OAuth and Google auth route tests to exercise real env parsing.
+  - **Local validation:** Consumer typecheck, lint, full Jest suite, targeted SSR redirect tests, production build, and `git diff --check` recorded green on the commit.
+
+  ### 🛠 DevEx
+  - **Shared error boundary:** Refactor root and shell error boundaries through a shared `ErrorBoundaryUI` and centralize cookie parsing for CSRF/session reads and middleware refresh cookie merging.
+
+</details>
+
+<details open>
+<summary>2026-05-22</summary>
+
+- **2026-05-22:**
+
+  ### 🚀 Feature
+  - **Graceful workspace-unavailable rendering:** Consumer `(shell)` list pages (contacts, contracts, documents, exchange + rules + scheduled, payments) now render a `WorkspaceUnavailableBanner` when the backend is unreachable, while client components still mount with empty/fallback data so navigation stays usable instead of crashing the shell.
+
+  ### 🔐 Security / Production Safety
+  - **Consumer BFF proxy hardening:** Add controlled upstream fetch handling for consumer BFF routes with no-store defaults, a timeout, and a stable `503 NETWORK_ERROR` response so transient upstream failures no longer surface as uncaught exceptions; auth, cookie, CSRF, OAuth, payment, and Stripe forwarding contracts are preserved.
+  - **Backend path segment encoding:** Encode dynamic backend path segments for consumer contacts, contracts, payments, documents, payment methods, exchange, and Stripe flows to mitigate malformed-ID path-traversal/routing risk before proxying.
+  - **Login redirect query preservation:** Preserve protected-route query strings when middleware redirects expired sessions to login.
+  - **List pagination input hardening:** `ConsumerPaymentsService.listPayments` normalizes `page` / `pageSize` (non-finite, `null`, `< 1` → fallback `page=1`, `pageSize=20`; decimals floored; `pageSize` capped at `MAX_CONSUMER_PAYMENTS_PAGE_SIZE = 100`) and the frontend adopts a shared `parseListPagination` with `MAX_CONSUMER_LIST_PAGE_SIZE = 100`, mitigating oversized/abusive page inputs reaching the read service. Append-only ledger and money-movement paths are not touched.
+
+  ### 🧪 Testing
+  - **BFF and middleware coverage:** Add network-failure coverage for login, `/api/me`, refresh, and document-upload routes; representative encoded path-segment coverage for mutations and SSR queries; middleware coverage for preserving query strings in login redirects.
+  - **Pagination coverage:** New `consumer-payments.service.spec.ts` covers the five normalization cases (decimal, `Infinity`, `NaN`, `0`, negative); new `pagination.test.ts` covers helper boundaries; `contracts-search-params.test.ts` renamed "clamps" → "falls back" and adds decimal-floor + oversized-cap cases.
+  - **`*Result` shape adoption:** Update page tests for contacts, contracts, documents, exchange (+ rules, scheduled), and payments to mock the new `{ data, unavailable }` result shape.
+  - **DTO rename alignment:** Update `admin-v2-audit.service.spec.ts` for the renamed query classes; remove obsolete admin-mutations / admin-api monolith tests (covered by per-module suites shipped earlier).
+  - **Validation commands:** Consumer-css-grid typecheck, Jest suite (`--runInBand`), lint, and clean `.next` production build recorded green on the BFF commit.
+
+  ### 🛠 DevEx
+  - **Shared pagination helper:** New `src/lib/pagination.ts` (`parseListPage`, `parseListPageSize`, `parseListPagination`, `MAX_CONSUMER_LIST_PAGE_SIZE`) centralizes the floor/clamp/cap logic previously inlined per page; adopted in contacts, contracts (`contracts-search-params`), documents, exchange (+ rules, scheduled), and payments pages.
+  - **`ConsumerApiResult<T>` and `*Result` queries:** Extract `ConsumerApiResult<T> = { data: T | null; unavailable: boolean }` and add `*Result` variants (`getContactsResult`, `searchContactsResult`, `getContractsResult`, `getDocumentsResult`, `getPaymentsResult`, `getAvailableBalancesResult`, `getExchangeCurrenciesResult`, `getExchangeRulesResult`, `getScheduledConversionsResult`) via `fetchConsumerApiResult`, instead of throwing on backend failure; legacy non-`Result` exports remain alongside for backward-compatible deploy.
+  - **api-v2 paging DTO consolidation:** Rename `PaginationQueryDto` → `PagingQuery`, `SearchPaginationQueryDto` → `SearchWithPagingQuery`, `DateRangePaginationQueryDto` → `DateRangePaginationWithPagingQuery`, `CursorLimitQueryDto` → `CursorLimitQuery`; audit/admins/consumers/documents/exchange/payment-methods/payments/verification DTOs now `extends PagingQuery`; audit DTOs renamed to `*WithPagingQuery` with matching controller signatures; explicit `@Transform(optionalNumberQuery(...))` aligns plain-object query parsing with the validator pipeline.
+  - **admin-v2 monolith retirement:** Delete legacy `src/lib/admin-api.server.ts` and `src/lib/admin-mutations.server.ts` (and their tests) now that the modular `admin-api/*` and `admin-mutations/*` surfaces are in place; minor import-surface touch-ups in `admin-mutations/form-helpers.ts` and `admin-mutations/revalidation.ts`.
+  - **Misc alignment:** Drop the obsolete `module-boundaries` assertion that pinned old admin-v2 admins DTO names, and remove the unused `baseUrl` from `apps/api-v2/tsconfig.json`.
+
+  ### ⚠️ Notes
+  - **DTO wire shape preserved:** `page` / `pageSize` query params still accept the same validation rules; only TS class names and inheritance changed. No controller route paths, response shapes, or auth guards modified.
+  - **No DB / migration / ledger code touched:** Money-flow endpoints (payments, exchange, documents) only see DTO-class renames, so append-only and reconciliation invariants are unaffected.
+  - **Deploy coordination:** api-v2 and admin-v2 should ship together for the DTO consolidation since the renamed classes are shared types; frontend ↔ api-v2 ordering is otherwise flexible because the `*Result` fallback path tolerates either side shipping first.
 
 </details>
 
