@@ -10,7 +10,7 @@ export default function HelpGuideNotFound() {
       <PageHeader
         title="Help Center"
         subtitle="The guide you tried to open is not available right now."
-        icon={<SearchIcon size={40} className="h-10 w-10 text-white" />}
+        icon={<SearchIcon size={40} className="h-10 w-10 text-(--app-text)" />}
       />
 
       <Panel title="Guide not found">

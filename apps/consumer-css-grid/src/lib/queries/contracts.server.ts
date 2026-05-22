@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { encodeApiPathSegment } from '../api-path';
 import { fetchConsumerApi, type ConsumerApiRequestOptions } from '../consumer-api-fetch.server';
 import { type ContractDetailsResponse, type ContractsResponse } from '../consumer-api.types';
 import { normalizeDocumentDownloadUrl } from '../document-download-url';
@@ -31,7 +32,9 @@ export async function getContracts(
 export async function getContractDetails(contractId: string): Promise<ContractDetailsResponse | null> {
   const id = contractId.trim();
   if (!id) return null;
-  const contract = await fetchConsumerApi<ContractDetailsResponse>(`/consumer/contracts/${id}/details`);
+  const contract = await fetchConsumerApi<ContractDetailsResponse>(
+    `/consumer/contracts/${encodeApiPathSegment(id)}/details`,
+  );
   if (!contract) return null;
 
   return {

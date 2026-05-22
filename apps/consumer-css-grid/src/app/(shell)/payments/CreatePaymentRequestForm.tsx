@@ -164,7 +164,10 @@ export function CreatePaymentRequestForm({
     >
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="md:col-span-2">
-          <label className="mb-2 block text-sm text-white/55" htmlFor={`${fieldIdPrefix}-payment-request-email`}>
+          <label
+            className="mb-2 block text-sm text-(--app-text-muted)"
+            htmlFor={`${fieldIdPrefix}-payment-request-email`}
+          >
             Recipient email
           </label>
           <input
@@ -178,7 +181,7 @@ export function CreatePaymentRequestForm({
             }}
             placeholder="recipient@example.com"
             aria-invalid={email.length > 0 && !hasValidEmail}
-            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
           />
           <datalist id={emailSuggestionsId}>
             {savedContacts.map((contact) => (
@@ -188,18 +191,23 @@ export function CreatePaymentRequestForm({
             ))}
           </datalist>
           {email.length > 0 && !hasValidEmail ? (
-            <div className="mt-2 text-sm text-rose-200">Enter a valid recipient email address.</div>
+            <div className="mt-2 text-sm text-(--app-danger-text)">Enter a valid recipient email address.</div>
           ) : matchedContact?.name ? (
-            <div className="mt-2 text-sm text-emerald-200">Saved contact: {matchedContact.name}</div>
+            <div className="mt-2 text-sm text-(--app-success-text)">Saved contact: {matchedContact.name}</div>
           ) : savedContacts.length > 0 ? (
-            <div className="mt-2 text-sm text-white/45">Start typing to use one of your saved contacts.</div>
+            <div className="mt-2 text-sm text-(--app-text-muted)">Start typing to use one of your saved contacts.</div>
           ) : (
-            <div className="mt-2 text-sm text-white/45">We will notify the payer after you send the request.</div>
+            <div className="mt-2 text-sm text-(--app-text-muted)">
+              We will notify the payer after you send the request.
+            </div>
           )}
         </div>
 
         <div>
-          <label className="mb-2 block text-sm text-white/55" htmlFor={`${fieldIdPrefix}-payment-request-amount`}>
+          <label
+            className="mb-2 block text-sm text-(--app-text-muted)"
+            htmlFor={`${fieldIdPrefix}-payment-request-amount`}
+          >
             Amount
           </label>
           <input
@@ -214,17 +222,20 @@ export function CreatePaymentRequestForm({
             }}
             placeholder="0.00"
             aria-invalid={amount.length > 0 && !hasValidAmount}
-            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
           />
           {amount.length > 0 && !hasValidAmount ? (
-            <div className="mt-2 text-sm text-rose-200">Enter an amount greater than zero.</div>
+            <div className="mt-2 text-sm text-(--app-danger-text)">Enter an amount greater than zero.</div>
           ) : (
-            <div className="mt-2 text-sm text-white/45">Use decimal format like `125.50`.</div>
+            <div className="mt-2 text-sm text-(--app-text-muted)">Use decimal format like `125.50`.</div>
           )}
         </div>
 
         <div>
-          <label className="mb-2 block text-sm text-white/55" htmlFor={`${fieldIdPrefix}-payment-request-currency`}>
+          <label
+            className="mb-2 block text-sm text-(--app-text-muted)"
+            htmlFor={`${fieldIdPrefix}-payment-request-currency`}
+          >
             Currency
           </label>
           <select
@@ -234,7 +245,7 @@ export function CreatePaymentRequestForm({
               setCurrencyCode(event.target.value);
               setMessage(null);
             }}
-            className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
           >
             {availableCurrencies.map((code) => (
               <option key={code} value={code}>
@@ -245,7 +256,10 @@ export function CreatePaymentRequestForm({
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-2 block text-sm text-white/55" htmlFor={`${fieldIdPrefix}-payment-request-description`}>
+          <label
+            className="mb-2 block text-sm text-(--app-text-muted)"
+            htmlFor={`${fieldIdPrefix}-payment-request-description`}
+          >
             Description
           </label>
           <textarea
@@ -257,12 +271,15 @@ export function CreatePaymentRequestForm({
               setMessage(null);
             }}
             placeholder="What is this payment request for?"
-            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-2 block text-sm text-white/55" htmlFor={`${fieldIdPrefix}-payment-request-due-date`}>
+          <label
+            className="mb-2 block text-sm text-(--app-text-muted)"
+            htmlFor={`${fieldIdPrefix}-payment-request-due-date`}
+          >
             Due date
           </label>
           <input
@@ -275,12 +292,12 @@ export function CreatePaymentRequestForm({
               setMessage(null);
             }}
             aria-invalid={dueDate.length > 0 && !hasValidDueDate}
-            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none"
           />
           {dueDate.length > 0 && !hasValidDueDate ? (
-            <div className="mt-2 text-sm text-rose-200">Choose today or a future date.</div>
+            <div className="mt-2 text-sm text-(--app-danger-text)">Choose today or a future date.</div>
           ) : (
-            <div className="mt-2 text-sm text-white/45">Optional deadline for the payer.</div>
+            <div className="mt-2 text-sm text-(--app-text-muted)">Optional deadline for the payer.</div>
           )}
         </div>
       </div>
@@ -289,8 +306,8 @@ export function CreatePaymentRequestForm({
         <div
           className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
             message.type === `error`
-              ? `border-rose-400/30 bg-rose-500/10 text-rose-200`
-              : `border-emerald-400/30 bg-emerald-500/10 text-emerald-200`
+              ? `border-(--app-danger-soft) bg-(--app-danger-soft) text-(--app-danger-text)`
+              : `border-(--app-success-soft) bg-(--app-success-soft) text-(--app-success-text)`
           }`}
         >
           {message.text}
@@ -301,7 +318,7 @@ export function CreatePaymentRequestForm({
         <button
           type="submit"
           disabled={isPending || !formValid}
-          className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? `Creating...` : formValid ? `Create request draft` : `Complete request details`}
         </button>
@@ -309,7 +326,7 @@ export function CreatePaymentRequestForm({
           type="button"
           disabled={isPending}
           onClick={clearForm}
-          className="rounded-2xl border border-white/10 px-4 py-3 text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-2xl border border-(--app-border) px-4 py-3 text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
         >
           Clear form
         </button>

@@ -10,7 +10,7 @@ export default async function ContactDetailsPage({ params }: { params: Promise<{
 
   return (
     <div>
-      <PageHeader title="Contact details" icon={<UsersIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Contact details" icon={<UsersIcon className="h-10 w-10 text-(--app-text)" />} />
       <ContactDetailView contact={contact} contactId={contactId} />
     </div>
   );

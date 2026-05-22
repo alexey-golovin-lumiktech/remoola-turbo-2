@@ -73,7 +73,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams?: Pr
 
   return (
     <div>
-      <PageHeader title="Payments" icon={<CreditCardIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Payments" icon={<CreditCardIcon className="h-10 w-10 text-(--app-text)" />} />
       <HelpContextualGuides
         guides={paymentsHelpGuides}
         title="Find the right payment flow faster"

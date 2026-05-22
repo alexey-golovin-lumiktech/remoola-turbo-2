@@ -14,6 +14,7 @@ import {
 } from '@remoola/api-types';
 
 import { type DraftPaymentRequestsResult } from '../actions/payments.types';
+import { encodeApiPathSegment } from '../api-path';
 import { isDateInputTodayOrLater, normalizeDateInput } from '../date-input';
 import {
   configuredBaseUrl,
@@ -225,7 +226,7 @@ export async function sendPaymentRequestMutation(
     };
   }
 
-  const sendUrl = new URL(`${baseUrl}/consumer/payment-requests/${id}/send`);
+  const sendUrl = new URL(`${baseUrl}/consumer/payment-requests/${encodeApiPathSegment(id)}/send`);
   sendUrl.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const response = await fetch(sendUrl, {
     method: `POST`,
@@ -427,13 +428,16 @@ export async function detachDocumentFromPaymentRequestMutation(
     };
   }
 
-  const response = await fetch(`${baseUrl}/consumer/documents/payment-attachments/${id}/${normalizedResourceId}`, {
-    method: `DELETE`,
-    headers: {
-      ...(await consumerMutationHeaders()),
+  const response = await fetch(
+    `${baseUrl}/consumer/documents/payment-attachments/${encodeApiPathSegment(id)}/${encodeApiPathSegment(normalizedResourceId)}`,
+    {
+      method: `DELETE`,
+      headers: {
+        ...(await consumerMutationHeaders()),
+      },
+      cache: `no-store`,
     },
-    cache: `no-store`,
-  });
+  );
 
   if (!response.ok) {
     const error = await parseError(response, `Failed to remove attachment from the payment request`);

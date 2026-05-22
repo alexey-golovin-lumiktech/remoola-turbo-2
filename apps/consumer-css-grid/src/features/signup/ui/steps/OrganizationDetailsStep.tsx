@@ -37,7 +37,7 @@ export function OrganizationDetailsStep() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400">
               Final step
             </p>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-(--app-text)">
               Organization details
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
@@ -122,7 +122,7 @@ export function OrganizationDetailsStep() {
 
         <div className="space-y-4">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            <p className="font-semibold text-slate-900 dark:text-white">Submit behavior</p>
+            <p className="font-semibold text-slate-900 dark:text-(--app-text)">Submit behavior</p>
             <p className="mt-2 leading-6">
               This step builds the final payload adapter for `BUSINESS` and `CONTRACTOR + ENTITY`, then triggers signup.
             </p>

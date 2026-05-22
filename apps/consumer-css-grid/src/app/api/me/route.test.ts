@@ -87,4 +87,16 @@ describe(`me route`, () => {
     await expect(response.json()).resolves.toEqual({ code: `INVALID_RESPONSE` });
     expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`me_cookie=`))).toBe(true);
   });
+
+  it(`returns a controlled network error when upstream me fetch fails`, async () => {
+    mockFetch.mockRejectedValueOnce(new Error(`network down`));
+
+    const response = await GET(new Request(`https://app.example.com/api/me`) as unknown as NextRequest);
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      code: `NETWORK_ERROR`,
+      message: `The upstream API request failed. Please try again.`,
+    });
+  });
 });

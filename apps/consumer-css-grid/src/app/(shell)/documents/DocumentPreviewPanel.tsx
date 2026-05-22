@@ -42,13 +42,13 @@ export function DocumentPreviewPanel({ document, onClose }: { document: Document
       onClick={onClose}
     >
       <div
-        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1a1a2e] shadow-2xl"
+        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-(--app-border) bg-[#1a1a2e] shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-(--app-border) px-6 py-4">
           <div className="min-w-0">
-            <h3 className="truncate text-lg font-semibold text-white/90">{document.name}</h3>
-            <div className="mt-1 flex flex-wrap gap-3 text-xs text-white/50">
+            <h3 className="truncate text-lg font-semibold text-(--app-text)">{document.name}</h3>
+            <div className="mt-1 flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
               <span>{document.kind}</span>
               <span>{formatFileSize(document.size)}</span>
               <span>{formatDate(document.createdAt)}</span>
@@ -57,16 +57,16 @@ export function DocumentPreviewPanel({ document, onClose }: { document: Document
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) transition hover:bg-white/10 hover:text-(--app-text)"
           >
             Close
           </button>
         </div>
 
         {document.tags.length > 0 ? (
-          <div className="flex flex-wrap gap-2 border-b border-white/10 px-6 py-3">
+          <div className="flex flex-wrap gap-2 border-b border-(--app-border) px-6 py-3">
             {document.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/70">
+              <span key={tag} className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-(--app-text-soft)">
                 {tag}
               </span>
             ))}
@@ -95,13 +95,13 @@ export function DocumentPreviewPanel({ document, onClose }: { document: Document
               className="h-[60vh] w-full rounded-2xl border border-white/5 bg-white"
             />
           ) : (
-            <div className="flex h-[40vh] flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-center text-white/40">
+            <div className="flex h-[40vh] flex-col items-center justify-center rounded-2xl border border-(--app-border) bg-(--app-surface-muted) text-center text-white/40">
               <p className="mb-4 text-sm">Preview not available for this file type.</p>
               <a
                 href={document.downloadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+                className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-(--app-text) transition hover:bg-indigo-500"
               >
                 Open file
               </a>
@@ -109,12 +109,12 @@ export function DocumentPreviewPanel({ document, onClose }: { document: Document
           )}
         </div>
 
-        <div className="flex justify-end border-t border-white/10 px-6 py-3">
+        <div className="flex justify-end border-t border-(--app-border) px-6 py-3">
           <a
             href={document.downloadUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10"
+            className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-2 text-sm font-medium text-(--app-text-soft) transition hover:bg-white/10"
           >
             Open in new tab
           </a>

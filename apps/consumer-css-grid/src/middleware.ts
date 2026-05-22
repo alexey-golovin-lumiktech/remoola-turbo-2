@@ -214,13 +214,14 @@ export async function middleware(req: NextRequest) {
 
   if (isCallback) return NextResponse.next();
 
+  const currentPathWithSearch = req.nextUrl.pathname + req.nextUrl.search;
   const safeNext = (path: string) => encodeURIComponent(sanitizeNextForRedirect(path, `/dashboard`));
   const clearAuthCookies = (response: NextResponse) => {
     clearConsumerAuthCookies(response, req);
     return response;
   };
   const loginRedirect = (sessionExpired = false) => {
-    const loginUrl = new URL(`/login?next=${safeNext(req.nextUrl.pathname)}`, req.url);
+    const loginUrl = new URL(`/login?next=${safeNext(currentPathWithSearch)}`, req.url);
     if (sessionExpired) {
       loginUrl.searchParams.set(SESSION_EXPIRED_QUERY, `1`);
     }

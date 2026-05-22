@@ -16,8 +16,6 @@ import {
   submitWithdrawAction as submitWithdrawActionImpl,
 } from '../mutations/payments.server';
 
-export type { DraftPaymentRequestOption } from './payments.types';
-
 export async function createPaymentRequestMutation(
   ...args: Parameters<typeof createPaymentRequestMutationImpl>
 ): ReturnType<typeof createPaymentRequestMutationImpl> {

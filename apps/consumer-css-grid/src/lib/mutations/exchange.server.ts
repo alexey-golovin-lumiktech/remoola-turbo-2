@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
+import { encodeApiPathSegment } from '../api-path';
 import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
 import { getExchangeRatesBatch, type ExchangeRatesBatchResult } from '../consumer-api.server';
 import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
@@ -328,7 +329,7 @@ export async function updateExchangeRuleMutation(
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/exchange/rules/${ruleId}`, {
+  const response = await fetch(`${baseUrl}/consumer/exchange/rules/${encodeApiPathSegment(ruleId)}`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
@@ -356,7 +357,7 @@ export async function deleteExchangeRuleMutation(ruleId: string): Promise<Mutati
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/exchange/rules/${ruleId}`, {
+  const response = await fetch(`${baseUrl}/consumer/exchange/rules/${encodeApiPathSegment(ruleId)}`, {
     method: `DELETE`,
     headers: {
       ...buildConsumerMutationHeaders(cookieStore.toString()),
@@ -436,7 +437,7 @@ export async function cancelScheduledExchangeMutation(conversionId: string): Pro
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/exchange/scheduled/${conversionId}/cancel`, {
+  const response = await fetch(`${baseUrl}/consumer/exchange/scheduled/${encodeApiPathSegment(conversionId)}/cancel`, {
     method: `POST`,
     headers: {
       ...buildConsumerMutationHeaders(cookieStore.toString()),

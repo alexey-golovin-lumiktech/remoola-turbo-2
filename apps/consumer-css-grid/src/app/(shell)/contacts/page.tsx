@@ -37,7 +37,7 @@ export default async function ContactsPage({ searchParams }: { searchParams?: Pr
 
   return (
     <div>
-      <PageHeader title="Contacts" icon={<UsersIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Contacts" icon={<UsersIcon className="h-10 w-10 text-(--app-text)" />} />
       <HelpContextualGuides
         guides={contactsHelpGuides}
         title="Use contacts without losing the next step"

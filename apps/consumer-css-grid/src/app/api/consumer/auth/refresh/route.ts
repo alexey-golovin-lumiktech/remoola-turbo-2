@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders, fetchUpstream } from '../../../../../lib/api-utils';
 import { getEnv } from '../../../../../lib/env.server';
 
 export async function POST(req: Request) {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 
   const url = new URL(`${baseUrl}/consumer/auth/refresh`);
-  const res = await fetch(url, {
+  const res = await fetchUpstream(url, {
     method: `POST`,
     headers: forwardHeaders,
     cache: `no-store`,

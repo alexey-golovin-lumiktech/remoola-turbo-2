@@ -128,30 +128,38 @@ export function ContactDetailView({ contact, contactId }: Props) {
           </section>
 
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/35">Matching payments</div>
-              <div className="mt-3 text-4xl font-semibold tracking-tight text-white">{totalPayments}</div>
-              <div className="mt-2 text-sm text-white/55">Records where this email appears as payer or requester</div>
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Matching payments</div>
+              <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">{totalPayments}</div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">
+                Records where this email appears as payer or requester
+              </div>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/35">Completed</div>
-              <div className="mt-3 text-4xl font-semibold tracking-tight text-emerald-300">{completedPayments}</div>
-              <div className="mt-2 text-sm text-white/55">Based on the effective status returned by the backend</div>
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Completed</div>
+              <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-success-text)">
+                {completedPayments}
+              </div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">
+                Based on the effective status returned by the backend
+              </div>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/35">Documents</div>
-              <div className="mt-3 text-4xl font-semibold tracking-tight text-white">{totalDocuments}</div>
-              <div className="mt-2 text-sm text-white/55">Files attached to those matching payment records</div>
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Documents</div>
+              <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">{totalDocuments}</div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">
+                Files attached to those matching payment records
+              </div>
             </div>
           </section>
 
           <Panel title="Matching payment records" aside={`${totalPayments} total`}>
-            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60">
+            <div className="mb-4 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
               This endpoint matches payment records by contact email and returns the amount, effective status, and
               created date for each record.
             </div>
             {totalPayments === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
                 No matching payment records yet.
               </div>
             ) : (
@@ -160,20 +168,22 @@ export function ContactDetailView({ contact, contactId }: Props) {
                   <Link
                     key={payment.id}
                     href={`/payments/${payment.id}`}
-                    className="block rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-white/20 hover:bg-white/8"
+                    className="block rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4 transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
                   >
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-start">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <div className="font-medium text-white/90">Payment record</div>
+                          <div className="font-medium text-(--app-text)">Payment record</div>
                           <StatusPill status={formatStatusLabel(payment.status)} />
                         </div>
-                        <div className="mt-2 text-sm text-white/55">Created {formatDateOnly(payment.createdAt)}</div>
-                        <div className="mt-2 text-xs text-white/35">{payment.id}</div>
+                        <div className="mt-2 text-sm text-(--app-text-muted)">
+                          Created {formatDateOnly(payment.createdAt)}
+                        </div>
+                        <div className="mt-2 text-xs text-(--app-text-faint)">{payment.id}</div>
                       </div>
                       <div className="text-left md:text-right">
-                        <div className="text-sm text-white/45">Amount from contact details endpoint</div>
-                        <div className="mt-1 text-lg font-medium text-white/90">{payment.amount}</div>
+                        <div className="text-sm text-(--app-text-muted)">Amount from contact details endpoint</div>
+                        <div className="mt-1 text-lg font-medium text-(--app-text)">{payment.amount}</div>
                       </div>
                     </div>
                   </Link>
@@ -186,16 +196,16 @@ export function ContactDetailView({ contact, contactId }: Props) {
         <div className="space-y-5">
           <Panel title="Contact record">
             <div className="space-y-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                 Name: {contact.name?.trim() ? contact.name : `No saved name`}
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                 Email: {contact.email?.trim() ? contact.email : `No email available`}
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                 Address: {formatAddress(contact)}
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
                 Contact id: {contact.id}
               </div>
             </div>
@@ -203,31 +213,36 @@ export function ContactDetailView({ contact, contactId }: Props) {
 
           <Panel title="Files from matching payment records" aside={`${totalDocuments} total`}>
             {totalDocuments === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
                 No files are attached to matching payment records yet.
               </div>
             ) : (
               <div className="space-y-3">
                 {contact.documents.map((document) => (
-                  <div key={document.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div
+                    key={document.id}
+                    className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-200">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-(--app-primary)">
                             <DocumentIcon className="h-5 w-5" />
                           </div>
                           <div className="min-w-0">
-                            <div className="truncate font-medium text-white/90">{document.name}</div>
-                            <div className="mt-1 text-xs text-white/35">{document.id}</div>
+                            <div className="truncate font-medium text-(--app-text)">{document.name}</div>
+                            <div className="mt-1 text-xs text-(--app-text-faint)">{document.id}</div>
                           </div>
                         </div>
-                        <div className="mt-3 text-sm text-white/55">Added {formatDateTime(document.createdAt)}</div>
+                        <div className="mt-3 text-sm text-(--app-text-muted)">
+                          Added {formatDateTime(document.createdAt)}
+                        </div>
                       </div>
                       <a
                         href={document.downloadUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 rounded-xl border border-white/10 px-3 py-2 text-sm text-blue-200 transition hover:border-white/20 hover:text-blue-100"
+                        className="shrink-0 rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-primary) transition hover:border-(--app-border-strong) hover:text-(--app-primary)"
                       >
                         Open
                       </a>
@@ -242,16 +257,16 @@ export function ContactDetailView({ contact, contactId }: Props) {
             <div className="space-y-3">
               <Link
                 href="/contacts"
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/8"
+                className="flex items-center gap-3 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
               >
-                <UsersIcon className="h-5 w-5 text-blue-300" />
+                <UsersIcon className="h-5 w-5 text-(--app-primary)" />
                 Back to the contacts list and edit this record there
               </Link>
               <Link
                 href="/payments"
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/8"
+                className="flex items-center gap-3 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
               >
-                <DocumentIcon className="h-5 w-5 text-blue-300" />
+                <DocumentIcon className="h-5 w-5 text-(--app-primary)" />
                 Open payments to review related request details
               </Link>
             </div>

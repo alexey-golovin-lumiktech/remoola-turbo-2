@@ -96,7 +96,7 @@ export default async function PaymentDetailPage({
 
   return (
     <div>
-      <PageHeader title="Payment details" icon={<CreditCardIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Payment details" icon={<CreditCardIcon className="h-10 w-10 text-(--app-text)" />} />
 
       {checkoutSuccess ? (
         <div className="mb-5 rounded-2xl border border-transparent bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)">
@@ -134,7 +134,7 @@ export default async function PaymentDetailPage({
       </div>
 
       {contract ? (
-        <div className="mb-5 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+        <div className="mb-5 rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary)">
           Opened from contract: {contract.name?.trim() || contract.email || `Unknown contractor`}. Return to the
           relationship workspace when this payment step is complete.
         </div>

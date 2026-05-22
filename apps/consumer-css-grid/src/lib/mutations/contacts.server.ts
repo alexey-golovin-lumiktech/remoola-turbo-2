@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
+import { encodeApiPathSegment } from '../api-path';
 import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
 import { findContactByExactEmail } from '../consumer-api.server';
 import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
@@ -160,7 +161,7 @@ export async function deleteContactMutation(contactId: string): Promise<Mutation
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/contacts/${contactId}`, {
+  const response = await fetch(`${baseUrl}/consumer/contacts/${encodeApiPathSegment(contactId)}`, {
     method: `DELETE`,
     headers: {
       ...buildConsumerMutationHeaders(cookieStore.toString()),
@@ -218,7 +219,7 @@ export async function updateContactMutation(
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/contacts/${contactId}`, {
+  const response = await fetch(`${baseUrl}/consumer/contacts/${encodeApiPathSegment(contactId)}`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,

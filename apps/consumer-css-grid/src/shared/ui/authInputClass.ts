@@ -19,6 +19,6 @@ export const AUTH_INPUT_CLASS = `
   disabled:opacity-70
   dark:border-slate-600
   dark:bg-slate-800
-  dark:text-white
+  dark:text-(--app-text)
   dark:placeholder:text-slate-500
 `.trim();

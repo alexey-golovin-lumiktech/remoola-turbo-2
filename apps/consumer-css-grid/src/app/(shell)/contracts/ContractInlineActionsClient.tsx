@@ -52,8 +52,8 @@ export function ContractInlineActionsClient({
         <div
           className={`rounded-2xl border px-4 py-3 text-sm ${
             message.type === `error`
-              ? `border-rose-400/30 bg-rose-500/10 text-rose-200`
-              : `border-emerald-400/30 bg-emerald-500/10 text-emerald-200`
+              ? `border-(--app-danger-soft) bg-(--app-danger-soft) text-(--app-danger-text)`
+              : `border-(--app-success-soft) bg-(--app-success-soft) text-(--app-success-text)`
           }`}
         >
           <div>{message.text}</div>
@@ -63,7 +63,7 @@ export function ContractInlineActionsClient({
                 href={message.actionHref}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex rounded-xl border border-current/20 px-3 py-2 text-sm font-medium transition hover:bg-white/5"
+                className="inline-flex rounded-xl border border-current/20 px-3 py-2 text-sm font-medium transition hover:bg-(--app-surface-muted)"
               >
                 Open generated invoice
               </a>
@@ -74,7 +74,7 @@ export function ContractInlineActionsClient({
 
       {canSend ? (
         <div className="space-y-3">
-          <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <div className="rounded-2xl border border-(--app-warning-soft) bg-(--app-warning-soft) px-4 py-3 text-sm text-(--app-warning-text)">
             The current contract workflow is still a requester draft. You can send it directly from this workspace.
           </div>
           <div className="flex flex-wrap gap-3">
@@ -96,19 +96,19 @@ export function ContractInlineActionsClient({
                   }
                 });
               }}
-              className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSending ? `Sending...` : `Send active draft`}
             </button>
             <Link
               href={filesHref}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/8"
+              className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
             >
               Open contract files
             </Link>
             <Link
               href={paymentDetailHref}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/8"
+              className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
             >
               Open payment detail
             </Link>
@@ -118,7 +118,7 @@ export function ContractInlineActionsClient({
 
       {canGenerateInvoice ? (
         <div className="space-y-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
             The current requester-side workflow can generate an invoice without leaving the contract workspace.
           </div>
           <div className="flex flex-wrap gap-3">
@@ -144,13 +144,13 @@ export function ContractInlineActionsClient({
                   }
                 });
               }}
-              className="rounded-2xl border border-white/10 px-4 py-3 font-medium text-white/85 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-2xl border border-(--app-border) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isGeneratingInvoice ? `Generating invoice...` : `Generate invoice inline`}
             </button>
             <Link
               href={paymentDetailHref}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/8"
+              className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
             >
               Open payment detail
             </Link>
@@ -160,7 +160,7 @@ export function ContractInlineActionsClient({
 
       {canPayWithCard ? (
         <div className="space-y-3">
-          <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+          <div className="rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary)">
             The current contract workflow is pending on the payer side. Start Stripe Checkout directly from this
             workspace.
           </div>
@@ -184,13 +184,13 @@ export function ContractInlineActionsClient({
                   window.location.assign(result.data.url);
                 });
               }}
-              className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isStartingCheckout ? `Opening checkout...` : `Pay now with new card`}
             </button>
             <Link
               href={paymentDetailHref}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/8"
+              className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
             >
               Open full payment actions
             </Link>
@@ -200,13 +200,13 @@ export function ContractInlineActionsClient({
 
       {isBankTransferPending ? (
         <div className="space-y-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60">
+          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
             The current contract workflow is pending on the bank-transfer rail. Continue in payment detail for the exact
             settlement state.
           </div>
           <Link
             href={paymentDetailHref}
-            className="inline-flex rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/8"
+            className="inline-flex rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
           >
             Open payment detail
           </Link>

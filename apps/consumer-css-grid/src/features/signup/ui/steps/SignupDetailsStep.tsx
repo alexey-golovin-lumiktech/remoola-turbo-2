@@ -121,7 +121,9 @@ export function SignupDetailsStep() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400">
               Step 1
             </p>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Account details</h2>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-(--app-text)">
+              Account details
+            </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
               This is the identity layer of signup: account credentials, acquisition source, and Google handoff.
             </p>
@@ -300,7 +302,7 @@ export function SignupDetailsStep() {
 
         <div className="space-y-4">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            <p className="font-semibold text-slate-900 dark:text-white">What happens next</p>
+            <p className="font-semibold text-slate-900 dark:text-(--app-text)">What happens next</p>
             <p className="mt-2 leading-6">
               The remaining steps adapt to your selected path: personal contractor, contractor entity, or business.
             </p>
@@ -308,7 +310,7 @@ export function SignupDetailsStep() {
 
           {googleSignupStartUrl && !isGoogleSignup ? (
             <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-900/50 dark:bg-primary-950/30">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">Prefer Google sign-up?</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-(--app-text)">Prefer Google sign-up?</p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
                 Continue with Google and keep the same selected account type and contractor kind.
               </p>
@@ -318,7 +320,7 @@ export function SignupDetailsStep() {
                   await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
                   window.location.href = googleSignupStartUrl;
                 }}
-                className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-xs ring-1 ring-slate-200 transition hover:bg-slate-50 dark:bg-slate-900 dark:text-white dark:ring-slate-700 dark:hover:bg-slate-800"
+                className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-xs ring-1 ring-slate-200 transition hover:bg-slate-50 dark:bg-slate-900 dark:text-(--app-text) dark:ring-slate-700 dark:hover:bg-slate-800"
               >
                 <GoogleIcon size={18} />
                 Continue with Google
@@ -327,7 +329,7 @@ export function SignupDetailsStep() {
           ) : null}
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-            <p className="font-semibold text-slate-900 dark:text-white">Need a different account path?</p>
+            <p className="font-semibold text-slate-900 dark:text-(--app-text)">Need a different account path?</p>
             <p className="mt-2 leading-6">
               You can go back at any point before submit to change account type or contractor structure.
             </p>

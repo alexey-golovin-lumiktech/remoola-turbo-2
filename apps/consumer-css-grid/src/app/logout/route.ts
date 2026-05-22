@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { AUTH_NOTICE_QUERY, parseAuthNotice } from '@remoola/api-types';
 
-import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders, fetchUpstream } from '../../lib/api-utils';
 import { clearConsumerAuthCookies, getCsrfTokenFromRequest } from '../../lib/auth-cookie-policy';
 import { getEnv } from '../../lib/env.server';
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       if (csrfToken) {
         forwardHeaders.set(`x-csrf-token`, csrfToken);
       }
-      const backendResponse = await fetch(new URL(`${apiBase}/consumer/auth/logout`), {
+      const backendResponse = await fetchUpstream(new URL(`${apiBase}/consumer/auth/logout`), {
         method: `POST`,
         headers: forwardHeaders,
         credentials: `include`,

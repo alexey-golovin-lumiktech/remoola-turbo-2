@@ -294,75 +294,88 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
           </section>
 
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/35">Payment history</div>
-              <div className="mt-3 text-4xl font-semibold tracking-tight text-white">
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Payment history</div>
+              <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">
                 {contract.summary.paymentsCount}
               </div>
-              <div className="mt-2 text-sm text-white/55">Requests currently connected to this contractor</div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">
+                Requests currently connected to this contractor
+              </div>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/35">Completed</div>
-              <div className="mt-3 text-4xl font-semibold tracking-tight text-emerald-300">
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Completed</div>
+              <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-success-text)">
                 {contract.summary.completedPaymentsCount}
               </div>
-              <div className="mt-2 text-sm text-white/55">Effective completed outcomes inside this relationship</div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">
+                Effective completed outcomes inside this relationship
+              </div>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/35">Files</div>
-              <div className="mt-3 text-4xl font-semibold tracking-tight text-white">
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Files</div>
+              <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">
                 {contract.summary.documentsCount}
               </div>
-              <div className="mt-2 text-sm text-white/55">Documents linked to payment records for this contractor</div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">
+                Documents linked to payment records for this contractor
+              </div>
             </div>
           </section>
 
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/35">Drafts</div>
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Drafts</div>
               <div className="mt-3 text-3xl font-semibold tracking-tight text-amber-200">
                 {contract.summary.draftPaymentsCount}
               </div>
-              <div className="mt-2 text-sm text-white/55">Requester-side drafts still open for this relationship</div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">
+                Requester-side drafts still open for this relationship
+              </div>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/35">Pending</div>
-              <div className="mt-3 text-3xl font-semibold tracking-tight text-blue-200">
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Pending</div>
+              <div className="mt-3 text-3xl font-semibold tracking-tight text-(--app-primary)">
                 {contract.summary.pendingPaymentsCount}
               </div>
-              <div className="mt-2 text-sm text-white/55">Payments still waiting for a payer-side action</div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">Payments still waiting for a payer-side action</div>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/35">Waiting</div>
+            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Waiting</div>
               <div className="mt-3 text-3xl font-semibold tracking-tight text-indigo-200">
                 {contract.summary.waitingPaymentsCount}
               </div>
-              <div className="mt-2 text-sm text-white/55">In-flight settlements already moving through the rail</div>
+              <div className="mt-2 text-sm text-(--app-text-muted)">
+                In-flight settlements already moving through the rail
+              </div>
             </div>
           </section>
 
           <Panel title="Relationship timeline" aside={`${timeline.length} visible`}>
             {timeline.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
                 No relationship events yet.
               </div>
             ) : (
               <div className="space-y-3">
                 {timeline.map((event) => (
-                  <div key={event.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div key={event.id} className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <div className="font-medium text-white/90">{event.title}</div>
+                          <div className="font-medium text-(--app-text)">{event.title}</div>
                           {event.status ? <StatusPill status={event.status} /> : null}
                         </div>
-                        <div className="mt-2 text-sm text-white/55">{event.detail}</div>
+                        <div className="mt-2 text-sm text-(--app-text-muted)">{event.detail}</div>
                       </div>
-                      <div className="text-sm text-white/45">{formatDateTime(event.createdAt)}</div>
+                      <div className="text-sm text-(--app-text-muted)">{formatDateTime(event.createdAt)}</div>
                     </div>
                     {event.href ? (
                       <div className="mt-3">
-                        <Link href={event.href} className="text-sm text-blue-200 transition hover:text-blue-100">
+                        <Link
+                          href={event.href}
+                          className="text-sm text-(--app-primary) transition hover:text-(--app-primary)"
+                        >
                           Open related workflow
                         </Link>
                       </div>
@@ -374,12 +387,12 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
           </Panel>
 
           <Panel title="Payment history for this contract" aside={`${contract.summary.paymentsCount} total`}>
-            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60">
+            <div className="mb-4 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
               Each payment row stays linked to the existing payment detail route, but this screen frames the activity as
               one contractor relationship.
             </div>
             {contract.summary.paymentsCount === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
                 No payment history for this contract yet.
               </div>
             ) : (
@@ -388,20 +401,22 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                   <Link
                     key={payment.id}
                     href={buildContractPaymentDetailHref(payment.id, contractId, returnToContractsHref)}
-                    className="block rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-white/20 hover:bg-white/8"
+                    className="block rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4 transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
                   >
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-start">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <div className="font-medium text-white/90">Payment request</div>
+                          <div className="font-medium text-(--app-text)">Payment request</div>
                           <StatusPill status={formatStatusLabel(payment.status)} />
                         </div>
-                        <div className="mt-2 text-sm text-white/55">Created {formatDateOnly(payment.createdAt)}</div>
-                        <div className="mt-2 text-xs text-white/35">{payment.id}</div>
+                        <div className="mt-2 text-sm text-(--app-text-muted)">
+                          Created {formatDateOnly(payment.createdAt)}
+                        </div>
+                        <div className="mt-2 text-xs text-(--app-text-faint)">{payment.id}</div>
                       </div>
                       <div className="text-left md:text-right">
-                        <div className="text-sm text-white/45">Amount</div>
-                        <div className="mt-1 text-lg font-medium text-white/90">{payment.amount}</div>
+                        <div className="text-sm text-(--app-text-muted)">Amount</div>
+                        <div className="mt-1 text-lg font-medium text-(--app-text)">{payment.amount}</div>
                       </div>
                     </div>
                   </Link>
@@ -428,7 +443,7 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
               <MetricLine label="Files linked" value={`${contract.summary.documentsCount}`} />
             </div>
             {readiness ? (
-              <div className="mt-4 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+              <div className="mt-4 rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary)">
                 <div className="font-medium">{readiness.label}</div>
                 <div className="mt-1 text-blue-100/80">{readiness.description}</div>
               </div>
@@ -437,7 +452,7 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
 
           <div id="files">
             <Panel title="Files for this contract" aside={`${contract.summary.documentsCount} total`}>
-              <div className="mb-4 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-4 text-sm text-blue-100">
+              <div className="mb-4 rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-4 text-sm text-(--app-primary)">
                 <div className="font-medium">
                   {contract.summary.draftPaymentsCount > 0
                     ? `Draft file actions stay inside this contract workflow`
@@ -453,7 +468,7 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                     {draftLinkedFilesCount} file{draftLinkedFilesCount === 1 ? `` : `s`} already linked to draft work
                   </span>
                   {contract.summary.draftPaymentsCount > 0 ? (
-                    <span className="rounded-full border border-white/10 px-2 py-1 text-blue-100/80">
+                    <span className="rounded-full border border-(--app-border) px-2 py-1 text-blue-100/80">
                       {filesWithoutDraftLinkCount} file{filesWithoutDraftLinkCount === 1 ? `` : `s`} not yet linked to a
                       draft
                     </span>
@@ -462,14 +477,14 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
                     href={buildContractFilesWorkspaceHref(contractId, returnToContractsHref)}
-                    className="rounded-xl border border-blue-300/20 px-3 py-2 text-sm text-blue-100 transition hover:bg-blue-500/10"
+                    className="rounded-xl border border-blue-300/20 px-3 py-2 text-sm text-(--app-primary) transition hover:bg-(--app-primary-soft)"
                   >
                     Open contract files workspace
                   </Link>
                   {latestDraftPayment ? (
                     <Link
                       href={buildContractPaymentDetailHref(latestDraftPayment.id, contractId, returnToContractsHref)}
-                      className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/5"
+                      className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
                     >
                       Open latest draft
                     </Link>
@@ -477,31 +492,36 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                 </div>
               </div>
               {contract.summary.documentsCount === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
                   No files are attached to this contractor relationship yet.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {contract.documents.map((document) => (
-                    <div key={document.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div
+                      key={document.id}
+                      className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-200">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-(--app-primary)">
                               <DocumentIcon className="h-5 w-5" />
                             </div>
                             <div className="min-w-0">
-                              <div className="truncate font-medium text-white/90">{document.name}</div>
-                              <div className="mt-1 text-xs text-white/35">{document.id}</div>
+                              <div className="truncate font-medium text-(--app-text)">{document.name}</div>
+                              <div className="mt-1 text-xs text-(--app-text-faint)">{document.id}</div>
                             </div>
                           </div>
-                          <div className="mt-3 text-sm text-white/55">Added {formatDateTime(document.createdAt)}</div>
+                          <div className="mt-3 text-sm text-(--app-text-muted)">
+                            Added {formatDateTime(document.createdAt)}
+                          </div>
                         </div>
                         <a
                           href={document.downloadUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="shrink-0 rounded-xl border border-white/10 px-3 py-2 text-sm text-blue-200 transition hover:border-white/20 hover:text-blue-100"
+                          className="shrink-0 rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-primary) transition hover:border-(--app-border-strong) hover:text-(--app-primary)"
                         >
                           Open
                         </a>
@@ -513,7 +533,7 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                           </span>
                         ) : null}
                         {document.isAttachedToDraftPaymentRequest ? (
-                          <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-xs text-amber-100">
+                          <span className="rounded-full border border-(--app-warning-soft) bg-(--app-warning-soft) px-2 py-1 text-xs text-(--app-warning-text)">
                             Attached to draft payment request
                             {document.attachedDraftPaymentRequestIds.length === 1 ? `` : `s`}
                           </span>
@@ -522,7 +542,7 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                           <Link
                             key={`${document.id}-draft-${paymentRequestId}`}
                             href={buildContractPaymentDetailHref(paymentRequestId, contractId, returnToContractsHref)}
-                            className="rounded-full border border-amber-400/20 px-2 py-1 text-xs text-amber-100 transition hover:border-amber-300/40"
+                            className="rounded-full border border-(--app-warning-soft) px-2 py-1 text-xs text-(--app-warning-text) transition hover:border-amber-300/40"
                           >
                             {document.attachedDraftPaymentRequestIds.length === 1
                               ? `Open draft`
@@ -530,7 +550,7 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                           </Link>
                         ))}
                         {document.isAttachedToNonDraftPaymentRequest ? (
-                          <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2 py-1 text-xs text-rose-100">
+                          <span className="rounded-full border border-(--app-danger-soft) bg-(--app-danger-soft) px-2 py-1 text-xs text-(--app-danger-text)">
                             Attached to payment record
                             {document.attachedNonDraftPaymentRequestIds.length === 1 ? `` : `s`}
                           </span>
@@ -539,7 +559,7 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                           <Link
                             key={`${document.id}-payment-${paymentRequestId}`}
                             href={buildContractPaymentDetailHref(paymentRequestId, contractId, returnToContractsHref)}
-                            className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/70 transition hover:border-white/20 hover:text-white"
+                            className="rounded-full border border-(--app-border) px-2 py-1 text-xs text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:text-(--app-text)"
                           >
                             {document.attachedNonDraftPaymentRequestIds.length === 1
                               ? `Open payment`
@@ -547,14 +567,14 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                           </Link>
                         ))}
                         {document.tags.length === 0 ? (
-                          <span className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/35">
+                          <span className="rounded-full border border-(--app-border) px-2 py-1 text-xs text-(--app-text-faint)">
                             No tags
                           </span>
                         ) : (
                           document.tags.map((tag) => (
                             <span
                               key={`${document.id}-${tag}`}
-                              className="rounded-full border border-blue-400/20 bg-blue-500/10 px-2 py-1 text-xs text-blue-100"
+                              className="rounded-full border border-(--app-primary-soft) bg-(--app-primary-soft) px-2 py-1 text-xs text-(--app-primary)"
                             >
                               {tag}
                             </span>
@@ -574,15 +594,15 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
           >
             {activeWorkflow ? (
               <div className="space-y-4">
-                <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+                <div className="rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary)">
                   {activeWorkflow.title}
                 </div>
-                <div className="text-sm text-white/60">{activeWorkflow.detail}</div>
+                <div className="text-sm text-(--app-text-soft)">{activeWorkflow.detail}</div>
                 <Link
                   href={activeWorkflow.primaryAction.href}
                   className="flex items-center gap-3 rounded-2xl border border-(--app-primary)/20 bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary) transition hover:opacity-90"
                 >
-                  <DocumentIcon className="h-5 w-5 text-blue-300" />
+                  <DocumentIcon className="h-5 w-5 text-(--app-primary)" />
                   {activeWorkflow.primaryAction.label}
                 </Link>
                 {operatingPayment ? (
@@ -605,12 +625,12 @@ export function ContractDetailView({ contract, contractId, returnToContractsHref
                     <Link
                       key={action.label}
                       href={action.href}
-                      className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/8"
+                      className="flex items-center gap-3 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
                     >
                       {action.label.includes(`contact`) ? (
-                        <UsersIcon className="h-5 w-5 text-blue-300" />
+                        <UsersIcon className="h-5 w-5 text-(--app-primary)" />
                       ) : (
-                        <DocumentIcon className="h-5 w-5 text-blue-300" />
+                        <DocumentIcon className="h-5 w-5 text-(--app-primary)" />
                       )}
                       {action.label}
                     </Link>

@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { encodeApiPathSegment } from '../api-path';
 import { fetchConsumerApi } from '../consumer-api-fetch.server';
 import {
   type ContactDetailsResponse,
@@ -33,13 +34,15 @@ export async function findContactByExactEmail(email: string): Promise<ContactSea
 export async function getContact(contactId: string): Promise<ContactResponse | null> {
   const id = contactId.trim();
   if (!id) return null;
-  return fetchConsumerApi<ContactResponse>(`/consumer/contacts/${id}`);
+  return fetchConsumerApi<ContactResponse>(`/consumer/contacts/${encodeApiPathSegment(id)}`);
 }
 
 export async function getContactDetails(contactId: string): Promise<ContactDetailsResponse | null> {
   const id = contactId.trim();
   if (!id) return null;
-  const contact = await fetchConsumerApi<ContactDetailsResponse>(`/consumer/contacts/${id}/details`);
+  const contact = await fetchConsumerApi<ContactDetailsResponse>(
+    `/consumer/contacts/${encodeApiPathSegment(id)}/details`,
+  );
   if (!contact) return null;
 
   return {

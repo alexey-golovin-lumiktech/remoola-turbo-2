@@ -152,7 +152,7 @@ export function PaymentsClient({
               : `${incomingCount}`
           }
           sublabel={hasSingleCurrency && incomingCount > 0 ? `Visible on this page` : `Incoming payments on this page`}
-          accent="text-emerald-300"
+          accent="text-(--app-success-text)"
         />
         <MetricCard
           icon="↓"
@@ -183,13 +183,13 @@ export function PaymentsClient({
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search by description or counterparty"
             aria-label="Search payments by description or counterparty"
-            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
           />
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value)}
             aria-label="Filter by payment status"
-            className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option || `all-statuses`} value={option}>
@@ -201,7 +201,7 @@ export function PaymentsClient({
             value={type}
             onChange={(event) => setType(event.target.value)}
             aria-label="Filter by payment type"
-            className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
           >
             {PAYMENT_TYPE_OPTIONS.map((option) => (
               <option key={option || `all-types`} value={option}>
@@ -213,7 +213,7 @@ export function PaymentsClient({
             value={role}
             onChange={(event) => setRole(event.target.value)}
             aria-label="Filter by role"
-            className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
+            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
           >
             {ROLE_OPTIONS.map((option) => (
               <option key={option || `all-roles`} value={option}>
@@ -226,7 +226,7 @@ export function PaymentsClient({
               type="button"
               disabled={isFilterPending}
               onClick={() => applyFilters(1)}
-              className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isFilterPending ? `Applying...` : `Apply`}
             </button>
@@ -235,7 +235,7 @@ export function PaymentsClient({
                 type="button"
                 disabled={isFilterPending}
                 onClick={clearFilters}
-                className="rounded-2xl border border-white/10 px-4 py-3 font-medium text-white/70 transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl border border-(--app-border) px-4 py-3 font-medium text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Clear filters
               </button>
@@ -251,7 +251,7 @@ export function PaymentsClient({
       >
         {payments.length === 0 ? (
           <div className="mt-5 space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
               No payments match the current filters.
             </div>
             <HelpContextualGuides
@@ -267,33 +267,33 @@ export function PaymentsClient({
               <Link
                 key={payment.id}
                 href={`/payments/${payment.id}`}
-                className="block rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-white/20 hover:bg-white/8"
+                className="block rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4 transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="font-medium text-white/90">
+                    <div className="font-medium text-(--app-text)">
                       {payment.description ||
                         payment.counterparty.email ||
                         formatPaymentTypeLabel(payment.type || ``) ||
                         `Payment`}
                     </div>
-                    <div className="mt-1 text-sm text-white/45">{formatDate(payment.createdAt)}</div>
-                    <div className="mt-2 text-xs text-white/35">
+                    <div className="mt-1 text-sm text-(--app-text-muted)">{formatDate(payment.createdAt)}</div>
+                    <div className="mt-2 text-xs text-(--app-text-faint)">
                       {formatStatusLabel(payment.status)} · {formatRoleLabel(payment.role)} ·{` `}
                       {payment.counterparty.email || `No counterparty`}
                     </div>
                     {payment.latestTransaction ? (
-                      <div className="mt-2 text-xs text-blue-200/85">
+                      <div className="mt-2 text-xs text-(--app-primary)">
                         Latest ledger update: {formatStatusLabel(payment.latestTransaction.status)} on{` `}
                         {formatDate(payment.latestTransaction.createdAt)}
                       </div>
                     ) : null}
                   </div>
                   <div className="text-right">
-                    <div className="font-medium text-white/90">
+                    <div className="font-medium text-(--app-text)">
                       {formatMajorCurrency(payment.amount, payment.currencyCode)}
                     </div>
-                    <div className="mt-1 text-sm text-white/45">{formatStatusLabel(payment.status)}</div>
+                    <div className="mt-1 text-sm text-(--app-text-muted)">{formatStatusLabel(payment.status)}</div>
                   </div>
                 </div>
               </Link>
@@ -306,7 +306,7 @@ export function PaymentsClient({
             type="button"
             disabled={isFilterPending || page <= 1}
             onClick={() => applyFilters(page - 1)}
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Previous
           </button>
@@ -314,7 +314,7 @@ export function PaymentsClient({
             type="button"
             disabled={isFilterPending || page >= totalPages}
             onClick={() => applyFilters(page + 1)}
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next
           </button>

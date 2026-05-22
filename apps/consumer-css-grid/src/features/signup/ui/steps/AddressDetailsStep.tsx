@@ -93,7 +93,9 @@ export function AddressDetailsStep() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400">
               Step 3
             </p>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Address details</h2>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-(--app-text)">
+              Address details
+            </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
               Confirm the operational address that will be stored with the new consumer profile.
             </p>
@@ -201,14 +203,16 @@ export function AddressDetailsStep() {
         <div className="space-y-4">
           {isEntityFlow ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              <p className="font-semibold text-slate-900 dark:text-white">Prefilled from legal address</p>
+              <p className="font-semibold text-slate-900 dark:text-(--app-text)">Prefilled from legal address</p>
               <p className="mt-2 leading-6">
                 We used the entity legal address to prefill this step. Review and correct anything before continuing.
               </p>
             </div>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              <p className="font-semibold text-slate-900 dark:text-white">Final step for individual contractors</p>
+              <p className="font-semibold text-slate-900 dark:text-(--app-text)">
+                Final step for individual contractors
+              </p>
               <p className="mt-2 leading-6">
                 Once you confirm your address, we can submit the full individual contractor onboarding payload.
               </p>

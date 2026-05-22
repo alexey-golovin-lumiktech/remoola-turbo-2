@@ -18,6 +18,21 @@ const FORWARDED_HEADER_ALLOWLIST = new Set([
   `x-request-id`,
 ]);
 
+const UPSTREAM_FETCH_TIMEOUT_MS = 15000;
+const UPSTREAM_NETWORK_ERROR_MESSAGE = `The upstream API request failed. Please try again.`;
+
+export async function fetchUpstream(input: string | URL, init: RequestInit = {}): Promise<Response> {
+  try {
+    return await fetch(input, {
+      cache: `no-store`,
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(UPSTREAM_FETCH_TIMEOUT_MS),
+    });
+  } catch {
+    return NextResponse.json({ code: `NETWORK_ERROR`, message: UPSTREAM_NETWORK_ERROR_MESSAGE }, { status: 503 });
+  }
+}
+
 export function getSetCookieValues(headers: Headers): string[] {
   const h = headers as Headers & { getSetCookie?: () => string[] };
   if (typeof h.getSetCookie === `function`) {

@@ -202,9 +202,9 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
 
   return (
     <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.3fr_0.7fr]">
-      <div className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur">
+      <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface-muted) p-5 backdrop-blur">
         {contractContext ? (
-          <div className="mb-4 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-4 text-sm text-blue-100">
+          <div className="mb-4 rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-4 text-sm text-(--app-primary)">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="font-medium text-blue-50">Contract files mode</div>
@@ -214,7 +214,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
               </div>
               <Link
                 href={contractContext.returnTo}
-                className="rounded-xl border border-blue-300/20 px-3 py-2 text-sm text-blue-100 transition hover:bg-blue-500/10"
+                className="rounded-xl border border-blue-300/20 px-3 py-2 text-sm text-(--app-primary) transition hover:bg-(--app-primary-soft)"
               >
                 Back to contract
               </Link>
@@ -223,10 +223,10 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
         ) : null}
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
-            <div className="text-lg font-semibold text-white/90">
+            <div className="text-lg font-semibold text-(--app-text)">
               {contractContext ? `Relationship files` : `Document library`}
             </div>
-            <div className="mt-1 text-sm text-white/45">
+            <div className="mt-1 text-sm text-(--app-text-muted)">
               {contractContext
                 ? `Preview, tag, and attach files already connected to this contract. Page ${page} of ${totalPages} shows ${documents.length} of ${total} files.`
                 : `Upload new files or remove outdated ones. Page ${page} of ${totalPages} shows ${documents.length} of ${total} documents.`}
@@ -245,7 +245,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
           }
         />
         {isContractMode ? (
-          <div className="mb-4 text-sm text-white/45">
+          <div className="mb-4 text-sm text-(--app-text-muted)">
             Upload remains in the full document library. This mode stays focused on files already tied to the current
             contractor relationship.
           </div>
@@ -265,15 +265,15 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
           <div
             className={
               message.type === `error`
-                ? `mb-4 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200`
-                : `mb-4 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200`
+                ? `mb-4 rounded-2xl border border-(--app-danger-soft) bg-(--app-danger-soft) px-4 py-3 text-sm text-(--app-danger-text)`
+                : `mb-4 rounded-2xl border border-(--app-success-soft) bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)`
             }
           >
             {message.text}
           </div>
         ) : null}
         {documents.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
             <div>
               {hasDocumentsOnAnotherPage
                 ? contractContext
@@ -288,7 +288,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
                 <button
                   type="button"
                   onClick={returnToFirstPage}
-                  className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 transition hover:border-white/20 hover:text-white"
+                  className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:text-(--app-text)"
                 >
                   Go to page 1
                 </button>
@@ -327,8 +327,8 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
                   }}
                   className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
                     filterKind === filter.value
-                      ? `bg-indigo-600 text-white`
-                      : `bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80`
+                      ? `bg-indigo-600 text-(--app-text)`
+                      : `bg-(--app-surface-muted) text-(--app-text-soft) hover:bg-white/10 hover:text-(--app-text-soft)`
                   }`}
                 >
                   {filter.label} ({filter.count})
@@ -398,7 +398,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
             type="button"
             disabled={isPending || page <= 1}
             onClick={() => applyPage(page - 1)}
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Previous
           </button>
@@ -406,15 +406,15 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
             type="button"
             disabled={isPending || page >= totalPages}
             onClick={() => applyPage(page + 1)}
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next
           </button>
         </div>
       </div>
 
-      <div className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur">
-        <div className="mb-4 text-lg font-semibold text-white/90">
+      <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface-muted) p-5 backdrop-blur">
+        <div className="mb-4 text-lg font-semibold text-(--app-text)">
           {contractContext ? `Contract files summary` : `Storage summary`}
         </div>
         <div className="space-y-4">

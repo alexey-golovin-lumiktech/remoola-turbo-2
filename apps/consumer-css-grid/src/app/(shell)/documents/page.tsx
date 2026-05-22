@@ -27,7 +27,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams?: P
 
   return (
     <div>
-      <PageHeader title="Documents" icon={<DocumentIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Documents" icon={<DocumentIcon className="h-10 w-10 text-(--app-text)" />} />
       <Suspense
         fallback={
           <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface) p-5 text-sm text-(--app-text-muted) shadow-(--app-shadow)">

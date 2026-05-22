@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { encodeApiPathSegment } from '../api-path';
 import { fetchConsumerApi, type ConsumerApiRequestOptions } from '../consumer-api-fetch.server';
 import { type PaymentHistoryResponse, type PaymentsResponse, type PaymentViewResponse } from '../consumer-api.types';
 import { normalizeDocumentDownloadUrl } from '../document-download-url';
@@ -30,8 +31,12 @@ export async function getPaymentView(
   paymentRequestId: string,
   options?: ConsumerApiRequestOptions,
 ): Promise<PaymentViewResponse | null> {
-  if (!paymentRequestId.trim()) return null;
-  const payment = await fetchConsumerApi<PaymentViewResponse>(`/consumer/payments/${paymentRequestId}`, options);
+  const id = paymentRequestId.trim();
+  if (!id) return null;
+  const payment = await fetchConsumerApi<PaymentViewResponse>(
+    `/consumer/payments/${encodeApiPathSegment(id)}`,
+    options,
+  );
   if (!payment) return null;
 
   return {

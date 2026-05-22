@@ -232,14 +232,14 @@ export function ContractsClient({
                     }}
                     placeholder="Search contractors by name or email"
                     aria-label="Search contracts by contact name or email"
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-white outline-none ring-blue-500/40 placeholder:text-white/25 focus:border-white/20 focus:ring-2"
+                    className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) py-3 pl-10 pr-4 text-(--app-text) outline-none ring-blue-500/40 placeholder:text-(--app-text-faint) focus:border-(--app-border-strong) focus:ring-2"
                   />
                 </div>
                 <button
                   type="button"
                   disabled={isSearchPending}
                   onClick={() => applyFilters(query, status, hasDocuments, hasPayments, sort)}
-                  className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSearchPending ? `Searching...` : `Search`}
                 </button>
@@ -292,7 +292,7 @@ export function ContractsClient({
                       setHasDocuments(nextValue);
                       applyFilters(query, status, nextValue, hasPayments, sort);
                     }}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+                    className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none"
                   >
                     {CONTRACT_PRESENCE_FILTERS.map((filterValue) => (
                       <option key={`has-documents-${filterValue}`} value={filterValue}>
@@ -310,7 +310,7 @@ export function ContractsClient({
                       setHasPayments(nextValue);
                       applyFilters(query, status, hasDocuments, nextValue, sort);
                     }}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+                    className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none"
                   >
                     {CONTRACT_PRESENCE_FILTERS.map((filterValue) => (
                       <option key={`has-payments-${filterValue}`} value={filterValue}>
@@ -328,7 +328,7 @@ export function ContractsClient({
                       setSort(nextValue);
                       applyFilters(query, status, hasDocuments, hasPayments, nextValue);
                     }}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+                    className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none"
                   >
                     {CONTRACT_SORT_OPTIONS.map((sortOption) => (
                       <option key={sortOption} value={sortOption}>

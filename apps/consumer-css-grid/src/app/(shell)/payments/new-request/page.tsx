@@ -53,8 +53,10 @@ export default async function NewPaymentRequestPage({ searchParams }: { searchPa
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="text-sm uppercase tracking-[0.3em] text-(--app-primary)">Payments</div>
-          <h1 className="mt-1 text-2xl font-bold text-white/90">New Payment Request</h1>
-          <p className="mt-1 text-sm text-white/50">Create a new payment request and send it to a recipient.</p>
+          <h1 className="mt-1 text-2xl font-bold text-(--app-text)">New Payment Request</h1>
+          <p className="mt-1 text-sm text-(--app-text-muted)">
+            Create a new payment request and send it to a recipient.
+          </p>
         </div>
         <Link
           href={getPaymentFlowBackHref(paymentFlowContext)}
@@ -72,7 +74,7 @@ export default async function NewPaymentRequestPage({ searchParams }: { searchPa
         className="mb-6"
       />
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+      <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-6">
         <CreatePaymentRequestForm
           contacts={contacts}
           currencies={currencies}

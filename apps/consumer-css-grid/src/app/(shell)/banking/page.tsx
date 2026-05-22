@@ -22,7 +22,7 @@ export default async function BankingPage() {
 
   return (
     <div>
-      <PageHeader title="Bank & Cards" icon={<BankIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Bank & Cards" icon={<BankIcon className="h-10 w-10 text-(--app-text)" />} />
       <HelpContextualGuides
         guides={bankingHelpGuides}
         compact

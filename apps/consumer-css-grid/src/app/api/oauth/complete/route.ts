@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import { appendSetCookies, buildAuthMutationForwardHeaders, requireJsonBody } from '../../../../lib/api-utils';
+import {
+  appendSetCookies,
+  buildAuthMutationForwardHeaders,
+  fetchUpstream,
+  requireJsonBody,
+} from '../../../../lib/api-utils';
 import { getEnv } from '../../../../lib/env.server';
 
 export async function POST(req: Request) {
@@ -20,7 +25,7 @@ export async function POST(req: Request) {
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 
-  const res = await fetch(url, {
+  const res = await fetchUpstream(url, {
     method: `POST`,
     headers: forwardHeaders,
     body: bodyResult.body,

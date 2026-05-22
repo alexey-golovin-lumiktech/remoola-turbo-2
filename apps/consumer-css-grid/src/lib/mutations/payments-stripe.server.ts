@@ -14,6 +14,7 @@ import {
   CURRENT_CONSUMER_APP_SCOPE,
 } from '@remoola/api-types';
 
+import { encodeApiPathSegment } from '../api-path';
 import { normalizeDocumentDownloadUrl } from '../document-download-url';
 import {
   configuredBaseUrl,
@@ -101,7 +102,7 @@ export async function payWithSavedMethodMutation(
     };
   }
 
-  const savedMethodUrl = new URL(`${baseUrl}/consumer/stripe/${id}/pay-with-saved-method`);
+  const savedMethodUrl = new URL(`${baseUrl}/consumer/stripe/${encodeApiPathSegment(id)}/pay-with-saved-method`);
   savedMethodUrl.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const response = await fetch(savedMethodUrl, {
     method: `POST`,
@@ -159,7 +160,7 @@ export async function createPaymentCheckoutSessionMutation(
     };
   }
 
-  const checkoutUrl = new URL(`${baseUrl}/consumer/stripe/${id}/stripe-session`);
+  const checkoutUrl = new URL(`${baseUrl}/consumer/stripe/${encodeApiPathSegment(id)}/stripe-session`);
   checkoutUrl.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const paymentFlowContext = normalizePaymentFlowMutationContext(context);
   if (paymentFlowContext?.contractId) {
@@ -210,7 +211,7 @@ export async function generateInvoiceMutation(
     };
   }
 
-  const response = await fetch(`${baseUrl}/consumer/payments/${id}/generate-invoice`, {
+  const response = await fetch(`${baseUrl}/consumer/payments/${encodeApiPathSegment(id)}/generate-invoice`, {
     method: `POST`,
     headers: {
       ...(await consumerMutationHeaders()),

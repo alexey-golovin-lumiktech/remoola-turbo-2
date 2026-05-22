@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { appendSetCookies, buildForwardHeaders } from '../../../../../lib/api-utils';
+import { encodeApiPathSegment } from '../../../../../lib/api-path';
+import { appendSetCookies, buildForwardHeaders, fetchUpstream } from '../../../../../lib/api-utils';
 import { getEnv } from '../../../../../lib/env.server';
 
 const RESPONSE_HEADER_ALLOWLIST = new Set([`cache-control`, `content-disposition`, `content-length`, `content-type`]);
@@ -29,8 +30,8 @@ export async function GET(req: NextRequest, context: RouteContext) {
   const forwardHeaders = buildForwardHeaders(req.headers);
   forwardHeaders.delete(`host`);
 
-  const url = new URL(`${baseUrl}/consumer/documents/${encodeURIComponent(documentId)}/download`);
-  const res = await fetch(url, {
+  const url = new URL(`${baseUrl}/consumer/documents/${encodeApiPathSegment(documentId)}/download`);
+  const res = await fetchUpstream(url, {
     method: `GET`,
     headers: forwardHeaders,
     cache: `no-store`,

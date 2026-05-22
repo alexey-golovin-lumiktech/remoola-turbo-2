@@ -55,4 +55,23 @@ describe(`documents upload route`, () => {
     expect(forwardedHeaders?.get(`host`)).toBeNull();
     expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`upload_cookie=`))).toBe(true);
   });
+
+  it(`returns a controlled network error when upstream upload fetch fails`, async () => {
+    mockFetch.mockRejectedValueOnce(new Error(`network down`));
+
+    const response = await POST(
+      new Request(`https://app.example.com/api/documents/upload`, {
+        method: `POST`,
+        headers: { 'content-type': `multipart/form-data; boundary=test-boundary` },
+        body: `--test-boundary--`,
+        duplex: `half`,
+      } as RequestInit) as unknown as NextRequest,
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      code: `NETWORK_ERROR`,
+      message: `The upstream API request failed. Please try again.`,
+    });
+  });
 });

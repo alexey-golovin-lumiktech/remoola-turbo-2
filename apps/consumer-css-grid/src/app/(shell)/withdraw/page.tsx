@@ -40,7 +40,7 @@ export default async function WithdrawPage() {
       <PageHeader
         title="Move funds"
         subtitle="Withdraw to your bank or transfer available balance to another consumer account."
-        icon={<ArrowDownIcon className="h-10 w-10 text-white" />}
+        icon={<ArrowDownIcon className="h-10 w-10 text-(--app-text)" />}
       />
       <HelpContextualGuides
         guides={withdrawHelpGuides}

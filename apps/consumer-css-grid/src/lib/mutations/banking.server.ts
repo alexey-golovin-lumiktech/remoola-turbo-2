@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
+import { encodeApiPathSegment } from '../api-path';
 import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
 import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
 import { getEnv } from '../env.server';
@@ -285,7 +286,7 @@ export async function setDefaultPaymentMethodMutation(paymentMethodId: string): 
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/payment-methods/${paymentMethodId}`, {
+  const response = await fetch(`${baseUrl}/consumer/payment-methods/${encodeApiPathSegment(paymentMethodId)}`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
@@ -315,7 +316,7 @@ export async function deletePaymentMethodMutation(paymentMethodId: string): Prom
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/payment-methods/${paymentMethodId}`, {
+  const response = await fetch(`${baseUrl}/consumer/payment-methods/${encodeApiPathSegment(paymentMethodId)}`, {
     method: `DELETE`,
     headers: {
       ...buildConsumerMutationHeaders(cookieStore.toString()),

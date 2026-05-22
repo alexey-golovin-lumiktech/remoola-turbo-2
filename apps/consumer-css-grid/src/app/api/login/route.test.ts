@@ -55,4 +55,22 @@ describe(`login route`, () => {
     expect(forwardedHeaders?.get(`x-correlation-id`)).toBe(`corr-1`);
     expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`login_cookie=`))).toBe(true);
   });
+
+  it(`returns a controlled network error when upstream login fetch fails`, async () => {
+    mockFetch.mockRejectedValueOnce(new Error(`network down`));
+
+    const response = await POST(
+      new Request(`https://app.example.com/api/login`, {
+        method: `POST`,
+        headers: { 'content-type': `application/json` },
+        body: JSON.stringify({ email: `user@example.com`, password: `Password1!` }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      code: `NETWORK_ERROR`,
+      message: `The upstream API request failed. Please try again.`,
+    });
+  });
 });

@@ -349,6 +349,42 @@ describe(`consumer css-grid ancillary routing`, () => {
     expect(headers.origin).toBe(`http://localhost:3003`);
   });
 
+  it(`encodes dynamic backend path segments across representative mutations`, async () => {
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    fetchMock
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ url: `https://checkout.example/session` }), { status: 200 }),
+      );
+    global.fetch = fetchMock;
+
+    const {
+      cancelScheduledExchangeMutation,
+      createPaymentCheckoutSessionMutation,
+      deleteContactMutation,
+      setDefaultPaymentMethodMutation,
+      updateDocumentTagsMutation,
+    } = await loadSubject();
+
+    await deleteContactMutation(`contact/abc?x=1`);
+    await setDefaultPaymentMethodMutation(`pm id?x=1`);
+    await updateDocumentTagsMutation(`doc space id`, `reviewed`);
+    await cancelScheduledExchangeMutation(`conversion/abc?x=1`);
+    await createPaymentCheckoutSessionMutation(`payment/abc?x=1`);
+
+    const urls = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(urls).toEqual([
+      `https://api.example.com/consumer/contacts/contact%2Fabc%3Fx%3D1`,
+      `https://api.example.com/consumer/payment-methods/pm%20id%3Fx%3D1`,
+      `https://api.example.com/consumer/documents/doc%20space%20id/tags`,
+      `https://api.example.com/consumer/exchange/scheduled/conversion%2Fabc%3Fx%3D1/cancel`,
+      `https://api.example.com/consumer/stripe/payment%2Fabc%3Fx%3D1/stripe-session?appScope=consumer-css-grid`,
+    ]);
+  });
+
   it(`revalidates contract pages when sending a payment request from contract detail`, async () => {
     const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
     fetchMock.mockResolvedValue(new Response(null, { status: 200 }));

@@ -97,7 +97,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
   function renderFieldError(key: string) {
     const message = fieldErrors[key];
     if (!message) return null;
-    return <div className="mt-2 text-sm text-rose-200">{message}</div>;
+    return <div className="mt-2 text-sm text-(--app-danger-text)">{message}</div>;
   }
 
   return (
@@ -111,8 +111,8 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
           }}
           className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
             activeTab === `withdraw`
-              ? `border-blue-400/30 bg-blue-500 text-white`
-              : `border-white/10 bg-white/5 text-white/75`
+              ? `border-(--app-primary-soft) bg-(--app-primary) text-(--app-text)`
+              : `border-(--app-border) bg-(--app-surface-muted) text-(--app-text-soft)`
           }`}
         >
           Withdraw
@@ -125,8 +125,8 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
           }}
           className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
             activeTab === `transfer`
-              ? `border-blue-400/30 bg-blue-500 text-white`
-              : `border-white/10 bg-white/5 text-white/75`
+              ? `border-(--app-primary-soft) bg-(--app-primary) text-(--app-text)`
+              : `border-(--app-border) bg-(--app-surface-muted) text-(--app-text-soft)`
           }`}
         >
           Transfer
@@ -144,18 +144,18 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
       {activeTab === `withdraw` ? (
         <>
           {!hasBankMethod ? (
-            <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            <div className="rounded-2xl border border-(--app-warning-soft) bg-(--app-warning-soft) px-4 py-3 text-sm text-(--app-warning-text)">
               Add a bank account in the Banking section before creating a withdrawal.
             </div>
           ) : null}
           {!hasPositiveBalance ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/55">
+            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-muted)">
               Withdrawals unlock once at least one balance becomes positive.
             </div>
           ) : null}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm text-white/55" htmlFor="withdraw-amount">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="withdraw-amount">
                 Amount
               </label>
               <input
@@ -168,16 +168,18 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
                   setWithdrawAmount(event.target.value);
                   clearFeedback();
                 }}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
                 placeholder="0.00"
               />
               {hasWithdrawInsufficientFunds ? (
-                <div className="mt-2 text-sm text-rose-200">Entered amount is greater than the available balance.</div>
+                <div className="mt-2 text-sm text-(--app-danger-text)">
+                  Entered amount is greater than the available balance.
+                </div>
               ) : null}
               {renderFieldError(`amount`)}
             </div>
             <div>
-              <label className="mb-2 block text-sm text-white/55" htmlFor="withdraw-currency">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="withdraw-currency">
                 Currency
               </label>
               <select
@@ -187,7 +189,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
                   setWithdrawCurrency(event.target.value);
                   clearFeedback();
                 }}
-                className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
               >
                 {Object.keys(balances ?? {}).length === 0 ? <option value="USD">USD</option> : null}
                 {Object.keys(balances ?? {}).map((code) => (
@@ -199,7 +201,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
               {renderFieldError(`currency`)}
             </div>
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm text-white/55" htmlFor="withdraw-destination">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="withdraw-destination">
                 Destination bank account
               </label>
               <select
@@ -210,7 +212,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
                   clearFeedback();
                 }}
                 disabled={bankMethods.length === 0}
-                className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {bankMethods.length === 0 ? <option value="">No bank account connected</option> : null}
                 {bankMethods.map((method) => (
@@ -222,7 +224,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
               {renderFieldError(`paymentMethodId`)}
             </div>
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm text-white/55" htmlFor="withdraw-note">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="withdraw-note">
                 Note
               </label>
               <textarea
@@ -233,7 +235,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
                   setWithdrawNote(event.target.value);
                   clearFeedback();
                 }}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
                 placeholder="Optional note for this payout"
               />
             </div>
@@ -245,18 +247,18 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
         </>
       ) : (
         <>
-          <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+          <div className="rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary)">
             Transfers move available balance to an existing consumer account already registered under the recipient
             email or phone number.
           </div>
           {!hasPositiveBalance ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/55">
+            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-muted)">
               Transfers unlock once at least one balance becomes positive.
             </div>
           ) : null}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm text-white/55" htmlFor="transfer-recipient">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="transfer-recipient">
                 Recipient email or phone
               </label>
               <input
@@ -267,16 +269,16 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
                   setRecipient(event.target.value);
                   clearFeedback();
                 }}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
                 placeholder="recipient@example.com"
               />
-              <div className="mt-2 text-sm text-white/45">
+              <div className="mt-2 text-sm text-(--app-text-muted)">
                 The recipient must already exist as a consumer account for the transfer to complete.
               </div>
               {renderFieldError(`recipient`)}
             </div>
             <div>
-              <label className="mb-2 block text-sm text-white/55" htmlFor="transfer-amount">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="transfer-amount">
                 Amount
               </label>
               <input
@@ -289,16 +291,18 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
                   setTransferAmount(event.target.value);
                   clearFeedback();
                 }}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
                 placeholder="0.00"
               />
               {hasTransferInsufficientFunds ? (
-                <div className="mt-2 text-sm text-rose-200">Entered amount is greater than the available balance.</div>
+                <div className="mt-2 text-sm text-(--app-danger-text)">
+                  Entered amount is greater than the available balance.
+                </div>
               ) : null}
               {renderFieldError(`amount`)}
             </div>
             <div>
-              <label className="mb-2 block text-sm text-white/55" htmlFor="transfer-currency">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="transfer-currency">
                 Currency
               </label>
               <select
@@ -308,7 +312,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
                   setTransferCurrency(event.target.value);
                   clearFeedback();
                 }}
-                className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
               >
                 {Object.keys(balances ?? {}).length === 0 ? <option value="USD">USD</option> : null}
                 {Object.keys(balances ?? {}).map((code) => (
@@ -324,12 +328,12 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
       )}
 
       {error ? (
-        <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+        <div className="rounded-2xl border border-(--app-danger-soft) bg-(--app-danger-soft) px-4 py-3 text-sm text-(--app-danger-text)">
           {error}
         </div>
       ) : null}
       {success ? (
-        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+        <div className="rounded-2xl border border-(--app-success-soft) bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)">
           {success}
         </div>
       ) : null}
@@ -372,7 +376,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
             router.refresh();
           });
         }}
-        className="w-full rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
       >
         {activeTab === `withdraw` ? withdrawSubmitLabel : transferSubmitLabel}
       </button>

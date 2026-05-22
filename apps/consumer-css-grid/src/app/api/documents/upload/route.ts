@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { appendSetCookies, buildForwardHeaders } from '../../../../lib/api-utils';
+import { appendSetCookies, buildForwardHeaders, fetchUpstream } from '../../../../lib/api-utils';
 import { getEnv } from '../../../../lib/env.server';
 
 export async function POST(req: NextRequest) {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const url = new URL(`${baseUrl}/consumer/documents/upload`);
   const forwardHeaders = buildForwardHeaders(req.headers);
   forwardHeaders.delete(`host`);
-  const res = await fetch(url, {
+  const res = await fetchUpstream(url, {
     method: `POST`,
     body: req.body,
     credentials: `include`,

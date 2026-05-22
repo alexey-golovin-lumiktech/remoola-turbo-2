@@ -23,7 +23,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
   return (
     <div>
-      <PageHeader title="Settings" icon={<SettingsIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Settings" icon={<SettingsIcon className="h-10 w-10 text-(--app-text)" />} />
       <SettingsClient profile={profile} settings={settings} logoutAllFailed={logoutAllFailed} />
     </div>
   );

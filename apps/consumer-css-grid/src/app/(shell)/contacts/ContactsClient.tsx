@@ -143,26 +143,28 @@ export function ContactsClient({
 
   return (
     <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-      <div className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur">
+      <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface-muted) p-5 backdrop-blur">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <div className="text-lg font-semibold text-white/90">Contacts</div>
-            <div className="mt-1 text-sm text-white/45">Create, update and remove saved payout recipients.</div>
+            <div className="text-lg font-semibold text-(--app-text)">Contacts</div>
+            <div className="mt-1 text-sm text-(--app-text-muted)">
+              Create, update and remove saved payout recipients.
+            </div>
           </div>
         </div>
-        <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="mb-5 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.2fr_auto_auto]">
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search by name or email"
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
             />
             <button
               type="button"
               disabled={isSearchPending}
               onClick={() => applyQuery(query)}
-              className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSearchPending ? `Applying...` : `Search`}
             </button>
@@ -173,34 +175,34 @@ export function ContactsClient({
                 setQuery(``);
                 applyQuery(``);
               }}
-              className="rounded-2xl border border-white/10 px-4 py-3 font-medium text-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-2xl border border-(--app-border) px-4 py-3 font-medium text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
             >
               Clear
             </button>
           </div>
-          <div className="mt-3 text-sm text-white/45">
+          <div className="mt-3 text-sm text-(--app-text-muted)">
             Search uses the backend contacts query contract and matches saved contact name or email only.
           </div>
         </div>
         {createMode ? (
-          <div className="mb-5 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+          <div className="mb-5 rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary)">
             Finish this contact to return to your saved start-payment draft.
           </div>
         ) : null}
         {initialEditingContact && returnTo ? (
-          <div className="mb-5 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+          <div className="mb-5 rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary)">
             Edit this contact and you will be returned to the contract workspace after saving.
           </div>
         ) : null}
         {searchMode ? (
-          <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60">
+          <div className="mb-5 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
             Search results return only name and email from the backend search endpoint. Open a full record to review
             address details or related payment history.
           </div>
         ) : null}
         <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm text-white/55" htmlFor="contact-email">
+            <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="contact-email">
               Email
             </label>
             <input
@@ -211,12 +213,12 @@ export function ContactsClient({
                 setForm((current) => ({ ...current, email: event.target.value }));
                 setMessage(null);
               }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               placeholder="partner@example.com"
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/55" htmlFor="contact-name">
+            <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="contact-name">
               Name
             </label>
             <input
@@ -226,12 +228,12 @@ export function ContactsClient({
                 setForm((current) => ({ ...current, name: event.target.value }));
                 setMessage(null);
               }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               placeholder="Partner name"
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/55" htmlFor="contact-street">
+            <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="contact-street">
               Street
             </label>
             <input
@@ -241,12 +243,12 @@ export function ContactsClient({
                 setForm((current) => ({ ...current, street: event.target.value }));
                 setMessage(null);
               }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               placeholder="221B Baker Street"
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/55" htmlFor="contact-city">
+            <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="contact-city">
               City
             </label>
             <input
@@ -256,12 +258,12 @@ export function ContactsClient({
                 setForm((current) => ({ ...current, city: event.target.value }));
                 setMessage(null);
               }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               placeholder="London"
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/55" htmlFor="contact-state">
+            <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="contact-state">
               State / Region
             </label>
             <input
@@ -271,12 +273,12 @@ export function ContactsClient({
                 setForm((current) => ({ ...current, state: event.target.value }));
                 setMessage(null);
               }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               placeholder="Greater London"
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/55" htmlFor="contact-postal-code">
+            <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="contact-postal-code">
               Postal code
             </label>
             <input
@@ -286,12 +288,12 @@ export function ContactsClient({
                 setForm((current) => ({ ...current, postalCode: event.target.value }));
                 setMessage(null);
               }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               placeholder="NW1 6XE"
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/55" htmlFor="contact-country">
+            <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="contact-country">
               Country
             </label>
             <input
@@ -301,7 +303,7 @@ export function ContactsClient({
                 setForm((current) => ({ ...current, country: event.target.value }));
                 setMessage(null);
               }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               placeholder="United Kingdom"
             />
           </div>
@@ -310,8 +312,8 @@ export function ContactsClient({
           <div
             className={
               message.type === `error`
-                ? `mb-4 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200`
-                : `mb-4 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200`
+                ? `mb-4 rounded-2xl border border-(--app-danger-soft) bg-(--app-danger-soft) px-4 py-3 text-sm text-(--app-danger-text)`
+                : `mb-4 rounded-2xl border border-(--app-success-soft) bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)`
             }
           >
             {message.text}
@@ -347,7 +349,7 @@ export function ContactsClient({
               router.refresh();
             });
           }}
-          className="mb-5 rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="mb-5 rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? `Saving...` : editingContactId ? `Save changes` : `Add contact`}
         </button>
@@ -360,35 +362,35 @@ export function ContactsClient({
               resetForm();
               setMessage(null);
             }}
-            className="mb-5 ml-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-medium text-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mb-5 ml-3 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 font-medium text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel edit
           </button>
         ) : null}
         {contacts.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
             {searchMode ? `No contacts match the current search.` : `No contacts saved yet.`}
           </div>
         ) : (
           <div className="space-y-3">
             {contacts.map((contact) => (
-              <div key={contact.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div key={contact.id} className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="font-medium text-white/90">
+                    <div className="font-medium text-(--app-text)">
                       {contact.name || contact.email || `Unnamed contact`}
                     </div>
-                    <div className="mt-1 text-sm text-white/45">
+                    <div className="mt-1 text-sm text-(--app-text-muted)">
                       {searchMode
                         ? `Matched by backend search on saved contact name or email`
                         : displayAddress(contact)}
                     </div>
-                    <div className="mt-2 text-sm text-blue-300">{contact.email || `No email`}</div>
+                    <div className="mt-2 text-sm text-(--app-primary)">{contact.email || `No email`}</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Link
                       href={`/contacts/${contact.id}/details`}
-                      className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/8"
+                      className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
                     >
                       View details
                     </Link>
@@ -402,7 +404,7 @@ export function ContactsClient({
                             setForm(toEditableForm(contact));
                             setMessage(null);
                           }}
-                          className="rounded-xl border border-blue-400/20 px-3 py-2 text-sm text-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-xl border border-(--app-primary-soft) px-3 py-2 text-sm text-(--app-primary) disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Edit
                         </button>
@@ -428,7 +430,7 @@ export function ContactsClient({
                               router.refresh();
                             });
                           }}
-                          className="rounded-xl border border-rose-400/20 px-3 py-2 text-sm text-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-xl border border-(--app-danger-soft) px-3 py-2 text-sm text-(--app-danger-text) disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {pendingDeleteId === contact.id ? `Deleting...` : `Delete`}
                         </button>
@@ -446,7 +448,7 @@ export function ContactsClient({
               type="button"
               disabled={isSearchPending || page <= 1}
               onClick={() => applyPage(page - 1)}
-              className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
             >
               Previous
             </button>
@@ -454,7 +456,7 @@ export function ContactsClient({
               type="button"
               disabled={isSearchPending || page >= totalPages}
               onClick={() => applyPage(page + 1)}
-              className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
             >
               Next
             </button>
@@ -462,8 +464,8 @@ export function ContactsClient({
         ) : null}
       </div>
 
-      <div className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur">
-        <div className="mb-4 text-lg font-semibold text-white/90">Contact summary</div>
+      <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface-muted) p-5 backdrop-blur">
+        <div className="mb-4 text-lg font-semibold text-(--app-text)">Contact summary</div>
         <div className="space-y-3">
           <ActionMini
             label={

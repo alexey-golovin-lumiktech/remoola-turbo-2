@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { buildAuthMutationForwardHeaders, requireJsonBody } from '../../../../../../lib/api-utils';
+import { buildAuthMutationForwardHeaders, fetchUpstream, requireJsonBody } from '../../../../../../lib/api-utils';
 import { getEnv } from '../../../../../../lib/env.server';
 
 export async function POST(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 
-  const res = await fetch(url, {
+  const res = await fetchUpstream(url, {
     method: `POST`,
     headers: forwardHeaders,
     body: bodyResult.body,

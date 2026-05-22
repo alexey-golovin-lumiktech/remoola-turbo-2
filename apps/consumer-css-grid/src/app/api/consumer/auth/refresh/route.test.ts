@@ -49,4 +49,21 @@ describe(`refresh route`, () => {
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf`);
     expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`refresh_cookie=`))).toBe(true);
   });
+
+  it(`returns a controlled network error when upstream refresh fetch fails`, async () => {
+    mockFetch.mockRejectedValueOnce(new Error(`network down`));
+
+    const response = await POST(
+      new Request(`https://app.example.com/api/consumer/auth/refresh`, {
+        method: `POST`,
+        headers: { cookie: `refresh_cookie=token` },
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      code: `NETWORK_ERROR`,
+      message: `The upstream API request failed. Please try again.`,
+    });
+  });
 });

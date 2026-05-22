@@ -171,7 +171,7 @@ export function StartPaymentClient({
     <div className="space-y-5">
       <Panel title="Start payment" aside="Payer initiated">
         <div className="space-y-4">
-          <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+          <div className="rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-3 text-sm text-(--app-primary)">
             Create a one-off payment to a contractor or client without waiting for a payment request. The payment detail
             flow will keep the selected settlement currency.
           </div>
@@ -180,8 +180,8 @@ export function StartPaymentClient({
             <div
               className={
                 message.type === `error`
-                  ? `rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200`
-                  : `rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200`
+                  ? `rounded-2xl border border-(--app-danger-soft) bg-(--app-danger-soft) px-4 py-3 text-sm text-(--app-danger-text)`
+                  : `rounded-2xl border border-(--app-success-soft) bg-(--app-success-soft) px-4 py-3 text-sm text-(--app-success-text)`
               }
             >
               {message.text}
@@ -190,7 +190,7 @@ export function StartPaymentClient({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm text-white/55" htmlFor="start-payment-email">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="start-payment-email">
                 Recipient email
               </label>
               <input
@@ -202,15 +202,15 @@ export function StartPaymentClient({
                   setMessage(null);
                 }}
                 placeholder="recipient@example.com"
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               />
-              <div className="mt-2 text-sm text-white/45">
+              <div className="mt-2 text-sm text-(--app-text-muted)">
                 We will create a payer-side payment draft for this recipient.
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-white/55" htmlFor="start-payment-amount">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="start-payment-amount">
                 Amount
               </label>
               <input
@@ -222,12 +222,12 @@ export function StartPaymentClient({
                   setMessage(null);
                 }}
                 placeholder="0.00"
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-white/55" htmlFor="start-payment-currency">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="start-payment-currency">
                 Currency
               </label>
               <select
@@ -237,7 +237,7 @@ export function StartPaymentClient({
                   setCurrencyCode(event.target.value);
                   setMessage(null);
                 }}
-                className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
               >
                 {CURRENCY_CODES.map((code) => (
                   <option key={code} value={code}>
@@ -248,7 +248,7 @@ export function StartPaymentClient({
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-white/55" htmlFor="start-payment-method">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="start-payment-method">
                 Payment method
               </label>
               <select
@@ -258,7 +258,7 @@ export function StartPaymentClient({
                   setMethod(event.target.value === `BANK_ACCOUNT` ? `BANK_ACCOUNT` : `CREDIT_CARD`);
                   setMessage(null);
                 }}
-                className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
+                className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
               >
                 <option value="CREDIT_CARD">Credit Card</option>
                 <option value="BANK_ACCOUNT">Bank Account</option>
@@ -266,7 +266,7 @@ export function StartPaymentClient({
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm text-white/55" htmlFor="start-payment-description">
+              <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="start-payment-description">
                 Description
               </label>
               <textarea
@@ -277,7 +277,7 @@ export function StartPaymentClient({
                   setMessage(null);
                 }}
                 placeholder="Optional payment note"
-                className="min-h-28 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
+                className="min-h-28 w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
               />
             </div>
           </div>
@@ -289,7 +289,7 @@ export function StartPaymentClient({
               onClick={() => {
                 void handleSubmit();
               }}
-              className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? `Processing...` : `Send payment`}
             </button>
@@ -304,7 +304,7 @@ export function StartPaymentClient({
                 setMethod(`CREDIT_CARD`);
                 setMessage(null);
               }}
-              className="rounded-2xl border border-white/10 px-4 py-3 font-medium text-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-2xl border border-(--app-border) px-4 py-3 font-medium text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
             >
               Clear
             </button>
@@ -313,7 +313,7 @@ export function StartPaymentClient({
       </Panel>
 
       <Panel title="How unknown recipients work">
-        <div className="space-y-3 text-sm text-white/65">
+        <div className="space-y-3 text-sm text-(--app-text-soft)">
           <p>
             If the recipient email is not already saved in your contacts, the app will ask whether you want to continue
             immediately, add the email as a lightweight contact, or jump to the full contacts page.
@@ -324,9 +324,9 @@ export function StartPaymentClient({
 
       {confirmOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-          <div className="w-full max-w-2xl rounded-[28px] border border-white/10 bg-[#09162f] p-5 shadow-2xl">
-            <h2 className="text-2xl font-semibold text-white">This email is not in your contacts yet</h2>
-            <p className="mt-3 text-sm leading-7 text-white/65">
+          <div className="w-full max-w-2xl rounded-[28px] border border-(--app-border) bg-(--app-surface-strong) p-5 shadow-2xl">
+            <h2 className="text-2xl font-semibold text-(--app-text)">This email is not in your contacts yet</h2>
+            <p className="mt-3 text-sm leading-7 text-(--app-text-soft)">
               You can continue right away, add a lightweight contact and continue, or open the full contacts page and
               come back to this draft.
             </p>
@@ -338,7 +338,7 @@ export function StartPaymentClient({
                 onClick={() => {
                   void continueWithoutAdding();
                 }}
-                className="rounded-2xl bg-blue-500 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl bg-(--app-primary) px-4 py-3 text-sm font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isConfirmLoading ? `Working...` : `Continue anyway`}
               </button>
@@ -348,7 +348,7 @@ export function StartPaymentClient({
                 onClick={() => {
                   void addAndContinue();
                 }}
-                className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl border border-(--app-success-soft) bg-(--app-success-soft) px-4 py-3 text-sm font-medium text-(--app-success-text) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Add contact and continue
               </button>
@@ -356,7 +356,7 @@ export function StartPaymentClient({
                 type="button"
                 disabled={isConfirmLoading}
                 onClick={addFullContact}
-                className="rounded-2xl border border-white/10 px-4 py-3 text-sm font-medium text-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl border border-(--app-border) px-4 py-3 text-sm font-medium text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Add full contact
               </button>
@@ -366,7 +366,7 @@ export function StartPaymentClient({
               type="button"
               disabled={isConfirmLoading}
               onClick={() => setConfirmOpen(false)}
-              className="mt-4 text-sm text-white/50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-4 text-sm text-(--app-text-muted) disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>

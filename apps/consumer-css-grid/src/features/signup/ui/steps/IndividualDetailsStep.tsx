@@ -45,7 +45,7 @@ export function IndividualDetailsStep() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400">
               Step 2
             </p>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-(--app-text)">
               Personal contractor details
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
@@ -240,7 +240,7 @@ export function IndividualDetailsStep() {
 
         <div className="space-y-4">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            <p className="font-semibold text-slate-900 dark:text-white">Validation rules</p>
+            <p className="font-semibold text-slate-900 dark:text-(--app-text)">Validation rules</p>
             <ul className="mt-2 space-y-2 leading-6">
               <li>You must be at least 18 years old.</li>
               <li>Phone number is validated in international format.</li>

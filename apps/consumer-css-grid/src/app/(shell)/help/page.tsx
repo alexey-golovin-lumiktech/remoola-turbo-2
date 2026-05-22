@@ -65,7 +65,7 @@ export default function HelpPage() {
       <PageHeader
         title="Help Center"
         subtitle="Browse guidance by product area and find the best place to start for your next task."
-        icon={<SearchIcon size={40} className="h-10 w-10 text-white" />}
+        icon={<SearchIcon size={40} className="h-10 w-10 text-(--app-text)" />}
       />
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1fr]">

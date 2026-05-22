@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
+import { encodeApiPathSegment } from '../api-path';
 import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
 import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
 import { getEnv } from '../env.server';
@@ -72,7 +73,7 @@ export async function deleteDocumentMutation(documentId: string): Promise<Mutati
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/documents/${documentId}`, {
+  const response = await fetch(`${baseUrl}/consumer/documents/${encodeApiPathSegment(documentId)}`, {
     method: `DELETE`,
     headers: {
       ...buildConsumerMutationHeaders(cookieStore.toString()),
@@ -155,7 +156,7 @@ export async function updateDocumentTagsMutation(documentId: string, rawTags: st
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/documents/${id}/tags`, {
+  const response = await fetch(`${baseUrl}/consumer/documents/${encodeApiPathSegment(id)}/tags`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,

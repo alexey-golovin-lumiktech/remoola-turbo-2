@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../../../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders, fetchUpstream } from '../../../../../../lib/api-utils';
 import { getEnv } from '../../../../../../lib/env.server';
 
 export async function GET(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 
-  const res = await fetch(url, {
+  const res = await fetchUpstream(url, {
     method: `GET`,
     headers: forwardHeaders,
     cache: `no-store`,

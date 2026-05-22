@@ -6,8 +6,8 @@ import { useEffect, useState, useTransition } from 'react';
 import {
   attachDocumentToDraftPaymentRequestsMutation,
   getDraftPaymentRequestsAction,
-  type DraftPaymentRequestOption,
 } from '../../../lib/actions/payments.server';
+import { type DraftPaymentRequestOption } from '../../../lib/actions/payments.types';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -143,13 +143,13 @@ export function AttachToPaymentModal({
       onClick={onClose}
     >
       <div
-        className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1a1a2e] shadow-2xl"
+        className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-(--app-border) bg-[#1a1a2e] shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-(--app-border) px-6 py-4">
           <div className="min-w-0">
-            <h3 className="truncate text-lg font-semibold text-white/90">Attach to payment</h3>
-            <div className="mt-1 text-sm text-white/50">
+            <h3 className="truncate text-lg font-semibold text-(--app-text)">Attach to payment</h3>
+            <div className="mt-1 text-sm text-(--app-text-muted)">
               {scopeLabel
                 ? `Choose one or more draft payment requests in ${scopeLabel} for \`${documentName}\`.`
                 : `Choose one or more draft payment requests for \`${documentName}\`.`}
@@ -158,7 +158,7 @@ export function AttachToPaymentModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) transition hover:bg-white/10 hover:text-(--app-text)"
           >
             Close
           </button>
@@ -169,8 +169,8 @@ export function AttachToPaymentModal({
             <div
               className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
                 message.type === `error`
-                  ? `border-rose-400/30 bg-rose-500/10 text-rose-200`
-                  : `border-emerald-400/30 bg-emerald-500/10 text-emerald-200`
+                  ? `border-(--app-danger-soft) bg-(--app-danger-soft) text-(--app-danger-text)`
+                  : `border-(--app-success-soft) bg-(--app-success-soft) text-(--app-success-text)`
               }`}
             >
               {message.text}
@@ -178,18 +178,18 @@ export function AttachToPaymentModal({
           ) : null}
 
           {isLoading ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/55">
+            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-8 text-center text-sm text-(--app-text-muted)">
               Loading draft payment requests...
             </div>
           ) : scopedDraftPayments.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/55">
+            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-8 text-center text-sm text-(--app-text-muted)">
               {scopeLabel
                 ? `No draft payment requests are available for this contract yet.`
                 : `No draft payment requests are available yet.`}
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="text-sm text-white/50">
+              <div className="text-sm text-(--app-text-muted)">
                 {allowedPaymentRequestIds
                   ? `${scopedDraftPayments.length} draft payment request${scopedDraftPayments.length === 1 ? `` : `s`} in this contract scope.`
                   : draftPaymentsTotal > draftPayments.length
@@ -206,10 +206,10 @@ export function AttachToPaymentModal({
                     key={payment.id}
                     className={`flex items-start gap-3 rounded-2xl border px-4 py-4 transition ${
                       alreadyAttached
-                        ? `border-amber-400/25 bg-amber-500/10`
+                        ? `border-amber-400/25 bg-(--app-warning-soft)`
                         : checked
                           ? `border-indigo-400/40 bg-indigo-500/10`
-                          : `border-white/10 bg-white/5 hover:border-white/20`
+                          : `border-(--app-border) bg-(--app-surface-muted) hover:border-(--app-border-strong)`
                     } ${alreadyAttached ? `cursor-not-allowed` : `cursor-pointer`}`}
                   >
                     <input
@@ -228,17 +228,17 @@ export function AttachToPaymentModal({
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <div className="font-medium text-white/90">{title}</div>
+                        <div className="font-medium text-(--app-text)">{title}</div>
                         {alreadyAttached ? (
-                          <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-100">
+                          <span className="rounded-full border border-(--app-warning-soft) bg-(--app-warning-soft) px-2 py-1 text-[11px] text-(--app-warning-text)">
                             Already attached
                           </span>
                         ) : null}
                       </div>
-                      <div className="mt-1 text-sm text-white/50">
+                      <div className="mt-1 text-sm text-(--app-text-muted)">
                         {formatAmount(payment.amount, payment.currencyCode)} · {formatDate(payment.createdAt)}
                       </div>
-                      <div className="mt-2 text-xs text-white/35">Payment ID: {payment.id}</div>
+                      <div className="mt-2 text-xs text-(--app-text-faint)">Payment ID: {payment.id}</div>
                     </div>
                   </label>
                 );
@@ -247,7 +247,7 @@ export function AttachToPaymentModal({
           )}
 
           {!isLoading && scopedDraftPayments.length > 0 && availableDrafts.length === 0 ? (
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/55">
+            <div className="mt-4 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-muted)">
               {scopeLabel
                 ? `This document is already attached to every draft payment request in this contract scope.`
                 : `This document is already attached to every draft payment request currently available.`}
@@ -259,7 +259,7 @@ export function AttachToPaymentModal({
                 type="button"
                 disabled={isPending || isLoading || draftPaymentsPage <= 1}
                 onClick={() => setDraftPaymentsPage((current) => Math.max(1, current - 1))}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-2 text-sm text-(--app-text-soft) transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Previous page
               </button>
@@ -267,7 +267,7 @@ export function AttachToPaymentModal({
                 type="button"
                 disabled={isPending || isLoading || draftPaymentsPage >= totalPages}
                 onClick={() => setDraftPaymentsPage((current) => Math.min(totalPages, current + 1))}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-2 text-sm text-(--app-text-soft) transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Next page
               </button>
@@ -275,8 +275,8 @@ export function AttachToPaymentModal({
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-6 py-4">
-          <div className="text-sm text-white/45">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-(--app-border) px-6 py-4">
+          <div className="text-sm text-(--app-text-muted)">
             {selectedPaymentRequestIds.length === 0
               ? `Select at least one draft payment request.`
               : `${selectedPaymentRequestIds.length} draft payment request${selectedPaymentRequestIds.length === 1 ? `` : `s`} selected`}
@@ -285,7 +285,7 @@ export function AttachToPaymentModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10"
+              className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-2 text-sm text-(--app-text-soft) transition hover:bg-white/10"
             >
               Cancel
             </button>
@@ -314,7 +314,7 @@ export function AttachToPaymentModal({
                   router.refresh();
                 });
               }}
-              className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-(--app-text) transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isPending ? `Attaching...` : `Attach to payment`}
             </button>

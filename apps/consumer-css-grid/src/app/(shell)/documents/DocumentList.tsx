@@ -52,14 +52,14 @@ export function DocumentList({
 }: Props) {
   if (documents.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+      <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
         No documents match the selected filter.
       </div>
     );
   }
 
   return documents.map((document) => (
-    <div key={document.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+    <div key={document.id} className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <input
@@ -73,23 +73,23 @@ export function DocumentList({
             <button
               type="button"
               onClick={() => onPreview(document)}
-              className="text-left font-medium text-white/90 transition hover:text-white"
+              className="text-left font-medium text-(--app-text) transition hover:text-(--app-text)"
             >
               {document.name}
             </button>
-            <div className="mt-1 text-sm text-white/45">
+            <div className="mt-1 text-sm text-(--app-text-muted)">
               {document.kind} · {formatFileSize(document.size)}
             </div>
             {document.isAttachedToDraftPaymentRequest ? (
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-xs text-amber-100">
+                <span className="rounded-full border border-(--app-warning-soft) bg-(--app-warning-soft) px-2 py-1 text-xs text-(--app-warning-text)">
                   Attached to draft payment request{document.attachedDraftPaymentRequestIds.length > 1 ? `s` : ``}
                 </span>
                 {document.attachedDraftPaymentRequestIds.map((paymentRequestId, index) => (
                   <Link
                     key={`${document.id}-${paymentRequestId}`}
                     href={buildDocumentPaymentHref(paymentRequestId, contractContext)}
-                    className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/70 transition hover:border-white/20 hover:text-white"
+                    className="rounded-full border border-(--app-border) px-2 py-1 text-xs text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:text-(--app-text)"
                   >
                     {document.attachedDraftPaymentRequestIds.length === 1 ? `Open draft` : `Open draft ${index + 1}`}
                   </Link>
@@ -98,14 +98,14 @@ export function DocumentList({
             ) : null}
             {document.isAttachedToNonDraftPaymentRequest ? (
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2 py-1 text-xs text-rose-100">
+                <span className="rounded-full border border-(--app-danger-soft) bg-(--app-danger-soft) px-2 py-1 text-xs text-(--app-danger-text)">
                   {getHistoricalRecordLabel(document.attachedNonDraftPaymentRequestIds.length)}
                 </span>
                 {document.attachedNonDraftPaymentRequestIds.map((paymentRequestId, index) => (
                   <Link
                     key={`${document.id}-historical-${paymentRequestId}`}
                     href={buildDocumentPaymentHref(paymentRequestId, contractContext)}
-                    className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/70 transition hover:border-white/20 hover:text-white"
+                    className="rounded-full border border-(--app-border) px-2 py-1 text-xs text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:text-(--app-text)"
                   >
                     {document.attachedNonDraftPaymentRequestIds.length === 1
                       ? `Open payment`
@@ -116,12 +116,14 @@ export function DocumentList({
             ) : null}
             <div className="mt-2 flex flex-wrap gap-2">
               {document.tags.length === 0 ? (
-                <span className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/35">No tags</span>
+                <span className="rounded-full border border-(--app-border) px-2 py-1 text-xs text-(--app-text-faint)">
+                  No tags
+                </span>
               ) : (
                 document.tags.map((tag) => (
                   <span
                     key={`${document.id}-${tag}`}
-                    className="rounded-full border border-blue-400/20 bg-blue-500/10 px-2 py-1 text-xs text-blue-100"
+                    className="rounded-full border border-(--app-primary-soft) bg-(--app-primary-soft) px-2 py-1 text-xs text-(--app-primary)"
                   >
                     {tag}
                   </span>
@@ -130,7 +132,7 @@ export function DocumentList({
             </div>
           </div>
         </div>
-        <div className="text-right text-sm text-white/45">{formatDate(document.createdAt)}</div>
+        <div className="text-right text-sm text-(--app-text-muted)">{formatDate(document.createdAt)}</div>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -138,7 +140,7 @@ export function DocumentList({
           href={document.downloadUrl}
           target="_blank"
           rel="noreferrer"
-          className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/75"
+          className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft)"
         >
           Open file
         </a>
@@ -154,7 +156,7 @@ export function DocumentList({
           type="button"
           disabled={isPending}
           onClick={() => onToggleTags(document)}
-          className="rounded-xl border border-blue-400/20 px-3 py-2 text-sm text-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-(--app-primary-soft) px-3 py-2 text-sm text-(--app-primary) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {editingTagsId === document.id ? `Close tags` : `Edit tags`}
         </button>
@@ -162,7 +164,7 @@ export function DocumentList({
           type="button"
           disabled={isPending || isDeleteBlocked(document)}
           onClick={() => onDelete(document)}
-          className="rounded-xl border border-rose-400/20 px-3 py-2 text-sm text-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-(--app-danger-soft) px-3 py-2 text-sm text-(--app-danger-text) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isDeleteBlocked(document) ? `Delete blocked` : pendingDeleteId === document.id ? `Deleting...` : `Delete`}
         </button>
@@ -172,7 +174,7 @@ export function DocumentList({
           Delete is disabled here because this file is already part of a sent or in-progress payment record.
         </div>
       ) : document.isAttachedToDraftPaymentRequest ? (
-        <div className="mt-3 text-xs text-amber-200/80">
+        <div className="mt-3 text-xs text-(--app-warning-text)">
           Delete is disabled here while this file is still attached to a draft payment request.
         </div>
       ) : null}

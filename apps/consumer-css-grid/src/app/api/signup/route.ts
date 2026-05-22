@@ -2,7 +2,13 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import { appendSetCookies, buildAuthMutationForwardHeaders, requireJsonBody } from '../../../lib/api-utils';
+import { encodeApiPathSegment } from '../../../lib/api-path';
+import {
+  appendSetCookies,
+  buildAuthMutationForwardHeaders,
+  fetchUpstream,
+  requireJsonBody,
+} from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
 
 export async function POST(req: NextRequest) {
@@ -20,7 +26,7 @@ export async function POST(req: NextRequest) {
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 
-  const res = await fetch(url, {
+  const res = await fetchUpstream(url, {
     method: `POST`,
     headers: forwardHeaders,
     body: bodyResult.body,
@@ -38,8 +44,8 @@ export async function POST(req: NextRequest) {
       // Google signup already completes the handoff when `next` is returned.
       const needsEmailVerificationFollowUp = consumerId && typeof parsed.next !== `string`;
       if (needsEmailVerificationFollowUp) {
-        const completionRes = await fetch(
-          `${baseUrl}/consumer/auth/signup/${consumerId}/complete-profile-creation?appScope=${encodeURIComponent(CURRENT_CONSUMER_APP_SCOPE)}`,
+        const completionRes = await fetchUpstream(
+          `${baseUrl}/consumer/auth/signup/${encodeApiPathSegment(consumerId)}/complete-profile-creation?appScope=${encodeURIComponent(CURRENT_CONSUMER_APP_SCOPE)}`,
           {
             method: `GET`,
             headers: forwardHeaders,

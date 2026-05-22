@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { loginSchema } from '../../../features/auth/schemas';
-import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders, fetchUpstream } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
 
 export async function POST(req: Request) {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
   const url = new URL(`${baseUrl}/consumer/auth/login`);
   url.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
-  const res = await fetch(url, {
+  const res = await fetchUpstream(url, {
     method: `POST`,
     headers: forwardHeaders,
     body: JSON.stringify(parsed.data),

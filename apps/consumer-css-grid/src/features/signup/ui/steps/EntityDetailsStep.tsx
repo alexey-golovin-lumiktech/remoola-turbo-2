@@ -65,7 +65,9 @@ export function EntityDetailsStep() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400">
               Step 2
             </p>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Entity details</h2>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-(--app-text)">
+              Entity details
+            </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
               These details power the entity or business signup branch and prefill the address step automatically.
             </p>
@@ -146,7 +148,7 @@ export function EntityDetailsStep() {
 
         <div className="space-y-4">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            <p className="font-semibold text-slate-900 dark:text-white">Smart address parsing</p>
+            <p className="font-semibold text-slate-900 dark:text-(--app-text)">Smart address parsing</p>
             <p className="mt-2 leading-6">
               We parse the legal address to prefill country, region, city, postal code, and normalized street details in
               the next step.

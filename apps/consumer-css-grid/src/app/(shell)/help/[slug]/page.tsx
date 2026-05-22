@@ -41,7 +41,7 @@ export default async function HelpGuideDetailPage({ params }: { params: Promise<
       <PageHeader
         title="Help Center"
         subtitle="Read detailed guidance for a specific consumer workflow and follow the next safe action."
-        icon={<SearchIcon size={40} className="h-10 w-10 text-white" />}
+        icon={<SearchIcon size={40} className="h-10 w-10 text-(--app-text)" />}
         action={
           <Link
             href="/help"

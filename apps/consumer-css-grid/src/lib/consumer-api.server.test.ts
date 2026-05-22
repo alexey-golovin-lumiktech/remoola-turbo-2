@@ -195,6 +195,27 @@ describe(`consumer-api exact contact lookup`, () => {
       `https://api.example.com/consumer/contacts/lookup/by-email?email=known%40example.com`,
     );
   });
+
+  it(`encodes dynamic backend path segments for detail queries`, async () => {
+    const { getContact, getContactDetails, getContractDetails, getPaymentView } = await loadSubject();
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: `contact-1` }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: `contact-1`, documents: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: `contract-1`, documents: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: `payment-1`, attachments: [] }), { status: 200 }));
+
+    await getContact(`contact/abc?x=1`);
+    await getContactDetails(`contact detail`);
+    await getContractDetails(`contract/abc?x=1`);
+    await getPaymentView(`payment detail`);
+
+    expect(mockFetch.mock.calls.map(([url]) => String(url))).toEqual([
+      `https://api.example.com/consumer/contacts/contact%2Fabc%3Fx%3D1`,
+      `https://api.example.com/consumer/contacts/contact%20detail/details`,
+      `https://api.example.com/consumer/contracts/contract%2Fabc%3Fx%3D1/details`,
+      `https://api.example.com/consumer/payments/payment%20detail`,
+    ]);
+  });
 });
 
 describe(`consumer-api balance normalization`, () => {

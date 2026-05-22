@@ -146,23 +146,23 @@ export function PaymentAttachmentsClient({
     <div className="space-y-4">
       {canAttach ? (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4">
-            <div className="text-sm text-blue-100">
+          <div className="rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) p-4">
+            <div className="text-sm text-(--app-primary)">
               Upload a new file directly to this draft or attach an existing file from your document library.
             </div>
-            <div className="mt-3 rounded-2xl border border-white/10 bg-[#071225] p-4">
+            <div className="mt-3 rounded-2xl border border-(--app-border) bg-(--app-surface-strong) p-4">
               <input
                 ref={uploadInputRef}
                 type="file"
                 name="files"
                 multiple
-                className="max-w-full text-sm text-white/70 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
+                className="max-w-full text-sm text-(--app-text-soft) file:mr-4 file:rounded-xl file:border-0 file:bg-(--app-primary) file:px-4 file:py-2 file:text-sm file:font-medium file:text-(--app-text)"
                 onChange={(event) => {
                   setSelectedFiles(Array.from(event.target.files ?? []).map((file) => file.name));
                   setMessage(null);
                 }}
               />
-              <div className="mt-3 text-sm text-white/55">
+              <div className="mt-3 text-sm text-(--app-text-muted)">
                 {selectedFiles.length === 0
                   ? `Choose one or more files to upload directly into this draft.`
                   : `${selectedFiles.length} file${selectedFiles.length === 1 ? `` : `s`} selected: ${selectedFiles.join(`, `)}`}
@@ -196,13 +196,13 @@ export function PaymentAttachmentsClient({
                       router.refresh();
                     });
                   }}
-                  className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isPending ? `Uploading...` : selectedFiles.length === 0 ? `Select files` : `Upload to draft`}
                 </button>
                 <Link
                   href={documentsHref}
-                  className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-white/75 transition hover:border-white/20 hover:text-white"
+                  className="rounded-2xl border border-(--app-border) px-4 py-3 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:text-(--app-text)"
                 >
                   {contractId ? `Open contract files` : `Open document library`}
                 </Link>
@@ -211,8 +211,8 @@ export function PaymentAttachmentsClient({
           </div>
 
           {availableDocumentsTotal > 0 || availableDocuments.length > 0 ? (
-            <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4">
-              <div className="text-sm text-blue-100">
+            <div className="rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) p-4">
+              <div className="text-sm text-(--app-primary)">
                 Attach existing files from your document library. Page {availableDocumentsPage} of{` `}
                 {availableDocumentPages}
                 shows {attachableDocuments.length} attachable files.
@@ -226,8 +226,8 @@ export function PaymentAttachmentsClient({
                         key={document.id}
                         className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition ${
                           checked
-                            ? `border-blue-400/40 bg-blue-500/10`
-                            : `border-white/10 bg-white/5 hover:border-white/20`
+                            ? `border-blue-400/40 bg-(--app-primary-soft)`
+                            : `border-(--app-border) bg-(--app-surface-muted) hover:border-(--app-border-strong)`
                         }`}
                       >
                         <input
@@ -244,8 +244,8 @@ export function PaymentAttachmentsClient({
                           className="mt-1"
                         />
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium text-white/90">{document.name}</div>
-                          <div className="mt-1 text-sm text-white/45">
+                          <div className="truncate font-medium text-(--app-text)">{document.name}</div>
+                          <div className="mt-1 text-sm text-(--app-text-muted)">
                             {document.kind} · {formatFileSize(document.size)} · {formatDateTime(document.createdAt)}
                           </div>
                           {document.tags.length > 0 ? (
@@ -253,7 +253,7 @@ export function PaymentAttachmentsClient({
                               {document.tags.slice(0, 4).map((tag) => (
                                 <span
                                   key={`${document.id}-${tag}`}
-                                  className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/55"
+                                  className="rounded-full border border-(--app-border) px-2 py-1 text-xs text-(--app-text-muted)"
                                 >
                                   {tag}
                                 </span>
@@ -266,7 +266,7 @@ export function PaymentAttachmentsClient({
                   })}
                 </div>
               ) : (
-                <div className="mt-3 rounded-2xl border border-white/10 bg-[#071225] px-4 py-4 text-sm text-white/60">
+                <div className="mt-3 rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-4 text-sm text-(--app-text-soft)">
                   {attachmentLibraryState.emptyMessage}
                 </div>
               )}
@@ -292,7 +292,7 @@ export function PaymentAttachmentsClient({
                         router.refresh();
                       });
                     }}
-                    className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isPending
                       ? `Attaching...`
@@ -307,7 +307,7 @@ export function PaymentAttachmentsClient({
                       type="button"
                       disabled={isPending || availableDocumentsPage <= 1}
                       onClick={() => applyDocumentPage(availableDocumentsPage - 1)}
-                      className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-2xl border border-(--app-border) px-4 py-3 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Previous page
                     </button>
@@ -315,7 +315,7 @@ export function PaymentAttachmentsClient({
                       type="button"
                       disabled={isPending || availableDocumentsPage >= availableDocumentPages}
                       onClick={() => applyDocumentPage(availableDocumentsPage + 1)}
-                      className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-2xl border border-(--app-border) px-4 py-3 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Next page
                     </button>
@@ -324,7 +324,7 @@ export function PaymentAttachmentsClient({
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-white/60">
+            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-4 text-sm text-(--app-text-soft)">
               {attachmentLibraryState.emptyMessage}
             </div>
           )}
@@ -335,8 +335,8 @@ export function PaymentAttachmentsClient({
         <div
           className={`rounded-2xl border px-4 py-3 text-sm ${
             message.type === `error`
-              ? `border-rose-400/30 bg-rose-500/10 text-rose-200`
-              : `border-emerald-400/30 bg-emerald-500/10 text-emerald-200`
+              ? `border-(--app-danger-soft) bg-(--app-danger-soft) text-(--app-danger-text)`
+              : `border-(--app-success-soft) bg-(--app-success-soft) text-(--app-success-text)`
           }`}
         >
           {message.text}
@@ -344,14 +344,14 @@ export function PaymentAttachmentsClient({
       ) : null}
 
       {showHistoricalRecordNotice ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/65">
+        <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
           These files are part of this payment record now. You can review them here, but attachments can only be added
           or removed while the request is still a draft.
         </div>
       ) : null}
 
       {attachments.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+        <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
           No attachments for this payment.
         </div>
       ) : (
@@ -359,12 +359,12 @@ export function PaymentAttachmentsClient({
           {attachments.map((attachment) => (
             <div
               key={attachment.id}
-              className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-white/20 hover:bg-white/8"
+              className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4 transition hover:border-(--app-border-strong) hover:bg-(--app-surface-muted)"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <a href={attachment.downloadUrl} target="_blank" rel="noreferrer" className="min-w-0 flex-1">
-                  <div className="font-medium text-white/90">{attachment.name}</div>
-                  <div className="mt-1 text-sm text-white/45">
+                  <div className="font-medium text-(--app-text)">{attachment.name}</div>
+                  <div className="mt-1 text-sm text-(--app-text-muted)">
                     {formatFileSize(attachment.size)} · {formatDateTime(attachment.createdAt)}
                   </div>
                 </a>
@@ -387,7 +387,7 @@ export function PaymentAttachmentsClient({
                         router.refresh();
                       });
                     }}
-                    className="rounded-2xl border border-white/10 px-4 py-2 text-sm text-white/75 transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-2xl border border-(--app-border) px-4 py-2 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isPending && removingAttachmentId === attachment.id ? `Removing...` : `Remove`}
                   </button>

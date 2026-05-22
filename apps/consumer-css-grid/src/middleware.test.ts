@@ -99,6 +99,14 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
     expect(mockFetch).toHaveBeenCalledTimes(0);
   });
 
+  it(`preserves the current query string in protected page login redirects`, async () => {
+    const response = await middleware(createRequest(`/payments?role=PAYER&status=PENDING`));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get(`location`)).toContain(`/login?next=%2Fpayments%3Frole%3DPAYER%26status%3DPENDING`);
+    expect(mockFetch).toHaveBeenCalledTimes(0);
+  });
+
   it(`refreshes protected pages when the access cookie is missing but refresh is still valid`, async () => {
     mockFetch.mockResolvedValueOnce(
       new Response(undefined, {

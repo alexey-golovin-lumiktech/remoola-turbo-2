@@ -42,7 +42,7 @@ export default async function StartPaymentPage({ searchParams }: { searchParams?
       <PageHeader
         title="Start Payment"
         subtitle="Create a one-off payer-side payment and continue into the normal payment detail flow."
-        icon={<CreditCardIcon className="h-10 w-10 text-white" />}
+        icon={<CreditCardIcon className="h-10 w-10 text-(--app-text)" />}
         action={
           <Link
             href={getPaymentFlowBackHref(paymentFlowContext)}

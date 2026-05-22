@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { appendSetCookies, buildForwardHeaders } from '../../../lib/api-utils';
+import { appendSetCookies, buildForwardHeaders, fetchUpstream } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
 
 export async function GET(req: NextRequest) {
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   forwardHeaders.delete(`host`);
 
   const url = new URL(`${baseUrl}/consumer/auth/me`);
-  const res = await fetch(url, {
+  const res = await fetchUpstream(url, {
     method: `GET`,
     headers: forwardHeaders,
     cache: `no-store`,
@@ -24,6 +24,10 @@ export async function GET(req: NextRequest) {
   appendSetCookies(responseHeaders, res.headers);
 
   if (!res.ok) {
+    const payload = (await res.json().catch(() => null)) as { code?: string; message?: string } | null;
+    if (payload?.code === `NETWORK_ERROR`) {
+      return NextResponse.json(payload, { status: res.status, headers: responseHeaders });
+    }
     return NextResponse.json(
       { code: `UPSTREAM_ERROR`, status: res.status },
       { status: res.status, headers: responseHeaders },

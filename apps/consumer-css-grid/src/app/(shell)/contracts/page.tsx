@@ -25,7 +25,7 @@ export default async function ContractsPage({ searchParams }: { searchParams?: P
 
   return (
     <div>
-      <PageHeader title="Contracts" icon={<DocumentIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Contracts" icon={<DocumentIcon className="h-10 w-10 text-(--app-text)" />} />
       <HelpContextualGuides
         guides={contractsHelpGuides}
         title="Understand the contract workflow before drilling in"

@@ -30,7 +30,7 @@ export default async function ContractDetailPage({
 
   return (
     <div>
-      <PageHeader title="Contract details" icon={<DocumentIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Contract details" icon={<DocumentIcon className="h-10 w-10 text-(--app-text)" />} />
       <ContractDetailView contract={contract} contractId={contractId} returnToContractsHref={returnToContractsHref} />
     </div>
   );
