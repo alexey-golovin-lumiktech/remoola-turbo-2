@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto';
-
 import { Injectable } from '@nestjs/common';
 
 import { type NotificationOutboxModel, type Prisma } from '@remoola/database-2';
+import { newUuid } from '@remoola/security-utils';
 
 import {
   ADMIN_REFUND_FINALIZATION_OUTBOX_EVENT_TYPE,
@@ -51,7 +50,7 @@ export class AdminV2PaymentReversalRefundOutboxRepository {
   }
 
   async claimDueRows(params?: { limit?: number; claimToken?: string; now?: Date }) {
-    const claimToken = params?.claimToken ?? randomUUID();
+    const claimToken = params?.claimToken ?? newUuid();
     const now = params?.now ?? new Date();
     const staleProcessingBefore = new Date(now.getTime() - PROCESSING_STALE_MS);
     const limit = params?.limit ?? 25;

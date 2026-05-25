@@ -1,6 +1,5 @@
-import { createHash } from 'crypto';
-
 import { $Enums, Prisma } from '@remoola/database-2';
+import { sha256Hex } from '@remoola/security-utils';
 
 import {
   moneyDecimalToNumber,
@@ -133,7 +132,7 @@ export function buildAdminPaymentReversalIdempotencyKey(payload: {
     amount: toCanonicalMoneyString(payload.amount),
     reason: payload.reason?.trim() || null,
   });
-  return createHash(`sha256`).update(normalized).digest(`hex`);
+  return sha256Hex(normalized);
 }
 
 export function buildStripeReversalLedgerIdempotencyKeys(params: {

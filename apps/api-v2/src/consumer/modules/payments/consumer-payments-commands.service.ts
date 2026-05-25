@@ -1,5 +1,3 @@
-import { randomUUID } from 'crypto';
-
 import {
   BadRequestException,
   Injectable,
@@ -10,6 +8,7 @@ import {
 
 import { type ConsumerAppScope, PAYMENT_METHOD, toCurrencyOrDefault } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
+import { newUuid } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
@@ -78,7 +77,7 @@ export class ConsumerPaymentsCommandsService {
       body.method === PAYMENT_METHOD.CREDIT_CARD ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
 
     return this.transactions.runLedgerMutation(async (tx) => {
-      const ledgerId = randomUUID();
+      const ledgerId = newUuid();
       const paymentRequest = await this.paymentRequestRepository.createPendingStartPayment(tx, {
         ledgerId,
         consumerId,
@@ -174,7 +173,7 @@ export class ConsumerPaymentsCommandsService {
       return this.paymentRequestRepository.sendDraftPaymentRequest(tx, {
         consumerId,
         paymentRequestId,
-        ledgerId: randomUUID(),
+        ledgerId: newUuid(),
         consumerAppScope,
       });
     });
@@ -206,7 +205,7 @@ export class ConsumerPaymentsCommandsService {
       }
     }
 
-    const ledgerId = randomUUID();
+    const ledgerId = newUuid();
 
     try {
       return await this.transactions.runLedgerMutation(async (tx) => {
@@ -266,7 +265,7 @@ export class ConsumerPaymentsCommandsService {
     }
 
     const transferCurrency = toCurrencyOrDefault(body.currencyCode ?? body.currency, $Enums.CurrencyCode.USD);
-    const ledgerId = randomUUID();
+    const ledgerId = newUuid();
     const [firstId, secondId] = [consumerId, recipient.id].sort();
 
     try {

@@ -1,7 +1,7 @@
-import { randomUUID } from 'crypto';
-
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+
+import { newUuid } from '@remoola/security-utils';
 
 export interface RequestWithCorrelationId extends Request {
   correlationId: string;
@@ -11,10 +11,10 @@ const CORRELATION_ID_MAX_LENGTH = 128;
 const CORRELATION_ID_SAFE_PATTERN = /^[A-Za-z0-9._:-]+$/;
 
 function normalizeCorrelationId(raw: unknown): string {
-  if (typeof raw !== `string`) return randomUUID();
+  if (typeof raw !== `string`) return newUuid();
   const value = raw.trim();
-  if (!value || value.length > CORRELATION_ID_MAX_LENGTH) return randomUUID();
-  if (!CORRELATION_ID_SAFE_PATTERN.test(value)) return randomUUID();
+  if (!value || value.length > CORRELATION_ID_MAX_LENGTH) return newUuid();
+  if (!CORRELATION_ID_SAFE_PATTERN.test(value)) return newUuid();
   return value;
 }
 

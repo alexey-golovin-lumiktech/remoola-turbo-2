@@ -1,11 +1,9 @@
-import { randomUUID } from 'crypto';
-
 import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
-import { oauthCrypto } from '@remoola/security-utils';
+import { newUuid, oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 import {
@@ -106,7 +104,7 @@ export class ConsumerAuthSessionService {
     }
     this.ensureConsumerNotSuspended(consumer);
 
-    const nextSessionId = randomUUID();
+    const nextSessionId = newUuid();
     const rotatedAt = new Date();
     const issued = await this.issueSessionTokens(consumer.id, appScope, nextSessionId, session.sessionFamilyId);
     let access: {
@@ -251,7 +249,7 @@ export class ConsumerAuthSessionService {
     appScope: ConsumerAppScope,
     sessionFamilyId?: string,
   ) {
-    const sessionId = randomUUID();
+    const sessionId = newUuid();
     const effectiveSessionFamilyId = sessionFamilyId ?? sessionId;
     const issuedAt = new Date();
     const issued = await this.issueSessionTokens(identityId, appScope, sessionId, effectiveSessionFamilyId);

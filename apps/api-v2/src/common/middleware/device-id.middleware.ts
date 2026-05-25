@@ -1,9 +1,8 @@
-import { randomUUID } from 'crypto';
-
 import { Injectable, UnauthorizedException, type NestMiddleware } from '@nestjs/common';
 import { type NextFunction, type Request, type Response } from 'express';
 
 import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { newUuid } from '@remoola/security-utils';
 
 import { isExternalPublicConsumerRoute } from './consumer-public-route-policy';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
@@ -71,7 +70,7 @@ export function createDeviceIdMiddleware(
     if (existing.value) {
       deviceId = existing.value;
     } else {
-      deviceId = randomUUID();
+      deviceId = newUuid();
       try {
         const options = getApiConsumerDeviceCookieOptions(req);
         res.cookie(getApiConsumerDeviceCookieKey(req, consumerScope), deviceId, { ...options, signed: true });

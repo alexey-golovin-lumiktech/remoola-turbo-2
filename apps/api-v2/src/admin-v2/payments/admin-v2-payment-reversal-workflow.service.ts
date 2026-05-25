@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto';
-
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { newUuid } from '@remoola/security-utils';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { AdminV2PaymentReversalPolicyProvider } from './admin-v2-payment-reversal-policy';
@@ -229,7 +228,7 @@ export class AdminV2PaymentReversalWorkflowService {
       finalRequestedAmount = amountResolution.finalAmount;
       remainingBefore = amountResolution.remainingBefore;
 
-      const ledgerId = randomUUID();
+      const ledgerId = newUuid();
       await this.adminActionAudit.recordRequiredWithClient(tx, {
         adminId,
         action: policy.auditAction,

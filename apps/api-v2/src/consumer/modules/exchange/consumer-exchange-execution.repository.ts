@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto';
-
 import { Injectable } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { newUuid } from '@remoola/security-utils';
 
 import { roundConsumerExchangeAmountToCurrency } from './consumer-exchange-normalizers';
 import { PrismaService } from '../../../shared/prisma.service';
@@ -154,7 +153,7 @@ export class ConsumerExchangeExecutionRepository {
       }
     }
 
-    const ledgerId = randomUUID();
+    const ledgerId = newUuid();
 
     return this.prisma.$transaction(async (tx) => {
       await this.acquireExchangeLock(tx, consumerId);

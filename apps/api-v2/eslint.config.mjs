@@ -15,6 +15,16 @@ export default [
       'no-restricted-imports': [
         'error',
         {
+          paths: [
+            {
+              name: 'crypto',
+              message: 'Use @remoola/security-utils helpers (newUuid, sha256Hex, secureCompare, oauthCrypto) instead of node crypto.',
+            },
+            {
+              name: 'node:crypto',
+              message: 'Use @remoola/security-utils helpers (newUuid, sha256Hex, secureCompare, oauthCrypto) instead of node crypto.',
+            },
+          ],
           patterns: [
             {
               group: ['**/shared/mailing.service', '**/mailing.service'],

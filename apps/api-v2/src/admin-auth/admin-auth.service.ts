@@ -1,10 +1,8 @@
-import { randomUUID } from 'crypto';
-
 import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { type AdminModel } from '@remoola/database-2';
-import { oauthCrypto } from '@remoola/security-utils';
+import { newUuid, oauthCrypto } from '@remoola/security-utils';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { ADMIN_AUTH_SESSION_REVOKE_REASONS, type AdminAuthSessionRevokeReason } from './admin-auth-session-reasons';
@@ -215,7 +213,7 @@ export class AdminAuthService {
     previousSessionId?: string,
     expectedRefreshTokenHash?: string,
   ): Promise<AdminTokenPair> {
-    const sessionId = randomUUID();
+    const sessionId = newUuid();
     const effectiveSessionFamilyId = sessionFamilyId ?? sessionId;
     const issuedAt = new Date();
     const accessToken = await this.getAccessToken(identityId, sessionId);

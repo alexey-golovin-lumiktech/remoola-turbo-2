@@ -1,6 +1,6 @@
-import { randomUUID } from 'crypto';
-
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+
+import { newUuid } from '@remoola/security-utils';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { AdminV2AccessService } from '../admin-v2-access.service';
@@ -178,7 +178,7 @@ export class AdminV2AssignmentsService {
       key: meta.idempotencyKey,
       payload: { assignmentId, newAssigneeId, confirmed: true, reason, expectedReleasedAtNull: 0 },
       execute: async () => {
-        const transferOperationId = randomUUID();
+        const transferOperationId = newUuid();
         const result = await this.repository.reassign({
           assignmentId,
           newAssigneeId,

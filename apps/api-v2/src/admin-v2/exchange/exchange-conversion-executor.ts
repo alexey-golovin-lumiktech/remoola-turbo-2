@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto';
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { $Enums, type Prisma } from '@remoola/database-2';
+import { newUuid } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { AdminExchangeConversionPersistenceRepository } from './admin-exchange-conversion-persistence.repository';
@@ -75,7 +74,7 @@ export class ExchangeConversionExecutor {
 
     const rate = Number(rateRow.rate);
     const converted = this.roundToCurrency(params.amount * rate, params.toCurrency);
-    const ledgerId = randomUUID();
+    const ledgerId = newUuid();
     const sourceKey = `${params.idempotencyKeyPrefix}:source`;
     const targetKey = `${params.idempotencyKeyPrefix}:target`;
     const metadata = {

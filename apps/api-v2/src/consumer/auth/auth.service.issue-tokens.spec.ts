@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 
 jest.mock(`@remoola/security-utils`, () => ({
   hashTokenToHex: jest.fn((token: string) => `hex-${token}`),
+  newUuid: jest.fn(() => `00000000-0000-4000-8000-000000000000`),
   oauthCrypto: {
     generateOAuthState: jest.fn(() => `generated-state`),
     hashOAuthState: jest.fn((token: string) => `hash-${token}`),

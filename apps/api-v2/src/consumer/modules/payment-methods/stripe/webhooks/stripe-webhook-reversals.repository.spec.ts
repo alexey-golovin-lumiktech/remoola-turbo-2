@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto';
-
 import { Logger } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { newUuid } from '@remoola/security-utils';
 
 import { StripeWebhookReversalsRepository } from './stripe-webhook-reversals.repository';
 import { createOutcomeIdempotent } from '../core/ledger-outcome-idempotent';

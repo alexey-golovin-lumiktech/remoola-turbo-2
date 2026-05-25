@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto';
-
 import { Injectable, Logger } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { newUuid } from '@remoola/security-utils';
 
 import {
   buildStripeReversalLedgerIdempotencyKeys,
@@ -217,7 +216,7 @@ export class StripeWebhookReversalsRepository {
       ...(params.metadata ?? {}),
     } as const;
 
-    const ledgerId = randomUUID();
+    const ledgerId = newUuid();
     let appendedAmount = 0;
 
     try {

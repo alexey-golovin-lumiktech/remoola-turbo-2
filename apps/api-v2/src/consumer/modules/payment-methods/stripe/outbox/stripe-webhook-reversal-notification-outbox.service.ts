@@ -1,6 +1,6 @@
-import { randomUUID } from 'crypto';
-
 import { Injectable, Logger } from '@nestjs/common';
+
+import { newUuid } from '@remoola/security-utils';
 
 import {
   type ClaimedReversalNotificationOutboxRow,
@@ -43,7 +43,7 @@ export class StripeWebhookReversalNotificationOutboxService {
   }
 
   private async claimDueRows(limit = StripeWebhookReversalNotificationOutboxService.MAX_BATCH_SIZE) {
-    const claimToken = randomUUID();
+    const claimToken = newUuid();
     const now = new Date();
     const staleProcessingBefore = new Date(
       now.getTime() - StripeWebhookReversalNotificationOutboxService.PROCESSING_STALE_MS,

@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto';
-
 import { Injectable } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { newUuid } from '@remoola/security-utils';
 
 @Injectable()
 export class StripePaymentRequestLedgerBootstrapRepository {
@@ -17,7 +16,7 @@ export class StripePaymentRequestLedgerBootstrapRepository {
     consumerId: string;
   }) {
     const amount = Number(params.paymentRequest.amount);
-    const ledgerId = randomUUID();
+    const ledgerId = newUuid();
     const payerKey = `pr:${params.paymentRequest.id}:payer`;
     const requesterKey = `pr:${params.paymentRequest.id}:requester`;
 

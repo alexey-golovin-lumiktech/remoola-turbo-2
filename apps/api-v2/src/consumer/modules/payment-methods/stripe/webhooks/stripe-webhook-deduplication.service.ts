@@ -1,6 +1,6 @@
-import { randomUUID } from 'crypto';
-
 import { Injectable } from '@nestjs/common';
+
+import { newUuid } from '@remoola/security-utils';
 
 import { StripeWebhookDeduplicationRepository } from './stripe-webhook-deduplication.repository';
 
@@ -31,7 +31,7 @@ export class StripeWebhookDeduplicationService {
 
   async claim(event: Pick<Stripe.Event, `id` | `type`>): Promise<StripeWebhookEventClaimResult> {
     const now = new Date();
-    const claimToken = randomUUID();
+    const claimToken = newUuid();
 
     const createResult = await this.repository.tryCreateProcessingClaim({
       eventId: event.id,

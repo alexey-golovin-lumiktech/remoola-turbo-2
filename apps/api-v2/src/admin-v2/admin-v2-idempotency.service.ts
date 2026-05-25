@@ -1,8 +1,7 @@
-import { createHash } from 'crypto';
-
 import { BadRequestException, ConflictException, Inject, Injectable, Logger, Optional } from '@nestjs/common';
 
 import { type Prisma } from '@remoola/database-2';
+import { sha256Hex } from '@remoola/security-utils';
 
 import {
   isPlainJsonObject,
@@ -58,7 +57,7 @@ export class AdminV2IdempotencyService {
   async execute<T>(params: IdempotentExecutionParams<T>): Promise<T> {
     const key = this.normalizeKey(params.key);
     const entryKey = `${params.adminId}:${params.scope}:${key}`;
-    const requestHash = createHash(`sha256`).update(stableStringifyJson(params.payload)).digest(`hex`);
+    const requestHash = sha256Hex(stableStringifyJson(params.payload));
     const existing = this.entries.get(entryKey);
     if (existing) {
       if (existing.requestHash !== requestHash) {
@@ -94,7 +93,7 @@ export class AdminV2IdempotencyService {
 
     const key = this.normalizeKey(params.key);
     const entryKey = `${params.adminId}:${params.scope}:${key}`;
-    const requestHash = createHash(`sha256`).update(stableStringifyJson(params.payload)).digest(`hex`);
+    const requestHash = sha256Hex(stableStringifyJson(params.payload));
     const existing = this.entries.get(entryKey);
     if (existing) {
       if (existing.requestHash !== requestHash) {

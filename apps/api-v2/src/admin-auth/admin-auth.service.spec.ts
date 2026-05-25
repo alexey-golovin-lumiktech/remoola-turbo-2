@@ -16,6 +16,7 @@ import { PrismaService } from '../shared/prisma.service';
 import { passwordUtils, secureCompare } from '../shared-common';
 
 jest.mock(`@remoola/security-utils`, () => ({
+  newUuid: jest.fn(() => `00000000-0000-4000-8000-000000000000`),
   oauthCrypto: {
     generateOAuthState: jest.fn(() => `generated-oauth-state`),
     hashOAuthState: jest.fn((token: string) => `hash-${token}`),
