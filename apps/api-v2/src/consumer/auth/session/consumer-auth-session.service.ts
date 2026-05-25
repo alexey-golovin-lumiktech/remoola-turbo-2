@@ -10,6 +10,7 @@ import {
   ConsumerAuthSessionRepository,
   ConsumerAuthSessionRotationConflictError,
 } from './consumer-auth-session.repository';
+import { isRefreshPayload, resolveIdentityId } from '../../../auth/jwt-payload.utils';
 import { type IJwtTokenPayload } from '../../../dtos/consumer';
 import { envs } from '../../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../../shared/auth-audit.service';
@@ -51,10 +52,10 @@ export class ConsumerAuthSessionService {
       throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
     }
 
-    const identityId = this.resolveIdentityId(verified);
+    const identityId = resolveIdentityId(verified);
     const sessionId = verified.sid;
     const tokenAppScope = this.originResolver.validateConsumerAppScope(verified.appScope);
-    if (!identityId || !sessionId || !this.isRefreshPayload(verified) || !tokenAppScope || tokenAppScope !== appScope) {
+    if (!identityId || !sessionId || !isRefreshPayload(verified) || !tokenAppScope || tokenAppScope !== appScope) {
       this.logger.warn(`ConsumerAuth: invalid refresh payload`);
       throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
     }
@@ -186,7 +187,7 @@ export class ConsumerAuthSessionService {
     if (!refreshToken) return;
     try {
       const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
-      const identityId = this.resolveIdentityId(verified);
+      const identityId = resolveIdentityId(verified);
       const tokenAppScope = this.originResolver.validateConsumerAppScope(verified.appScope);
       if (!identityId || !verified.sid || !tokenAppScope || (appScope && tokenAppScope !== appScope)) return;
       await this.sessionRepository.revokeScopedSessionByRefreshToken({
@@ -208,7 +209,7 @@ export class ConsumerAuthSessionService {
     if (!refreshToken) return;
     try {
       const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
-      const identityId = this.resolveIdentityId(verified);
+      const identityId = resolveIdentityId(verified);
       const consumer = identityId ? await this.consumerIdentityRepository.findActiveById(identityId) : null;
       await this.revokeSessionByRefreshToken(refreshToken, appScope);
       if (consumer) {
@@ -315,14 +316,6 @@ export class ConsumerAuthSessionService {
       },
       { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
     );
-  }
-
-  private resolveIdentityId(payload: IJwtTokenPayload): string | null {
-    return payload.identityId ?? payload.sub ?? null;
-  }
-
-  private isRefreshPayload(payload: IJwtTokenPayload): boolean {
-    return payload.typ === `refresh` || (payload as { type?: string }).type === `refresh`;
   }
 
   private hashToken(token: string): string {

@@ -3,29 +3,11 @@ import { PassportStrategy } from '@nestjs/passport';
 import express from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { CONSUMER_APP_SCOPE_HEADER, isAdminApiPath } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 
 import { envs } from '../envs';
+import { CONSUMER_API_PATH_PREFIX, getAccessTokenCookieKeysForPath } from '../guards/auth-guard-boundary';
 import { OriginResolverService } from '../shared/origin-resolver.service';
-import { getApiAdminAccessTokenCookieKeysForRead, getApiConsumerAccessTokenCookieKeysForRead } from '../shared-common';
-
-const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
-
-function getAccessTokenCookieKeysForPath(
-  path: string,
-  consumerScope?: Parameters<typeof getApiConsumerAccessTokenCookieKeysForRead>[0],
-): readonly string[] {
-  if (path.startsWith(CONSUMER_API_PATH_PREFIX)) {
-    if (!consumerScope) {
-      return [];
-    }
-    return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
-  }
-  if (isAdminApiPath(path)) {
-    return getApiAdminAccessTokenCookieKeysForRead();
-  }
-  return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
-}
 
 function buildCookieExtractor(
   originResolver: Pick<OriginResolverService, `validateConsumerAppScopeHeader`>,

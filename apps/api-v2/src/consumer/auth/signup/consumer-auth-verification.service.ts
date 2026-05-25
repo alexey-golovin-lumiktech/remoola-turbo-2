@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { resolveIdentityId } from '../../../auth/jwt-payload.utils';
 import { type IJwtTokenPayload } from '../../../dtos/consumer';
 import { envs } from '../../../envs';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
@@ -53,7 +54,7 @@ export class ConsumerAuthVerificationService {
       return;
     }
 
-    const identityId = this.resolveIdentityId(verified);
+    const identityId = resolveIdentityId(verified);
     if (!identityId) {
       redirectWith(`no`, appScope);
       return;
@@ -136,9 +137,5 @@ export class ConsumerAuthVerificationService {
       { sub: identityId, identityId, typ: `access` as const, scope: `consumer` as const, appScope },
       { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
     );
-  }
-
-  private resolveIdentityId(payload: IJwtTokenPayload): string | null {
-    return payload.identityId ?? payload.sub ?? null;
   }
 }
