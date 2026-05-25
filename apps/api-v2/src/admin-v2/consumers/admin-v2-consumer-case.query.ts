@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
 import { mapPaymentMethodStatus } from './admin-v2-consumer-query-helpers';
-import { normalizeConsumerFacingTransactionStatus } from '../../consumer/consumer-status-compat';
 import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
+import { normalizeConsumerFacingTransactionStatus } from '../../shared/consumer-status-compat';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()

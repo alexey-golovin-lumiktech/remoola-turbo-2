@@ -11,7 +11,12 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { type PaymentsHistoryQuery } from './dto';
+import {
+  normalizeConsumerFacingTransactionStatus,
+  buildConsumerStatusFilter,
+} from '../../../shar../../shared/consumer-status-compat';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
+import { buildConsumerDocumentDownloadUrl } from '../../../shared/consumer-document-download-url';
 import { parseLedgerMetadata } from '../../../shared/json-metadata.utils';
 import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
@@ -19,8 +24,6 @@ import {
   getEffectiveLedgerStatusOrNull,
   getEffectivePaymentRequestStatus,
 } from '../../../shared/transaction-status.utils';
-import { normalizeConsumerFacingTransactionStatus, buildConsumerStatusFilter } from '../../consumer-status-compat';
-import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
 @Injectable()
 // Read-side repository for payment projections and history.

@@ -18,9 +18,9 @@ import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { type GoogleSignupPayload } from './auth.service';
-import { ConsumerAuthSignupService } from './consumer-auth-signup.service';
-import { type ConsumerGoogleProfileRepository } from './consumer-google-profile.repository';
-import { type ConsumerIdentityRepository } from './consumer-identity.repository';
+import { type ConsumerIdentityRepository } from './identity/consumer-identity.repository';
+import { type ConsumerGoogleProfileRepository } from './oauth/consumer-google-profile.repository';
+import { ConsumerAuthSignupService } from './signup/consumer-auth-signup.service';
 import { passwordUtils } from '../../shared-common';
 
 const mockHashPassword = passwordUtils.hashPassword as jest.MockedFunction<typeof passwordUtils.hashPassword>;

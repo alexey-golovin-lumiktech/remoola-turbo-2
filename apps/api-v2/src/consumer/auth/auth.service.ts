@@ -5,14 +5,14 @@ import { type ConsumerAppScope } from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { ConsumerAuthLoginService } from './consumer-auth-login.service';
-import { ConsumerAuthRecoveryService } from './consumer-auth-recovery.service';
-import { ConsumerAuthSessionService } from './consumer-auth-session.service';
-import { ConsumerAuthSignupService } from './consumer-auth-signup.service';
-import { ConsumerAuthVerificationService } from './consumer-auth-verification.service';
 import { type ForgotPasswordOutcome, type GoogleSignupPayload, type LoginContext } from './consumer-auth.types';
-import { ConsumerIdentityRepository } from './consumer-identity.repository';
 import { ConsumerSignup } from './dto';
+import { ConsumerIdentityRepository } from './identity/consumer-identity.repository';
+import { ConsumerAuthRecoveryService } from './recovery/consumer-auth-recovery.service';
+import { ConsumerAuthLoginService } from './session/consumer-auth-login.service';
+import { ConsumerAuthSessionService } from './session/consumer-auth-session.service';
+import { ConsumerAuthSignupService } from './signup/consumer-auth-signup.service';
+import { ConsumerAuthVerificationService } from './signup/consumer-auth-verification.service';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
 

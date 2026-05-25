@@ -11,7 +11,7 @@ import {
   buildConsumerDocumentPaymentParticipantIdsSql,
   buildConsumerDocumentPaymentParticipantWhere,
 } from './consumer-document-query-helpers';
-import { buildConsumerDocumentDownloadUrl } from './document-download-url';
+import { buildConsumerDocumentDownloadUrl } from '../../../shared/consumer-document-download-url';
 import { sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 

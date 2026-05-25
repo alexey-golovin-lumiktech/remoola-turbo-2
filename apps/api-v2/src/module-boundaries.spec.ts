@@ -251,6 +251,25 @@ describe(`Nest module provider boundaries`, () => {
     expect(sourceFileCounts(__dirname, /@Cron\(`[^`]+`\)/g)).toEqual(new Map());
   });
 
+  it(`keeps admin-v2 independent from consumer module implementations`, () => {
+    expect(sourceFileCounts(join(__dirname, `admin-v2`), /from\s+[`'"](?:\.\.\/)+consumer\/modules\//g)).toEqual(
+      new Map(),
+    );
+  });
+
+  it(`keeps infrastructure independent from application verticals`, () => {
+    expect(
+      sourceFileCounts(join(__dirname, `infrastructure`), /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer)\//g),
+    ).toEqual(new Map());
+  });
+
+  it(`keeps file storage owned by infrastructure`, () => {
+    expect(sourceFileCounts(__dirname, /consumer\/modules\/files\/(?:file-storage\.service|files\.module)/g)).toEqual(
+      new Map(),
+    );
+    expect(sourceFileCounts(__dirname, /infrastructure\/storage\/file-storage\.service/g).size).toBeGreaterThan(0);
+  });
+
   it(`keeps admin-v2 idempotency transaction posture explicit`, () => {
     const adminV2Dir = join(__dirname, `admin-v2`);
     const nonTransactionalExecuteAllowlist = {

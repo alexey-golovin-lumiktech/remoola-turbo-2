@@ -10,9 +10,9 @@ import {
   ConsumerCreateContact,
   ConsumerUpdateContact,
 } from './dto/consumer-contact.dto';
+import { normalizeConsumerFacingTransactionStatus } from '../../../shar../../shared/consumer-status-compat';
+import { buildConsumerDocumentDownloadUrl } from '../../../shared/consumer-document-download-url';
 import { getEffectiveLedgerStatusOrNull } from '../../../shared/transaction-status.utils';
-import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
-import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
 @Injectable()
 export class ConsumerContactsService {

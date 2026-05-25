@@ -4,12 +4,10 @@ import {
   IsBoolean,
   IsEmail,
   IsIn,
-  IsNumber,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
-  Min,
   ValidateNested,
 } from 'class-validator';
 

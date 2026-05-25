@@ -32,10 +32,10 @@
   "eslint.useFlatConfig": true,
   "eslint.workingDirectories": [
     {
-      "pattern": "apps/*"
+      "pattern": "./apps/*/"
     },
     {
-      "pattern": "packages/*"
+      "pattern": "./packages/*/"
     }
   ],
   "eslint.validate": [
@@ -47,14 +47,15 @@
   "eslint.run": "onType",
   // 💾 --- Auto Fix + Formatting ---
   "editor.formatOnSave": true,
+  "editor.codeActionsOnSaveTimeout": 10000,
   "editor.codeActionsOnSave": {
-    "source.fixAll": "always",
-    "source.fixAll.eslint": "always"
+    "source.fixAll.eslint": "explicit"
   },
+  "eslint.codeActionsOnSave.mode": "problems",
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   // 🎨 --- Prettier/Formatting Sync ---
   "[typescript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features"
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"

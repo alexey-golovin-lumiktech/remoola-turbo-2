@@ -1,14 +1,11 @@
 import { Module } from '@nestjs/common';
 
-import { ConsumerContractsInMemoryQuery } from './consumer-contracts-in-memory.query';
 import { ConsumerContractsController } from './consumer-contracts.controller';
-import { ConsumerContractsQuery } from './consumer-contracts.query';
-import { ConsumerContractsService } from './consumer-contracts.service';
+import { ConsumerContractsReadModule } from '../../../shared/consumer-contracts/consumer-contracts-read.module';
 
 @Module({
-  imports: [],
+  imports: [ConsumerContractsReadModule],
   controllers: [ConsumerContractsController],
-  providers: [ConsumerContractsQuery, ConsumerContractsInMemoryQuery, ConsumerContractsService],
-  exports: [ConsumerContractsService],
+  exports: [ConsumerContractsReadModule],
 })
 export class ConsumerContractsModule {}

@@ -17,7 +17,7 @@ export const withdrawalGuideSourceMap = [
       `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
     ],
     backendSurfaces: [
-      `apps/api-v2/src/consumer/modules/payment-methods/consumer-payment-methods.controller.ts`,
+      `apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-payment-methods.controller.ts`,
       `apps/api-v2/src/consumer/modules/payments/consumer-payments.controller.ts`,
     ],
     sharedContracts: [`packages/api-types/src/payments/constants.ts`],
@@ -43,7 +43,7 @@ export const withdrawalGuideSourceMap = [
       `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
     ],
     backendSurfaces: [
-      `apps/api-v2/src/consumer/modules/payment-methods/consumer-payment-methods.controller.ts`,
+      `apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-payment-methods.controller.ts`,
       `apps/api-v2/src/consumer/modules/payments/consumer-payments.controller.ts`,
     ],
     sharedContracts: [`packages/api-types/src/payments/constants.ts`],
@@ -69,7 +69,7 @@ export const withdrawalGuideSourceMap = [
       `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
     ],
     backendSurfaces: [
-      `apps/api-v2/src/consumer/modules/payment-methods/consumer-payment-methods.controller.ts`,
+      `apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-payment-methods.controller.ts`,
       `apps/api-v2/src/consumer/modules/payments/consumer-payments.controller.ts`,
     ],
     sharedContracts: [`packages/api-types/src/payments/constants.ts`],

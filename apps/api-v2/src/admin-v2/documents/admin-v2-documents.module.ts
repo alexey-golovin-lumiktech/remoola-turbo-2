@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { FilesModule } from '../../consumer/modules/files/files.module';
+import { InfrastructureStorageModule } from '../../infrastructure/storage/infrastructure-storage.module';
 import { AdminV2SharedModule } from '../admin-v2-shared.module';
 import { AdminDocumentTagService } from './admin-document-tag.service';
 import { AdminDocumentTaggerService } from './admin-document-tagger.service';
@@ -11,7 +11,7 @@ import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.module';
 
 @Module({
-  imports: [AdminV2SharedModule, AdminV2AssignmentsModule, FilesModule],
+  imports: [AdminV2SharedModule, AdminV2AssignmentsModule, InfrastructureStorageModule],
   controllers: [AdminV2DocumentsController],
   providers: [
     AdminV2DocumentsRepository,

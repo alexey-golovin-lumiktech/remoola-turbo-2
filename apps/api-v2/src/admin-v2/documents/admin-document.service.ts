@@ -8,7 +8,7 @@ import {
   buildDocumentEvidenceScopeWhere,
   resolveCanonicalConsumer,
 } from './document-query-helpers';
-import { FileStorageService } from '../../consumer/modules/files/file-storage.service';
+import { FileStorageService } from '../../infrastructure/storage/file-storage.service';
 import { deriveVersion, toNullableIso } from '../admin-v2-version-utils';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 

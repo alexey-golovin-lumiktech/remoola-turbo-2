@@ -2,9 +2,9 @@ import { $Enums } from '@remoola/database-2';
 
 import { type DashboardActivityLedgerRow } from './consumer-dashboard.query';
 import { type ActivityItem } from './dtos/dashboard-data.dto';
+import { normalizeConsumerFacingTransactionStatus } from '../../../shar../../shared/consumer-status-compat';
 import { parseLedgerMetadata } from '../../../shared/json-metadata.utils';
 import { getEffectiveLedgerStatusOrNull } from '../../../shared/transaction-status.utils';
-import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 
 function normalizeDashboardActivityType(
   type: $Enums.LedgerEntryType,

@@ -8,7 +8,7 @@ import { ConsumerDocumentListRepository } from './consumer-document-list.reposit
 import { type DocumentListItem } from './consumer-document-mapper';
 import { normalizeConsumerDocumentTags } from './consumer-document-tags.util';
 import { ConsumerDocumentRepository } from './consumer-document.repository';
-import { FileStorageService } from '../files/file-storage.service';
+import { FileStorageService } from '../../../infrastructure/storage/file-storage.service';
 
 const SINGLE_DRAFT_ATTACHMENT_DELETE_BLOCK_MESSAGE =
   `This document is still attached to a draft payment request. ` +

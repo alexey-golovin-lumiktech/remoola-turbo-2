@@ -5,7 +5,8 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { PrismaClient } from '@remoola/database-2';
 
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
-import { ConsumerActionLogRetentionScheduler } from '../src/consumer/auth/consumer-action-log-retention.scheduler';
+// eslint-disable-next-line max-len
+import { ConsumerActionLogRetentionScheduler } from '../src/consumer/auth/maintenance/consumer-action-log-retention.scheduler';
 import { envs } from '../src/envs';
 import { ConsumerActionLogMaintenanceRepository } from '../src/shared/consumer-action-log-maintenance.repository';
 import { type PrismaService } from '../src/shared/prisma.service';

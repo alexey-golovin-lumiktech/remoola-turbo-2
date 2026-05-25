@@ -16,7 +16,7 @@ export const verificationGuideSourceMap = [
       `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
     ],
     backendSurfaces: [
-      `apps/api-v2/src/consumer/modules/payment-methods/consumer-verification.controller.ts`,
+      `apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-verification.controller.ts`,
       `apps/api-v2/src/shared-common/utils/consumer-verification.ts`,
     ],
     sharedContracts: [],
@@ -37,7 +37,7 @@ export const verificationGuideSourceMap = [
       `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
     ],
     backendSurfaces: [
-      `apps/api-v2/src/consumer/modules/payment-methods/consumer-verification.controller.ts`,
+      `apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-verification.controller.ts`,
       `apps/api-v2/src/shared-common/utils/consumer-verification.ts`,
     ],
     sharedContracts: [],
@@ -63,7 +63,7 @@ export const verificationGuideSourceMap = [
       `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
     ],
     backendSurfaces: [
-      `apps/api-v2/src/consumer/modules/payment-methods/consumer-verification.controller.ts`,
+      `apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-verification.controller.ts`,
       `apps/api-v2/src/shared-common/utils/consumer-verification.ts`,
     ],
     sharedContracts: [],

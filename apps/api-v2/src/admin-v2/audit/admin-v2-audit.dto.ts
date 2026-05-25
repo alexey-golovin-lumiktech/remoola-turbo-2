@@ -1,5 +1,5 @@
-import { Expose, Transform, Type } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Expose, Transform } from 'class-transformer';
+import { IsDate, IsOptional, IsString } from 'class-validator';
 
 import { PagingQuery } from '../../common';
 

@@ -4,10 +4,10 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerInvoiceRepository } from './consumer-invoice.repository';
 import { buildInvoiceHtmlV5 } from './templates';
+import { FileStorageService } from '../../../infrastructure/storage/file-storage.service';
+import { normalizeConsumerFacingTransactionStatus } from '../../../shar../../shared/consumer-status-compat';
+import { buildConsumerDocumentDownloadUrl } from '../../../shared/consumer-document-download-url';
 import { getBrowser, pfdPageViewport } from '../../../shared-common/pdf-generator-package/constants';
-import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
-import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
-import { FileStorageService } from '../files/file-storage.service';
 
 /** Return existing invoice if same consumer generated one for this payment in last 60s (double-click / retry). */
 const RECENT_INVOICE_WINDOW_MS = 60_000;

@@ -9,11 +9,11 @@ import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
 import { AdminV2ConsumersController } from './admin-v2-consumers.controller';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
 import { ConsumerAuthModule } from '../../consumer/auth/consumer-auth.module';
-import { ConsumerContractsModule } from '../../consumer/modules/contracts/consumer-contracts.module';
+import { ConsumerContractsReadModule } from '../../shared/consumer-contracts/consumer-contracts-read.module';
 import { AdminV2SharedModule } from '../admin-v2-shared.module';
 
 @Module({
-  imports: [ConsumerContractsModule, ConsumerAuthModule, AdminV2SharedModule],
+  imports: [ConsumerContractsReadModule, ConsumerAuthModule, AdminV2SharedModule],
   controllers: [AdminV2ConsumersController],
   providers: [
     AdminV2ConsumerRepository,

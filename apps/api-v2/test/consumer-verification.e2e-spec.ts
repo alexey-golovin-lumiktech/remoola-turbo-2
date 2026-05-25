@@ -15,7 +15,7 @@ import { hashPassword } from '@remoola/security-utils';
 import { applyManualAuthGuard } from './helpers/bootstrap-api-test-app';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
-import { StripeWebhookService } from '../src/consumer/modules/payment-methods/stripe-webhook.service';
+import { StripeWebhookService } from '../src/consumer/modules/payment-methods/stripe/webhooks/stripe-webhook.service';
 import { ConsumerPaymentsPoliciesService } from '../src/consumer/modules/payments/consumer-payments-policies.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';

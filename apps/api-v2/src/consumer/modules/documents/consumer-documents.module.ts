@@ -5,10 +5,10 @@ import { ConsumerDocumentListRepository } from './consumer-document-list.reposit
 import { ConsumerDocumentRepository } from './consumer-document.repository';
 import { ConsumerDocumentsController } from './consumer-documents.controller';
 import { ConsumerDocumentsService } from './consumer-documents.service';
-import { FilesModule } from '../files/files.module';
+import { InfrastructureStorageModule } from '../../../infrastructure/storage/infrastructure-storage.module';
 
 @Module({
-  imports: [FilesModule],
+  imports: [InfrastructureStorageModule],
   controllers: [ConsumerDocumentsController],
   providers: [
     ConsumerDocumentRepository,
@@ -16,6 +16,6 @@ import { FilesModule } from '../files/files.module';
     ConsumerDocumentListRepository,
     ConsumerDocumentsService,
   ],
-  exports: [ConsumerDocumentsService, FilesModule],
+  exports: [ConsumerDocumentsService, InfrastructureStorageModule],
 })
 export class ConsumerDocumentsModule {}

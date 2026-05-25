@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { ConsumerAuthMaintenanceModule } from './auth/consumer-auth-maintenance.module';
 import { ConsumerAuthModule } from './auth/consumer-auth.module';
+import { ConsumerAuthMaintenanceModule } from './auth/maintenance/consumer-auth-maintenance.module';
 import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-dashboard.module';
 import { ConsumerContactsModule } from './modules/contacts/consumer-contacts.module';
 import { ConsumerContractsModule } from './modules/contracts/consumer-contracts.module';

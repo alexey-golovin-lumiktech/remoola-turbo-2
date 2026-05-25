@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
-import { IsArray, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Expose } from 'class-transformer';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 import { PagingQuery } from '../../../../common';
 

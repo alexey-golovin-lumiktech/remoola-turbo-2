@@ -14,7 +14,7 @@ import { hashPassword, oauthCrypto } from '@remoola/security-utils';
 import { applyManualAuthGuard } from './helpers/bootstrap-api-test-app';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
-import { GoogleOAuthService } from '../src/consumer/auth/google-oauth.service';
+import { GoogleOAuthService } from '../src/consumer/auth/oauth/google-oauth.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { getApiOAuthStateCookieKeysForRead } from '../src/shared-common';

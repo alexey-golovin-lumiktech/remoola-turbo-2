@@ -15,11 +15,11 @@ import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
 import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsController } from './consumer-payments.controller';
 import { ConsumerPaymentsService } from './consumer-payments.service';
+import { InfrastructureStorageModule } from '../../../infrastructure/storage/infrastructure-storage.module';
 import { MailingModule } from '../../../shared/mailing.module';
-import { FilesModule } from '../files/files.module';
 
 @Module({
-  imports: [MailingModule, FilesModule],
+  imports: [MailingModule, InfrastructureStorageModule],
   controllers: [ConsumerPaymentsController, ConsumerPaymentRequestsController],
   providers: [
     ConsumerPaymentsIdentityRepository,

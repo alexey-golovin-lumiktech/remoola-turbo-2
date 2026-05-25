@@ -6,10 +6,10 @@ import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/
 
 import { ConsumerAuthService } from './auth.service';
 import { ConsumerAuthControllerSupportService } from './consumer-auth-controller-support.service';
-import { ConsumerGoogleOAuthFlowService } from './consumer-google-oauth-flow.service';
-import { ConsumerGoogleOAuthController } from './consumer-google-oauth.controller';
-import { GoogleOAuthService } from './google-oauth.service';
-import { OAuthStateStoreService } from './oauth-state-store.service';
+import { ConsumerGoogleOAuthFlowService } from './oauth/consumer-google-oauth-flow.service';
+import { ConsumerGoogleOAuthController } from './oauth/consumer-google-oauth.controller';
+import { GoogleOAuthService } from './oauth/google-oauth.service';
+import { OAuthStateStoreService } from './oauth/oauth-state-store.service';
 import { bootstrapApiTestApp } from '../../../test/helpers/bootstrap-api-test-app';
 import { extractMessage } from '../../../test/helpers/http-test-helpers';
 import { OriginResolverService } from '../../shared/origin-resolver.service';

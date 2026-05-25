@@ -2,9 +2,9 @@ import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
-import { ConsumerContractsService } from './consumer-contracts.service';
-import { ConsumerContractsListWithPagingQuery } from './dto';
 import { Identity, type IIdentityContext } from '../../../common';
+import { ConsumerContractsService } from '../../../shared/consumer-contracts/consumer-contracts.service';
+import { ConsumerContractsListWithPagingQuery } from '../../../shared/consumer-contracts/dto';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
 
 @ApiTags(`Consumer: Contracts`)

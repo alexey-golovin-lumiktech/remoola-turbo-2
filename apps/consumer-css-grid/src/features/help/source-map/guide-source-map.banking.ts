@@ -17,7 +17,7 @@ export const bankingGuideSourceMap = [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
       `apps/consumer-css-grid/src/lib/mutations/banking.server.ts`,
     ],
-    backendSurfaces: [`apps/api-v2/src/consumer/modules/payment-methods/consumer-payment-methods.controller.ts`],
+    backendSurfaces: [`apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-payment-methods.controller.ts`],
     sharedContracts: [],
     planningDocs: [
       `consumer-help-pack/02-help-information-architecture.md`,
@@ -42,7 +42,7 @@ export const bankingGuideSourceMap = [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
       `apps/consumer-css-grid/src/lib/mutations/banking.server.ts`,
     ],
-    backendSurfaces: [`apps/api-v2/src/consumer/modules/payment-methods/consumer-payment-methods.controller.ts`],
+    backendSurfaces: [`apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-payment-methods.controller.ts`],
     sharedContracts: [],
     planningDocs: [
       `consumer-help-pack/02-help-information-architecture.md`,
@@ -65,7 +65,7 @@ export const bankingGuideSourceMap = [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
       `apps/consumer-css-grid/src/lib/mutations/banking.server.ts`,
     ],
-    backendSurfaces: [`apps/api-v2/src/consumer/modules/payment-methods/consumer-payment-methods.controller.ts`],
+    backendSurfaces: [`apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-payment-methods.controller.ts`],
     sharedContracts: [],
     planningDocs: [
       `consumer-help-pack/02-help-information-architecture.md`,

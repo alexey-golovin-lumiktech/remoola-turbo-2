@@ -1,4 +1,4 @@
-import { buildConsumerDocumentDownloadUrl } from './document-download-url';
+import { buildConsumerDocumentDownloadUrl } from '../../../shared/consumer-document-download-url';
 
 export type DocumentListItem = {
   id: string;

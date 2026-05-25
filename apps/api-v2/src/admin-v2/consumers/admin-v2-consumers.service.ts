@@ -18,8 +18,8 @@ import {
   CONSUMER_ADMIN_AUTH_ACTIONS,
   type ConsumerAdminAuthActionsPort,
 } from '../../consumer/auth/consumer-admin-auth-actions.port';
-import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
+import { ConsumerContractsService } from '../../shared/consumer-contracts/consumer-contracts.service';
 import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
