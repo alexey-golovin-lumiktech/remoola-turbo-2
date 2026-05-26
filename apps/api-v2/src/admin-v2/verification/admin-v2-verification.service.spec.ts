@@ -302,6 +302,8 @@ describe(`AdminV2VerificationService`, () => {
     expect(result).toEqual(
       expect.objectContaining({
         verificationStatus: `APPROVED`,
+        verificationUpdatedAt: `2026-04-15T10:05:00.000Z`,
+        updatedAt: `2026-04-15T10:05:00.000Z`,
         notification: { type: `email`, sent: true },
       }),
     );
@@ -362,6 +364,8 @@ describe(`AdminV2VerificationService`, () => {
       expect.objectContaining({
         verificationStatus: `FLAGGED`,
         verificationReason: `Manual review`,
+        verificationUpdatedAt: `2026-04-15T10:05:00.000Z`,
+        updatedAt: `2026-04-15T10:05:00.000Z`,
       }),
     );
   });

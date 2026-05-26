@@ -16,6 +16,10 @@ import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
 type VerificationDecisionEmailer = Pick<AdminNotificationMailingService, `sendAdminV2VerificationDecisionEmail`>;
 
+function toNullableIso(value: Date | null | undefined): string | null {
+  return value?.toISOString() ?? null;
+}
+
 @Injectable()
 export class AdminV2VerificationDecisionService {
   private readonly logger = new Logger(AdminV2VerificationDecisionService.name);
@@ -80,8 +84,8 @@ export class AdminV2VerificationDecisionService {
           id: result.updatedConsumer.id,
           verificationStatus: result.updatedConsumer.verificationStatus,
           verificationReason: result.updatedConsumer.verificationReason,
-          verificationUpdatedAt: result.updatedConsumer.verificationUpdatedAt,
-          updatedAt: result.updatedConsumer.updatedAt,
+          verificationUpdatedAt: toNullableIso(result.updatedConsumer.verificationUpdatedAt),
+          updatedAt: result.updatedConsumer.updatedAt.toISOString(),
           version: deriveVersion(result.updatedConsumer.updatedAt),
           ...(decisionConfig.notificationType
             ? { notification: { type: decisionConfig.notificationType, sent: notificationSent } }
