@@ -15,7 +15,7 @@ export class StripePaymentRequestLedgerBootstrapRepository {
     };
     consumerId: string;
   }) {
-    const amount = Number(params.paymentRequest.amount);
+    const amount = new Prisma.Decimal(params.paymentRequest.amount);
     const ledgerId = newUuid();
     const payerKey = `pr:${params.paymentRequest.id}:payer`;
     const requesterKey = `pr:${params.paymentRequest.id}:requester`;
@@ -29,7 +29,7 @@ export class StripePaymentRequestLedgerBootstrapRepository {
           type: $Enums.LedgerEntryType.USER_PAYMENT,
           currencyCode: params.paymentRequest.currencyCode,
           status: $Enums.TransactionStatus.PENDING,
-          amount: -amount,
+          amount: amount.negated(),
           createdBy: params.consumerId,
           updatedBy: params.consumerId,
           idempotencyKey: payerKey,

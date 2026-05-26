@@ -904,28 +904,27 @@ describe(`StripePaymentRequestLedgerBootstrapRepository`, () => {
       consumerId: `consumer-1`,
     });
 
-    expect(create).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        data: expect.objectContaining({
-          consumerId: `consumer-1`,
-          paymentRequestId: `payment-request-claim`,
-          type: $Enums.LedgerEntryType.USER_PAYMENT,
-          amount: -25,
-        }),
-      }),
-    );
-    expect(create).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        data: expect.objectContaining({
-          consumerId: `requester-1`,
-          paymentRequestId: `payment-request-claim`,
-          type: $Enums.LedgerEntryType.USER_DEPOSIT,
-          amount: 25,
-        }),
-      }),
-    );
+    expect(create).toHaveBeenCalledTimes(2);
+    const payerArg = create.mock.calls[0]?.[0] as {
+      data: { consumerId: string; paymentRequestId: string; type: $Enums.LedgerEntryType; amount: Prisma.Decimal };
+    };
+    const requesterArg = create.mock.calls[1]?.[0] as {
+      data: { consumerId: string; paymentRequestId: string; type: $Enums.LedgerEntryType; amount: Prisma.Decimal };
+    };
+    expect(payerArg.data).toMatchObject({
+      consumerId: `consumer-1`,
+      paymentRequestId: `payment-request-claim`,
+      type: $Enums.LedgerEntryType.USER_PAYMENT,
+    });
+    expect(payerArg.data.amount.toString()).toBe(`-25`);
+    expect(requesterArg.data).toMatchObject({
+      consumerId: `requester-1`,
+      paymentRequestId: `payment-request-claim`,
+      type: $Enums.LedgerEntryType.USER_DEPOSIT,
+    });
+    expect(requesterArg.data.amount.toString()).toBe(`25`);
+    // reconciliation invariant: debits + credits = 0
+    expect(payerArg.data.amount.plus(requesterArg.data.amount).toString()).toBe(`0`);
   });
 
   it(`swallows duplicate-safe P2002 races during bootstrap`, async () => {
