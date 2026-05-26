@@ -14,16 +14,12 @@ import {
   normalizeContractSort,
   normalizeContractStatusFilter,
 } from './consumer-contract-normalizers';
-import { ConsumerContractsInMemoryQuery } from './consumer-contracts-in-memory.query';
 import { ConsumerContractsQuery } from './consumer-contracts.query';
 import { ConsumerContractDetails, ConsumerContractItem } from './dto';
 
 @Injectable()
 export class ConsumerContractsService {
-  constructor(
-    private readonly contractsQuery: ConsumerContractsQuery,
-    private readonly inMemoryQuery: ConsumerContractsInMemoryQuery,
-  ) {}
+  constructor(private readonly contractsQuery: ConsumerContractsQuery) {}
 
   async getContracts(
     consumerId: string,
@@ -42,20 +38,7 @@ export class ConsumerContractsService {
     const normalizedHasDocumentsFilter = normalizeContractPresenceFilter(hasDocuments);
     const normalizedHasPaymentsFilter = normalizeContractPresenceFilter(hasPayments);
     const normalizedSort = normalizeContractSort(sort);
-    if (this.contractsQuery.supportsRawContractsQuery()) {
-      return this.contractsQuery.getContractsRaw({
-        consumerId,
-        safePage,
-        safePageSize,
-        term,
-        normalizedStatusFilter,
-        normalizedHasDocumentsFilter,
-        normalizedHasPaymentsFilter,
-        normalizedSort,
-      });
-    }
-
-    return this.inMemoryQuery.getContracts({
+    return this.contractsQuery.getContractsRaw({
       consumerId,
       safePage,
       safePageSize,

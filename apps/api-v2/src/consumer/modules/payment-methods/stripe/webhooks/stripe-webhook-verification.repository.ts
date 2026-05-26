@@ -2,6 +2,7 @@ import { Injectable, type Logger } from '@nestjs/common';
 
 import { type Prisma } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../../shared/prisma.service';
 
 export type VerificationConsumerDb = Pick<PrismaService, `consumerModel`>;
@@ -34,7 +35,10 @@ type VerificationPersonalDetailsUpsert = {
 
 @Injectable()
 export class StripeWebhookVerificationRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
+  ) {}
 
   async getVerificationSessionState(
     consumerId: string,
@@ -73,7 +77,7 @@ export class StripeWebhookVerificationRepository {
   }
 
   async runManagedVerificationEvent(eventId: string, handler: (db: VerificationConsumerDb) => Promise<void> | void) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.transactions.run(async (tx) => {
       const verificationDb: VerificationConsumerDb = tx as VerificationEventTx;
       await tx.stripeWebhookEventModel.create({
         data: { eventId },

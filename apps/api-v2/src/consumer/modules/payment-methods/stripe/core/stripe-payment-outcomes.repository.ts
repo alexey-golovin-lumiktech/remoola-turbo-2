@@ -4,6 +4,7 @@ import { $Enums } from '@remoola/database-2';
 
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { StripePaymentRequestAccessRepository } from './stripe-payment-request-access.repository';
+import { PrismaTransactionRunner } from '../../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../../shared/prisma.service';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class StripePaymentOutcomesRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly paymentRequestAccessRepository: StripePaymentRequestAccessRepository,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
   ) {}
 
   async appendCheckoutWaitingOutcomes(params: { paymentRequestId: string; checkoutSessionId: string; logger: Logger }) {
@@ -33,7 +35,7 @@ export class StripePaymentOutcomesRepository {
   }
 
   async markSavedMethodPaymentCompleted(params: { paymentRequestId: string; paymentIntentId: string; logger: Logger }) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.transactions.runLedgerMutation(async (tx) => {
       const ledgerEntries = await tx.ledgerEntryModel.findMany({
         where: {
           paymentRequestId: params.paymentRequestId,
@@ -67,7 +69,7 @@ export class StripePaymentOutcomesRepository {
   }
 
   async appendDeniedSavedMethodPaymentOutcomes(params: { paymentRequestId: string; logger: Logger }) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.transactions.runLedgerMutation(async (tx) => {
       const entries = await tx.ledgerEntryModel.findMany({
         where: { paymentRequestId: params.paymentRequestId },
         select: { id: true },

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { type NotificationOutboxModel } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../../shared/prisma.service';
 
 export type ClaimedReversalNotificationOutboxRow = NotificationOutboxModel;
@@ -37,10 +38,13 @@ type MarkFailedParams = {
 
 @Injectable()
 export class StripeWebhookReversalNotificationOutboxRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
+  ) {}
 
   async claimDueRows(params: ClaimDueRowsParams): Promise<ClaimedReversalNotificationOutboxRow[]> {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const candidates = await tx.notificationOutboxModel.findMany({
         where: {
           eventType: params.eventType,

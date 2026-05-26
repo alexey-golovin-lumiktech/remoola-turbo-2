@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative } from 'path';
 
 import { MODULE_METADATA } from '@nestjs/common/constants';
@@ -119,6 +119,13 @@ function controllerFileCounts(directory: string, pattern: RegExp): Map<string, n
   return counts;
 }
 
+function expectSourceNotToContain(file: string, patterns: RegExp[]): void {
+  const source = readFileSync(file, `utf8`);
+  for (const pattern of patterns) {
+    expect(source).not.toMatch(pattern);
+  }
+}
+
 function mergeAllowlistBuckets(buckets: Record<string, Map<string, number>>): Map<string, number> {
   const merged = new Map<string, number>();
   for (const [bucket, files] of Object.entries(buckets)) {
@@ -185,6 +192,40 @@ describe(`Nest module provider boundaries`, () => {
       const source = readFileSync(file, `utf8`);
       expect(source).not.toMatch(/\.\$transaction\s*\(/);
     }
+  });
+
+  it(`routes consumer runtime transactions through PrismaTransactionRunner`, () => {
+    expect(sourceFileCounts(join(__dirname, `consumer`), /\.\$transaction\s*\(/g)).toEqual(new Map());
+  });
+
+  it(`keeps legacy src/dtos imports out of runtime feature code`, () => {
+    expect(sourceFileCounts(join(__dirname, `auth`), /from\s+[`'"]\.\.\/dtos\//g)).toEqual(new Map());
+    expect(sourceFileCounts(join(__dirname, `admin-auth`), /from\s+[`'"]\.\.\/dtos\//g)).toEqual(new Map());
+    expect(sourceFileCounts(join(__dirname, `guards`), /from\s+[`'"]\.\.\/dtos\//g)).toEqual(new Map());
+    expect(sourceFileCounts(join(__dirname, `consumer`), /from\s+[`'"](?:\.\.\/)+dtos\//g)).toEqual(new Map());
+  });
+
+  it(`keeps auth and backoffice dto barrels free of legacy auth exports`, () => {
+    expectSourceNotToContain(join(__dirname, `dtos/consumer/index.ts`), [
+      /access-consumer\.dto/,
+      /forgot-password-request\.dto/,
+      /jwt-payload\.dto/,
+      /reset-password\.dto/,
+    ]);
+    expect(existsSync(join(__dirname, `dtos/backoffice/index.ts`))).toBe(false);
+  });
+
+  it(`keeps consumer and shared read models free of runtime raw-query capability branching`, () => {
+    expect(
+      sourceFileCounts(join(__dirname, `consumer`), /typeof\s+this\.prisma\.\$queryRaw\s*===\s*[`'"]function[`'"]/g),
+    ).toEqual(new Map());
+    expect(sourceFileCounts(join(__dirname, `shared`), /supportsRawContractsQuery\s*\(/g)).toEqual(new Map());
+    expect(
+      sourceFileCounts(
+        join(__dirname, `shared`),
+        /typeof\s+(?:consumerModel|this\.prisma\.\$queryRaw)\.[A-Za-z0-9_$]+\s*!==\s*[`'"]function[`'"]/g,
+      ),
+    ).toEqual(new Map());
   });
 
   it(`keeps api bootstrap creation centralized`, () => {

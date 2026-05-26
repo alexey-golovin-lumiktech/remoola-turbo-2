@@ -19,11 +19,11 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { LoginBody } from '../../../auth/dto/login.dto';
 import { Identity, type IIdentityContext, PublicEndpoint, TrackConsumerAction } from '../../../common';
-import { CONSUMER } from '../../../dtos';
 import { TransformResponse } from '../../../interceptors';
 import { getApiOAuthStateCookieKey } from '../../../shared-common';
 import { ConsumerAuthService } from '../auth.service';
 import { ConsumerAuthControllerSupportService } from '../consumer-auth-controller-support.service';
+import { LoginResponse } from '../dto';
 
 @ApiTags(`Consumer: Auth`)
 @Controller(`consumer/auth`)
@@ -79,8 +79,8 @@ export class ConsumerSessionController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ operationId: `consumer_auth_login` })
-  @ApiOkResponse({ type: CONSUMER.LoginResponse })
-  @TransformResponse(CONSUMER.LoginResponse)
+  @ApiOkResponse({ type: LoginResponse })
+  @TransformResponse(LoginResponse)
   async login(
     @Req() req: express.Request,
     @Res({ passthrough: true }) res,
@@ -127,7 +127,7 @@ export class ConsumerSessionController {
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiCookieAuth()
   @ApiOperation({ operationId: `refresh_access` })
-  @ApiOkResponse({ type: CONSUMER.LoginResponse })
+  @ApiOkResponse({ type: LoginResponse })
   async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res) {
     this.ensureCsrf(req);
     const consumerScope = this.requireRequestConsumerAppScope(req);

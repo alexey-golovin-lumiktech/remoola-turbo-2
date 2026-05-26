@@ -38,17 +38,8 @@ type ContractsRawParams = {
 export class ConsumerContractsQuery {
   constructor(private readonly prisma: PrismaService) {}
 
-  supportsRawContractsQuery(): boolean {
-    return typeof this.prisma.$queryRaw === `function`;
-  }
-
   async getConsumerEmail(consumerId: string): Promise<string | null> {
-    const consumerModel = this.prisma.consumerModel;
-    if (!consumerModel || typeof consumerModel.findUnique !== `function`) {
-      return null;
-    }
-
-    const consumer = await consumerModel.findUnique({
+    const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },
       select: { email: true },
     });

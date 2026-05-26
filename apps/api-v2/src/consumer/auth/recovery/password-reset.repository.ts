@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { type Prisma } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../shared/prisma.service';
 import { ConsumerIdentityRepository } from '../identity/consumer-identity.repository';
 
@@ -11,6 +12,7 @@ export class PasswordResetRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly consumerIdentityRepository: ConsumerIdentityRepository,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
   ) {}
 
   async deleteExpiredTokens(now: Date = new Date()): Promise<number> {
@@ -77,7 +79,7 @@ export class PasswordResetRepository {
     password: string;
     salt: string;
   }) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const updateResult = await this.consumeToken(params.resetTokenId, tx);
       if (updateResult.count !== 1) {
         return false;

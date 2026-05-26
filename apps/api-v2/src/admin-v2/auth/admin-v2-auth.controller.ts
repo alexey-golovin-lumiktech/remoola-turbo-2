@@ -21,10 +21,9 @@ import {
   RevokeAdminSessionBody,
 } from './admin-v2-auth.dto';
 import { AdminAuthControllerSupportService } from '../../admin-auth/admin-auth-controller-support.service';
+import { BackofficeAccess, BackofficeCredentials } from '../../admin-auth/admin-auth.dto';
 import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
-import { BACKOFFICE } from '../../dtos';
-import { BackofficeCredentials } from '../../dtos/backoffice';
 import { TransformResponse } from '../../interceptors';
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { AdminV2AdminsService } from '../admins/admin-v2-admins.service';
@@ -70,8 +69,8 @@ export class AdminV2AuthController {
   @Post(`login`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ operationId: `admin_v2_auth_login` })
-  @ApiOkResponse({ type: BACKOFFICE.BackofficeAccess })
-  @TransformResponse(BACKOFFICE.BackofficeAccess)
+  @ApiOkResponse({ type: BackofficeAccess })
+  @TransformResponse(BackofficeAccess)
   async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: BackofficeCredentials) {
     this.supportService.resolveAdminOrigin(req);
     const { ipAddress, userAgent } = this.supportService.resolveRequestMeta(req);
@@ -88,8 +87,8 @@ export class AdminV2AuthController {
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiCookieAuth()
   @ApiOperation({ operationId: `admin_v2_refresh_access` })
-  @ApiOkResponse({ type: BACKOFFICE.BackofficeAccess })
-  @TransformResponse(BACKOFFICE.BackofficeAccess)
+  @ApiOkResponse({ type: BackofficeAccess })
+  @TransformResponse(BackofficeAccess)
   async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
     this.supportService.ensureCsrf(req);
     const refreshToken = this.supportService.getRefreshTokenFromRequest(req);

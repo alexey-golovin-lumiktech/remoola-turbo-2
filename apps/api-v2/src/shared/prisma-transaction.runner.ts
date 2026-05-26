@@ -69,16 +69,29 @@ export class PrismaTransactionRunner {
   runWithPolicy<T>(
     policy: PrismaTransactionPolicy,
     callback: (tx: Prisma.TransactionClient) => Promise<T>,
+    options?: PrismaTransactionOptions,
   ): Promise<T> {
-    return this.runPolicyAttempt(policy, callback);
+    return this.runPolicyAttempt(
+      {
+        ...policy,
+        options: { ...policy.options, ...options },
+      },
+      callback,
+    );
   }
 
-  runAuthSessionRotation<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
-    return this.runWithPolicy(AUTH_SESSION_ROTATION_TRANSACTION_POLICY, callback);
+  runAuthSessionRotation<T>(
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+    options?: PrismaTransactionOptions,
+  ): Promise<T> {
+    return this.runWithPolicy(AUTH_SESSION_ROTATION_TRANSACTION_POLICY, callback, options);
   }
 
-  runLedgerMutation<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
-    return this.runWithPolicy(LEDGER_TRANSACTION_POLICY, callback);
+  runLedgerMutation<T>(
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+    options?: PrismaTransactionOptions,
+  ): Promise<T> {
+    return this.runWithPolicy(LEDGER_TRANSACTION_POLICY, callback, options);
   }
 
   private async runPolicyAttempt<T>(
@@ -86,6 +99,9 @@ export class PrismaTransactionRunner {
     callback: (tx: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
     const maxAttempts = policy.retry?.maxAttempts ?? 1;
+    if (maxAttempts < 1) {
+      throw new Error(`runPolicyAttempt: maxAttempts must be at least 1`);
+    }
     let attempt = 0;
     let lastError: unknown;
 
@@ -102,7 +118,7 @@ export class PrismaTransactionRunner {
       }
     }
 
-    throw lastError;
+    throw lastError ?? new Error(`runPolicyAttempt: no attempts configured`);
   }
 
   private isRetryableTransactionConflict(error: unknown): boolean {

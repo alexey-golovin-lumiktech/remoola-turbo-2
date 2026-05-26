@@ -4,6 +4,7 @@ import { $Enums, type Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { StripePaymentRequestLedgerBootstrapRepository } from './stripe-payment-request-ledger-bootstrap.repository';
+import { PrismaTransactionRunner } from '../../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../../shared/prisma.service';
 
 type PaymentRequestSettlementTransitionClient =
@@ -15,6 +16,7 @@ export class StripePaymentRequestAccessRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ledgerBootstrapRepository: StripePaymentRequestLedgerBootstrapRepository,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
   ) {}
 
   async ensureCardPaymentRail(
@@ -68,7 +70,7 @@ export class StripePaymentRequestAccessRepository {
 
     const consumerEmail = consumer.email.trim().toLowerCase();
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.transactions.runLedgerMutation(async (tx) => {
       const paymentRequest = await tx.paymentRequestModel.findUnique({
         where: { id: paymentRequestId },
         include: { ledgerEntries: true },

@@ -10,8 +10,8 @@ import {
   ConsumerAuthSessionRepository,
   ConsumerAuthSessionRotationConflictError,
 } from './consumer-auth-session.repository';
+import { type IJwtTokenPayload } from '../../../auth/jwt-payload.types';
 import { isRefreshPayload, resolveIdentityId } from '../../../auth/jwt-payload.utils';
-import { type IJwtTokenPayload } from '../../../dtos/consumer';
 import { envs } from '../../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../../shared/auth-audit.service';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';

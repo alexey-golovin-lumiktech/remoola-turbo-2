@@ -4,19 +4,19 @@ import { AUTH_NOTICE_QUERY, type ConsumerAppScope } from '@remoola/api-types';
 import { oauthCrypto, hashTokenToHex } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { ForgotPasswordOutcome } from '../consumer-auth.types';
 import {
   CONSUMER_SESSION_REVOCATION_PORT,
   type ConsumerSessionRevocationPort,
 } from '../consumer-session-revocation.port';
 import { PasswordResetRepository } from './password-reset.repository';
-import { type CONSUMER } from '../../../dtos';
 import { AdminNotificationMailingService } from '../../../shared/admin-notification-mailing.service';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../../shared/auth-audit.service';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
 import { RecoveryMailingService } from '../../../shared/recovery-mailing.service';
 import { resolveEmailApiBaseUrl } from '../../../shared/resolve-email-api-base-url';
 import { passwordUtils, secureCompare } from '../../../shared-common';
+import { ForgotPasswordOutcome } from '../consumer-auth.types';
+import { type ForgotPasswordBody } from '../dto';
 import { ConsumerIdentityRepository } from '../identity/consumer-identity.repository';
 import { ConsumerAuthSessionRepository } from '../session/consumer-auth-session.repository';
 
@@ -121,7 +121,7 @@ export class ConsumerAuthRecoveryService {
   }
 
   async requestPasswordReset(
-    email: CONSUMER.ForgotPasswordBody[`email`],
+    email: ForgotPasswordBody[`email`],
     appScope: ConsumerAppScope,
   ): Promise<ForgotPasswordOutcome> {
     const origin = this.resolveForgotPasswordAppScopeOrigin(appScope);

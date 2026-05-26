@@ -1,4 +1,4 @@
-import { type IJwtTokenPayload } from '../dtos/consumer';
+import { type IJwtTokenPayload } from './jwt-payload.types';
 
 export function resolveIdentityId(payload: IJwtTokenPayload): string | null {
   return payload.identityId ?? payload.sub ?? null;

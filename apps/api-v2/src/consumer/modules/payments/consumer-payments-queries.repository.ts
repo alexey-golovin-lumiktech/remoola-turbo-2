@@ -11,12 +11,12 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { type PaymentsHistoryQuery } from './dto';
+import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
+import { buildConsumerDocumentDownloadUrl } from '../../../shared/consumer-document-download-url';
 import {
   normalizeConsumerFacingTransactionStatus,
   buildConsumerStatusFilter,
-} from '../../../shar../../shared/consumer-status-compat';
-import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
-import { buildConsumerDocumentDownloadUrl } from '../../../shared/consumer-document-download-url';
+} from '../../../shared/consumer-status-compat';
 import { parseLedgerMetadata } from '../../../shared/json-metadata.utils';
 import { buildPaymentRequestParticipantIdsSql, sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
@@ -191,7 +191,7 @@ export class ConsumerPaymentsQueriesRepository {
     let total = 0;
     let paymentRequests: PaymentRequestWithInclude[] = [];
 
-    if (effectiveStatusFilter && typeof this.prisma.$queryRaw === `function`) {
+    if (effectiveStatusFilter) {
       const participantPaymentIdsSql = this.buildPaymentRoleIdsSql(consumerId, normalizedConsumerEmail, role);
       const searchTerm = search?.trim();
       const searchPattern = searchTerm ? `%${searchTerm}%` : null;
@@ -273,25 +273,14 @@ export class ConsumerPaymentsQueriesRepository {
       const positionById = new Map(pageIds.map((id, index) => [id, index]));
       paymentRequests.sort((left, right) => (positionById.get(left.id) ?? 0) - (positionById.get(right.id) ?? 0));
     } else {
-      paymentRequests = effectiveStatusFilter
-        ? await this.prisma.paymentRequestModel.findMany({
-            where: whereBase,
-            include,
-            orderBy,
-            take: 2000,
-          })
-        : await this.prisma.paymentRequestModel.findMany({
-            where: whereBase,
-            include,
-            orderBy,
-            skip: (page - 1) * pageSize,
-            take: pageSize,
-          });
-      if (effectiveStatusFilter) {
-        total = 0;
-      } else {
-        total = await this.prisma.paymentRequestModel.count({ where: whereBase });
-      }
+      paymentRequests = await this.prisma.paymentRequestModel.findMany({
+        where: whereBase,
+        include,
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+      total = await this.prisma.paymentRequestModel.count({ where: whereBase });
     }
 
     const mappedItems = paymentRequests.map((paymentRequest) => {
@@ -339,20 +328,6 @@ export class ConsumerPaymentsQueriesRepository {
         latestTransaction,
       };
     });
-
-    if (effectiveStatusFilter && typeof this.prisma.$queryRaw !== `function`) {
-      const filterSet =
-        typeof effectiveStatusFilter === `object` && `in` in effectiveStatusFilter
-          ? new Set(effectiveStatusFilter.in)
-          : new Set([effectiveStatusFilter as $Enums.TransactionStatus]);
-      const filteredItems = mappedItems.filter((item) => filterSet.has(item.status));
-      return {
-        items: filteredItems.slice((page - 1) * pageSize, page * pageSize),
-        total: filteredItems.length,
-        page,
-        pageSize,
-      };
-    }
 
     return {
       items: mappedItems,
@@ -506,38 +481,35 @@ export class ConsumerPaymentsQueriesRepository {
 
   async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
     const { direction, status, type, limit = 20, offset = 0 } = query;
-    let items: ReturnType<ConsumerPaymentsQueriesRepository[`mapHistoryEntry`]>[];
-    let total: number;
 
-    if (typeof this.prisma.$queryRaw === `function`) {
-      const effectiveStatusFilter = buildConsumerStatusFilter(status);
-      const directionSql =
-        direction === PAYMENT_DIRECTION.INCOME
-          ? Prisma.sql`AND latest.amount > 0`
-          : direction === PAYMENT_DIRECTION.OUTCOME
-            ? Prisma.sql`AND latest.amount < 0`
-            : Prisma.empty;
-      const statusSql = !effectiveStatusFilter
-        ? Prisma.empty
-        : typeof effectiveStatusFilter === `object` && `in` in effectiveStatusFilter
-          ? Prisma.sql`AND latest."effectiveStatus" IN (${Prisma.join(effectiveStatusFilter.in)})`
-          : Prisma.sql`AND latest."effectiveStatus" = ${effectiveStatusFilter}`;
-      const typeSql = type ? Prisma.sql`AND latest."normalizedType" = ${type}` : Prisma.empty;
-      type HistoryRawRow = {
-        id: string;
-        ledgerId: string;
-        type: $Enums.LedgerEntryType;
-        effectiveStatus: $Enums.TransactionStatus;
-        amount: Prisma.Decimal | number | string;
-        currencyCode: $Enums.CurrencyCode;
-        createdAt: Date;
-        metadata: Prisma.JsonValue | null;
-        paymentRequestId: string | null;
-        paymentRail: $Enums.PaymentRail | null;
-        totalRows: number;
-      };
-      const rows = !effectiveStatusFilter
-        ? await this.prisma.$queryRaw<Array<HistoryRawRow>>(Prisma.sql`
+    const effectiveStatusFilter = buildConsumerStatusFilter(status);
+    const directionSql =
+      direction === PAYMENT_DIRECTION.INCOME
+        ? Prisma.sql`AND latest.amount > 0`
+        : direction === PAYMENT_DIRECTION.OUTCOME
+          ? Prisma.sql`AND latest.amount < 0`
+          : Prisma.empty;
+    const statusSql = !effectiveStatusFilter
+      ? Prisma.empty
+      : typeof effectiveStatusFilter === `object` && `in` in effectiveStatusFilter
+        ? Prisma.sql`AND latest."effectiveStatus" IN (${Prisma.join(effectiveStatusFilter.in)})`
+        : Prisma.sql`AND latest."effectiveStatus" = ${effectiveStatusFilter}`;
+    const typeSql = type ? Prisma.sql`AND latest."normalizedType" = ${type}` : Prisma.empty;
+    type HistoryRawRow = {
+      id: string;
+      ledgerId: string;
+      type: $Enums.LedgerEntryType;
+      effectiveStatus: $Enums.TransactionStatus;
+      amount: Prisma.Decimal | number | string;
+      currencyCode: $Enums.CurrencyCode;
+      createdAt: Date;
+      metadata: Prisma.JsonValue | null;
+      paymentRequestId: string | null;
+      paymentRail: $Enums.PaymentRail | null;
+      totalRows: number;
+    };
+    const rows = !effectiveStatusFilter
+      ? await this.prisma.$queryRaw<Array<HistoryRawRow>>(Prisma.sql`
             WITH latest_entry_ids AS (
               SELECT DISTINCT ON (le.ledger_id)
                 le.id
@@ -608,7 +580,7 @@ export class ConsumerPaymentsQueriesRepository {
             ) latest_outcome ON true
             ORDER BY latest."createdAt" DESC, latest.id DESC
           `)
-        : await this.prisma.$queryRaw<Array<HistoryRawRow>>(Prisma.sql`
+      : await this.prisma.$queryRaw<Array<HistoryRawRow>>(Prisma.sql`
         WITH latest_entry_ids AS (
           SELECT DISTINCT ON (le.ledger_id)
             le.id
@@ -672,69 +644,22 @@ export class ConsumerPaymentsQueriesRepository {
         OFFSET ${offset}
         LIMIT ${limit}
       `);
-      items = rows.map((row) =>
-        this.mapHistoryEntry({
-          id: row.id,
-          ledgerId: row.ledgerId,
-          type: row.type,
-          status: row.effectiveStatus,
-          amount: row.amount,
-          currencyCode: row.currencyCode,
-          createdAt: new Date(row.createdAt),
-          metadata: row.metadata,
-          paymentRequestId: row.paymentRequestId,
-          outcomes: [],
-          paymentRequest: { paymentRail: row.paymentRail },
-        }),
-      );
-      total = Number(rows[0]?.totalRows ?? 0);
-    } else {
-      const where: Prisma.LedgerEntryModelWhereInput = { consumerId, deletedAt: null };
-      const batchSize = Math.max(offset + limit + 50, 200);
-      const latestEntryByLedgerId = new Map<string, ReturnType<ConsumerPaymentsQueriesRepository[`mapHistoryEntry`]>>();
-
-      for (let skip = 0; ; skip += batchSize) {
-        const rows = await this.prisma.ledgerEntryModel.findMany({
-          where,
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          skip,
-          take: batchSize,
-          include: {
-            outcomes: {
-              orderBy: { createdAt: `desc` },
-              take: 1,
-              select: { status: true },
-            },
-            paymentRequest: {
-              select: { paymentRail: true },
-            },
-          },
-        });
-
-        for (const row of rows) {
-          if (!latestEntryByLedgerId.has(row.ledgerId)) {
-            latestEntryByLedgerId.set(row.ledgerId, this.mapHistoryEntry(row));
-          }
-        }
-
-        if (rows.length < batchSize) {
-          break;
-        }
-      }
-
-      const filteredItems = Array.from(latestEntryByLedgerId.values())
-        .filter((entry) => !direction || entry.direction === direction)
-        .filter((entry) => !status || entry.status === status)
-        .filter((entry) => !type || entry.type === type)
-        .sort((left, right) => {
-          const createdAtDiff = Date.parse(right.createdAt) - Date.parse(left.createdAt);
-          if (createdAtDiff !== 0) return createdAtDiff;
-          return right.id.localeCompare(left.id);
-        });
-
-      items = filteredItems.slice(offset, offset + limit);
-      total = filteredItems.length;
-    }
+    const items = rows.map((row) =>
+      this.mapHistoryEntry({
+        id: row.id,
+        ledgerId: row.ledgerId,
+        type: row.type,
+        status: row.effectiveStatus,
+        amount: row.amount,
+        currencyCode: row.currencyCode,
+        createdAt: new Date(row.createdAt),
+        metadata: row.metadata,
+        paymentRequestId: row.paymentRequestId,
+        outcomes: [],
+        paymentRequest: { paymentRail: row.paymentRail },
+      }),
+    );
+    const total = Number(rows[0]?.totalRows ?? 0);
 
     const paymentMethodIds = Array.from(
       new Set(

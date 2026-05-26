@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../../shared/prisma.service';
 
 type CheckoutPaymentMethodData = {
@@ -22,7 +23,10 @@ type CheckoutPaymentMethodData = {
 
 @Injectable()
 export class StripeWebhookPaymentMethodsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
+  ) {}
 
   async findConsumer(consumerId: string) {
     return this.prisma.consumerModel.findUnique({
@@ -65,7 +69,7 @@ export class StripeWebhookPaymentMethodsRepository {
     const duplicateWhere = this.buildDuplicateWhere(data);
 
     try {
-      await this.prisma.$transaction(async (tx) => {
+      await this.transactions.run(async (tx) => {
         await tx.$executeRaw(Prisma.sql`
           SELECT pg_advisory_xact_lock(
             hashtext((${data.consumerId} || ':' || ${data.type} || ':checkout-payment-method')::text)::bigint

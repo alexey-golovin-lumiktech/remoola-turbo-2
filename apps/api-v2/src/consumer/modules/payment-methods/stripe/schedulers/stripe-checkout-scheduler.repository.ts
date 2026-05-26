@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../../shared/prisma.service';
 
 type CheckoutSchedulerSelection =
@@ -14,10 +15,13 @@ export class StripeCheckoutSchedulerRepository {
   private static readonly LOCK_TRANSACTION_TIMEOUT_MS = 120000;
   private static readonly MAX_SESSION_IDS_PER_RUN = 50;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
+  ) {}
 
   async selectWaitingSessionIdsForRun(): Promise<CheckoutSchedulerSelection> {
-    return this.prisma.$transaction(
+    return this.transactions.runLedgerMutation(
       async (tx) => {
         const lockRows = await tx.$queryRaw<{ locked: boolean }[]>`
           SELECT pg_try_advisory_xact_lock(${StripeCheckoutSchedulerRepository.ADVISORY_LOCK_KEY}) AS "locked"

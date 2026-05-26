@@ -2,7 +2,19 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsString, MaxLength, MinLength } from 'class-validator';
 
-import { type ConsumerResetPasswordBody } from '@remoola/api-types';
+import {
+  type ConsumerForgotPasswordBody as ConsumerForgotPasswordBodyContract,
+  type ConsumerResetPasswordBody,
+} from '@remoola/api-types';
+
+import { IsValidEmail } from '../../../shared-common';
+
+export class ForgotPasswordBody implements ConsumerForgotPasswordBodyContract {
+  @Expose()
+  @ApiProperty({ example: `email@email.com` })
+  @IsValidEmail()
+  email: string;
+}
 
 export class ResetPassword implements ConsumerResetPasswordBody {
   @Expose()

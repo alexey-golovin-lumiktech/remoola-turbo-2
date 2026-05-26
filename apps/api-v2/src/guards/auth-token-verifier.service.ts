@@ -1,7 +1,7 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { type IJwtTokenPayload } from '../dtos/consumer';
+import { type IJwtTokenPayload } from '../auth/jwt-payload.types';
 import { envs } from '../envs';
 import { GuardMessage } from './auth-guard-boundary';
 

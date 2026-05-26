@@ -5,6 +5,7 @@ import { newUuid } from '@remoola/security-utils';
 
 import { roundConsumerExchangeAmountToCurrencyDecimal } from './consumer-exchange-normalizers';
 import { toMoneyDecimal } from '../../../shared/money-decimal.utils';
+import { PrismaTransactionRunner } from '../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../shared/prisma.service';
 
 function readRateFromMetadata(metadata: unknown): Prisma.Decimal | undefined {
@@ -42,7 +43,10 @@ type ExecuteExchangeParams = {
 
 @Injectable()
 export class ConsumerExchangeExecutionRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
+  ) {}
 
   async executeExchange(params: ExecuteExchangeParams): Promise<ExchangeExecutionResult> {
     const {
@@ -84,7 +88,7 @@ export class ConsumerExchangeExecutionRepository {
       }
 
       if (existingSource) {
-        return this.prisma.$transaction(async (tx) => {
+        return this.transactions.runLedgerMutation(async (tx) => {
           await this.acquireExchangeLock(tx, consumerId);
 
           const targetInsideTx = await tx.ledgerEntryModel.findFirst({
@@ -177,7 +181,7 @@ export class ConsumerExchangeExecutionRepository {
       rate: rateDecimal.toString(),
     } as Prisma.InputJsonValue;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.runLedgerMutation(async (tx) => {
       await this.acquireExchangeLock(tx, consumerId);
       await assertSufficientBalance(tx);
 

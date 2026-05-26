@@ -4,8 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import { type ConsumerAppScope } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
+import { type IJwtTokenPayload } from '../../../auth/jwt-payload.types';
 import { resolveIdentityId } from '../../../auth/jwt-payload.utils';
-import { type IJwtTokenPayload } from '../../../dtos/consumer';
 import { envs } from '../../../envs';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
 import { SignupMailingService } from '../../../shared/signup-mailing.service';

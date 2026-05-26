@@ -21,12 +21,11 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from '../auth.service';
 import { ConsumerAuthControllerSupportService } from '../consumer-auth-controller-support.service';
+import { GoogleSignupSessionResponse, HandoffTokenRequest, OAuthCompleteResponse } from '../dto';
 import { CONSUMER_GOOGLE_OAUTH_POLICY, ConsumerGoogleOAuthFlowService } from './consumer-google-oauth-flow.service';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreService } from './oauth-state-store.service';
 import { PublicEndpoint, TrackConsumerAction } from '../../../common';
-import { CONSUMER } from '../../../dtos';
-import { HandoffTokenRequest } from '../../../dtos/consumer';
 import { envs } from '../../../envs';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
 import { getApiOAuthStateCookieKey } from '../../../shared-common';
@@ -285,7 +284,7 @@ export class ConsumerGoogleOAuthController {
 
   @PublicEndpoint()
   @Get(`google/signup-session`)
-  @ApiOkResponse({ type: CONSUMER.GoogleSignupSessionResponse })
+  @ApiOkResponse({ type: GoogleSignupSessionResponse })
   async googleSignupSession(@Req() req: express.Request, @Query(`appScope`) appScope?: string) {
     return this.flowService.getSignupSession(req, appScope);
   }
@@ -295,8 +294,8 @@ export class ConsumerGoogleOAuthController {
   @Post(`google/signup-session/establish`)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  @ApiBody({ type: CONSUMER.HandoffTokenRequest })
-  @ApiOkResponse({ type: CONSUMER.GoogleSignupSessionResponse })
+  @ApiBody({ type: HandoffTokenRequest })
+  @ApiOkResponse({ type: GoogleSignupSessionResponse })
   async establishGoogleSignupSession(
     @Req() req: express.Request,
     @Res({ passthrough: true }) res,
@@ -320,8 +319,8 @@ export class ConsumerGoogleOAuthController {
   @Post(`oauth/complete`)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  @ApiBody({ type: CONSUMER.HandoffTokenRequest })
-  @ApiOkResponse({ type: CONSUMER.OAuthCompleteResponse })
+  @ApiBody({ type: HandoffTokenRequest })
+  @ApiOkResponse({ type: OAuthCompleteResponse })
   async oauthComplete(
     @Req() req: express.Request,
     @Res({ passthrough: true }) res,

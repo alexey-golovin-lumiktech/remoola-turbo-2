@@ -8,7 +8,7 @@ import { GuardMessage } from './auth-guard-boundary';
 import { AuthIdentityRepository } from './auth-identity.repository';
 import { validateSessionTokenHash } from './auth-session-token-hash.validator';
 import { AuthSessionRepository } from './auth-session.repository';
-import { type IJwtTokenPayload } from '../dtos/consumer';
+import { type IJwtTokenPayload } from '../auth/jwt-payload.types';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 
 @Injectable()

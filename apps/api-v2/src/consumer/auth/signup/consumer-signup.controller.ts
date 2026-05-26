@@ -19,12 +19,11 @@ import express from 'express';
 import { type ConsumerAppScope } from '@remoola/api-types';
 
 import { PublicEndpoint, TrackConsumerAction } from '../../../common';
-import { CONSUMER } from '../../../dtos';
 import { TransformResponse } from '../../../interceptors';
 import { removeNil } from '../../../shared-common';
 import { ConsumerAuthService } from '../auth.service';
 import { ConsumerAuthControllerSupportService } from '../consumer-auth-controller-support.service';
-import { ConsumerSignup } from '../dto';
+import { ConsumerSignup, SignupResponse } from '../dto';
 import { OAuthStateStoreService } from '../oauth/oauth-state-store.service';
 
 @ApiTags(`Consumer: Auth`)
@@ -93,8 +92,8 @@ export class ConsumerSignupController {
   @Post(`signup`)
   @Throttle({ default: { limit: 15, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
-  @ApiCreatedResponse({ type: CONSUMER.SignupResponse })
-  @TransformResponse(CONSUMER.SignupResponse)
+  @ApiCreatedResponse({ type: SignupResponse })
+  @TransformResponse(SignupResponse)
   async signup(
     @Req() req: express.Request,
     @Res({ passthrough: true }) res,

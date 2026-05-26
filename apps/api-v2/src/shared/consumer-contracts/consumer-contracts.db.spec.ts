@@ -4,6 +4,11 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 
 import { $Enums } from '@remoola/database-2';
 
+import {
+  normalizeContractPresenceFilter,
+  normalizeContractSort,
+  normalizeContractStatusFilter,
+} from './consumer-contract-normalizers';
 import { ConsumerContractsInMemoryQuery } from './consumer-contracts-in-memory.query';
 import { ConsumerContractsQuery } from './consumer-contracts.query';
 import { ConsumerContractsService } from './consumer-contracts.service';
@@ -11,8 +16,8 @@ import { type ConsumerContractItem } from './dto';
 import { createPrismaTestContext } from '../../../test/helpers/prisma-test-context';
 
 class RawDisabledConsumerContractsQuery extends ConsumerContractsQuery {
-  supportsRawContractsQuery(): boolean {
-    return false;
+  override async getContractsRaw(): Promise<never> {
+    throw new Error(`raw contracts query disabled for parity test`);
   }
 }
 
@@ -62,11 +67,8 @@ describe(`ConsumerContractsService DB smoke`, () => {
   const { prisma } = prismaContext;
   const rawQuery = new ConsumerContractsQuery(prisma as any);
   const fallbackQuery = new RawDisabledConsumerContractsQuery(prisma as any);
-  const rawService = new ConsumerContractsService(rawQuery, new ConsumerContractsInMemoryQuery(rawQuery));
-  const fallbackService = new ConsumerContractsService(
-    fallbackQuery,
-    new ConsumerContractsInMemoryQuery(fallbackQuery),
-  );
+  const rawService = new ConsumerContractsService(rawQuery);
+  const fallbackQueryHelper = new ConsumerContractsInMemoryQuery(fallbackQuery);
 
   let ownerId = ``;
   const paymentIdsByContactEmail = new Map<string, string[]>();
@@ -185,16 +187,16 @@ describe(`ConsumerContractsService DB smoke`, () => {
       params.hasPayments,
       params.sort,
     );
-    const fallback = await fallbackService.getContracts(
-      ownerId,
-      params.page,
-      params.pageSize,
-      params.query,
-      params.status,
-      params.hasDocuments,
-      params.hasPayments,
-      params.sort,
-    );
+    const fallback = await fallbackQueryHelper.getContracts({
+      consumerId: ownerId,
+      safePage: Math.max(1, Math.floor(Number(params.page)) || 1),
+      safePageSize: Math.min(100, Math.max(1, Math.floor(Number(params.pageSize)) || 10)),
+      term: params.query?.trim() ?? ``,
+      normalizedStatusFilter: normalizeContractStatusFilter(params.status),
+      normalizedHasDocumentsFilter: normalizeContractPresenceFilter(params.hasDocuments),
+      normalizedHasPaymentsFilter: normalizeContractPresenceFilter(params.hasPayments),
+      normalizedSort: normalizeContractSort(params.sort),
+    });
 
     expect(normalizeContractsResult(raw)).toEqual(normalizeContractsResult(fallback));
     return raw;

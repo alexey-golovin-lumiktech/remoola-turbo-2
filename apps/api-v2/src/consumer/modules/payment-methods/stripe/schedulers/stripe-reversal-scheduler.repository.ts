@@ -2,6 +2,7 @@ import { Injectable, type Logger } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../../shared/prisma.service';
 import { createOutcomeIdempotent } from '../core/ledger-outcome-idempotent';
 
@@ -19,10 +20,13 @@ export class StripeReversalSchedulerRepository {
     $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL,
   ] as const;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
+  ) {}
 
   async selectPendingStripeIdsForRun(): Promise<ReversalSchedulerSelection> {
-    return this.prisma.$transaction(
+    return this.transactions.runLedgerMutation(
       async (tx) => {
         const lockRows = await tx.$queryRaw<{ locked: boolean }[]>`
           SELECT pg_try_advisory_xact_lock(${StripeReversalSchedulerRepository.ADVISORY_LOCK_KEY}) AS "locked"
@@ -73,7 +77,7 @@ export class StripeReversalSchedulerRepository {
     externalId: string;
     logger: Logger;
   }) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.transactions.runLedgerMutation(async (tx) => {
       const entries = await tx.ledgerEntryModel.findMany({
         where: {
           stripeId: params.stripeId,

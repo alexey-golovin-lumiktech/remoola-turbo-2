@@ -1,17 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { $Enums, Prisma } from '@remoola/database-2';
+import { Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { detectConsumerDocumentKind } from './consumer-document-kind.util';
 import { type DocumentListItem, type DocumentListRow, formatConsumerDocumentRows } from './consumer-document-mapper';
 import {
-  buildConsumerDocumentContractRelationshipWhere,
   buildConsumerDocumentKindSql,
   buildConsumerDocumentPaymentParticipantIdsSql,
-  buildConsumerDocumentPaymentParticipantWhere,
 } from './consumer-document-query-helpers';
-import { buildConsumerDocumentDownloadUrl } from '../../../shared/consumer-document-download-url';
 import { sqlUuid } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
 
@@ -27,12 +23,7 @@ export class ConsumerDocumentListRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   private async getConsumerEmail(consumerId: string): Promise<string | null> {
-    const consumerModel = this.prisma.consumerModel;
-    if (!consumerModel || typeof consumerModel.findUnique !== `function`) {
-      return null;
-    }
-
-    const consumer = await consumerModel.findUnique({
+    const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },
       select: { email: true },
     });
@@ -342,166 +333,6 @@ export class ConsumerDocumentListRepository {
     return { ...formatted, page: safePage, pageSize: safePageSize };
   }
 
-  private async getDocumentsInMemory(
-    consumerId: string,
-    consumerEmail: string | null,
-    safePage: number,
-    safePageSize: number,
-    backendBaseUrl: string | undefined,
-    kindFilter: string | null,
-    contractContact: { id: string; email: string } | null,
-  ): Promise<DocumentListResult> {
-    const consumerResources = contractContact
-      ? []
-      : await this.prisma.consumerResourceModel.findMany({
-          where: {
-            consumerId,
-            deletedAt: null,
-            resource: {
-              deletedAt: null,
-            },
-          },
-          include: {
-            resource: {
-              include: {
-                resourceTags: {
-                  include: { tag: true },
-                },
-              },
-            },
-          },
-          orderBy: { createdAt: `desc` },
-        });
-
-    const paymentRequestAttachments = await this.prisma.paymentRequestAttachmentModel.findMany({
-      where: {
-        deletedAt: null,
-        resource: {
-          deletedAt: null,
-        },
-        ...(contractContact
-          ? {
-              paymentRequest: buildConsumerDocumentContractRelationshipWhere(
-                consumerId,
-                consumerEmail,
-                contractContact.email,
-              ),
-            }
-          : {
-              paymentRequest: {
-                deletedAt: null,
-                OR: buildConsumerDocumentPaymentParticipantWhere(consumerId, consumerEmail),
-              },
-            }),
-      },
-      include: {
-        resource: {
-          include: {
-            resourceTags: {
-              include: { tag: true },
-            },
-          },
-        },
-        paymentRequest: {
-          select: {
-            id: true,
-            status: true,
-          },
-        },
-      },
-      orderBy: { createdAt: `desc` },
-    });
-
-    const draftAttachmentIdsByResource = new Map<string, Set<string>>();
-    const nonDraftAttachmentIdsByResource = new Map<string, Set<string>>();
-    for (const attachment of paymentRequestAttachments) {
-      const attachmentIdsByResource =
-        attachment.paymentRequest.status === $Enums.TransactionStatus.DRAFT
-          ? draftAttachmentIdsByResource
-          : nonDraftAttachmentIdsByResource;
-      const existingIds = attachmentIdsByResource.get(attachment.resource.id) ?? new Set<string>();
-      existingIds.add(attachment.paymentRequest.id);
-      attachmentIdsByResource.set(attachment.resource.id, existingIds);
-    }
-
-    const all = [
-      ...consumerResources.map((cr) => ({
-        resourceId: cr.resource.id,
-        name: cr.resource.originalName,
-        size: cr.resource.size,
-        createdAt: cr.resource.createdAt ?? cr.createdAt,
-        mimetype: cr.resource.mimetype,
-        kind: detectConsumerDocumentKind(cr.resource.originalName),
-        tags: cr.resource.resourceTags.map((rt) => rt.tag.name),
-        attachedDraftPaymentRequestIds: Array.from(draftAttachmentIdsByResource.get(cr.resource.id) ?? []),
-        attachedNonDraftPaymentRequestIds: Array.from(nonDraftAttachmentIdsByResource.get(cr.resource.id) ?? []),
-      })),
-      ...paymentRequestAttachments.map((pa) => ({
-        resourceId: pa.resource.id,
-        name: pa.resource.originalName,
-        size: pa.resource.size,
-        createdAt: pa.resource.createdAt ?? pa.createdAt,
-        mimetype: pa.resource.mimetype,
-        kind: `PAYMENT`,
-        tags: pa.resource.resourceTags.map((rt) => rt.tag.name),
-        attachedDraftPaymentRequestIds: Array.from(draftAttachmentIdsByResource.get(pa.resource.id) ?? []),
-        attachedNonDraftPaymentRequestIds: Array.from(nonDraftAttachmentIdsByResource.get(pa.resource.id) ?? []),
-      })),
-    ];
-
-    const byResource = new Map<string, (typeof all)[number]>();
-    for (const doc of all) {
-      const existing = byResource.get(doc.resourceId);
-      const mergedDraftPaymentRequestIds = Array.from(
-        new Set([...(existing?.attachedDraftPaymentRequestIds ?? []), ...doc.attachedDraftPaymentRequestIds]),
-      );
-      const mergedNonDraftPaymentRequestIds = Array.from(
-        new Set([...(existing?.attachedNonDraftPaymentRequestIds ?? []), ...doc.attachedNonDraftPaymentRequestIds]),
-      );
-
-      if (!existing || doc.createdAt > existing.createdAt) {
-        byResource.set(doc.resourceId, {
-          ...doc,
-          attachedDraftPaymentRequestIds: mergedDraftPaymentRequestIds,
-          attachedNonDraftPaymentRequestIds: mergedNonDraftPaymentRequestIds,
-        });
-        continue;
-      }
-
-      byResource.set(doc.resourceId, {
-        ...existing,
-        attachedDraftPaymentRequestIds: mergedDraftPaymentRequestIds,
-        attachedNonDraftPaymentRequestIds: mergedNonDraftPaymentRequestIds,
-      });
-    }
-
-    let result = Array.from(byResource.values())
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .map((doc) => ({
-        id: doc.resourceId,
-        name: doc.name,
-        size: doc.size,
-        createdAt: doc.createdAt.toISOString(),
-        downloadUrl: buildConsumerDocumentDownloadUrl(doc.resourceId, backendBaseUrl),
-        mimetype: doc.mimetype,
-        kind: doc.kind,
-        tags: doc.tags,
-        isAttachedToDraftPaymentRequest: doc.attachedDraftPaymentRequestIds.length > 0,
-        attachedDraftPaymentRequestIds: doc.attachedDraftPaymentRequestIds,
-        isAttachedToNonDraftPaymentRequest: doc.attachedNonDraftPaymentRequestIds.length > 0,
-        attachedNonDraftPaymentRequestIds: doc.attachedNonDraftPaymentRequestIds,
-      }));
-
-    if (kindFilter) {
-      result = result.filter((document) => document.kind === kindFilter);
-    }
-
-    const total = result.length;
-    const start = (safePage - 1) * safePageSize;
-    const items = result.slice(start, start + safePageSize);
-    return { items, total, page: safePage, pageSize: safePageSize };
-  }
-
   async list(params: {
     consumerId: string;
     kind?: string;
@@ -534,36 +365,14 @@ export class ConsumerDocumentListRepository {
       throw new NotFoundException(errorCodes.CONTACT_NOT_FOUND);
     }
 
-    if (typeof this.prisma.$queryRaw === `function`) {
-      try {
-        return await this.getDocumentsRaw({
-          consumerId,
-          consumerEmail,
-          safePage,
-          safePageSize,
-          kindFilter,
-          backendBaseUrl,
-          contractEmail: contractContact?.email,
-        });
-      } catch (error) {
-        // Fall back to the ORM path when Prisma raw execution rejects an otherwise valid list query.
-        if (
-          !(error instanceof Prisma.PrismaClientKnownRequestError) &&
-          !(error instanceof Prisma.PrismaClientValidationError)
-        ) {
-          throw error;
-        }
-      }
-    }
-
-    return this.getDocumentsInMemory(
+    return this.getDocumentsRaw({
       consumerId,
       consumerEmail,
       safePage,
       safePageSize,
-      backendBaseUrl,
       kindFilter,
-      contractContact,
-    );
+      backendBaseUrl,
+      contractEmail: contractContact?.email,
+    });
   }
 }

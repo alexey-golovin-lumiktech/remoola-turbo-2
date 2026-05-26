@@ -114,4 +114,23 @@ describe(`PrismaTransactionRunner`, () => {
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   });
+
+  it(`fails fast when a retry policy configures zero attempts`, async () => {
+    const { prisma, runner } = buildRunner();
+    const callback = jest.fn(async () => `ok`);
+
+    await expect(
+      runner.runWithPolicy(
+        {
+          name: `invalid-retry-test`,
+          options: DEFAULT_TRANSACTION_OPTIONS,
+          retry: { maxAttempts: 0, baseDelayMs: 0 },
+        },
+        callback,
+      ),
+    ).rejects.toThrow(`runPolicyAttempt: maxAttempts must be at least 1`);
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(callback).not.toHaveBeenCalled();
+  });
 });

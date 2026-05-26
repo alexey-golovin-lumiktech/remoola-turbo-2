@@ -2,11 +2,15 @@ import { Injectable } from '@nestjs/common';
 
 import { type Prisma } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class ConsumerProfileRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
+  ) {}
 
   async findPasswordCredentials(consumerId: string) {
     return this.prisma.consumerModel.findUnique({
@@ -51,15 +55,15 @@ export class ConsumerProfileRepository {
   }
 
   async persistPasswordAndRevokeSessions(consumerId: string, hash: string, salt: string) {
-    await this.prisma.$transaction([
-      this.prisma.consumerModel.update({
+    await this.transactions.run(async (tx) => {
+      await tx.consumerModel.update({
         where: { id: consumerId },
         data: { password: hash, salt },
-      }),
-      this.prisma.authSessionModel.updateMany({
+      });
+      await tx.authSessionModel.updateMany({
         where: { consumerId, revokedAt: null },
         data: { revokedAt: new Date(), invalidatedReason: `logout_all`, lastUsedAt: new Date() },
-      }),
-    ]);
+      });
+    });
   }
 }

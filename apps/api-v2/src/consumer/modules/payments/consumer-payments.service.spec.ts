@@ -1223,6 +1223,10 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
 
   it(`filters by effective status instead of raw payment request status`, async () => {
     const prisma = {
+      $queryRaw: jest
+        .fn()
+        .mockResolvedValueOnce([{ total: 1 }])
+        .mockResolvedValueOnce([{ id: `pr-waiting-filter` }]),
       consumerModel: {
         findUnique: jest.fn(async () => ({ email: consumerEmail })),
       },
@@ -1266,13 +1270,11 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
 
     expect(result.total).toBe(1);
     expect(result.items[0]?.status).toBe($Enums.TransactionStatus.WAITING);
-    expect(prisma.paymentRequestModel.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.not.objectContaining({
-          status: $Enums.TransactionStatus.WAITING,
-        }),
-      }),
-    );
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(2);
+    expect(prisma.paymentRequestModel.findMany).toHaveBeenCalledWith({
+      where: { id: { in: [`pr-waiting-filter`] } },
+      include: expect.any(Object),
+    });
   });
 
   it(`filters by requester role and labels rows accordingly`, async () => {
@@ -2046,26 +2048,23 @@ describe(`ConsumerPaymentsService.assertProfileCompleteForVerification`, () => {
 describe(`ConsumerPaymentsService.getHistory`, () => {
   const consumerId = `consumer-1`;
 
-  it(`walks multiple batches so total and offset stay truthful after ledger collapse`, async () => {
+  it(`keeps total and offset truthful after raw ledger collapse`, async () => {
     const makeRow = (index: number) => ({
       id: `entry-${index}`,
       ledgerId: `ledger-${index}`,
-      consumerId,
       type: $Enums.LedgerEntryType.USER_PAYMENT,
       amount: -index,
-      status: $Enums.TransactionStatus.COMPLETED,
+      effectiveStatus: $Enums.TransactionStatus.COMPLETED,
       currencyCode: $Enums.CurrencyCode.USD,
       createdAt: new Date(Date.UTC(2026, 2, 1, 12, 0, index)),
       metadata: {},
       paymentRequestId: null,
-      paymentRequest: null,
-      outcomes: [],
+      paymentRail: null,
+      totalRows: 203,
     });
-    const firstBatch = Array.from({ length: 200 }, (_, index) => makeRow(203 - index));
-    const secondBatch = Array.from({ length: 3 }, (_, index) => makeRow(3 - index));
-    const findMany = jest.fn().mockResolvedValueOnce(firstBatch).mockResolvedValueOnce(secondBatch);
+    const rows = [makeRow(202), makeRow(201)];
     const prisma = {
-      ledgerEntryModel: { findMany },
+      $queryRaw: jest.fn().mockResolvedValue(rows),
       paymentMethodModel: { findMany: jest.fn().mockResolvedValue([]) },
     } as any;
     const balanceService = {
@@ -2081,41 +2080,26 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
     expect(result.items).toHaveLength(2);
     expect(result.items[0]?.ledgerId).toBe(`ledger-202`);
     expect(result.items[1]?.ledgerId).toBe(`ledger-201`);
-    expect(findMany).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        skip: 0,
-        take: 200,
-      }),
-    );
-    expect(findMany).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        skip: 200,
-        take: 200,
-      }),
-    );
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
   });
 
   it(`uses latest outcome status for returned history items and status filtering`, async () => {
-    const findMany = jest.fn().mockResolvedValue([
-      {
-        id: `entry-1`,
-        ledgerId: `ledger-1`,
-        consumerId,
-        type: $Enums.LedgerEntryType.USER_PAYMENT,
-        amount: -25,
-        status: $Enums.TransactionStatus.PENDING,
-        currencyCode: $Enums.CurrencyCode.USD,
-        createdAt: new Date(`2026-03-01T12:00:00.000Z`),
-        metadata: { paymentMethodId: `pm-bank-1` },
-        paymentRequestId: `pr-1`,
-        paymentRequest: { paymentRail: $Enums.PaymentRail.BANK_TRANSFER },
-        outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
-      },
-    ]);
     const prisma = {
-      ledgerEntryModel: { findMany },
+      $queryRaw: jest.fn().mockResolvedValue([
+        {
+          id: `entry-1`,
+          ledgerId: `ledger-1`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT,
+          amount: -25,
+          effectiveStatus: $Enums.TransactionStatus.COMPLETED,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-03-01T12:00:00.000Z`),
+          metadata: { paymentMethodId: `pm-bank-1` },
+          paymentRequestId: `pr-1`,
+          paymentRail: $Enums.PaymentRail.BANK_TRANSFER,
+          totalRows: 1,
+        },
+      ]),
       paymentMethodModel: {
         findMany: jest.fn().mockResolvedValue([
           {
@@ -2144,41 +2128,26 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
     expect(result.items[0]?.rail).toBe($Enums.PaymentRail.BANK_TRANSFER);
     expect(result.items[0]?.paymentMethodId).toBe(`pm-bank-1`);
     expect(result.items[0]?.paymentMethodLabel).toBe(`History Temp Bank •••• 5511`);
-    expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        include: {
-          outcomes: {
-            orderBy: { createdAt: `desc` },
-            take: 1,
-            select: { status: true },
-          },
-          paymentRequest: {
-            select: { paymentRail: true },
-          },
-        },
-      }),
-    );
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
   });
 
   it(`normalizes deposit settlement rows back to product payment type in history`, async () => {
-    const findMany = jest.fn().mockResolvedValue([
-      {
-        id: `entry-deposit-history`,
-        ledgerId: `ledger-deposit-history`,
-        consumerId,
-        type: $Enums.LedgerEntryType.USER_DEPOSIT,
-        amount: 30,
-        status: $Enums.TransactionStatus.COMPLETED,
-        currencyCode: $Enums.CurrencyCode.USD,
-        createdAt: new Date(`2026-03-01T14:00:00.000Z`),
-        metadata: {},
-        paymentRequestId: `pr-deposit-history`,
-        paymentRequest: { paymentRail: $Enums.PaymentRail.CARD },
-        outcomes: [],
-      },
-    ]);
     const prisma = {
-      ledgerEntryModel: { findMany },
+      $queryRaw: jest.fn().mockResolvedValue([
+        {
+          id: `entry-deposit-history`,
+          ledgerId: `ledger-deposit-history`,
+          type: $Enums.LedgerEntryType.USER_DEPOSIT,
+          amount: 30,
+          effectiveStatus: $Enums.TransactionStatus.COMPLETED,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-03-01T14:00:00.000Z`),
+          metadata: {},
+          paymentRequestId: `pr-deposit-history`,
+          paymentRail: $Enums.PaymentRail.CARD,
+          totalRows: 1,
+        },
+      ]),
       paymentMethodModel: { findMany: jest.fn().mockResolvedValue([]) },
     } as any;
     const balanceService = {
@@ -2194,24 +2163,22 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
   });
 
   it(`filters by normalized history type after collapse`, async () => {
-    const findMany = jest.fn().mockResolvedValue([
-      {
-        id: `entry-deposit-history`,
-        ledgerId: `ledger-deposit-history`,
-        consumerId,
-        type: $Enums.LedgerEntryType.USER_DEPOSIT,
-        amount: 30,
-        status: $Enums.TransactionStatus.COMPLETED,
-        currencyCode: $Enums.CurrencyCode.USD,
-        createdAt: new Date(`2026-03-01T14:00:00.000Z`),
-        metadata: {},
-        paymentRequestId: `pr-deposit-history`,
-        paymentRequest: { paymentRail: $Enums.PaymentRail.CARD },
-        outcomes: [],
-      },
-    ]);
     const prisma = {
-      ledgerEntryModel: { findMany },
+      $queryRaw: jest.fn().mockResolvedValue([
+        {
+          id: `entry-deposit-history`,
+          ledgerId: `ledger-deposit-history`,
+          type: $Enums.LedgerEntryType.USER_DEPOSIT,
+          amount: 30,
+          effectiveStatus: $Enums.TransactionStatus.COMPLETED,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-03-01T14:00:00.000Z`),
+          metadata: {},
+          paymentRequestId: `pr-deposit-history`,
+          paymentRail: $Enums.PaymentRail.CARD,
+          totalRows: 1,
+        },
+      ]),
       paymentMethodModel: { findMany: jest.fn().mockResolvedValue([]) },
     } as any;
     const balanceService = {
@@ -2232,39 +2199,25 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
   });
 
   it(`filters direction from the collapsed visible row instead of raw multi-leg ledger entries`, async () => {
-    const rows = [
-      {
-        id: `entry-exchange-income`,
-        ledgerId: `ledger-exchange-1`,
-        consumerId,
-        type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-        amount: 10,
-        status: $Enums.TransactionStatus.COMPLETED,
-        currencyCode: $Enums.CurrencyCode.USD,
-        createdAt: new Date(`2026-03-01T15:00:01.000Z`),
-        metadata: { from: $Enums.CurrencyCode.EUR, to: $Enums.CurrencyCode.USD },
-        paymentRequestId: null,
-        paymentRequest: null,
-        outcomes: [],
-      },
-      {
-        id: `entry-exchange-outcome`,
-        ledgerId: `ledger-exchange-1`,
-        consumerId,
-        type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-        amount: -9.5,
-        status: $Enums.TransactionStatus.COMPLETED,
-        currencyCode: $Enums.CurrencyCode.EUR,
-        createdAt: new Date(`2026-03-01T15:00:00.000Z`),
-        metadata: { from: $Enums.CurrencyCode.EUR, to: $Enums.CurrencyCode.USD },
-        paymentRequestId: null,
-        paymentRequest: null,
-        outcomes: [],
-      },
-    ];
-    const findMany = jest.fn().mockResolvedValue(rows);
     const prisma = {
-      ledgerEntryModel: { findMany },
+      $queryRaw: jest
+        .fn()
+        .mockResolvedValueOnce([
+          {
+            id: `entry-exchange-income`,
+            ledgerId: `ledger-exchange-1`,
+            type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
+            amount: 10,
+            effectiveStatus: $Enums.TransactionStatus.COMPLETED,
+            currencyCode: $Enums.CurrencyCode.USD,
+            createdAt: new Date(`2026-03-01T15:00:01.000Z`),
+            metadata: { from: $Enums.CurrencyCode.EUR, to: $Enums.CurrencyCode.USD },
+            paymentRequestId: null,
+            paymentRail: null,
+            totalRows: 1,
+          },
+        ])
+        .mockResolvedValueOnce([]),
       paymentMethodModel: { findMany: jest.fn().mockResolvedValue([]) },
     } as any;
     const balanceService = {

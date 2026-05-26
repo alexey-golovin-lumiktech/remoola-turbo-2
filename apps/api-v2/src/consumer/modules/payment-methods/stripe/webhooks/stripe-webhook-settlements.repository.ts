@@ -2,6 +2,7 @@ import { Injectable, type Logger } from '@nestjs/common';
 
 import { $Enums, type Prisma } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../../../shared-common';
 import { createOutcomeIdempotent } from '../core/ledger-outcome-idempotent';
@@ -25,10 +26,13 @@ export class StripeWebhookSettlementsRepository {
     $Enums.LedgerEntryType.USER_DEPOSIT,
   ] as const;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
+  ) {}
 
   async finalizeCheckoutSettlement(params: FinalizeCheckoutSettlementParams) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.runLedgerMutation(async (tx) => {
       const validation = await this.validateCheckoutSettlement(tx, params);
       if (!validation) {
         return false;

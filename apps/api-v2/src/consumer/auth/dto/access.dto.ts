@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsString, MaxLength, MinLength } from 'class-validator';
 
@@ -9,8 +9,6 @@ import {
   type ConsumerOAuthCompleteResponse as ConsumerOAuthCompleteResponseContract,
   type ConsumerSignupResponse as ConsumerSignupResponseContract,
 } from '@remoola/api-types';
-
-import { Consumer } from './consumer.dto';
 
 export class LoginResponse implements ConsumerLoginResponseContract {
   @Expose()
@@ -28,27 +26,39 @@ export class HandoffTokenRequest implements ConsumerHandoffTokenRequestContract 
   handoffToken: string;
 }
 
-export class SignupRequest extends PickType(Consumer, [
-  `email`, //
-  `password`,
-  `accountType`,
-  `contractorKind`,
-] as const) {}
+export class SignupResponseConsumer {
+  declare private readonly contract: ConsumerSignupResponseContract[`consumer`];
 
-export class ConsumerResponse extends PickType(Consumer, [
-  `id`,
-  `email`,
-  `verified`,
-  `accountType`,
-  `contractorKind`,
-  `howDidHearAboutUs`,
-] as const) {}
+  @Expose()
+  @ApiProperty()
+  id: string;
+
+  @Expose()
+  @ApiProperty({ example: `email@email.com` })
+  email: string;
+
+  @Expose()
+  @ApiProperty({ default: false })
+  verified: boolean;
+
+  @Expose()
+  @ApiProperty({ nullable: true })
+  accountType: ConsumerSignupResponseContract[`consumer`][`accountType`] | null;
+
+  @Expose()
+  @ApiProperty({ nullable: true })
+  contractorKind: ConsumerSignupResponseContract[`consumer`][`contractorKind`] | null;
+
+  @Expose()
+  @ApiProperty({ nullable: true })
+  howDidHearAboutUs: ConsumerSignupResponseContract[`consumer`][`howDidHearAboutUs`] | null;
+}
 
 export class SignupResponse implements ConsumerSignupResponseContract {
   @Expose()
-  @Type(() => ConsumerResponse)
-  @ApiProperty({ type: () => ConsumerResponse })
-  consumer: ConsumerResponse;
+  @Type(() => SignupResponseConsumer)
+  @ApiProperty({ type: () => SignupResponseConsumer })
+  consumer: SignupResponseConsumer;
 
   @Expose()
   @ApiPropertyOptional({

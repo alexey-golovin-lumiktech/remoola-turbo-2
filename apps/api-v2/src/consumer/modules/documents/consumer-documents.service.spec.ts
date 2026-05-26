@@ -101,6 +101,7 @@ describe(`ConsumerDocumentsService.attachToPayment`, () => {
 
   function makeService() {
     const prisma = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
       consumerModel: {
         findUnique: jest.fn().mockResolvedValue({ email: `owner@example.com` }),
       },
@@ -539,6 +540,7 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
 
   function makeService() {
     const prisma = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
       consumerModel: {
         findUnique: jest.fn().mockResolvedValue({ email: `owner@example.com` }),
       },
@@ -560,38 +562,18 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
   it(`exposes separate draft and non-draft payment attachment truth per resource`, async () => {
     const { service, prisma } = makeService();
     const createdAt = new Date(`2026-03-27T10:00:00.000Z`);
-    const resource = {
-      id: `resource-1`,
-      originalName: `invoice.pdf`,
-      size: 2048,
-      createdAt,
-      downloadUrl: `https://files.example/invoice.pdf`,
-      mimetype: `application/pdf`,
-      resourceTags: [{ tag: { name: `invoice` } }],
-    };
-
-    prisma.consumerResourceModel.findMany.mockResolvedValue([
+    prisma.$queryRaw.mockResolvedValue([
       {
-        resource,
+        id: `resource-1`,
+        name: `invoice.pdf`,
+        size: BigInt(2048),
         createdAt,
-      },
-    ]);
-    prisma.paymentRequestAttachmentModel.findMany.mockResolvedValue([
-      {
-        resource,
-        createdAt,
-        paymentRequest: {
-          id: `payment-draft`,
-          status: $Enums.TransactionStatus.DRAFT,
-        },
-      },
-      {
-        resource,
-        createdAt: new Date(`2026-03-27T11:00:00.000Z`),
-        paymentRequest: {
-          id: `payment-sent`,
-          status: $Enums.TransactionStatus.PENDING,
-        },
+        mimetype: `application/pdf`,
+        kind: `PAYMENT`,
+        tags: [`invoice`],
+        attachedDraftPaymentRequestIds: [`payment-draft`],
+        attachedNonDraftPaymentRequestIds: [`payment-sent`],
+        totalCount: BigInt(1),
       },
     ]);
 
@@ -621,28 +603,23 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
   it(`filters to contract-scoped relationship files when contactId is provided`, async () => {
     const { service, prisma } = makeService();
     const createdAt = new Date(`2026-03-27T10:00:00.000Z`);
-    const resource = {
-      id: `resource-1`,
-      originalName: `invoice.pdf`,
-      size: 2048,
-      createdAt,
-      downloadUrl: `https://files.example/invoice.pdf`,
-      mimetype: `application/pdf`,
-      resourceTags: [{ tag: { name: `invoice` } }],
-    };
 
     prisma.contactModel.findFirst.mockResolvedValue({
       id: `contact-1`,
       email: `vendor@example.com`,
     });
-    prisma.paymentRequestAttachmentModel.findMany.mockResolvedValue([
+    prisma.$queryRaw.mockResolvedValue([
       {
-        resource,
         createdAt,
-        paymentRequest: {
-          id: `payment-draft`,
-          status: $Enums.TransactionStatus.DRAFT,
-        },
+        id: `resource-1`,
+        name: `invoice.pdf`,
+        size: BigInt(2048),
+        mimetype: `application/pdf`,
+        kind: `PAYMENT`,
+        tags: [`invoice`],
+        attachedDraftPaymentRequestIds: [`payment-draft`],
+        attachedNonDraftPaymentRequestIds: [],
+        totalCount: BigInt(1),
       },
     ]);
 
@@ -682,98 +659,23 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
       },
     });
     expect(prisma.consumerResourceModel.findMany).not.toHaveBeenCalled();
-    expect(prisma.paymentRequestAttachmentModel.findMany).toHaveBeenCalledWith({
-      where: {
-        deletedAt: null,
-        resource: {
-          deletedAt: null,
-        },
-        paymentRequest: {
-          AND: [
-            { deletedAt: null },
-            {
-              OR: [
-                { requesterId: consumerId },
-                { payerId: consumerId },
-                { requesterId: null, requesterEmail: { equals: `owner@example.com`, mode: `insensitive` } },
-                { payerId: null, payerEmail: { equals: `owner@example.com`, mode: `insensitive` } },
-              ],
-            },
-            {
-              OR: [
-                { payer: { email: { equals: `vendor@example.com`, mode: `insensitive` } } },
-                { requester: { email: { equals: `vendor@example.com`, mode: `insensitive` } } },
-                { payerEmail: { equals: `vendor@example.com`, mode: `insensitive` } },
-                { requesterEmail: { equals: `vendor@example.com`, mode: `insensitive` } },
-              ],
-            },
-          ],
-        },
-      },
-      include: {
-        resource: {
-          include: {
-            resourceTags: {
-              include: { tag: true },
-            },
-          },
-        },
-        paymentRequest: {
-          select: {
-            id: true,
-            status: true,
-          },
-        },
-      },
-      orderBy: { createdAt: `desc` },
-    });
+    expect(prisma.$queryRaw).toHaveBeenCalled();
   });
 
   it(`ignores soft-deleted relationship attachments in document listings`, async () => {
     const { service, prisma } = makeService();
+    prisma.$queryRaw.mockResolvedValue([]);
 
-    prisma.consumerResourceModel.findMany.mockResolvedValue([]);
-    prisma.paymentRequestAttachmentModel.findMany.mockResolvedValue([]);
-
-    await service.getDocuments(consumerId, undefined, 1, 10, `http://localhost:3334`);
-
-    expect(prisma.paymentRequestAttachmentModel.findMany).toHaveBeenCalledWith({
-      where: {
-        deletedAt: null,
-        resource: {
-          deletedAt: null,
-        },
-        paymentRequest: {
-          deletedAt: null,
-          OR: [
-            { requesterId: consumerId },
-            { payerId: consumerId },
-            { requesterId: null, requesterEmail: { equals: `owner@example.com`, mode: `insensitive` } },
-            { payerId: null, payerEmail: { equals: `owner@example.com`, mode: `insensitive` } },
-          ],
-        },
-      },
-      include: {
-        resource: {
-          include: {
-            resourceTags: {
-              include: { tag: true },
-            },
-          },
-        },
-        paymentRequest: {
-          select: {
-            id: true,
-            status: true,
-          },
-        },
-      },
-      orderBy: { createdAt: `desc` },
+    await expect(service.getDocuments(consumerId, undefined, 1, 10, `http://localhost:3334`)).resolves.toEqual({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 10,
     });
+    expect(prisma.$queryRaw).toHaveBeenCalled();
   });
 
-  it(`falls back to the ORM listing when Prisma raw queries fail`, async () => {
-    const createdAt = new Date(`2026-03-27T10:00:00.000Z`);
+  it(`surfaces Prisma raw query failures from the document list path`, async () => {
     const prisma = {
       $queryRaw: jest.fn().mockRejectedValue(
         new Prisma.PrismaClientKnownRequestError(`Raw query failed`, {
@@ -788,52 +690,22 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
         findFirst: jest.fn(),
       },
       consumerResourceModel: {
-        findMany: jest.fn().mockResolvedValue([
-          {
-            resource: {
-              id: `resource-1`,
-              originalName: `contract.pdf`,
-              size: 2048,
-              createdAt,
-              mimetype: `application/pdf`,
-              resourceTags: [],
-            },
-            createdAt,
-          },
-        ]),
+        findMany: jest.fn(),
       },
       paymentRequestAttachmentModel: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn(),
       },
     } as any;
 
     const service = createConsumerDocumentsService(prisma);
 
-    await expect(service.getDocuments(consumerId, undefined, 1, 10, `http://localhost:3334`)).resolves.toEqual({
-      items: [
-        {
-          id: `resource-1`,
-          name: `contract.pdf`,
-          size: 2048,
-          createdAt: createdAt.toISOString(),
-          downloadUrl: `http://localhost:3334/api/consumer/documents/resource-1/download`,
-          mimetype: `application/pdf`,
-          kind: `CONTRACT`,
-          tags: [],
-          isAttachedToDraftPaymentRequest: false,
-          attachedDraftPaymentRequestIds: [],
-          isAttachedToNonDraftPaymentRequest: false,
-          attachedNonDraftPaymentRequestIds: [],
-        },
-      ],
-      total: 1,
-      page: 1,
-      pageSize: 10,
-    });
+    await expect(service.getDocuments(consumerId, undefined, 1, 10, `http://localhost:3334`)).rejects.toThrow(
+      `Raw query failed`,
+    );
 
     expect(prisma.$queryRaw).toHaveBeenCalled();
-    expect(prisma.consumerResourceModel.findMany).toHaveBeenCalled();
-    expect(prisma.paymentRequestAttachmentModel.findMany).toHaveBeenCalled();
+    expect(prisma.consumerResourceModel.findMany).not.toHaveBeenCalled();
+    expect(prisma.paymentRequestAttachmentModel.findMany).not.toHaveBeenCalled();
   });
 });
 

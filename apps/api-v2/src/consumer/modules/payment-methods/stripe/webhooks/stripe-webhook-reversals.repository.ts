@@ -15,6 +15,7 @@ import {
   buildConsumerOutgoingBalanceLockName,
   buildPaymentRequestOperationLockName,
 } from '../../../../../shared/prisma-advisory-locks';
+import { PrismaTransactionRunner } from '../../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../../shared/prisma.service';
 import { createOutcomeIdempotent } from '../core/ledger-outcome-idempotent';
 import {
@@ -63,7 +64,10 @@ type AppendStripeReversalParams = {
 
 @Injectable()
 export class StripeWebhookReversalsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
+  ) {}
 
   async resolveDisputeLedgerEntryIdByPaymentIntent(paymentIntentId: string) {
     const entry = await this.prisma.ledgerEntryModel.findFirst({
@@ -122,7 +126,7 @@ export class StripeWebhookReversalsRepository {
   }
 
   async appendRefundUpdatedOutcome(params: { refundId: string; status: $Enums.TransactionStatus; logger: Logger }) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.transactions.runLedgerMutation(async (tx) => {
       const entries = await tx.ledgerEntryModel.findMany({
         where: {
           stripeId: params.refundId,
@@ -168,7 +172,7 @@ export class StripeWebhookReversalsRepository {
     amount: number;
     reason?: string | null;
   }) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.transactions.runLedgerMutation(async (tx) => {
       await acquireTransactionAdvisoryLock(
         tx,
         buildConsumerOperationLockName(params.ledgerEntryId, `${params.stripeDisputeId}:dispute`),
@@ -220,7 +224,7 @@ export class StripeWebhookReversalsRepository {
     let appendedAmount = 0;
 
     try {
-      await this.prisma.$transaction(async (tx) => {
+      await this.transactions.runLedgerMutation(async (tx) => {
         await acquireTransactionAdvisoryLock(
           tx,
           buildPaymentRequestOperationLockName(params.paymentRequestId, `stripe-reversal-pr`),

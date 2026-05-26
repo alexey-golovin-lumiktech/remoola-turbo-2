@@ -6,7 +6,7 @@ import { type ConsumerModel } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { type ForgotPasswordOutcome, type GoogleSignupPayload, type LoginContext } from './consumer-auth.types';
-import { ConsumerSignup } from './dto';
+import { ForgotPasswordBody, ConsumerSignup } from './dto';
 import { ConsumerIdentityRepository } from './identity/consumer-identity.repository';
 import { ConsumerAuthRecoveryService } from './recovery/consumer-auth-recovery.service';
 import { ConsumerAuthLoginService } from './session/consumer-auth-login.service';
@@ -14,7 +14,6 @@ import { ConsumerAuthSessionService } from './session/consumer-auth-session.serv
 import { ConsumerAuthSignupService } from './signup/consumer-auth-signup.service';
 import { ConsumerAuthVerificationService } from './signup/consumer-auth-verification.service';
 import { LoginBody } from '../../auth/dto/login.dto';
-import { CONSUMER } from '../../dtos';
 
 export type { GoogleSignupPayload };
 
@@ -162,7 +161,7 @@ export class ConsumerAuthService {
     return this.signupService.signup(dto, googleSignupPayload);
   }
   async requestPasswordReset(
-    email: CONSUMER.ForgotPasswordBody[`email`],
+    email: ForgotPasswordBody[`email`],
     appScope: ConsumerAppScope,
   ): Promise<ForgotPasswordOutcome> {
     return this.recoveryService.requestPasswordReset(email, appScope);

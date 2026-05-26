@@ -8,12 +8,12 @@ import { adminErrorCodes } from '@remoola/shared-constants';
 import { ADMIN_AUTH_SESSION_REVOKE_REASONS, type AdminAuthSessionRevokeReason } from './admin-auth-session-reasons';
 import { AdminAuthSessionRepository, AdminAuthSessionRotationConflictError } from './admin-auth-session.repository';
 import { AdminIdentityRepository } from './admin-identity.repository';
-import { BackofficeCredentials } from '../dtos/backoffice';
-import { type IJwtTokenPayload } from '../dtos/consumer';
+import { type IJwtTokenPayload } from '../auth/jwt-payload.types';
 import { envs } from '../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../shared/auth-audit.service';
 import { PrismaTransactionRunner } from '../shared/prisma-transaction.runner';
 import { passwordUtils, secureCompare } from '../shared-common';
+import { BackofficeCredentials } from './admin-auth.dto';
 
 type AdminLoginContext = {
   ipAddress?: string | null;

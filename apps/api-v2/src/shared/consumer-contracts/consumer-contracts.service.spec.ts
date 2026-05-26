@@ -5,13 +5,8 @@ import { ConsumerContractsService } from './consumer-contracts.service';
 
 function createContractsQueryMock(prisma: any): ConsumerContractsQuery {
   return {
-    supportsRawContractsQuery: jest.fn(() => typeof prisma.$queryRaw === `function`),
     getConsumerEmail: jest.fn(async (consumerId: string) => {
-      const consumerModel = prisma.consumerModel;
-      if (!consumerModel || typeof consumerModel.findUnique !== `function`) {
-        return null;
-      }
-      const consumer = await consumerModel.findUnique({
+      const consumer = await prisma.consumerModel?.findUnique?.({
         where: { id: consumerId },
         select: { email: true },
       });
@@ -117,7 +112,9 @@ function createContractsQueryMock(prisma: any): ConsumerContractsQuery {
 
 function createContractsService(prisma: any) {
   const contractsQuery = createContractsQueryMock(prisma);
-  return new ConsumerContractsService(contractsQuery, new ConsumerContractsInMemoryQuery(contractsQuery));
+  const inMemoryQuery = new ConsumerContractsInMemoryQuery(contractsQuery);
+  (contractsQuery.getContractsRaw as jest.Mock).mockImplementation((params) => inMemoryQuery.getContracts(params));
+  return new ConsumerContractsService(contractsQuery);
 }
 
 describe(`consumer contract query helpers`, () => {

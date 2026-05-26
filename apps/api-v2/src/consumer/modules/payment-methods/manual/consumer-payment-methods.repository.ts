@@ -4,6 +4,7 @@ import { type Cache } from 'cache-manager';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { PrismaTransactionRunner } from '../../../../shared/prisma-transaction.runner';
 import { PrismaService } from '../../../../shared/prisma.service';
 import { type CreateManualPaymentMethod, type UpdatePaymentMethod } from '../dto/payment-method.dto';
 
@@ -17,6 +18,7 @@ export class ConsumerPaymentMethodsRepository {
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
     private readonly prisma: PrismaService,
+    private readonly transactions: PrismaTransactionRunner = new PrismaTransactionRunner(prisma),
   ) {}
 
   async listForConsumer(consumerId: string) {
@@ -41,7 +43,7 @@ export class ConsumerPaymentMethodsRepository {
   }
 
   async createManualPaymentMethod(consumerId: string, body: CreateManualPaymentMethod) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transactions.run(async (tx) => {
       const billingDetails = await tx.billingDetailsModel.create({
         data: {
           email: body.billingEmail ?? null,
@@ -134,7 +136,7 @@ export class ConsumerPaymentMethodsRepository {
     type: $Enums.PaymentMethodType;
     wasDefault: boolean;
   }) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.transactions.run(async (tx) => {
       await tx.paymentMethodModel.update({
         where: { id: params.paymentMethodId },
         data: { deletedAt: new Date(), defaultSelected: false },

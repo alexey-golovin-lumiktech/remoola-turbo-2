@@ -3,9 +3,9 @@ import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import { PublicEndpoint, TrackConsumerAction } from '../../../common';
-import { ForgotPasswordBody, ResetPassword } from '../../../dtos/consumer';
 import { ConsumerAuthService } from '../auth.service';
 import { ConsumerAuthControllerSupportService } from '../consumer-auth-controller-support.service';
+import { ForgotPasswordBody, ResetPassword } from '../dto';
 
 @Controller(`consumer/auth`)
 export class ConsumerPasswordController {
