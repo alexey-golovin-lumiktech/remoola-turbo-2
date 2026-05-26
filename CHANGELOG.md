@@ -2991,7 +2991,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-22</summary>
 
 - **2026-05-22:**
@@ -3023,6 +3023,49 @@
   - **DTO wire shape preserved:** `page` / `pageSize` query params still accept the same validation rules; only TS class names and inheritance changed. No controller route paths, response shapes, or auth guards modified.
   - **No DB / migration / ledger code touched:** Money-flow endpoints (payments, exchange, documents) only see DTO-class renames, so append-only and reconciliation invariants are unaffected.
   - **Deploy coordination:** api-v2 and admin-v2 should ship together for the DTO consolidation since the renamed classes are shared types; frontend ↔ api-v2 ordering is otherwise flexible because the `*Result` fallback path tolerates either side shipping first.
+
+</details>
+
+<details>
+<summary>2026-05-25</summary>
+
+- **2026-05-25:**
+
+  ### 🔐 Security / Production Safety
+  - **API domain-boundary hardening:** Rezone `api-v2` into domain-scoped `consumer`, `admin-v2`, `infrastructure`, and `shared` slices; move consumer contracts and storage behind shared/infrastructure facades; and lock the shape with a module-boundary spec so `admin-v2` no longer reaches into `consumer/modules/*` directly while OAuth, session-cookie, CSRF, and auth route behavior stay unchanged.
+  - **Shared crypto primitive ownership:** Centralize `sha256Hex`, `newUuid`, and `secureCompare` in `@remoola/security-utils`, switch `api-v2` call sites off direct `crypto` imports, and preserve idempotency hashes, session/ledger/webhook identifiers, and timing-safe cron-secret comparison semantics.
+  - **JWT payload guardrail preservation:** Extract shared JWT payload helpers and guard-boundary constants without changing refresh-token validation, identity resolution, cookie-key boundaries, or auth/session semantics.
+
+  ### 🧪 Testing
+  - **Boundary and helper verification:** Retarget existing unit, integration, and e2e suites to the new import paths for the api-v2 zoning work, and record local lint, typecheck, build, test, and e2e verification for the shared crypto-helper extraction.
+
+  ### 🛠 DevEx
+  - **Architecture and config alignment:** Add `apps/api-v2/src/ARCHITECTURE.md`, enforce explicit module exports/import boundaries in `module-boundaries.spec.ts`, add a single-entry `packages/eslint-config/eslint.config.mjs` re-export, and align the shared Nest TypeScript config with TS 5 deprecation handling.
+
+  ### 📄 Documentation
+  - **Runtime-policy env stubs:** Document optional Swagger, health, mail-test, and ngrok runtime-policy toggles in `apps/api-v2/.env.example` without changing default runtime behavior.
+
+</details>
+
+<details open>
+<summary>2026-05-26</summary>
+
+- **2026-05-26:**
+
+  ### 🔐 Security / Production Safety
+  - **Append-only ledger restoration:** Remove admin refund writes that mutated `ledger_entry`, store external refund identifiers in a dedicated append-only reference path, and add a database-level guard trigger so future `UPDATE` or `DELETE` drift on `ledger_entry` fails unless an explicit internal bypass is set.
+  - **Decimal-only money writes:** Replace JS-number money arithmetic and ledger writes in Stripe bootstrap and consumer exchange execution with `Prisma.Decimal`, preserve reconciliation and replay precision through string-backed rate metadata, and keep Stripe webhook/refund idempotency behavior intact.
+  - **Auth and transaction-policy hardening:** Move auth DTO ownership into feature-local modules, replace legacy JWT payload DTO usage with shared payload types, and make transaction-policy overrides fail fast on invalid retry configuration while preserving auth/session, CSRF, OAuth, cookie, and webhook mutation boundaries.
+  - **Verification decision idempotency compatibility:** Serialize verification decision timestamps to ISO strings before admin-v2 idempotency snapshot persistence so approve/reject/request-info/flag mutations remain replay-safe under the JSON-only snapshot contract.
+
+  ### 🗄 Database & Migrations
+  - **Ledger invariant migrations:** Add the additive `20260526120000_ledger_entry_external_ref` migration for external ledger references and `20260526130000_ledger_entry_append_only_trigger` for the row-level append-only guard; deploy order is migration-first, with no backfill required.
+
+  ### 🧪 Testing
+  - **Financial safety coverage:** Add and extend repository/service coverage for Decimal ledger amounts, Stripe bootstrap reconciliation, webhook deduplication, consumer ledger writes, transaction-runner retry validation, legacy DTO removal boundaries, and verification decision timestamp serialization.
+
+  ### ⚠️ Notes
+  - **Operational constraint after trigger rollout:** Once the append-only trigger is live, unapproved `UPDATE` and `DELETE` operations on `ledger_entry` will fail by design; only the controlled fixture teardown path sets the internal bypass needed for seed cleanup.
 
 </details>
 
