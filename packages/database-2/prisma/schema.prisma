@@ -842,6 +842,7 @@ model LedgerEntryModel {
   deletedAt        DateTime?                 @map("deleted_at") @db.Timestamptz(6)
   outcomes         LedgerEntryOutcomeModel[]
   disputes         LedgerEntryDisputeModel[]
+  externalRefs     LedgerEntryExternalRefModel[]
   payoutEscalation PayoutEscalationModel?
 
   @@unique([idempotencyKey])
@@ -879,6 +880,23 @@ model LedgerEntryDisputeModel {
   @@unique([ledgerEntryId, stripeDisputeId])
   @@index([ledgerEntryId])
   @@map("ledger_entry_dispute")
+}
+
+/// Append-only late-binding of external system identifiers for an existing ledger_entry.
+/// One row per (ledger_entry_id, source). App only INSERTs; no UPDATE/DELETE.
+model LedgerEntryExternalRefModel {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ledgerEntryId String   @map("ledger_entry_id") @db.Uuid
+  source        String   @db.Text
+  externalId    String   @map("external_id") @db.Text
+  createdBy     String?  @map("created_by") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ledgerEntry LedgerEntryModel @relation(fields: [ledgerEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerEntryId, source])
+  @@index([source, externalId])
+  @@map("ledger_entry_external_ref")
 }
 
 model PayoutEscalationModel {

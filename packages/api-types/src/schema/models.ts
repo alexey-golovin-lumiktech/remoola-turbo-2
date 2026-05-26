@@ -233,6 +233,7 @@ export type LedgerEntryModelWithRelations = Prisma.LedgerEntryModelGetPayload<{
     paymentRequest: true;
     outcomes: true;
     disputes: true;
+    externalRefs: true;
     payoutEscalation: true;
   };
 }>;
@@ -244,6 +245,12 @@ export type LedgerEntryOutcomeModelWithRelations = Prisma.LedgerEntryOutcomeMode
 }>;
 
 export type LedgerEntryDisputeModelWithRelations = Prisma.LedgerEntryDisputeModelGetPayload<{
+  include: {
+    ledgerEntry: true;
+  };
+}>;
+
+export type LedgerEntryExternalRefModelWithRelations = Prisma.LedgerEntryExternalRefModelGetPayload<{
   include: {
     ledgerEntry: true;
   };

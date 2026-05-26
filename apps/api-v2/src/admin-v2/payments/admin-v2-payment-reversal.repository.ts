@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
@@ -21,8 +21,12 @@ const PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES = [
   $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL,
 ] as const;
 
+export const STRIPE_REFUND_EXTERNAL_REF_SOURCE = `stripe_refund`;
+
 @Injectable()
 export class AdminV2PaymentReversalRepository {
+  private readonly logger = new Logger(AdminV2PaymentReversalRepository.name);
+
   async createOutcomeIdempotent(
     client: Pick<Prisma.TransactionClient, `ledgerEntryOutcomeModel`>,
     data: {
@@ -114,18 +118,60 @@ export class AdminV2PaymentReversalRepository {
       select: { id: true },
     });
 
-    await tx.ledgerEntryModel.updateMany({
-      where: { id: { in: entries.map((entry) => entry.id) } },
-      data: { stripeId: stripeRefundId, updatedBy: adminId },
-    });
-
     for (const entry of entries) {
+      await this.createExternalRefIdempotent(tx, {
+        ledgerEntryId: entry.id,
+        source: STRIPE_REFUND_EXTERNAL_REF_SOURCE,
+        externalId: stripeRefundId,
+        createdBy: adminId,
+      });
       await this.createOutcomeIdempotent(tx, {
         ledgerEntryId: entry.id,
         status,
         source: `stripe`,
         externalId: `admin-refund:${stripeRefundId}:${status}`,
       });
+    }
+  }
+
+  private async createExternalRefIdempotent(
+    client: Pick<Prisma.TransactionClient, `ledgerEntryExternalRefModel`>,
+    data: {
+      ledgerEntryId: string;
+      source: string;
+      externalId: string;
+      createdBy: string | null;
+    },
+  ) {
+    try {
+      await client.ledgerEntryExternalRefModel.create({
+        data: {
+          ledgerEntry: { connect: { id: data.ledgerEntryId } },
+          source: data.source,
+          externalId: data.externalId,
+          createdBy: data.createdBy,
+        },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
+        const existing = await client.ledgerEntryExternalRefModel.findUnique({
+          where: {
+            ledgerEntryId_source: { ledgerEntryId: data.ledgerEntryId, source: data.source },
+          },
+          select: { externalId: true },
+        });
+        if (existing && existing.externalId !== data.externalId) {
+          this.logger.warn({
+            event: `ledger_external_ref_divergence`,
+            ledgerEntryId: data.ledgerEntryId,
+            source: data.source,
+            incomingExternalId: data.externalId,
+            existingExternalId: existing.externalId,
+          });
+        }
+        return;
+      }
+      throw err;
     }
   }
 

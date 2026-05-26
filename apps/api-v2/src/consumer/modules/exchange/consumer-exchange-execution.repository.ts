@@ -3,8 +3,20 @@ import { Injectable } from '@nestjs/common';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { newUuid } from '@remoola/security-utils';
 
-import { roundConsumerExchangeAmountToCurrency } from './consumer-exchange-normalizers';
+import { roundConsumerExchangeAmountToCurrencyDecimal } from './consumer-exchange-normalizers';
+import { toMoneyDecimal } from '../../../shared/money-decimal.utils';
 import { PrismaService } from '../../../shared/prisma.service';
+
+function readRateFromMetadata(metadata: unknown): Prisma.Decimal | undefined {
+  if (!metadata || typeof metadata !== `object`) return undefined;
+  const raw = (metadata as Record<string, unknown>).rate;
+  if (typeof raw !== `number` && typeof raw !== `string`) return undefined;
+  try {
+    return toMoneyDecimal(raw, `metadata rate`);
+  } catch {
+    return undefined;
+  }
+}
 
 type ExchangeExecutionResult = {
   from: $Enums.CurrencyCode;
@@ -45,6 +57,9 @@ export class ConsumerExchangeExecutionRepository {
       assertSufficientBalance,
     } = params;
 
+    const amountDecimal = toMoneyDecimal(amount, `exchange amount`);
+    const rateDecimal = toMoneyDecimal(rate, `exchange rate`);
+
     if (sourceIdempotencyKey || targetIdempotencyKey) {
       const [existingTarget, existingSource] = await Promise.all([
         this.prisma.ledgerEntryModel.findFirst({
@@ -56,14 +71,13 @@ export class ConsumerExchangeExecutionRepository {
       ]);
 
       if (existingTarget) {
-        const existingMetadata = (existingTarget.metadata ?? {}) as Record<string, unknown>;
-        const rateFromMetadata = typeof existingMetadata.rate === `number` ? existingMetadata.rate : undefined;
+        const rateFromMetadata = readRateFromMetadata(existingTarget.metadata);
         return {
           from,
           to,
-          rate: rateFromMetadata ?? rate,
-          sourceAmount: amount,
-          targetAmount: Number(existingTarget.amount),
+          rate: (rateFromMetadata ?? rateDecimal).toNumber(),
+          sourceAmount: amountDecimal.toNumber(),
+          targetAmount: toMoneyDecimal(existingTarget.amount, `existing target amount`).toNumber(),
           ledgerId: existingTarget.ledgerId,
           entryId: existingTarget.id,
         };
@@ -76,31 +90,34 @@ export class ConsumerExchangeExecutionRepository {
           const targetInsideTx = await tx.ledgerEntryModel.findFirst({
             where: { idempotencyKey: targetIdempotencyKey, consumerId },
           });
+          const sourceAmountDecimal = toMoneyDecimal(existingSource.amount, `existing source amount`).abs();
+
           if (targetInsideTx) {
-            const targetMetadata = (targetInsideTx.metadata ?? {}) as Record<string, unknown>;
-            const rateFromMetadata = typeof targetMetadata.rate === `number` ? targetMetadata.rate : rate;
+            const rateFromMetadata = readRateFromMetadata(targetInsideTx.metadata) ?? rateDecimal;
             return {
               from,
               to,
-              rate: rateFromMetadata,
-              sourceAmount: Math.abs(Number(existingSource.amount)),
-              targetAmount: Number(targetInsideTx.amount),
+              rate: rateFromMetadata.toNumber(),
+              sourceAmount: sourceAmountDecimal.toNumber(),
+              targetAmount: toMoneyDecimal(targetInsideTx.amount, `existing target amount`).toNumber(),
               ledgerId: targetInsideTx.ledgerId,
               entryId: targetInsideTx.id,
             };
           }
 
           const sourceMetadata = (existingSource.metadata ?? {}) as Record<string, unknown>;
-          const rateFromMetadata = typeof sourceMetadata.rate === `number` ? sourceMetadata.rate : rate;
+          const rateFromMetadataDecimal = readRateFromMetadata(sourceMetadata) ?? rateDecimal;
           const mergedMetadata = {
             ...sourceMetadata,
             ...(metadata as Record<string, unknown>),
             from,
             to,
-            rate: rateFromMetadata,
+            rate: rateFromMetadataDecimal.toString(),
           } as Prisma.InputJsonValue;
-          const sourceAmount = Math.abs(Number(existingSource.amount));
-          const targetAmount = roundConsumerExchangeAmountToCurrency(sourceAmount * rateFromMetadata, to);
+          const targetAmountDecimal = roundConsumerExchangeAmountToCurrencyDecimal(
+            sourceAmountDecimal.times(rateFromMetadataDecimal),
+            to,
+          );
 
           try {
             const income = await tx.ledgerEntryModel.create({
@@ -110,7 +127,7 @@ export class ConsumerExchangeExecutionRepository {
                 type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
                 currencyCode: to,
                 status: $Enums.TransactionStatus.COMPLETED,
-                amount: +targetAmount,
+                amount: targetAmountDecimal,
                 createdBy: consumerId,
                 updatedBy: consumerId,
                 idempotencyKey: targetIdempotencyKey,
@@ -121,9 +138,9 @@ export class ConsumerExchangeExecutionRepository {
             return {
               from,
               to,
-              rate: rateFromMetadata,
-              sourceAmount,
-              targetAmount,
+              rate: rateFromMetadataDecimal.toNumber(),
+              sourceAmount: sourceAmountDecimal.toNumber(),
+              targetAmount: targetAmountDecimal.toNumber(),
               ledgerId: income.ledgerId,
               entryId: income.id,
             };
@@ -133,14 +150,13 @@ export class ConsumerExchangeExecutionRepository {
                 where: { idempotencyKey: targetIdempotencyKey, consumerId },
               });
               if (existing) {
-                const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
-                const existingRate = typeof existingMetadata.rate === `number` ? existingMetadata.rate : rate;
+                const existingRate = readRateFromMetadata(existing.metadata) ?? rateDecimal;
                 return {
                   from,
                   to,
-                  rate: existingRate,
-                  sourceAmount,
-                  targetAmount: Number(existing.amount),
+                  rate: existingRate.toNumber(),
+                  sourceAmount: sourceAmountDecimal.toNumber(),
+                  targetAmount: toMoneyDecimal(existing.amount, `existing target amount`).toNumber(),
                   ledgerId: existing.ledgerId,
                   entryId: existing.id,
                 };
@@ -154,6 +170,12 @@ export class ConsumerExchangeExecutionRepository {
     }
 
     const ledgerId = newUuid();
+    const targetAmountDecimal = roundConsumerExchangeAmountToCurrencyDecimal(amountDecimal.times(rateDecimal), to);
+    const sourceAmountSignedDecimal = amountDecimal.negated();
+    const metadataWithStringRate = {
+      ...((metadata as Record<string, unknown>) ?? {}),
+      rate: rateDecimal.toString(),
+    } as Prisma.InputJsonValue;
 
     return this.prisma.$transaction(async (tx) => {
       await this.acquireExchangeLock(tx, consumerId);
@@ -166,11 +188,11 @@ export class ConsumerExchangeExecutionRepository {
           type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
           currencyCode: from,
           status: $Enums.TransactionStatus.COMPLETED,
-          amount: -amount,
+          amount: sourceAmountSignedDecimal,
           createdBy: consumerId,
           updatedBy: consumerId,
           idempotencyKey: sourceIdempotencyKey,
-          metadata,
+          metadata: metadataWithStringRate,
         },
       });
 
@@ -181,20 +203,20 @@ export class ConsumerExchangeExecutionRepository {
           type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
           currencyCode: to,
           status: $Enums.TransactionStatus.COMPLETED,
-          amount: +roundConsumerExchangeAmountToCurrency(amount * rate, to),
+          amount: targetAmountDecimal,
           createdBy: consumerId,
           updatedBy: consumerId,
           idempotencyKey: targetIdempotencyKey,
-          metadata,
+          metadata: metadataWithStringRate,
         },
       });
 
       return {
         from,
         to,
-        rate,
-        sourceAmount: amount,
-        targetAmount: Number(income.amount),
+        rate: rateDecimal.toNumber(),
+        sourceAmount: amountDecimal.toNumber(),
+        targetAmount: targetAmountDecimal.toNumber(),
         ledgerId,
         entryId: income.id,
       };

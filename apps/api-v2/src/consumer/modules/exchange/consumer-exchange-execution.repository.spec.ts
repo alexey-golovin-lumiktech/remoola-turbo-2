@@ -81,13 +81,19 @@ describe(`ConsumerExchangeExecutionRepository`, () => {
 
     expect(assertSufficientBalance).toHaveBeenCalledWith(tx);
     expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+    const createMock = tx.ledgerEntryModel.create as jest.Mock;
+    const firstCallAmount = createMock.mock.calls[0][0].data.amount as Prisma.Decimal;
+    const secondCallAmount = createMock.mock.calls[1][0].data.amount as Prisma.Decimal;
+    expect(firstCallAmount).toBeInstanceOf(Prisma.Decimal);
+    expect(firstCallAmount.toString()).toBe(`-100`);
+    expect(secondCallAmount).toBeInstanceOf(Prisma.Decimal);
+    expect(secondCallAmount.toString()).toBe(`92`);
     expect(tx.ledgerEntryModel.create).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         data: expect.objectContaining({
           consumerId: `consumer-1`,
           currencyCode: $Enums.CurrencyCode.USD,
-          amount: -100,
         }),
       }),
     );
@@ -97,7 +103,6 @@ describe(`ConsumerExchangeExecutionRepository`, () => {
         data: expect.objectContaining({
           consumerId: `consumer-1`,
           currencyCode: $Enums.CurrencyCode.EUR,
-          amount: 92,
         }),
       }),
     );

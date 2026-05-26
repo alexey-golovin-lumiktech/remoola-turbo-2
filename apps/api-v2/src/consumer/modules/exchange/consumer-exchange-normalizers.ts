@@ -1,6 +1,6 @@
 import { type BadRequestException, type NotFoundException } from '@nestjs/common';
 
-import { type $Enums, type Prisma } from '@remoola/database-2';
+import { type $Enums, Prisma } from '@remoola/database-2';
 
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
@@ -71,6 +71,14 @@ export function mergeConsumerExchangeRuleExecutionMetadata(
 export function roundConsumerExchangeAmountToCurrency(amount: number, currency: $Enums.CurrencyCode) {
   const digits = getCurrencyFractionDigits(currency);
   return Number(amount.toFixed(digits));
+}
+
+export function roundConsumerExchangeAmountToCurrencyDecimal(
+  amount: Prisma.Decimal,
+  currency: $Enums.CurrencyCode,
+): Prisma.Decimal {
+  const digits = getCurrencyFractionDigits(currency);
+  return amount.toDecimalPlaces(digits, Prisma.Decimal.ROUND_HALF_UP);
 }
 
 export function getConsumerExchangeRateBatchErrorCode(error: BadRequestException | NotFoundException) {

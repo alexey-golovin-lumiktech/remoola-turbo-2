@@ -221,13 +221,16 @@ export async function cleanupFixtures(prisma: PrismaClient): Promise<void> {
   }
 
   if (paymentRequestIds.length > 0 || consumerIds.length > 0) {
-    await prisma.ledgerEntryModel.deleteMany({
-      where: {
-        OR: [
-          ...(paymentRequestIds.length > 0 ? [{ paymentRequestId: { in: paymentRequestIds } }] : []),
-          ...(consumerIds.length > 0 ? [{ consumerId: { in: consumerIds } }] : []),
-        ],
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(`SET LOCAL remoola.allow_ledger_mutation = 'true'`);
+      await tx.ledgerEntryModel.deleteMany({
+        where: {
+          OR: [
+            ...(paymentRequestIds.length > 0 ? [{ paymentRequestId: { in: paymentRequestIds } }] : []),
+            ...(consumerIds.length > 0 ? [{ consumerId: { in: consumerIds } }] : []),
+          ],
+        },
+      });
     });
   }
 

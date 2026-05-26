@@ -12,19 +12,22 @@ describe(`AdminV2PaymentReversalRepository`, () => {
         findMany: jest.fn(),
         findFirst: jest.fn(),
         create: jest.fn().mockResolvedValue(undefined),
-        updateMany: jest.fn().mockResolvedValue({ count: 2 }),
       },
       ledgerEntryOutcomeModel: {
         create: jest.fn().mockResolvedValue({ id: `outcome-1` }),
+      },
+      ledgerEntryExternalRefModel: {
+        create: jest.fn().mockResolvedValue({ id: `ref-1` }),
+        findUnique: jest.fn(),
       },
     } as unknown as Prisma.TransactionClient & {
       ledgerEntryModel: {
         findMany: jest.Mock;
         findFirst: jest.Mock;
         create: jest.Mock;
-        updateMany: jest.Mock;
       };
       ledgerEntryOutcomeModel: { create: jest.Mock };
+      ledgerEntryExternalRefModel: { create: jest.Mock; findUnique: jest.Mock };
     };
     const repository = new AdminV2PaymentReversalRepository();
 
@@ -50,10 +53,17 @@ describe(`AdminV2PaymentReversalRepository`, () => {
       status: $Enums.TransactionStatus.COMPLETED,
     });
 
-    expect(tx.ledgerEntryModel.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: [`payer-reversal`, `requester-reversal`] } },
-      data: { stripeId: `re_123`, updatedBy: `admin-1` },
-    });
+    expect(tx.ledgerEntryExternalRefModel.create).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          source: `stripe_refund`,
+          externalId: `re_123`,
+          createdBy: `admin-1`,
+        }),
+      }),
+    );
+    expect(tx.ledgerEntryExternalRefModel.create).toHaveBeenCalledTimes(2);
     expect(tx.ledgerEntryOutcomeModel.create).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
@@ -75,7 +85,7 @@ describe(`AdminV2PaymentReversalRepository`, () => {
       idempotencyKeyBase: `base-1`,
     });
 
-    expect(tx.ledgerEntryModel.updateMany).not.toHaveBeenCalled();
+    expect(tx.ledgerEntryExternalRefModel.create).not.toHaveBeenCalled();
     expect(tx.ledgerEntryOutcomeModel.create).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
