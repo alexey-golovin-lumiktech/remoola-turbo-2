@@ -1,13 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
-import { ConsumerPaymentsQueriesRepository } from './consumer-payments-queries.repository';
 import { type PaymentsHistoryQuery } from './dto';
+import { ConsumerPaymentViewRepository } from './queries/consumer-payment-view.repository';
+import { ConsumerPaymentsHistoryRepository } from './queries/consumer-payments-history.repository';
+import { ConsumerPaymentsListRepository } from './queries/consumer-payments-list.repository';
+import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
 @Injectable()
 export class ConsumerPaymentsReadService {
-  constructor(private readonly queriesService: ConsumerPaymentsQueriesRepository) {}
+  private readonly logger = new Logger(ConsumerPaymentsReadService.name);
+
+  constructor(
+    private readonly listRepository: ConsumerPaymentsListRepository,
+    private readonly viewRepository: ConsumerPaymentViewRepository,
+    private readonly historyRepository: ConsumerPaymentsHistoryRepository,
+    private readonly balanceService: BalanceCalculationService,
+  ) {}
 
   async listPayments(params: {
     consumerId: string;
@@ -18,26 +28,43 @@ export class ConsumerPaymentsReadService {
     role?: string;
     search?: string;
   }) {
-    return this.queriesService.listPayments(params);
+    return this.listRepository.listPayments(params);
   }
 
   async getPaymentView(consumerId: string, paymentRequestId: string, backendBaseUrl?: string) {
-    return this.queriesService.getPaymentView(consumerId, paymentRequestId, backendBaseUrl);
+    return this.viewRepository.getPaymentView(consumerId, paymentRequestId, backendBaseUrl);
   }
 
   async getBalancesCompleted(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
-    return this.queriesService.getBalancesCompleted(consumerId);
+    try {
+      const result = await this.balanceService.calculateMultiCurrency(consumerId, {
+        mode: BalanceCalculationMode.COMPLETED,
+      });
+      return result.balances;
+    } catch {
+      this.logger.error(`Balance calculation failed`, { consumerId });
+      throw new InternalServerErrorException(`An unexpected error occurred`);
+    }
   }
 
   async getBalancesIncludePending(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
-    return this.queriesService.getBalancesIncludePending(consumerId);
+    try {
+      const result = await this.balanceService.calculateMultiCurrency(consumerId, {
+        mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
+      });
+      return result.balances;
+    } catch {
+      this.logger.error(`Balance calculation failed`, { consumerId });
+      throw new InternalServerErrorException(`An unexpected error occurred`);
+    }
   }
 
   async getAvailableBalance(consumerId: string): Promise<number> {
-    return this.queriesService.getAvailableBalance(consumerId);
+    const result = await this.balanceService.calculateSingle(consumerId);
+    return result.balance;
   }
 
   async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
-    return this.queriesService.getHistory(consumerId, query);
+    return this.historyRepository.getHistory(consumerId, query);
   }
 }

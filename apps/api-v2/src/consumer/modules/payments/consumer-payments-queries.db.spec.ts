@@ -4,19 +4,21 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 
 import { $Enums } from '@remoola/database-2';
 
-import { ConsumerPaymentsQueriesRepository } from './consumer-payments-queries.repository';
+import { ConsumerEmailResolver } from './queries/consumer-email.resolver';
+import { ConsumerPaymentsHistoryRepository } from './queries/consumer-payments-history.repository';
+import { ConsumerPaymentsListRepository } from './queries/consumer-payments-list.repository';
 import { createPrismaTestContext } from '../../../../test/helpers/prisma-test-context';
 
 describe(`ConsumerPaymentsQueriesRepository DB smoke`, () => {
   const prismaContext = createPrismaTestContext();
   const { prisma } = prismaContext;
-  const service = new ConsumerPaymentsQueriesRepository(
-    prisma as any,
-    {
-      calculateMultiCurrency: async () => ({ balances: {} }),
-      calculateSingle: async () => ({ balance: 0 }),
-    } as any,
-  );
+  const emailResolver = new ConsumerEmailResolver(prisma as any);
+  const listRepository = new ConsumerPaymentsListRepository(prisma as any, emailResolver);
+  const historyRepository = new ConsumerPaymentsHistoryRepository(prisma as any);
+  const service = {
+    listPayments: listRepository.listPayments.bind(listRepository),
+    getHistory: historyRepository.getHistory.bind(historyRepository),
+  };
 
   let listOwnerId = ``;
   let waitingOlderId = ``;

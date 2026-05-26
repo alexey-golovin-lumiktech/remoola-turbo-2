@@ -10,11 +10,14 @@ import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity
 import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { ConsumerPaymentsPolicyRepository } from './consumer-payments-policy.repository';
-import { ConsumerPaymentsQueriesRepository } from './consumer-payments-queries.repository';
 import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
 import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsController } from './consumer-payments.controller';
 import { ConsumerPaymentsService } from './consumer-payments.service';
+import { ConsumerEmailResolver } from './queries/consumer-email.resolver';
+import { ConsumerPaymentViewRepository } from './queries/consumer-payment-view.repository';
+import { ConsumerPaymentsHistoryRepository } from './queries/consumer-payments-history.repository';
+import { ConsumerPaymentsListRepository } from './queries/consumer-payments-list.repository';
 import { InfrastructureStorageModule } from '../../../infrastructure/storage/infrastructure-storage.module';
 import { MailingModule } from '../../../shared/mailing.module';
 
@@ -28,7 +31,10 @@ import { MailingModule } from '../../../shared/mailing.module';
     ConsumerPaymentRequestRepository,
     ConsumerInvoiceRepository,
     ConsumerPaymentsPoliciesService,
-    ConsumerPaymentsQueriesRepository,
+    ConsumerEmailResolver,
+    ConsumerPaymentsListRepository,
+    ConsumerPaymentViewRepository,
+    ConsumerPaymentsHistoryRepository,
     ConsumerPaymentsCommandsService,
     ConsumerPaymentsReadService,
     ConsumerPaymentsWriteService,

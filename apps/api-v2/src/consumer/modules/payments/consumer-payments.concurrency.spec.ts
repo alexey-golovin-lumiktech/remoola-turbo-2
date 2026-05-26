@@ -15,11 +15,14 @@ import { ConsumerPaymentsIdentityRepository } from './consumer-payments-identity
 import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
 import { ConsumerPaymentsPoliciesService } from './consumer-payments-policies.service';
 import { ConsumerPaymentsPolicyRepository } from './consumer-payments-policy.repository';
-import { ConsumerPaymentsQueriesRepository } from './consumer-payments-queries.repository';
 import { ConsumerPaymentsReadService } from './consumer-payments-read.service';
 import { ConsumerPaymentsWriteService } from './consumer-payments-write.service';
 import { ConsumerPaymentsService as ConsumerPaymentsServiceClass } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
+import { ConsumerEmailResolver } from './queries/consumer-email.resolver';
+import { ConsumerPaymentViewRepository } from './queries/consumer-payment-view.repository';
+import { ConsumerPaymentsHistoryRepository } from './queries/consumer-payments-history.repository';
+import { ConsumerPaymentsListRepository } from './queries/consumer-payments-list.repository';
 import { BalanceCalculationRepository } from '../../../shared/balance-calculation.repository';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
@@ -39,7 +42,15 @@ class ConsumerPaymentsService extends ConsumerPaymentsServiceClass {
 
     super(
       policiesService,
-      new ConsumerPaymentsReadService(new ConsumerPaymentsQueriesRepository(prisma, balanceService)),
+      (() => {
+        const emailResolver = new ConsumerEmailResolver(prisma);
+        return new ConsumerPaymentsReadService(
+          new ConsumerPaymentsListRepository(prisma, emailResolver),
+          new ConsumerPaymentViewRepository(prisma, emailResolver),
+          new ConsumerPaymentsHistoryRepository(prisma),
+          balanceService,
+        );
+      })(),
       new ConsumerPaymentsWriteService(
         new ConsumerPaymentsCommandsService(
           transactionRunner as any,
