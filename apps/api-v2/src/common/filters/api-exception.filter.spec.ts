@@ -96,6 +96,23 @@ describe(`ApiExceptionFilter`, () => {
     );
   });
 
+  it(`maps Prisma validation errors into the API envelope`, () => {
+    const filter = new ApiExceptionFilter();
+    const { host, response } = mockHost();
+
+    filter.catch(new Prisma.PrismaClientValidationError(`Argument where is missing`, { clientVersion: `test` }), host);
+
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 400,
+        code: `PRISMA_VALIDATION_ERROR`,
+        message: expect.any(String),
+        correlationId: `corr-123`,
+      }),
+    );
+  });
+
   it(`does not log handled exceptions as unhandled`, () => {
     const filter = new ApiExceptionFilter();
     const { host } = mockHost();
