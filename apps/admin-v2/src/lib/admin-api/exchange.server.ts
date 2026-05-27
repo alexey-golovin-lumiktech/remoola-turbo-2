@@ -1,3 +1,12 @@
+import {
+  adminV2ExchangeRateCaseResponseSchema,
+  adminV2ExchangeRatesListResponseSchema,
+  adminV2ExchangeRuleCaseResponseSchema,
+  adminV2ExchangeRulesListResponseSchema,
+  adminV2ExchangeScheduledCaseResponseSchema,
+  adminV2ExchangeScheduledListResponseSchema,
+} from '@remoola/api-types';
+
 import { fetchAdminApiResult, fetchAdminApi, type AdminApiReadResult } from './core.server';
 import {
   type ExchangeRateCaseResponse,
@@ -7,6 +16,7 @@ import {
   type ExchangeScheduledCaseResponse,
   type ExchangeScheduledListResponse,
 } from './types';
+import { pathSegment, withQuery } from '../query-contract';
 
 export async function getExchangeRates(params?: {
   page?: number;
@@ -17,21 +27,27 @@ export async function getExchangeRates(params?: {
   status?: string;
   stale?: boolean;
 }): Promise<ExchangeRatesListResponse | null> {
-  const searchParams = new URLSearchParams({
-    page: String(params?.page ?? 1),
-    pageSize: String(params?.pageSize ?? 20),
-  });
-  if (params?.fromCurrency?.trim()) searchParams.set(`fromCurrency`, params.fromCurrency.trim());
-  if (params?.toCurrency?.trim()) searchParams.set(`toCurrency`, params.toCurrency.trim());
-  if (params?.provider?.trim()) searchParams.set(`provider`, params.provider.trim());
-  if (params?.status?.trim()) searchParams.set(`status`, params.status.trim());
-  if (params?.stale) searchParams.set(`stale`, `true`);
-  return fetchAdminApi<ExchangeRatesListResponse>(`/admin-v2/exchange/rates?${searchParams.toString()}`);
+  return fetchAdminApi<ExchangeRatesListResponse>(
+    withQuery(`/admin-v2/exchange/rates`, {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      fromCurrency: params?.fromCurrency,
+      toCurrency: params?.toCurrency,
+      provider: params?.provider,
+      status: params?.status,
+      stale: params?.stale === true ? true : undefined,
+    }),
+    adminV2ExchangeRatesListResponseSchema,
+  );
 }
 
 export async function getExchangeRateCaseResult(rateId: string): Promise<AdminApiReadResult<ExchangeRateCaseResponse>> {
-  if (!rateId.trim()) return { status: `not_found` };
-  return fetchAdminApiResult<ExchangeRateCaseResponse>(`/admin-v2/exchange/rates/${rateId}`);
+  const id = pathSegment(rateId);
+  if (!id) return { status: `not_found` };
+  return fetchAdminApiResult<ExchangeRateCaseResponse>(
+    `/admin-v2/exchange/rates/${id}`,
+    adminV2ExchangeRateCaseResponseSchema,
+  );
 }
 
 export async function getExchangeRules(params?: {
@@ -42,20 +58,26 @@ export async function getExchangeRules(params?: {
   fromCurrency?: string;
   toCurrency?: string;
 }): Promise<ExchangeRulesListResponse | null> {
-  const searchParams = new URLSearchParams({
-    page: String(params?.page ?? 1),
-    pageSize: String(params?.pageSize ?? 20),
-  });
-  if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
-  if (typeof params?.enabled === `boolean`) searchParams.set(`enabled`, String(params.enabled));
-  if (params?.fromCurrency?.trim()) searchParams.set(`fromCurrency`, params.fromCurrency.trim());
-  if (params?.toCurrency?.trim()) searchParams.set(`toCurrency`, params.toCurrency.trim());
-  return fetchAdminApi<ExchangeRulesListResponse>(`/admin-v2/exchange/rules?${searchParams.toString()}`);
+  return fetchAdminApi<ExchangeRulesListResponse>(
+    withQuery(`/admin-v2/exchange/rules`, {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      q: params?.q,
+      enabled: params?.enabled,
+      fromCurrency: params?.fromCurrency,
+      toCurrency: params?.toCurrency,
+    }),
+    adminV2ExchangeRulesListResponseSchema,
+  );
 }
 
 export async function getExchangeRuleCaseResult(ruleId: string): Promise<AdminApiReadResult<ExchangeRuleCaseResponse>> {
-  if (!ruleId.trim()) return { status: `not_found` };
-  return fetchAdminApiResult<ExchangeRuleCaseResponse>(`/admin-v2/exchange/rules/${ruleId}`);
+  const id = pathSegment(ruleId);
+  if (!id) return { status: `not_found` };
+  return fetchAdminApiResult<ExchangeRuleCaseResponse>(
+    `/admin-v2/exchange/rules/${id}`,
+    adminV2ExchangeRuleCaseResponseSchema,
+  );
 }
 
 export async function getExchangeScheduledConversions(params?: {
@@ -64,18 +86,24 @@ export async function getExchangeScheduledConversions(params?: {
   q?: string;
   status?: string;
 }): Promise<ExchangeScheduledListResponse | null> {
-  const searchParams = new URLSearchParams({
-    page: String(params?.page ?? 1),
-    pageSize: String(params?.pageSize ?? 20),
-  });
-  if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
-  if (params?.status?.trim()) searchParams.set(`status`, params.status.trim());
-  return fetchAdminApi<ExchangeScheduledListResponse>(`/admin-v2/exchange/scheduled?${searchParams.toString()}`);
+  return fetchAdminApi<ExchangeScheduledListResponse>(
+    withQuery(`/admin-v2/exchange/scheduled`, {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      q: params?.q,
+      status: params?.status,
+    }),
+    adminV2ExchangeScheduledListResponseSchema,
+  );
 }
 
 export async function getExchangeScheduledCaseResult(
   conversionId: string,
 ): Promise<AdminApiReadResult<ExchangeScheduledCaseResponse>> {
-  if (!conversionId.trim()) return { status: `not_found` };
-  return fetchAdminApiResult<ExchangeScheduledCaseResponse>(`/admin-v2/exchange/scheduled/${conversionId}`);
+  const id = pathSegment(conversionId);
+  if (!id) return { status: `not_found` };
+  return fetchAdminApiResult<ExchangeScheduledCaseResponse>(
+    `/admin-v2/exchange/scheduled/${id}`,
+    adminV2ExchangeScheduledCaseResponseSchema,
+  );
 }

@@ -6,9 +6,9 @@ import {
   getAdminRefreshTokenCookieKey,
 } from '@remoola/api-types';
 
-import { appendSetCookies, getSetCookieValues } from './lib/api-utils';
+import { appendSetCookies } from './lib/api-utils';
 import { clearAdminAuthCookies, getAdminV2CookieRuntime, getPreferredAdminCookieValue } from './lib/auth-cookie-policy';
-import { parseCookieHeader } from './lib/cookies';
+import { mergeSetCookieHeadersIntoHeader } from './lib/cookies';
 
 const AUTH_TELEMETRY_HEADERS_FLAG = `NEXT_PUBLIC_AUTH_TELEMETRY_HEADERS`;
 const REFRESH_PATH = `/api/admin-v2/auth/refresh-access`;
@@ -46,19 +46,6 @@ function isObviouslyInvalidCookieToken(token: string | undefined): boolean {
 
 function buildCookieHeader(parts: string[]): string {
   return parts.filter(Boolean).join(`; `);
-}
-
-function applySetCookieHeaders(cookieHeader: string | null, responseHeaders: Headers): string {
-  const cookies = parseCookieHeader(cookieHeader);
-  for (const setCookie of getSetCookieValues(responseHeaders)) {
-    const firstSegment = setCookie.split(`;`, 1)[0] ?? ``;
-    const separatorIndex = firstSegment.indexOf(`=`);
-    if (separatorIndex <= 0) continue;
-    cookies.set(firstSegment.slice(0, separatorIndex), firstSegment.slice(separatorIndex + 1));
-  }
-  return Array.from(cookies.entries())
-    .map(([name, value]) => `${name}=${value}`)
-    .join(`; `);
 }
 
 function decodeBase64Url(value: string): string | null {
@@ -216,7 +203,10 @@ export async function middleware(req: NextRequest) {
       const refreshResult = await refreshAccess(req, refreshToken, csrfToken, `protected_page`);
       const refreshResponse = refreshResult.response;
       if (refreshResponse) {
-        requestHeaders.set(`cookie`, applySetCookieHeaders(req.headers.get(`cookie`), refreshResponse.headers));
+        requestHeaders.set(
+          `cookie`,
+          mergeSetCookieHeadersIntoHeader(req.headers.get(`cookie`), refreshResponse.headers),
+        );
         const response = NextResponse.next({ request: { headers: requestHeaders } });
         appendSetCookies(response.headers, refreshResponse.headers);
         return applyRefreshTelemetry(response, refreshResult.telemetry);
@@ -237,7 +227,10 @@ export async function middleware(req: NextRequest) {
       const refreshResult = await refreshAccess(req, refreshToken, csrfToken, `protected_page`);
       const refreshResponse = refreshResult.response;
       if (refreshResponse) {
-        requestHeaders.set(`cookie`, applySetCookieHeaders(req.headers.get(`cookie`), refreshResponse.headers));
+        requestHeaders.set(
+          `cookie`,
+          mergeSetCookieHeadersIntoHeader(req.headers.get(`cookie`), refreshResponse.headers),
+        );
         const response = NextResponse.next({ request: { headers: requestHeaders } });
         appendSetCookies(response.headers, refreshResponse.headers);
         return applyRefreshTelemetry(response, refreshResult.telemetry);

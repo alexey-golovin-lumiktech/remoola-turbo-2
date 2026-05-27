@@ -14,7 +14,11 @@ export type AdminApiReadResult<T> =
   | { status: `not_found` }
   | { status: `error` };
 
-export async function fetchAdminApiResult<T>(path: string): Promise<AdminApiReadResult<T>> {
+type ReadSchema = {
+  safeParse(data: unknown): { success: true; data: unknown } | { success: false };
+};
+
+export async function fetchAdminApiResult<T>(path: string, schema: ReadSchema): Promise<AdminApiReadResult<T>> {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) return { status: `error` };
@@ -52,13 +56,17 @@ export async function fetchAdminApiResult<T>(path: string): Promise<AdminApiRead
   }
 
   try {
-    return { status: `ready`, data: (await response.json()) as T };
+    const parsed = schema.safeParse(await response.json());
+    if (!parsed.success) {
+      return { status: `error` };
+    }
+    return { status: `ready`, data: parsed.data as T };
   } catch {
     return { status: `error` };
   }
 }
 
-export async function fetchAdminApi<T>(path: string): Promise<T | null> {
-  const result = await fetchAdminApiResult<T>(path);
+export async function fetchAdminApi<T>(path: string, schema: ReadSchema): Promise<T | null> {
+  const result = await fetchAdminApiResult<T>(path, schema);
   return result.status === `ready` ? result.data : null;
 }

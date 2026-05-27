@@ -1,6 +1,9 @@
+import { adminV2AuditListResponseSchema } from '@remoola/api-types';
+
 import { fetchAdminApi } from './core.server';
 import { getDefaultLookbackIsoRange } from '../admin-format';
 import { type AuditListResponse } from './types';
+import { withQuery } from '../query-contract';
 
 export async function getAuthAudit(params?: {
   email?: string;
@@ -11,16 +14,18 @@ export async function getAuthAudit(params?: {
   dateFrom?: string;
   dateTo?: string;
 }): Promise<AuditListResponse | null> {
-  const searchParams = new URLSearchParams({
-    page: String(params?.page ?? 1),
-    pageSize: String(params?.pageSize ?? 20),
-  });
-  if (params?.email?.trim()) searchParams.set(`email`, params.email.trim());
-  if (params?.event?.trim()) searchParams.set(`event`, params.event.trim());
-  if (params?.ipAddress?.trim()) searchParams.set(`ipAddress`, params.ipAddress.trim());
-  if (params?.dateFrom?.trim()) searchParams.set(`dateFrom`, params.dateFrom.trim());
-  if (params?.dateTo?.trim()) searchParams.set(`dateTo`, params.dateTo.trim());
-  return fetchAdminApi<AuditListResponse>(`/admin-v2/audit/auth?${searchParams.toString()}`);
+  return fetchAdminApi<AuditListResponse>(
+    withQuery(`/admin-v2/audit/auth`, {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      email: params?.email,
+      event: params?.event,
+      ipAddress: params?.ipAddress,
+      dateFrom: params?.dateFrom,
+      dateTo: params?.dateTo,
+    }),
+    adminV2AuditListResponseSchema,
+  );
 }
 
 export async function getAdminActionAudit(params?: {
@@ -33,17 +38,19 @@ export async function getAdminActionAudit(params?: {
   dateFrom?: string;
   dateTo?: string;
 }): Promise<AuditListResponse | null> {
-  const searchParams = new URLSearchParams({
-    page: String(params?.page ?? 1),
-    pageSize: String(params?.pageSize ?? 20),
-  });
-  if (params?.action?.trim()) searchParams.set(`action`, params.action.trim());
-  if (params?.adminId?.trim()) searchParams.set(`adminId`, params.adminId.trim());
-  if (params?.email?.trim()) searchParams.set(`email`, params.email.trim());
-  if (params?.resourceId?.trim()) searchParams.set(`resourceId`, params.resourceId.trim());
-  if (params?.dateFrom?.trim()) searchParams.set(`dateFrom`, params.dateFrom.trim());
-  if (params?.dateTo?.trim()) searchParams.set(`dateTo`, params.dateTo.trim());
-  return fetchAdminApi<AuditListResponse>(`/admin-v2/audit/admin-actions?${searchParams.toString()}`);
+  return fetchAdminApi<AuditListResponse>(
+    withQuery(`/admin-v2/audit/admin-actions`, {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      action: params?.action,
+      adminId: params?.adminId,
+      email: params?.email,
+      resourceId: params?.resourceId,
+      dateFrom: params?.dateFrom,
+      dateTo: params?.dateTo,
+    }),
+    adminV2AuditListResponseSchema,
+  );
 }
 
 export async function getConsumerActionAudit(params?: {
@@ -56,13 +63,15 @@ export async function getConsumerActionAudit(params?: {
 }): Promise<AuditListResponse | null> {
   const dateTo = params?.dateTo?.trim() || new Date().toISOString();
   const dateFrom = params?.dateFrom?.trim() || getDefaultLookbackIsoRange().dateFrom;
-  const searchParams = new URLSearchParams({
-    page: String(params?.page ?? 1),
-    pageSize: String(params?.pageSize ?? 20),
-    dateFrom,
-    dateTo,
-  });
-  if (params?.consumerId?.trim()) searchParams.set(`consumerId`, params.consumerId.trim());
-  if (params?.action?.trim()) searchParams.set(`action`, params.action.trim());
-  return fetchAdminApi<AuditListResponse>(`/admin-v2/audit/consumer-actions?${searchParams.toString()}`);
+  return fetchAdminApi<AuditListResponse>(
+    withQuery(`/admin-v2/audit/consumer-actions`, {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      dateFrom,
+      dateTo,
+      consumerId: params?.consumerId,
+      action: params?.action,
+    }),
+    adminV2AuditListResponseSchema,
+  );
 }

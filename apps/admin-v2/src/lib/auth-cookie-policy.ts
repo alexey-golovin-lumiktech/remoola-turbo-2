@@ -13,6 +13,8 @@ import {
   type AuthCookieRuntime,
 } from '@remoola/api-types';
 
+import { getPreferredCookieValue } from './cookies';
+
 function isSecureRequest(request: Request): boolean {
   const forwardedProto = request.headers.get(`x-forwarded-proto`);
   return new URL(request.url).protocol === `https:` || forwardedProto?.split(`,`)[0]?.trim() === `https`;
@@ -59,19 +61,7 @@ export function getPreferredAdminCookieValue(
       : kind === `refresh`
         ? getAdminRefreshTokenCookieKeysForRead()
         : getAdminCsrfTokenCookieKeysForRead();
-
-  const cookieHeader = request.headers.get(`cookie`) ?? ``;
-  const orderedKeys = [preferredKey, ...readableKeys.filter((key) => key !== preferredKey)];
-  for (const key of orderedKeys) {
-    const match = cookieHeader
-      .split(`;`)
-      .map((part) => part.trim())
-      .find((part) => part.startsWith(`${key}=`));
-    if (match) {
-      return match.split(`=`).slice(1).join(`=`);
-    }
-  }
-  return undefined;
+  return getPreferredCookieValue(request.headers.get(`cookie`), preferredKey, readableKeys);
 }
 
 export function getCsrfTokenFromRequest(request: Request): string | null {

@@ -1,3 +1,11 @@
+import {
+  adminV2LedgerAnomalyListResponseSchema,
+  adminV2LedgerAnomalySummaryResponseSchema,
+  adminV2LedgerDisputesResponseSchema,
+  adminV2LedgerEntriesListResponseSchema,
+  adminV2LedgerEntryCaseResponseSchema,
+} from '@remoola/api-types';
+
 import { fetchAdminApiResult, fetchAdminApi, type AdminApiReadResult } from './core.server';
 import { dateSearchParam, pathSegment, withQuery } from '../query-contract';
 import {
@@ -11,7 +19,10 @@ import {
 } from './types';
 
 export async function getLedgerAnomaliesSummary(): Promise<LedgerAnomalySummaryResponse | null> {
-  return fetchAdminApi<LedgerAnomalySummaryResponse>(`/admin-v2/ledger/anomalies/summary`);
+  return fetchAdminApi<LedgerAnomalySummaryResponse>(
+    `/admin-v2/ledger/anomalies/summary`,
+    adminV2LedgerAnomalySummaryResponseSchema,
+  );
 }
 
 export async function getLedgerAnomalies(params: {
@@ -29,6 +40,7 @@ export async function getLedgerAnomalies(params: {
       cursor: params.cursor,
       limit: params.limit ?? 50,
     }),
+    adminV2LedgerAnomalyListResponseSchema,
   );
 }
 
@@ -49,6 +61,7 @@ export async function getLedgerEntries(
       dateFrom: dateSearchParam(params?.dateFrom),
       dateTo: dateSearchParam(params?.dateTo),
     }),
+    adminV2LedgerEntriesListResponseSchema,
   );
 }
 
@@ -57,7 +70,7 @@ export async function getLedgerEntryCaseResult(
 ): Promise<AdminApiReadResult<LedgerEntryCaseResponse>> {
   const id = pathSegment(ledgerEntryId);
   if (!id) return { status: `not_found` };
-  return fetchAdminApiResult<LedgerEntryCaseResponse>(`/admin-v2/ledger/${id}`);
+  return fetchAdminApiResult<LedgerEntryCaseResponse>(`/admin-v2/ledger/${id}`, adminV2LedgerEntryCaseResponseSchema);
 }
 
 export async function getLedgerDisputes(params?: AdminV2LedgerDisputesQuery): Promise<LedgerDisputesResponse | null> {
@@ -71,5 +84,6 @@ export async function getLedgerDisputes(params?: AdminV2LedgerDisputesQuery): Pr
       dateFrom: dateSearchParam(params?.dateFrom),
       dateTo: dateSearchParam(params?.dateTo),
     }),
+    adminV2LedgerDisputesResponseSchema,
   );
 }

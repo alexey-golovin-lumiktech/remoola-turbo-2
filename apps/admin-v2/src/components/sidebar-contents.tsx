@@ -112,8 +112,8 @@ export function SidebarContents({
         />
       </nav>
 
-      <div className="border-t border-white/8 bg-white/[0.02] px-5 py-4">
-        <div className="text-[11px] uppercase tracking-[0.24em] text-white/[0.32]">Shortcuts</div>
+      <div className="border-t border-white/8 bg-white/2 px-5 py-4">
+        <div className="text-[11px] uppercase tracking-[0.24em] text-white/32">Shortcuts</div>
         <div className="mt-1 text-xs leading-5 text-white/40">
           Recommended investigation starts for the current admin scope.
         </div>
@@ -123,7 +123,7 @@ export function SidebarContents({
               key={view.id}
               href={buildQuickstartHref(view.targetPath, view.id)}
               className={cn(
-                `group block w-full rounded-2xl border border-white/8 bg-white/[0.02] px-3 py-3 text-left transition hover:-translate-y-px hover:border-cyan-400/24 hover:bg-cyan-500/[0.05]`,
+                `group block w-full rounded-2xl border border-white/8 bg-white/2 px-3 py-3 text-left transition hover:-translate-y-px hover:border-cyan-400/24 hover:bg-cyan-500/5`,
               )}
             >
               <div className="flex items-start justify-between gap-3">
@@ -145,8 +145,8 @@ export function SidebarContents({
           ))}
         </div>
 
-        <div className="mt-5 rounded-[20px] border border-white/10 bg-linear-to-br from-white/[0.05] to-white/[0.025] p-4 text-sm shadow-[0_18px_40px_rgba(2,6,23,0.16)]">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-white/[0.32]">Identity</div>
+        <div className="mt-5 rounded-[20px] border border-white/10 bg-linear-to-br from-white/5 to-white/2.5 p-4 text-sm shadow-[0_18px_40px_rgba(2,6,23,0.16)]">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-white/32">Identity</div>
           <div className="mt-1 font-medium text-white/88">{identity?.email ?? `Access denied`}</div>
           <div className="mt-1 text-white/45">
             {identity
@@ -162,7 +162,7 @@ export function SidebarContents({
             {identity ? (
               <Link
                 href="/me/sessions"
-                className="inline-flex items-center rounded-input border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/85 hover:bg-white/[0.05]"
+                className="inline-flex items-center rounded-input border border-white/10 bg-white/3 px-3 py-1.5 text-xs text-white/85 hover:bg-white/5"
               >
                 My sessions
               </Link>

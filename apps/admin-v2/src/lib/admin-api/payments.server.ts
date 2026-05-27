@@ -1,3 +1,13 @@
+import {
+  adminV2PaymentCaseResponseSchema,
+  adminV2PaymentMethodCaseResponseSchema,
+  adminV2PaymentMethodsListResponseSchema,
+  adminV2PaymentOperationsQueueResponseSchema,
+  adminV2PaymentsListResponseSchema,
+  adminV2PayoutCaseResponseSchema,
+  adminV2PayoutsListResponseSchema,
+} from '@remoola/api-types';
+
 import { fetchAdminApiResult, fetchAdminApi, type AdminApiReadResult } from './core.server';
 import { dateSearchParam, pathSegment, withQuery } from '../query-contract';
 import {
@@ -30,17 +40,21 @@ export async function getPayments(params?: AdminV2PaymentsListQuery): Promise<Pa
       createdTo: dateSearchParam(params?.createdTo),
       overdue: params?.overdue === true ? true : undefined,
     }),
+    adminV2PaymentsListResponseSchema,
   );
 }
 
 export async function getPaymentCaseResult(paymentRequestId: string): Promise<AdminApiReadResult<PaymentCaseResponse>> {
   const id = pathSegment(paymentRequestId);
   if (!id) return { status: `not_found` };
-  return fetchAdminApiResult<PaymentCaseResponse>(`/admin-v2/payments/${id}`);
+  return fetchAdminApiResult<PaymentCaseResponse>(`/admin-v2/payments/${id}`, adminV2PaymentCaseResponseSchema);
 }
 
 export async function getPaymentOperationsQueue(): Promise<PaymentOperationsQueueResponse | null> {
-  return fetchAdminApi<PaymentOperationsQueueResponse>(`/admin-v2/payments/operations-queue`);
+  return fetchAdminApi<PaymentOperationsQueueResponse>(
+    `/admin-v2/payments/operations-queue`,
+    adminV2PaymentOperationsQueueResponseSchema,
+  );
 }
 
 export async function getPaymentMethods(
@@ -56,6 +70,7 @@ export async function getPaymentMethods(
       fingerprint: params?.fingerprint,
       includeDeleted: params?.includeDeleted === true ? true : undefined,
     }),
+    adminV2PaymentMethodsListResponseSchema,
   );
 }
 
@@ -65,13 +80,14 @@ export async function getPayouts(params?: AdminV2PayoutsListQuery): Promise<Payo
       limit: params?.limit ?? 25,
       cursor: params?.cursor,
     }),
+    adminV2PayoutsListResponseSchema,
   );
 }
 
 export async function getPayoutCaseResult(payoutId: string): Promise<AdminApiReadResult<PayoutCaseResponse>> {
   const id = pathSegment(payoutId);
   if (!id) return { status: `not_found` };
-  return fetchAdminApiResult<PayoutCaseResponse>(`/admin-v2/payouts/${id}`);
+  return fetchAdminApiResult<PayoutCaseResponse>(`/admin-v2/payouts/${id}`, adminV2PayoutCaseResponseSchema);
 }
 
 export async function getPaymentMethodCaseResult(
@@ -79,5 +95,8 @@ export async function getPaymentMethodCaseResult(
 ): Promise<AdminApiReadResult<PaymentMethodCaseResponse>> {
   const id = pathSegment(paymentMethodId);
   if (!id) return { status: `not_found` };
-  return fetchAdminApiResult<PaymentMethodCaseResponse>(`/admin-v2/payment-methods/${id}`);
+  return fetchAdminApiResult<PaymentMethodCaseResponse>(
+    `/admin-v2/payment-methods/${id}`,
+    adminV2PaymentMethodCaseResponseSchema,
+  );
 }

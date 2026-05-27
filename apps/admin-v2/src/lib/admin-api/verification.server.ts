@@ -1,3 +1,5 @@
+import { adminV2VerificationCaseResponseSchema, adminV2VerificationQueueResponseSchema } from '@remoola/api-types';
+
 import { fetchAdminApiResult, fetchAdminApi, type AdminApiReadResult } from './core.server';
 import { pathSegment, withQuery } from '../query-contract';
 import {
@@ -20,6 +22,7 @@ export async function getVerificationQueue(
       missingProfileData: params?.missingProfileData === true ? true : undefined,
       missingDocuments: params?.missingDocuments === true ? true : undefined,
     }),
+    adminV2VerificationQueueResponseSchema,
   );
 }
 
@@ -28,5 +31,8 @@ export async function getVerificationCaseResult(
 ): Promise<AdminApiReadResult<VerificationCaseResponse>> {
   const id = pathSegment(consumerId);
   if (!id) return { status: `not_found` };
-  return fetchAdminApiResult<VerificationCaseResponse>(`/admin-v2/verification/${id}`);
+  return fetchAdminApiResult<VerificationCaseResponse>(
+    `/admin-v2/verification/${id}`,
+    adminV2VerificationCaseResponseSchema,
+  );
 }

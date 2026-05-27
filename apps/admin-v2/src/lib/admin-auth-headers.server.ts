@@ -1,15 +1,12 @@
 import { getAdminCsrfTokenCookieKeysForRead } from '@remoola/api-types';
 
-import { getCookieValue } from './cookies';
+import { getPreferredCookieValue } from './cookies';
 import { getBypassHeaders, getRequestOrigin } from './request-origin';
 
 function getAdminCsrfTokenFromCookieHeader(cookieHeader: string): string | null {
   if (!cookieHeader) return null;
-  for (const key of getAdminCsrfTokenCookieKeysForRead()) {
-    const token = getCookieValue(cookieHeader, key);
-    if (token) return token;
-  }
-  return null;
+  const keys = getAdminCsrfTokenCookieKeysForRead();
+  return getPreferredCookieValue(cookieHeader, keys[0] ?? ``, keys) ?? null;
 }
 
 export function buildAdminMutationHeaders(

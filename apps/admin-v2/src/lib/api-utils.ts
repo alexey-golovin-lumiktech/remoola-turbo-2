@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { type ZodType } from 'zod';
 
+import { getEnv } from './env.server';
 import { getRequestOrigin, getBypassHeaders } from './request-origin';
 
 const FORWARDED_HEADER_ALLOWLIST = new Set([
@@ -95,4 +97,73 @@ export async function requireJsonBody(
   }
 
   return { ok: true, body };
+}
+
+export async function requireValidatedJsonBody<T>(
+  req: Request,
+  schema: ZodType<T>,
+  error: { code: string; message: string },
+): Promise<{ ok: true; body: string; data: T } | { ok: false; response: NextResponse }> {
+  const raw = await req
+    .clone()
+    .json()
+    .catch(() => null);
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          code: error.code,
+          message: error.message,
+          fieldErrors: parsed.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      ),
+    };
+  }
+
+  return { ok: true, body: JSON.stringify(parsed.data), data: parsed.data };
+}
+
+type ProxyPreparedBody = { ok: true; body?: BodyInit | null } | { ok: false; response: NextResponse };
+
+export async function proxyAdminApiRoute({
+  req,
+  method,
+  upstreamPath,
+  buildHeaders = buildForwardHeaders,
+  prepareBody,
+}: {
+  req: Request;
+  method: string;
+  upstreamPath: string;
+  buildHeaders?: (sourceHeaders: Headers) => Headers;
+  prepareBody?: (req: Request) => Promise<ProxyPreparedBody> | ProxyPreparedBody;
+}): Promise<NextResponse> {
+  const env = getEnv();
+  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
+  if (!baseUrl) {
+    return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
+  }
+
+  const prepared = prepareBody ? await prepareBody(req) : { ok: true as const };
+  if (!prepared.ok) {
+    return prepared.response;
+  }
+
+  const headers = buildHeaders(new Headers(req.headers));
+  headers.delete(`host`);
+
+  const res = await fetch(new URL(`${baseUrl}${upstreamPath}`), {
+    method,
+    headers,
+    body: prepared.body,
+    cache: `no-store`,
+  });
+
+  const data = await res.text();
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }

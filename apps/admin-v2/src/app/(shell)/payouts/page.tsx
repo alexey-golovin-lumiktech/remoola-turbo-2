@@ -87,7 +87,7 @@ function renderBucketMapLinks(
         <a
           key={bucket.key}
           href={`#${idPrefix}-${bucket.key}`}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-pill border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-pill border border-white/10 bg-white/3 px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/5 hover:text-white/90"
         >
           <span>{bucket.label}</span>
           <TinyPill>{bucket.items.length}</TinyPill>

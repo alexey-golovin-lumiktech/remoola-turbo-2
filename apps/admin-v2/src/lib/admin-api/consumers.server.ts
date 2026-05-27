@@ -1,3 +1,11 @@
+import {
+  adminV2ConsumerCaseResponseSchema,
+  adminV2ConsumerContractsResponseSchema,
+  adminV2ConsumerLedgerSummaryResponseSchema,
+  adminV2ConsumerTimelineResponseSchema,
+  adminV2ConsumersListResponseSchema,
+} from '@remoola/api-types';
+
 import { fetchAdminApiResult, fetchAdminApi, type AdminApiReadResult } from './core.server';
 import { getDefaultLookbackIsoRange } from '../admin-format';
 import {
@@ -7,6 +15,7 @@ import {
   type ConsumerTimelineResponse,
   type ConsumersListResponse,
 } from './types';
+import { pathSegment, withQuery } from '../query-contract';
 
 export async function getConsumers(params?: {
   page?: number;
@@ -17,21 +26,24 @@ export async function getConsumers(params?: {
   verificationStatus?: string;
   includeDeleted?: boolean;
 }): Promise<ConsumersListResponse | null> {
-  const searchParams = new URLSearchParams({
-    page: String(params?.page ?? 1),
-    pageSize: String(params?.pageSize ?? 20),
-  });
-  if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
-  if (params?.accountType?.trim()) searchParams.set(`accountType`, params.accountType.trim());
-  if (params?.contractorKind?.trim()) searchParams.set(`contractorKind`, params.contractorKind.trim());
-  if (params?.verificationStatus?.trim()) searchParams.set(`verificationStatus`, params.verificationStatus.trim());
-  if (params?.includeDeleted) searchParams.set(`includeDeleted`, `true`);
-  return fetchAdminApi<ConsumersListResponse>(`/admin-v2/consumers?${searchParams.toString()}`);
+  return fetchAdminApi<ConsumersListResponse>(
+    withQuery(`/admin-v2/consumers`, {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      q: params?.q,
+      accountType: params?.accountType,
+      contractorKind: params?.contractorKind,
+      verificationStatus: params?.verificationStatus,
+      includeDeleted: params?.includeDeleted === true ? true : undefined,
+    }),
+    adminV2ConsumersListResponseSchema,
+  );
 }
 
 export async function getConsumerCaseResult(consumerId: string): Promise<AdminApiReadResult<ConsumerCaseResponse>> {
-  if (!consumerId.trim()) return { status: `not_found` };
-  return fetchAdminApiResult<ConsumerCaseResponse>(`/admin-v2/consumers/${consumerId}`);
+  const id = pathSegment(consumerId);
+  if (!id) return { status: `not_found` };
+  return fetchAdminApiResult<ConsumerCaseResponse>(`/admin-v2/consumers/${id}`, adminV2ConsumerCaseResponseSchema);
 }
 
 export async function getConsumerContracts(params: {
@@ -40,20 +52,25 @@ export async function getConsumerContracts(params: {
   pageSize?: number;
   q?: string;
 }): Promise<ConsumerContractsResponse | null> {
-  if (!params.consumerId.trim()) return null;
-  const searchParams = new URLSearchParams({
-    page: String(params.page ?? 1),
-    pageSize: String(params.pageSize ?? 5),
-  });
-  if (params.q?.trim()) searchParams.set(`q`, params.q.trim());
+  const id = pathSegment(params.consumerId);
+  if (!id) return null;
   return fetchAdminApi<ConsumerContractsResponse>(
-    `/admin-v2/consumers/${params.consumerId}/contracts?${searchParams.toString()}`,
+    withQuery(`/admin-v2/consumers/${id}/contracts`, {
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 5,
+      q: params.q,
+    }),
+    adminV2ConsumerContractsResponseSchema,
   );
 }
 
 export async function getConsumerLedgerSummary(consumerId: string): Promise<ConsumerLedgerSummaryResponse | null> {
-  if (!consumerId.trim()) return null;
-  return fetchAdminApi<ConsumerLedgerSummaryResponse>(`/admin-v2/consumers/${consumerId}/ledger-summary`);
+  const id = pathSegment(consumerId);
+  if (!id) return null;
+  return fetchAdminApi<ConsumerLedgerSummaryResponse>(
+    `/admin-v2/consumers/${id}/ledger-summary`,
+    adminV2ConsumerLedgerSummaryResponseSchema,
+  );
 }
 
 export async function getConsumerAuthHistory(params: {
@@ -63,15 +80,16 @@ export async function getConsumerAuthHistory(params: {
   dateFrom?: string;
   dateTo?: string;
 }): Promise<ConsumerTimelineResponse | null> {
-  if (!params.consumerId.trim()) return null;
-  const searchParams = new URLSearchParams({
-    page: String(params.page ?? 1),
-    pageSize: String(params.pageSize ?? 5),
-  });
-  if (params.dateFrom?.trim()) searchParams.set(`dateFrom`, params.dateFrom.trim());
-  if (params.dateTo?.trim()) searchParams.set(`dateTo`, params.dateTo.trim());
+  const id = pathSegment(params.consumerId);
+  if (!id) return null;
   return fetchAdminApi<ConsumerTimelineResponse>(
-    `/admin-v2/consumers/${params.consumerId}/auth-history?${searchParams.toString()}`,
+    withQuery(`/admin-v2/consumers/${id}/auth-history`, {
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 5,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
+    }),
+    adminV2ConsumerTimelineResponseSchema,
   );
 }
 
@@ -83,17 +101,18 @@ export async function getConsumerActionLog(params: {
   dateTo?: string;
   action?: string;
 }): Promise<ConsumerTimelineResponse | null> {
-  if (!params.consumerId.trim()) return null;
+  const id = pathSegment(params.consumerId);
+  if (!id) return null;
   const dateTo = params.dateTo?.trim() || new Date().toISOString();
   const dateFrom = params.dateFrom?.trim() || getDefaultLookbackIsoRange().dateFrom;
-  const searchParams = new URLSearchParams({
-    page: String(params.page ?? 1),
-    pageSize: String(params.pageSize ?? 5),
-    dateFrom,
-    dateTo,
-  });
-  if (params.action?.trim()) searchParams.set(`action`, params.action.trim());
   return fetchAdminApi<ConsumerTimelineResponse>(
-    `/admin-v2/consumers/${params.consumerId}/action-log?${searchParams.toString()}`,
+    withQuery(`/admin-v2/consumers/${id}/action-log`, {
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 5,
+      dateFrom,
+      dateTo,
+      action: params.action,
+    }),
+    adminV2ConsumerTimelineResponseSchema,
   );
 }

@@ -1,17 +1,9 @@
+import { buildQueryString } from './query-contract';
+
 type SearchParamValue = string | number | boolean | null | undefined;
 
 export function buildPathWithSearch(pathname: string, params: Record<string, SearchParamValue>): string {
-  const searchParams = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(params)) {
-    if (value == null || value === false || value === ``) {
-      continue;
-    }
-
-    searchParams.set(key, String(value));
-  }
-
-  const query = searchParams.toString();
+  const query = buildQueryString(params);
   return query.length > 0 ? `${pathname}?${query}` : pathname;
 }
 
