@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { adminV2AuditListQuerySchema } from '@remoola/api-types';
+
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { Panel } from '../../../../components/panel';
@@ -14,6 +16,8 @@ import {
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getConsumerActionAudit } from '../../../../lib/admin-api/audit.server';
 import { formatDateTime, getDefaultLookbackIsoRange } from '../../../../lib/admin-format';
+import { buildPathWithSearch } from '../../../../lib/navigation-context';
+import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
 type ConsumerActionRow = Record<string, unknown>;
 
@@ -138,25 +142,32 @@ export default async function AuditConsumerActionsPage({
   }>;
 }) {
   const params = await searchParams;
-  const page = params?.page ? Number(params.page) : 1;
+  const defaultRange = getDefaultLookbackIsoRange();
+  const query = adminV2AuditListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params?.page, 1),
+    action: trimmedSearchParam(params?.action),
+    dateFrom: dateSearchParam(params?.dateFrom),
+    dateTo: dateSearchParam(params?.dateTo),
+  });
+  const consumerId = trimmedSearchParam(params?.consumerId);
+  const page = query.page ?? 1;
   const data = await getConsumerActionAudit({
-    consumerId: params?.consumerId,
-    action: params?.action,
-    dateFrom: params?.dateFrom,
-    dateTo: params?.dateTo,
+    consumerId,
+    action: query.action,
+    dateFrom: query.dateFrom,
+    dateTo: query.dateTo,
     page,
   });
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   function pageHref(nextPage: number) {
-    const query = new URLSearchParams();
-    if (params?.consumerId?.trim()) query.set(`consumerId`, params.consumerId.trim());
-    if (params?.action?.trim()) query.set(`action`, params.action.trim());
-    const { dateFrom, dateTo } = getDefaultLookbackIsoRange();
-    query.set(`dateFrom`, params?.dateFrom ?? dateFrom);
-    query.set(`dateTo`, params?.dateTo ?? dateTo);
-    query.set(`page`, String(nextPage));
-    return `/audit/consumer-actions?${query.toString()}`;
+    return buildPathWithSearch(`/audit/consumer-actions`, {
+      consumerId,
+      action: query.action,
+      dateFrom: query.dateFrom ?? defaultRange.dateFrom,
+      dateTo: query.dateTo ?? defaultRange.dateTo,
+      page: nextPage,
+    });
   }
 
   const items = (data?.items ?? []) as Array<Record<string, unknown>> as ConsumerActionRow[];
@@ -174,25 +185,20 @@ export default async function AuditConsumerActionsPage({
               <input
                 className={textInputClass}
                 name="consumerId"
-                defaultValue={params?.consumerId ?? ``}
+                defaultValue={consumerId ?? ``}
                 placeholder="consumer id"
               />
             </label>
             <label className={fieldClass}>
               <span className={fieldLabelClass}>Action</span>
-              <input
-                className={textInputClass}
-                name="action"
-                defaultValue={params?.action ?? ``}
-                placeholder="action"
-              />
+              <input className={textInputClass} name="action" defaultValue={query.action ?? ``} placeholder="action" />
             </label>
             <label className={fieldClass}>
               <span className={fieldLabelClass}>Date from</span>
               <input
                 className={textInputClass}
                 name="dateFrom"
-                defaultValue={params?.dateFrom ?? getDefaultLookbackIsoRange().dateFrom}
+                defaultValue={query.dateFrom ?? defaultRange.dateFrom}
                 placeholder="dateFrom"
               />
             </label>
@@ -201,7 +207,7 @@ export default async function AuditConsumerActionsPage({
               <input
                 className={textInputClass}
                 name="dateTo"
-                defaultValue={params?.dateTo ?? getDefaultLookbackIsoRange().dateTo}
+                defaultValue={query.dateTo ?? defaultRange.dateTo}
                 placeholder="dateTo"
               />
             </label>

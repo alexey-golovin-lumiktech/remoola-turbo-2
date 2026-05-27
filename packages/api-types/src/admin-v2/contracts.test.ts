@@ -1,12 +1,17 @@
 import {
+  ADMIN_V2_DEFAULT_AUTH_REFRESH_REUSE_WINDOW_MINUTES,
+  ADMIN_V2_MAX_AUTH_REFRESH_REUSE_WINDOW_MINUTES,
+  ADMIN_V2_MIN_AUTH_REFRESH_REUSE_WINDOW_MINUTES,
   ADMIN_V2_ENDPOINTS,
   ADMIN_V2_OPERATIONAL_ALERT_WORKSPACES,
   ADMIN_V2_QUICKSTART_IDS,
   ADMIN_V2_SAVED_VIEW_WORKSPACES,
   adminV2AdminIdentitySchema,
   adminV2AdminPasswordPatchBodySchema,
+  adminV2AdminsListQuerySchema,
   adminV2AdminsListResponseSchema,
   adminV2ApproveRateBodySchema,
+  adminV2AuthRefreshReuseAlertQueryPayloadSchema,
   adminV2ChangeAdminPermissionsBodySchema,
   adminV2ChangeAdminRoleBodySchema,
   adminV2AssignmentClaimBodySchema,
@@ -23,6 +28,8 @@ import {
   adminV2PaymentReversalBodySchema,
   adminV2QuickstartsListResponseSchema,
   adminV2SavedViewCreateBodySchema,
+  adminV2VerificationQueuePayloadSchema,
+  adminV2VerificationQueueQuerySchema,
   adminV2VerificationQueueResponseSchema,
 } from '.';
 
@@ -58,6 +65,68 @@ describe(`admin-v2 shared contracts`, () => {
       }),
     ).not.toThrow();
     expect(() => adminV2OperationalAlertThresholdSchema.parse({ type: `count_gt`, value: 1 })).not.toThrow();
+  });
+
+  it(`keeps shared verification queue and auth refresh payload contracts strict`, () => {
+    expect(
+      adminV2VerificationQueuePayloadSchema.safeParse({
+        status: `pending`,
+        stripeIdentityStatus: `requires_input`,
+        missingDocuments: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2VerificationQueuePayloadSchema.safeParse({
+        status: `pending`,
+        extra: `nope`,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      adminV2AuthRefreshReuseAlertQueryPayloadSchema.safeParse({
+        windowMinutes: ADMIN_V2_DEFAULT_AUTH_REFRESH_REUSE_WINDOW_MINUTES,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2AuthRefreshReuseAlertQueryPayloadSchema.safeParse({
+        windowMinutes: ADMIN_V2_MIN_AUTH_REFRESH_REUSE_WINDOW_MINUTES - 1,
+      }).success,
+    ).toBe(false);
+    expect(
+      adminV2AuthRefreshReuseAlertQueryPayloadSchema.safeParse({
+        windowMinutes: ADMIN_V2_MAX_AUTH_REFRESH_REUSE_WINDOW_MINUTES + 1,
+      }).success,
+    ).toBe(false);
+  });
+
+  it(`runtime-validates normalized admin-v2 query objects`, () => {
+    expect(
+      adminV2AdminsListQuerySchema.safeParse({
+        page: 2,
+        q: `ops@example.com`,
+        status: `active`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2AdminsListQuerySchema.safeParse({
+        page: 0,
+        q: `ops@example.com`,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      adminV2VerificationQueueQuerySchema.safeParse({
+        page: 3,
+        status: `pending`,
+        missingProfileData: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2VerificationQueueQuerySchema.safeParse({
+        page: 1,
+        missingProfileData: `true`,
+      }).success,
+    ).toBe(false);
   });
 
   it(`keeps sensitive admin mutation bodies aligned with backend DTO field names`, () => {

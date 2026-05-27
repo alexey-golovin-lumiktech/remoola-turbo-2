@@ -2,16 +2,36 @@
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation, patchAdminMutation, deleteAdminMutation } from './core.server';
-import { parseRequiredVersion, parseStringList } from './form-helpers';
+import {
+  buildAssignmentClaimBody,
+  buildAssignmentReassignBody,
+  buildAssignmentReleaseBody,
+  parseRequiredVersion,
+  parseStringList,
+} from './form-helpers';
 import { revalidateDocumentsPaths, revalidateDocumentAssignmentPaths } from './revalidation';
+
+import type { FormActionState } from './form-action-state';
 
 export async function createDocumentTagAction(formData: FormData): Promise<void> {
   const name = String(formData.get(`name`) ?? ``).trim();
   if (!name) {
-    return;
+    throw new Error(`Tag name is required`);
   }
   await postAdminMutation(`/admin-v2/documents/tags`, { name }, `Failed to create document tag`);
   revalidateDocumentsPaths();
+}
+
+export async function createDocumentTagFormAction(
+  _state: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  try {
+    await createDocumentTagAction(formData);
+    return {};
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : `Failed to create document tag` };
+  }
 }
 
 export async function updateDocumentTagAction(tagId: string, formData: FormData): Promise<void> {
@@ -67,12 +87,8 @@ export async function claimDocumentAssignmentAction(documentId: string, formData
   if (!documentId) {
     throw new Error(`documentId is required`);
   }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/assignments/claim`,
-    { resourceType: `document`, resourceId: documentId, reason: reason || null },
-    `Failed to claim document assignment`,
-  );
+  const body = buildAssignmentClaimBody(`document`, documentId, formData);
+  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim document assignment`);
   revalidateDocumentAssignmentPaths(documentId);
 }
 
@@ -80,16 +96,8 @@ export async function releaseDocumentAssignmentAction(documentId: string, formDa
   if (!documentId) {
     throw new Error(`documentId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  await postAdminMutation(
-    `/admin-v2/assignments/release`,
-    { assignmentId, reason: reason || null, expectedReleasedAtNull: 0 },
-    `Failed to release document assignment`,
-  );
+  const body = buildAssignmentReleaseBody(formData);
+  await postAdminMutation(`/admin-v2/assignments/release`, body, `Failed to release document assignment`);
   revalidateDocumentAssignmentPaths(documentId);
 }
 
@@ -97,20 +105,7 @@ export async function reassignDocumentAssignmentAction(documentId: string, formD
   if (!documentId) {
     throw new Error(`documentId is required`);
   }
-  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
-  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
-  const reason = String(formData.get(`reason`) ?? ``).trim();
-  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
-  if (!assignmentId) {
-    throw new Error(`assignmentId is required`);
-  }
-  if (!newAssigneeId) {
-    throw new Error(`newAssigneeId is required`);
-  }
-  await postAdminMutation(
-    `/admin-v2/assignments/reassign`,
-    { assignmentId, newAssigneeId, reason, confirmed, expectedReleasedAtNull: 0 },
-    `Failed to reassign document assignment`,
-  );
+  const body = buildAssignmentReassignBody(formData);
+  await postAdminMutation(`/admin-v2/assignments/reassign`, body, `Failed to reassign document assignment`);
   revalidateDocumentAssignmentPaths(documentId);
 }

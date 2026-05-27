@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { adminV2ExchangeRatesListQuerySchema } from '@remoola/api-types';
+
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { StatusPill } from '../../../../components/status-pill';
@@ -8,6 +10,8 @@ import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getExchangeRates } from '../../../../lib/admin-api/exchange.server';
 import { type ExchangeRatesListResponse } from '../../../../lib/admin-api/types';
 import { formatDateTime } from '../../../../lib/admin-format';
+import { buildPathWithSearch } from '../../../../lib/navigation-context';
+import { booleanSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
 type ExchangeRateItem = ExchangeRatesListResponse[`items`][number];
 
@@ -173,12 +177,20 @@ export default async function ExchangeRatesPage({
   }>;
 }) {
   const params = await searchParams;
-  const page = params?.page ? Number(params.page) : 1;
-  const fromCurrency = params?.fromCurrency?.trim() ?? ``;
-  const toCurrency = params?.toCurrency?.trim() ?? ``;
-  const provider = params?.provider?.trim() ?? ``;
-  const status = params?.status?.trim() ?? ``;
-  const stale = params?.stale === `true`;
+  const query = adminV2ExchangeRatesListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params?.page, 1),
+    fromCurrency: trimmedSearchParam(params?.fromCurrency),
+    toCurrency: trimmedSearchParam(params?.toCurrency),
+    provider: trimmedSearchParam(params?.provider),
+    status: trimmedSearchParam(params?.status),
+    stale: booleanSearchParam(params?.stale),
+  });
+  const page = query.page ?? 1;
+  const fromCurrency = query.fromCurrency ?? ``;
+  const toCurrency = query.toCurrency ?? ``;
+  const provider = query.provider ?? ``;
+  const status = query.status ?? ``;
+  const stale = query.stale === true;
 
   const data = await getExchangeRates({
     page,
@@ -191,14 +203,14 @@ export default async function ExchangeRatesPage({
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   function pageHref(nextPage: number) {
-    const query = new URLSearchParams();
-    if (fromCurrency) query.set(`fromCurrency`, fromCurrency);
-    if (toCurrency) query.set(`toCurrency`, toCurrency);
-    if (provider) query.set(`provider`, provider);
-    if (status) query.set(`status`, status);
-    if (stale) query.set(`stale`, `true`);
-    query.set(`page`, String(nextPage));
-    return `/exchange/rates?${query.toString()}`;
+    return buildPathWithSearch(`/exchange/rates`, {
+      fromCurrency,
+      toCurrency,
+      provider,
+      status,
+      stale: stale ? `true` : undefined,
+      page: nextPage,
+    });
   }
 
   return (

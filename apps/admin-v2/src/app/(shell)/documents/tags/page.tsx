@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { type ReactNode } from 'react';
 
 import { DenseTable } from '../../../../components/dense-table';
+import { InlineErrorForm } from '../../../../components/inline-error-form';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
@@ -12,7 +13,7 @@ import { formatDateTime } from '../../../../lib/admin-format';
 import {
   deleteDocumentTagAction,
   updateDocumentTagAction,
-  createDocumentTagAction,
+  createDocumentTagFormAction,
 } from '../../../../lib/admin-mutations/documents.server';
 
 type DocumentTag = DocumentTagsResponse[`items`][number];
@@ -228,12 +229,12 @@ export default async function DocumentTagsPage({
                 <p className="muted">Exact `document_tag_create` action only.</p>
               </div>
             </div>
-            <form action={createDocumentTagAction} className="actionsRow">
+            <InlineErrorForm action={createDocumentTagFormAction} className="actionsRow">
               <input name="name" placeholder="evidence" maxLength={120} required />
               <button className="secondaryButton" type="submit">
                 Create tag
               </button>
-            </form>
+            </InlineErrorForm>
           </section>
         ) : null}
 

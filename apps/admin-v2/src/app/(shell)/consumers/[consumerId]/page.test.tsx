@@ -40,7 +40,9 @@ jest.mock(`../../../../lib/admin-api/consumers.server`, () => ({
 
 jest.mock(`../../../../lib/admin-mutations/consumers.server`, () => ({
   addConsumerFlagAction: jest.fn(),
+  addConsumerFlagFormAction: jest.fn(),
   createConsumerNoteAction: jest.fn(),
+  createConsumerNoteFormAction: jest.fn(),
   forceLogoutConsumerAction: jest.fn(),
   resendConsumerEmailAction: jest.fn(),
   removeConsumerFlagAction: jest.fn(),

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { adminV2LedgerDisputesQuerySchema, adminV2LedgerEntriesListQuerySchema } from '@remoola/api-types';
 import { cn } from '@remoola/ui';
 
 import { ActionGhost } from '../../../components/action-ghost';
@@ -14,6 +15,7 @@ import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getLedgerEntries, getLedgerDisputes } from '../../../lib/admin-api/ledger.server';
 import { type LedgerDisputesResponse, type LedgerEntriesListResponse } from '../../../lib/admin-api/types';
 import { formatDateTime } from '../../../lib/admin-format';
+import { buildPathWithSearch } from '../../../lib/navigation-context';
 import { dateSearchParam, type SearchParamValue, trimmedSearchParam } from '../../../lib/query-contract';
 
 const formatDate = formatDateTime;
@@ -360,60 +362,59 @@ export default async function LedgerPage({
 }) {
   const params = await searchParams;
   const view = trimmedSearchParam(params?.view) === `disputes` ? `disputes` : `entries`;
-  const cursor = trimmedSearchParam(params?.cursor) ?? ``;
-  const q = trimmedSearchParam(params?.q) ?? ``;
-  const type = trimmedSearchParam(params?.type) ?? ``;
-  const status = trimmedSearchParam(params?.status) ?? ``;
-  const currencyCode = trimmedSearchParam(params?.currencyCode) ?? ``;
-  const paymentRequestId = trimmedSearchParam(params?.paymentRequestId) ?? ``;
-  const consumerId = trimmedSearchParam(params?.consumerId) ?? ``;
-  const amountSign = trimmedSearchParam(params?.amountSign) ?? ``;
-  const dateFrom = dateSearchParam(params?.dateFrom) ?? ``;
-  const dateTo = dateSearchParam(params?.dateTo) ?? ``;
+  const cursor = trimmedSearchParam(params?.cursor);
+  const q = trimmedSearchParam(params?.q);
+  const type = trimmedSearchParam(params?.type);
+  const status = trimmedSearchParam(params?.status);
+  const currencyCode = trimmedSearchParam(params?.currencyCode);
+  const paymentRequestId = trimmedSearchParam(params?.paymentRequestId);
+  const consumerId = trimmedSearchParam(params?.consumerId);
+  const amountSign = trimmedSearchParam(params?.amountSign);
+  const dateFrom = dateSearchParam(params?.dateFrom);
+  const dateTo = dateSearchParam(params?.dateTo);
+  const entriesQuery = adminV2LedgerEntriesListQuerySchema.parse({
+    cursor,
+    q,
+    type,
+    status,
+    currencyCode,
+    paymentRequestId,
+    consumerId,
+    amountSign,
+    dateFrom,
+    dateTo,
+  });
+  const disputesQuery = adminV2LedgerDisputesQuerySchema.parse({
+    cursor,
+    q,
+    paymentRequestId,
+    consumerId,
+    dateFrom,
+    dateTo,
+  });
 
   const [entries, disputes] = await Promise.all([
-    view === `entries`
-      ? getLedgerEntries({
-          cursor: cursor || undefined,
-          q,
-          type,
-          status,
-          currencyCode,
-          paymentRequestId,
-          consumerId,
-          amountSign,
-          dateFrom,
-          dateTo,
-        })
-      : Promise.resolve(null),
-    view === `disputes`
-      ? getLedgerDisputes({
-          cursor: cursor || undefined,
-          q,
-          paymentRequestId,
-          consumerId,
-          dateFrom,
-          dateTo,
-        })
-      : Promise.resolve(null),
+    view === `entries` ? getLedgerEntries(entriesQuery) : Promise.resolve(null),
+    view === `disputes` ? getLedgerDisputes(disputesQuery) : Promise.resolve(null),
   ]);
   const entryItems = entries?.items ?? [];
   const disputeItems = disputes?.items ?? [];
 
   function buildHref(next: { cursor?: string; view?: string }) {
-    const query = new URLSearchParams();
-    if ((next.view ?? view) === `disputes`) query.set(`view`, `disputes`);
-    if (q) query.set(`q`, q);
-    if (type && (next.view ?? view) === `entries`) query.set(`type`, type);
-    if (status && (next.view ?? view) === `entries`) query.set(`status`, status);
-    if (currencyCode && (next.view ?? view) === `entries`) query.set(`currencyCode`, currencyCode);
-    if (amountSign && (next.view ?? view) === `entries`) query.set(`amountSign`, amountSign);
-    if (paymentRequestId) query.set(`paymentRequestId`, paymentRequestId);
-    if (consumerId) query.set(`consumerId`, consumerId);
-    if (dateFrom) query.set(`dateFrom`, dateFrom);
-    if (dateTo) query.set(`dateTo`, dateTo);
-    if (next.cursor) query.set(`cursor`, next.cursor);
-    return `/ledger?${query.toString()}`;
+    const targetView = next.view ?? view;
+    return buildPathWithSearch(`/ledger`, {
+      view: targetView === `disputes` ? `disputes` : undefined,
+      q,
+      type: targetView === `entries` ? type : undefined,
+      status: targetView === `entries` ? status : undefined,
+      currencyCode: targetView === `entries` ? currencyCode : undefined,
+      amountSign: targetView === `entries` ? amountSign : undefined,
+      paymentRequestId,
+      consumerId,
+      dateFrom,
+      dateTo,
+      cursor: next.cursor,
+    });
   }
 
   return (

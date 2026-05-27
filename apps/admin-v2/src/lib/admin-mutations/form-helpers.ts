@@ -1,4 +1,5 @@
 import {
+  adminV2AuthRefreshReuseAlertQueryPayloadSchema,
   adminV2AssignmentClaimBodySchema,
   adminV2AssignmentReassignBodySchema,
   adminV2AssignmentReleaseBodySchema,
@@ -6,6 +7,7 @@ import {
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { ADMIN_V2_PERMISSION_OVERRIDE_OPTIONS } from '../admin-rbac';
+import { buildVerificationQueuePayloadFromForm } from '../admin-surface-payloads';
 
 export function parseRequiredVersion(formData: FormData): number {
   const version = Number(formData.get(`version`) ?? 0);
@@ -64,15 +66,6 @@ export function parsePositiveIntegerField(raw: string | null, label: string): nu
   return value;
 }
 
-function parseCheckboxField(raw: FormDataEntryValue | null): boolean | undefined {
-  if (raw == null) return undefined;
-  const value = String(raw).trim().toLowerCase();
-  if (!value) return undefined;
-  if (value === `true` || value === `on` || value === `1`) return true;
-  if (value === `false` || value === `0`) return false;
-  throw new Error(`checkbox field must be boolean-like`);
-}
-
 function parseTrimmedField(raw: FormDataEntryValue | null): string | undefined {
   if (raw == null) return undefined;
   const value = String(raw).trim();
@@ -102,24 +95,11 @@ export function buildOperationalAlertQueryPayload(workspace: string, formData: F
     if (windowMinutes === undefined) {
       throw new Error(`windowMinutes is required`);
     }
-    return { windowMinutes };
+    return adminV2AuthRefreshReuseAlertQueryPayloadSchema.parse({ windowMinutes });
   }
 
   if (workspace === `verification_queue`) {
-    const missingProfileData = parseCheckboxField(formData.get(`missingProfileData`));
-    const missingDocuments = parseCheckboxField(formData.get(`missingDocuments`));
-    return {
-      ...(parseTrimmedField(formData.get(`status`)) ? { status: parseTrimmedField(formData.get(`status`)) } : {}),
-      ...(parseTrimmedField(formData.get(`stripeIdentityStatus`))
-        ? { stripeIdentityStatus: parseTrimmedField(formData.get(`stripeIdentityStatus`)) }
-        : {}),
-      ...(parseTrimmedField(formData.get(`country`)) ? { country: parseTrimmedField(formData.get(`country`)) } : {}),
-      ...(parseTrimmedField(formData.get(`contractorKind`))
-        ? { contractorKind: parseTrimmedField(formData.get(`contractorKind`)) }
-        : {}),
-      ...(missingProfileData ? { missingProfileData: true } : {}),
-      ...(missingDocuments ? { missingDocuments: true } : {}),
-    };
+    return buildVerificationQueuePayloadFromForm(formData);
   }
 
   throw new Error(`workspace is not supported`);

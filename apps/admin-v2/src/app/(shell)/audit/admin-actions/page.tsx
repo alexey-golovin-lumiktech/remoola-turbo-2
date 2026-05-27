@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { adminV2AuditListQuerySchema } from '@remoola/api-types';
+
 import { ActionGhost } from '../../../../components/action-ghost';
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
@@ -16,6 +18,8 @@ import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminActionAudit } from '../../../../lib/admin-api/audit.server';
 import { getQuickstart } from '../../../../lib/admin-api/overview.server';
 import { formatDateTime } from '../../../../lib/admin-format';
+import { buildPathWithSearch } from '../../../../lib/navigation-context';
+import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 import { parseQuickstartId } from '../../../../lib/quickstart-investigations';
 
 function formatDate(value: unknown): string {
@@ -149,16 +153,25 @@ export default async function AuditAdminActionsPage({
   }>;
 }) {
   const params = await searchParams;
-  const page = params?.page ? Number(params.page) : 1;
-  const requestedQuickstartId = parseQuickstartId(params?.quickstart);
+  const requestedQuickstartId = parseQuickstartId(trimmedSearchParam(params?.quickstart));
   const resolvedQuickstart = requestedQuickstartId ? await getQuickstart(requestedQuickstartId) : null;
   const appliedQuickstart = resolvedQuickstart?.targetPath === `/audit/admin-actions` ? resolvedQuickstart : null;
-  const action = params?.action?.trim() || appliedQuickstart?.filters.action || undefined;
-  const adminId = params?.adminId?.trim() || appliedQuickstart?.filters.adminId || undefined;
-  const email = params?.email?.trim() || appliedQuickstart?.filters.email || undefined;
-  const resourceId = params?.resourceId?.trim() || appliedQuickstart?.filters.resourceId || undefined;
-  const dateFrom = params?.dateFrom?.trim() || appliedQuickstart?.filters.dateFrom || undefined;
-  const dateTo = params?.dateTo?.trim() || appliedQuickstart?.filters.dateTo || undefined;
+  const query = adminV2AuditListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params?.page, 1),
+    action: trimmedSearchParam(params?.action) || appliedQuickstart?.filters.action,
+    adminId: trimmedSearchParam(params?.adminId) || appliedQuickstart?.filters.adminId,
+    email: trimmedSearchParam(params?.email) || appliedQuickstart?.filters.email,
+    resourceId: trimmedSearchParam(params?.resourceId) || appliedQuickstart?.filters.resourceId,
+    dateFrom: dateSearchParam(params?.dateFrom) || appliedQuickstart?.filters.dateFrom,
+    dateTo: dateSearchParam(params?.dateTo) || appliedQuickstart?.filters.dateTo,
+  });
+  const page = query.page ?? 1;
+  const action = query.action;
+  const adminId = query.adminId;
+  const email = query.email;
+  const resourceId = query.resourceId;
+  const dateFrom = query.dateFrom;
+  const dateTo = query.dateTo;
   const data = await getAdminActionAudit({
     action,
     adminId,
@@ -171,16 +184,16 @@ export default async function AuditAdminActionsPage({
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   function pageHref(nextPage: number) {
-    const query = new URLSearchParams();
-    if (requestedQuickstartId) query.set(`quickstart`, requestedQuickstartId);
-    if (action) query.set(`action`, action);
-    if (adminId) query.set(`adminId`, adminId);
-    if (email) query.set(`email`, email);
-    if (resourceId) query.set(`resourceId`, resourceId);
-    if (dateFrom) query.set(`dateFrom`, dateFrom);
-    if (dateTo) query.set(`dateTo`, dateTo);
-    query.set(`page`, String(nextPage));
-    return `/audit/admin-actions?${query.toString()}`;
+    return buildPathWithSearch(`/audit/admin-actions`, {
+      quickstart: requestedQuickstartId,
+      action,
+      adminId,
+      email,
+      resourceId,
+      dateFrom,
+      dateTo,
+      page: nextPage,
+    });
   }
 
   const items = (data?.items ?? []) as Array<Record<string, unknown>> as AdminActionRow[];

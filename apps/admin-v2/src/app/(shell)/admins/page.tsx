@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { adminV2AdminsListQuerySchema } from '@remoola/api-types';
+
 import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
@@ -14,6 +16,7 @@ import { type AdminsListResponse } from '../../../lib/admin-api/types';
 import { formatDateTime } from '../../../lib/admin-format';
 import { inviteAdminAction } from '../../../lib/admin-mutations/admins.server';
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../lib/admin-rbac';
+import { positiveIntegerSearchParam, trimmedSearchParam } from '../../../lib/query-contract';
 
 const formatDate = formatDateTime;
 
@@ -136,9 +139,14 @@ export default async function AdminsPage({
   searchParams?: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
   const params = await searchParams;
-  const page = Number(params?.page ?? 1) || 1;
-  const q = params?.q?.trim() ?? ``;
-  const status = params?.status?.trim() ?? ``;
+  const query = adminV2AdminsListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params?.page, 1),
+    q: trimmedSearchParam(params?.q),
+    status: trimmedSearchParam(params?.status),
+  });
+  const page = query.page ?? 1;
+  const q = query.q ?? ``;
+  const status = query.status ?? ``;
 
   const [identity, admins] = await Promise.all([
     getAdminIdentity(),

@@ -52,7 +52,7 @@ describe(`admin-v2 ledger filters`, () => {
       expect.objectContaining({
         paymentRequestId: `payment-1`,
         consumerId: `consumer-1`,
-        dateFrom: ``,
+        dateFrom: undefined,
         dateTo: `2026-04-30`,
       }),
     );

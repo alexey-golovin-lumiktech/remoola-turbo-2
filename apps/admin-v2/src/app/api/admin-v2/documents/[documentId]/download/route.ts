@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { appendSetCookies, buildForwardHeaders } from '../../../../../../lib/api-utils';
+import { UPSTREAM_FETCH_TIMEOUT_MS, appendSetCookies, buildForwardHeaders } from '../../../../../../lib/api-utils';
 import { getEnv } from '../../../../../../lib/env.server';
 
 const PASSTHROUGH_HEADERS = [
@@ -29,6 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ docu
       method: `GET`,
       headers: forwardHeaders,
       cache: `no-store`,
+      signal: AbortSignal.timeout(UPSTREAM_FETCH_TIMEOUT_MS),
     });
   } catch {
     return NextResponse.json(

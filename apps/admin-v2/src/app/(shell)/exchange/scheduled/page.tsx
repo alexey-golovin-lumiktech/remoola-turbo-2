@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { adminV2ExchangeScheduledListQuerySchema } from '@remoola/api-types';
+
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { StatusPill } from '../../../../components/status-pill';
@@ -8,6 +10,8 @@ import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getExchangeScheduledConversions } from '../../../../lib/admin-api/exchange.server';
 import { type ExchangeScheduledListResponse } from '../../../../lib/admin-api/types';
 import { formatDateTime } from '../../../../lib/admin-format';
+import { buildPathWithSearch } from '../../../../lib/navigation-context';
+import { positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
 type ScheduledConversionItem = ExchangeScheduledListResponse[`items`][number];
 
@@ -188,9 +192,14 @@ export default async function ExchangeScheduledPage({
   }>;
 }) {
   const params = await searchParams;
-  const page = params?.page ? Number(params.page) : 1;
-  const q = params?.q?.trim() ?? ``;
-  const status = params?.status?.trim() ?? ``;
+  const query = adminV2ExchangeScheduledListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params?.page, 1),
+    q: trimmedSearchParam(params?.q),
+    status: trimmedSearchParam(params?.status),
+  });
+  const page = query.page ?? 1;
+  const q = query.q ?? ``;
+  const status = query.status ?? ``;
 
   const data = await getExchangeScheduledConversions({
     page,
@@ -200,11 +209,11 @@ export default async function ExchangeScheduledPage({
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   function pageHref(nextPage: number) {
-    const query = new URLSearchParams();
-    if (q) query.set(`q`, q);
-    if (status) query.set(`status`, status);
-    query.set(`page`, String(nextPage));
-    return `/exchange/scheduled?${query.toString()}`;
+    return buildPathWithSearch(`/exchange/scheduled`, {
+      q,
+      status,
+      page: nextPage,
+    });
   }
 
   return (

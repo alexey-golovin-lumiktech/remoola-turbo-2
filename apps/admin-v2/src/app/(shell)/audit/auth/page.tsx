@@ -1,3 +1,5 @@
+import { adminV2AuditListQuerySchema } from '@remoola/api-types';
+
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { Panel } from '../../../../components/panel';
@@ -12,6 +14,8 @@ import {
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAuthAudit } from '../../../../lib/admin-api/audit.server';
 import { formatDateTime } from '../../../../lib/admin-format';
+import { buildPathWithSearch } from '../../../../lib/navigation-context';
+import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
 function formatDate(value: unknown): string {
   if (typeof value !== `string`) return `-`;
@@ -132,26 +136,34 @@ export default async function AuditAuthPage({
   }>;
 }) {
   const params = await searchParams;
-  const page = params?.page ? Number(params.page) : 1;
+  const query = adminV2AuditListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params?.page, 1),
+    email: trimmedSearchParam(params?.email),
+    event: trimmedSearchParam(params?.event),
+    ipAddress: trimmedSearchParam(params?.ipAddress),
+    dateFrom: dateSearchParam(params?.dateFrom),
+    dateTo: dateSearchParam(params?.dateTo),
+  });
+  const page = query.page ?? 1;
   const data = await getAuthAudit({
-    email: params?.email,
-    event: params?.event,
-    ipAddress: params?.ipAddress,
-    dateFrom: params?.dateFrom,
-    dateTo: params?.dateTo,
+    email: query.email,
+    event: query.event,
+    ipAddress: query.ipAddress,
+    dateFrom: query.dateFrom,
+    dateTo: query.dateTo,
     page,
   });
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   function pageHref(nextPage: number) {
-    const query = new URLSearchParams();
-    if (params?.email?.trim()) query.set(`email`, params.email.trim());
-    if (params?.event?.trim()) query.set(`event`, params.event.trim());
-    if (params?.ipAddress?.trim()) query.set(`ipAddress`, params.ipAddress.trim());
-    if (params?.dateFrom?.trim()) query.set(`dateFrom`, params.dateFrom.trim());
-    if (params?.dateTo?.trim()) query.set(`dateTo`, params.dateTo.trim());
-    query.set(`page`, String(nextPage));
-    return `/audit/auth?${query.toString()}`;
+    return buildPathWithSearch(`/audit/auth`, {
+      email: query.email,
+      event: query.event,
+      ipAddress: query.ipAddress,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+      page: nextPage,
+    });
   }
 
   const items: AuthAuditRow[] = (data?.items ?? []) as AuthAuditRow[];
@@ -169,20 +181,20 @@ export default async function AuditAuthPage({
               <input
                 className={textInputClass}
                 name="email"
-                defaultValue={params?.email ?? ``}
+                defaultValue={query.email ?? ``}
                 placeholder="admin email"
               />
             </label>
             <label className={fieldClass}>
               <span className={fieldLabelClass}>Event</span>
-              <input className={textInputClass} name="event" defaultValue={params?.event ?? ``} placeholder="event" />
+              <input className={textInputClass} name="event" defaultValue={query.event ?? ``} placeholder="event" />
             </label>
             <label className={fieldClass}>
               <span className={fieldLabelClass}>IP or prefix</span>
               <input
                 className={textInputClass}
                 name="ipAddress"
-                defaultValue={params?.ipAddress ?? ``}
+                defaultValue={query.ipAddress ?? ``}
                 placeholder="ip or prefix"
               />
             </label>
@@ -191,7 +203,7 @@ export default async function AuditAuthPage({
               <input
                 className={textInputClass}
                 name="dateFrom"
-                defaultValue={params?.dateFrom ?? ``}
+                defaultValue={query.dateFrom ?? ``}
                 placeholder="2026-04-15T00:00:00Z"
               />
             </label>
@@ -200,7 +212,7 @@ export default async function AuditAuthPage({
               <input
                 className={textInputClass}
                 name="dateTo"
-                defaultValue={params?.dateTo ?? ``}
+                defaultValue={query.dateTo ?? ``}
                 placeholder="2026-04-15T23:59:59Z"
               />
             </label>

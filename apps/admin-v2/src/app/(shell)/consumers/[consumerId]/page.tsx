@@ -6,6 +6,7 @@ import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { ActionGhost } from '../../../../components/action-ghost';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { ContextStat } from '../../../../components/context-stat';
+import { InlineErrorForm } from '../../../../components/inline-error-form';
 import { Panel } from '../../../../components/panel';
 import { StatusPill } from '../../../../components/status-pill';
 import {
@@ -33,12 +34,12 @@ import {
 import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { formatDateTime } from '../../../../lib/admin-format';
 import {
-  createConsumerNoteAction,
+  createConsumerNoteFormAction,
   forceLogoutConsumerAction,
   resendConsumerEmailAction,
   removeConsumerFlagAction,
   suspendConsumerAction,
-  addConsumerFlagAction,
+  addConsumerFlagFormAction,
 } from '../../../../lib/admin-mutations/consumers.server';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
@@ -486,7 +487,10 @@ export default async function ConsumerCasePage({
             surface="support"
           >
             {canManageNotes ? (
-              <form action={createConsumerNoteAction.bind(null, consumer.id)} className={operatorFormClass}>
+              <InlineErrorForm
+                action={createConsumerNoteFormAction.bind(null, consumer.id)}
+                className={operatorFormClass}
+              >
                 <div className={operatorFormSectionClass}>
                   <div className={operatorFormFieldsClass}>
                     <label className="field">
@@ -504,7 +508,7 @@ export default async function ConsumerCasePage({
                     </button>
                   </div>
                 </div>
-              </form>
+              </InlineErrorForm>
             ) : (
               <p className="muted">Internal note creation is not available for this admin identity.</p>
             )}
@@ -516,7 +520,7 @@ export default async function ConsumerCasePage({
             surface="support"
           >
             {canManageFlags ? (
-              <form action={addConsumerFlagAction.bind(null, consumer.id)} className={operatorFormClass}>
+              <InlineErrorForm action={addConsumerFlagFormAction.bind(null, consumer.id)} className={operatorFormClass}>
                 <div className={operatorFormSectionClass}>
                   <div className={operatorFormFieldsClass}>
                     <label className="field">
@@ -534,7 +538,7 @@ export default async function ConsumerCasePage({
                     </button>
                   </div>
                 </div>
-              </form>
+              </InlineErrorForm>
             ) : (
               <p className="muted">Consumer flag management is not available for this admin identity.</p>
             )}

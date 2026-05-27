@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { adminV2PaymentMethodsListQuerySchema } from '@remoola/api-types';
+
 import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
@@ -18,6 +20,7 @@ import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getPaymentMethods } from '../../../lib/admin-api/payments.server';
 import { type PaymentMethodsListResponse } from '../../../lib/admin-api/types';
 import { formatDateTime } from '../../../lib/admin-format';
+import { buildPathWithSearch } from '../../../lib/navigation-context';
 import {
   booleanSearchParam,
   positiveIntegerSearchParam,
@@ -188,13 +191,21 @@ export default async function PaymentMethodsPage({
   searchParams?: Promise<Record<string, SearchParamValue>>;
 }) {
   const params = await searchParams;
-  const page = positiveIntegerSearchParam(params?.page, 1) ?? 1;
-  const consumerId = trimmedSearchParam(params?.consumerId) ?? ``;
-  const type = trimmedSearchParam(params?.type) ?? ``;
-  const defaultSelectedValue = booleanSearchParam(params?.defaultSelected);
+  const query = adminV2PaymentMethodsListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params?.page, 1),
+    consumerId: trimmedSearchParam(params?.consumerId),
+    type: trimmedSearchParam(params?.type),
+    defaultSelected: booleanSearchParam(params?.defaultSelected),
+    fingerprint: trimmedSearchParam(params?.fingerprint),
+    includeDeleted: booleanSearchParam(params?.includeDeleted),
+  });
+  const page = query.page ?? 1;
+  const consumerId = query.consumerId ?? ``;
+  const type = query.type ?? ``;
+  const defaultSelectedValue = query.defaultSelected;
   const defaultSelected = defaultSelectedValue === undefined ? `` : String(defaultSelectedValue);
-  const fingerprint = trimmedSearchParam(params?.fingerprint) ?? ``;
-  const includeDeleted = booleanSearchParam(params?.includeDeleted) === true;
+  const fingerprint = query.fingerprint ?? ``;
+  const includeDeleted = query.includeDeleted === true;
   const data = await getPaymentMethods({
     page,
     consumerId,
@@ -206,14 +217,14 @@ export default async function PaymentMethodsPage({
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   function pageHref(nextPage: number) {
-    const query = new URLSearchParams();
-    if (consumerId) query.set(`consumerId`, consumerId);
-    if (type) query.set(`type`, type);
-    if (defaultSelected) query.set(`defaultSelected`, defaultSelected);
-    if (fingerprint) query.set(`fingerprint`, fingerprint);
-    if (includeDeleted) query.set(`includeDeleted`, `true`);
-    query.set(`page`, String(nextPage));
-    return `/payment-methods?${query.toString()}`;
+    return buildPathWithSearch(`/payment-methods`, {
+      consumerId,
+      type,
+      defaultSelected,
+      fingerprint,
+      includeDeleted: includeDeleted ? `true` : undefined,
+      page: nextPage,
+    });
   }
 
   return (

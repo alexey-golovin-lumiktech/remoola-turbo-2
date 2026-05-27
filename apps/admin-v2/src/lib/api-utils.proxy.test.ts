@@ -133,6 +133,7 @@ describe(`admin-v2 proxy helpers`, () => {
       headers: expect.any(Headers),
       body: JSON.stringify({ email: `ops@example.com`, password: `Current1!@#abc` }),
       cache: `no-store`,
+      signal: expect.any(AbortSignal),
     });
     const headers = mockFetch.mock.calls[0]?.[1]?.headers as Headers;
     expect(headers.get(`cookie`)).toBe(`admin_refresh=refresh-token`);
@@ -182,5 +183,23 @@ describe(`admin-v2 proxy helpers`, () => {
     expect(mockFetch.mock.calls[0]?.[1]?.body).toBeUndefined();
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe(`rotated`);
+  });
+
+  it(`returns a generic network error when the upstream fetch rejects`, async () => {
+    const { proxyAdminApiRoute } = await import(`./api-utils`);
+
+    mockFetch.mockRejectedValueOnce(new Error(`socket hang up`));
+
+    const response = await proxyAdminApiRoute({
+      req: new Request(`https://admin-v2.example.com/api/admin-v2/auth/me`),
+      method: `GET`,
+      upstreamPath: `/admin-v2/auth/me`,
+    });
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      code: `NETWORK_ERROR`,
+      message: `The upstream API request failed. Please try again.`,
+    });
   });
 });

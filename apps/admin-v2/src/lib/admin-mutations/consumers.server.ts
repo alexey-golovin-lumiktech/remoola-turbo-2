@@ -1,7 +1,5 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
-
 import {
   adminV2ForceLogoutConsumerBodySchema,
   adminV2ResendConsumerEmailBodySchema,
@@ -10,44 +8,68 @@ import {
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation, patchAdminMutation } from './core.server';
+import { parseRequiredVersion } from './form-helpers';
+import { revalidateConsumerDetailPaths, revalidateConsumerPaths } from './revalidation';
+
+import type { FormActionState } from './form-action-state';
 
 export async function createConsumerNoteAction(consumerId: string, formData: FormData): Promise<void> {
   const content = String(formData.get(`content`) ?? ``).trim();
   if (!content) {
-    return;
+    throw new Error(`content is required`);
   }
   await postAdminMutation(`/admin-v2/consumers/${consumerId}/notes`, { content }, `Failed to create note`);
+  revalidateConsumerPaths(consumerId);
+}
 
-  revalidatePath(`/consumers`);
-  revalidatePath(`/consumers/${consumerId}`);
+export async function createConsumerNoteFormAction(
+  consumerId: string,
+  _state: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  try {
+    await createConsumerNoteAction(consumerId, formData);
+    return {};
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : `Failed to create note` };
+  }
 }
 
 export async function addConsumerFlagAction(consumerId: string, formData: FormData): Promise<void> {
   const flag = String(formData.get(`flag`) ?? ``).trim();
   const reason = String(formData.get(`reason`) ?? ``).trim();
   if (!flag) {
-    return;
+    throw new Error(`flag is required`);
   }
   await postAdminMutation(
     `/admin-v2/consumers/${consumerId}/flags`,
     { flag, reason: reason || null },
     `Failed to add flag`,
   );
+  revalidateConsumerPaths(consumerId);
+}
 
-  revalidatePath(`/consumers`);
-  revalidatePath(`/consumers/${consumerId}`);
+export async function addConsumerFlagFormAction(
+  consumerId: string,
+  _state: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  try {
+    await addConsumerFlagAction(consumerId, formData);
+    return {};
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : `Failed to add flag` };
+  }
 }
 
 export async function removeConsumerFlagAction(consumerId: string, flagId: string, formData: FormData): Promise<void> {
-  const version = Number(formData.get(`version`) ?? 0);
+  const version = parseRequiredVersion(formData);
   await patchAdminMutation(
     `/admin-v2/consumers/${consumerId}/flags/${flagId}/remove`,
     { version },
     `Failed to remove flag`,
   );
-
-  revalidatePath(`/consumers`);
-  revalidatePath(`/consumers/${consumerId}`);
+  revalidateConsumerPaths(consumerId);
 }
 
 export async function forceLogoutConsumerAction(consumerId: string, formData: FormData): Promise<void> {
@@ -58,8 +80,7 @@ export async function forceLogoutConsumerAction(consumerId: string, formData: Fo
     body,
     `Failed to force logout consumer sessions`,
   );
-  revalidatePath(`/consumers/${consumerId}`);
-  revalidatePath(`/verification/${consumerId}`);
+  revalidateConsumerDetailPaths(consumerId, true);
 }
 
 export async function suspendConsumerAction(consumerId: string, formData: FormData): Promise<void> {
@@ -67,9 +88,7 @@ export async function suspendConsumerAction(consumerId: string, formData: FormDa
   const reason = String(formData.get(`reason`) ?? ``).trim();
   const body = adminV2SuspendConsumerBodySchema.parse({ confirmed, reason });
   await postAdminMutation(`/admin-v2/consumers/${consumerId}/suspend`, body, `Failed to suspend consumer`);
-  revalidatePath(`/consumers`);
-  revalidatePath(`/consumers/${consumerId}`);
-  revalidatePath(`/verification/${consumerId}`);
+  revalidateConsumerPaths(consumerId, true);
 }
 
 export async function resendConsumerEmailAction(consumerId: string, formData: FormData): Promise<void> {
@@ -77,5 +96,5 @@ export async function resendConsumerEmailAction(consumerId: string, formData: Fo
   const appScope = String(formData.get(`appScope`) ?? ``).trim();
   const body = adminV2ResendConsumerEmailBodySchema.parse({ emailKind, appScope });
   await postAdminMutation(`/admin-v2/consumers/${consumerId}/email-resend`, body, `Failed to resend consumer email`);
-  revalidatePath(`/consumers/${consumerId}`);
+  revalidateConsumerDetailPaths(consumerId);
 }

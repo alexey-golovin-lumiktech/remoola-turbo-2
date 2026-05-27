@@ -1,26 +1,13 @@
 import { z } from 'zod';
 
-import { type AdminV2AdminIdentity } from './access';
-import {
-  type AdminV2AssignmentContext,
-  type AdminV2AssignmentContextHistoryItem,
-  type AdminV2AssignmentContextSummary,
-  type AdminV2AdminRef,
-} from './assignments';
-import { ADMIN_V2_LEDGER_ANOMALY_CLASSES, type AdminV2LedgerAnomalyClass } from './ledger-anomalies';
+import { type AdminV2AssignmentContext, type AdminV2AdminRef } from './assignments';
+import { ADMIN_V2_LEDGER_ANOMALY_CLASSES } from './ledger-anomalies';
 import {
   ADMIN_V2_OPERATIONAL_ALERT_WORKSPACES,
   adminV2OperationalAlertThresholdSchema,
-  type AdminV2OperationalAlertSummary,
   type AdminV2OperationalAlertThreshold,
 } from './operational-alerts';
-import { type AdminV2OverviewSignalSummary, type AdminV2OverviewSummaryResponse } from './overview';
-import {
-  type AdminV2QuickstartCard,
-  type AdminV2QuickstartResolvedPreset,
-} from './quickstarts';
-import { ADMIN_V2_SAVED_VIEW_WORKSPACES, type AdminV2SavedViewSummary } from './saved-views';
-import { type AdminV2SystemSummaryCard, type AdminV2SystemSummaryResponse } from './system';
+import { ADMIN_V2_SAVED_VIEW_WORKSPACES } from './saved-views';
 import { jsonObjectSchema, jsonValueSchema } from '../validation';
 
 const isoDateTimeSchema = z.string();
@@ -357,7 +344,9 @@ export type AdminV2AuditListResponse = {
 };
 
 export const adminV2AuditListResponseSchema = z.object({
-  items: z.array(z.union([adminV2AuthAuditRowSchema, adminV2AdminActionAuditRowSchema, adminV2ConsumerActionAuditRowSchema])),
+  items: z.array(
+    z.union([adminV2AuthAuditRowSchema, adminV2AdminActionAuditRowSchema, adminV2ConsumerActionAuditRowSchema]),
+  ),
   total: z.number(),
   page: z.number(),
   pageSize: z.number(),
@@ -630,8 +619,7 @@ const adminV2ConsumerCaseResponseSchemaBase = z.object({
   recentConsumerActions: z.array(adminV2ConsumerActionAuditRowSchema),
 });
 
-export const adminV2ConsumerCaseResponseSchema =
-  adminV2ConsumerCaseResponseSchemaBase;
+export const adminV2ConsumerCaseResponseSchema = adminV2ConsumerCaseResponseSchemaBase;
 
 export type AdminV2PaymentOperationsQueueResponse = {
   generatedAt: string;

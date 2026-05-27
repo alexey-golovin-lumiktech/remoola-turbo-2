@@ -165,6 +165,24 @@ describe(`admin-v2 ledger anomalies page`, () => {
     });
   });
 
+  it(`normalizes invalid anomaly filters back to the default safe window`, async () => {
+    await LedgerAnomaliesPage({
+      searchParams: Promise.resolve({
+        class: `not-a-real-class`,
+        dateFrom: `not-a-date`,
+        dateTo: `still-not-a-date`,
+      }),
+    });
+
+    expect(getLedgerAnomalies).toHaveBeenCalledWith({
+      className: `stalePendingEntries`,
+      dateFrom: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      dateTo: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      cursor: undefined,
+      limit: 50,
+    });
+  });
+
   it(`hides saved-view mutation affordances when saved_views.manage is missing`, async () => {
     getAdminIdentity.mockResolvedValueOnce({
       id: `admin-2`,

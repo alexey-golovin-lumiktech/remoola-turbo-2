@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { adminV2LedgerAnomaliesListQuerySchema } from '@remoola/api-types';
+
 import { ActionGhost } from '../../../../components/action-ghost';
 import { DenseTable } from '../../../../components/dense-table';
 import { Panel } from '../../../../components/panel';
@@ -27,6 +29,7 @@ import {
   SHARED_DESCRIPTION_MAX_LENGTH,
   SHARED_NAME_MAX_LENGTH,
 } from '../../../../lib/admin-surface-meta';
+import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { dateSearchParam, type SearchParamValue, trimmedSearchParam } from '../../../../lib/query-contract';
 
 const SAVED_VIEW_WORKSPACE = `ledger_anomalies` as const;
@@ -329,10 +332,16 @@ export default async function LedgerAnomaliesPage({
   const canManageSavedViews = identity?.capabilities.includes(`saved_views.manage`) ?? false;
   const defaults = defaultDateRange();
   const requestedClass = trimmedSearchParam(params?.class);
-  const className: LedgerAnomalyClass = isLedgerAnomalyClass(requestedClass) ? requestedClass : `stalePendingEntries`;
-  const dateFrom = dateSearchParam(params?.dateFrom) || defaults.dateFrom;
-  const dateTo = dateSearchParam(params?.dateTo) || defaults.dateTo;
-  const cursor = trimmedSearchParam(params?.cursor);
+  const query = adminV2LedgerAnomaliesListQuerySchema.parse({
+    class: isLedgerAnomalyClass(requestedClass) ? requestedClass : `stalePendingEntries`,
+    dateFrom: dateSearchParam(params?.dateFrom) || defaults.dateFrom,
+    dateTo: dateSearchParam(params?.dateTo) || defaults.dateTo,
+    cursor: trimmedSearchParam(params?.cursor),
+  });
+  const className = query.class as LedgerAnomalyClass;
+  const dateFrom = query.dateFrom;
+  const dateTo = query.dateTo ?? ``;
+  const cursor = query.cursor;
 
   const [summary, list, savedViewsResponse] = await Promise.all([
     getLedgerAnomaliesSummary(),
@@ -356,17 +365,12 @@ export default async function LedgerAnomaliesPage({
     dateTo?: string;
     cursor?: string | null;
   }) {
-    const query = new URLSearchParams();
-    query.set(`class`, next.className ?? className);
-    query.set(`dateFrom`, next.dateFrom ?? dateFrom);
-    if (next.dateTo ?? dateTo) {
-      query.set(`dateTo`, next.dateTo ?? dateTo);
-    }
-    if (next.cursor) {
-      query.set(`cursor`, next.cursor);
-    }
-
-    return `/ledger/anomalies?${query.toString()}`;
+    return buildPathWithSearch(`/ledger/anomalies`, {
+      class: next.className ?? className,
+      dateFrom: next.dateFrom ?? dateFrom,
+      dateTo: next.dateTo ?? dateTo,
+      cursor: next.cursor ?? undefined,
+    });
   }
 
   return (

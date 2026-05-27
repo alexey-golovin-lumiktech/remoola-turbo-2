@@ -370,6 +370,15 @@ td {
   gap: 8px;
 }
 
+.formError {
+  border-radius: 12px;
+  border: 1px solid var(--tone-rose-border);
+  background: var(--tone-rose-bg);
+  color: var(--tone-rose-fg);
+  padding: 8px 12px;
+  font-size: 0.875rem;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;

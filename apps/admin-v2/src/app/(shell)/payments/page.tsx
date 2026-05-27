@@ -1,31 +1,28 @@
-import Link from 'next/link';
+import { adminV2PaymentsListQuerySchema } from '@remoola/api-types';
 
 import { ActionGhost } from '../../../components/action-ghost';
 import { ContextStat } from '../../../components/context-stat';
-import { DenseTable } from '../../../components/dense-table';
-import { MobileQueueCard, MobileQueueSection } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
 import { ResponsiveFilterPanel } from '../../../components/responsive-filter-panel';
-import { StatusPill } from '../../../components/status-pill';
-import { TabletRow } from '../../../components/tablet-row';
 import { TinyPill } from '../../../components/tiny-pill';
 import {
   buttonRowClass,
   checkboxFieldClass,
   checkboxInputClass,
-  emptyPanelClass,
   fieldClass,
   fieldLabelClass,
   mutedTextClass,
-  subtleTextClass,
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
+import {
+  PaymentsDesktopTable,
+  PaymentsMobileCards,
+  PaymentsTabletRows,
+} from '../../../features/payments/payments-list-presenters';
 import { getQuickstart } from '../../../lib/admin-api/overview.server';
 import { getPayments } from '../../../lib/admin-api/payments.server';
-import { type PaymentsListResponse } from '../../../lib/admin-api/types';
-import { formatDateTime } from '../../../lib/admin-format';
-import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
+import { buildPathWithSearch } from '../../../lib/navigation-context';
 import {
   booleanSearchParam,
   dateSearchParam,
@@ -34,255 +31,6 @@ import {
   trimmedSearchParam,
 } from '../../../lib/query-contract';
 import { parseQuickstartId } from '../../../lib/quickstart-investigations';
-
-const formatDate = formatDateTime;
-
-type PaymentItem = PaymentsListResponse[`items`][number];
-
-function renderConsumerLabel(consumer: PaymentItem[`payer`] | PaymentItem[`requester`]): string {
-  return consumer.email ?? consumer.id ?? `Unknown consumer`;
-}
-
-function renderConsumerLink(consumer: PaymentItem[`payer`] | PaymentItem[`requester`], returnTo: string) {
-  if (consumer.id) {
-    return <Link href={withReturnTo(`/consumers/${consumer.id}`, returnTo)}>{consumer.email ?? consumer.id}</Link>;
-  }
-
-  return consumer.email ?? `-`;
-}
-
-function PaymentParticipants({ item, returnTo }: { item: PaymentItem; returnTo: string }) {
-  return (
-    <>
-      <div>Payer: {renderConsumerLink(item.payer, returnTo)}</div>
-      <div>Requester: {renderConsumerLink(item.requester, returnTo)}</div>
-    </>
-  );
-}
-
-function PaymentParticipantsSummary({ item, returnTo }: { item: PaymentItem; returnTo: string }) {
-  return (
-    <div className="min-w-0">
-      <div className="truncate text-sm text-white/90">Payer: {renderConsumerLink(item.payer, returnTo)}</div>
-      <div className="truncate text-sm text-white/72">Requester: {renderConsumerLink(item.requester, returnTo)}</div>
-    </div>
-  );
-}
-
-function PaymentQueueHeading({ item }: { item: PaymentItem }) {
-  return (
-    <div className="min-w-0">
-      <div className="truncate text-sm text-white/95">{renderConsumerLabel(item.payer)}</div>
-      <div className="truncate text-xs text-white/56">Requester: {renderConsumerLabel(item.requester)}</div>
-    </div>
-  );
-}
-
-function PaymentAssignedTo({ item }: { item: PaymentItem }) {
-  if (!item.assignedTo) {
-    return <span className={mutedTextClass}>—</span>;
-  }
-
-  return (
-    <>
-      <span>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</span>
-      {item.assignedTo.email ? <span className={mutedTextClass}> {item.assignedTo.email}</span> : null}
-    </>
-  );
-}
-
-function shouldShowPersistedStatus(item: PaymentItem): boolean {
-  return item.persistedStatus !== item.effectiveStatus;
-}
-
-function shouldShowFreshnessLabel(item: PaymentItem): boolean {
-  return item.staleWarning || item.dataFreshnessClass !== `exact`;
-}
-
-function PaymentsMobileCards({ items, returnTo }: { items: PaymentItem[]; returnTo: string }) {
-  if (items.length === 0) {
-    return (
-      <div className="readSurface md:hidden" data-view="mobile">
-        <div className={emptyPanelClass}>No payment requests found for the current filters.</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="readSurface md:hidden" data-view="mobile">
-      <div className="queueCards">
-        {items.map((item) => (
-          <MobileQueueCard
-            key={item.id}
-            id={item.id}
-            href={withReturnTo(`/payments/${item.id}`, returnTo)}
-            eyebrow="Payment request"
-            title={<PaymentQueueHeading item={item} />}
-            subtitle={item.id}
-            trailing={
-              <>
-                {item.amount} {item.currencyCode}
-              </>
-            }
-            badges={
-              <>
-                <StatusPill status={item.effectiveStatus} />
-                {item.paymentRail ? <TinyPill>{item.paymentRail}</TinyPill> : null}
-              </>
-            }
-          >
-            <MobileQueueSection title="Queue summary">
-              <div className={mutedTextClass}>
-                Assigned: <PaymentAssignedTo item={item} />
-              </div>
-              {shouldShowPersistedStatus(item) ? (
-                <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
-              ) : null}
-              <div className={mutedTextClass}>
-                {item.staleWarning ? `Persisted status is stale` : `Exact enough for list`}
-              </div>
-              <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
-            </MobileQueueSection>
-            <MobileQueueSection title="Participants" compact>
-              <PaymentParticipants item={item} returnTo={returnTo} />
-            </MobileQueueSection>
-            <MobileQueueSection title="Freshness" compact>
-              <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
-              <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
-            </MobileQueueSection>
-          </MobileQueueCard>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PaymentsTabletRows({ items, returnTo }: { items: PaymentItem[]; returnTo: string }) {
-  if (items.length === 0) {
-    return (
-      <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-        <div className={emptyPanelClass}>No payment requests found for the current filters.</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-      <div className="condensedList">
-        {items.map((item) => (
-          <TabletRow
-            key={item.id}
-            eyebrow="Payment request"
-            primary={
-              <>
-                <Link href={withReturnTo(`/payments/${item.id}`, returnTo)}>
-                  <strong>{renderConsumerLabel(item.payer)}</strong>
-                </Link>
-                <div className={mutedTextClass}>Requester: {renderConsumerLabel(item.requester)}</div>
-                <div className={subtleTextClass}>{item.id}</div>
-              </>
-            }
-            badges={
-              <>
-                <StatusPill status={item.effectiveStatus} />
-                <TinyPill tone="cyan">
-                  {item.amount} {item.currencyCode}
-                </TinyPill>
-                {item.paymentRail ? <TinyPill>{item.paymentRail}</TinyPill> : null}
-              </>
-            }
-            cells={[
-              <PaymentParticipantsSummary item={item} key="participants" returnTo={returnTo} />,
-              <div key="status">
-                {shouldShowPersistedStatus(item) ? (
-                  <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
-                ) : null}
-                {item.staleWarning ? <div className={mutedTextClass}>Persisted status is stale</div> : null}
-              </div>,
-              <div key="amount">
-                <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
-                <div className={mutedTextClass}>Rail: {item.paymentRail ?? `No rail`}</div>
-              </div>,
-              <div key="timing-assigned">
-                <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
-                {item.assignedTo ? (
-                  <div className={mutedTextClass}>
-                    Assigned: <PaymentAssignedTo item={item} />
-                  </div>
-                ) : null}
-                {item.attachmentsCount > 0 ? (
-                  <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
-                ) : null}
-              </div>,
-            ]}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PaymentsDesktopTable({ items, returnTo }: { items: PaymentItem[]; returnTo: string }) {
-  return (
-    <div className="readSurface hidden xl:block" data-view="desktop">
-      <DenseTable
-        headers={[`Request`, `Participants`, `Status / follow-up`, `Amount / timing`]}
-        emptyMessage="No payment requests found for the current filters."
-      >
-        {items.length === 0
-          ? null
-          : items.map((item) => (
-              <tr key={item.id}>
-                <td>
-                  <div className={subtleTextClass}>Payment request</div>
-                  <div className="mb-1 text-sm text-white/90">Payer: {renderConsumerLabel(item.payer)}</div>
-                  <div className={mutedTextClass}>Requester: {renderConsumerLabel(item.requester)}</div>
-                  <Link href={withReturnTo(`/payments/${item.id}`, returnTo)} className="block">
-                    <strong className="block text-white">{item.id}</strong>
-                  </Link>
-                  <div className={mutedTextClass}>{item.paymentRail ?? `No rail`}</div>
-                  {item.attachmentsCount > 0 ? (
-                    <div className={subtleTextClass}>Attachments: {item.attachmentsCount}</div>
-                  ) : null}
-                </td>
-                <td>
-                  <PaymentParticipantsSummary item={item} returnTo={returnTo} />
-                </td>
-                <td>
-                  <div>
-                    <StatusPill status={item.effectiveStatus} />
-                  </div>
-                  {shouldShowPersistedStatus(item) ? (
-                    <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
-                  ) : null}
-                  {item.assignedTo ? (
-                    <div className={mutedTextClass}>
-                      Assigned: <PaymentAssignedTo item={item} />
-                    </div>
-                  ) : null}
-                  {shouldShowFreshnessLabel(item) ? (
-                    <div className={mutedTextClass}>
-                      {item.staleWarning ? `Persisted status is stale` : `Freshness: ${item.dataFreshnessClass}`}
-                    </div>
-                  ) : null}
-                </td>
-                <td>
-                  <div className="font-semibold text-white/92">
-                    {item.amount} {item.currencyCode}
-                  </div>
-                  <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
-                  <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
-                  {!item.assignedTo ? <div className={subtleTextClass}>Unassigned</div> : null}
-                  {!shouldShowFreshnessLabel(item) ? (
-                    <div className={subtleTextClass}>Freshness: {item.dataFreshnessClass}</div>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-      </DenseTable>
-    </div>
-  );
-}
 
 export default async function PaymentsPage({
   searchParams,
@@ -293,22 +41,36 @@ export default async function PaymentsPage({
   const requestedQuickstartId = parseQuickstartId(trimmedSearchParam(params?.quickstart));
   const resolvedQuickstart = requestedQuickstartId ? await getQuickstart(requestedQuickstartId) : null;
   const appliedQuickstart = resolvedQuickstart?.targetPath === `/payments` ? resolvedQuickstart : null;
-  const q = trimmedSearchParam(params?.q) ?? ``;
-  const status = trimmedSearchParam(params?.status) || appliedQuickstart?.filters.status || ``;
-  const paymentRail = trimmedSearchParam(params?.paymentRail) || appliedQuickstart?.filters.paymentRail || ``;
-  const currencyCode = trimmedSearchParam(params?.currencyCode) || appliedQuickstart?.filters.currencyCode || ``;
-  const amountMinValue = finiteNumberSearchParam(params?.amountMin);
-  const amountMaxValue = finiteNumberSearchParam(params?.amountMax);
+  const query = adminV2PaymentsListQuerySchema.parse({
+    cursor: trimmedSearchParam(params?.cursor),
+    q: trimmedSearchParam(params?.q),
+    status: trimmedSearchParam(params?.status) || appliedQuickstart?.filters.status,
+    paymentRail: trimmedSearchParam(params?.paymentRail) || appliedQuickstart?.filters.paymentRail,
+    currencyCode: trimmedSearchParam(params?.currencyCode) || appliedQuickstart?.filters.currencyCode,
+    amountMin: finiteNumberSearchParam(params?.amountMin),
+    amountMax: finiteNumberSearchParam(params?.amountMax),
+    dueDateFrom: dateSearchParam(params?.dueDateFrom),
+    dueDateTo: dateSearchParam(params?.dueDateTo),
+    createdFrom: dateSearchParam(params?.createdFrom),
+    createdTo: dateSearchParam(params?.createdTo),
+    overdue:
+      booleanSearchParam(params?.overdue) ??
+      (params?.overdue == null && appliedQuickstart?.filters.overdue === true ? true : undefined),
+  });
+  const q = query.q ?? ``;
+  const status = query.status ?? ``;
+  const paymentRail = query.paymentRail ?? ``;
+  const currencyCode = query.currencyCode ?? ``;
+  const amountMinValue = query.amountMin;
+  const amountMaxValue = query.amountMax;
   const amountMin = amountMinValue === undefined ? `` : String(amountMinValue);
   const amountMax = amountMaxValue === undefined ? `` : String(amountMaxValue);
-  const dueDateFrom = dateSearchParam(params?.dueDateFrom) ?? ``;
-  const dueDateTo = dateSearchParam(params?.dueDateTo) ?? ``;
-  const createdFrom = dateSearchParam(params?.createdFrom) ?? ``;
-  const createdTo = dateSearchParam(params?.createdTo) ?? ``;
-  const overdue =
-    booleanSearchParam(params?.overdue) === true ||
-    (params?.overdue == null && appliedQuickstart?.filters.overdue === true);
-  const cursor = trimmedSearchParam(params?.cursor) ?? ``;
+  const dueDateFrom = query.dueDateFrom ?? ``;
+  const dueDateTo = query.dueDateTo ?? ``;
+  const createdFrom = query.createdFrom ?? ``;
+  const createdTo = query.createdTo ?? ``;
+  const overdue = query.overdue === true;
+  const cursor = query.cursor ?? ``;
   const data = await getPayments({
     cursor: cursor || undefined,
     q,
@@ -325,21 +87,21 @@ export default async function PaymentsPage({
   });
 
   function nextHref(nextCursor: string) {
-    const query = new URLSearchParams();
-    if (requestedQuickstartId) query.set(`quickstart`, requestedQuickstartId);
-    if (q) query.set(`q`, q);
-    if (status) query.set(`status`, status);
-    if (paymentRail) query.set(`paymentRail`, paymentRail);
-    if (currencyCode) query.set(`currencyCode`, currencyCode);
-    if (amountMin) query.set(`amountMin`, amountMin);
-    if (amountMax) query.set(`amountMax`, amountMax);
-    if (dueDateFrom) query.set(`dueDateFrom`, dueDateFrom);
-    if (dueDateTo) query.set(`dueDateTo`, dueDateTo);
-    if (createdFrom) query.set(`createdFrom`, createdFrom);
-    if (createdTo) query.set(`createdTo`, createdTo);
-    if (overdue) query.set(`overdue`, `true`);
-    query.set(`cursor`, nextCursor);
-    return `/payments?${query.toString()}`;
+    return buildPathWithSearch(`/payments`, {
+      quickstart: requestedQuickstartId,
+      q,
+      status,
+      paymentRail,
+      currencyCode,
+      amountMin,
+      amountMax,
+      dueDateFrom,
+      dueDateTo,
+      createdFrom,
+      createdTo,
+      overdue: overdue ? `true` : undefined,
+      cursor: nextCursor,
+    });
   }
 
   const items = data?.items ?? [];

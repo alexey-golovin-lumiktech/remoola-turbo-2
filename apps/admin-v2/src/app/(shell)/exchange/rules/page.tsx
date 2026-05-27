@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { adminV2ExchangeRulesListQuerySchema } from '@remoola/api-types';
+
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
@@ -7,6 +9,8 @@ import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getExchangeRules } from '../../../../lib/admin-api/exchange.server';
 import { type ExchangeRulesListResponse } from '../../../../lib/admin-api/types';
 import { formatDateTime } from '../../../../lib/admin-format';
+import { buildPathWithSearch } from '../../../../lib/navigation-context';
+import { booleanSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
 type ExchangeRuleItem = ExchangeRulesListResponse[`items`][number];
 
@@ -167,29 +171,36 @@ export default async function ExchangeRulesPage({
   }>;
 }) {
   const params = await searchParams;
-  const page = params?.page ? Number(params.page) : 1;
-  const q = params?.q?.trim() ?? ``;
+  const query = adminV2ExchangeRulesListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params?.page, 1),
+    q: trimmedSearchParam(params?.q),
+    enabled: params?.enabled == null ? undefined : booleanSearchParam(params?.enabled),
+    fromCurrency: trimmedSearchParam(params?.fromCurrency),
+    toCurrency: trimmedSearchParam(params?.toCurrency),
+  });
+  const page = query.page ?? 1;
+  const q = query.q ?? ``;
   const enabled = params?.enabled?.trim() ?? ``;
-  const fromCurrency = params?.fromCurrency?.trim() ?? ``;
-  const toCurrency = params?.toCurrency?.trim() ?? ``;
+  const fromCurrency = query.fromCurrency ?? ``;
+  const toCurrency = query.toCurrency ?? ``;
 
   const data = await getExchangeRules({
     page,
     q,
-    enabled: enabled === `` ? undefined : enabled === `true`,
+    enabled: query.enabled,
     fromCurrency,
     toCurrency,
   });
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   function pageHref(nextPage: number) {
-    const query = new URLSearchParams();
-    if (q) query.set(`q`, q);
-    if (enabled) query.set(`enabled`, enabled);
-    if (fromCurrency) query.set(`fromCurrency`, fromCurrency);
-    if (toCurrency) query.set(`toCurrency`, toCurrency);
-    query.set(`page`, String(nextPage));
-    return `/exchange/rules?${query.toString()}`;
+    return buildPathWithSearch(`/exchange/rules`, {
+      q,
+      enabled,
+      fromCurrency,
+      toCurrency,
+      page: nextPage,
+    });
   }
 
   return (

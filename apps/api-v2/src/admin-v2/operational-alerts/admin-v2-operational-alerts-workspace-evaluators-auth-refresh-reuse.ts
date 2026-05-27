@@ -1,34 +1,40 @@
 import { Injectable } from '@nestjs/common';
 
+import {
+  ADMIN_V2_MAX_AUTH_REFRESH_REUSE_WINDOW_MINUTES,
+  ADMIN_V2_MIN_AUTH_REFRESH_REUSE_WINDOW_MINUTES,
+  adminV2AuthRefreshReuseAlertQueryPayloadSchema,
+} from '@remoola/api-types';
+
 import { AdminV2OperationalAlertsAuthRefreshReuseQuery } from './admin-v2-operational-alerts-auth-refresh-reuse.query';
 import { type OperationalAlertObservation } from './admin-v2-operational-alerts-thresholds';
 import { type OperationalAlertWorkspaceEvaluator } from './admin-v2-operational-alerts-workspace-evaluators';
 
-type AuthRefreshReuseQuery = { windowMinutes: number };
-
-const MIN_WINDOW_MINUTES = 1;
-const MAX_WINDOW_MINUTES = 1440;
-
-const SUPPORTED_PAYLOAD_KEYS = new Set([`windowMinutes`]);
+type AuthRefreshReuseQuery = {
+  windowMinutes: number;
+};
 
 function parseQueryPayload(raw: unknown): AuthRefreshReuseQuery {
+  const parsed = adminV2AuthRefreshReuseAlertQueryPayloadSchema.safeParse(raw);
+  if (parsed.success) {
+    return parsed.data;
+  }
+
   if (raw === null || raw === undefined) {
     throw new Error(`queryPayload is required (must include windowMinutes)`);
   }
-  if (typeof raw !== `object` || Array.isArray(raw)) {
-    throw new Error(`queryPayload must be an object`);
+  const issue = parsed.error.issues[0];
+  if (issue?.path[0] === `windowMinutes`) {
+    throw new Error(
+      `queryPayload.windowMinutes must be integer in [` +
+        `${ADMIN_V2_MIN_AUTH_REFRESH_REUSE_WINDOW_MINUTES}..${ADMIN_V2_MAX_AUTH_REFRESH_REUSE_WINDOW_MINUTES}]`,
+    );
   }
-  const obj = raw as Record<string, unknown>;
-  for (const key of Object.keys(obj)) {
-    if (!SUPPORTED_PAYLOAD_KEYS.has(key)) {
-      throw new Error(`queryPayload key "${key}" is not recognized`);
-    }
+  if (issue?.code === `unrecognized_keys`) {
+    const key = issue.keys[0];
+    throw new Error(`queryPayload key "${key}" is not recognized`);
   }
-  const w = obj.windowMinutes;
-  if (typeof w !== `number` || !Number.isInteger(w) || w < MIN_WINDOW_MINUTES || w > MAX_WINDOW_MINUTES) {
-    throw new Error(`queryPayload.windowMinutes must be integer in [${MIN_WINDOW_MINUTES}..${MAX_WINDOW_MINUTES}]`);
-  }
-  return { windowMinutes: w };
+  throw new Error(`queryPayload must be an object`);
 }
 
 @Injectable()

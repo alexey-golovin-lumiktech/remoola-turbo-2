@@ -1,13 +1,16 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
-
 import { adminV2VerificationDecisionBodySchema } from '@remoola/api-types';
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation } from './core.server';
-import { buildAssignmentClaimBody, buildAssignmentReleaseBody, buildAssignmentReassignBody } from './form-helpers';
-import { revalidateVerificationAssignmentPaths } from './revalidation';
+import {
+  buildAssignmentClaimBody,
+  buildAssignmentReleaseBody,
+  buildAssignmentReassignBody,
+  parseRequiredVersion,
+} from './form-helpers';
+import { revalidateVerificationAssignmentPaths, revalidateVerificationDecisionPaths } from './revalidation';
 
 async function applyVerificationDecision(
   consumerId: string,
@@ -15,7 +18,7 @@ async function applyVerificationDecision(
   formData: FormData,
   fallbackMessage: string,
 ): Promise<void> {
-  const version = Number(formData.get(`version`) ?? 0);
+  const version = parseRequiredVersion(formData);
   const reason = String(formData.get(`reason`) ?? ``).trim();
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const body = adminV2VerificationDecisionBodySchema.parse({
@@ -24,10 +27,7 @@ async function applyVerificationDecision(
     confirmed,
   });
   await postAdminMutation(`/admin-v2/verification/${consumerId}/${decisionPath}`, body, fallbackMessage);
-  revalidatePath(`/overview`);
-  revalidatePath(`/verification`);
-  revalidatePath(`/verification/${consumerId}`);
-  revalidatePath(`/consumers/${consumerId}`);
+  revalidateVerificationDecisionPaths(consumerId);
 }
 
 export async function approveVerificationAction(consumerId: string, formData: FormData): Promise<void> {

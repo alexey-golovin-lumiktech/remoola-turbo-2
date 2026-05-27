@@ -1,12 +1,8 @@
-import Link from 'next/link';
+import { adminV2ConsumersListQuerySchema } from '@remoola/api-types';
 
 import { ActionGhost } from '../../../components/action-ghost';
 import { ContextStat } from '../../../components/context-stat';
-import { DenseTable } from '../../../components/dense-table';
-import { MobileQueueCard } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
-import { StatusPill } from '../../../components/status-pill';
-import { TabletRow } from '../../../components/tablet-row';
 import {
   buttonRowClass,
   checkboxFieldClass,
@@ -16,174 +12,14 @@ import {
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
+import {
+  ConsumersDesktopTable,
+  ConsumersMobileCards,
+  ConsumersTabletRows,
+} from '../../../features/consumers/consumers-list-presenters';
 import { getConsumers } from '../../../lib/admin-api/consumers.server';
-import { formatDateTime } from '../../../lib/admin-format';
-
-const formatDate = formatDateTime;
-
-type ConsumerItem = NonNullable<Awaited<ReturnType<typeof getConsumers>>>[`items`][number];
-
-function renderConsumerLabel(consumer: ConsumerItem) {
-  return consumer.displayName ?? consumer.email ?? consumer.id;
-}
-
-function renderConsumerFlags(consumer: ConsumerItem) {
-  if (consumer.adminFlags.length === 0) {
-    return <span className="muted">No active flags</span>;
-  }
-
-  return (
-    <div className="pillRow">
-      {consumer.adminFlags.map((flag) => (
-        <span key={flag.id} className="pill">
-          {flag.flag}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function renderConsumerFlagsSummary(consumer: ConsumerItem): string {
-  if (consumer.adminFlags.length === 0) {
-    return `No active flags`;
-  }
-
-  return consumer.adminFlags.map((flag) => flag.flag).join(`, `);
-}
-
-function ConsumersMobileCards({ items }: { items: ConsumerItem[] }) {
-  if (items.length === 0) {
-    return (
-      <div className="readSurface md:hidden" data-view="mobile">
-        <div className="panel muted">No consumers matched the current filters.</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="readSurface md:hidden" data-view="mobile">
-      <div className="queueCards">
-        {items.map((consumer) => (
-          <MobileQueueCard
-            key={consumer.id}
-            id={consumer.id}
-            href={`/consumers/${consumer.id}`}
-            eyebrow="Consumer case"
-            title={renderConsumerLabel(consumer)}
-            subtitle={consumer.email ?? `No email`}
-            trailing={<StatusPill status={consumer.verificationStatus} />}
-            badges={
-              <>
-                <span className="pill">{consumer.accountType}</span>
-                {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
-              </>
-            }
-          >
-            <div className="muted mono">{consumer.id}</div>
-            <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
-            <div className="muted">Stripe identity: {consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
-            <div className="muted">Flags: {renderConsumerFlagsSummary(consumer)}</div>
-            <div className="muted">Notes: {consumer._count.adminNotes}</div>
-            <div className="muted">Updated: {formatDate(consumer.updatedAt)}</div>
-          </MobileQueueCard>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ConsumersTabletRows({ items }: { items: ConsumerItem[] }) {
-  if (items.length === 0) {
-    return (
-      <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-        <div className="panel muted">No consumers matched the current filters.</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-      <div className="condensedList">
-        {items.map((consumer) => (
-          <TabletRow
-            key={consumer.id}
-            eyebrow="Consumer case"
-            primary={
-              <>
-                <Link href={`/consumers/${consumer.id}`}>
-                  <strong>{renderConsumerLabel(consumer)}</strong>
-                </Link>
-                <div className="muted">{consumer.email ?? `No email`}</div>
-                <div className="muted mono">{consumer.id}</div>
-              </>
-            }
-            badges={
-              <>
-                <StatusPill status={consumer.verificationStatus} />
-                <span className="pill">{consumer.accountType}</span>
-                {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
-              </>
-            }
-            cells={[
-              <div key="type">
-                <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
-              </div>,
-              <div key="verification">
-                <div className="muted">{consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
-              </div>,
-              <div key="flags" className="muted">
-                {renderConsumerFlagsSummary(consumer)}
-              </div>,
-              <div key="notes-updated">
-                <div>{consumer._count.adminNotes} notes</div>
-                <div className="muted">{formatDate(consumer.updatedAt)}</div>
-              </div>,
-            ]}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ConsumersDesktopTable({ items }: { items: ConsumerItem[] }) {
-  return (
-    <div className="readSurface hidden xl:block" data-view="desktop">
-      <DenseTable
-        headers={[`Consumer`, `Type`, `Verification`, `Flags`, `Notes`, `Updated`]}
-        emptyMessage="No consumers matched the current filters."
-      >
-        {items.length === 0
-          ? null
-          : items.map((consumer) => (
-              <tr key={consumer.id}>
-                <td>
-                  <Link href={`/consumers/${consumer.id}`}>
-                    <strong>{renderConsumerLabel(consumer)}</strong>
-                  </Link>
-                  <div className="muted">{consumer.email ?? `No email`}</div>
-                  <div className="muted mono">{consumer.id}</div>
-                </td>
-                <td>
-                  <div>{consumer.accountType}</div>
-                  <div className="muted">{consumer.contractorKind ?? `-`}</div>
-                  <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
-                </td>
-                <td>
-                  <div>
-                    <StatusPill status={consumer.verificationStatus} />
-                  </div>
-                  <div className="muted">{consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
-                </td>
-                <td>{renderConsumerFlags(consumer)}</td>
-                <td>{consumer._count.adminNotes}</td>
-                <td>{formatDate(consumer.updatedAt)}</td>
-              </tr>
-            ))}
-      </DenseTable>
-    </div>
-  );
-}
+import { buildPathWithSearch } from '../../../lib/navigation-context';
+import { booleanSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../lib/query-contract';
 
 export default async function ConsumersPage({
   searchParams,
@@ -198,12 +34,20 @@ export default async function ConsumersPage({
   }>;
 }) {
   const params = await searchParams;
-  const page = params?.page ? Number(params.page) : 1;
-  const q = params?.q?.trim() ?? ``;
-  const accountType = params?.accountType?.trim() ?? ``;
-  const contractorKind = params?.contractorKind?.trim() ?? ``;
-  const verificationStatus = params?.verificationStatus?.trim() ?? ``;
-  const includeDeleted = params?.includeDeleted === `true`;
+  const query = adminV2ConsumersListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params?.page, 1),
+    q: trimmedSearchParam(params?.q),
+    accountType: trimmedSearchParam(params?.accountType),
+    contractorKind: trimmedSearchParam(params?.contractorKind),
+    verificationStatus: trimmedSearchParam(params?.verificationStatus),
+    includeDeleted: booleanSearchParam(params?.includeDeleted),
+  });
+  const page = query.page ?? 1;
+  const q = query.q ?? ``;
+  const accountType = query.accountType ?? ``;
+  const contractorKind = query.contractorKind ?? ``;
+  const verificationStatus = query.verificationStatus ?? ``;
+  const includeDeleted = query.includeDeleted === true;
   const data = await getConsumers({ page, q, accountType, contractorKind, verificationStatus, includeDeleted });
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
   const items = data?.items ?? [];
@@ -216,14 +60,14 @@ export default async function ConsumersPage({
   ].filter(Boolean).length;
 
   function pageHref(nextPage: number) {
-    const query = new URLSearchParams();
-    if (q) query.set(`q`, q);
-    if (accountType) query.set(`accountType`, accountType);
-    if (contractorKind) query.set(`contractorKind`, contractorKind);
-    if (verificationStatus) query.set(`verificationStatus`, verificationStatus);
-    if (includeDeleted) query.set(`includeDeleted`, `true`);
-    query.set(`page`, String(nextPage));
-    return `/consumers?${query.toString()}`;
+    return buildPathWithSearch(`/consumers`, {
+      q,
+      accountType,
+      contractorKind,
+      verificationStatus,
+      includeDeleted: includeDeleted ? `true` : undefined,
+      page: nextPage,
+    });
   }
 
   return (

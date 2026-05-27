@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { cookies } from 'next/headers';
 
 import { buildAdminMutationHeaders } from '../admin-auth-headers.server';
+import { UPSTREAM_FETCH_TIMEOUT_MS, UPSTREAM_NETWORK_ERROR_MESSAGE } from '../api-utils';
 import { getEnv } from '../env.server';
 
 type MutationError = {
@@ -34,16 +35,22 @@ async function sendAdminMutation(
 ): Promise<void> {
   const baseUrl = await requireBaseUrl();
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}${path}`, {
-    method,
-    headers: buildAdminMutationHeaders(cookieStore.toString(), {
-      'content-type': `application/json`,
-      'x-correlation-id': randomUUID(),
-      'Idempotency-Key': randomUUID(),
-    }),
-    body: JSON.stringify(body),
-    cache: `no-store`,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers: buildAdminMutationHeaders(cookieStore.toString(), {
+        'content-type': `application/json`,
+        'x-correlation-id': randomUUID(),
+        'Idempotency-Key': randomUUID(),
+      }),
+      body: JSON.stringify(body),
+      cache: `no-store`,
+      signal: AbortSignal.timeout(UPSTREAM_FETCH_TIMEOUT_MS),
+    });
+  } catch {
+    throw new Error(UPSTREAM_NETWORK_ERROR_MESSAGE);
+  }
 
   if (!response.ok) {
     const error = await parseError(response, fallbackMessage);

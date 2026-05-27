@@ -72,6 +72,32 @@ export function revalidateAdminPaths(adminId?: string | null) {
   }
 }
 
+export function revalidateAdminSessionPaths() {
+  revalidatePath(`/me/sessions`);
+}
+
+export function revalidateConsumerPaths(consumerId: string, includeVerification = false) {
+  revalidatePath(`/consumers`);
+  revalidatePath(`/consumers/${consumerId}`);
+  if (includeVerification) {
+    revalidatePath(`/verification/${consumerId}`);
+  }
+}
+
+export function revalidateConsumerDetailPaths(consumerId: string, includeVerification = false) {
+  revalidatePath(`/consumers/${consumerId}`);
+  if (includeVerification) {
+    revalidatePath(`/verification/${consumerId}`);
+  }
+}
+
+export function revalidateVerificationDecisionPaths(consumerId: string) {
+  revalidatePath(`/overview`);
+  revalidatePath(`/verification`);
+  revalidatePath(`/verification/${consumerId}`);
+  revalidatePath(`/consumers/${consumerId}`);
+}
+
 export function revalidateVerificationAssignmentPaths(consumerId: string) {
   revalidatePath(`/verification`);
   revalidatePath(`/verification/${consumerId}`);

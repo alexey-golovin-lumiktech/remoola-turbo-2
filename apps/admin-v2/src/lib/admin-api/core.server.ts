@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { fetchUpstream } from '../api-utils';
 import { getEnv } from '../env.server';
 import { getRequestOrigin } from '../request-origin';
 
@@ -27,20 +28,13 @@ export async function fetchAdminApiResult<T>(path: string, schema: ReadSchema): 
   const cookieHeader = cookieStore.toString();
   const origin = getRequestOrigin();
 
-  let response: Response;
-  try {
-    response = await fetch(`${baseUrl}${path}`, {
-      method: `GET`,
-      headers: {
-        Cookie: cookieHeader,
-        origin,
-      },
-      cache: `no-store`,
-      signal: AbortSignal.timeout(15000),
-    });
-  } catch {
-    return { status: `error` };
-  }
+  const response = await fetchUpstream(`${baseUrl}${path}`, {
+    method: `GET`,
+    headers: {
+      Cookie: cookieHeader,
+      origin,
+    },
+  });
 
   if (response.status === 401) {
     redirectToLogin();

@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { adminV2DocumentsListQuerySchema } from '@remoola/api-types';
+
 import { ActionGhost } from '../../../components/action-ghost';
 import { ContextStat } from '../../../components/context-stat';
 import { DenseTable } from '../../../components/dense-table';
@@ -24,6 +26,13 @@ import { getDocuments, getDocumentTags } from '../../../lib/admin-api/documents.
 import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
 import { formatBytes, formatDateTime } from '../../../lib/admin-format';
 import { bulkTagDocumentsAction } from '../../../lib/admin-mutations/documents.server';
+import {
+  booleanSearchParam,
+  dateSearchParam,
+  finiteNumberSearchParam,
+  positiveIntegerSearchParam,
+  trimmedSearchParam,
+} from '../../../lib/query-contract';
 
 type DocumentsPageParams = Record<string, string | string[] | undefined>;
 
@@ -325,39 +334,54 @@ function BulkTagPanel({ tags }: { tags: Awaited<ReturnType<typeof getDocumentTag
 
 export default async function DocumentsPage({ searchParams }: { searchParams: Promise<DocumentsPageParams> }) {
   const params = await searchParams;
-  const page = Number(typeof params.page === `string` ? params.page : `1`) || 1;
-  const includeDeleted = typeof params.includeDeleted === `string` && params.includeDeleted === `true`;
+  const query = adminV2DocumentsListQuerySchema.parse({
+    page: positiveIntegerSearchParam(params.page, 1),
+    q: trimmedSearchParam(params.q),
+    consumerId: trimmedSearchParam(params.consumerId),
+    access: trimmedSearchParam(params.access),
+    mimetype: trimmedSearchParam(params.mimetype),
+    sizeMin: finiteNumberSearchParam(params.sizeMin),
+    sizeMax: finiteNumberSearchParam(params.sizeMax),
+    createdFrom: dateSearchParam(params.createdFrom),
+    createdTo: dateSearchParam(params.createdTo),
+    paymentRequestId: trimmedSearchParam(params.paymentRequestId),
+    tag: trimmedSearchParam(params.tag),
+    tagId: trimmedSearchParam(params.tagId),
+    includeDeleted: booleanSearchParam(params.includeDeleted),
+  });
+  const page = query.page ?? 1;
+  const includeDeleted = query.includeDeleted === true;
   const [identity, documents, tags] = await Promise.all([
     getAdminIdentity(),
     getDocuments({
       page,
-      q: typeof params.q === `string` ? params.q : undefined,
-      consumerId: typeof params.consumerId === `string` ? params.consumerId : undefined,
-      access: typeof params.access === `string` ? params.access : undefined,
-      mimetype: typeof params.mimetype === `string` ? params.mimetype : undefined,
-      sizeMin: typeof params.sizeMin === `string` ? Number(params.sizeMin) : undefined,
-      sizeMax: typeof params.sizeMax === `string` ? Number(params.sizeMax) : undefined,
-      createdFrom: typeof params.createdFrom === `string` ? params.createdFrom : undefined,
-      createdTo: typeof params.createdTo === `string` ? params.createdTo : undefined,
-      paymentRequestId: typeof params.paymentRequestId === `string` ? params.paymentRequestId : undefined,
-      tag: typeof params.tag === `string` ? params.tag : undefined,
-      tagId: typeof params.tagId === `string` ? params.tagId : undefined,
+      q: query.q,
+      consumerId: query.consumerId,
+      access: query.access,
+      mimetype: query.mimetype,
+      sizeMin: query.sizeMin,
+      sizeMax: query.sizeMax,
+      createdFrom: query.createdFrom,
+      createdTo: query.createdTo,
+      paymentRequestId: query.paymentRequestId,
+      tag: query.tag,
+      tagId: query.tagId,
       includeDeleted,
     }),
     getDocumentTags(),
   ]);
   const canManage = identity?.capabilities.includes(`documents.manage`) ?? false;
   const activeFilterCount = [
-    typeof params.q === `string` ? params.q : ``,
-    typeof params.consumerId === `string` ? params.consumerId : ``,
-    typeof params.paymentRequestId === `string` ? params.paymentRequestId : ``,
-    typeof params.tag === `string` ? params.tag : ``,
-    typeof params.access === `string` ? params.access : ``,
-    typeof params.mimetype === `string` ? params.mimetype : ``,
-    typeof params.sizeMin === `string` ? params.sizeMin : ``,
-    typeof params.sizeMax === `string` ? params.sizeMax : ``,
-    typeof params.createdFrom === `string` ? params.createdFrom : ``,
-    typeof params.createdTo === `string` ? params.createdTo : ``,
+    query.q ?? ``,
+    query.consumerId ?? ``,
+    query.paymentRequestId ?? ``,
+    query.tag ?? ``,
+    query.access ?? ``,
+    query.mimetype ?? ``,
+    query.sizeMin === undefined ? `` : String(query.sizeMin),
+    query.sizeMax === undefined ? `` : String(query.sizeMax),
+    query.createdFrom ?? ``,
+    query.createdTo ?? ``,
     includeDeleted ? `include deleted` : ``,
   ].filter(Boolean).length;
 

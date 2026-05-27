@@ -1,7 +1,5 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
-
 import {
   adminV2ChangeAdminPermissionsBodySchema,
   adminV2ChangeAdminRoleBodySchema,
@@ -13,7 +11,7 @@ import {
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation } from './core.server';
 import { parseRequiredVersion, parsePasswordConfirmation, buildAdminCapabilityOverrides } from './form-helpers';
-import { revalidateAdminPaths } from './revalidation';
+import { revalidateAdminPaths, revalidateAdminSessionPaths } from './revalidation';
 
 export async function inviteAdminAction(formData: FormData): Promise<void> {
   const email = String(formData.get(`email`) ?? ``).trim();
@@ -83,7 +81,7 @@ export async function revokeMyAdminSessionAction(formData: FormData): Promise<vo
     throw new Error(`sessionId is required`);
   }
   await postAdminMutation(`/admin-v2/auth/revoke-session`, { sessionId }, `Failed to revoke own session`);
-  revalidatePath(`/me/sessions`);
+  revalidateAdminSessionPaths();
 }
 
 export async function revokeAdminSessionAction(adminId: string, sessionId: string, formData: FormData): Promise<void> {
