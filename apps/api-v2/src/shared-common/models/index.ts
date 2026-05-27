@@ -4,7 +4,7 @@ export * from './google-profile-details.model';
 export * from './personal-details.model';
 export * from './address-details.model';
 export * from './organization-details.model';
-export * from './billing-details.mode';
+export * from './billing-details.model';
 export * from './payment-request.model';
 export * from './contact.model';
 export * from './resource.model';

@@ -20,7 +20,7 @@ import {
 } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
-import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../../common/query-transforms';
+import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../../common/query';
 
 export class LedgerAnomaliesListQuery {
   @Expose({ name: `class` })

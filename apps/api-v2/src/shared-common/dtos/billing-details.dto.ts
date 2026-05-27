@@ -1,4 +1,4 @@
-import { type IBillingDetailsModel } from '../models/billing-details.mode';
+import { type IBillingDetailsModel } from '../models/billing-details.model';
 import { type OnlyUpsertFields, type WithoutDeletedAt } from '../types';
 
 export type IBillingDetailsResponse = WithoutDeletedAt<IBillingDetailsModel>;

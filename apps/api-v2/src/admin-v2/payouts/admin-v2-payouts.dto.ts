@@ -3,7 +3,7 @@ import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 import { type AdminV2EscalatePayoutBody } from '@remoola/api-types';
 
-import { optionalNumberQuery, optionalStringQuery } from '../../common/query-transforms';
+import { optionalNumberQuery, optionalStringQuery } from '../../common/query';
 import { ConfirmedVersionedMutationBody } from '../admin-v2-common.dto';
 
 export class PayoutsListQuery {

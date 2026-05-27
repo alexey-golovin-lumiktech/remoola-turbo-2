@@ -1,7 +1,7 @@
 import { Expose, Transform } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../common/query-transforms';
+import { optionalDateQuery, optionalNumberQuery, optionalStringQuery } from '../../common/query';
 
 export class LedgerEntriesQuery {
   @Expose()

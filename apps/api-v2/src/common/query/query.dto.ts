@@ -1,7 +1,7 @@
 import { Expose, Transform } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-import { OptionalDateQuery, optionalNumberQuery, OptionalNumberQuery, OptionalStringQuery } from '../query-transforms';
+import { OptionalDateQuery, optionalNumberQuery, OptionalNumberQuery, OptionalStringQuery } from './query-transforms';
 
 export class PagingQuery {
   @Expose()

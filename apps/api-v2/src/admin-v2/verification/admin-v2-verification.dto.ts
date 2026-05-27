@@ -4,7 +4,7 @@ import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { type AdminV2VerificationDecisionBody } from '@remoola/api-types';
 
 import { PagingQuery } from '../../common';
-import { optionalBooleanQuery, optionalStringQuery } from '../../common/query-transforms';
+import { optionalBooleanQuery, optionalStringQuery } from '../../common/query';
 import { ConfirmedVersionedMutationBody } from '../admin-v2-common.dto';
 
 export class VerificationQueueWithPagingQuery extends PagingQuery {
