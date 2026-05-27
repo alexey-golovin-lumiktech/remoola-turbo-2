@@ -319,6 +319,19 @@ describe(`Nest module provider boundaries`, () => {
     ).toEqual(new Map());
   });
 
+  it(`keeps admin step-up checks on sensitive admin-v2 controllers`, () => {
+    const adminV2Dir = join(__dirname, `admin-v2`);
+
+    expect(controllerFileCounts(adminV2Dir, /adminStepUp\.verify\s*\(/g)).toEqual(
+      new Map([
+        [`admins/admin-v2-admins.controller.ts`, 8],
+        [`exchange/admin-v2-exchange.controller.ts`, 4],
+        [`payments/admin-v2-payments.controller.ts`, 2],
+      ]),
+    );
+    expect(sourceFileCounts(adminV2Dir, /verifyStepUp\s*\(/g)).toEqual(new Map());
+  });
+
   it(`keeps shared-common leaf kit free of common and feature-vertical imports`, () => {
     const sharedCommonDir = join(__dirname, `shared-common`);
 

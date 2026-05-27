@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { AdminAuthModule } from '../../admin-auth/admin-auth.module';
+import { AdminStepUpModule } from '../../admin-auth/admin-step-up.module';
 import { BalanceCalculationModule } from '../../shared/balance-calculation.module';
 import { AdminV2SharedModule } from '../admin-v2-shared.module';
 import { AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
@@ -26,7 +26,7 @@ import { ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.module';
 
 @Module({
-  imports: [AdminAuthModule, AdminV2SharedModule, BalanceCalculationModule, AdminV2AssignmentsModule],
+  imports: [AdminStepUpModule, AdminV2SharedModule, BalanceCalculationModule, AdminV2AssignmentsModule],
   controllers: [AdminV2ExchangeController],
   providers: [
     AdminExchangeActionLockRepository,

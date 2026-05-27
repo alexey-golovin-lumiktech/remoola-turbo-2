@@ -20,7 +20,7 @@ describe(`AdminV2ExchangeController`, () => {
     const controller = new AdminV2ExchangeController(
       service as never,
       { assertCapability } as never,
-      { verifyStepUp } as never,
+      { verify: verifyStepUp } as never,
     );
 
     return { assertCapability, controller, service, verifyStepUp };

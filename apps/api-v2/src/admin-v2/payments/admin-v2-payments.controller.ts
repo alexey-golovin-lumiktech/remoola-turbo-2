@@ -3,7 +3,7 @@ import { ApiBadRequestResponse, ApiCookieAuth, ApiQuery, ApiTags } from '@nestjs
 
 import { PAYMENT_REVERSAL_KIND } from '@remoola/api-types';
 
-import { AdminAuthService } from '../../admin-auth/admin-auth.service';
+import { AdminStepUpService } from '../../admin-auth/admin-step-up.service';
 import {
   AdminV2ReadThrottle,
   ApiUuidParam,
@@ -26,7 +26,7 @@ export class AdminV2PaymentsController {
   constructor(
     private readonly service: AdminV2PaymentsService,
     private readonly accessService: AdminV2AccessService,
-    private readonly adminAuthService: AdminAuthService,
+    private readonly adminStepUp: AdminStepUpService,
     private readonly adminPaymentReversalService: AdminV2PaymentReversalService,
   ) {}
 
@@ -87,7 +87,7 @@ export class AdminV2PaymentsController {
     @Body() body: PaymentReversalBody,
   ) {
     await this.accessService.assertCapability(admin, `payments.reverse`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.adminPaymentReversalService.createReversal(
       id,
       { amount: body.amount, reason: body.reason, kind: PAYMENT_REVERSAL_KIND.REFUND },
@@ -104,7 +104,7 @@ export class AdminV2PaymentsController {
     @Body() body: PaymentReversalBody,
   ) {
     await this.accessService.assertCapability(admin, `payments.reverse`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.adminPaymentReversalService.createReversal(
       id,
       { amount: body.amount, reason: body.reason, kind: PAYMENT_REVERSAL_KIND.CHARGEBACK },

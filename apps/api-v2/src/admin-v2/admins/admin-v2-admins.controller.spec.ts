@@ -58,7 +58,7 @@ describe(`AdminV2AdminsController`, () => {
         adminsService as never,
         { assertCapability } as never,
         { listSessionsForAdmin, revokeSessionAsManager } as never,
-        { verifyStepUp } as never,
+        { verify: verifyStepUp } as never,
       );
       return {
         controller,

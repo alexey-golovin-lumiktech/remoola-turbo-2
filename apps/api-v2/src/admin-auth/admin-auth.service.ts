@@ -268,27 +268,6 @@ export class AdminAuthService {
   }
 
   /** Re-authenticate the current admin before sensitive actions. */
-  async verifyStepUp(adminId: string, passwordConfirmation: string): Promise<void> {
-    const trimmed = typeof passwordConfirmation === `string` ? passwordConfirmation.trim() : ``;
-    if (trimmed.length === 0) {
-      throw new BadRequestException(adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED);
-    }
-
-    const admin = await this.adminIdentityRepository.findStepUpCredentialsById(adminId);
-    if (!admin) {
-      throw new UnauthorizedException(adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_INVALID);
-    }
-
-    const valid = await passwordUtils.verifyPassword({
-      password: trimmed,
-      storedHash: admin.password,
-      storedSalt: admin.salt,
-    });
-    if (!valid) {
-      throw new UnauthorizedException(adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_INVALID);
-    }
-  }
-
   async revokeSessionByRefreshTokenAndAudit(refreshToken?: string | null, ctx?: AdminLoginContext): Promise<void> {
     if (!refreshToken) return;
     try {

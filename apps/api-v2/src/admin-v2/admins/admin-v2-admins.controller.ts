@@ -4,7 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 
 import { adminErrorCodes } from '@remoola/shared-constants';
 
-import { AdminAuthService } from '../../admin-auth/admin-auth.service';
+import { AdminStepUpService } from '../../admin-auth/admin-step-up.service';
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2AdminSessionsService } from './admin-v2-admin-sessions.service';
@@ -29,7 +29,7 @@ export class AdminV2AdminsController {
     private readonly service: AdminV2AdminsService,
     private readonly accessService: AdminV2AccessService,
     private readonly adminSessionsService: AdminV2AdminSessionsService,
-    private readonly adminAuthService: AdminAuthService,
+    private readonly adminStepUp: AdminStepUpService,
   ) {}
 
   @Get()
@@ -51,7 +51,7 @@ export class AdminV2AdminsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.inviteAdmin(admin.id, body, meta);
   }
 
@@ -63,7 +63,7 @@ export class AdminV2AdminsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.deactivateAdmin(id, admin.id, body, meta);
   }
 
@@ -75,7 +75,7 @@ export class AdminV2AdminsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.restoreAdmin(id, admin.id, body, meta);
   }
 
@@ -87,7 +87,7 @@ export class AdminV2AdminsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.changeAdminRole(id, admin.id, body, meta);
   }
 
@@ -99,7 +99,7 @@ export class AdminV2AdminsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.changeAdminPermissions(id, admin.id, body, meta);
   }
 
@@ -111,7 +111,7 @@ export class AdminV2AdminsController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.resetAdminPassword(id, admin.id, body, meta);
   }
 
@@ -126,7 +126,7 @@ export class AdminV2AdminsController {
     if (admin.type !== `SUPER`) {
       throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_SUPER_CAN_CHANGE_PASSWORDS);
     }
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.patchAdminPassword(id, body.password, admin.id, meta);
   }
 
@@ -149,7 +149,7 @@ export class AdminV2AdminsController {
       if (confirmation.length === 0) {
         throw new BadRequestException(adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED);
       }
-      await this.adminAuthService.verifyStepUp(admin.id, confirmation);
+      await this.adminStepUp.verify(admin.id, confirmation);
     }
     return this.service.updateAdminStatus(id, body.action, admin.id, meta);
   }

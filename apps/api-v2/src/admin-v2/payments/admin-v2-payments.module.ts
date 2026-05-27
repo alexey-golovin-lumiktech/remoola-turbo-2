@@ -22,7 +22,7 @@ import { AdminV2PaymentsController } from './admin-v2-payments.controller';
 import { AdminV2PaymentsPresenter } from './admin-v2-payments.presenter';
 import { AdminV2PaymentsQuery } from './admin-v2-payments.query';
 import { AdminV2PaymentsService } from './admin-v2-payments.service';
-import { AdminAuthModule } from '../../admin-auth/admin-auth.module';
+import { AdminStepUpModule } from '../../admin-auth/admin-step-up.module';
 import { AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { MailingModule } from '../../shared/mailing.module';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
@@ -30,7 +30,7 @@ import { AdminV2SharedModule } from '../admin-v2-shared.module';
 import { AdminV2AssignmentsModule } from '../assignments/admin-v2-assignments.module';
 
 @Module({
-  imports: [AdminAuthModule, AdminV2SharedModule, AdminV2AssignmentsModule, MailingModule],
+  imports: [AdminStepUpModule, AdminV2SharedModule, AdminV2AssignmentsModule, MailingModule],
   controllers: [AdminV2PaymentsController],
   providers: [
     AdminV2PaymentsService,

@@ -6,7 +6,7 @@ import { AdminV2PaymentReversalService } from './admin-v2-payment-reversal.servi
 import { AdminV2PaymentsController } from './admin-v2-payments.controller';
 import { AdminV2PaymentsService } from './admin-v2-payments.service';
 import { bootstrapApiTestApp } from '../../../test/helpers/bootstrap-api-test-app';
-import { AdminAuthService } from '../../admin-auth/admin-auth.service';
+import { AdminStepUpService } from '../../admin-auth/admin-step-up.service';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 
 describe(`AdminV2PaymentsController`, () => {
@@ -22,7 +22,7 @@ describe(`AdminV2PaymentsController`, () => {
     const controller = new AdminV2PaymentsController(
       {} as never,
       { assertCapability } as never,
-      { verifyStepUp } as never,
+      { verify: verifyStepUp } as never,
       { createReversal } as never,
     );
 
@@ -48,7 +48,7 @@ describe(`AdminV2PaymentsController`, () => {
     const controller = new AdminV2PaymentsController(
       {} as never,
       { assertCapability } as never,
-      { verifyStepUp } as never,
+      { verify: verifyStepUp } as never,
       { createReversal } as never,
     );
 
@@ -80,7 +80,7 @@ describe(`AdminV2PaymentsController`, () => {
     const controller = new AdminV2PaymentsController(
       {} as never,
       { assertCapability } as never,
-      { verifyStepUp } as never,
+      { verify: verifyStepUp } as never,
       { createReversal } as never,
     );
 
@@ -110,7 +110,7 @@ describe(`AdminV2PaymentsController integration`, () => {
       providers: [
         { provide: AdminV2PaymentsService, useValue: { listPaymentRequests, getPaymentOperationsQueue: jest.fn() } },
         { provide: AdminV2AccessService, useValue: { assertCapability } },
-        { provide: AdminAuthService, useValue: { verifyStepUp: jest.fn() } },
+        { provide: AdminStepUpService, useValue: { verify: jest.fn() } },
         { provide: AdminV2PaymentReversalService, useValue: { createReversal: jest.fn() } },
       ],
       preset: `validationOnly`,

@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AdminAuthControllerSupportService } from './admin-auth-controller-support.service';
 import { AdminAuthSessionRepository } from './admin-auth-session.repository';
 import { AdminAuthService } from './admin-auth.service';
-import { AdminIdentityRepository } from './admin-identity.repository';
+import { AdminStepUpModule } from './admin-step-up.module';
 import { envs } from '../envs';
 import { AuthAuditModule } from '../shared/auth-audit.module';
 import { DatabaseModule } from '../shared/database.module';
@@ -15,12 +15,13 @@ import { MailingModule } from '../shared/mailing.module';
     DatabaseModule,
     AuthAuditModule,
     MailingModule,
+    AdminStepUpModule,
     JwtModule.register({
       secret: envs.JWT_ACCESS_SECRET!,
       signOptions: { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
     }),
   ],
-  providers: [AdminAuthControllerSupportService, AdminIdentityRepository, AdminAuthSessionRepository, AdminAuthService],
-  exports: [AdminAuthControllerSupportService, AdminAuthService],
+  providers: [AdminAuthControllerSupportService, AdminAuthSessionRepository, AdminAuthService],
+  exports: [AdminAuthControllerSupportService, AdminAuthService, AdminStepUpModule],
 })
 export class AdminAuthModule {}

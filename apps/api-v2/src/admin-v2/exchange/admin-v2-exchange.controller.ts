@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
-import { AdminAuthService } from '../../admin-auth/admin-auth.service';
+import { AdminStepUpService } from '../../admin-auth/admin-step-up.service';
 import {
   AdminV2ReadThrottle,
   Identity,
@@ -32,7 +32,7 @@ export class AdminV2ExchangeController {
   constructor(
     private readonly service: AdminV2ExchangeService,
     private readonly accessService: AdminV2AccessService,
-    private readonly adminAuthService: AdminAuthService,
+    private readonly adminStepUp: AdminStepUpService,
   ) {}
 
   @Get(`rates`)
@@ -55,7 +55,7 @@ export class AdminV2ExchangeController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.approveRate(id, admin.id, body, meta);
   }
 
@@ -101,7 +101,7 @@ export class AdminV2ExchangeController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.runRuleNow(id, admin.id, body, meta);
   }
 
@@ -128,7 +128,7 @@ export class AdminV2ExchangeController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.forceExecuteScheduledConversion(id, admin.id, body, meta);
   }
 
@@ -140,7 +140,7 @@ export class AdminV2ExchangeController {
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `exchange.manage`);
-    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    await this.adminStepUp.verify(admin.id, body.passwordConfirmation);
     return this.service.cancelScheduledConversion(id, admin.id, body, meta);
   }
 }
