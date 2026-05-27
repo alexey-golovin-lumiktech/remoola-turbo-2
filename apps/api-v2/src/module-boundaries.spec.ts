@@ -304,6 +304,30 @@ describe(`Nest module provider boundaries`, () => {
     ).toEqual(new Map());
   });
 
+  it(`keeps the shared services layer independent from common and feature verticals`, () => {
+    const sharedDir = join(__dirname, `shared`);
+
+    expect(sourceFileCounts(sharedDir, /from\s+[`'"](?:\.\.\/)+common\//g)).toEqual(new Map());
+    expect(sourceFileCounts(sharedDir, /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer|auth|admin-auth)\//g)).toEqual(
+      new Map(),
+    );
+  });
+
+  it(`keeps the common HTTP layer independent from feature verticals`, () => {
+    expect(
+      sourceFileCounts(join(__dirname, `common`), /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer|auth|admin-auth)\//g),
+    ).toEqual(new Map());
+  });
+
+  it(`keeps shared-common leaf kit free of common and feature-vertical imports`, () => {
+    const sharedCommonDir = join(__dirname, `shared-common`);
+
+    expect(sourceFileCounts(sharedCommonDir, /from\s+[`'"](?:\.\.\/)+common\//g)).toEqual(new Map());
+    expect(
+      sourceFileCounts(sharedCommonDir, /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer|auth|admin-auth)\//g),
+    ).toEqual(new Map());
+  });
+
   it(`keeps file storage owned by infrastructure`, () => {
     expect(sourceFileCounts(__dirname, /consumer\/modules\/files\/(?:file-storage\.service|files\.module)/g)).toEqual(
       new Map(),

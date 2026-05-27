@@ -24,3 +24,21 @@ when multiple verticals need the same capability.
 - `infrastructure` must not depend on `admin-v2` or `consumer`.
 - Feature modules should export facades and keep repositories, workflow services,
   and adapters private unless another module has a concrete dependency.
+
+### Shared-zone layering
+
+The three shared zones form a one-directional stack: `common` (HTTP layer) may
+depend on `shared`; `shared` may depend on `shared-common`; `shared-common` is a
+leaf kit. Concretely:
+
+- `shared` must not import from `common` or from feature verticals
+  (`admin-v2`, `consumer`, `auth`, `admin-auth`).
+- `common` must not import from feature verticals.
+- `shared-common` must not import from `common` or from feature verticals.
+
+These three invariants are enforced by `module-boundaries.spec.ts`.
+
+> Known exception: `shared-common/csrf-protection.ts` imports `@nestjs/common`
+> and `shared/origin-resolver.service` (type-only), so `shared-common` is not yet
+> a pure leaf. This is legacy; relocate it in a dedicated PR under security
+> review rather than extending the pattern.
