@@ -3047,7 +3047,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-26</summary>
 
 - **2026-05-26:**
@@ -3064,8 +3064,45 @@
   ### 🧪 Testing
   - **Financial safety coverage:** Add and extend repository/service coverage for Decimal ledger amounts, Stripe bootstrap reconciliation, webhook deduplication, consumer ledger writes, transaction-runner retry validation, legacy DTO removal boundaries, and verification decision timestamp serialization.
 
+  ### 🛠 DevEx
+  - **Consumer-payments queries decomposition:** Split the 706-line `ConsumerPaymentsQueriesRepository` into focused list, single-view, and history repositories plus shared email-resolver and pure list/view mappers, with the raw SQL in `listPayments` and `getHistory` preserved verbatim to keep query plans stable; `ConsumerPaymentsReadService` keeps the same public surface and authorization checks, so controllers and consumer endpoints are untouched.
+
+  ### 📄 Documentation
+  - **Financial-safety doc reconciliation:** Align `governance/remoola-domain/04_FINANCIAL_SAFETY_COMPLIANCE.md` with the new external-ref table and append-only trigger, remove the stale claim of a non-existent `sync_ledger_entry_status_from_outcome` trigger, and record the remediation log under `ai_docs/develop/audits/`.
+
   ### ⚠️ Notes
   - **Operational constraint after trigger rollout:** Once the append-only trigger is live, unapproved `UPDATE` and `DELETE` operations on `ledger_entry` will fail by design; only the controlled fixture teardown path sets the internal bypass needed for seed cleanup.
+
+</details>
+
+<details open>
+<summary>2026-05-27</summary>
+
+- **2026-05-27:**
+
+  ### 🚀 Feature
+  - **Inline operator form errors:** Add `InlineErrorForm` (`useActionState` + a `role="alert"` `.formError` banner) and FormActionState wrappers for document-tag, consumer-note, and consumer-flag mutations so admin-v2 operator forms surface server-side failures inline instead of crashing to the error boundary.
+
+  ### 🔐 Security / Production Safety
+  - **Admin read-contract validation:** Add canonical Zod response schemas for admin-v2 read endpoints in `@remoola/api-types` and require schema-validated JSON in `fetchAdminApiResult`/`fetchAdminApi` before data reaches page reads, preserving the existing `401` redirect, `403` forbidden, `404` not_found, and non-ok/network/schema-mismatch semantics.
+  - **Auth proxy cookie integrity:** Always forward upstream `Set-Cookie` headers through admin auth and `/api/me` proxy routes and centralize cookie selection and `Set-Cookie` merge logic across middleware and auth header builders, keeping admin auth cookies and CSRF tokens intact across refresh/proxy boundaries.
+  - **Admin step-up surface narrowing:** Extract step-up re-authentication into `AdminStepUpService`/`AdminStepUpModule` so the exchange and payments controllers depend on the narrow step-up surface instead of the full `AdminAuthService` (dropping JWT/session imports), with `ADMIN_PASSWORD_CONFIRMATION_REQUIRED`/`ADMIN_PASSWORD_CONFIRMATION_INVALID` gating preserved verbatim.
+  - **Auth-refresh-reuse bounds:** Add validated reuse-window bounds (min 1, max 1440, default 15 minutes) and harden the operational-alerts auth-refresh-reuse evaluator.
+  - **Idempotency invariants under dedupe:** Collapse the duplicated non-transactional and transactional idempotency paths into shared private helpers while keeping the `@@unique(adminId, scope, key)` contract and terminal-behavior divergence exactly; the change touches no ledger/balance path and cleared the ledger-auditor gate.
+
+  ### 🧪 Testing
+  - **Contract, proxy, and boundary coverage:** Add unit coverage for schema-validated admin reads, proxy-route helpers, cookie merging, navigation query helpers, form-action state, and step-up verification, and lock shared-zone layering with three new `module-boundaries.spec.ts` invariants (`shared`, `common`, and `shared-common` must not import feature verticals).
+
+  ### 🛠 DevEx
+  - **Admin-v2 presenter extraction:** Extract list rendering into `features/*` presenters for consumers, payments, payouts, system alerts, and verification queue, and share mutation plumbing (`core.server`, `form-helpers`, `revalidation`, `validation.server`, `admin-surface-payloads`) across documents/consumers/payouts/verification surfaces.
+  - **api-v2 tech-debt reduction:** Remove the two dead Prisma/SQL exception filters behind the single registered `ApiExceptionFilter`, consolidate `common/` query helpers under `common/query/` with a barrel, and rename the misspelled `billing-details.mode.ts` model file.
+  - **Shared admin contracts:** Replace admin-v2 read-contract duplication with `@remoola/api-types` re-exports, add additive admin-v2 query schemas (cursor/page/date-range bases plus payments, documents, payment-methods, exchange-rates list queries), and route navigation query building through the shared query builder.
+
+  ### 📄 Documentation
+  - **Shared-zone layering rules:** Extend `apps/api-v2/src/ARCHITECTURE.md` with a one-directional `common → shared-common → shared` layering section and record the known `shared-common/csrf-protection.ts` exception.
+
+  ### ⚠️ Notes
+  - **Additive, migration-free day:** All `@remoola/api-types` changes are additive (new exports only) — verify downstream consumers typecheck against the bumped package before merge. No DB migration landed today; every change is a safe rolling deploy.
 
 </details>
 
