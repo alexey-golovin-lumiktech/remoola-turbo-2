@@ -3,9 +3,9 @@ import { z } from 'zod';
 import {
   adminV2ConfirmedMutationBodySchema,
   adminV2ConfirmedVersionedMutationBodySchema,
-  adminV2ExpectedDeletedAtNullBodySchema,
   type AdminV2StepUpConfirmedVersionedMutationBody,
   type AdminV2StepUpVersionedMutationBody,
+  type AdminV2VersionedMutationBody,
   adminV2StepUpConfirmedVersionedMutationBodySchema,
   adminV2StepUpVersionedMutationBodySchema,
   adminV2VersionedMutationBodySchema,
@@ -15,7 +15,7 @@ import { CONSUMER_APP_SCOPES, type ConsumerAppScope } from '../http';
 const ADMIN_V2_PASSWORD_RE = /(?!.* )(?=(.*[A-Z]){2,})(?=.*?[a-z])(?=.*[1-9]{1,})(?=.*?[#?!@$%^&*-]).{8,}$/;
 
 const adminV2PasswordSchema = z.string().regex(ADMIN_V2_PASSWORD_RE, {
-  message: `Use at least 8 characters, 2 uppercase letters, 1 lowercase letter, 1 number, and 1 special character, with no spaces.`,
+  message: `Use at least 8 characters, 2 uppercase letters, 1 lowercase letter, 1 number, and 1 special character, with no spaces.`, // eslint-disable-line
 });
 
 const adminV2UuidSchema = z.uuid();
@@ -113,6 +113,12 @@ export type AdminV2ApproveRateBody = AdminV2StepUpConfirmedVersionedMutationBody
   reason: string;
 };
 
+export type AdminV2RunExchangeRuleBody = AdminV2StepUpVersionedMutationBody;
+export type AdminV2PauseExchangeRuleBody = AdminV2VersionedMutationBody;
+export type AdminV2ResumeExchangeRuleBody = AdminV2VersionedMutationBody;
+export type AdminV2ForceExecuteScheduledExchangeBody = AdminV2StepUpConfirmedVersionedMutationBody;
+export type AdminV2CancelScheduledExchangeBody = AdminV2StepUpConfirmedVersionedMutationBody;
+
 export type AdminV2DocumentTagCreateBody = {
   name: string;
 };
@@ -166,6 +172,9 @@ export type AdminV2PermissionOverride = {
 export type AdminV2ChangeAdminPermissionsBody = AdminV2StepUpVersionedMutationBody & {
   capabilityOverrides: AdminV2PermissionOverride[];
 };
+
+export type AdminV2RestoreAdminBody = AdminV2StepUpVersionedMutationBody;
+export type AdminV2ResetAdminPasswordBody = AdminV2StepUpVersionedMutationBody;
 
 export type AdminV2AdminPasswordPatchBody = {
   password: string;
@@ -384,7 +393,7 @@ export const adminV2DocumentRetagBodySchema = adminV2VersionedMutationBodySchema
   })
   .strict();
 
-export const adminV2DocumentBulkTagResourceSchema = adminV2VersionedMutationBodySchema
+const adminV2DocumentBulkTagResourceSchema = adminV2VersionedMutationBodySchema
   .extend({
     resourceId: z.string().trim().min(1),
   })
@@ -400,5 +409,7 @@ export const adminV2DocumentBulkTagBodySchema = z
 export const adminV2RunExchangeRuleBodySchema = adminV2StepUpVersionedMutationBodySchema;
 export const adminV2PauseExchangeRuleBodySchema = adminV2VersionedMutationBodySchema;
 export const adminV2ResumeExchangeRuleBodySchema = adminV2VersionedMutationBodySchema;
+export const adminV2ForceExecuteScheduledExchangeBodySchema = adminV2StepUpConfirmedVersionedMutationBodySchema;
+export const adminV2CancelScheduledExchangeBodySchema = adminV2StepUpConfirmedVersionedMutationBodySchema;
 export const adminV2RestoreAdminBodySchema = adminV2StepUpVersionedMutationBodySchema;
 export const adminV2ResetAdminPasswordBodySchema = adminV2StepUpVersionedMutationBodySchema;

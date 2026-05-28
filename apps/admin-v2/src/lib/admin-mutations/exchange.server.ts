@@ -2,9 +2,11 @@
 
 import {
   adminV2ApproveRateBodySchema,
-  adminV2StepUpConfirmedVersionedMutationBodySchema,
-  adminV2StepUpVersionedMutationBodySchema,
-  adminV2VersionedMutationBodySchema,
+  adminV2CancelScheduledExchangeBodySchema,
+  adminV2ForceExecuteScheduledExchangeBodySchema,
+  adminV2PauseExchangeRuleBodySchema,
+  adminV2ResumeExchangeRuleBodySchema,
+  adminV2RunExchangeRuleBodySchema,
 } from '@remoola/api-types';
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
@@ -37,7 +39,7 @@ export async function approveExchangeRateAction(rateId: string, formData: FormDa
 export async function pauseExchangeRuleAction(ruleId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
-  const body = adminV2VersionedMutationBodySchema.parse({ version });
+  const body = adminV2PauseExchangeRuleBodySchema.parse({ version });
   await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/pause`, body, `Failed to pause exchange rule`);
   revalidateExchangeRulePaths(ruleId, consumerId);
 }
@@ -45,7 +47,7 @@ export async function pauseExchangeRuleAction(ruleId: string, formData: FormData
 export async function resumeExchangeRuleAction(ruleId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
-  const body = adminV2VersionedMutationBodySchema.parse({ version });
+  const body = adminV2ResumeExchangeRuleBodySchema.parse({ version });
   await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/resume`, body, `Failed to resume exchange rule`);
   revalidateExchangeRulePaths(ruleId, consumerId);
 }
@@ -54,7 +56,7 @@ export async function runExchangeRuleNowAction(ruleId: string, formData: FormDat
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
   const passwordConfirmation = parsePasswordConfirmation(formData);
-  const body = adminV2StepUpVersionedMutationBodySchema.parse({ version, passwordConfirmation });
+  const body = adminV2RunExchangeRuleBodySchema.parse({ version, passwordConfirmation });
   await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/run-now`, body, `Failed to run exchange rule`);
   revalidateExchangeRulePaths(ruleId, consumerId);
 }
@@ -64,7 +66,7 @@ export async function forceExecuteScheduledExchangeAction(conversionId: string, 
   const consumerId = parseOptionalConsumerId(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const passwordConfirmation = parsePasswordConfirmation(formData);
-  const body = adminV2StepUpConfirmedVersionedMutationBodySchema.parse({ version, confirmed, passwordConfirmation });
+  const body = adminV2ForceExecuteScheduledExchangeBodySchema.parse({ version, confirmed, passwordConfirmation });
   await postAdminMutation(
     `/admin-v2/exchange/scheduled/${conversionId}/force-execute`,
     body,
@@ -78,7 +80,7 @@ export async function cancelScheduledExchangeAction(conversionId: string, formDa
   const consumerId = parseOptionalConsumerId(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
   const passwordConfirmation = parsePasswordConfirmation(formData);
-  const body = adminV2StepUpConfirmedVersionedMutationBodySchema.parse({ version, confirmed, passwordConfirmation });
+  const body = adminV2CancelScheduledExchangeBodySchema.parse({ version, confirmed, passwordConfirmation });
   await postAdminMutation(
     `/admin-v2/exchange/scheduled/${conversionId}/cancel`,
     body,

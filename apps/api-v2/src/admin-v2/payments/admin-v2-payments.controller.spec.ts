@@ -101,7 +101,9 @@ describe(`AdminV2PaymentsController integration`, () => {
   let close: (() => Promise<void>) | undefined;
 
   const admin = { id: `00000000-0000-4000-8000-000000000101`, email: `admin@example.com`, type: `ADMIN` };
-  const listPaymentRequests = jest.fn<(params?: unknown) => Promise<{ items: unknown[] }>>(async () => ({ items: [] }));
+  const listPaymentRequests = jest.fn<
+    (params?: unknown) => Promise<{ items: unknown[]; pageInfo: { nextCursor: string | null } }>
+  >(async () => ({ items: [], pageInfo: { nextCursor: null } }));
   const assertCapability = jest.fn<(admin: unknown, capability: string) => Promise<void>>(async () => undefined);
 
   beforeAll(async () => {
@@ -126,7 +128,7 @@ describe(`AdminV2PaymentsController integration`, () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    listPaymentRequests.mockResolvedValue({ items: [] });
+    listPaymentRequests.mockResolvedValue({ items: [], pageInfo: { nextCursor: null } });
   });
 
   afterAll(async () => {

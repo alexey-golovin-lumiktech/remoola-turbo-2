@@ -12,7 +12,9 @@ describe(`AdminV2LedgerController integration`, () => {
   let close: (() => Promise<void>) | undefined;
 
   const admin = { id: `00000000-0000-4000-8000-000000000103`, email: `admin@example.com`, type: `ADMIN` };
-  const listLedgerEntries = jest.fn<(params?: unknown) => Promise<{ items: unknown[] }>>(async () => ({ items: [] }));
+  const listLedgerEntries = jest.fn<
+    (params?: unknown) => Promise<{ items: unknown[]; pageInfo: { nextCursor: string | null } }>
+  >(async () => ({ items: [], pageInfo: { nextCursor: null } }));
   const listDisputes = jest.fn<(params?: unknown) => Promise<{ items: unknown[] }>>(async () => ({ items: [] }));
   const getLedgerEntryCase = jest.fn<(id: string) => Promise<{ id: string }>>(async (id) => ({ id }));
   const assertCapability = jest.fn<(admin: unknown, capability: string) => Promise<void>>(async () => undefined);
@@ -34,7 +36,7 @@ describe(`AdminV2LedgerController integration`, () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    listLedgerEntries.mockResolvedValue({ items: [] });
+    listLedgerEntries.mockResolvedValue({ items: [], pageInfo: { nextCursor: null } });
     listDisputes.mockResolvedValue({ items: [] });
     getLedgerEntryCase.mockImplementation(async (id) => ({ id }));
   });

@@ -3,6 +3,15 @@ import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
 import {
+  adminV2DocumentCaseResponseSchema,
+  adminV2DocumentsListResponseSchema,
+  adminV2DocumentTagsResponseSchema,
+  type AdminV2DocumentCaseResponse,
+  type AdminV2DocumentsListResponse,
+  type AdminV2DocumentTagsResponse,
+} from '@remoola/api-types';
+
+import {
   AdminV2ReadThrottle,
   ApiUuidParam,
   Identity,
@@ -14,6 +23,7 @@ import {
 } from '../../common';
 import { resolveRequestBaseUrl } from '../../shared/request-base-url';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { toAdminV2WireContract } from '../admin-v2-wire-contract';
 import { AdminDocumentTagService } from './admin-document-tag.service';
 import { AdminDocumentTaggerService } from './admin-document-tagger.service';
 import { AdminDocumentService } from './admin-document.service';
@@ -44,18 +54,21 @@ export class AdminV2DocumentsController {
     @Identity() admin: IIdentityContext,
     @Query() query: AdminDocumentsListWithPagingQuery,
     @Req() req: express.Request,
-  ) {
+  ): Promise<AdminV2DocumentsListResponse> {
     await this.accessService.assertCapability(admin, `documents.read`);
-    return this.service.listDocuments({
-      ...query,
-      backendBaseUrl: resolveRequestBaseUrl(req),
-    });
+    return toAdminV2WireContract(
+      adminV2DocumentsListResponseSchema,
+      await this.service.listDocuments({
+        ...query,
+        backendBaseUrl: resolveRequestBaseUrl(req),
+      }),
+    );
   }
 
   @Get(`tags`)
-  async listTags(@Identity() admin: IIdentityContext) {
+  async listTags(@Identity() admin: IIdentityContext): Promise<AdminV2DocumentTagsResponse> {
     await this.accessService.assertCapability(admin, `documents.read`);
-    return this.tagService.listTags();
+    return toAdminV2WireContract(adminV2DocumentTagsResponseSchema, await this.tagService.listTags());
   }
 
   @Get(`:id/download`)
@@ -83,9 +96,16 @@ export class AdminV2DocumentsController {
 
   @Get(`:id`)
   @ApiUuidParam(`id`, `Document resource id`)
-  async getDocumentCase(@Identity() admin: IIdentityContext, @UuidParam() id: string, @Req() req: express.Request) {
+  async getDocumentCase(
+    @Identity() admin: IIdentityContext,
+    @UuidParam() id: string,
+    @Req() req: express.Request,
+  ): Promise<AdminV2DocumentCaseResponse> {
     await this.accessService.assertCapability(admin, `documents.read`);
-    return this.service.getDocumentCase(id, resolveRequestBaseUrl(req));
+    return toAdminV2WireContract(
+      adminV2DocumentCaseResponseSchema,
+      await this.service.getDocumentCase(id, resolveRequestBaseUrl(req)),
+    );
   }
 
   @Post(`tags`)

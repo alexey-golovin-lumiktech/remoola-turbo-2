@@ -19,6 +19,8 @@ import {
   type AdminV2InviteAdminBody,
   type AdminV2LegacyAdminStatusBody,
   type AdminV2PermissionOverride,
+  type AdminV2ResetAdminPasswordBody,
+  type AdminV2RestoreAdminBody,
 } from '@remoola/api-types';
 
 import { PagingQuery } from '../../common';
@@ -40,7 +42,11 @@ export class InviteAdminBody implements AdminV2InviteAdminBody {
   passwordConfirmation!: string;
 }
 
-export class VersionedAdminMutationBody extends StepUpVersionedMutationBody {}
+class VersionedAdminMutationBody extends StepUpVersionedMutationBody {}
+
+export class RestoreAdminBody extends VersionedAdminMutationBody implements AdminV2RestoreAdminBody {}
+
+export class ResetAdminPasswordBody extends VersionedAdminMutationBody implements AdminV2ResetAdminPasswordBody {}
 
 export class DeactivateAdminBody extends VersionedAdminMutationBody implements AdminV2DeactivateAdminBody {
   @Expose()

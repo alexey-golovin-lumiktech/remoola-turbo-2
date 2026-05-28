@@ -2,8 +2,8 @@
 
 import {
   adminV2DisablePaymentMethodBodySchema,
+  adminV2DuplicateEscalatePaymentMethodBodySchema,
   adminV2RemoveDefaultPaymentMethodBodySchema,
-  adminV2VersionedMutationBodySchema,
 } from '@remoola/api-types';
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
@@ -40,7 +40,7 @@ export async function removeDefaultPaymentMethodAction(paymentMethodId: string, 
 export async function escalateDuplicatePaymentMethodAction(paymentMethodId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const consumerId = parseOptionalConsumerId(formData);
-  const body = adminV2VersionedMutationBodySchema.parse({ version });
+  const body = adminV2DuplicateEscalatePaymentMethodBodySchema.parse({ version });
   await postAdminMutation(
     `/admin-v2/payment-methods/${paymentMethodId}/duplicate-escalate`,
     body,

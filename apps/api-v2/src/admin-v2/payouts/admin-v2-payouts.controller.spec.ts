@@ -12,7 +12,45 @@ describe(`AdminV2PayoutsController integration`, () => {
   let close: (() => Promise<void>) | undefined;
 
   const admin = { id: `00000000-0000-4000-8000-000000000102`, email: `admin@example.com`, type: `ADMIN` };
-  const listPayouts = jest.fn<(params?: unknown) => Promise<{ items: unknown[] }>>(async () => ({ items: [] }));
+  const listPayouts = jest.fn<
+    (params?: unknown) => Promise<{
+      generatedAt: string;
+      posture: { kind: string; wording: string };
+      stuckPolicy: {
+        thresholdHours: number;
+        breachCondition: string;
+        escalationTarget: string;
+        expectedOperatorReaction: string;
+        automationStatus: string;
+      };
+      highValuePolicy: {
+        availability: string;
+        source: string;
+        wording: string;
+        configuredThresholds: Array<{ currencyCode: string; amount: string }>;
+      };
+      items: unknown[];
+      pageInfo: { nextCursor: string | null };
+    }>
+  >(async () => ({
+    generatedAt: `2026-01-01T00:00:00.000Z`,
+    posture: { kind: `nominal`, wording: `ok` },
+    stuckPolicy: {
+      thresholdHours: 24,
+      breachCondition: `older-than-threshold`,
+      escalationTarget: `ops`,
+      expectedOperatorReaction: `review`,
+      automationStatus: `manual`,
+    },
+    highValuePolicy: {
+      availability: `configured`,
+      source: `settings`,
+      wording: `Configured`,
+      configuredThresholds: [],
+    },
+    items: [],
+    pageInfo: { nextCursor: null },
+  }));
   const getPayoutCase = jest.fn<(id: string) => Promise<{ id: string }>>(async () => ({
     id: `00000000-0000-4000-8000-000000000301`,
   }));
@@ -38,7 +76,25 @@ describe(`AdminV2PayoutsController integration`, () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    listPayouts.mockResolvedValue({ items: [] });
+    listPayouts.mockResolvedValue({
+      generatedAt: `2026-01-01T00:00:00.000Z`,
+      posture: { kind: `nominal`, wording: `ok` },
+      stuckPolicy: {
+        thresholdHours: 24,
+        breachCondition: `older-than-threshold`,
+        escalationTarget: `ops`,
+        expectedOperatorReaction: `review`,
+        automationStatus: `manual`,
+      },
+      highValuePolicy: {
+        availability: `configured`,
+        source: `settings`,
+        wording: `Configured`,
+        configuredThresholds: [],
+      },
+      items: [],
+      pageInfo: { nextCursor: null },
+    });
     getPayoutCase.mockResolvedValue({ id: `00000000-0000-4000-8000-000000000301` });
   });
 

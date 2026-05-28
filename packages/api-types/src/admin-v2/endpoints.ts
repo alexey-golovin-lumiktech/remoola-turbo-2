@@ -341,12 +341,12 @@ export const ADMIN_V2_ENDPOINTS = {
   exchangeScheduledForceExecute: {
     method: `POST`,
     path: `/admin-v2/exchange/scheduled/:id/force-execute`,
-    body: `AdminV2ConfirmedVersionedMutationBody`,
+    body: `AdminV2ForceExecuteScheduledExchangeBody`,
   },
   exchangeScheduledCancel: {
     method: `POST`,
     path: `/admin-v2/exchange/scheduled/:id/cancel`,
-    body: `AdminV2ConfirmedVersionedMutationBody`,
+    body: `AdminV2CancelScheduledExchangeBody`,
   },
   auditAuth: {
     method: `GET`,

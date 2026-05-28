@@ -1,7 +1,14 @@
 import { Expose, Transform } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
-import { type AdminV2ApproveRateBody } from '@remoola/api-types';
+import {
+  type AdminV2ApproveRateBody,
+  type AdminV2CancelScheduledExchangeBody,
+  type AdminV2ForceExecuteScheduledExchangeBody,
+  type AdminV2PauseExchangeRuleBody,
+  type AdminV2ResumeExchangeRuleBody,
+  type AdminV2RunExchangeRuleBody,
+} from '@remoola/api-types';
 
 import { OptionalStringQuery, PagingQuery, SearchWithPagingQuery } from '../../common';
 import {
@@ -16,11 +23,23 @@ function optionalLooseBoolean(value: unknown): boolean | undefined {
   return undefined;
 }
 
-export class VersionBody extends VersionedMutationBody {}
+class VersionBody extends VersionedMutationBody {}
 
-export class StepUpVersionBody extends StepUpVersionedMutationBody {}
+class StepUpVersionBody extends StepUpVersionedMutationBody {}
 
-export class ConfirmedVersionBody extends StepUpConfirmedVersionedMutationBody {}
+class ConfirmedVersionBody extends StepUpConfirmedVersionedMutationBody {}
+
+export class PauseExchangeRuleBody extends VersionBody implements AdminV2PauseExchangeRuleBody {}
+
+export class ResumeExchangeRuleBody extends VersionBody implements AdminV2ResumeExchangeRuleBody {}
+
+export class RunExchangeRuleBody extends StepUpVersionBody implements AdminV2RunExchangeRuleBody {}
+
+export class ForceExecuteScheduledExchangeBody
+  extends ConfirmedVersionBody
+  implements AdminV2ForceExecuteScheduledExchangeBody {}
+
+export class CancelScheduledExchangeBody extends ConfirmedVersionBody implements AdminV2CancelScheduledExchangeBody {}
 
 export class ApproveRateBody extends ConfirmedVersionBody implements AdminV2ApproveRateBody {
   @Expose()

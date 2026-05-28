@@ -5,8 +5,9 @@ import {
   adminV2ChangeAdminRoleBodySchema,
   adminV2DeactivateAdminBodySchema,
   adminV2InviteAdminBodySchema,
+  adminV2ResetAdminPasswordBodySchema,
   adminV2RevokeAdminSessionBodySchema,
-  adminV2StepUpVersionedMutationBodySchema,
+  adminV2RestoreAdminBodySchema,
 } from '@remoola/api-types';
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
@@ -41,7 +42,7 @@ export async function deactivateAdminAction(adminId: string, formData: FormData)
 export async function restoreAdminAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const passwordConfirmation = parsePasswordConfirmation(formData);
-  const body = adminV2StepUpVersionedMutationBodySchema.parse({ version, passwordConfirmation });
+  const body = adminV2RestoreAdminBodySchema.parse({ version, passwordConfirmation });
   await postAdminMutation(`/admin-v2/admins/${adminId}/restore`, body, `Failed to restore admin`);
   revalidateAdminPaths(adminId);
 }
@@ -71,7 +72,7 @@ export async function changeAdminPermissionsAction(adminId: string, formData: Fo
 export async function resetAdminPasswordAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const passwordConfirmation = parsePasswordConfirmation(formData);
-  const body = adminV2StepUpVersionedMutationBodySchema.parse({ version, passwordConfirmation });
+  const body = adminV2ResetAdminPasswordBodySchema.parse({ version, passwordConfirmation });
   await postAdminMutation(`/admin-v2/admins/${adminId}/password-reset`, body, `Failed to send admin password reset`);
   revalidateAdminPaths(adminId);
 }

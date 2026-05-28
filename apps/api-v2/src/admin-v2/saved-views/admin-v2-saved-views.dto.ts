@@ -7,7 +7,7 @@ import {
   ADMIN_V2_MAX_SAVED_VIEW_NAME_LENGTH,
   ADMIN_V2_MAX_SAVED_VIEW_PAYLOAD_BYTES,
   ADMIN_V2_MIN_SAVED_VIEW_NAME_LENGTH,
-  AdminV2OperationalAlertThresholdQueryPayload,
+  type AdminV2OperationalAlertThresholdQueryPayload,
   getAdminV2JsonPayloadBytes,
   isAdminV2SavedViewWorkspace,
   type AdminV2SavedViewCreateBody,

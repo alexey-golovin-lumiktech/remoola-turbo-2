@@ -2,6 +2,8 @@ import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post,
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
+import { type AdminV2OperationalAlertsListResponse } from '@remoola/api-types';
+
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import {
@@ -22,7 +24,10 @@ export class AdminV2OperationalAlertsController {
   ) {}
 
   @Get()
-  async list(@Identity() admin: IIdentityContext, @Query(`workspace`) workspace?: string) {
+  async list(
+    @Identity() admin: IIdentityContext,
+    @Query(`workspace`) workspace?: string,
+  ): Promise<AdminV2OperationalAlertsListResponse> {
     await this.accessService.assertCapability(admin, `alerts.manage`);
     if (!workspace || typeof workspace !== `string`) {
       throw new BadRequestException(`workspace query parameter is required`);

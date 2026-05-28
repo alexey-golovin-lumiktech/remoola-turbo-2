@@ -1,8 +1,18 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+import {
+  adminV2LedgerDisputesResponseSchema,
+  adminV2LedgerEntriesListResponseSchema,
+  adminV2LedgerEntryCaseResponseSchema,
+  type AdminV2LedgerDisputesResponse,
+  type AdminV2LedgerEntriesListResponse,
+  type AdminV2LedgerEntryCaseResponse,
+} from '@remoola/api-types';
+
 import { AdminV2ReadThrottle, Identity, type IIdentityContext, PlainObjectResponseContract } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { toAdminV2WireContract } from '../admin-v2-wire-contract';
 import { LedgerDisputesQuery, LedgerEntriesQuery } from './admin-v2-ledger.dto';
 import { AdminV2LedgerService } from './admin-v2-ledger.service';
 
@@ -30,9 +40,12 @@ export class AdminV2LedgerController {
   @ApiQuery({ name: `dateFrom`, required: false })
   @ApiQuery({ name: `dateTo`, required: false })
   @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
-  async listLedgerEntries(@Identity() admin: IIdentityContext, @Query() query: LedgerEntriesQuery) {
+  async listLedgerEntries(
+    @Identity() admin: IIdentityContext,
+    @Query() query: LedgerEntriesQuery,
+  ): Promise<AdminV2LedgerEntriesListResponse> {
     await this.accessService.assertCapability(admin, `ledger.read`);
-    return this.service.listLedgerEntries(query);
+    return toAdminV2WireContract(adminV2LedgerEntriesListResponseSchema, await this.service.listLedgerEntries(query));
   }
 
   @Get(`disputes`)
@@ -44,16 +57,22 @@ export class AdminV2LedgerController {
   @ApiQuery({ name: `dateFrom`, required: false })
   @ApiQuery({ name: `dateTo`, required: false })
   @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
-  async listDisputes(@Identity() admin: IIdentityContext, @Query() query: LedgerDisputesQuery) {
+  async listDisputes(
+    @Identity() admin: IIdentityContext,
+    @Query() query: LedgerDisputesQuery,
+  ): Promise<AdminV2LedgerDisputesResponse> {
     await this.accessService.assertCapability(admin, `ledger.read`);
-    return this.service.listDisputes(query);
+    return toAdminV2WireContract(adminV2LedgerDisputesResponseSchema, await this.service.listDisputes(query));
   }
 
   @Get(`:id`)
   @ApiParam({ name: `id`, format: `uuid`, description: `Ledger entry id` })
   @ApiBadRequestResponse({ description: `Invalid ledger entry id.` })
-  async getLedgerEntryCase(@Identity() admin: IIdentityContext, @Param(`id`, ParseUUIDPipe) id: string) {
+  async getLedgerEntryCase(
+    @Identity() admin: IIdentityContext,
+    @Param(`id`, ParseUUIDPipe) id: string,
+  ): Promise<AdminV2LedgerEntryCaseResponse> {
     await this.accessService.assertCapability(admin, `ledger.read`);
-    return this.service.getLedgerEntryCase(id);
+    return toAdminV2WireContract(adminV2LedgerEntryCaseResponseSchema, await this.service.getLedgerEntryCase(id));
   }
 }

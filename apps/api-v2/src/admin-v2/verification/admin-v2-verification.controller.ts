@@ -2,6 +2,13 @@ import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestj
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
+  adminV2VerificationCaseResponseSchema,
+  adminV2VerificationQueueResponseSchema,
+  type AdminV2VerificationCaseResponse,
+  type AdminV2VerificationQueueResponse,
+} from '@remoola/api-types';
+
+import {
   AdminV2ReadThrottle,
   Identity,
   type IIdentityContext,
@@ -10,6 +17,7 @@ import {
   type RequestMeta as RequestMetaPayload,
 } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { toAdminV2WireContract } from '../admin-v2-wire-contract';
 import { VerificationDecisionBody, VerificationQueueWithPagingQuery } from './admin-v2-verification.dto';
 import { AdminV2VerificationService } from './admin-v2-verification.service';
 
@@ -36,35 +44,47 @@ export class AdminV2VerificationController {
   @ApiQuery({ name: `missingProfileData`, required: false, type: Boolean })
   @ApiQuery({ name: `missingDocuments`, required: false, type: Boolean })
   @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
-  async getQueue(@Identity() admin: IIdentityContext, @Query() query: VerificationQueueWithPagingQuery) {
+  async getQueue(
+    @Identity() admin: IIdentityContext,
+    @Query() query: VerificationQueueWithPagingQuery,
+  ): Promise<AdminV2VerificationQueueResponse> {
     await this.accessService.assertCapability(admin, `verification.read`);
-    return this.service.getQueue({
-      page: query.page,
-      pageSize: query.pageSize,
-      status: query.status,
-      stripeIdentityStatus: query.stripeIdentityStatus,
-      country: query.country,
-      contractorKind: query.contractorKind,
-      missingProfileData: query.missingProfileData === true,
-      missingDocuments: query.missingDocuments === true,
-    });
+    return toAdminV2WireContract(
+      adminV2VerificationQueueResponseSchema,
+      await this.service.getQueue({
+        page: query.page,
+        pageSize: query.pageSize,
+        status: query.status,
+        stripeIdentityStatus: query.stripeIdentityStatus,
+        country: query.country,
+        contractorKind: query.contractorKind,
+        missingProfileData: query.missingProfileData === true,
+        missingDocuments: query.missingDocuments === true,
+      }),
+    );
   }
 
   @Get(`:consumerId`)
   @ApiParam({ name: `consumerId`, format: `uuid`, description: `Consumer id` })
   @ApiBadRequestResponse({ description: `Invalid consumer id.` })
-  async getCase(@Identity() admin: IIdentityContext, @Param(`consumerId`, ParseUUIDPipe) consumerId: string) {
+  async getCase(
+    @Identity() admin: IIdentityContext,
+    @Param(`consumerId`, ParseUUIDPipe) consumerId: string,
+  ): Promise<AdminV2VerificationCaseResponse> {
     const profile = await this.accessService.assertCapability(admin, `verification.read`);
     const canManageAssignments = profile.capabilities.includes(`assignments.manage`);
-    return this.service.getCase(consumerId, {
-      canForceLogout: profile.capabilities.includes(`consumers.force_logout`),
-      canDecide: profile.capabilities.includes(`verification.decide`),
-      allowedActions: profile.capabilities.filter(
-        (capability) => capability === `verification.decide` || capability === `consumers.force_logout`,
-      ),
-      canManageAssignments,
-      canReassignAssignments: canManageAssignments && profile.role === `SUPER_ADMIN`,
-    });
+    return toAdminV2WireContract(
+      adminV2VerificationCaseResponseSchema,
+      await this.service.getCase(consumerId, {
+        canForceLogout: profile.capabilities.includes(`consumers.force_logout`),
+        canDecide: profile.capabilities.includes(`verification.decide`),
+        allowedActions: profile.capabilities.filter(
+          (capability) => capability === `verification.decide` || capability === `consumers.force_logout`,
+        ),
+        canManageAssignments,
+        canReassignAssignments: canManageAssignments && profile.role === `SUPER_ADMIN`,
+      }),
+    );
   }
 
   @Post(`:consumerId/approve`)

@@ -24,6 +24,7 @@ import {
   adminV2AssignmentReleaseBodySchema,
   adminV2ConsumerCaseResponseSchema,
   adminV2ConsumersListResponseSchema,
+  adminV2CancelScheduledExchangeBodySchema,
   adminV2CreateConsumerNoteBodySchema,
   adminV2DeactivateAdminBodySchema,
   adminV2DocumentBulkTagBodySchema,
@@ -31,19 +32,26 @@ import {
   adminV2DocumentTagDeleteBodySchema,
   adminV2DocumentTagUpdateBodySchema,
   adminV2DocumentRetagBodySchema,
+  adminV2DuplicateEscalatePaymentMethodBodySchema,
+  adminV2ForceExecuteScheduledExchangeBodySchema,
   adminV2InviteAdminBodySchema,
   adminV2ListAdminSessionsResponseSchema,
   adminV2LegacyAdminStatusBodySchema,
   adminV2LoginBodySchema,
   adminV2OperationalAlertThresholdSchema,
   adminV2OverviewSummaryResponseSchema,
+  adminV2PauseExchangeRuleBodySchema,
   adminV2PaymentReversalBodySchema,
   adminV2QuickstartsListResponseSchema,
+  adminV2ResetAdminPasswordBodySchema,
   adminV2RequestPasswordResetBodySchema,
   adminV2RequestPasswordResetResponseSchema,
+  adminV2RestoreAdminBodySchema,
   adminV2ResetPasswordWithTokenResponseSchema,
+  adminV2ResumeExchangeRuleBodySchema,
   adminV2RevokeAdminSessionBodySchema,
   adminV2RevokeAdminSessionResponseSchema,
+  adminV2RunExchangeRuleBodySchema,
   adminV2SavedViewCreateBodySchema,
   adminV2TokenPasswordBodySchema,
   adminV2VerificationQueuePayloadSchema,
@@ -79,6 +87,16 @@ describe(`admin-v2 shared contracts`, () => {
       method: `POST`,
       path: `/admin-v2/operational-alerts`,
       body: `AdminV2OperationalAlertCreateBody`,
+    });
+    expect(ADMIN_V2_ENDPOINTS.exchangeScheduledForceExecute).toMatchObject({
+      method: `POST`,
+      path: `/admin-v2/exchange/scheduled/:id/force-execute`,
+      body: `AdminV2ForceExecuteScheduledExchangeBody`,
+    });
+    expect(ADMIN_V2_ENDPOINTS.exchangeScheduledCancel).toMatchObject({
+      method: `POST`,
+      path: `/admin-v2/exchange/scheduled/:id/cancel`,
+      body: `AdminV2CancelScheduledExchangeBody`,
     });
   });
 
@@ -301,6 +319,59 @@ describe(`admin-v2 shared contracts`, () => {
         reason: `Fresh provider sample`,
       }).success,
     ).toBe(false);
+    expect(
+      adminV2PauseExchangeRuleBodySchema.safeParse({
+        version: 1,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2ResumeExchangeRuleBodySchema.safeParse({
+        version: 1,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2RunExchangeRuleBodySchema.safeParse({
+        version: 1,
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2ForceExecuteScheduledExchangeBodySchema.safeParse({
+        version: 1,
+        confirmed: true,
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2CancelScheduledExchangeBodySchema.safeParse({
+        version: 1,
+        confirmed: true,
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2ForceExecuteScheduledExchangeBodySchema.safeParse({
+        version: 1,
+        confirmed: true,
+      }).success,
+    ).toBe(false);
+    expect(
+      adminV2RestoreAdminBodySchema.safeParse({
+        version: 1,
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2ResetAdminPasswordBodySchema.safeParse({
+        version: 1,
+        passwordConfirmation: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2DuplicateEscalatePaymentMethodBodySchema.safeParse({
+        version: 1,
+      }).success,
+    ).toBe(true);
 
     expect(
       adminV2CreateConsumerNoteBodySchema.safeParse({

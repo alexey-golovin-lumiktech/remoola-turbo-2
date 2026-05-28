@@ -2,11 +2,20 @@ import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query }
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
+import {
+  adminV2AdminCaseRecordResponseSchema,
+  adminV2AdminsListResponseSchema,
+  adminV2ListAdminSessionsResponseSchema,
+  type AdminV2AdminCaseRecordResponse,
+  type AdminV2AdminsListResponse,
+  type AdminV2ListAdminSessionsResponse,
+} from '@remoola/api-types';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminStepUpService } from '../../admin-auth/admin-step-up.service';
 import { Identity, type IIdentityContext, RequestMeta, type RequestMeta as RequestMetaPayload } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { toAdminV2WireContract } from '../admin-v2-wire-contract';
 import { AdminV2AdminSessionsService } from './admin-v2-admin-sessions.service';
 import {
   AdminPasswordPatchBody,
@@ -16,7 +25,8 @@ import {
   InviteAdminBody,
   LegacyAdminStatusBody,
   ListAdminsWithPagingQuery,
-  VersionedAdminMutationBody,
+  ResetAdminPasswordBody,
+  RestoreAdminBody,
 } from './admin-v2-admins.dto';
 import { AdminV2AdminsService } from './admin-v2-admins.service';
 
@@ -33,15 +43,21 @@ export class AdminV2AdminsController {
   ) {}
 
   @Get()
-  async listAdmins(@Identity() admin: IIdentityContext, @Query() query: ListAdminsWithPagingQuery) {
+  async listAdmins(
+    @Identity() admin: IIdentityContext,
+    @Query() query: ListAdminsWithPagingQuery,
+  ): Promise<AdminV2AdminsListResponse> {
     await this.accessService.assertCapability(admin, `admins.read`);
-    return this.service.listAdmins(query);
+    return toAdminV2WireContract(adminV2AdminsListResponseSchema, await this.service.listAdmins(query));
   }
 
   @Get(`:id`)
-  async getAdminCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+  async getAdminCase(
+    @Identity() admin: IIdentityContext,
+    @Param(`id`) id: string,
+  ): Promise<AdminV2AdminCaseRecordResponse> {
     await this.accessService.assertCapability(admin, `admins.read`);
-    return this.service.getAdminCase(id);
+    return toAdminV2WireContract(adminV2AdminCaseRecordResponseSchema, await this.service.getAdminCase(id));
   }
 
   @Post(`invite`)
@@ -71,7 +87,7 @@ export class AdminV2AdminsController {
   async restoreAdmin(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: VersionedAdminMutationBody,
+    @Body() body: RestoreAdminBody,
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
@@ -107,7 +123,7 @@ export class AdminV2AdminsController {
   async resetAdminPassword(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,
-    @Body() body: VersionedAdminMutationBody,
+    @Body() body: ResetAdminPasswordBody,
     @RequestMeta() meta: RequestMetaPayload,
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
@@ -155,9 +171,15 @@ export class AdminV2AdminsController {
   }
 
   @Get(`:id/sessions`)
-  async listAdminSessions(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+  async listAdminSessions(
+    @Identity() admin: IIdentityContext,
+    @Param(`id`) id: string,
+  ): Promise<AdminV2ListAdminSessionsResponse> {
     await this.accessService.assertCapability(admin, `admins.read`);
-    return this.adminSessionsService.listSessionsForAdmin(id);
+    return toAdminV2WireContract(
+      adminV2ListAdminSessionsResponseSchema,
+      await this.adminSessionsService.listSessionsForAdmin(id),
+    );
   }
 
   @Post(`:id/sessions/:sessionId/revoke`)

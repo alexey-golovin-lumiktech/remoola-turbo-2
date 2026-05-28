@@ -2,6 +2,13 @@ import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestj
 import { ApiBadRequestResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
+  adminV2PaymentMethodCaseResponseSchema,
+  adminV2PaymentMethodsListResponseSchema,
+  type AdminV2PaymentMethodCaseResponse,
+  type AdminV2PaymentMethodsListResponse,
+} from '@remoola/api-types';
+
+import {
   AdminV2ReadThrottle,
   Identity,
   type IIdentityContext,
@@ -10,6 +17,7 @@ import {
   type RequestMeta as RequestMetaPayload,
 } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { toAdminV2WireContract } from '../admin-v2-wire-contract';
 import {
   DisablePaymentMethodBody,
   DuplicateEscalatePaymentMethodBody,
@@ -40,25 +48,34 @@ export class AdminV2PaymentMethodsController {
   @ApiQuery({ name: `fingerprint`, required: false })
   @ApiQuery({ name: `includeDeleted`, required: false, type: Boolean })
   @ApiBadRequestResponse({ description: `Invalid query parameter shape or type.` })
-  async listPaymentMethods(@Identity() admin: IIdentityContext, @Query() query: PaymentMethodsListQuery) {
+  async listPaymentMethods(
+    @Identity() admin: IIdentityContext,
+    @Query() query: PaymentMethodsListQuery,
+  ): Promise<AdminV2PaymentMethodsListResponse> {
     await this.accessService.assertCapability(admin, `payment_methods.read`);
-    return this.service.listPaymentMethods({
-      page: query.page,
-      pageSize: query.pageSize,
-      consumerId: query.consumerId,
-      type: query.type,
-      defaultSelected: query.defaultSelected,
-      fingerprint: query.fingerprint,
-      includeDeleted: query.includeDeleted === true,
-    });
+    return toAdminV2WireContract(
+      adminV2PaymentMethodsListResponseSchema,
+      await this.service.listPaymentMethods({
+        page: query.page,
+        pageSize: query.pageSize,
+        consumerId: query.consumerId,
+        type: query.type,
+        defaultSelected: query.defaultSelected,
+        fingerprint: query.fingerprint,
+        includeDeleted: query.includeDeleted === true,
+      }),
+    );
   }
 
   @Get(`:id`)
   @ApiParam({ name: `id`, format: `uuid`, description: `Payment method id` })
   @ApiBadRequestResponse({ description: `Invalid payment method id.` })
-  async getPaymentMethodCase(@Identity() admin: IIdentityContext, @Param(`id`, ParseUUIDPipe) id: string) {
+  async getPaymentMethodCase(
+    @Identity() admin: IIdentityContext,
+    @Param(`id`, ParseUUIDPipe) id: string,
+  ): Promise<AdminV2PaymentMethodCaseResponse> {
     await this.accessService.assertCapability(admin, `payment_methods.read`);
-    return this.service.getPaymentMethodCase(id);
+    return toAdminV2WireContract(adminV2PaymentMethodCaseResponseSchema, await this.service.getPaymentMethodCase(id));
   }
 
   @Post(`:id/disable`)

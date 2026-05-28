@@ -15,8 +15,10 @@ import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import {
+  adminV2ListAdminSessionsResponseSchema,
   type AdminV2AcceptAdminInvitationResponse,
   type AdminV2AuthOkResponse,
+  type AdminV2ListAdminSessionsResponse,
   type AdminV2RequestPasswordResetResponse,
   type AdminV2RevokeAdminSessionResponse,
   type AdminV2ResetPasswordWithTokenResponse,
@@ -34,6 +36,7 @@ import { AdminAuthService } from '../../admin-auth/admin-auth.service';
 import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
 import { TransformResponse } from '../../interceptors';
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
+import { toAdminV2WireContract } from '../admin-v2-wire-contract';
 import { AdminV2AdminsService } from '../admins/admin-v2-admins.service';
 
 @ApiTags(`Admin v2: Auth`)
@@ -180,13 +183,13 @@ export class AdminV2AuthController {
 
   @Get(`me/sessions`)
   @ApiCookieAuth()
-  async listMySessions(@Identity() identity: IIdentityContext) {
+  async listMySessions(@Identity() identity: IIdentityContext): Promise<AdminV2ListAdminSessionsResponse> {
     const sessions = await this.service.listSessionsForAdmin(identity.id);
-    return {
+    return toAdminV2WireContract(adminV2ListAdminSessionsResponseSchema, {
       sessions: sessions.map((s) => ({
         ...s,
         current: s.id === identity.sessionId,
       })),
-    };
+    });
   }
 }

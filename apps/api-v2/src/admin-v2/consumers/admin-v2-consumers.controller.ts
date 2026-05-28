@@ -2,6 +2,19 @@ import { Body, Controller, Get, Patch, Post, Query } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import {
+  adminV2ConsumerCaseResponseSchema,
+  adminV2ConsumerContractsResponseSchema,
+  adminV2ConsumerLedgerSummaryResponseSchema,
+  adminV2ConsumerTimelineResponseSchema,
+  adminV2ConsumersListResponseSchema,
+  type AdminV2ConsumerCaseResponse,
+  type AdminV2ConsumerContractsResponse,
+  type AdminV2ConsumerLedgerSummaryResponse,
+  type AdminV2ConsumerTimelineResponse,
+  type AdminV2ConsumersListResponse,
+} from '@remoola/api-types';
+
+import {
   AdminV2ReadThrottle,
   Identity,
   type IIdentityContext,
@@ -12,6 +25,7 @@ import {
   UuidParam,
 } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { toAdminV2WireContract } from '../admin-v2-wire-contract';
 import {
   AdminConsumerActionLogQuery,
   AdminConsumerDateRangeWithPagingQuery,
@@ -37,15 +51,21 @@ export class AdminV2ConsumersController {
   ) {}
 
   @Get()
-  async listConsumers(@Identity() admin: IIdentityContext, @Query() query: AdminConsumersListQuery) {
+  async listConsumers(
+    @Identity() admin: IIdentityContext,
+    @Query() query: AdminConsumersListQuery,
+  ): Promise<AdminV2ConsumersListResponse> {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    return this.service.listConsumers(query);
+    return toAdminV2WireContract(adminV2ConsumersListResponseSchema, await this.service.listConsumers(query));
   }
 
   @Get(`:id`)
-  async getConsumerCase(@Identity() admin: IIdentityContext, @UuidParam(`id`) id: string) {
+  async getConsumerCase(
+    @Identity() admin: IIdentityContext,
+    @UuidParam(`id`) id: string,
+  ): Promise<AdminV2ConsumerCaseResponse> {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    return this.service.getConsumerCase(id);
+    return toAdminV2WireContract(adminV2ConsumerCaseResponseSchema, await this.service.getConsumerCase(id));
   }
 
   @Get(`:id/contracts`)
@@ -53,15 +73,24 @@ export class AdminV2ConsumersController {
     @Identity() admin: IIdentityContext,
     @UuidParam(`id`) id: string,
     @Query() query: PagingQuery,
-  ) {
+  ): Promise<AdminV2ConsumerContractsResponse> {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    return this.service.getConsumerContracts(id, query);
+    return toAdminV2WireContract(
+      adminV2ConsumerContractsResponseSchema,
+      await this.service.getConsumerContracts(id, query),
+    );
   }
 
   @Get(`:id/ledger-summary`)
-  async getConsumerLedgerSummary(@Identity() admin: IIdentityContext, @UuidParam(`id`) id: string) {
+  async getConsumerLedgerSummary(
+    @Identity() admin: IIdentityContext,
+    @UuidParam(`id`) id: string,
+  ): Promise<AdminV2ConsumerLedgerSummaryResponse> {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    return this.service.getConsumerLedgerSummary(id);
+    return toAdminV2WireContract(
+      adminV2ConsumerLedgerSummaryResponseSchema,
+      await this.service.getConsumerLedgerSummary(id),
+    );
   }
 
   @Get(`:id/auth-history`)
@@ -69,9 +98,12 @@ export class AdminV2ConsumersController {
     @Identity() admin: IIdentityContext,
     @UuidParam(`id`) id: string,
     @Query() query: AdminConsumerDateRangeWithPagingQuery,
-  ) {
+  ): Promise<AdminV2ConsumerTimelineResponse> {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    return this.service.getConsumerAuthHistory(id, query);
+    return toAdminV2WireContract(
+      adminV2ConsumerTimelineResponseSchema,
+      await this.service.getConsumerAuthHistory(id, query),
+    );
   }
 
   @Get(`:id/action-log`)
@@ -79,9 +111,12 @@ export class AdminV2ConsumersController {
     @Identity() admin: IIdentityContext,
     @UuidParam(`id`) id: string,
     @Query() query: AdminConsumerActionLogQuery,
-  ) {
+  ): Promise<AdminV2ConsumerTimelineResponse> {
     await this.accessService.assertCapability(admin, `consumers.read`);
-    return this.service.getConsumerActionLog(id, query);
+    return toAdminV2WireContract(
+      adminV2ConsumerTimelineResponseSchema,
+      await this.service.getConsumerActionLog(id, query),
+    );
   }
 
   @Post(`:id/notes`)
