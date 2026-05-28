@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { buildConsumerContractPaymentsWhere } from './consumer-contract-query-helpers';
 import { ConsumerContractsInMemoryQuery } from './consumer-contracts-in-memory.query';
 import { type ConsumerContractsQuery } from './consumer-contracts.query';
@@ -5,15 +7,15 @@ import { ConsumerContractsService } from './consumer-contracts.service';
 
 function createContractsQueryMock(prisma: any): ConsumerContractsQuery {
   return {
-    getConsumerEmail: jest.fn(async (consumerId: string) => {
+    getConsumerEmail: jest.fn<(...a: any[]) => any>(async (consumerId: string) => {
       const consumer = await prisma.consumerModel?.findUnique?.({
         where: { id: consumerId },
         select: { email: true },
       });
       return consumer?.email?.trim().toLowerCase() ?? null;
     }),
-    getContractsRaw: jest.fn(),
-    findContactsForList: jest.fn((consumerId: string, term: string) =>
+    getContractsRaw: jest.fn<(...a: any[]) => any>(),
+    findContactsForList: jest.fn<(...a: any[]) => any>((consumerId: string, term: string) =>
       prisma.contactModel.findMany({
         where: {
           consumerId,
@@ -30,36 +32,37 @@ function createContractsQueryMock(prisma: any): ConsumerContractsQuery {
         orderBy: { updatedAt: `desc` },
       }),
     ),
-    findPaymentRequestsForContracts: jest.fn((consumerId: string, emails: string[], consumerEmail: string | null) =>
-      prisma.paymentRequestModel.findMany({
-        where: buildConsumerContractPaymentsWhere(consumerId, emails, consumerEmail),
-        include: {
-          payer: true,
-          requester: true,
-          ledgerEntries: {
-            where: { consumerId },
-            orderBy: { createdAt: `desc` },
-            take: 1,
-            include: {
-              outcomes: {
-                orderBy: { createdAt: `desc` },
-                take: 1,
-                select: { status: true },
+    findPaymentRequestsForContracts: jest.fn<(...a: any[]) => any>(
+      (consumerId: string, emails: string[], consumerEmail: string | null) =>
+        prisma.paymentRequestModel.findMany({
+          where: buildConsumerContractPaymentsWhere(consumerId, emails, consumerEmail),
+          include: {
+            payer: true,
+            requester: true,
+            ledgerEntries: {
+              where: { consumerId },
+              orderBy: { createdAt: `desc` },
+              take: 1,
+              include: {
+                outcomes: {
+                  orderBy: { createdAt: `desc` },
+                  take: 1,
+                  select: { status: true },
+                },
               },
             },
-          },
-          attachments: {
-            where: {
-              deletedAt: null,
-              resource: {
+            attachments: {
+              where: {
                 deletedAt: null,
+                resource: {
+                  deletedAt: null,
+                },
               },
             },
           },
-        },
-      }),
+        }),
     ),
-    findContactForDetails: jest.fn((id: string, consumerId: string) =>
+    findContactForDetails: jest.fn<(...a: any[]) => any>((id: string, consumerId: string) =>
       prisma.contactModel.findFirst({
         where: {
           id,
@@ -68,44 +71,45 @@ function createContractsQueryMock(prisma: any): ConsumerContractsQuery {
         },
       }),
     ),
-    findPaymentRequestsForDetails: jest.fn((consumerId: string, contractEmail: string, consumerEmail: string | null) =>
-      prisma.paymentRequestModel.findMany({
-        where: buildConsumerContractPaymentsWhere(consumerId, [contractEmail], consumerEmail),
-        include: {
-          ledgerEntries: {
-            where: { consumerId },
-            orderBy: { createdAt: `desc` },
-            take: 1,
-            include: {
-              outcomes: {
-                orderBy: { createdAt: `desc` },
-                take: 1,
-                select: { status: true },
+    findPaymentRequestsForDetails: jest.fn<(...a: any[]) => any>(
+      (consumerId: string, contractEmail: string, consumerEmail: string | null) =>
+        prisma.paymentRequestModel.findMany({
+          where: buildConsumerContractPaymentsWhere(consumerId, [contractEmail], consumerEmail),
+          include: {
+            ledgerEntries: {
+              where: { consumerId },
+              orderBy: { createdAt: `desc` },
+              take: 1,
+              include: {
+                outcomes: {
+                  orderBy: { createdAt: `desc` },
+                  take: 1,
+                  select: { status: true },
+                },
               },
             },
-          },
-          attachments: {
-            where: {
-              deletedAt: null,
-              resource: {
+            attachments: {
+              where: {
                 deletedAt: null,
+                resource: {
+                  deletedAt: null,
+                },
               },
-            },
-            include: {
-              resource: {
-                include: {
-                  resourceTags: {
-                    include: {
-                      tag: true,
+              include: {
+                resource: {
+                  include: {
+                    resourceTags: {
+                      include: {
+                        tag: true,
+                      },
                     },
                   },
                 },
               },
             },
           },
-        },
-        orderBy: [{ updatedAt: `desc` }, { createdAt: `desc` }],
-      }),
+          orderBy: [{ updatedAt: `desc` }, { createdAt: `desc` }],
+        }),
     ),
   } as unknown as ConsumerContractsQuery;
 }
@@ -113,7 +117,9 @@ function createContractsQueryMock(prisma: any): ConsumerContractsQuery {
 function createContractsService(prisma: any) {
   const contractsQuery = createContractsQueryMock(prisma);
   const inMemoryQuery = new ConsumerContractsInMemoryQuery(contractsQuery);
-  (contractsQuery.getContractsRaw as jest.Mock).mockImplementation((params) => inMemoryQuery.getContracts(params));
+  (contractsQuery.getContractsRaw as jest.Mock<typeof inMemoryQuery.getContracts>).mockImplementation((params) =>
+    inMemoryQuery.getContracts(params),
+  );
   return new ConsumerContractsService(contractsQuery);
 }
 
@@ -148,10 +154,10 @@ describe(`ConsumerContractsService`, () => {
     const updatedAt = new Date(`2026-03-25T10:00:00.000Z`);
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: `owner@example.com` }),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => ({ email: `owner@example.com` })),
       },
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-1`,
             consumerId: `consumer-1`,
@@ -162,7 +168,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-request-1`,
             payer: null,
@@ -252,7 +258,7 @@ describe(`ConsumerContractsService`, () => {
     const linkedUpdatedAt = new Date(`2026-03-27T11:45:00.000Z`);
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-2`,
             consumerId: `consumer-1`,
@@ -263,7 +269,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-request-2`,
             payer: { id: `linked-consumer`, email: `linked@example.com` },
@@ -312,10 +318,10 @@ describe(`ConsumerContractsService`, () => {
   it(`returns empty items when consumer has no contacts`, async () => {
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<(...a: any[]) => any>(async () => []),
       },
       paymentRequestModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 
@@ -335,7 +341,7 @@ describe(`ConsumerContractsService`, () => {
     const updatedAt = new Date(`2026-03-28T09:15:00.000Z`);
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-3`,
             consumerId: `consumer-1`,
@@ -346,7 +352,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<(...a: any[]) => any>(async () => []),
       },
     } as any;
 
@@ -375,10 +381,10 @@ describe(`ConsumerContractsService`, () => {
   it(`does not add search filters when query is blank`, async () => {
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<(...a: any[]) => any>(async () => []),
       },
       paymentRequestModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 
@@ -397,7 +403,7 @@ describe(`ConsumerContractsService`, () => {
     const completedUpdatedAt = new Date(`2026-03-29T11:15:00.000Z`);
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-no-activity`,
             consumerId: `consumer-1`,
@@ -429,7 +435,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-request-pending`,
             payer: null,
@@ -558,7 +564,7 @@ describe(`ConsumerContractsService`, () => {
     const secondUpdatedAt = new Date(`2026-03-30T09:15:00.000Z`);
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-older`,
             consumerId: `consumer-1`,
@@ -576,7 +582,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-request-older`,
             payer: null,
@@ -629,7 +635,7 @@ describe(`ConsumerContractsService`, () => {
   it(`filters by document/payment presence and sorts by payment volume`, async () => {
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-no-payments`,
             consumerId: `consumer-1`,
@@ -654,7 +660,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-request-1`,
             payer: null,
@@ -733,7 +739,7 @@ describe(`ConsumerContractsService`, () => {
   it(`counts unique relationship files instead of raw attachment rows in the contracts list`, async () => {
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-shared-docs`,
             consumerId: `consumer-1`,
@@ -744,7 +750,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-request-1`,
             payer: null,
@@ -803,7 +809,7 @@ describe(`ConsumerContractsService`, () => {
     const draftUpdatedAt = new Date(`2026-03-31T09:15:00.000Z`);
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-draft-priority`,
             consumerId: `consumer-1`,
@@ -814,7 +820,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-completed-1`,
             payer: null,
@@ -868,7 +874,7 @@ describe(`ConsumerContractsService`, () => {
   it(`sorts contracts by name case-insensitively when requested`, async () => {
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-zeta`,
             consumerId: `consumer-1`,
@@ -893,7 +899,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<(...a: any[]) => any>(async () => []),
       },
     } as any;
 
@@ -947,7 +953,7 @@ describe(`ConsumerContractsService`, () => {
     const newerUpdatedAt = new Date(`2026-04-02T09:15:00.000Z`);
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `contact-older`,
             consumerId: `consumer-1`,
@@ -965,7 +971,7 @@ describe(`ConsumerContractsService`, () => {
         ]),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-request-older`,
             payer: null,
@@ -1044,10 +1050,10 @@ describe(`ConsumerContractsService`, () => {
     const documentCreatedAt = new Date(`2026-03-30T08:15:00.000Z`);
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: `owner@example.com` }),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => ({ email: `owner@example.com` })),
       },
       contactModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>(async () => ({
           id: `contact-1`,
           consumerId: `consumer-1`,
           email: `vendor@example.com`,
@@ -1060,10 +1066,10 @@ describe(`ConsumerContractsService`, () => {
             postalCode: `NW1 6XE`,
             country: `United Kingdom`,
           },
-        }),
+        })),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-1`,
             amount: { toString: () => `100` },
@@ -1211,17 +1217,17 @@ describe(`ConsumerContractsService`, () => {
     const completedUpdatedAt = new Date(`2026-04-01T10:15:00.000Z`);
     const prisma = {
       contactModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>(async () => ({
           id: `contact-2`,
           consumerId: `consumer-1`,
           email: `priority@example.com`,
           name: `Priority Vendor`,
           updatedAt: contactUpdatedAt,
           address: null,
-        }),
+        })),
       },
       paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `payment-completed-1`,
             amount: { toString: () => `250` },
@@ -1271,20 +1277,20 @@ describe(`ConsumerContractsService`, () => {
     async () => {
       const prisma = {
         consumerModel: {
-          findUnique: jest.fn().mockResolvedValue({ email: `owner@example.com` }),
+          findUnique: jest.fn<(...a: any[]) => any>(async () => ({ email: `owner@example.com` })),
         },
         contactModel: {
-          findFirst: jest.fn().mockResolvedValue({
+          findFirst: jest.fn<(...a: any[]) => any>(async () => ({
             id: `contact-tenant-safe`,
             consumerId: `consumer-1`,
             email: `shared-vendor@example.com`,
             name: `Shared Vendor`,
             updatedAt: new Date(`2026-04-02T09:00:00.000Z`),
             address: null,
-          }),
+          })),
         },
         paymentRequestModel: {
-          findMany: jest.fn().mockResolvedValue([]),
+          findMany: jest.fn<(...a: any[]) => any>(async () => []),
         },
       } as any;
 
@@ -1355,10 +1361,10 @@ describe(`ConsumerContractsService`, () => {
   it(`ignores soft-deleted contacts when building the contracts list`, async () => {
     const prisma = {
       contactModel: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<(...a: any[]) => any>(async () => []),
       },
       paymentRequestModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 

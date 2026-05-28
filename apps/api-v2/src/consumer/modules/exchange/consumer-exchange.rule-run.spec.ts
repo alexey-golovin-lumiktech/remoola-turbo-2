@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -29,14 +30,17 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
   function createService(prismaOverrides?: Record<string, unknown>) {
     const prisma = {
       walletAutoConversionRuleModel: {
-        findFirst: jest.fn().mockResolvedValue(rule),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-        update: jest.fn().mockResolvedValue({}),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(rule),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
+        update: jest.fn<(...a: any[]) => any>().mockResolvedValue({}),
       },
       ...prismaOverrides,
     } as any;
     const balanceService = {} as any;
-    const cacheManager = { get: jest.fn().mockResolvedValue(undefined), set: jest.fn() };
+    const cacheManager = {
+      get: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      set: jest.fn<(...a: any[]) => any>(),
+    };
     const rateReader = new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(cacheManager as never, prisma));
     const rateService = new ConsumerExchangeRateService(rateReader);
     const executionRepository = new ConsumerExchangeExecutionRepository(prisma);
@@ -58,9 +62,9 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
   it(`rejects a second overlapping manual claim`, async () => {
     const { service, prisma } = createService({
       walletAutoConversionRuleModel: {
-        findFirst: jest.fn().mockResolvedValue(rule),
-        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-        update: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(rule),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 0 }),
+        update: jest.fn<(...a: any[]) => any>(),
       },
     });
 
@@ -107,9 +111,9 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
     };
     const { service, prisma } = createService({
       walletAutoConversionRuleModel: {
-        findFirst: jest.fn().mockResolvedValueOnce(rule).mockResolvedValueOnce(refreshedRule),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-        update: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValueOnce(rule).mockResolvedValueOnce(refreshedRule),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
+        update: jest.fn<(...a: any[]) => any>(),
       },
     });
     const executeSpy = jest

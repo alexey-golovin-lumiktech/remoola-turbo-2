@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals';
+
 import { applyAdminV2PermissionOverrides, getAdminV2AccessProfile } from './admin-v2-access';
 
 describe(`AdminV2Access`, () => {

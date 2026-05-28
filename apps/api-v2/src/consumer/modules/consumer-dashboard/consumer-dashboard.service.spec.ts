@@ -18,7 +18,9 @@ function mockResolvedSequence<T>(...values: T[]) {
   return mock;
 }
 
-function createDashboardQueryMock(overrides: Partial<Record<keyof ConsumerDashboardQuery, jest.Mock>> = {}) {
+function createDashboardQueryMock(
+  overrides: Partial<Record<keyof ConsumerDashboardQuery, jest.Mock<(...a: any[]) => any>>> = {},
+) {
   return {
     getConsumerEmail: mockResolved(null),
     findFinancialActivityRows: mockResolved([]),

@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { resolveRequestBaseUrl } from './request-base-url';
 
 describe(`resolveRequestBaseUrl`, () => {
@@ -9,7 +11,7 @@ describe(`resolveRequestBaseUrl`, () => {
       },
       protocol: `http`,
       secure: false,
-      get: jest.fn(),
+      get: jest.fn<(...a: any[]) => any>(),
     } as any;
 
     expect(resolveRequestBaseUrl(req)).toBe(`https://api.example.com`);
@@ -22,7 +24,7 @@ describe(`resolveRequestBaseUrl`, () => {
       },
       protocol: `http`,
       secure: false,
-      get: jest.fn().mockReturnValue(`localhost:3334`),
+      get: jest.fn<(...a: any[]) => any>().mockReturnValue(`localhost:3334`),
     } as any;
 
     expect(resolveRequestBaseUrl(req)).toBe(`http://localhost:3334`);

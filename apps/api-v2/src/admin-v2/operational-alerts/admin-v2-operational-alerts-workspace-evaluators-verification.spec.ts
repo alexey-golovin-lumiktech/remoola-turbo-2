@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { VerificationQueueAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-verification';
 
 type GetQueueCountFilters = {
@@ -12,10 +14,10 @@ type GetQueueCountFilters = {
 function buildEvaluator(
   opts: {
     countResult?: number;
-    countImpl?: jest.Mock;
+    countImpl?: jest.Mock<(...a: any[]) => any>;
   } = {},
 ) {
-  const getQueueCount = opts.countImpl ?? jest.fn(async () => opts.countResult ?? 0);
+  const getQueueCount = opts.countImpl ?? jest.fn<(...a: any[]) => any>(async () => opts.countResult ?? 0);
   const verification = { getQueueCount } as never;
   const evaluator = new VerificationQueueAlertEvaluator(verification);
   return { evaluator, getQueueCount };
@@ -178,8 +180,10 @@ describe(`VerificationQueueAlertEvaluator`, () => {
 
   describe(`integration shape`, () => {
     it(`forwards exactly the parsed filter object (no extra wrapping) to verification.getQueueCount`, async () => {
-      const getQueueCount: GetQueueCountFilters extends never ? never : jest.Mock = jest.fn().mockResolvedValue(3);
-      const { evaluator } = buildEvaluator({ countImpl: getQueueCount as jest.Mock });
+      const getQueueCount: GetQueueCountFilters extends never ? never : jest.Mock<(...a: any[]) => any> = jest
+        .fn<(...a: any[]) => any>()
+        .mockResolvedValue(3);
+      const { evaluator } = buildEvaluator({ countImpl: getQueueCount as jest.Mock<(...a: any[]) => any> });
 
       await evaluator.evaluate({ status: `FLAGGED`, country: `US` });
 

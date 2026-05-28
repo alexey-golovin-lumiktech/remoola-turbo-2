@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { type Prisma, $Enums } from '@remoola/database-2';
 
 import { BalanceCalculationRepository } from './balance-calculation.repository';
@@ -11,8 +13,10 @@ describe(`BalanceCalculationService`, () => {
   describe(`COMPLETED_AND_PENDING mode (Ledger B1 regression)`, () => {
     it(`returns non-zero balance when query returns rows (uses IN not = 'COMPLETED,PENDING')`, async () => {
       const prisma = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
-        $queryRaw: jest.fn().mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `100` }]),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        $queryRaw: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `100` }]),
       } as any;
 
       const service = buildService(prisma);
@@ -26,8 +30,10 @@ describe(`BalanceCalculationService`, () => {
 
     it(`calculateSingle with COMPLETED_AND_PENDING returns stubbed balance`, async () => {
       const prisma = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
-        $queryRaw: jest.fn().mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, balance: `50` }]),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        $queryRaw: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, balance: `50` }]),
       } as any;
 
       const service = buildService(prisma);
@@ -41,8 +47,10 @@ describe(`BalanceCalculationService`, () => {
 
     it(`excludes pending user deposit credits from available wallet balance`, async () => {
       const prisma = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
-        $queryRaw: jest.fn().mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `0` }]),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        $queryRaw: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `0` }]),
       } as any;
 
       const service = buildService(prisma);
@@ -61,8 +69,10 @@ describe(`BalanceCalculationService`, () => {
 
     it(`excludes pending card-funded requester credits even when the settlement row stays USER_PAYMENT`, async () => {
       const prisma = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
-        $queryRaw: jest.fn().mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `0` }]),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        $queryRaw: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `0` }]),
       } as any;
 
       const service = buildService(prisma);
@@ -84,8 +94,10 @@ describe(`BalanceCalculationService`, () => {
   describe(`COMPLETED mode`, () => {
     it(`calculateMultiCurrency returns balances from query`, async () => {
       const prisma = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
-        $queryRaw: jest.fn().mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `200` }]),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        $queryRaw: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `200` }]),
       } as any;
 
       const service = buildService(prisma);
@@ -97,8 +109,8 @@ describe(`BalanceCalculationService`, () => {
 
     it(`rejects invalid raw balance rows`, async () => {
       const prisma = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
-        $queryRaw: jest.fn().mockResolvedValue([{ currency_code: `DOGE`, sum_amount: `10` }]),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([{ currency_code: `DOGE`, sum_amount: `10` }]),
       } as any;
 
       const service = buildService(prisma);
@@ -109,8 +121,10 @@ describe(`BalanceCalculationService`, () => {
 
     it(`rejects invalid raw balance amounts`, async () => {
       const prisma = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
-        $queryRaw: jest.fn().mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, balance: `not-a-number` }]),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        $queryRaw: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, balance: `not-a-number` }]),
       } as any;
 
       const service = buildService(prisma);
@@ -121,8 +135,10 @@ describe(`BalanceCalculationService`, () => {
 
     it(`excludes external card payer legs from wallet balances`, async () => {
       const prisma = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
-        $queryRaw: jest.fn().mockResolvedValue([{ currency_code: $Enums.CurrencyCode.EUR, sum_amount: `0` }]),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        $queryRaw: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ currency_code: $Enums.CurrencyCode.EUR, sum_amount: `0` }]),
       } as any;
 
       const service = buildService(prisma);
@@ -143,8 +159,8 @@ describe(`BalanceCalculationService`, () => {
 
     it(`applies the same wallet eligibility rule inside transaction balance checks`, async () => {
       const tx = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
-        $queryRaw: jest.fn().mockResolvedValue([{ balance: `0` }]),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([{ balance: `0` }]),
       } as any;
 
       const service = buildService({} as any);

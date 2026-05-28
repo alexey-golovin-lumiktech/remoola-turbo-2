@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { Prisma } from '@remoola/database-2';
 
 import { AdminV2AdminAuditTrailRepository } from './admin-v2-admin-audit-trail.repository';
@@ -6,8 +8,8 @@ describe(`AdminV2AdminAuditTrailRepository`, () => {
   function makeRepository() {
     const prisma = {
       adminActionAuditLogModel: {
-        update: jest.fn(async () => null),
-        create: jest.fn(async () => null),
+        update: jest.fn<(...a: any[]) => any>(async () => null),
+        create: jest.fn<(...a: any[]) => any>(async () => null),
       },
     };
 

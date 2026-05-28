@@ -1,25 +1,25 @@
 import { z } from 'zod';
 
-import { type AdminV2AssignmentContext, type AdminV2AdminRef } from './assignments';
 import { ADMIN_V2_LEDGER_ANOMALY_CLASSES } from './ledger-anomalies';
 import {
-  ADMIN_V2_OPERATIONAL_ALERT_WORKSPACES,
+  adminV2OperationalAlertSummaryWorkspaceSchema,
+  adminV2OperationalAlertThresholdQueryPayloadSchema,
   adminV2OperationalAlertThresholdSchema,
   type AdminV2OperationalAlertThreshold,
 } from './operational-alerts';
 import { ADMIN_V2_SAVED_VIEW_WORKSPACES } from './saved-views';
-import { jsonObjectSchema, jsonValueSchema } from '../validation';
+import { jsonObjectSchema } from '../validation';
 
 const isoDateTimeSchema = z.string();
 const nullableIsoDateTimeSchema = isoDateTimeSchema.nullable();
 const stringOrNullSchema = z.string().nullable();
-export const adminV2AdminRefSchema = z.object({
+
+const adminV2AdminRefSchema = z.object({
   id: z.string(),
   name: stringOrNullSchema,
   email: stringOrNullSchema,
 });
-
-export const adminV2AssignmentSummarySchema = z.object({
+const adminV2AssignmentSummarySchema = z.object({
   id: z.string(),
   assignedTo: adminV2AdminRefSchema,
   assignedBy: adminV2AdminRefSchema.nullable(),
@@ -28,12 +28,12 @@ export const adminV2AssignmentSummarySchema = z.object({
   expiresAt: nullableIsoDateTimeSchema,
 });
 
-export const adminV2AssignmentHistoryItemSchema = adminV2AssignmentSummarySchema.extend({
+const adminV2AssignmentHistoryItemSchema = adminV2AssignmentSummarySchema.extend({
   releasedAt: nullableIsoDateTimeSchema,
   releasedBy: adminV2AdminRefSchema.nullable(),
 });
 
-export const adminV2AssignmentContextSchema = z.object({
+const adminV2AssignmentContextSchema = z.object({
   current: adminV2AssignmentSummarySchema.nullable(),
   history: z.array(adminV2AssignmentHistoryItemSchema),
 });
@@ -63,7 +63,7 @@ const adminV2CursorPageInfoSchema = z
   .object({
     nextCursor: z.string().nullable(),
   })
-  .passthrough();
+  .loose();
 
 const adminV2ConsumerPartySchema = z.object({
   id: z.string().nullable(),
@@ -129,7 +129,7 @@ const adminV2AuthAuditRowSchema = z
     userAgent: z.string().nullable().optional(),
     createdAt: isoDateTimeSchema,
   })
-  .passthrough();
+  .loose();
 
 const adminV2AdminActionAuditRowSchema = z
   .object({
@@ -143,7 +143,7 @@ const adminV2AdminActionAuditRowSchema = z
     metadata: adminV2TimelineMetadataSchema.optional(),
     createdAt: isoDateTimeSchema,
   })
-  .passthrough();
+  .loose();
 
 const adminV2ConsumerActionAuditRowSchema = z
   .object({
@@ -155,7 +155,7 @@ const adminV2ConsumerActionAuditRowSchema = z
     metadata: adminV2TimelineMetadataSchema.optional(),
     createdAt: isoDateTimeSchema,
   })
-  .passthrough();
+  .loose();
 
 const adminV2DecisionHistoryItemSchema = z
   .object({
@@ -166,7 +166,7 @@ const adminV2DecisionHistoryItemSchema = z
     metadata: adminV2TimelineMetadataSchema.optional(),
     createdAt: isoDateTimeSchema,
   })
-  .passthrough();
+  .loose();
 
 const adminV2DocumentTagItemSchema = z.object({
   id: z.string(),
@@ -187,10 +187,10 @@ const adminV2LinkedPaymentRequestSchema = z.object({
 
 const adminV2OperationalAlertSummarySchema = z.object({
   id: z.string(),
-  workspace: z.enum(ADMIN_V2_OPERATIONAL_ALERT_WORKSPACES),
+  workspace: adminV2OperationalAlertSummaryWorkspaceSchema,
   name: z.string(),
   description: z.string().nullable(),
-  queryPayload: jsonValueSchema,
+  queryPayload: adminV2OperationalAlertThresholdQueryPayloadSchema,
   thresholdPayload: adminV2OperationalAlertThresholdSchema,
   evaluationIntervalMinutes: z.number(),
   lastEvaluatedAt: nullableIsoDateTimeSchema,
@@ -206,7 +206,7 @@ const adminV2SavedViewSummarySchema = z.object({
   workspace: z.enum(ADMIN_V2_SAVED_VIEW_WORKSPACES),
   name: z.string(),
   description: z.string().nullable(),
-  queryPayload: jsonValueSchema,
+  queryPayload: adminV2OperationalAlertThresholdQueryPayloadSchema,
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
 });
@@ -332,17 +332,6 @@ export const adminV2OperationalAlertsListResponseSchema = z.object({
   alerts: z.array(adminV2OperationalAlertSummarySchema),
 });
 
-export type AdminV2AuthAuditRow = z.infer<typeof adminV2AuthAuditRowSchema>;
-export type AdminV2AdminActionAuditRow = z.infer<typeof adminV2AdminActionAuditRowSchema>;
-export type AdminV2ConsumerActionAuditRow = z.infer<typeof adminV2ConsumerActionAuditRowSchema>;
-
-export type AdminV2AuditListResponse = {
-  items: Array<AdminV2AuthAuditRow | AdminV2AdminActionAuditRow | AdminV2ConsumerActionAuditRow>;
-  total: number;
-  page: number;
-  pageSize: number;
-};
-
 export const adminV2AuditListResponseSchema = z.object({
   items: z.array(
     z.union([adminV2AuthAuditRowSchema, adminV2AdminActionAuditRowSchema, adminV2ConsumerActionAuditRowSchema]),
@@ -351,34 +340,6 @@ export const adminV2AuditListResponseSchema = z.object({
   page: z.number(),
   pageSize: z.number(),
 });
-
-export type AdminV2ConsumersListResponse = {
-  items: Array<{
-    id: string;
-    email: string;
-    accountType: string;
-    contractorKind: string | null;
-    verificationStatus: string;
-    stripeIdentityStatus: string | null;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt: string | null;
-    displayName: string | null;
-    adminFlags: Array<{ id: string; flag: string }>;
-    _count: {
-      adminNotes: number;
-      adminFlags: number;
-    };
-    summary: {
-      notesCount: number;
-      activeFlagsCount: number;
-      deleted: boolean;
-    };
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-};
 
 const adminV2ConsumerListItemSchema = z.object({
   id: z.string(),
@@ -414,105 +375,6 @@ export const adminV2ConsumersListResponseSchema = z.object({
   page: z.number(),
   pageSize: z.number(),
 });
-
-export type AdminV2ConsumerCaseResponse = {
-  id: string;
-  email: string;
-  accountType: string;
-  contractorKind: string | null;
-  verified: boolean | null;
-  legalVerified: boolean | null;
-  verificationStatus: string;
-  verificationReason: string | null;
-  verificationUpdatedAt: string | null;
-  suspendedAt: string | null;
-  suspendedBy: string | null;
-  suspensionReason: string | null;
-  stripeIdentityStatus: string | null;
-  stripeIdentityLastErrorCode: string | null;
-  stripeIdentityLastErrorReason: string | null;
-  stripeIdentityStartedAt: string | null;
-  stripeIdentityUpdatedAt: string | null;
-  stripeIdentityVerifiedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  personalDetails: z.infer<typeof jsonObjectSchema> | null;
-  organizationDetails: z.infer<typeof jsonObjectSchema> | null;
-  addressDetails: z.infer<typeof jsonObjectSchema> | null;
-  googleProfileDetails: z.infer<typeof jsonObjectSchema> | null;
-  contacts: Array<{
-    id: string;
-    email: string;
-    name: string | null;
-    updatedAt: string;
-  }>;
-  paymentMethods: Array<{
-    id: string;
-    type: string;
-    brand: string | null;
-    last4: string | null;
-    status: string;
-    defaultSelected: boolean;
-    createdAt: string;
-    updatedAt: string;
-    disabledAt: string | null;
-  }>;
-  recentPaymentRequests: Array<{
-    id: string;
-    amount: string;
-    currencyCode: string;
-    status: string;
-    paymentRail: string | null;
-    createdAt: string;
-  }>;
-  ledgerSummary: Record<string, z.infer<typeof adminV2CountSummarySchema>>;
-  consumerResources: Array<{
-    id: string;
-    createdAt: string;
-    resource: {
-      id: string;
-      originalName: string;
-      mimetype: string;
-      size: number;
-      downloadUrl: string;
-      createdAt: string;
-    };
-  }>;
-  adminNotes: Array<{
-    id: string;
-    content: string;
-    createdAt: string;
-    admin: {
-      id: string;
-      email: string;
-    };
-  }>;
-  adminFlags: Array<{
-    id: string;
-    flag: string;
-    reason: string | null;
-    version: number;
-    createdAt: string;
-    admin: {
-      id: string;
-      email: string;
-    };
-  }>;
-  _count: {
-    contacts: number;
-    paymentMethods: number;
-    asPayerPaymentRequests: number;
-    asRequesterPaymentRequests: number;
-    ledgerEntries: number;
-    consumerResources: number;
-    adminNotes: number;
-    adminFlags: number;
-  };
-  recentAuthEvents: AdminV2AuthAuditRow[];
-  recentAdminActions: AdminV2AdminActionAuditRow[];
-  recentConsumerActions: AdminV2ConsumerActionAuditRow[];
-};
 
 const adminV2ConsumerCaseResponseSchemaBase = z.object({
   id: z.string(),
@@ -621,38 +483,6 @@ const adminV2ConsumerCaseResponseSchemaBase = z.object({
 
 export const adminV2ConsumerCaseResponseSchema = adminV2ConsumerCaseResponseSchemaBase;
 
-export type AdminV2PaymentOperationsQueueResponse = {
-  generatedAt: string;
-  posture: {
-    kind: string;
-    wording: string;
-  };
-  buckets: Array<{
-    key: string;
-    label: string;
-    operatorPrompt: string;
-    items: Array<{
-      id: string;
-      amount: string;
-      currencyCode: string;
-      persistedStatus: string;
-      effectiveStatus: string;
-      staleWarning: boolean;
-      paymentRail: string | null;
-      payer: { id: string | null; email: string | null };
-      requester: { id: string | null; email: string | null };
-      dueDate: string | null;
-      createdAt: string;
-      updatedAt: string;
-      attachmentsCount: number;
-      invoiceTaggedAttachmentsCount: number;
-      followUpReason: string;
-      dataFreshnessClass: string;
-      assignedTo: AdminV2AdminRef | null;
-    }>;
-  }>;
-};
-
 const adminV2PaymentQueueItemSchema = z.object({
   id: z.string(),
   amount: z.string(),
@@ -692,62 +522,10 @@ export const adminV2PaymentOperationsQueueResponseSchema = z.object({
   ),
 });
 
-export type AdminV2PaymentsListResponse = {
-  items: Array<z.infer<typeof adminV2PaymentQueueItemSchema>>;
-  pageInfo: z.infer<typeof adminV2CursorPageInfoSchema>;
-};
-
 export const adminV2PaymentsListResponseSchema = z.object({
   items: z.array(adminV2PaymentQueueItemSchema),
   pageInfo: adminV2CursorPageInfoSchema,
 });
-
-export type AdminV2PaymentCaseResponse = {
-  id: string;
-  core: {
-    id: string;
-    amount: string;
-    currencyCode: string;
-    persistedStatus: string;
-    effectiveStatus: string;
-    paymentRail: string | null;
-    description: string | null;
-    dueDate: string | null;
-    sentDate: string | null;
-    createdAt: string;
-    deletedAt: string | null;
-  };
-  payer: { id: string | null; email: string | null };
-  requester: { id: string | null; email: string | null };
-  attachments: Array<{
-    id: string;
-    resourceId: string;
-    name: string;
-    size: number;
-    mimetype: string;
-    downloadUrl: string;
-    createdAt: string;
-    deletedAt: string | null;
-    resourceDeletedAt: string | null;
-  }>;
-  ledgerEntries: Array<{
-    id: string;
-    ledgerId: string;
-    type: string;
-    amount: string;
-    currencyCode: string;
-    effectiveStatus: string;
-    createdAt: string;
-    deletedAt: string | null;
-  }>;
-  timeline: Array<z.infer<typeof adminV2PaymentTimelineItemSchema>>;
-  auditContext: Array<z.infer<typeof adminV2AuditContextItemSchema>>;
-  assignment: AdminV2AssignmentContext;
-  version: number;
-  updatedAt: string;
-  staleWarning: boolean;
-  dataFreshnessClass: string;
-};
 
 export const adminV2PaymentCaseResponseSchema = z.object({
   id: z.string(),
@@ -800,27 +578,6 @@ export const adminV2PaymentCaseResponseSchema = z.object({
   dataFreshnessClass: z.string(),
 });
 
-export type AdminV2PaymentMethodsListResponse = {
-  items: Array<{
-    id: string;
-    type: string;
-    brand: string | null;
-    last4: string | null;
-    bankLast4: string | null;
-    status: string;
-    defaultSelected: boolean;
-    stripeFingerprint: string | null;
-    disabledAt: string | null;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt: string | null;
-    consumer: { id: string; email: string | null };
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-};
-
 const adminV2PaymentMethodListItemSchema = z.object({
   id: z.string(),
   type: z.string(),
@@ -843,67 +600,6 @@ export const adminV2PaymentMethodsListResponseSchema = z.object({
   page: z.number(),
   pageSize: z.number(),
 });
-
-export type AdminV2PayoutsListResponse = {
-  generatedAt: string;
-  posture: {
-    kind: string;
-    wording: string;
-  };
-  stuckPolicy: {
-    thresholdHours: number;
-    breachCondition: string;
-    escalationTarget: string;
-    expectedOperatorReaction: string;
-    automationStatus: string;
-  };
-  highValuePolicy: {
-    availability: string;
-    source: string;
-    wording: string;
-    configuredThresholds: Array<{
-      currencyCode: string;
-      amount: string;
-    }>;
-  };
-  items: Array<{
-    id: string;
-    ledgerId: string;
-    type: string;
-    amount: string;
-    currencyCode: string;
-    persistedStatus: string;
-    effectiveStatus: string;
-    derivedStatus: string;
-    externalReference: string | null;
-    consumer: { id: string; email: string | null };
-    paymentRequestId: string | null;
-    createdAt: string;
-    updatedAt: string;
-    staleWarning: boolean;
-    dataFreshnessClass: string;
-    outcomeAgeHours: number;
-    slaBreachDetected: boolean;
-    highValue: {
-      eligibility: string;
-      thresholdAmount: string | null;
-      thresholdCurrency: string;
-    };
-    hasActiveEscalation: boolean;
-    destinationAvailability: string;
-    destinationLinkageSource: string | null;
-    destinationPaymentMethodSummary: {
-      id: string;
-      type: string;
-      brand: string | null;
-      last4: string | null;
-      bankLast4: string | null;
-      deletedAt: string | null;
-    } | null;
-    assignedTo: AdminV2AdminRef | null;
-  }>;
-  pageInfo: z.infer<typeof adminV2CursorPageInfoSchema>;
-};
 
 const adminV2HighValuePolicySchema = z.object({
   availability: z.string(),
@@ -978,63 +674,6 @@ export const adminV2PayoutsListResponseSchema = z.object({
   pageInfo: adminV2CursorPageInfoSchema,
 });
 
-export type AdminV2PayoutCaseResponse = {
-  id: string;
-  core: {
-    id: string;
-    ledgerId: string;
-    type: string;
-    amount: string;
-    currencyCode: string;
-    persistedStatus: string;
-    effectiveStatus: string;
-    derivedStatus: string;
-    externalReference: string | null;
-    createdAt: string;
-    updatedAt: string;
-  };
-  consumer: { id: string; email: string | null };
-  paymentRequest: {
-    id: string;
-    amount: string;
-    currencyCode: string;
-    status: string;
-    paymentRail: string | null;
-    payerId: string | null;
-    payerEmail: string | null;
-    requesterId: string | null;
-    requesterEmail: string | null;
-  } | null;
-  metadata: z.infer<typeof jsonObjectSchema>;
-  outcomes: Array<z.infer<typeof adminV2OutcomeItemSchema>>;
-  relatedEntries: Array<z.infer<typeof adminV2RelatedLedgerEntrySchema>>;
-  auditContext: Array<z.infer<typeof adminV2AuditContextItemSchema>>;
-  assignment: AdminV2AssignmentContext;
-  outcomeAgeHours: number;
-  slaBreachDetected: boolean;
-  version: number;
-  stuckPolicy: z.infer<typeof adminV2StuckPolicySchema>;
-  highValuePolicy: z.infer<typeof adminV2HighValuePolicySchema>;
-  highValue: z.infer<typeof adminV2HighValueAssessmentSchema>;
-  payoutEscalation: {
-    id: string;
-    reason: string | null;
-    confirmed: boolean;
-    createdAt: string;
-    escalatedBy: { id: string; email: string | null };
-  } | null;
-  actionControls: {
-    canEscalate: boolean;
-    allowedActions: string[];
-    escalateBlockedReason: string | null;
-  };
-  staleWarning: boolean;
-  dataFreshnessClass: string;
-  destinationAvailability: string;
-  destinationLinkageSource: string | null;
-  destinationPaymentMethodSummary: z.infer<typeof adminV2DestinationPaymentMethodSummarySchema> | null;
-};
-
 export const adminV2PayoutCaseResponseSchema = z.object({
   id: z.string(),
   core: z.object({
@@ -1095,58 +734,6 @@ export const adminV2PayoutCaseResponseSchema = z.object({
   destinationLinkageSource: z.string().nullable(),
   destinationPaymentMethodSummary: adminV2DestinationPaymentMethodSummarySchema.nullable(),
 });
-
-export type AdminV2PaymentMethodCaseResponse = {
-  id: string;
-  type: string;
-  status: string;
-  stripePaymentMethodId: string | null;
-  stripeFingerprint: string | null;
-  defaultSelected: boolean;
-  version: number;
-  brand: string | null;
-  last4: string | null;
-  expMonth: string | null;
-  expYear: string | null;
-  bankName: string | null;
-  bankLast4: string | null;
-  bankCountry: string | null;
-  bankCurrency: string | null;
-  serviceFee: number;
-  createdAt: string;
-  updatedAt: string;
-  disabledAt: string | null;
-  disabledBy: string | null;
-  deletedAt: string | null;
-  consumer: { id: string; email: string | null };
-  billingDetails: {
-    id: string;
-    email: string | null;
-    name: string | null;
-    phone: string | null;
-    deletedAt: string | null;
-  } | null;
-  duplicateEscalation: {
-    id: string;
-    fingerprint: string;
-    duplicateCount: number;
-    duplicatePaymentMethodIds: string[];
-    createdAt: string;
-    escalatedBy: { id: string; email: string | null };
-  } | null;
-  fingerprintDuplicates: Array<{
-    id: string;
-    type: string;
-    brand: string | null;
-    last4: string | null;
-    bankLast4: string | null;
-    defaultSelected: boolean;
-    createdAt: string;
-    deletedAt: string | null;
-    consumer: { id: string; email: string | null };
-  }>;
-};
-
 export const adminV2PaymentMethodCaseResponseSchema = z.object({
   id: z.string(),
   type: z.string(),
@@ -1204,26 +791,6 @@ export const adminV2PaymentMethodCaseResponseSchema = z.object({
   ),
 });
 
-export type AdminV2DocumentsListResponse = {
-  items: Array<{
-    id: string;
-    originalName: string;
-    access: string;
-    mimeType: string;
-    size: number;
-    consumerId: string | null;
-    consumerEmail: string | null;
-    createdAt: string;
-    version: number;
-    tags: string[];
-    linkedPaymentRequestIds: string[];
-    assignedTo: AdminV2AdminRef | null;
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-};
-
 export const adminV2DocumentsListResponseSchema = z.object({
   items: z.array(
     z.object({
@@ -1245,28 +812,6 @@ export const adminV2DocumentsListResponseSchema = z.object({
   page: z.number(),
   pageSize: z.number(),
 });
-
-export type AdminV2DocumentCaseResponse = {
-  id: string;
-  core: {
-    id: string;
-    originalName: string;
-    access: string;
-    mimeType: string;
-    size: number;
-    createdAt: string;
-    deletedAt: string | null;
-  };
-  consumer: { id: string; email: string | null } | null;
-  tags: Array<{ id: string; name: string }>;
-  linkedPaymentRequests: Array<z.infer<typeof adminV2LinkedPaymentRequestSchema>>;
-  downloadUrl: string;
-  version: number;
-  updatedAt: string;
-  staleWarning: boolean;
-  dataFreshnessClass: string;
-  assignment: AdminV2AssignmentContext;
-};
 
 export const adminV2DocumentCaseResponseSchema = z.object({
   id: z.string(),
@@ -1294,43 +839,9 @@ export const adminV2DocumentCaseResponseSchema = z.object({
   dataFreshnessClass: z.string(),
   assignment: adminV2AssignmentContextSchema,
 });
-
-export type AdminV2DocumentTagsResponse = {
-  items: Array<z.infer<typeof adminV2DocumentTagItemSchema>>;
-};
-
 export const adminV2DocumentTagsResponseSchema = z.object({
   items: z.array(adminV2DocumentTagItemSchema),
 });
-
-export type AdminV2ExchangeRatesListResponse = {
-  items: Array<{
-    id: string;
-    sourceCurrency: string;
-    targetCurrency: string;
-    rate: string;
-    inverseRate: string | null;
-    spreadBps: number | null;
-    confidence: number | null;
-    status: string;
-    provider: string | null;
-    effectiveAt: string;
-    fetchedAt: string | null;
-    expiresAt: string | null;
-    approvedAt: string | null;
-    createdAt: string;
-    updatedAt: string;
-    stalenessIndicator: {
-      isStale: boolean;
-      referenceAt: string;
-      ageMinutes: number;
-    };
-    version: number;
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-};
 
 const adminV2ExchangeStalenessIndicatorSchema = z.object({
   isStale: z.boolean(),
@@ -1364,50 +875,6 @@ export const adminV2ExchangeRatesListResponseSchema = z.object({
   page: z.number(),
   pageSize: z.number(),
 });
-
-export type AdminV2ExchangeRateCaseResponse = {
-  id: string;
-  core: {
-    id: string;
-    sourceCurrency: string;
-    targetCurrency: string;
-    rate: string;
-    inverseRate: string | null;
-    spreadBps: number | null;
-    confidence: number | null;
-    status: string;
-    provider: string | null;
-    providerRateId: string | null;
-    fetchedAt: string | null;
-    effectiveAt: string;
-    expiresAt: string | null;
-    approvedAt: string | null;
-    approvedBy: string | null;
-    createdAt: string;
-    deletedAt: string | null;
-  };
-  approvalHistory: Array<{
-    id: string;
-    action: string;
-    createdAt: string;
-    admin: { id: string; email: string | null };
-    metadata: z.infer<typeof jsonObjectSchema>;
-  }>;
-  stalenessIndicator: {
-    isStale: boolean;
-    ageMinutes: number;
-    referenceAt: string;
-    thresholdMinutes: number;
-  };
-  actionControls: {
-    canApprove: boolean;
-    allowedActions: string[];
-  };
-  version: number;
-  updatedAt: string;
-  staleWarning: boolean;
-  dataFreshnessClass: string;
-};
 
 export const adminV2ExchangeRateCaseResponseSchema = z.object({
   id: z.string(),
@@ -1455,27 +922,6 @@ export const adminV2ExchangeRateCaseResponseSchema = z.object({
   dataFreshnessClass: z.string(),
 });
 
-export type AdminV2ExchangeRulesListResponse = {
-  items: Array<{
-    id: string;
-    consumer: { id: string; email: string | null };
-    sourceCurrency: string;
-    targetCurrency: string;
-    threshold: string;
-    maxConvertAmount: string | null;
-    minIntervalMinutes: number;
-    enabled: boolean;
-    nextRunAt: string | null;
-    lastRunAt: string | null;
-    lastExecution: z.infer<typeof jsonObjectSchema> | null;
-    version: number;
-    updatedAt: string;
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-};
-
 export const adminV2ExchangeRulesListResponseSchema = z.object({
   items: z.array(
     z.object({
@@ -1498,34 +944,6 @@ export const adminV2ExchangeRulesListResponseSchema = z.object({
   page: z.number(),
   pageSize: z.number(),
 });
-
-export type AdminV2ExchangeRuleCaseResponse = {
-  id: string;
-  consumer: { id: string; email: string | null };
-  core: {
-    id: string;
-    sourceCurrency: string;
-    targetCurrency: string;
-    threshold: string;
-    maxConvertAmount: string | null;
-    minIntervalMinutes: number;
-    enabled: boolean;
-    nextRunAt: string | null;
-    lastRunAt: string | null;
-    createdAt: string;
-  };
-  lastExecution: z.infer<typeof jsonObjectSchema> | null;
-  actionControls: {
-    canPause: boolean;
-    canResume: boolean;
-    canRunNow: boolean;
-    allowedActions: string[];
-  };
-  version: number;
-  updatedAt: string;
-  staleWarning: boolean;
-  dataFreshnessClass: string;
-};
 
 export const adminV2ExchangeRuleCaseResponseSchema = z.object({
   id: z.string(),
@@ -1554,39 +972,6 @@ export const adminV2ExchangeRuleCaseResponseSchema = z.object({
   staleWarning: z.boolean(),
   dataFreshnessClass: z.string(),
 });
-
-export type AdminV2ExchangeScheduledListResponse = {
-  items: Array<{
-    id: string;
-    consumer: { id: string; email: string | null };
-    amount: string;
-    sourceCurrency: string;
-    targetCurrency: string;
-    status: string;
-    attempts: number;
-    retryCount: number;
-    executeAt: string;
-    processingAt: string | null;
-    executedAt: string | null;
-    failedAt: string | null;
-    failureDetail: string | null;
-    linkedRuleId: string | null;
-    ledgerId: string | null;
-    linkedLedgerEntry: {
-      id: string;
-      type: string;
-      amount: string;
-      currencyCode: string;
-    } | null;
-    version: number;
-    updatedAt: string;
-    assignedTo: AdminV2AdminRef | null;
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-};
-
 const adminV2ExchangeScheduledListItemSchema = z.object({
   id: z.string(),
   consumer: adminV2ConsumerRefSchema,
@@ -1615,45 +1000,12 @@ const adminV2ExchangeScheduledListItemSchema = z.object({
   updatedAt: isoDateTimeSchema,
   assignedTo: adminV2AdminRefSchema.nullable(),
 });
-
 export const adminV2ExchangeScheduledListResponseSchema = z.object({
   items: z.array(adminV2ExchangeScheduledListItemSchema),
   total: z.number(),
   page: z.number(),
   pageSize: z.number(),
 });
-
-export type AdminV2ExchangeScheduledCaseResponse = {
-  id: string;
-  consumer: { id: string; email: string | null };
-  core: {
-    id: string;
-    sourceCurrency: string;
-    targetCurrency: string;
-    amount: string;
-    status: string;
-    attempts: number;
-    executeAt: string;
-    processingAt: string | null;
-    executedAt: string | null;
-    failedAt: string | null;
-    createdAt: string;
-    updatedAt: string;
-  };
-  failureDetail: string | null;
-  linkedRuleId: string | null;
-  linkedLedgerEntries: Array<z.infer<typeof adminV2RelatedLedgerEntrySchema>>;
-  actionControls: {
-    canForceExecute: boolean;
-    canCancel: boolean;
-    allowedActions: string[];
-  };
-  version: number;
-  updatedAt: string;
-  staleWarning: boolean;
-  dataFreshnessClass: string;
-  assignment: AdminV2AssignmentContext;
-};
 
 export const adminV2ExchangeScheduledCaseResponseSchema = z.object({
   id: z.string(),
@@ -1687,30 +1039,6 @@ export const adminV2ExchangeScheduledCaseResponseSchema = z.object({
   assignment: adminV2AssignmentContextSchema,
 });
 
-export type AdminV2LedgerEntriesListResponse = {
-  items: Array<{
-    id: string;
-    ledgerId: string;
-    type: string;
-    amount: string;
-    currencyCode: string;
-    persistedStatus: string;
-    effectiveStatus: string;
-    paymentRail: string | null;
-    consumerId: string;
-    consumerEmail: string | null;
-    paymentRequestId: string | null;
-    paymentRequestStatus: string | null;
-    createdAt: string;
-    updatedAt: string;
-    disputeCount: number;
-    staleWarning: boolean;
-    dataFreshnessClass: string;
-    assignedTo: AdminV2AdminRef | null;
-  }>;
-  pageInfo: z.infer<typeof adminV2CursorPageInfoSchema>;
-};
-
 const adminV2LedgerEntryListItemSchema = z.object({
   id: z.string(),
   ledgerId: z.string(),
@@ -1736,51 +1064,6 @@ export const adminV2LedgerEntriesListResponseSchema = z.object({
   items: z.array(adminV2LedgerEntryListItemSchema),
   pageInfo: adminV2CursorPageInfoSchema,
 });
-
-export type AdminV2LedgerEntryCaseResponse = {
-  id: string;
-  core: {
-    id: string;
-    ledgerId: string;
-    type: string;
-    amount: string;
-    currencyCode: string;
-    persistedStatus: string;
-    effectiveStatus: string;
-    paymentRail: string | null;
-    feesType: string | null;
-    feesAmount: string | null;
-    stripeId: string | null;
-    idempotencyKey: string | null;
-    createdAt: string;
-    updatedAt: string;
-  };
-  consumer: { id: string; email: string | null };
-  paymentRequest: {
-    id: string;
-    amount: string;
-    currencyCode: string;
-    status: string;
-    paymentRail: string | null;
-    payerId: string | null;
-    payerEmail: string | null;
-    requesterId: string | null;
-    requesterEmail: string | null;
-  } | null;
-  metadata: z.infer<typeof jsonObjectSchema>;
-  outcomes: Array<z.infer<typeof adminV2OutcomeItemSchema>>;
-  disputes: Array<{
-    id: string;
-    stripeDisputeId: string;
-    metadata: z.infer<typeof jsonObjectSchema>;
-    createdAt: string;
-  }>;
-  relatedEntries: Array<z.infer<typeof adminV2RelatedLedgerEntrySchema>>;
-  auditContext: Array<z.infer<typeof adminV2AuditContextItemSchema>>;
-  assignment: AdminV2AssignmentContext;
-  staleWarning: boolean;
-  dataFreshnessClass: string;
-};
 
 export const adminV2LedgerEntryCaseResponseSchema = z.object({
   id: z.string(),
@@ -1830,32 +1113,6 @@ export const adminV2LedgerEntryCaseResponseSchema = z.object({
   staleWarning: z.boolean(),
   dataFreshnessClass: z.string(),
 });
-
-export type AdminV2LedgerDisputesResponse = {
-  items: Array<{
-    id: string;
-    stripeDisputeId: string;
-    disputeStatus: string | null;
-    reason: string | null;
-    amountMinor: number | null;
-    updatedAt: string | null;
-    createdAt: string;
-    metadata: z.infer<typeof jsonObjectSchema>;
-    ledgerEntry: {
-      id: string;
-      ledgerId: string;
-      paymentRequestId: string | null;
-      consumerId: string;
-      type: string;
-      amount: string;
-      currencyCode: string;
-      paymentRail: string | null;
-    };
-    dataFreshnessClass: string;
-  }>;
-  pageInfo: z.infer<typeof adminV2CursorPageInfoSchema>;
-};
-
 export const adminV2LedgerDisputesResponseSchema = z.object({
   items: z.array(
     z.object({
@@ -1883,7 +1140,7 @@ export const adminV2LedgerDisputesResponseSchema = z.object({
   pageInfo: adminV2CursorPageInfoSchema,
 });
 
-export const adminV2LedgerAnomalyEntrySchema = z.object({
+const adminV2LedgerAnomalyEntrySchema = z.object({
   id: z.string(),
   ledgerEntryId: z.string(),
   consumerId: z.string(),
@@ -1923,35 +1180,6 @@ export const adminV2LedgerAnomalyListResponseSchema = z.object({
   computedAt: isoDateTimeSchema,
 });
 
-export type AdminV2VerificationQueueResponse = {
-  items: Array<{
-    id: string;
-    email: string;
-    accountType: string;
-    contractorKind: string | null;
-    verificationStatus: string;
-    stripeIdentityStatus: string | null;
-    country: string | null;
-    createdAt: string;
-    updatedAt: string;
-    verificationUpdatedAt: string | null;
-    missingProfileData: boolean;
-    missingDocuments: boolean;
-    documentsCount: number;
-    slaBreached: boolean;
-    assignedTo: AdminV2AdminRef | null;
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-  activeStatuses: string[];
-  sla: {
-    breachedCount: number;
-    thresholdHours: number;
-    lastComputedAt: string | null;
-  };
-};
-
 const adminV2VerificationQueueItemSchema = z.object({
   id: z.string(),
   email: z.string(),
@@ -1983,29 +1211,6 @@ export const adminV2VerificationQueueResponseSchema = z.object({
   }),
 });
 
-export type AdminV2VerificationCaseResponse = AdminV2ConsumerCaseResponse & {
-  version: number;
-  decisionControls: {
-    canForceLogout: boolean;
-    canDecide: boolean;
-    allowedActions: string[];
-    canManageAssignments: boolean;
-    canReassignAssignments: boolean;
-  };
-  decisionHistory: Array<z.infer<typeof adminV2DecisionHistoryItemSchema>>;
-  authRisk: {
-    loginFailures24h: number;
-    refreshReuse30d: number;
-    recentEvents: Array<AdminV2AuthAuditRow>;
-  };
-  verificationSla: {
-    breached: boolean;
-    thresholdHours: number;
-    lastComputedAt: string | null;
-  };
-  assignment: AdminV2AssignmentContext;
-};
-
 export const adminV2VerificationCaseResponseSchema = adminV2ConsumerCaseResponseSchemaBase.extend({
   version: z.number(),
   decisionControls: z.object({
@@ -2029,23 +1234,6 @@ export const adminV2VerificationCaseResponseSchema = adminV2ConsumerCaseResponse
   assignment: adminV2AssignmentContextSchema,
 });
 
-export type AdminV2ConsumerContractsResponse = {
-  items: Array<{
-    id: string;
-    name: string;
-    email: string;
-    lastRequestId: string | null;
-    lastStatus: string | null;
-    lastActivity: string | null;
-    docs: number;
-    paymentsCount: number;
-    completedPaymentsCount: number;
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-};
-
 export const adminV2ConsumerContractsResponseSchema = z.object({
   items: z.array(
     z.object({
@@ -2065,24 +1253,10 @@ export const adminV2ConsumerContractsResponseSchema = z.object({
   pageSize: z.number(),
 });
 
-export type AdminV2ConsumerLedgerSummaryResponse = {
-  consumerId: string;
-  summary: Record<string, z.infer<typeof adminV2CountSummarySchema>>;
-};
-
 export const adminV2ConsumerLedgerSummaryResponseSchema = z.object({
   consumerId: z.string(),
   summary: z.record(z.string(), adminV2CountSummarySchema),
 });
-
-export type AdminV2ConsumerTimelineResponse = {
-  items: Array<AdminV2AuthAuditRow | AdminV2ConsumerActionAuditRow>;
-  total: number;
-  page: number;
-  pageSize: number;
-  dateFrom?: string;
-  dateTo?: string;
-};
 
 export const adminV2ConsumerTimelineResponseSchema = z.object({
   items: z.array(z.union([adminV2AuthAuditRowSchema, adminV2ConsumerActionAuditRowSchema])),
@@ -2092,32 +1266,6 @@ export const adminV2ConsumerTimelineResponseSchema = z.object({
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
 });
-
-export type AdminV2AdminsListResponse = {
-  items: Array<{
-    id: string;
-    email: string;
-    type: string;
-    role: string | null;
-    status: `ACTIVE` | `INACTIVE`;
-    lastActivityAt: string | null;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt: string | null;
-  }>;
-  pendingInvitations: Array<{
-    id: string;
-    email: string;
-    role: string;
-    status: `pending` | `expired` | `accepted`;
-    expiresAt: string | null;
-    createdAt: string;
-    invitedBy: { id: string; email: string } | null;
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-};
 
 const adminV2PendingInvitationSchema = z.object({
   id: z.string(),
@@ -2148,73 +1296,6 @@ export const adminV2AdminsListResponseSchema = z.object({
   page: z.number(),
   pageSize: z.number(),
 });
-
-export type AdminV2AdminCaseRecordResponse = {
-  id: string;
-  core: {
-    id: string;
-    email: string;
-    type: string;
-    role: string | null;
-    status: `ACTIVE` | `INACTIVE`;
-    createdAt: string;
-    deletedAt: string | null;
-  };
-  accessProfile: {
-    source: string;
-    resolvedRole: string | null;
-    capabilities: string[];
-    workspaces: string[];
-    schemaRoleKey: string | null;
-    availablePermissionCapabilities: string[];
-    permissionOverrides: Array<{
-      capability: string;
-      granted: boolean;
-    }>;
-  };
-  settings: {
-    id: string;
-    theme: string;
-    createdAt: string;
-    updatedAt: string;
-  } | null;
-  authoredNotesCount: number;
-  authoredFlagsCount: number;
-  recentAuditActions: Array<{
-    id: string;
-    action: string;
-    resource: string;
-    resourceId: string | null;
-    metadata: z.infer<typeof jsonObjectSchema> | null;
-    actorEmail: string;
-    createdAt: string;
-  }>;
-  recentAuthEvents: Array<{
-    id: string;
-    event: string;
-    ipAddress: string | null;
-    userAgent: string | null;
-    createdAt: string;
-  }>;
-  invitations: Array<{
-    id: string;
-    email: string;
-    role: string;
-    status: `pending` | `expired` | `accepted`;
-    expiresAt: string | null;
-    acceptedAt: string | null;
-    createdAt: string;
-  }>;
-  auditShortcuts: {
-    adminActionsHref: string;
-    authHref: string;
-  };
-  version: number;
-  updatedAt: string;
-  staleWarning: boolean;
-  dataFreshnessClass: string;
-};
-
 export const adminV2AdminCaseRecordResponseSchema = z.object({
   id: z.string(),
   core: z.object({
@@ -2300,18 +1381,6 @@ export type AdminV2AdminSessionInvalidatedReason =
   | `password_reset`
   | `admin_deactivated`;
 
-export type AdminV2AdminSessionView = {
-  id: string;
-  sessionFamilyId: string;
-  createdAt: string;
-  lastUsedAt: string;
-  expiresAt: string;
-  revokedAt: string | null;
-  invalidatedReason: AdminV2AdminSessionInvalidatedReason | null;
-  replacedById: string | null;
-  current?: boolean;
-};
-
 const adminV2AdminSessionViewSchema = z.object({
   id: z.string(),
   sessionFamilyId: z.string(),
@@ -2334,10 +1403,48 @@ const adminV2AdminSessionViewSchema = z.object({
   current: z.boolean().optional(),
 });
 
-export type AdminV2ListAdminSessionsResponse = { sessions: AdminV2AdminSessionView[] };
-
 export const adminV2ListAdminSessionsResponseSchema = z.object({
   sessions: z.array(adminV2AdminSessionViewSchema),
 });
 
-export type { AdminV2AdminRef, AdminV2OperationalAlertThreshold };
+export type AdminV2PaymentsListResponse = z.infer<typeof adminV2PaymentsListResponseSchema>;
+export type AdminV2PaymentCaseResponse = z.infer<typeof adminV2PaymentCaseResponseSchema>;
+export type AdminV2PaymentMethodsListResponse = z.infer<typeof adminV2PaymentMethodsListResponseSchema>;
+export type AdminV2PayoutsListResponse = z.infer<typeof adminV2PayoutsListResponseSchema>;
+export type AdminV2PayoutCaseResponse = z.infer<typeof adminV2PayoutCaseResponseSchema>;
+export type AdminV2PaymentMethodCaseResponse = z.infer<typeof adminV2PaymentMethodCaseResponseSchema>;
+export type AdminV2DocumentsListResponse = z.infer<typeof adminV2DocumentsListResponseSchema>;
+export type AdminV2DocumentCaseResponse = z.infer<typeof adminV2DocumentCaseResponseSchema>;
+export type AdminV2DocumentTagsResponse = z.infer<typeof adminV2DocumentTagsResponseSchema>;
+export type AdminV2ExchangeRatesListResponse = z.infer<typeof adminV2ExchangeRatesListResponseSchema>;
+export type AdminV2ExchangeRateCaseResponse = z.infer<typeof adminV2ExchangeRateCaseResponseSchema>;
+export type AdminV2ConsumerTimelineResponse = z.infer<typeof adminV2ConsumerTimelineResponseSchema>;
+export type AdminV2PaymentOperationsQueueResponse = z.infer<typeof adminV2PaymentOperationsQueueResponseSchema>;
+export type AdminV2VerificationCaseResponse = z.infer<typeof adminV2VerificationCaseResponseSchema>;
+export type AdminV2ConsumerCaseResponse = z.infer<typeof adminV2ConsumerCaseResponseSchema>;
+export type AdminV2AuthAuditRow = z.infer<typeof adminV2AuthAuditRowSchema>;
+export type AdminV2AdminActionAuditRow = z.infer<typeof adminV2AdminActionAuditRowSchema>;
+export type AdminV2ConsumerActionAuditRow = z.infer<typeof adminV2ConsumerActionAuditRowSchema>;
+export type AdminV2AuditListResponse = z.infer<typeof adminV2AuditListResponseSchema>;
+export type AdminV2ConsumersListResponse = z.infer<typeof adminV2ConsumersListResponseSchema>;
+export type AdminV2ExchangeRulesListResponse = z.infer<typeof adminV2ExchangeRulesListResponseSchema>;
+export type AdminV2ExchangeRuleCaseResponse = z.infer<typeof adminV2ExchangeRuleCaseResponseSchema>;
+export type AdminV2ExchangeScheduledListResponse = z.infer<typeof adminV2ExchangeScheduledListResponseSchema>;
+export type AdminV2ExchangeScheduledCaseResponse = z.infer<typeof adminV2ExchangeScheduledCaseResponseSchema>;
+export type AdminV2LedgerEntriesListResponse = z.infer<typeof adminV2LedgerEntriesListResponseSchema>;
+export type AdminV2LedgerEntryCaseResponse = z.infer<typeof adminV2LedgerEntryCaseResponseSchema>;
+export type AdminV2LedgerDisputesResponse = z.infer<typeof adminV2LedgerDisputesResponseSchema>;
+export type AdminV2VerificationQueueResponse = z.infer<typeof adminV2VerificationQueueResponseSchema>;
+export type AdminV2ConsumerContractsResponse = z.infer<typeof adminV2ConsumerContractsResponseSchema>;
+export type AdminV2ConsumerLedgerSummaryResponse = z.infer<typeof adminV2ConsumerLedgerSummaryResponseSchema>;
+export type AdminV2AdminSessionView = z.infer<typeof adminV2AdminSessionViewSchema>;
+export type AdminV2ListAdminSessionsResponse = z.infer<typeof adminV2ListAdminSessionsResponseSchema>;
+export type AdminV2AdminsListResponse = z.infer<typeof adminV2AdminsListResponseSchema>;
+export type AdminV2AdminCaseRecordResponse = z.infer<typeof adminV2AdminCaseRecordResponseSchema>;
+export type AdminV2OperationalAlertSummary = z.infer<typeof adminV2OperationalAlertSummarySchema>;
+export type AdminV2OperationalAlertsListResponse = z.infer<typeof adminV2OperationalAlertsListResponseSchema>;
+export type AdminV2AdminRef = z.infer<typeof adminV2AdminRefSchema>;
+export type AdminV2AssignmentContext = z.infer<typeof adminV2AssignmentContextSchema>;
+export type AdminV2OperationalAlertSummaryWorkspace = z.infer<typeof adminV2OperationalAlertSummaryWorkspaceSchema>;
+
+export type { AdminV2OperationalAlertThreshold };

@@ -14,7 +14,7 @@ describe(`createApiApp`, () => {
     const mockOriginResolver = {};
     const mockPrisma = {};
     const mockApp = {
-      get: jest.fn((token: { name?: string }) => {
+      get: jest.fn<(...a: any[]) => any>((token: { name?: string }) => {
         if (token.name === `OriginResolverService`) return mockOriginResolver;
         if (token.name === `PrismaService`) return mockPrisma;
         throw new Error(`Unexpected provider token ${token.name ?? `<anonymous>`}`);

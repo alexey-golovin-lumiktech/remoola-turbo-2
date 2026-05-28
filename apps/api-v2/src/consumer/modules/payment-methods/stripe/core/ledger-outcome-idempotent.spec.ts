@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { type Logger } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -20,7 +21,7 @@ describe(`createOutcomeIdempotent`, () => {
     externalId: `ext-1`,
   };
 
-  function makeClient(create: jest.Mock) {
+  function makeClient(create: jest.Mock<(...a: any[]) => any>) {
     return {
       ledgerEntryOutcomeModel: { create },
     } as Parameters<typeof createOutcomeIdempotent>[0];
@@ -41,7 +42,7 @@ describe(`createOutcomeIdempotent`, () => {
   }
 
   it(`calls create once and does not throw on success`, async () => {
-    const create = jest.fn().mockResolvedValue(undefined);
+    const create = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const client = makeClient(create);
 
     await expect(createOutcomeIdempotent(client, data)).resolves.toBeUndefined();
@@ -58,9 +59,11 @@ describe(`createOutcomeIdempotent`, () => {
   });
 
   it(`on P2002 returns without throwing (idempotent skip)`, async () => {
-    const create = jest.fn().mockRejectedValue(makeKnownRequestError(`P2002`, [`ledger_entry_id`, `external_id`]));
+    const create = jest
+      .fn<(...a: any[]) => any>()
+      .mockRejectedValue(makeKnownRequestError(`P2002`, [`ledger_entry_id`, `external_id`]));
     const client = makeClient(create);
-    const logger = { debug: jest.fn() } as unknown as Logger;
+    const logger = { debug: jest.fn<(...a: any[]) => any>() } as unknown as Logger;
 
     await expect(createOutcomeIdempotent(client, data, logger)).resolves.toBeUndefined();
 
@@ -70,7 +73,7 @@ describe(`createOutcomeIdempotent`, () => {
 
   it(`on P2002 without logger does not throw`, async () => {
     const create = jest
-      .fn()
+      .fn<(...a: any[]) => any>()
       .mockRejectedValue(makeKnownRequestError(`P2002`, `idx_ledger_entry_outcome_ledger_entry_external`));
     const client = makeClient(create);
 
@@ -79,7 +82,7 @@ describe(`createOutcomeIdempotent`, () => {
 
   it(`on other error rethrows`, async () => {
     const otherError = new Error(`Connection refused`);
-    const create = jest.fn().mockRejectedValue(otherError);
+    const create = jest.fn<(...a: any[]) => any>().mockRejectedValue(otherError);
     const client = makeClient(create);
 
     await expect(createOutcomeIdempotent(client, data)).rejects.toThrow(otherError);
@@ -87,7 +90,7 @@ describe(`createOutcomeIdempotent`, () => {
   });
 
   it(`on other Prisma code rethrows`, async () => {
-    const create = jest.fn().mockRejectedValue(makeKnownRequestError(`P2025`));
+    const create = jest.fn<(...a: any[]) => any>().mockRejectedValue(makeKnownRequestError(`P2025`));
     const client = makeClient(create);
 
     await expect(createOutcomeIdempotent(client, data)).rejects.toMatchObject({
@@ -96,7 +99,9 @@ describe(`createOutcomeIdempotent`, () => {
   });
 
   it(`rethrows P2002 when unique target is unrelated`, async () => {
-    const create = jest.fn().mockRejectedValue(makeKnownRequestError(`P2002`, [`some_other_unique`]));
+    const create = jest
+      .fn<(...a: any[]) => any>()
+      .mockRejectedValue(makeKnownRequestError(`P2002`, [`some_other_unique`]));
     const client = makeClient(create);
 
     await expect(createOutcomeIdempotent(client, data)).rejects.toMatchObject({

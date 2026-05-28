@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { NotFoundException } from '@nestjs/common';
 
 import { type AdminV2AdminsActivityQuery } from './admin-v2-admins-activity.query';
@@ -6,26 +7,26 @@ import { type AdminV2AdminsQuery } from './admin-v2-admins.query';
 
 describe(`AdminV2AdminsQueriesService`, () => {
   function buildService() {
-    const listAdminsPage = jest.fn(async () => [[], 0] as [Array<any>, number]);
-    const listPendingInvitations = jest.fn(async () => [] as Array<any>);
-    const findAdminCaseBase = jest.fn(async () => null);
-    const listRelatedInvitations = jest.fn(async () => [] as Array<any>);
+    const listAdminsPage = jest.fn<(...a: any[]) => any>(async () => [[], 0] as [Array<any>, number]);
+    const listPendingInvitations = jest.fn<(...a: any[]) => any>(async () => [] as Array<any>);
+    const findAdminCaseBase = jest.fn<(...a: any[]) => any>(async () => null);
+    const listRelatedInvitations = jest.fn<(...a: any[]) => any>(async () => [] as Array<any>);
     const query = {
       listAdminsPage,
       listPendingInvitations,
       findAdminCaseBase,
       listRelatedInvitations,
     };
-    const listLastActivitySources = jest.fn(async () => [[], []] as [Array<any>, Array<any>]);
-    const listRecentAuditActions = jest.fn(async () => [] as Array<any>);
-    const listRecentAuthEvents = jest.fn(async () => [] as Array<any>);
+    const listLastActivitySources = jest.fn<(...a: any[]) => any>(async () => [[], []] as [Array<any>, Array<any>]);
+    const listRecentAuditActions = jest.fn<(...a: any[]) => any>(async () => [] as Array<any>);
+    const listRecentAuthEvents = jest.fn<(...a: any[]) => any>(async () => [] as Array<any>);
     const activityQuery = {
       listLastActivitySources,
       listRecentAuditActions,
       listRecentAuthEvents,
     };
     const accessService = {
-      getAccessProfile: jest.fn(async () => ({
+      getAccessProfile: jest.fn<(...a: any[]) => any>(async () => ({
         role: null,
         source: `schema`,
         capabilities: [],

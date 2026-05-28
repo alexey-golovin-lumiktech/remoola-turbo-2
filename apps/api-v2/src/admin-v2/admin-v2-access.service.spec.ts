@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ForbiddenException } from '@nestjs/common';
 
 import { AdminV2AccessService } from './admin-v2-access.service';
@@ -44,7 +45,7 @@ describe(`AdminV2AccessService`, () => {
     },
   ) {
     return new AdminV2AccessService({
-      findAdminAccessRecord: jest.fn(async () =>
+      findAdminAccessRecord: jest.fn<(...a: any[]) => any>(async () =>
         record
           ? {
               roleKey: record.roleKey,

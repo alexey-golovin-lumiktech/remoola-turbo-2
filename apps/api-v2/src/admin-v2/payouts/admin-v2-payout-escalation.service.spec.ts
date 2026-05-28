@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -14,19 +15,19 @@ describe(`AdminV2PayoutEscalationService`, () => {
   function buildService() {
     const calls: string[] = [];
     const transactions = {
-      runLedgerMutation: jest.fn(async (callback: (txArg: unknown) => Promise<unknown>) => {
+      runLedgerMutation: jest.fn<(...a: any[]) => any>(async (callback: (txArg: unknown) => Promise<unknown>) => {
         calls.push(`transaction`);
         return callback(tx);
       }),
     };
     const idempotency = {
-      execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => {
+      execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => {
         calls.push(`idempotency`);
         return execute();
       }),
     };
     const repository = {
-      findEscalationPreflight: jest.fn(async () => {
+      findEscalationPreflight: jest.fn<(...a: any[]) => any>(async () => {
         calls.push(`preflight`);
         return {
           id: `payout-1`,
@@ -38,7 +39,7 @@ describe(`AdminV2PayoutEscalationService`, () => {
           outcomes: [{ status: $Enums.TransactionStatus.DENIED, createdAt: new Date(`2026-04-14T08:00:00.000Z`) }],
         };
       }),
-      lockPayoutForEscalation: jest.fn(async () => {
+      lockPayoutForEscalation: jest.fn<(...a: any[]) => any>(async () => {
         calls.push(`lock`);
         return {
           id: `payout-1`,
@@ -51,7 +52,7 @@ describe(`AdminV2PayoutEscalationService`, () => {
           deleted_at: null,
         };
       }),
-      findLatestOutcome: jest.fn(async () => {
+      findLatestOutcome: jest.fn<(...a: any[]) => any>(async () => {
         calls.push(`latestOutcome`);
         return {
           status: $Enums.TransactionStatus.DENIED as $Enums.TransactionStatus,
@@ -59,11 +60,11 @@ describe(`AdminV2PayoutEscalationService`, () => {
           externalId: `po_failed` as string | null,
         };
       }),
-      findExistingEscalation: jest.fn(async () => {
+      findExistingEscalation: jest.fn<(...a: any[]) => any>(async () => {
         calls.push(`existingEscalation`);
         return null;
       }),
-      createEscalationWithAudit: jest.fn(async () => {
+      createEscalationWithAudit: jest.fn<(...a: any[]) => any>(async () => {
         calls.push(`createEscalation`);
         return {
           id: `esc-1`,

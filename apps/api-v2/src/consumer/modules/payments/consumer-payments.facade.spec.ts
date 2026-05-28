@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
@@ -8,22 +10,22 @@ import { ConsumerPaymentsService } from './consumer-payments.service';
 
 function createFacade() {
   const policiesService = {
-    assertProfileCompleteForVerification: jest.fn(),
+    assertProfileCompleteForVerification: jest.fn<(...a: any[]) => any>(),
   } as unknown as jest.Mocked<ConsumerPaymentsPoliciesService>;
   const readService = {
-    listPayments: jest.fn(),
-    getPaymentView: jest.fn(),
-    getBalancesCompleted: jest.fn(),
-    getBalancesIncludePending: jest.fn(),
-    getAvailableBalance: jest.fn(),
-    getHistory: jest.fn(),
+    listPayments: jest.fn<(...a: any[]) => any>(),
+    getPaymentView: jest.fn<(...a: any[]) => any>(),
+    getBalancesCompleted: jest.fn<(...a: any[]) => any>(),
+    getBalancesIncludePending: jest.fn<(...a: any[]) => any>(),
+    getAvailableBalance: jest.fn<(...a: any[]) => any>(),
+    getHistory: jest.fn<(...a: any[]) => any>(),
   } as unknown as jest.Mocked<ConsumerPaymentsReadService>;
   const writeService = {
-    startPayment: jest.fn(),
-    createPaymentRequest: jest.fn(),
-    sendPaymentRequest: jest.fn(),
-    withdraw: jest.fn(),
-    transfer: jest.fn(),
+    startPayment: jest.fn<(...a: any[]) => any>(),
+    createPaymentRequest: jest.fn<(...a: any[]) => any>(),
+    sendPaymentRequest: jest.fn<(...a: any[]) => any>(),
+    withdraw: jest.fn<(...a: any[]) => any>(),
+    transfer: jest.fn<(...a: any[]) => any>(),
   } as unknown as jest.Mocked<ConsumerPaymentsWriteService>;
 
   return {

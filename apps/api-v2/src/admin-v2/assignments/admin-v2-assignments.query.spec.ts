@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2AssignmentsQuery } from './admin-v2-assignments.query';
 
 const OPS_ADMIN_ID = `11111111-1111-4111-8111-111111111111`;
@@ -8,11 +10,11 @@ const ASSIGNMENT_ID = `55555555-5555-4555-8555-555555555555`;
 
 function buildQuery() {
   const adminModel = {
-    findUnique: jest.fn(),
+    findUnique: jest.fn<(...a: any[]) => any>(),
   };
   const prisma = {
     adminModel,
-    $queryRaw: jest.fn(),
+    $queryRaw: jest.fn<(...a: any[]) => any>(),
   };
 
   return {

@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { type Response } from 'express';
@@ -16,30 +17,30 @@ import { SignupMailingService } from '../../shared/signup-mailing.service';
 
 describe(`ConsumerAuthService.signupVerification`, () => {
   let service: ConsumerAuthService;
-  let jwtService: { verify: jest.Mock; decode: jest.Mock };
+  let jwtService: { verify: jest.Mock<(...a: any[]) => any>; decode: jest.Mock<(...a: any[]) => any> };
   let prisma: {
-    consumerModel: { findFirst: jest.Mock; update: jest.Mock };
+    consumerModel: { findFirst: jest.Mock<(...a: any[]) => any>; update: jest.Mock<(...a: any[]) => any> };
   };
   let originResolver: {
-    validateConsumerAppScope: jest.Mock;
-    resolveConsumerOriginByScope: jest.Mock;
+    validateConsumerAppScope: jest.Mock<(...a: any[]) => any>;
+    resolveConsumerOriginByScope: jest.Mock<(...a: any[]) => any>;
   };
 
   const consumerId = `11111111-1111-1111-1111-111111111111`;
 
   beforeEach(async () => {
-    jwtService = { verify: jest.fn(), decode: jest.fn() };
+    jwtService = { verify: jest.fn<(...a: any[]) => any>(), decode: jest.fn<(...a: any[]) => any>() };
     prisma = {
       consumerModel: {
-        findFirst: jest.fn(),
-        update: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
+        update: jest.fn<(...a: any[]) => any>(),
       },
     };
     originResolver = {
-      validateConsumerAppScope: jest.fn((scope?: string | null) =>
+      validateConsumerAppScope: jest.fn<(...a: any[]) => any>((scope?: string | null) =>
         scope === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
       ),
-      resolveConsumerOriginByScope: jest.fn((scope: string) => {
+      resolveConsumerOriginByScope: jest.fn<(...a: any[]) => any>((scope: string) => {
         if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example`;
         return null;
       }),
@@ -52,7 +53,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
         { provide: RecoveryMailingService, useValue: {} },
         { provide: AdminNotificationMailingService, useValue: {} },
         { provide: SignupMailingService, useValue: {} },
-        { provide: AuthAuditService, useValue: { recordAudit: jest.fn() } },
+        { provide: AuthAuditService, useValue: { recordAudit: jest.fn<(...a: any[]) => any>() } },
         { provide: OriginResolverService, useValue: originResolver },
       ]),
     }).compile();
@@ -65,7 +66,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       throw new Error(`invalid`);
     });
     jwtService.decode.mockReturnValue(null);
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await expect(service.signupVerification(`bad.jwt`, res)).rejects.toMatchObject({
       response: { message: errorCodes.ORIGIN_REQUIRED },
@@ -79,7 +80,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       throw new Error(`expired`);
     });
     jwtService.decode.mockReturnValue({ appScope: CURRENT_CONSUMER_APP_SCOPE });
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await service.signupVerification(`expired.jwt`, res);
 
@@ -96,7 +97,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       sid: `session-row-id`,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await service.signupVerification(`tok`, res);
 
@@ -112,7 +113,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       scope: `admin`,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await service.signupVerification(`tok`, res);
 
@@ -127,7 +128,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       typ: `access`,
       scope: `consumer`,
     });
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await expect(service.signupVerification(`tok`, res)).rejects.toMatchObject({
       response: { message: errorCodes.ORIGIN_REQUIRED },
@@ -144,7 +145,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       scope: `consumer`,
       appScope: `unknown-scope`,
     });
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await expect(service.signupVerification(`tok`, res)).rejects.toMatchObject({
       response: { message: errorCodes.ORIGIN_REQUIRED },
@@ -170,7 +171,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       email: `u@example.com`,
       verified: true,
     });
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await service.signupVerification(`tok`, res);
 
@@ -178,7 +179,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       where: { id: consumerId },
       data: { verified: true },
     });
-    const redirected = (res.redirect as jest.Mock).mock.calls[0][0] as string;
+    const redirected = (res.redirect as jest.Mock<(...a: any[]) => any>).mock.calls[0][0] as string;
     expect(redirected).toContain(`/signup/verification`);
     expect(redirected).toContain(`https://grid.example/signup/verification`);
     // Link no longer carries `email`, but post-verify redirect intentionally may.

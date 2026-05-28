@@ -1,3 +1,4 @@
+import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -17,24 +18,24 @@ import { type AdminV2AssignmentsService } from '../assignments/admin-v2-assignme
 
 function buildService() {
   const ledgerEntryModel = {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
+    findMany: jest.fn<(...a: any[]) => any>(),
+    findUnique: jest.fn<(...a: any[]) => any>(),
   };
   const paymentMethodModel = {
-    findMany: jest.fn(),
+    findMany: jest.fn<(...a: any[]) => any>(),
   };
   const adminActionAuditLogModel = {
-    findMany: jest.fn(),
-    create: jest.fn(),
+    findMany: jest.fn<(...a: any[]) => any>(),
+    create: jest.fn<(...a: any[]) => any>(),
   };
   const payoutEscalationModel = {
-    findUnique: jest.fn(),
-    create: jest.fn(),
+    findUnique: jest.fn<(...a: any[]) => any>(),
+    create: jest.fn<(...a: any[]) => any>(),
   };
   const ledgerEntryOutcomeModel = {
-    findFirst: jest.fn(),
+    findFirst: jest.fn<(...a: any[]) => any>(),
   };
-  const queryRaw = jest.fn();
+  const queryRaw = jest.fn<(...a: any[]) => any>();
   const prisma = {
     ledgerEntryModel,
     paymentMethodModel,
@@ -42,7 +43,7 @@ function buildService() {
     payoutEscalationModel,
     ledgerEntryOutcomeModel,
     $queryRaw: queryRaw,
-    $transaction: jest.fn(async (callback: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
+    $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
       callback({
         ...prisma,
         $queryRaw: queryRaw,
@@ -50,11 +51,11 @@ function buildService() {
     ),
   };
   const idempotency = {
-    execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+    execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
   };
   const assignmentsService = {
-    getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
-    getActiveAssigneesForResource: jest.fn(async () => new Map()),
+    getAssignmentContextForResource: jest.fn<(...a: any[]) => any>(async () => ({ current: null, history: [] })),
+    getActiveAssigneesForResource: jest.fn<(...a: any[]) => any>(async () => new Map()),
   };
   const prismaService = prisma as unknown as PrismaService;
   const payoutsRepository = new AdminV2PayoutsRepository(prismaService);

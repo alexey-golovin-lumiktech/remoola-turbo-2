@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { type Response } from 'express';
@@ -17,31 +18,38 @@ import { SignupMailingService } from '../../shared/signup-mailing.service';
 describe(`ConsumerAuthService.validateForgotPasswordTokenAndRedirect`, () => {
   let service: ConsumerAuthService;
   let prisma: {
-    resetPasswordModel: { findFirst: jest.Mock };
+    resetPasswordModel: { findFirst: jest.Mock<(...a: any[]) => any> };
   };
 
   beforeEach(async () => {
     prisma = {
       resetPasswordModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: consumerAuthServiceTestProviders([
         { provide: PrismaService, useValue: prisma },
-        { provide: JwtService, useValue: { signAsync: jest.fn(), verify: jest.fn(), decode: jest.fn() } },
+        {
+          provide: JwtService,
+          useValue: {
+            signAsync: jest.fn<(...a: any[]) => any>(),
+            verify: jest.fn<(...a: any[]) => any>(),
+            decode: jest.fn<(...a: any[]) => any>(),
+          },
+        },
         { provide: RecoveryMailingService, useValue: {} },
         { provide: AdminNotificationMailingService, useValue: {} },
         { provide: SignupMailingService, useValue: {} },
-        { provide: AuthAuditService, useValue: { recordAudit: jest.fn() } },
+        { provide: AuthAuditService, useValue: { recordAudit: jest.fn<(...a: any[]) => any>() } },
         {
           provide: OriginResolverService,
           useValue: {
-            validateConsumerAppScope: jest.fn((scope?: string | null) =>
+            validateConsumerAppScope: jest.fn<(...a: any[]) => any>((scope?: string | null) =>
               scope === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
             ),
-            resolveConsumerOriginByScope: jest.fn((scope: string) => {
+            resolveConsumerOriginByScope: jest.fn<(...a: any[]) => any>((scope: string) => {
               if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example.com`;
               return null;
             }),
@@ -59,7 +67,7 @@ describe(`ConsumerAuthService.validateForgotPasswordTokenAndRedirect`, () => {
       deletedAt: null,
       expiredAt: new Date(Date.now() + 60_000),
     });
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await service.validateForgotPasswordTokenAndRedirect(`reset-token`, res);
 
@@ -72,7 +80,7 @@ describe(`ConsumerAuthService.validateForgotPasswordTokenAndRedirect`, () => {
       deletedAt: null,
       expiredAt: new Date(Date.now() - 60_000),
     });
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await service.validateForgotPasswordTokenAndRedirect(`expired-token`, res);
 
@@ -81,7 +89,7 @@ describe(`ConsumerAuthService.validateForgotPasswordTokenAndRedirect`, () => {
 
   it(`rejects invalid tokens when no stored app scope is available`, async () => {
     prisma.resetPasswordModel.findFirst.mockResolvedValue(null);
-    const res = { redirect: jest.fn() } as unknown as Response;
+    const res = { redirect: jest.fn<(...a: any[]) => any>() } as unknown as Response;
 
     await expect(service.validateForgotPasswordTokenAndRedirect(`invalid-token`, res)).rejects.toMatchObject({
       response: { message: errorCodes.ORIGIN_REQUIRED },

@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -11,7 +12,7 @@ import { StripeSetupIntentPersistenceRepository } from './stripe-setup-intent-pe
 import { ConsumerStripeService } from './stripe.service';
 import { type PrismaService } from '../../../../../shared/prisma.service';
 
-const createOutcomeIdempotentMock = jest.fn().mockResolvedValue(undefined);
+const createOutcomeIdempotentMock = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
 jest.mock(`./ledger-outcome-idempotent`, () => ({
   createOutcomeIdempotent: (...args: unknown[]) => createOutcomeIdempotentMock(...args),
@@ -19,37 +20,37 @@ jest.mock(`./ledger-outcome-idempotent`, () => ({
 
 describe(`ConsumerStripeService`, () => {
   let prisma: {
-    paymentMethodModel: { findFirst: jest.Mock };
+    paymentMethodModel: { findFirst: jest.Mock<(...a: any[]) => any> };
   };
   let customerAccessRepository: {
-    findConsumer: jest.Mock;
-    claimStripeCustomerId: jest.Mock;
-    findStripeCustomerId: jest.Mock;
+    findConsumer: jest.Mock<(...a: any[]) => any>;
+    claimStripeCustomerId: jest.Mock<(...a: any[]) => any>;
+    findStripeCustomerId: jest.Mock<(...a: any[]) => any>;
   };
   let paymentRequestAccessRepository: {
-    ensureCardPaymentRailForRequest: jest.Mock;
-    markPaymentRequestCompletedForStripeRequest: jest.Mock;
-    getPaymentRequestForPayer: jest.Mock;
+    ensureCardPaymentRailForRequest: jest.Mock<(...a: any[]) => any>;
+    markPaymentRequestCompletedForStripeRequest: jest.Mock<(...a: any[]) => any>;
+    getPaymentRequestForPayer: jest.Mock<(...a: any[]) => any>;
   };
   let paymentOutcomesRepository: {
-    appendCheckoutWaitingOutcomes: jest.Mock;
-    markSavedMethodPaymentCompleted: jest.Mock;
-    appendDeniedSavedMethodPaymentOutcomes: jest.Mock;
+    appendCheckoutWaitingOutcomes: jest.Mock<(...a: any[]) => any>;
+    markSavedMethodPaymentCompleted: jest.Mock<(...a: any[]) => any>;
+    appendDeniedSavedMethodPaymentOutcomes: jest.Mock<(...a: any[]) => any>;
   };
   let service: ConsumerStripeService;
-  let paymentIntentsCreate: jest.Mock;
-  let paymentMethodsRetrieve: jest.Mock;
-  let checkoutSessionsCreate: jest.Mock;
+  let paymentIntentsCreate: jest.Mock<(...a: any[]) => any>;
+  let paymentMethodsRetrieve: jest.Mock<(...a: any[]) => any>;
+  let checkoutSessionsCreate: jest.Mock<(...a: any[]) => any>;
   let stripeClient: {
-    paymentMethods: { retrieve: jest.Mock };
-    paymentIntents: { create: jest.Mock };
-    checkout: { sessions: { create: jest.Mock } };
+    paymentMethods: { retrieve: jest.Mock<(...a: any[]) => any> };
+    paymentIntents: { create: jest.Mock<(...a: any[]) => any> };
+    checkout: { sessions: { create: jest.Mock<(...a: any[]) => any> } };
   };
 
   beforeEach(() => {
     prisma = {
       paymentMethodModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `payment-method-1`,
           stripePaymentMethodId: `pm_1`,
           billingDetails: null,
@@ -57,23 +58,23 @@ describe(`ConsumerStripeService`, () => {
       },
     };
     customerAccessRepository = {
-      findConsumer: jest.fn(),
-      claimStripeCustomerId: jest.fn(),
-      findStripeCustomerId: jest.fn(),
+      findConsumer: jest.fn<(...a: any[]) => any>(),
+      claimStripeCustomerId: jest.fn<(...a: any[]) => any>(),
+      findStripeCustomerId: jest.fn<(...a: any[]) => any>(),
     };
     paymentRequestAccessRepository = {
-      ensureCardPaymentRailForRequest: jest.fn().mockResolvedValue(undefined),
-      markPaymentRequestCompletedForStripeRequest: jest.fn().mockResolvedValue(undefined),
-      getPaymentRequestForPayer: jest.fn(),
+      ensureCardPaymentRailForRequest: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      markPaymentRequestCompletedForStripeRequest: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      getPaymentRequestForPayer: jest.fn<(...a: any[]) => any>(),
     };
     paymentOutcomesRepository = {
-      appendCheckoutWaitingOutcomes: jest.fn().mockResolvedValue(undefined),
-      markSavedMethodPaymentCompleted: jest.fn().mockResolvedValue(undefined),
-      appendDeniedSavedMethodPaymentOutcomes: jest.fn().mockResolvedValue(undefined),
+      appendCheckoutWaitingOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      markSavedMethodPaymentCompleted: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      appendDeniedSavedMethodPaymentOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
-    paymentIntentsCreate = jest.fn();
-    paymentMethodsRetrieve = jest.fn().mockResolvedValue({ customer: `cus_1` });
-    checkoutSessionsCreate = jest.fn();
+    paymentIntentsCreate = jest.fn<(...a: any[]) => any>();
+    paymentMethodsRetrieve = jest.fn<(...a: any[]) => any>().mockResolvedValue({ customer: `cus_1` });
+    checkoutSessionsCreate = jest.fn<(...a: any[]) => any>();
     stripeClient = {
       paymentMethods: { retrieve: paymentMethodsRetrieve },
       paymentIntents: { create: paymentIntentsCreate },
@@ -269,17 +270,17 @@ describe(`ConsumerStripeService`, () => {
   });
 
   it(`delegates bootstrap-capable claim flows while opening checkout`, async () => {
-    const txPaymentRequestUpdateManyForClaim = jest.fn().mockResolvedValue({ count: 1 });
-    const bootstrapInitialLedgerEntries = jest.fn().mockResolvedValue(undefined);
+    const txPaymentRequestUpdateManyForClaim = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 });
+    const bootstrapInitialLedgerEntries = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const prismaForClaim = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: `payer@example.com` }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: `payer@example.com` }),
       },
       ledgerEntryModel: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
       },
       paymentRequestModel: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `payment-request-claim`,
           payerId: `consumer-1`,
           status: $Enums.TransactionStatus.PENDING,
@@ -290,35 +291,39 @@ describe(`ConsumerStripeService`, () => {
         }),
         updateMany: txPaymentRequestUpdateManyForClaim,
       },
-      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
-        return callback({
-          paymentRequestModel: {
-            findUnique: jest.fn().mockResolvedValue({
-              id: `payment-request-claim`,
-              payerId: null,
-              payerEmail: `payer@example.com`,
-              requesterId: `requester-1`,
-              amount: 25,
-              currencyCode: $Enums.CurrencyCode.USD,
-              status: $Enums.TransactionStatus.PENDING,
-              ledgerEntries: [],
-            }),
-            updateMany: txPaymentRequestUpdateManyForClaim,
-          },
-        });
-      }),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+          return callback({
+            paymentRequestModel: {
+              findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
+                id: `payment-request-claim`,
+                payerId: null,
+                payerEmail: `payer@example.com`,
+                requesterId: `requester-1`,
+                amount: 25,
+                currencyCode: $Enums.CurrencyCode.USD,
+                status: $Enums.TransactionStatus.PENDING,
+                ledgerEntries: [],
+              }),
+              updateMany: txPaymentRequestUpdateManyForClaim,
+            },
+          });
+        }),
     } as any;
     const serviceForClaim = new ConsumerStripeService(
       {
         checkout: {
-          sessions: { create: jest.fn().mockResolvedValue({ id: `cs_1`, url: `https://stripe.test/cs_1` }) },
+          sessions: {
+            create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `cs_1`, url: `https://stripe.test/cs_1` }),
+          },
         },
       } as any,
       {} as StripeCustomerAccessRepository,
       {
-        appendCheckoutWaitingOutcomes: jest.fn().mockResolvedValue(undefined),
-        markSavedMethodPaymentCompleted: jest.fn().mockResolvedValue(undefined),
-        appendDeniedSavedMethodPaymentOutcomes: jest.fn().mockResolvedValue(undefined),
+        appendCheckoutWaitingOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        markSavedMethodPaymentCompleted: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        appendDeniedSavedMethodPaymentOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       } as unknown as StripePaymentOutcomesRepository,
       new StripePaymentRequestAccessRepository(
         prismaForClaim as unknown as PrismaService,
@@ -347,15 +352,15 @@ describe(`ConsumerStripeService`, () => {
   });
 
   it(`creates Stripe customer with deterministic idempotency key and claim update`, async () => {
-    const customersCreate = jest.fn().mockResolvedValue({ id: `cus_new` });
+    const customersCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `cus_new` });
     const customerAccessRepositoryForCustomer = {
-      findConsumer: jest.fn().mockResolvedValue({
+      findConsumer: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         id: `consumer-1`,
         email: `consumer@example.com`,
         stripeCustomerId: null,
       }),
-      claimStripeCustomerId: jest.fn().mockResolvedValue(true),
-      findStripeCustomerId: jest.fn(),
+      claimStripeCustomerId: jest.fn<(...a: any[]) => any>().mockResolvedValue(true),
+      findStripeCustomerId: jest.fn<(...a: any[]) => any>(),
     };
     const serviceForCustomer = new ConsumerStripeService(
       {
@@ -363,9 +368,9 @@ describe(`ConsumerStripeService`, () => {
       } as any,
       customerAccessRepositoryForCustomer as unknown as StripeCustomerAccessRepository,
       {
-        appendCheckoutWaitingOutcomes: jest.fn().mockResolvedValue(undefined),
-        markSavedMethodPaymentCompleted: jest.fn().mockResolvedValue(undefined),
-        appendDeniedSavedMethodPaymentOutcomes: jest.fn().mockResolvedValue(undefined),
+        appendCheckoutWaitingOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        markSavedMethodPaymentCompleted: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        appendDeniedSavedMethodPaymentOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       } as unknown as StripePaymentOutcomesRepository,
       {} as StripePaymentRequestAccessRepository,
       {} as StripeSavedPaymentMethodsRepository,
@@ -384,15 +389,15 @@ describe(`ConsumerStripeService`, () => {
   });
 
   it(`returns the already-claimed stripe customer id when another writer wins the claim race`, async () => {
-    const customersCreate = jest.fn().mockResolvedValue({ id: `cus_new` });
+    const customersCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `cus_new` });
     const customerAccessRepositoryForCustomer = {
-      findConsumer: jest.fn().mockResolvedValue({
+      findConsumer: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         id: `consumer-1`,
         email: `consumer@example.com`,
         stripeCustomerId: null,
       }),
-      claimStripeCustomerId: jest.fn().mockResolvedValue(false),
-      findStripeCustomerId: jest.fn().mockResolvedValue({ stripeCustomerId: `cus_existing` }),
+      claimStripeCustomerId: jest.fn<(...a: any[]) => any>().mockResolvedValue(false),
+      findStripeCustomerId: jest.fn<(...a: any[]) => any>().mockResolvedValue({ stripeCustomerId: `cus_existing` }),
     };
     const serviceForCustomer = new ConsumerStripeService(
       {
@@ -400,9 +405,9 @@ describe(`ConsumerStripeService`, () => {
       } as any,
       customerAccessRepositoryForCustomer as unknown as StripeCustomerAccessRepository,
       {
-        appendCheckoutWaitingOutcomes: jest.fn().mockResolvedValue(undefined),
-        markSavedMethodPaymentCompleted: jest.fn().mockResolvedValue(undefined),
-        appendDeniedSavedMethodPaymentOutcomes: jest.fn().mockResolvedValue(undefined),
+        appendCheckoutWaitingOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        markSavedMethodPaymentCompleted: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        appendDeniedSavedMethodPaymentOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       } as unknown as StripePaymentOutcomesRepository,
       {} as StripePaymentRequestAccessRepository,
       {} as StripeSavedPaymentMethodsRepository,
@@ -426,11 +431,11 @@ describe(`ConsumerStripeService`, () => {
   });
 
   it(`delegates successful setup-intent persistence after Stripe validation`, async () => {
-    const persistSetupIntentPaymentMethod = jest.fn().mockResolvedValue({ id: `local-pm-1` });
+    const persistSetupIntentPaymentMethod = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `local-pm-1` });
     const serviceForSetupIntent = new ConsumerStripeService(
       {
         setupIntents: {
-          retrieve: jest.fn().mockResolvedValue({
+          retrieve: jest.fn<(...a: any[]) => any>().mockResolvedValue({
             status: `succeeded`,
             payment_method: {
               id: `pm_1`,
@@ -453,9 +458,9 @@ describe(`ConsumerStripeService`, () => {
       } as any,
       {} as StripeCustomerAccessRepository,
       {
-        appendCheckoutWaitingOutcomes: jest.fn().mockResolvedValue(undefined),
-        markSavedMethodPaymentCompleted: jest.fn().mockResolvedValue(undefined),
-        appendDeniedSavedMethodPaymentOutcomes: jest.fn().mockResolvedValue(undefined),
+        appendCheckoutWaitingOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        markSavedMethodPaymentCompleted: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        appendDeniedSavedMethodPaymentOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       } as unknown as StripePaymentOutcomesRepository,
       new StripePaymentRequestAccessRepository(
         prisma as unknown as PrismaService,
@@ -495,12 +500,12 @@ describe(`ConsumerStripeService`, () => {
   });
 
   it(`invalidates the saved method after a non-reusable attach failure`, async () => {
-    const invalidateNonReusableSavedMethod = jest.fn().mockResolvedValue(undefined);
+    const invalidateNonReusableSavedMethod = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const serviceForSavedMethod = new ConsumerStripeService(
       {
         paymentMethods: {
-          retrieve: jest.fn().mockResolvedValue({ customer: `cus_other` }),
-          attach: jest.fn().mockRejectedValue({
+          retrieve: jest.fn<(...a: any[]) => any>().mockResolvedValue({ customer: `cus_other` }),
+          attach: jest.fn<(...a: any[]) => any>().mockRejectedValue({
             type: `invalid_request_error`,
             message: `This payment method was previously used without being attached to a Customer`,
           }),
@@ -508,16 +513,16 @@ describe(`ConsumerStripeService`, () => {
       } as any,
       {} as StripeCustomerAccessRepository,
       {
-        appendCheckoutWaitingOutcomes: jest.fn().mockResolvedValue(undefined),
-        markSavedMethodPaymentCompleted: jest.fn().mockResolvedValue(undefined),
-        appendDeniedSavedMethodPaymentOutcomes: jest.fn().mockResolvedValue(undefined),
+        appendCheckoutWaitingOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        markSavedMethodPaymentCompleted: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        appendDeniedSavedMethodPaymentOutcomes: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       } as unknown as StripePaymentOutcomesRepository,
       new StripePaymentRequestAccessRepository(
         prisma as unknown as PrismaService,
         {} as StripePaymentRequestLedgerBootstrapRepository,
       ),
       {
-        findActiveSavedPaymentMethod: jest.fn().mockResolvedValue({
+        findActiveSavedPaymentMethod: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `payment-method-1`,
           stripePaymentMethodId: `pm_1`,
           billingDetails: null,
@@ -552,7 +557,9 @@ describe(`StripePaymentOutcomesRepository`, () => {
   });
 
   it(`appends checkout WAITING outcomes after stamping CARD rail`, async () => {
-    const ledgerEntryFindMany = jest.fn().mockResolvedValue([{ id: `ledger-1` }, { id: `ledger-2` }]);
+    const ledgerEntryFindMany = jest
+      .fn<(...a: any[]) => any>()
+      .mockResolvedValue([{ id: `ledger-1` }, { id: `ledger-2` }]);
     const prisma = {
       ledgerEntryModel: {
         findMany: ledgerEntryFindMany,
@@ -595,7 +602,7 @@ describe(`StripePaymentOutcomesRepository`, () => {
   it(`marks saved-method payment completed without duplicating completed outcomes`, async () => {
     const tx = {
       ledgerEntryModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `ledger-1`,
             status: $Enums.TransactionStatus.PENDING,
@@ -609,11 +616,11 @@ describe(`StripePaymentOutcomesRepository`, () => {
         ]),
       },
     };
-    const markPaymentRequestCompletedForStripe = jest.fn().mockResolvedValue(undefined);
+    const markPaymentRequestCompletedForStripe = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const repository = new StripePaymentOutcomesRepository(
       {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
       } as unknown as PrismaService,
       {
@@ -643,7 +650,7 @@ describe(`StripePaymentOutcomesRepository`, () => {
   it(`does not stamp payment-request completion if outcome append fails inside the transaction`, async () => {
     const tx = {
       ledgerEntryModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `ledger-1`,
             status: $Enums.TransactionStatus.PENDING,
@@ -652,12 +659,12 @@ describe(`StripePaymentOutcomesRepository`, () => {
         ]),
       },
     };
-    const markPaymentRequestCompletedForStripe = jest.fn().mockResolvedValue(undefined);
+    const markPaymentRequestCompletedForStripe = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     createOutcomeIdempotentMock.mockRejectedValueOnce(new Error(`boom`));
     const repository = new StripePaymentOutcomesRepository(
       {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
       } as unknown as PrismaService,
       {
@@ -679,13 +686,13 @@ describe(`StripePaymentOutcomesRepository`, () => {
   it(`appends DENIED outcomes for all ledger entries on terminal decline`, async () => {
     const tx = {
       ledgerEntryModel: {
-        findMany: jest.fn().mockResolvedValue([{ id: `ledger-1` }, { id: `ledger-2` }]),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([{ id: `ledger-1` }, { id: `ledger-2` }]),
       },
     };
     const repository = new StripePaymentOutcomesRepository(
       {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
       } as unknown as PrismaService,
       {} as StripePaymentRequestAccessRepository,
@@ -721,7 +728,7 @@ describe(`StripePaymentOutcomesRepository`, () => {
 
 describe(`StripeCustomerAccessRepository`, () => {
   it(`loads the consumer used for stripe customer orchestration`, async () => {
-    const findUnique = jest.fn().mockResolvedValue({ id: `consumer-1` });
+    const findUnique = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `consumer-1` });
     const repository = new StripeCustomerAccessRepository({
       consumerModel: {
         findUnique,
@@ -736,7 +743,10 @@ describe(`StripeCustomerAccessRepository`, () => {
   });
 
   it(`claims stripeCustomerId only when it is currently null`, async () => {
-    const updateMany = jest.fn().mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+    const updateMany = jest
+      .fn<(...a: any[]) => any>()
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
     const repository = new StripeCustomerAccessRepository({
       consumerModel: {
         updateMany,
@@ -757,7 +767,7 @@ describe(`StripeCustomerAccessRepository`, () => {
   });
 
   it(`rereads only stripeCustomerId for the race fallback path`, async () => {
-    const findUnique = jest.fn().mockResolvedValue({ stripeCustomerId: `cus_existing` });
+    const findUnique = jest.fn<(...a: any[]) => any>().mockResolvedValue({ stripeCustomerId: `cus_existing` });
     const repository = new StripeCustomerAccessRepository({
       consumerModel: {
         findUnique,
@@ -777,14 +787,14 @@ describe(`StripeCustomerAccessRepository`, () => {
 
 describe(`StripePaymentRequestAccessRepository`, () => {
   it(`claims payer access and returns the payment request after bootstrap delegation`, async () => {
-    const txPaymentRequestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
-    const bootstrapInitialLedgerEntries = jest.fn().mockResolvedValue(undefined);
+    const txPaymentRequestUpdateMany = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 });
+    const bootstrapInitialLedgerEntries = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: `payer@example.com` }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: `payer@example.com` }),
       },
       paymentRequestModel: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `payment-request-claim`,
           payerId: `consumer-1`,
           status: $Enums.TransactionStatus.PENDING,
@@ -794,23 +804,25 @@ describe(`StripePaymentRequestAccessRepository`, () => {
           requesterEmail: null,
         }),
       },
-      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
-        callback({
-          paymentRequestModel: {
-            findUnique: jest.fn().mockResolvedValue({
-              id: `payment-request-claim`,
-              payerId: null,
-              payerEmail: `payer@example.com`,
-              requesterId: `requester-1`,
-              amount: 25,
-              currencyCode: $Enums.CurrencyCode.USD,
-              status: $Enums.TransactionStatus.PENDING,
-              ledgerEntries: [],
-            }),
-            updateMany: txPaymentRequestUpdateMany,
-          },
-        }),
-      ),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+          callback({
+            paymentRequestModel: {
+              findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
+                id: `payment-request-claim`,
+                payerId: null,
+                payerEmail: `payer@example.com`,
+                requesterId: `requester-1`,
+                amount: 25,
+                currencyCode: $Enums.CurrencyCode.USD,
+                status: $Enums.TransactionStatus.PENDING,
+                ledgerEntries: [],
+              }),
+              updateMany: txPaymentRequestUpdateMany,
+            },
+          }),
+        ),
     } as any;
     const repository = new StripePaymentRequestAccessRepository(prisma, {
       bootstrapInitialLedgerEntries,
@@ -836,7 +848,7 @@ describe(`StripePaymentRequestAccessRepository`, () => {
   });
 
   it(`stamps late-selected card payments with CARD rail`, async () => {
-    const paymentRequestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const paymentRequestUpdateMany = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 });
     const repository = new StripePaymentRequestAccessRepository(
       {} as PrismaService,
       {} as StripePaymentRequestLedgerBootstrapRepository,
@@ -858,7 +870,7 @@ describe(`StripePaymentRequestAccessRepository`, () => {
   });
 
   it(`marks the payment request completed for stripe once outcomes are appended`, async () => {
-    const paymentRequestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const paymentRequestUpdateMany = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 });
     const repository = new StripePaymentRequestAccessRepository(
       {
         paymentRequestModel: {
@@ -886,7 +898,7 @@ describe(`StripePaymentRequestAccessRepository`, () => {
 
 describe(`StripePaymentRequestLedgerBootstrapRepository`, () => {
   it(`materializes payer and requester ledger rows for a claimed payment request`, async () => {
-    const create = jest.fn().mockResolvedValue(undefined);
+    const create = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const repository = new StripePaymentRequestLedgerBootstrapRepository();
 
     await repository.bootstrapInitialLedgerEntries({
@@ -931,7 +943,7 @@ describe(`StripePaymentRequestLedgerBootstrapRepository`, () => {
     const duplicateError = Object.assign(Object.create(Prisma.PrismaClientKnownRequestError.prototype), {
       code: `P2002`,
     });
-    const create = jest.fn().mockRejectedValue(duplicateError);
+    const create = jest.fn<(...a: any[]) => any>().mockRejectedValue(duplicateError);
     const repository = new StripePaymentRequestLedgerBootstrapRepository();
 
     await expect(
@@ -957,9 +969,9 @@ describe(`StripePaymentRequestLedgerBootstrapRepository`, () => {
 
 describe(`StripeSetupIntentPersistenceRepository`, () => {
   it(`falls back billing email to the consumer email and maps card fields`, async () => {
-    const billingDetailsCreate = jest.fn().mockResolvedValue({ id: `billing-1` });
-    const paymentMethodCount = jest.fn().mockResolvedValue(0);
-    const paymentMethodCreate = jest.fn().mockResolvedValue({ id: `pm-local-1` });
+    const billingDetailsCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `billing-1` });
+    const paymentMethodCount = jest.fn<(...a: any[]) => any>().mockResolvedValue(0);
+    const paymentMethodCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `pm-local-1` });
     const repository = new StripeSetupIntentPersistenceRepository({
       billingDetailsModel: {
         create: billingDetailsCreate,
@@ -1013,13 +1025,13 @@ describe(`StripeSetupIntentPersistenceRepository`, () => {
   });
 
   it(`does not mark the new card as default when an active default already exists`, async () => {
-    const paymentMethodCreate = jest.fn().mockResolvedValue({ id: `pm-local-2` });
+    const paymentMethodCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `pm-local-2` });
     const repository = new StripeSetupIntentPersistenceRepository({
       billingDetailsModel: {
-        create: jest.fn().mockResolvedValue({ id: `billing-2` }),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `billing-2` }),
       },
       paymentMethodModel: {
-        count: jest.fn().mockResolvedValue(1),
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(1),
         create: paymentMethodCreate,
       },
     } as unknown as PrismaService);
@@ -1049,7 +1061,7 @@ describe(`StripeSetupIntentPersistenceRepository`, () => {
 
 describe(`StripeSavedPaymentMethodsRepository`, () => {
   it(`looks up only active saved methods for the owning consumer`, async () => {
-    const findFirst = jest.fn().mockResolvedValue({ id: `payment-method-1` });
+    const findFirst = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `payment-method-1` });
     const repository = new StripeSavedPaymentMethodsRepository({
       paymentMethodModel: {
         findFirst,
@@ -1071,7 +1083,7 @@ describe(`StripeSavedPaymentMethodsRepository`, () => {
   });
 
   it(`invalidates non-reusable saved methods by soft-deleting and clearing stripe id`, async () => {
-    const update = jest.fn().mockResolvedValue({ id: `payment-method-1` });
+    const update = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `payment-method-1` });
     const repository = new StripeSavedPaymentMethodsRepository({
       paymentMethodModel: {
         update,

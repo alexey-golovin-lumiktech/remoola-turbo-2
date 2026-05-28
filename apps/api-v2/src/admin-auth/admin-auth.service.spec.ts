@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
@@ -16,18 +17,18 @@ import { PrismaService } from '../shared/prisma.service';
 import { passwordUtils, secureCompare } from '../shared-common';
 
 jest.mock(`@remoola/security-utils`, () => ({
-  newUuid: jest.fn(() => `00000000-0000-4000-8000-000000000000`),
+  newUuid: jest.fn<(...a: any[]) => any>(() => `00000000-0000-4000-8000-000000000000`),
   oauthCrypto: {
-    generateOAuthState: jest.fn(() => `generated-oauth-state`),
-    hashOAuthState: jest.fn((token: string) => `hash-${token}`),
+    generateOAuthState: jest.fn<(...a: any[]) => any>(() => `generated-oauth-state`),
+    hashOAuthState: jest.fn<(...a: any[]) => any>((token: string) => `hash-${token}`),
   },
 }));
 
 jest.mock(`../shared-common`, () => ({
   passwordUtils: {
-    verifyPassword: jest.fn(),
+    verifyPassword: jest.fn<(...a: any[]) => any>(),
   },
-  secureCompare: jest.fn((a: string, b: string) => a === b),
+  secureCompare: jest.fn<(...a: any[]) => any>((a: string, b: string) => a === b),
 }));
 
 const mockVerifyPassword = passwordUtils.verifyPassword as jest.MockedFunction<typeof passwordUtils.verifyPassword>;
@@ -37,21 +38,21 @@ const mockHashOAuthState = oauthCrypto.hashOAuthState as jest.MockedFunction<typ
 describe(`AdminAuthService`, () => {
   let service: AdminAuthService;
   let prisma: {
-    adminModel: { findFirst: jest.Mock };
+    adminModel: { findFirst: jest.Mock<(...a: any[]) => any> };
     adminAuthSessionModel: {
-      create: jest.Mock;
-      findFirst: jest.Mock;
-      update: jest.Mock;
-      updateMany: jest.Mock;
+      create: jest.Mock<(...a: any[]) => any>;
+      findFirst: jest.Mock<(...a: any[]) => any>;
+      update: jest.Mock<(...a: any[]) => any>;
+      updateMany: jest.Mock<(...a: any[]) => any>;
     };
-    $transaction: jest.Mock;
+    $transaction: jest.Mock<(...a: any[]) => any>;
   };
-  let jwtService: { signAsync: jest.Mock; verify: jest.Mock };
+  let jwtService: { signAsync: jest.Mock<(...a: any[]) => any>; verify: jest.Mock<(...a: any[]) => any> };
   let authAudit: {
-    checkLockoutAndRateLimit: jest.Mock;
-    clearLockout: jest.Mock;
-    recordAudit: jest.Mock;
-    recordFailedAttempt: jest.Mock;
+    checkLockoutAndRateLimit: jest.Mock<(...a: any[]) => any>;
+    clearLockout: jest.Mock<(...a: any[]) => any>;
+    recordAudit: jest.Mock<(...a: any[]) => any>;
+    recordFailedAttempt: jest.Mock<(...a: any[]) => any>;
   };
 
   const adminIdentity = {
@@ -84,38 +85,42 @@ describe(`AdminAuthService`, () => {
 
     prisma = {
       adminModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       adminAuthSessionModel: {
-        create: jest.fn().mockResolvedValue(undefined),
-        findFirst: jest.fn(),
-        update: jest.fn().mockResolvedValue(undefined),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        findFirst: jest.fn<(...a: any[]) => any>(),
+        update: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
-      $transaction: jest.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-        const tx = {
-          adminAuthSessionModel: {
-            create: jest.fn().mockResolvedValue(undefined),
-            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-          },
-        };
-        return fn(tx);
-      }),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+          const tx = {
+            adminAuthSessionModel: {
+              create: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+              updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
+            },
+          };
+          return fn(tx);
+        }),
     };
 
     jwtService = {
-      signAsync: jest.fn().mockImplementation(async (payload: { typ: string }, options?: { secret?: string }) => {
-        if (payload.typ === `access`) return `access-token`;
-        return options?.secret === envs.JWT_REFRESH_SECRET ? `refresh-token` : `legacy-token`;
-      }),
-      verify: jest.fn(),
+      signAsync: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (payload: { typ: string }, options?: { secret?: string }) => {
+          if (payload.typ === `access`) return `access-token`;
+          return options?.secret === envs.JWT_REFRESH_SECRET ? `refresh-token` : `legacy-token`;
+        }),
+      verify: jest.fn<(...a: any[]) => any>(),
     };
 
     authAudit = {
-      checkLockoutAndRateLimit: jest.fn().mockResolvedValue(undefined),
-      clearLockout: jest.fn().mockResolvedValue(undefined),
-      recordAudit: jest.fn().mockResolvedValue(undefined),
-      recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+      checkLockoutAndRateLimit: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      clearLockout: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      recordAudit: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      recordFailedAttempt: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -237,8 +242,8 @@ describe(`AdminAuthService`, () => {
       prisma.adminAuthSessionModel.findFirst.mockResolvedValue(activeSession);
       prisma.adminModel.findFirst.mockResolvedValue(adminIdentity);
 
-      const txCreate = jest.fn().mockResolvedValue(undefined);
-      const txUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+      const txCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
+      const txUpdateMany = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 });
       prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
         return fn({
           adminAuthSessionModel: {
@@ -300,8 +305,8 @@ describe(`AdminAuthService`, () => {
       prisma.adminAuthSessionModel.findFirst.mockResolvedValue(activeSession);
       prisma.adminModel.findFirst.mockResolvedValue(adminIdentity);
 
-      const txCreate = jest.fn().mockResolvedValue(undefined);
-      const txUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
+      const txCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
+      const txUpdateMany = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 0 });
       prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
         fn({
           adminAuthSessionModel: {

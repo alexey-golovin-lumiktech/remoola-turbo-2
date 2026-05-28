@@ -29,18 +29,17 @@ jest.mock(`../../../../lib/admin-mutations/saved-views.server`, () => ({
   deleteSavedViewAction: jest.fn(),
 }));
 
-const { getAdminIdentity } = jest.requireMock(`../../../../lib/admin-api/identity.server`) as {
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(`../../../../lib/admin-api/identity.server`) as {
   getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
 };
 
-const { getLedgerAnomaliesSummary, getLedgerAnomalies } = jest.requireMock(
-  `../../../../lib/admin-api/ledger.server`,
-) as {
-  getLedgerAnomaliesSummary: jest.MockedFunction<typeof getLedgerAnomaliesSummary>;
-  getLedgerAnomalies: jest.MockedFunction<typeof getLedgerAnomalies>;
-};
+const { getLedgerAnomaliesSummary: mockedGetLedgerAnomaliesSummary, getLedgerAnomalies: mockedGetLedgerAnomalies } =
+  jest.requireMock(`../../../../lib/admin-api/ledger.server`) as {
+    getLedgerAnomaliesSummary: jest.MockedFunction<typeof getLedgerAnomaliesSummary>;
+    getLedgerAnomalies: jest.MockedFunction<typeof getLedgerAnomalies>;
+  };
 
-const { getSavedViews } = jest.requireMock(`../../../../lib/admin-api/overview.server`) as {
+const { getSavedViews: mockedGetSavedViews } = jest.requireMock(`../../../../lib/admin-api/overview.server`) as {
   getSavedViews: jest.MockedFunction<typeof getSavedViews>;
 };
 
@@ -56,11 +55,11 @@ describe(`admin-v2 ledger anomalies page`, () => {
   });
 
   beforeEach(() => {
-    getAdminIdentity.mockReset();
-    getLedgerAnomaliesSummary.mockReset();
-    getLedgerAnomalies.mockReset();
-    getSavedViews.mockReset();
-    getAdminIdentity.mockResolvedValue({
+    mockedGetAdminIdentity.mockReset();
+    mockedGetLedgerAnomaliesSummary.mockReset();
+    mockedGetLedgerAnomalies.mockReset();
+    mockedGetSavedViews.mockReset();
+    mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
       email: `ops@example.com`,
       type: `ADMIN`,
@@ -69,9 +68,9 @@ describe(`admin-v2 ledger anomalies page`, () => {
       capabilities: [`saved_views.manage`],
       workspaces: [`ledger`],
     } as never);
-    getSavedViews.mockResolvedValue({ views: [] });
+    mockedGetSavedViews.mockResolvedValue({ views: [] });
 
-    getLedgerAnomaliesSummary.mockResolvedValue({
+    mockedGetLedgerAnomaliesSummary.mockResolvedValue({
       computedAt: `2026-04-20T12:00:00.000Z`,
       totalCount: 6,
       classes: {
@@ -120,7 +119,7 @@ describe(`admin-v2 ledger anomalies page`, () => {
       },
     });
 
-    getLedgerAnomalies.mockResolvedValue({
+    mockedGetLedgerAnomalies.mockResolvedValue({
       class: `stalePendingEntries`,
       nextCursor: `cursor-2`,
       computedAt: `2026-04-20T12:00:00.000Z`,
@@ -147,7 +146,7 @@ describe(`admin-v2 ledger anomalies page`, () => {
   });
 
   it(`renders the narrow queue fallback when the anomaly list is unavailable`, async () => {
-    getLedgerAnomalies.mockResolvedValue(null);
+    mockedGetLedgerAnomalies.mockResolvedValue(null);
 
     await LedgerAnomaliesPage({
       searchParams: Promise.resolve({
@@ -156,7 +155,7 @@ describe(`admin-v2 ledger anomalies page`, () => {
       }),
     });
 
-    expect(getLedgerAnomalies).toHaveBeenCalledWith({
+    expect(mockedGetLedgerAnomalies).toHaveBeenCalledWith({
       className: `largeValueOutliers`,
       dateFrom: `2026-04-10`,
       dateTo: expect.any(String),
@@ -174,7 +173,7 @@ describe(`admin-v2 ledger anomalies page`, () => {
       }),
     });
 
-    expect(getLedgerAnomalies).toHaveBeenCalledWith({
+    expect(mockedGetLedgerAnomalies).toHaveBeenCalledWith({
       className: `stalePendingEntries`,
       dateFrom: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       dateTo: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
@@ -184,7 +183,7 @@ describe(`admin-v2 ledger anomalies page`, () => {
   });
 
   it(`hides saved-view mutation affordances when saved_views.manage is missing`, async () => {
-    getAdminIdentity.mockResolvedValueOnce({
+    mockedGetAdminIdentity.mockResolvedValueOnce({
       id: `admin-2`,
       email: `readonly@example.com`,
       type: `ADMIN`,
@@ -202,6 +201,6 @@ describe(`admin-v2 ledger anomalies page`, () => {
       }),
     });
 
-    expect(getSavedViews).not.toHaveBeenCalled();
+    expect(mockedGetSavedViews).not.toHaveBeenCalled();
   });
 });

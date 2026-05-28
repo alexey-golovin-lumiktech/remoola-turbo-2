@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -101,21 +102,21 @@ describe(`ConsumerDocumentsService.attachToPayment`, () => {
 
   function makeService() {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([]),
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: `owner@example.com` }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: `owner@example.com` }),
       },
       paymentRequestModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       consumerResourceModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
       paymentRequestAttachmentModel: {
-        findMany: jest.fn(),
-        findFirst: jest.fn(),
-        createMany: jest.fn(),
-        deleteMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
+        createMany: jest.fn<(...a: any[]) => any>(),
+        deleteMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 
@@ -244,15 +245,15 @@ describe(`ConsumerDocumentsService.bulkDeleteDocuments`, () => {
   function makeService() {
     const prisma = {
       paymentRequestAttachmentModel: {
-        findMany: jest.fn(),
-        deleteMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
+        deleteMany: jest.fn<(...a: any[]) => any>(),
       },
       consumerResourceModel: {
-        findMany: jest.fn(),
-        deleteMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
+        deleteMany: jest.fn<(...a: any[]) => any>(),
       },
       resourceTagModel: {
-        deleteMany: jest.fn(),
+        deleteMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 
@@ -372,10 +373,10 @@ describe(`ConsumerDocumentsService.detachFromPayment`, () => {
   function makeService() {
     const prisma = {
       paymentRequestModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       paymentRequestAttachmentModel: {
-        deleteMany: jest.fn(),
+        deleteMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 
@@ -434,20 +435,20 @@ describe(`ConsumerDocumentsService.uploadDocuments`, () => {
   function makeUploadService() {
     const prisma = {
       paymentRequestModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       resourceModel: {
-        create: jest.fn(),
+        create: jest.fn<(...a: any[]) => any>(),
       },
       consumerResourceModel: {
-        create: jest.fn(),
+        create: jest.fn<(...a: any[]) => any>(),
       },
       paymentRequestAttachmentModel: {
-        create: jest.fn(),
+        create: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const storage = {
-      upload: jest.fn(),
+      upload: jest.fn<(...a: any[]) => any>(),
     } as any;
 
     const service = createConsumerDocumentsService(prisma, storage);
@@ -540,18 +541,18 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
 
   function makeService() {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([]),
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: `owner@example.com` }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: `owner@example.com` }),
       },
       contactModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       consumerResourceModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
       paymentRequestAttachmentModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 
@@ -677,23 +678,23 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
 
   it(`surfaces Prisma raw query failures from the document list path`, async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockRejectedValue(
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockRejectedValue(
         new Prisma.PrismaClientKnownRequestError(`Raw query failed`, {
           code: `P2010`,
           clientVersion: `6.x`,
         }),
       ),
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: `owner@example.com` }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: `owner@example.com` }),
       },
       contactModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       consumerResourceModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
       paymentRequestAttachmentModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 
@@ -715,14 +716,14 @@ describe(`ConsumerDocumentsService.openDownload`, () => {
   function makeService() {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(),
+        findUnique: jest.fn<(...a: any[]) => any>(),
       },
       resourceModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const storage = {
-      openDownloadStream: jest.fn(),
+      openDownloadStream: jest.fn<(...a: any[]) => any>(),
     } as any;
 
     const service = createConsumerDocumentsService(prisma, storage);
@@ -732,7 +733,7 @@ describe(`ConsumerDocumentsService.openDownload`, () => {
   it(`opens a stream for an owned resource`, async () => {
     const { service, prisma, storage } = makeService();
     const streamResult = {
-      stream: { pipe: jest.fn() },
+      stream: { pipe: jest.fn<(...a: any[]) => any>() },
       filename: `invoice.pdf`,
       contentType: `application/pdf`,
       contentLength: 42,

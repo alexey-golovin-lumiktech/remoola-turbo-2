@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -20,7 +21,10 @@ import { ConsumerScheduledConversionService } from './consumer-scheduled-convers
 import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 
 function buildRateReader(prisma: any) {
-  const cacheManager = { get: jest.fn().mockResolvedValue(undefined), set: jest.fn() };
+  const cacheManager = {
+    get: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    set: jest.fn<(...a: any[]) => any>(),
+  };
   return new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(cacheManager as never, prisma));
 }
 
@@ -63,9 +67,11 @@ function createRateLookupService() {
 
   const prisma = {
     exchangeRateModel: {
-      findFirst: jest.fn().mockImplementation(({ where }: { where: { fromCurrency: string; toCurrency: string } }) => {
-        return Promise.resolve(rates.get(`${where.fromCurrency}-${where.toCurrency}`) ?? null);
-      }),
+      findFirst: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(({ where }: { where: { fromCurrency: string; toCurrency: string } }) => {
+          return Promise.resolve(rates.get(`${where.fromCurrency}-${where.toCurrency}`) ?? null);
+        }),
     },
   } as any;
 
@@ -89,7 +95,7 @@ describe(`ConsumerExchangeService.convert`, () => {
           ? (q as any).strings.join(`?`)
           : String(q);
     const createQueryRawMock = () =>
-      jest.fn().mockImplementation((query) => {
+      jest.fn<(...a: any[]) => any>().mockImplementation((query) => {
         const queryStr = queryToStr(query);
         if (queryStr.includes(`pg_advisory_xact_lock`)) return Promise.resolve([]);
         if (queryStr.includes(`SUM(amount)`) || queryStr.includes(`SUM(le.amount)`))
@@ -101,12 +107,14 @@ describe(`ConsumerExchangeService.convert`, () => {
 
     const prisma = {
       ledgerEntryModel: {
-        groupBy: jest.fn().mockResolvedValue([{ currencyCode: $Enums.CurrencyCode.USD, _sum: { amount: 100 } }]),
-        findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn(),
+        groupBy: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ currencyCode: $Enums.CurrencyCode.USD, _sum: { amount: 100 } }]),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        create: jest.fn<(...a: any[]) => any>(),
       },
       exchangeRateModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           rate: 1,
           rateBid: null,
           spreadBps: null,
@@ -118,13 +126,13 @@ describe(`ConsumerExchangeService.convert`, () => {
         }),
       },
       $queryRaw: queryRawMock,
-      $transaction: jest.fn((fn: (tx: unknown) => Promise<unknown>) => {
+      $transaction: jest.fn<(...a: any[]) => any>((fn: (tx: unknown) => Promise<unknown>) => {
         const tx = {
-          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
           $queryRaw: createQueryRawMock(),
           ledgerEntryModel: {
-            findFirst: jest.fn().mockResolvedValue(null),
-            create: jest.fn().mockResolvedValue({ id: `e-1`, ledgerId: `l-1` }),
+            findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+            create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `e-1`, ledgerId: `l-1` }),
           },
         };
         return fn(tx);
@@ -132,8 +140,8 @@ describe(`ConsumerExchangeService.convert`, () => {
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: { USD: 100 } }),
-      calculateInTransaction: jest.fn().mockResolvedValue(0),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: { USD: 100 } }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
     } as any;
 
     const service = buildService(prisma, balanceService);
@@ -156,7 +164,7 @@ describe(`ConsumerExchangeService.getBalanceByCurrency`, () => {
   it(`returns balance by currency using effective status (outcome or entry)`, async () => {
     const consumerId = `consumer-1`;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: { USD: 100 } }),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: { USD: 100 } }),
     } as any;
     const prisma = {} as any;
     const service = buildService(prisma, balanceService);

@@ -1,3 +1,4 @@
+import { expect, it, jest } from '@jest/globals';
 import { UnauthorizedException } from '@nestjs/common';
 import { type TokenPayload } from 'google-auth-library';
 
@@ -8,17 +9,17 @@ import { envs } from '../../../envs';
 import { type NgrokIngressService } from '../../../infrastructure/ngrok/ngrok-ingress.service';
 import { type ConsumerIdentityRepository } from '../identity/consumer-identity.repository';
 
-const mockGenerateAuthUrl = jest.fn((options: { redirect_uri: string }) => {
+const mockGenerateAuthUrl = jest.fn<(...a: any[]) => any>((options: { redirect_uri: string }) => {
   const url = new URL(`https://accounts.google.com/o/oauth2/v2/auth`);
   url.searchParams.set(`redirect_uri`, options.redirect_uri);
   return url.toString();
 });
 
-const mockGetToken = jest.fn();
-const mockVerifyIdToken = jest.fn();
+const mockGetToken = jest.fn<(...a: any[]) => any>();
+const mockVerifyIdToken = jest.fn<(...a: any[]) => any>();
 
 jest.mock(`google-auth-library`, () => ({
-  OAuth2Client: jest.fn().mockImplementation(() => ({
+  OAuth2Client: jest.fn<(...a: any[]) => any>().mockImplementation(() => ({
     generateAuthUrl: mockGenerateAuthUrl,
     getToken: mockGetToken,
     verifyIdToken: mockVerifyIdToken,
@@ -28,16 +29,16 @@ jest.mock(`google-auth-library`, () => ({
 describe(`GoogleOAuthService`, () => {
   let service: GoogleOAuthService;
   let consumerIdentityRepository: {
-    findGoogleLoginCandidateByEmail: jest.Mock;
-    updateGoogleLoginConsumer: jest.Mock;
-    createGoogleLoginConsumer: jest.Mock;
-    findGoogleLoginCandidateByEmailOrThrow: jest.Mock;
+    findGoogleLoginCandidateByEmail: jest.Mock<(...a: any[]) => any>;
+    updateGoogleLoginConsumer: jest.Mock<(...a: any[]) => any>;
+    createGoogleLoginConsumer: jest.Mock<(...a: any[]) => any>;
+    findGoogleLoginCandidateByEmailOrThrow: jest.Mock<(...a: any[]) => any>;
   };
   let googleProfileQuery: {
-    findMetadataByConsumerId: jest.Mock;
+    findMetadataByConsumerId: jest.Mock<(...a: any[]) => any>;
   };
   let googleProfileRepository: {
-    upsertProfile: jest.Mock;
+    upsertProfile: jest.Mock<(...a: any[]) => any>;
   };
   let ngrokIngress: Pick<NgrokIngressService, `getListenerUrl`>;
   let originalEnvs: Pick<
@@ -60,7 +61,7 @@ describe(`GoogleOAuthService`, () => {
     envs.NGROK_OAUTH_REDIRECT_ENABLED = false;
 
     consumerIdentityRepository = {
-      findGoogleLoginCandidateByEmail: jest.fn().mockResolvedValue({
+      findGoogleLoginCandidateByEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         id: `consumer-id`,
         email: `google@example.com`,
         verified: true,
@@ -69,7 +70,7 @@ describe(`GoogleOAuthService`, () => {
           lastName: `Lovelace`,
         },
       }),
-      updateGoogleLoginConsumer: jest.fn().mockResolvedValue({
+      updateGoogleLoginConsumer: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         id: `consumer-id`,
         email: `google@example.com`,
         verified: true,
@@ -78,19 +79,19 @@ describe(`GoogleOAuthService`, () => {
           lastName: `Lovelace`,
         },
       }),
-      createGoogleLoginConsumer: jest.fn(),
-      findGoogleLoginCandidateByEmailOrThrow: jest.fn(),
+      createGoogleLoginConsumer: jest.fn<(...a: any[]) => any>(),
+      findGoogleLoginCandidateByEmailOrThrow: jest.fn<(...a: any[]) => any>(),
     };
     googleProfileQuery = {
-      findMetadataByConsumerId: jest.fn().mockResolvedValue({
+      findMetadataByConsumerId: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         metadata: { sub: `google-sub` },
       }),
     };
     googleProfileRepository = {
-      upsertProfile: jest.fn().mockResolvedValue({}),
+      upsertProfile: jest.fn<(...a: any[]) => any>().mockResolvedValue({}),
     };
     ngrokIngress = {
-      getListenerUrl: jest.fn().mockReturnValue(`https://example.ngrok-free.app`),
+      getListenerUrl: jest.fn<(...a: any[]) => any>().mockReturnValue(`https://example.ngrok-free.app`),
     };
 
     mockGetToken.mockResolvedValue({ tokens: { id_token: `google-id-token` } });
@@ -136,7 +137,7 @@ describe(`GoogleOAuthService`, () => {
 
   it(`falls back to NEST_APP_EXTERNAL_ORIGIN when opt-in is enabled but listener is inactive`, async () => {
     envs.NGROK_OAUTH_REDIRECT_ENABLED = true;
-    (ngrokIngress.getListenerUrl as jest.Mock).mockReturnValue(null);
+    (ngrokIngress.getListenerUrl as jest.Mock<(...a: any[]) => any>).mockReturnValue(null);
 
     await service.exchangeCodeForPayload(`oauth-code`, `code-verifier`, `oauth-nonce`);
 

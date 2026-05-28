@@ -28,22 +28,24 @@ jest.mock(`../../../lib/quickstart-investigations`, () => ({
   normalizeQuickstartEyebrow: jest.fn((value: string) => value),
 }));
 
-const { getAdminIdentity } = jest.requireMock(`../../../lib/admin-api/identity.server`) as {
+const { getAdminIdentity: mockedGetAdminIdentity } = jest.requireMock(`../../../lib/admin-api/identity.server`) as {
   getAdminIdentity: jest.MockedFunction<typeof getAdminIdentity>;
 };
 
-const { getOverviewSummary, getQuickstarts } = jest.requireMock(`../../../lib/admin-api/overview.server`) as {
+const { getOverviewSummary: mockedGetOverviewSummary, getQuickstarts: mockedGetQuickstarts } = jest.requireMock(
+  `../../../lib/admin-api/overview.server`,
+) as {
   getOverviewSummary: jest.MockedFunction<typeof getOverviewSummary>;
   getQuickstarts: jest.MockedFunction<typeof getQuickstarts>;
 };
 
 describe(`admin-v2 overview page`, () => {
   beforeEach(() => {
-    getAdminIdentity.mockReset();
-    getOverviewSummary.mockReset();
-    getQuickstarts.mockReset();
+    mockedGetAdminIdentity.mockReset();
+    mockedGetOverviewSummary.mockReset();
+    mockedGetQuickstarts.mockReset();
 
-    getAdminIdentity.mockResolvedValue({
+    mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
       email: `ops@example.com`,
       type: `ADMIN`,
@@ -54,11 +56,11 @@ describe(`admin-v2 overview page`, () => {
       capabilities: [`overview.read`],
       workspaces: [`overview`, `verification`, `payments`, `ledger`],
     } as never);
-    getQuickstarts.mockResolvedValue([] as never);
+    mockedGetQuickstarts.mockResolvedValue([] as never);
   });
 
   it(`counts live workspaces from phaseStatus instead of availability`, async () => {
-    getOverviewSummary.mockResolvedValue({
+    mockedGetOverviewSummary.mockResolvedValue({
       computedAt: `2026-04-27T09:00:00.000Z`,
       signals: {
         pendingVerifications: {

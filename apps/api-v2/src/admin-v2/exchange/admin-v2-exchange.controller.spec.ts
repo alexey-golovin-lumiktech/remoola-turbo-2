@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2ExchangeController } from './admin-v2-exchange.controller';
 
 describe(`AdminV2ExchangeController`, () => {
@@ -10,13 +12,13 @@ describe(`AdminV2ExchangeController`, () => {
 
   function buildHarness() {
     const service = {
-      approveRate: jest.fn(async () => ({ ok: true })),
-      runRuleNow: jest.fn(async () => ({ ok: true })),
-      forceExecuteScheduledConversion: jest.fn(async () => ({ ok: true })),
-      cancelScheduledConversion: jest.fn(async () => ({ ok: true })),
+      approveRate: jest.fn<(...a: any[]) => any>(async () => ({ ok: true })),
+      runRuleNow: jest.fn<(...a: any[]) => any>(async () => ({ ok: true })),
+      forceExecuteScheduledConversion: jest.fn<(...a: any[]) => any>(async () => ({ ok: true })),
+      cancelScheduledConversion: jest.fn<(...a: any[]) => any>(async () => ({ ok: true })),
     };
-    const assertCapability = jest.fn(async () => undefined);
-    const verifyStepUp = jest.fn(async () => undefined);
+    const assertCapability = jest.fn<(...a: any[]) => any>(async () => undefined);
+    const verifyStepUp = jest.fn<(...a: any[]) => any>(async () => undefined);
     const controller = new AdminV2ExchangeController(
       service as never,
       { assertCapability } as never,

@@ -41,10 +41,7 @@ const SAVED_VIEW_WORKSPACE = `verification_queue` as const;
 
 type VerificationItem = NonNullable<Awaited<ReturnType<typeof getVerificationQueue>>>[`items`][number];
 
-export type BuildVerificationHref = (next: {
-  payload?: AdminV2VerificationQueuePayload | null;
-  page?: number;
-}) => string;
+type BuildVerificationHref = (next: { payload?: AdminV2VerificationQueuePayload | null; page?: number }) => string;
 
 function renderVerificationAssignee(item: VerificationItem) {
   if (!item.assignedTo) {

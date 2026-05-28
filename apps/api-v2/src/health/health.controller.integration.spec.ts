@@ -21,8 +21,8 @@ describe(`HealthController integration`, () => {
         {
           provide: MAIL_TRANSPORT,
           useValue: {
-            verify: jest.fn(async () => undefined),
-            sendMail: jest.fn(async () => undefined),
+            verify: jest.fn<(...a: any[]) => any>(async () => undefined),
+            sendMail: jest.fn<(...a: any[]) => any>(async () => undefined),
           },
         },
       ],

@@ -41,9 +41,7 @@ export type AdminV2ConfirmedVersionedMutationBody = AdminV2VersionedMutationBody
 export type AdminV2StepUpConfirmedVersionedMutationBody = AdminV2StepUpVersionedMutationBody &
   AdminV2ConfirmedVersionedMutationBody;
 
-export type AdminV2ExpectedDeletedAtNullBody = {
-  expectedDeletedAtNull: number;
-};
+export type AdminV2ExpectedDeletedAtNullBody = z.infer<typeof adminV2ExpectedDeletedAtNullBodySchema>;
 
 export type AdminV2ReasonBody = {
   reason?: string | null;

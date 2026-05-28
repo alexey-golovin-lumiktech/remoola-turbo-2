@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { NotFoundException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -99,13 +100,13 @@ function buildLedgerCaseEntry(id: string = LEDGER_ENTRY_ID) {
 
 function buildService() {
   const query = {
-    listLedgerEntries: jest.fn(),
-    getLedgerEntryCase: jest.fn(),
-    listDisputes: jest.fn(),
+    listLedgerEntries: jest.fn<(...a: any[]) => any>(),
+    getLedgerEntryCase: jest.fn<(...a: any[]) => any>(),
+    listDisputes: jest.fn<(...a: any[]) => any>(),
   };
   const assignmentsService = {
-    getAssignmentContextForResource: jest.fn(),
-    getActiveAssigneesForResource: jest.fn(),
+    getAssignmentContextForResource: jest.fn<(...a: any[]) => any>(),
+    getActiveAssigneesForResource: jest.fn<(...a: any[]) => any>(),
   };
 
   return {

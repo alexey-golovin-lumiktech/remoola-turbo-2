@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
@@ -12,32 +13,34 @@ import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 describe(`AdminV2AdminInvitationsService`, () => {
   async function buildService() {
     const repository = {
-      getAdminByEmail: jest.fn(),
-      getRoleByKey: jest.fn(),
-      getRoleById: jest.fn(),
-      getPendingInvitation: jest.fn(),
-      createInvitation: jest.fn(),
-      createInvitationAuditEntry: jest.fn(),
-      updateInvitationAuditDelivery: jest.fn(),
-      getInvitationForAcceptance: jest.fn(),
-      consumeInvitation: jest.fn(),
-      createAdminFromInvitation: jest.fn(),
+      getAdminByEmail: jest.fn<(...a: any[]) => any>(),
+      getRoleByKey: jest.fn<(...a: any[]) => any>(),
+      getRoleById: jest.fn<(...a: any[]) => any>(),
+      getPendingInvitation: jest.fn<(...a: any[]) => any>(),
+      createInvitation: jest.fn<(...a: any[]) => any>(),
+      createInvitationAuditEntry: jest.fn<(...a: any[]) => any>(),
+      updateInvitationAuditDelivery: jest.fn<(...a: any[]) => any>(),
+      getInvitationForAcceptance: jest.fn<(...a: any[]) => any>(),
+      consumeInvitation: jest.fn<(...a: any[]) => any>(),
+      createAdminFromInvitation: jest.fn<(...a: any[]) => any>(),
     };
     const transactions = {
-      run: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({ tx: true })),
+      run: jest.fn<(...a: any[]) => any>(async (callback: (tx: unknown) => Promise<unknown>) => callback({ tx: true })),
     };
     const idempotency = {
-      execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+      execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
     const jwtService = {
-      signAsync: jest.fn(async () => `invite-token`),
-      verify: jest.fn(),
+      signAsync: jest.fn<(...a: any[]) => any>(async () => `invite-token`),
+      verify: jest.fn<(...a: any[]) => any>(),
     };
     const links = {
-      buildInvitationUrl: jest.fn(() => `https://admin.example.com/accept-invite?token=invite-token`),
+      buildInvitationUrl: jest.fn<(...a: any[]) => any>(
+        () => `https://admin.example.com/accept-invite?token=invite-token`,
+      ),
     };
     const auditTrail = {
-      trySendInvitationEmail: jest.fn(async () => true),
+      trySendInvitationEmail: jest.fn<(...a: any[]) => any>(async () => true),
     };
 
     const moduleRef = await Test.createTestingModule({

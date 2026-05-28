@@ -8,6 +8,7 @@
     "test:e2e:standalone": "TERM=dumb NO_COLOR=1 node ../../scripts/run-jest-with-memory-cap.js --config ./jest-e2e.api-v2.json"
   },
   "devDependencies": {
+    "@jest/globals": "30.2.0",
     "@remoola/jest-config": "^0.0.0",
     "@remoola/test-db": "^0.0.0",
     "jest": "^30.2.0",

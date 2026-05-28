@@ -1,12 +1,14 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { type AdminV2OverviewQuery } from './admin-v2-overview.query';
 import { AdminV2OverviewService } from './admin-v2-overview.service';
 
 describe(`AdminV2OverviewService`, () => {
   function buildService() {
     const query = {
-      countPendingVerifications: jest.fn(async () => 28),
-      countSuspiciousAuthEvents: jest.fn(async () => 5),
-      listRecentAdminActions: jest.fn(async () => [
+      countPendingVerifications: jest.fn<(...a: any[]) => any>(async () => 28),
+      countSuspiciousAuthEvents: jest.fn<(...a: any[]) => any>(async () => 5),
+      listRecentAdminActions: jest.fn<(...a: any[]) => any>(async () => [
         {
           id: `audit-1`,
           action: `verification_approve`,
@@ -16,21 +18,21 @@ describe(`AdminV2OverviewService`, () => {
           admin: { email: `admin@example.com` },
         },
       ]),
-      countOverduePaymentRequests: jest.fn(async () => 14),
-      countUncollectiblePaymentRequests: jest.fn(async () => 3),
-      countOpenDisputes: jest.fn(async () => 4),
-      countFailedScheduledConversions: jest.fn(async () => 2),
-      countStaleExchangeRates: jest.fn(async () => 4),
+      countOverduePaymentRequests: jest.fn<(...a: any[]) => any>(async () => 14),
+      countUncollectiblePaymentRequests: jest.fn<(...a: any[]) => any>(async () => 3),
+      countOpenDisputes: jest.fn<(...a: any[]) => any>(async () => 4),
+      countFailedScheduledConversions: jest.fn<(...a: any[]) => any>(async () => 2),
+      countStaleExchangeRates: jest.fn<(...a: any[]) => any>(async () => 4),
     };
     const verificationSla = {
-      getSnapshot: jest.fn(async () => ({
+      getSnapshot: jest.fn<(...a: any[]) => any>(async () => ({
         breachedConsumerIds: new Set<string>([`consumer-1`]),
         thresholdHours: 24,
         lastComputedAt: `2026-04-15T10:05:00.000Z`,
       })),
     };
     const ledgerAnomalies = {
-      getSummary: jest.fn(async () => ({
+      getSummary: jest.fn<(...a: any[]) => any>(async () => ({
         computedAt: `2026-04-15T10:05:00.000Z`,
         totalCount: 6,
         classes: {},

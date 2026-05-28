@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -20,9 +21,9 @@ import { AdminV2AuditService } from './admin-v2-audit.service';
 describe(`AdminV2AuditService — bounded-query merge gate`, () => {
   function makeService() {
     const query = {
-      listAuthAudit: jest.fn(async () => [[], 0] as const),
-      listAdminActionAudit: jest.fn(async () => [[], 0] as const),
-      listConsumerActionAudit: jest.fn(async () => [[], 0] as const),
+      listAuthAudit: jest.fn<(...a: any[]) => any>(async () => [[], 0] as const),
+      listAdminActionAudit: jest.fn<(...a: any[]) => any>(async () => [[], 0] as const),
+      listConsumerActionAudit: jest.fn<(...a: any[]) => any>(async () => [[], 0] as const),
     };
     return {
       service: new AdminV2AuditService(query as never),

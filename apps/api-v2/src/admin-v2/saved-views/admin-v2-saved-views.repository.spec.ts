@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 import { AdminV2SavedViewsRepository } from './admin-v2-saved-views.repository';
@@ -5,17 +6,19 @@ import { AdminV2SavedViewsRepository } from './admin-v2-saved-views.repository';
 describe(`AdminV2SavedViewsRepository`, () => {
   function buildRepository() {
     const savedViewModel = {
-      create: jest.fn(),
-      update: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
+      update: jest.fn<(...a: any[]) => any>(),
     };
-    const queryRaw = jest.fn();
+    const queryRaw = jest.fn<(...a: any[]) => any>();
     const tx = {
       savedViewModel,
       $queryRaw: queryRaw,
     };
     const prisma = {
       savedViewModel,
-      $transaction: jest.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (client: typeof tx) => Promise<unknown>) =>
+        callback(tx),
+      ),
     };
 
     return {

@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Test, type TestingModule } from '@nestjs/testing';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';

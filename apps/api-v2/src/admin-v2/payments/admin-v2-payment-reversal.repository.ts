@@ -21,7 +21,7 @@ const PAYMENT_REQUEST_REVERSAL_ENTRY_TYPES = [
   $Enums.LedgerEntryType.USER_DEPOSIT_REVERSAL,
 ] as const;
 
-export const STRIPE_REFUND_EXTERNAL_REF_SOURCE = `stripe_refund`;
+const STRIPE_REFUND_EXTERNAL_REF_SOURCE = `stripe_refund`;
 
 @Injectable()
 export class AdminV2PaymentReversalRepository {

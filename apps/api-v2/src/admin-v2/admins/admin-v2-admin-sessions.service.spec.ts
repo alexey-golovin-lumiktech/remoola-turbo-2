@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 
 import { type AdminV2AdminSessionsQuery } from './admin-v2-admin-sessions.query';
@@ -10,18 +11,22 @@ describe(`AdminV2AdminSessionsService`, () => {
     revokeResult?: { revokedSessionId: string; alreadyRevoked: boolean };
     sessions?: unknown[];
   }) {
-    const findActiveAdminId = jest.fn(async () => (opts?.targetAdminExists === false ? null : { id: `admin-2` }));
-    const findOwnedSessionId = jest.fn(async () => (opts?.targetSessionExists === false ? null : { id: `session-2` }));
+    const findActiveAdminId = jest.fn<(...a: any[]) => any>(async () =>
+      opts?.targetAdminExists === false ? null : { id: `admin-2` },
+    );
+    const findOwnedSessionId = jest.fn<(...a: any[]) => any>(async () =>
+      opts?.targetSessionExists === false ? null : { id: `session-2` },
+    );
     const query = {
       findActiveAdminId,
       findOwnedSessionId,
     };
-    const listSessionsForAdmin = jest.fn(async () => opts?.sessions ?? []);
-    const revokeSessionByIdAndAudit = jest.fn(
+    const listSessionsForAdmin = jest.fn<(...a: any[]) => any>(async () => opts?.sessions ?? []);
+    const revokeSessionByIdAndAudit = jest.fn<(...a: any[]) => any>(
       async () => opts?.revokeResult ?? { revokedSessionId: `session-2`, alreadyRevoked: false },
     );
     const adminAuthService = { listSessionsForAdmin, revokeSessionByIdAndAudit };
-    const recordAudit = jest.fn(async () => undefined);
+    const recordAudit = jest.fn<(...a: any[]) => any>(async () => undefined);
     const adminActionAudit = { record: recordAudit };
     const service = new AdminV2AdminSessionsService(
       query as unknown as AdminV2AdminSessionsQuery,

@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2LedgerQuery } from './admin-v2-ledger.query';
@@ -39,16 +41,16 @@ function buildLedgerCaseEntry(id: string = LEDGER_ENTRY_ID) {
 
 function buildQuery() {
   const prisma = {
-    $queryRaw: jest.fn(),
+    $queryRaw: jest.fn<(...a: any[]) => any>(),
     ledgerEntryModel: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
+      findMany: jest.fn<(...a: any[]) => any>(),
+      findUnique: jest.fn<(...a: any[]) => any>(),
     },
     adminActionAuditLogModel: {
-      findMany: jest.fn(),
+      findMany: jest.fn<(...a: any[]) => any>(),
     },
     ledgerEntryDisputeModel: {
-      findMany: jest.fn(),
+      findMany: jest.fn<(...a: any[]) => any>(),
     },
   };
 

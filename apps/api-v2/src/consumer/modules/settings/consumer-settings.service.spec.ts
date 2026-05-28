@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Test, type TestingModule } from '@nestjs/testing';
 
 import { THEME } from '@remoola/api-types';
@@ -8,18 +9,18 @@ import { ConsumerSettingsService } from './consumer-settings.service';
 describe(`ConsumerSettingsService`, () => {
   let service: ConsumerSettingsService;
   let settingsRepository: {
-    findActiveByConsumerId: jest.Mock;
-    upsertTheme: jest.Mock;
-    upsertPreferredCurrency: jest.Mock;
-    patchSettings: jest.Mock;
+    findActiveByConsumerId: jest.Mock<(...a: any[]) => any>;
+    upsertTheme: jest.Mock<(...a: any[]) => any>;
+    upsertPreferredCurrency: jest.Mock<(...a: any[]) => any>;
+    patchSettings: jest.Mock<(...a: any[]) => any>;
   };
 
   beforeEach(async () => {
     settingsRepository = {
-      findActiveByConsumerId: jest.fn(),
-      upsertTheme: jest.fn(),
-      upsertPreferredCurrency: jest.fn(),
-      patchSettings: jest.fn(),
+      findActiveByConsumerId: jest.fn<(...a: any[]) => any>(),
+      upsertTheme: jest.fn<(...a: any[]) => any>(),
+      upsertPreferredCurrency: jest.fn<(...a: any[]) => any>(),
+      patchSettings: jest.fn<(...a: any[]) => any>(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

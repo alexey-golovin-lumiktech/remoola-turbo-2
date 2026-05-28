@@ -17,24 +17,26 @@ describe(`ConsumerContactsController integration`, () => {
     type: `CONSUMER`,
   };
 
-  const create = jest.fn(async (consumerId: string, body: Record<string, unknown>) => ({
+  const create = jest.fn<(...a: any[]) => any>(async (consumerId: string, body: Record<string, unknown>) => ({
     id: `contact-1`,
     consumerId,
     ...body,
   }));
-  const update = jest.fn(async (_id: string, _consumerId: string, body: Record<string, unknown>) => ({
-    id: `contact-1`,
-    ...body,
-  }));
+  const update = jest.fn<(...a: any[]) => any>(
+    async (_id: string, _consumerId: string, body: Record<string, unknown>) => ({
+      id: `contact-1`,
+      ...body,
+    }),
+  );
   const service = {
-    list: jest.fn(),
-    search: jest.fn(),
-    findByExactEmail: jest.fn(),
+    list: jest.fn<(...a: any[]) => any>(),
+    search: jest.fn<(...a: any[]) => any>(),
+    findByExactEmail: jest.fn<(...a: any[]) => any>(),
     create,
-    get: jest.fn(),
+    get: jest.fn<(...a: any[]) => any>(),
     update,
-    delete: jest.fn(),
-    getDetails: jest.fn(),
+    delete: jest.fn<(...a: any[]) => any>(),
+    getDetails: jest.fn<(...a: any[]) => any>(),
   };
 
   beforeAll(async () => {

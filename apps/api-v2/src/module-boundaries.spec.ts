@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative } from 'path';
 
+import { describe, expect, it } from '@jest/globals';
 import { MODULE_METADATA } from '@nestjs/common/constants';
 
 import { AdminV2AccessRepository } from './admin-v2/admin-v2-access.repository';
@@ -206,12 +207,7 @@ describe(`Nest module provider boundaries`, () => {
   });
 
   it(`keeps auth and backoffice dto barrels free of legacy auth exports`, () => {
-    expectSourceNotToContain(join(__dirname, `dtos/consumer/index.ts`), [
-      /access-consumer\.dto/,
-      /forgot-password-request\.dto/,
-      /jwt-payload\.dto/,
-      /reset-password\.dto/,
-    ]);
+    expect(existsSync(join(__dirname, `dtos/consumer/index.ts`))).toBe(false);
     expect(existsSync(join(__dirname, `dtos/backoffice/index.ts`))).toBe(false);
   });
 

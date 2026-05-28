@@ -1,9 +1,11 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2AdminsActivityQuery } from './admin-v2-admins-activity.query';
 
 describe(`AdminV2AdminsActivityQuery`, () => {
   it(`loads last-activity sources from auth and admin-action audits`, async () => {
-    const authFindMany = jest.fn(async () => []);
-    const adminActionFindMany = jest.fn(async () => []);
+    const authFindMany = jest.fn<(...a: any[]) => any>(async () => []);
+    const adminActionFindMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2AdminsActivityQuery({
       authAuditLogModel: { findMany: authFindMany },
       adminActionAuditLogModel: { findMany: adminActionFindMany },
@@ -31,8 +33,8 @@ describe(`AdminV2AdminsActivityQuery`, () => {
   });
 
   it(`loads recent audit and auth history with the requested limit`, async () => {
-    const adminActionFindMany = jest.fn(async () => []);
-    const authFindMany = jest.fn(async () => []);
+    const adminActionFindMany = jest.fn<(...a: any[]) => any>(async () => []);
+    const authFindMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2AdminsActivityQuery({
       authAuditLogModel: { findMany: authFindMany },
       adminActionAuditLogModel: { findMany: adminActionFindMany },

@@ -77,7 +77,11 @@ describe(`AdminV2LedgerAnomaliesController integration`, () => {
   let close: (() => Promise<void>) | undefined;
 
   const admin = { id: `00000000-0000-4000-8000-000000000104`, email: `admin@example.com`, type: `ADMIN` };
-  const getSummary = jest.fn(async () => ({ computedAt: `2026-04-20T00:00:00.000Z`, classes: {}, totalCount: 0 }));
+  const getSummary = jest.fn<(...a: any[]) => any>(async () => ({
+    computedAt: `2026-04-20T00:00:00.000Z`,
+    classes: {},
+    totalCount: 0,
+  }));
   const getList = jest.fn<(query?: unknown) => Promise<object>>(async () => ({
     class: `stalePendingEntries`,
     items: [],

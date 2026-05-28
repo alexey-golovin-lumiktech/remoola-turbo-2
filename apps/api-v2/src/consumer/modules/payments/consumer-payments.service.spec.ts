@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
@@ -111,7 +112,7 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
     ],
   ])(`normalizes unsafe pagination before delegating`, async (input, expected) => {
     const readService = {
-      listPayments: jest.fn().mockResolvedValue({ items: [], total: 0, ...expected }),
+      listPayments: jest.fn<(...a: any[]) => any>().mockResolvedValue({ items: [], total: 0, ...expected }),
     };
     const service = new ConsumerPaymentsServiceClass({} as any, readService as any, {} as any);
 
@@ -147,24 +148,24 @@ describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
   function makeService() {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async (args: any) => {
+        findUnique: jest.fn<(...a: any[]) => any>(async (args: any) => {
           if (args.select?.email) {
             return { email: requesterEmail };
           }
           return completeConsumerProfile;
         }),
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       paymentRequestModel: {
-        create: jest.fn(),
+        create: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 
     const mailingService = {} as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma as any, mailingService, balanceService);
 
@@ -269,25 +270,25 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
 
   function makeService() {
     const tx = {
-      paymentRequestModel: { create: jest.fn().mockResolvedValue({ id: `pr-1` }) },
-      ledgerEntryModel: { create: jest.fn().mockResolvedValue({}) },
+      paymentRequestModel: { create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `pr-1` }) },
+      ledgerEntryModel: { create: jest.fn<(...a: any[]) => any>().mockResolvedValue({}) },
     };
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async (args: { select?: { email?: boolean }; include?: unknown }) => {
+        findUnique: jest.fn<(...a: any[]) => any>(async (args: { select?: { email?: boolean }; include?: unknown }) => {
           if (args.select?.email) {
             return { email: payerEmail };
           }
           return completeConsumerProfile;
         }),
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
-      $transaction: jest.fn((fn: (t: typeof tx) => Promise<unknown>) => fn(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>((fn: (t: typeof tx) => Promise<unknown>) => fn(tx)),
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     return { service, prisma, tx };
@@ -524,29 +525,31 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
   function makeService() {
     const tx = {
       paymentRequestModel: {
-        findUnique: jest.fn(),
-        updateMany: jest.fn(async () => ({ count: 1 })),
+        findUnique: jest.fn<(...a: any[]) => any>(),
+        updateMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
       },
       ledgerEntryModel: {
-        create: jest.fn(),
+        create: jest.fn<(...a: any[]) => any>(),
       },
     };
 
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async () => completeConsumerProfile),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => completeConsumerProfile),
       },
-      $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (innerTx: typeof tx) => Promise<unknown>) =>
+        callback(tx),
+      ),
     } as any;
 
     const mailingService = {
-      sendPaymentRequestEmail: jest.fn(async () => undefined),
+      sendPaymentRequestEmail: jest.fn<(...a: any[]) => any>(async () => undefined),
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
 
     const service = new ConsumerPaymentsService(prisma, mailingService, balanceService);
@@ -617,12 +620,12 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
       }),
     );
     expect(String(tx.ledgerEntryModel.create.mock.calls[1][0].data.amount)).toBe(`55.25`);
-    expect((tx.ledgerEntryModel.create as jest.Mock).mock.calls[0]?.[0]?.data?.metadata).toEqual(
+    expect((tx.ledgerEntryModel.create as jest.Mock<(...a: any[]) => any>).mock.calls[0]?.[0]?.data?.metadata).toEqual(
       expect.not.objectContaining({
         rail: expect.anything(),
       }),
     );
-    expect((tx.ledgerEntryModel.create as jest.Mock).mock.calls[1]?.[0]?.data?.metadata).toEqual(
+    expect((tx.ledgerEntryModel.create as jest.Mock<(...a: any[]) => any>).mock.calls[1]?.[0]?.data?.metadata).toEqual(
       expect.not.objectContaining({
         rail: expect.anything(),
       }),
@@ -785,7 +788,7 @@ describe(`ConsumerPaymentsService.getPaymentView`, () => {
   function makeService() {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async (args: any) => {
+        findUnique: jest.fn<(...a: any[]) => any>(async (args: any) => {
           if (args.select?.email) {
             return { email: consumerEmail };
           }
@@ -804,14 +807,14 @@ describe(`ConsumerPaymentsService.getPaymentView`, () => {
         }),
       },
       paymentRequestModel: {
-        findUnique: jest.fn(),
+        findUnique: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     return { service, prisma };
@@ -1074,11 +1077,11 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
   it(`prefers latest outcome status for latestTransaction`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async () => ({ email: consumerEmail })),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => ({ email: consumerEmail })),
       },
       paymentRequestModel: {
-        count: jest.fn().mockResolvedValue(1),
-        findMany: jest.fn().mockResolvedValue([
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(1),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `pr-1`,
             amount: 99.5,
@@ -1105,9 +1108,9 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
       },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -1129,11 +1132,11 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
   it(`uses current consumer leg for latest transaction when mirrored pair is present`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async () => ({ email: consumerEmail })),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => ({ email: consumerEmail })),
       },
       paymentRequestModel: {
-        count: jest.fn().mockResolvedValue(1),
-        findMany: jest.fn().mockResolvedValue([
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(1),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `pr-mirrored-list`,
             amount: 6.54,
@@ -1168,9 +1171,9 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
       },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -1188,11 +1191,11 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
   it(`prefers effective status for payment row when latest consumer ledger outcome diverges`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async () => ({ email: consumerEmail })),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => ({ email: consumerEmail })),
       },
       paymentRequestModel: {
-        count: jest.fn().mockResolvedValue(1),
-        findMany: jest.fn().mockResolvedValue([
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(1),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `pr-waiting-list`,
             amount: 8.76,
@@ -1220,9 +1223,9 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
       },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -1235,15 +1238,15 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
   it(`filters by effective status instead of raw payment request status`, async () => {
     const prisma = {
       $queryRaw: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockResolvedValueOnce([{ total: 1 }])
         .mockResolvedValueOnce([{ id: `pr-waiting-filter` }]),
       consumerModel: {
-        findUnique: jest.fn(async () => ({ email: consumerEmail })),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => ({ email: consumerEmail })),
       },
       paymentRequestModel: {
-        count: jest.fn().mockResolvedValue(1),
-        findMany: jest.fn().mockResolvedValue([
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(1),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `pr-waiting-filter`,
             amount: 8.76,
@@ -1271,9 +1274,9 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
       },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -1291,11 +1294,11 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
   it(`filters by requester role and labels rows accordingly`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async () => ({ email: consumerEmail })),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => ({ email: consumerEmail })),
       },
       paymentRequestModel: {
-        count: jest.fn().mockResolvedValue(1),
-        findMany: jest.fn().mockResolvedValue([
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(1),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `pr-requester`,
             amount: 27,
@@ -1316,9 +1319,9 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
       },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -1338,11 +1341,11 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
   it(`searches requester rows by email-only payer address`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async () => ({ email: consumerEmail })),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => ({ email: consumerEmail })),
       },
       paymentRequestModel: {
-        count: jest.fn().mockResolvedValue(1),
-        findMany: jest.fn().mockResolvedValue([
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(1),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `pr-requester-email-search`,
             amount: 7.25,
@@ -1363,9 +1366,9 @@ describe(`ConsumerPaymentsService.listPayments`, () => {
       },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -1405,14 +1408,14 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
   const consumerId = `consumer-1`;
 
   it(`throws when idempotency key is missing`, async () => {
-    const prisma = { ledgerEntryModel: {}, $transaction: jest.fn() } as any;
+    const prisma = { ledgerEntryModel: {}, $transaction: jest.fn<(...a: any[]) => any>() } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     await expect(service.withdraw(consumerId, { amount: 100 } as WithdrawBody, undefined)).rejects.toThrow(
       BadRequestException,
@@ -1441,11 +1444,11 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
 
     const prisma = {
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(existingEntry),
-        aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 500 } }),
-        create: jest.fn().mockResolvedValue(existingEntry),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValueOnce(null).mockResolvedValueOnce(existingEntry),
+        aggregate: jest.fn<(...a: any[]) => any>().mockResolvedValue({ _sum: { amount: 500 } }),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue(existingEntry),
       },
-      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+      $transaction: jest.fn<(...a: any[]) => any>((fn: (tx: any) => Promise<any>) => {
         const queryToStr = (q: unknown): string =>
           typeof q === `string`
             ? q
@@ -1453,8 +1456,8 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
               ? (q as any).strings.join(`?`)
               : String(q);
         const tx = {
-          $executeRaw: jest.fn().mockResolvedValue(undefined),
-          $queryRaw: jest.fn().mockImplementation((query) => {
+          $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+          $queryRaw: jest.fn<(...a: any[]) => any>().mockImplementation((query) => {
             const queryStr = queryToStr(query);
             if (queryStr.includes(`pg_advisory_xact_lock`)) return Promise.resolve([]);
             if (
@@ -1466,8 +1469,8 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
             return Promise.resolve(undefined);
           }),
           ledgerEntryModel: {
-            aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 500 } }),
-            create: jest.fn().mockResolvedValue(existingEntry),
+            aggregate: jest.fn<(...a: any[]) => any>().mockResolvedValue({ _sum: { amount: 500 } }),
+            create: jest.fn<(...a: any[]) => any>().mockResolvedValue(existingEntry),
           },
         };
         return fn(tx);
@@ -1475,12 +1478,12 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     const body: WithdrawBody = { amount: 100, method: $Enums.PaymentMethodType.BANK_ACCOUNT };
     const first = await service.withdraw(consumerId, body, `key-1`);
@@ -1512,20 +1515,20 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
       deletedAt: null,
     };
 
-    const createSpy = jest.fn().mockResolvedValue(createdEntry);
+    const createSpy = jest.fn<(...a: any[]) => any>().mockResolvedValue(createdEntry);
     const prisma = {
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
       paymentMethodModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `pm_legacy`,
           type: $Enums.PaymentMethodType.BANK_ACCOUNT,
         }),
       },
-      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+      $transaction: jest.fn<(...a: any[]) => any>((fn: (tx: any) => Promise<any>) => {
         const tx = {
-          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
           ledgerEntryModel: {
             create: createSpy,
           },
@@ -1535,12 +1538,12 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     await service.withdraw(
       consumerId,
@@ -1576,24 +1579,24 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
   it(`rejects non-bank payout destination ids`, async () => {
     const prisma = {
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
       paymentMethodModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `pm_card`,
           type: $Enums.PaymentMethodType.CREDIT_CARD,
         }),
       },
-      $transaction: jest.fn(),
+      $transaction: jest.fn<(...a: any[]) => any>(),
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     await expect(
       service.withdraw(
@@ -1610,7 +1613,7 @@ describe(`ConsumerPaymentsService.transfer`, () => {
   const recipientId = `00000000-0000-4000-8000-000000000002`;
 
   function queryRawImpl(balance: number) {
-    return jest.fn().mockImplementation((query: unknown) => {
+    return jest.fn<(...a: any[]) => any>().mockImplementation((query: unknown) => {
       const str =
         typeof query === `string`
           ? query
@@ -1625,17 +1628,17 @@ describe(`ConsumerPaymentsService.transfer`, () => {
 
   it(`throws when idempotency key is missing`, async () => {
     const prisma = {
-      consumerModel: { findFirst: jest.fn().mockResolvedValue({ id: `r1`, email: `r@x.com` }) },
+      consumerModel: { findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `r1`, email: `r@x.com` }) },
       ledgerEntryModel: {},
-      $transaction: jest.fn(),
+      $transaction: jest.fn<(...a: any[]) => any>(),
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     const bodyNoKey: TransferBody = { amount: 50, recipient: `r@x.com` };
     await expect(service.transfer(consumerId, bodyNoKey, undefined)).rejects.toThrow(BadRequestException);
@@ -1649,18 +1652,18 @@ describe(`ConsumerPaymentsService.transfer`, () => {
 
   /* eslint-disable-next-line max-len */
   it(`happy path: creates exactly two ledger entries (debit sender, credit receiver) with same ledgerId and preserves ledger neutrality`, async () => {
-    const createSpy = jest.fn().mockResolvedValue({});
+    const createSpy = jest.fn<(...a: any[]) => any>().mockResolvedValue({});
     const prisma = {
       consumerModel: {
-        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `2@email.com` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: recipientId, email: `2@email.com` }),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
         create: createSpy,
       },
-      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+      $transaction: jest.fn<(...a: any[]) => any>((fn: (tx: any) => Promise<any>) => {
         const tx = {
-          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
           $queryRaw: queryRawImpl(10),
           ledgerEntryModel: { create: createSpy },
         };
@@ -1669,12 +1672,12 @@ describe(`ConsumerPaymentsService.transfer`, () => {
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     const body: TransferBody = { amount: 2, recipient: `2@email.com`, currencyCode: $Enums.CurrencyCode.USD };
     const result = await service.transfer(consumerId, body, `idem-key-1`);
@@ -1721,10 +1724,10 @@ describe(`ConsumerPaymentsService.transfer`, () => {
       deletedAt: null,
     };
 
-    const createSpy = jest.fn().mockResolvedValue({});
-    const transactionSpy = jest.fn((fn: (tx: any) => Promise<any>) => {
+    const createSpy = jest.fn<(...a: any[]) => any>().mockResolvedValue({});
+    const transactionSpy = jest.fn<(...a: any[]) => any>((fn: (tx: any) => Promise<any>) => {
       const tx = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         $queryRaw: queryRawImpl(500),
         ledgerEntryModel: { create: createSpy },
       };
@@ -1733,22 +1736,22 @@ describe(`ConsumerPaymentsService.transfer`, () => {
 
     const prisma = {
       consumerModel: {
-        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `r@example.com` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: recipientId, email: `r@example.com` }),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValue(existingEntry),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValueOnce(null).mockResolvedValue(existingEntry),
         create: createSpy,
       },
       $transaction: transactionSpy,
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     const body: TransferBody = { amount: 50, recipient: `r@example.com` };
     const first = await service.transfer(consumerId, body, `key-1`);
@@ -1770,17 +1773,17 @@ describe(`ConsumerPaymentsService.transfer`, () => {
   });
 
   it(`accepts legacy mobile recipientId alias`, async () => {
-    const createSpy = jest.fn().mockResolvedValue({});
+    const createSpy = jest.fn<(...a: any[]) => any>().mockResolvedValue({});
     const prisma = {
       consumerModel: {
-        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `2@email.com` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: recipientId, email: `2@email.com` }),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
-      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+      $transaction: jest.fn<(...a: any[]) => any>((fn: (tx: any) => Promise<any>) => {
         const tx = {
-          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
           $queryRaw: queryRawImpl(500),
           ledgerEntryModel: { create: createSpy },
         };
@@ -1789,12 +1792,12 @@ describe(`ConsumerPaymentsService.transfer`, () => {
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(500),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(500),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     await service.transfer(
       consumerId,
@@ -1835,21 +1838,21 @@ describe(`ConsumerPaymentsService.transfer`, () => {
   it(`does not query UUID id lookup when recipient is an email`, async () => {
     const prisma = {
       consumerModel: {
-        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `r@example.com` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: recipientId, email: `r@example.com` }),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue({ ledgerId: `existing-ledger` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ ledgerId: `existing-ledger` }),
       },
-      $transaction: jest.fn(),
+      $transaction: jest.fn<(...a: any[]) => any>(),
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     await service.transfer(consumerId, { amount: 50, recipient: `r@example.com` }, `key-email`);
 
@@ -1870,17 +1873,17 @@ describe(`ConsumerPaymentsService.transfer`, () => {
   });
 
   it(`treats non-UUID legacy recipientId alias as email or phone only`, async () => {
-    const createSpy = jest.fn().mockResolvedValue({});
+    const createSpy = jest.fn<(...a: any[]) => any>().mockResolvedValue({});
     const prisma = {
       consumerModel: {
-        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `legacy@example.com` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: recipientId, email: `legacy@example.com` }),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
-      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+      $transaction: jest.fn<(...a: any[]) => any>((fn: (tx: any) => Promise<any>) => {
         const tx = {
-          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
           $queryRaw: queryRawImpl(500),
           ledgerEntryModel: { create: createSpy },
         };
@@ -1889,12 +1892,12 @@ describe(`ConsumerPaymentsService.transfer`, () => {
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(500),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(500),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     await service.transfer(
       consumerId,
@@ -1915,16 +1918,19 @@ describe(`ConsumerPaymentsService.transfer`, () => {
 
   /* eslint-disable-next-line max-len */
   it(`atomic failure: when second ledger create throws, transaction throws and no partial state is returned`, async () => {
-    const createSpy = jest.fn().mockResolvedValueOnce({}).mockRejectedValueOnce(new Error(`DB failure`));
+    const createSpy = jest
+      .fn<(...a: any[]) => any>()
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(new Error(`DB failure`));
 
     const prisma = {
       consumerModel: {
-        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `2@email.com` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: recipientId, email: `2@email.com` }),
       },
-      ledgerEntryModel: { findFirst: jest.fn().mockResolvedValue(null), create: createSpy },
-      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+      ledgerEntryModel: { findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null), create: createSpy },
+      $transaction: jest.fn<(...a: any[]) => any>((fn: (tx: any) => Promise<any>) => {
         const tx = {
-          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
           $queryRaw: queryRawImpl(10),
           ledgerEntryModel: { create: createSpy },
         };
@@ -1933,12 +1939,12 @@ describe(`ConsumerPaymentsService.transfer`, () => {
     } as any;
 
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     const body: TransferBody = { amount: 2, recipient: `2@email.com` };
 
@@ -1953,7 +1959,7 @@ describe(`ConsumerPaymentsService.assertProfileCompleteForVerification`, () => {
   function makeService(consumer: unknown) {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue(consumer),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue(consumer),
       },
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, {} as any);
@@ -2075,13 +2081,13 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
     });
     const rows = [makeRow(202), makeRow(201)];
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue(rows),
-      paymentMethodModel: { findMany: jest.fn().mockResolvedValue([]) },
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(rows),
+      paymentMethodModel: { findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]) },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -2096,7 +2102,7 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
 
   it(`uses latest outcome status for returned history items and status filtering`, async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([
         {
           id: `entry-1`,
           ledgerId: `ledger-1`,
@@ -2112,7 +2118,7 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
         },
       ]),
       paymentMethodModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `pm-bank-1`,
             brand: `History Temp Bank`,
@@ -2122,9 +2128,9 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
       },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -2144,7 +2150,7 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
 
   it(`normalizes deposit settlement rows back to product payment type in history`, async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([
         {
           id: `entry-deposit-history`,
           ledgerId: `ledger-deposit-history`,
@@ -2159,12 +2165,12 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
           totalRows: 1,
         },
       ]),
-      paymentMethodModel: { findMany: jest.fn().mockResolvedValue([]) },
+      paymentMethodModel: { findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]) },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -2175,7 +2181,7 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
 
   it(`filters by normalized history type after collapse`, async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([
         {
           id: `entry-deposit-history`,
           ledgerId: `ledger-deposit-history`,
@@ -2190,12 +2196,12 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
           totalRows: 1,
         },
       ]),
-      paymentMethodModel: { findMany: jest.fn().mockResolvedValue([]) },
+      paymentMethodModel: { findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]) },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -2212,7 +2218,7 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
   it(`filters direction from the collapsed visible row instead of raw multi-leg ledger entries`, async () => {
     const prisma = {
       $queryRaw: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockResolvedValueOnce([
           {
             id: `entry-exchange-income`,
@@ -2229,12 +2235,12 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
           },
         ])
         .mockResolvedValueOnce([]),
-      paymentMethodModel: { findMany: jest.fn().mockResolvedValue([]) },
+      paymentMethodModel: { findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]) },
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -2271,10 +2277,10 @@ describe(`ConsumerPaymentsService.getBalancesIncludePending`, () => {
     const balances = { [$Enums.CurrencyCode.USD]: 75, [$Enums.CurrencyCode.EUR]: 20 };
     const balanceService = {
       calculateMultiCurrency: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockResolvedValue({ balances, mode: `COMPLETED_AND_PENDING`, calculatedAt: new Date() }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const prisma = {} as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
@@ -2295,12 +2301,12 @@ describe(`ConsumerPaymentsService.getTodayOutgoingTotal`, () => {
 
   it(`applies wallet eligibility rule so card-funded payer debits do not consume wallet daily limits`, async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([{ total: `0` }]),
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([{ total: `0` }]),
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
@@ -2324,12 +2330,12 @@ describe(`ConsumerPaymentsService.getTodayOutgoingTotal`, () => {
 
   it(`counts only user-initiated outgoing types for daily limits`, async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([{ total: `0` }]),
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([{ total: `0` }]),
     } as any;
     const balanceService = {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
     const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 

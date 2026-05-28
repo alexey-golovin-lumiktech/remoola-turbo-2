@@ -1,5 +1,6 @@
+import { describe, expect, it, jest } from '@jest/globals';
 jest.mock(`@remoola/security-utils`, () => ({
-  newUuid: jest.fn(() => `00000000-0000-0000-0000-000000000ledger`),
+  newUuid: jest.fn<(...a: any[]) => any>(() => `00000000-0000-0000-0000-000000000ledger`),
 }));
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -10,7 +11,7 @@ describe(`StripePaymentRequestLedgerBootstrapRepository`, () => {
   function makeTx() {
     return {
       ledgerEntryModel: {
-        create: jest.fn(async () => null) as jest.Mock,
+        create: jest.fn<(...a: any[]) => any>(async () => null) as jest.Mock<(...a: any[]) => any>,
       },
     };
   }

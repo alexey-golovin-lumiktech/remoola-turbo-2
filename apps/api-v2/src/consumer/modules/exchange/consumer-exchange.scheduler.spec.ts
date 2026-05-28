@@ -1,20 +1,22 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+
 import { ConsumerExchangeScheduler } from './consumer-exchange.scheduler';
 import { type ConsumerExchangeService } from './consumer-exchange.service';
 
 describe(`ConsumerExchangeScheduler`, () => {
   let scheduler: ConsumerExchangeScheduler;
   let exchangeService: {
-    processDueScheduledConversions: jest.Mock;
-    processDueAutoConversionRules: jest.Mock;
+    processDueScheduledConversions: jest.Mock<(...a: any[]) => any>;
+    processDueAutoConversionRules: jest.Mock<(...a: any[]) => any>;
   };
-  let logSpy: jest.SpyInstance;
-  let warnSpy: jest.SpyInstance;
-  let errorSpy: jest.SpyInstance;
+  let logSpy: jest.SpiedFunction<(...a: any[]) => any>;
+  let warnSpy: jest.SpiedFunction<(...a: any[]) => any>;
+  let errorSpy: jest.SpiedFunction<(...a: any[]) => any>;
 
   beforeEach(() => {
     exchangeService = {
-      processDueScheduledConversions: jest.fn().mockResolvedValue(undefined),
-      processDueAutoConversionRules: jest.fn().mockResolvedValue(undefined),
+      processDueScheduledConversions: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      processDueAutoConversionRules: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
     scheduler = new ConsumerExchangeScheduler(exchangeService as unknown as ConsumerExchangeService);
     logSpy = jest

@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { type AdminV2PayoutsRepository } from './admin-v2-payouts.repository';
@@ -9,7 +11,7 @@ import {
 describe(`PayoutPaymentMethodResolverService`, () => {
   function buildService() {
     const repository = {
-      fetchPaymentMethodsByIds: jest.fn(),
+      fetchPaymentMethodsByIds: jest.fn<(...a: any[]) => any>(),
     };
 
     return {

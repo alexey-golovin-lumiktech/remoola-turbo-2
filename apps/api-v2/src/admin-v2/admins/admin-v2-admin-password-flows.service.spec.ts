@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { AdminV2AdminPasswordFlowsService } from './admin-v2-admin-password-flows.service';
@@ -6,22 +7,22 @@ import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 describe(`AdminV2AdminPasswordFlowsService`, () => {
   function buildService() {
     const repository = {
-      getActiveAdminByEmail: jest.fn(),
-      getResetTarget: jest.fn(),
-      createPasswordResetArtifact: jest.fn(),
-      updateAuditNotificationStatus: jest.fn(),
-      getResetToken: jest.fn(),
-      getActiveAdminById: jest.fn(),
-      consumeResetTokenAndUpdatePassword: jest.fn(),
+      getActiveAdminByEmail: jest.fn<(...a: any[]) => any>(),
+      getResetTarget: jest.fn<(...a: any[]) => any>(),
+      createPasswordResetArtifact: jest.fn<(...a: any[]) => any>(),
+      updateAuditNotificationStatus: jest.fn<(...a: any[]) => any>(),
+      getResetToken: jest.fn<(...a: any[]) => any>(),
+      getActiveAdminById: jest.fn<(...a: any[]) => any>(),
+      consumeResetTokenAndUpdatePassword: jest.fn<(...a: any[]) => any>(),
     };
     const idempotency = {
-      execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+      execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
     const auditTrail = {
-      sendAdminV2PasswordResetEmailNotification: jest.fn(async () => true),
+      sendAdminV2PasswordResetEmailNotification: jest.fn<(...a: any[]) => any>(async () => true),
     };
     const authAudit = {
-      clearLockout: jest.fn(async () => undefined),
+      clearLockout: jest.fn<(...a: any[]) => any>(async () => undefined),
     };
 
     return {

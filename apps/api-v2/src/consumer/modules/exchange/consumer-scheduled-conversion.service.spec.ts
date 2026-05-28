@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -20,12 +21,12 @@ function createScheduledConversion(overrides?: Partial<Record<string, unknown>>)
 
 function createService() {
   const conversionService = {
-    convertInternal: jest.fn().mockResolvedValue({ ledgerId: `ledger-1` }),
+    convertInternal: jest.fn<(...a: any[]) => any>().mockResolvedValue({ ledgerId: `ledger-1` }),
   } as any;
   const automationRepository = {
-    countScheduledConversions: jest.fn().mockResolvedValue(0),
-    listScheduledConversions: jest.fn().mockResolvedValue([]),
-    createScheduledConversion: jest.fn().mockImplementation((data) =>
+    countScheduledConversions: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+    listScheduledConversions: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+    createScheduledConversion: jest.fn<(...a: any[]) => any>().mockImplementation((data) =>
       Promise.resolve(
         createScheduledConversion({
           id: `created-conversion`,
@@ -34,14 +35,14 @@ function createService() {
         }),
       ),
     ),
-    findActiveScheduledConversion: jest.fn().mockResolvedValue(createScheduledConversion()),
-    cancelScheduledConversion: jest.fn().mockResolvedValue(undefined),
-    findDueScheduledConversions: jest.fn().mockResolvedValue([]),
-    claimDueScheduledConversion: jest.fn().mockResolvedValue(true),
-    markScheduledConversionExecuted: jest.fn().mockResolvedValue(undefined),
-    markScheduledConversionFailed: jest.fn().mockResolvedValue(undefined),
-    findScheduledConversionById: jest.fn().mockResolvedValue(createScheduledConversion()),
-    claimScheduledConversionNow: jest.fn().mockResolvedValue(true),
+    findActiveScheduledConversion: jest.fn<(...a: any[]) => any>().mockResolvedValue(createScheduledConversion()),
+    cancelScheduledConversion: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    findDueScheduledConversions: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+    claimDueScheduledConversion: jest.fn<(...a: any[]) => any>().mockResolvedValue(true),
+    markScheduledConversionExecuted: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    markScheduledConversionFailed: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    findScheduledConversionById: jest.fn<(...a: any[]) => any>().mockResolvedValue(createScheduledConversion()),
+    claimScheduledConversionNow: jest.fn<(...a: any[]) => any>().mockResolvedValue(true),
   } as any;
   const service = new ConsumerScheduledConversionService(conversionService, automationRepository);
 

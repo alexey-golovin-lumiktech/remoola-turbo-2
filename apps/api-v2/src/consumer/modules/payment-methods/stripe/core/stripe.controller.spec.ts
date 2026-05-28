@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 
 import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
@@ -8,13 +9,13 @@ import { ConsumerStripeController } from './stripe.controller';
 
 describe(`ConsumerStripeController`, () => {
   const service = {
-    createStripeSession: jest.fn(),
-    payWithSavedPaymentMethod: jest.fn(),
+    createStripeSession: jest.fn<(...a: any[]) => any>(),
+    payWithSavedPaymentMethod: jest.fn<(...a: any[]) => any>(),
   };
   const originResolver = {
-    validateConsumerAppScope: jest.fn(),
-    validateConsumerAppScopeHeader: jest.fn(),
-    resolveConsumerOriginByScope: jest.fn(),
+    validateConsumerAppScope: jest.fn<(...a: any[]) => any>(),
+    validateConsumerAppScopeHeader: jest.fn<(...a: any[]) => any>(),
+    resolveConsumerOriginByScope: jest.fn<(...a: any[]) => any>(),
   };
 
   const consumer = { id: `consumer-1` } as unknown as ConsumerModel;
@@ -118,7 +119,7 @@ describe(`ConsumerStripeController`, () => {
   it(`uses provided idempotency-key header when valid`, async () => {
     const controller = new ConsumerStripeController(service as never, originResolver as never);
     const req = {
-      get: jest.fn().mockReturnValue(`key-123`),
+      get: jest.fn<(...a: any[]) => any>().mockReturnValue(`key-123`),
       path: `/api/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
       headers: {
         [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
@@ -141,7 +142,7 @@ describe(`ConsumerStripeController`, () => {
   it(`rejects when idempotency-key header is missing`, async () => {
     const controller = new ConsumerStripeController(service as never, originResolver as never);
     const req = {
-      get: jest.fn().mockReturnValue(undefined),
+      get: jest.fn<(...a: any[]) => any>().mockReturnValue(undefined),
       path: `/api/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
       headers: {
         [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
@@ -156,7 +157,7 @@ describe(`ConsumerStripeController`, () => {
   it(`rejects invalid idempotency-key header`, async () => {
     const controller = new ConsumerStripeController(service as never, originResolver as never);
     const req = {
-      get: jest.fn().mockReturnValue(`bad key with spaces`),
+      get: jest.fn<(...a: any[]) => any>().mockReturnValue(`bad key with spaces`),
       path: `/api/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
       headers: {
         [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE,
@@ -174,7 +175,7 @@ describe(`ConsumerStripeController`, () => {
 
     await expect(
       controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, `legacy-consumer`, {
-        get: jest.fn(),
+        get: jest.fn<(...a: any[]) => any>(),
         path: `/api/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
         headers: {},
       } as never),
@@ -186,7 +187,7 @@ describe(`ConsumerStripeController`, () => {
     const controller = new ConsumerStripeController(service as never, originResolver as never);
 
     await controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, CURRENT_CONSUMER_APP_SCOPE, {
-      get: jest.fn().mockReturnValue(`key-123`),
+      get: jest.fn<(...a: any[]) => any>().mockReturnValue(`key-123`),
       path: `/api/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
       headers: {},
     } as never);

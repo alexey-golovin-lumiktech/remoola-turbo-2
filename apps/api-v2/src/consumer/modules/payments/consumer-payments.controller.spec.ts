@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 
 import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
@@ -6,13 +7,13 @@ import { ConsumerPaymentsController } from './consumer-payments.controller';
 
 describe(`ConsumerPaymentsController`, () => {
   const service = {
-    startPayment: jest.fn(),
+    startPayment: jest.fn<(...a: any[]) => any>(),
   };
 
   const invoiceService = {} as any;
   const originResolver = {
-    validateConsumerAppScope: jest.fn(),
-    validateConsumerAppScopeHeader: jest.fn(),
+    validateConsumerAppScope: jest.fn<(...a: any[]) => any>(),
+    validateConsumerAppScopeHeader: jest.fn<(...a: any[]) => any>(),
   };
 
   const consumer = { id: `consumer-1` } as any;

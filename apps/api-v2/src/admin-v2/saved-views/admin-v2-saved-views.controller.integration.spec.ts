@@ -18,20 +18,25 @@ describe(`AdminV2SavedViewsController integration`, () => {
     type: `ADMIN`,
   };
 
-  const create = jest.fn(async (_admin: unknown, body: Record<string, unknown>) => ({ id: `saved-view-1`, ...body }));
-  const update = jest.fn(async (_admin: unknown, savedViewId: string, body: Record<string, unknown>) => ({
-    id: savedViewId,
+  const create = jest.fn<(...a: any[]) => any>(async (_admin: unknown, body: Record<string, unknown>) => ({
+    id: `saved-view-1`,
     ...body,
   }));
+  const update = jest.fn<(...a: any[]) => any>(
+    async (_admin: unknown, savedViewId: string, body: Record<string, unknown>) => ({
+      id: savedViewId,
+      ...body,
+    }),
+  );
   const service = {
-    list: jest.fn(),
+    list: jest.fn<(...a: any[]) => any>(),
     create,
     update,
-    delete: jest.fn(),
+    delete: jest.fn<(...a: any[]) => any>(),
   };
 
   const accessService = {
-    assertCapability: jest.fn(async () => ({ capabilities: [`saved_views.manage`] })),
+    assertCapability: jest.fn<(...a: any[]) => any>(async () => ({ capabilities: [`saved_views.manage`] })),
   };
 
   beforeAll(async () => {
@@ -91,8 +96,11 @@ describe(`AdminV2SavedViewsController integration`, () => {
       })
       .expect(201);
 
-    expect(accessService.assertCapability as jest.Mock).toHaveBeenCalledWith(adminIdentity, `saved_views.manage`);
-    expect(service.create as jest.Mock).toHaveBeenCalledWith(
+    expect(accessService.assertCapability as jest.Mock<(...a: any[]) => any>).toHaveBeenCalledWith(
+      adminIdentity,
+      `saved_views.manage`,
+    );
+    expect(service.create as jest.Mock<(...a: any[]) => any>).toHaveBeenCalledWith(
       adminIdentity,
       {
         workspace: `ledger_anomalies`,
@@ -125,7 +133,7 @@ describe(`AdminV2SavedViewsController integration`, () => {
       })
       .expect(201);
 
-    expect(service.create as jest.Mock).toHaveBeenCalledWith(
+    expect(service.create as jest.Mock<(...a: any[]) => any>).toHaveBeenCalledWith(
       adminIdentity,
       {
         workspace: `ledger_anomalies`,
@@ -134,7 +142,9 @@ describe(`AdminV2SavedViewsController integration`, () => {
       },
       expect.any(Object),
     );
-    expect((service.create as jest.Mock).mock.calls[0]?.[1]).not.toHaveProperty(`unexpectedTopLevel`);
+    expect((service.create as jest.Mock<(...a: any[]) => any>).mock.calls[0]?.[1]).not.toHaveProperty(
+      `unexpectedTopLevel`,
+    );
     expect(res.body).not.toHaveProperty(`unexpectedTopLevel`);
   });
 
@@ -157,7 +167,7 @@ describe(`AdminV2SavedViewsController integration`, () => {
       })
       .expect(200);
 
-    expect(service.update as jest.Mock).toHaveBeenCalledWith(
+    expect(service.update as jest.Mock<(...a: any[]) => any>).toHaveBeenCalledWith(
       adminIdentity,
       `saved-view-1`,
       {
@@ -186,7 +196,7 @@ describe(`AdminV2SavedViewsController integration`, () => {
       })
       .expect(200);
 
-    expect(service.update as jest.Mock).toHaveBeenCalledWith(
+    expect(service.update as jest.Mock<(...a: any[]) => any>).toHaveBeenCalledWith(
       adminIdentity,
       `saved-view-1`,
       {
@@ -195,7 +205,9 @@ describe(`AdminV2SavedViewsController integration`, () => {
       },
       expect.any(Object),
     );
-    expect((service.update as jest.Mock).mock.calls[0]?.[2]).not.toHaveProperty(`unexpectedTopLevel`);
+    expect((service.update as jest.Mock<(...a: any[]) => any>).mock.calls[0]?.[2]).not.toHaveProperty(
+      `unexpectedTopLevel`,
+    );
     expect(res.body).not.toHaveProperty(`unexpectedTopLevel`);
   });
 });

@@ -1,3 +1,5 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { StripeReversalSchedulerRepository } from './stripe-reversal-scheduler.repository';
@@ -7,7 +9,7 @@ type ReversalSchedulerSelection =
   | { skipped: true }
   | { skipped: false; stripeIdsForRun: string[]; pendingStripeIds: number };
 
-const createOutcomeIdempotentMock = jest.fn().mockResolvedValue(undefined);
+const createOutcomeIdempotentMock = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
 jest.mock(`../core/ledger-outcome-idempotent`, () => ({
   createOutcomeIdempotent: (...args: unknown[]) => createOutcomeIdempotentMock(...args),
@@ -16,17 +18,17 @@ jest.mock(`../core/ledger-outcome-idempotent`, () => ({
 describe(`StripeReversalScheduler`, () => {
   let scheduler: StripeReversalScheduler;
   let reversalSchedulerRepository: jest.Mocked<StripeReversalSchedulerRepository>;
-  let logSpy: jest.SpyInstance;
-  let warnSpy: jest.SpyInstance;
-  let refundsRetrieveMock: jest.Mock;
+  let logSpy: jest.SpiedFunction<(...a: any[]) => any>;
+  let warnSpy: jest.SpiedFunction<(...a: any[]) => any>;
+  let refundsRetrieveMock: jest.Mock<(...a: any[]) => any>;
   let selection: ReversalSchedulerSelection;
 
   beforeEach(() => {
     selection = { skipped: false, stripeIdsForRun: [`re_1`], pendingStripeIds: 1 };
-    refundsRetrieveMock = jest.fn().mockResolvedValue({ status: `succeeded` });
+    refundsRetrieveMock = jest.fn<(...a: any[]) => any>().mockResolvedValue({ status: `succeeded` });
     reversalSchedulerRepository = {
-      recordRefundOutcome: jest.fn().mockResolvedValue(undefined),
-      selectPendingStripeIdsForRun: jest.fn().mockImplementation(async () => selection),
+      recordRefundOutcome: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      selectPendingStripeIdsForRun: jest.fn<(...a: any[]) => any>().mockImplementation(async () => selection),
     } as unknown as jest.Mocked<StripeReversalSchedulerRepository>;
     scheduler = new StripeReversalScheduler(reversalSchedulerRepository, {
       refunds: { retrieve: refundsRetrieveMock },
@@ -175,7 +177,7 @@ describe(`StripeReversalSchedulerRepository`, () => {
   }) {
     const entriesByStripeId = params?.entriesByStripeId ?? new Map<string, Array<{ id: string }>>();
     const ledgerEntryFindMany = jest
-      .fn()
+      .fn<(...a: any[]) => any>()
       .mockImplementation((args: { select?: { stripeId?: boolean }; where?: { stripeId?: string } }) => {
         if (args?.select?.stripeId) {
           return Promise.resolve(params?.pendingEntries ?? []);
@@ -185,13 +187,15 @@ describe(`StripeReversalSchedulerRepository`, () => {
         return Promise.resolve(entriesByStripeId.get(stripeId) ?? []);
       });
     const tx = {
-      $queryRaw: jest.fn().mockResolvedValue([{ locked: params?.lockAcquired ?? true }]),
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([{ locked: params?.lockAcquired ?? true }]),
       ledgerEntryModel: {
         findMany: ledgerEntryFindMany,
       },
     };
     const prisma = {
-      $transaction: jest.fn().mockImplementation(async (cb: (innerTx: typeof tx) => Promise<unknown>) => cb(tx)),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (cb: (innerTx: typeof tx) => Promise<unknown>) => cb(tx)),
     } as any;
 
     return {
@@ -297,7 +301,7 @@ describe(`StripeReversalSchedulerRepository`, () => {
       stripeId: `re_1`,
       status: $Enums.TransactionStatus.COMPLETED,
       externalId: `reconcile:re_1:${$Enums.TransactionStatus.COMPLETED}`,
-      logger: { warn: jest.fn() } as any,
+      logger: { warn: jest.fn<(...a: any[]) => any>() } as any,
     });
 
     expect(createOutcomeIdempotentMock).toHaveBeenCalledTimes(2);

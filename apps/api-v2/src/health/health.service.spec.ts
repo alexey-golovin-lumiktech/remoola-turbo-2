@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ForbiddenException } from '@nestjs/common';
 
 import { envs } from '../envs';
@@ -6,11 +7,11 @@ import { HealthService } from './health.service';
 
 describe(`HealthService`, () => {
   const databaseProbe = {
-    ping: jest.fn(),
+    ping: jest.fn<(...a: any[]) => any>(),
   };
   const brevoMailService = {
-    verify: jest.fn(),
-    sendMail: jest.fn(),
+    verify: jest.fn<(...a: any[]) => any>(),
+    sendMail: jest.fn<(...a: any[]) => any>(),
   };
 
   let service: HealthService;

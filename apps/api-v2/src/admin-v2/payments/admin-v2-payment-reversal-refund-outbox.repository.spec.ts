@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2PaymentReversalRefundOutboxRepository } from './admin-v2-payment-reversal-refund-outbox.repository';
 import { type PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
 import { type PrismaService } from '../../shared/prisma.service';
@@ -6,7 +8,7 @@ describe(`AdminV2PaymentReversalRefundOutboxRepository`, () => {
   function buildRepository() {
     const prisma = {
       notificationOutboxModel: {
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     };
     const repository = new AdminV2PaymentReversalRefundOutboxRepository(

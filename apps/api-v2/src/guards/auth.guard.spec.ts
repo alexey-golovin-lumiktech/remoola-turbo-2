@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { type ExecutionContext } from '@nestjs/common/interfaces/features/execution-context.interface';
 import { Reflector } from '@nestjs/core';
@@ -32,29 +33,29 @@ type MockRequest = {
 
 describe(`AuthGuard`, () => {
   const reflector = {
-    get: jest.fn(),
-    getAllAndOverride: jest.fn(),
+    get: jest.fn<(...a: any[]) => any>(),
+    getAllAndOverride: jest.fn<(...a: any[]) => any>(),
   };
   const jwtService = {
-    verify: jest.fn(),
+    verify: jest.fn<(...a: any[]) => any>(),
   };
   const prisma = {
     authSessionModel: {
-      findFirst: jest.fn(),
+      findFirst: jest.fn<(...a: any[]) => any>(),
     },
     adminAuthSessionModel: {
-      findFirst: jest.fn(),
+      findFirst: jest.fn<(...a: any[]) => any>(),
     },
     adminModel: {
-      findFirst: jest.fn(),
+      findFirst: jest.fn<(...a: any[]) => any>(),
     },
     consumerModel: {
-      findFirst: jest.fn(),
+      findFirst: jest.fn<(...a: any[]) => any>(),
     },
   };
   const originResolver = {
-    validateConsumerAppScope: jest.fn(),
-    validateConsumerAppScopeHeader: jest.fn(),
+    validateConsumerAppScope: jest.fn<(...a: any[]) => any>(),
+    validateConsumerAppScopeHeader: jest.fn<(...a: any[]) => any>(),
   };
 
   let guard: AuthGuard;

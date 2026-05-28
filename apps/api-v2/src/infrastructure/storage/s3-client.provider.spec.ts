@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { S3ClientProvider, s3ClientProvider } from './s3-client.provider';
 
 describe(`S3ClientProvider`, () => {

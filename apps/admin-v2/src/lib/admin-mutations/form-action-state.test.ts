@@ -32,7 +32,7 @@ async function loadDocuments() {
 }
 
 async function loadCore() {
-  return import(`./core.server`) as Promise<{ postAdminMutation: jest.Mock }>;
+  return import(`./core.server`) as unknown as Promise<{ postAdminMutation: jest.Mock<(...a: any[]) => any> }>;
 }
 
 describe(`admin-v2 form-action wrappers`, () => {

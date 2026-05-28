@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -14,27 +15,27 @@ import { type PrismaTransactionRunner } from '../../../shared/prisma-transaction
 
 function createService() {
   const transactions = {
-    runLedgerMutation: jest.fn(),
+    runLedgerMutation: jest.fn<(...a: any[]) => any>(),
   } as unknown as jest.Mocked<PrismaTransactionRunner>;
   const paymentRequestNotification = {
-    sendPaymentRequest: jest.fn(),
+    sendPaymentRequest: jest.fn<(...a: any[]) => any>(),
   } as unknown as jest.Mocked<ConsumerPaymentRequestNotificationService>;
   const balanceService = {
-    calculateInTransaction: jest.fn(),
+    calculateInTransaction: jest.fn<(...a: any[]) => any>(),
   } as unknown as jest.Mocked<BalanceCalculationService>;
   const policiesService = {
-    appendConsumerAppScopeMetadata: jest.fn((metadata) => metadata),
-    buildTransferRecipientWhere: jest.fn(),
-    ensureLimits: jest.fn(),
-    ensureProfileComplete: jest.fn(),
+    appendConsumerAppScopeMetadata: jest.fn<(...a: any[]) => any>((metadata) => metadata),
+    buildTransferRecipientWhere: jest.fn<(...a: any[]) => any>(),
+    ensureLimits: jest.fn<(...a: any[]) => any>(),
+    ensureProfileComplete: jest.fn<(...a: any[]) => any>(),
   } as unknown as jest.Mocked<ConsumerPaymentsPoliciesService>;
   const paymentsIdentityRepository = {
-    findActiveRecipientByEmail: jest.fn(),
-    findConsumerEmailById: jest.fn(),
+    findActiveRecipientByEmail: jest.fn<(...a: any[]) => any>(),
+    findConsumerEmailById: jest.fn<(...a: any[]) => any>(),
   } as unknown as jest.Mocked<ConsumerPaymentsIdentityRepository>;
   const paymentsLedgerRepository = {} as unknown as jest.Mocked<ConsumerPaymentsLedgerRepository>;
   const paymentRequestRepository = {
-    createDraftPaymentRequest: jest.fn(),
+    createDraftPaymentRequest: jest.fn<(...a: any[]) => any>(),
   } as unknown as jest.Mocked<ConsumerPaymentRequestRepository>;
 
   return {

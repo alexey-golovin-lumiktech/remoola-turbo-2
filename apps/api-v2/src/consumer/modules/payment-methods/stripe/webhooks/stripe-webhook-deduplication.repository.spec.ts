@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { Prisma } from '@remoola/database-2';
 
 import { StripeWebhookDeduplicationRepository } from './stripe-webhook-deduplication.repository';
@@ -7,9 +9,9 @@ describe(`StripeWebhookDeduplicationRepository`, () => {
   function makeRepository() {
     const prisma = {
       stripeWebhookEventModel: {
-        findUnique: jest.fn(async (_args: unknown) => null),
-        create: jest.fn(async (_args: unknown) => null),
-        updateMany: jest.fn(async (_args: unknown) => ({ count: 0 })),
+        findUnique: jest.fn<(...a: any[]) => any>(async (_args: unknown) => null),
+        create: jest.fn<(...a: any[]) => any>(async (_args: unknown) => null),
+        updateMany: jest.fn<(...a: any[]) => any>(async (_args: unknown) => ({ count: 0 })),
       },
     };
     return {

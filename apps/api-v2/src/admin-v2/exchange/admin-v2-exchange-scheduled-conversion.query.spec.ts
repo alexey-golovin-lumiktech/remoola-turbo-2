@@ -1,11 +1,13 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { AdminV2ExchangeScheduledConversionQuery } from './admin-v2-exchange-scheduled-conversion.query';
 
 describe(`AdminV2ExchangeScheduledConversionQuery`, () => {
   it(`lists scheduled conversions with consumer include and total count`, async () => {
-    const count = jest.fn(async () => 2);
-    const findMany = jest.fn(async () => []);
+    const count = jest.fn<(...a: any[]) => any>(async () => 2);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2ExchangeScheduledConversionQuery({
       scheduledFxConversionModel: { count, findMany },
     } as never);
@@ -29,7 +31,7 @@ describe(`AdminV2ExchangeScheduledConversionQuery`, () => {
   });
 
   it(`loads linked ledger entries ordered oldest-first with latest outcome`, async () => {
-    const findMany = jest.fn(async () => []);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2ExchangeScheduledConversionQuery({
       ledgerEntryModel: { findMany },
     } as never);
@@ -51,7 +53,7 @@ describe(`AdminV2ExchangeScheduledConversionQuery`, () => {
   });
 
   it(`builds a first-entry-per-ledger map for positive exchange entries`, async () => {
-    const findMany = jest.fn(async () => [
+    const findMany = jest.fn<(...a: any[]) => any>(async () => [
       {
         id: `entry-1`,
         ledgerId: `ledger-1`,

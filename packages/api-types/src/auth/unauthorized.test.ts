@@ -2,6 +2,7 @@
  * Tests for isUnauthorizedError (401/403 classification).
  * Cross-surface unauthorized classification should stay consistent.
  */
+import { describe, expect, it } from '@jest/globals';
 
 import { isUnauthorizedError } from './unauthorized';
 

@@ -1,21 +1,22 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 
 jest.mock(`@remoola/security-utils`, () => ({
-  hashTokenToHex: jest.fn((token: string) => `hex-${token}`),
-  newUuid: jest.fn(() => `00000000-0000-4000-8000-000000000000`),
+  hashTokenToHex: jest.fn<(...a: any[]) => any>((token: string) => `hex-${token}`),
+  newUuid: jest.fn<(...a: any[]) => any>(() => `00000000-0000-4000-8000-000000000000`),
   oauthCrypto: {
-    generateOAuthState: jest.fn(() => `generated-state`),
-    hashOAuthState: jest.fn((token: string) => `hash-${token}`),
+    generateOAuthState: jest.fn<(...a: any[]) => any>(() => `generated-state`),
+    hashOAuthState: jest.fn<(...a: any[]) => any>((token: string) => `hash-${token}`),
   },
 }));
 
 jest.mock(`../../shared-common`, () => ({
   passwordUtils: {
-    verifyPassword: jest.fn(),
+    verifyPassword: jest.fn<(...a: any[]) => any>(),
   },
-  secureCompare: jest.fn((left: string, right: string) => left === right),
+  secureCompare: jest.fn<(...a: any[]) => any>((left: string, right: string) => left === right),
 }));
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
@@ -34,34 +35,39 @@ import { SignupMailingService } from '../../shared/signup-mailing.service';
 describe(`ConsumerAuthService.refreshAccess`, () => {
   let service: ConsumerAuthService;
   let prisma: {
-    authSessionModel: { create: jest.Mock; findFirst: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
-    consumerModel: { findFirst: jest.Mock };
-    $transaction: jest.Mock;
+    authSessionModel: {
+      create: jest.Mock<(...a: any[]) => any>;
+      findFirst: jest.Mock<(...a: any[]) => any>;
+      update: jest.Mock<(...a: any[]) => any>;
+      updateMany: jest.Mock<(...a: any[]) => any>;
+    };
+    consumerModel: { findFirst: jest.Mock<(...a: any[]) => any> };
+    $transaction: jest.Mock<(...a: any[]) => any>;
   };
   let authAudit: {
-    recordAudit: jest.Mock;
+    recordAudit: jest.Mock<(...a: any[]) => any>;
   };
-  let jwtService: { verify: jest.Mock; signAsync: jest.Mock };
+  let jwtService: { verify: jest.Mock<(...a: any[]) => any>; signAsync: jest.Mock<(...a: any[]) => any> };
 
   beforeEach(async () => {
     prisma = {
       authSessionModel: {
-        create: jest.fn(),
-        findFirst: jest.fn(),
-        update: jest.fn(),
-        updateMany: jest.fn().mockResolvedValue({ count: 2 }),
+        create: jest.fn<(...a: any[]) => any>(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
+        update: jest.fn<(...a: any[]) => any>(),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 2 }),
       },
       consumerModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
-      $transaction: jest.fn(),
+      $transaction: jest.fn<(...a: any[]) => any>(),
     };
     authAudit = {
-      recordAudit: jest.fn().mockResolvedValue(undefined),
+      recordAudit: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
     jwtService = {
-      verify: jest.fn(),
-      signAsync: jest.fn(),
+      verify: jest.fn<(...a: any[]) => any>(),
+      signAsync: jest.fn<(...a: any[]) => any>(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -75,18 +81,18 @@ describe(`ConsumerAuthService.refreshAccess`, () => {
           provide: AuthAuditService,
           useValue: {
             recordAudit: authAudit.recordAudit,
-            checkLockoutAndRateLimit: jest.fn(),
-            clearLockout: jest.fn(),
-            recordFailedAttempt: jest.fn(),
+            checkLockoutAndRateLimit: jest.fn<(...a: any[]) => any>(),
+            clearLockout: jest.fn<(...a: any[]) => any>(),
+            recordFailedAttempt: jest.fn<(...a: any[]) => any>(),
           },
         },
         {
           provide: OriginResolverService,
           useValue: {
-            validateConsumerAppScope: jest.fn((value?: string | null) =>
+            validateConsumerAppScope: jest.fn<(...a: any[]) => any>((value?: string | null) =>
               value === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
             ),
-            getAllowedOrigins: jest.fn().mockReturnValue(new Set()),
+            getAllowedOrigins: jest.fn<(...a: any[]) => any>().mockReturnValue(new Set()),
           },
         },
       ]),
@@ -187,9 +193,9 @@ describe(`ConsumerAuthService.refreshAccess`, () => {
       email: `consumer@example.com`,
       suspendedAt: null,
     });
-    const txCreate = jest.fn().mockResolvedValue({ id: `session-2` });
-    const txUpdate = jest.fn().mockResolvedValue({ id: `session-2` });
-    const txUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
+    const txCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `session-2` });
+    const txUpdate = jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `session-2` });
+    const txUpdateMany = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 0 });
     prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
       fn({
         authSessionModel: {

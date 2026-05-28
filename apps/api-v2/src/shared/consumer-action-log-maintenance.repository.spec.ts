@@ -1,11 +1,13 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { ConsumerActionLogMaintenanceRepository } from './consumer-action-log-maintenance.repository';
 import { type PrismaService } from './prisma.service';
 
 describe(`ConsumerActionLogMaintenanceRepository`, () => {
   function buildRepository() {
     const prisma = {
-      $executeRaw: jest.fn().mockResolvedValue(0),
-      $queryRaw: jest.fn(),
+      $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      $queryRaw: jest.fn<(...a: any[]) => any>(),
     };
 
     return {

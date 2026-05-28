@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -8,13 +9,13 @@ import { BalanceCalculationMode } from '../../../shared/balance-calculation.serv
 
 function createService() {
   const balanceService = {
-    calculateInTransaction: jest.fn().mockResolvedValue(100),
+    calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
   } as any;
   const rateService = {
-    getRate: jest.fn().mockResolvedValue({ rate: 0.95 }),
+    getRate: jest.fn<(...a: any[]) => any>().mockResolvedValue({ rate: 0.95 }),
   } as any;
   const executionRepository = {
-    executeExchange: jest.fn().mockResolvedValue({ ledgerId: `ledger-1` }),
+    executeExchange: jest.fn<(...a: any[]) => any>().mockResolvedValue({ ledgerId: `ledger-1` }),
   } as any;
 
   return {

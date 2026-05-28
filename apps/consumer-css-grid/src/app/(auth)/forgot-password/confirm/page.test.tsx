@@ -1,3 +1,4 @@
+import { describe, it } from '@jest/globals';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 

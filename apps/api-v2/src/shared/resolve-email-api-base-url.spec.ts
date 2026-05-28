@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals';
+
 import { resolveEmailApiBaseUrl } from './resolve-email-api-base-url';
 
 describe(`resolveEmailApiBaseUrl`, () => {

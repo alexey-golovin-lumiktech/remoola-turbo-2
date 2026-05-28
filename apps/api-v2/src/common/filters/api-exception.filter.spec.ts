@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, Logger, type ArgumentsHost } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
@@ -7,8 +8,8 @@ import { SqlValidationError } from '../../shared/prisma-raw.utils';
 
 function mockHost() {
   const response = {
-    status: jest.fn().mockReturnThis(),
-    json: jest.fn(),
+    status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+    json: jest.fn<(...a: any[]) => any>(),
   };
   const request = {
     correlationId: `corr-123`,
@@ -26,10 +27,10 @@ function mockHost() {
 }
 
 describe(`ApiExceptionFilter`, () => {
-  let loggerErrorSpy: jest.SpyInstance;
+  let loggerErrorSpy: jest.SpiedFunction<(...a: any[]) => any>;
 
   beforeEach(() => {
-    loggerErrorSpy = jest.spyOn(Logger.prototype, `error`).mockImplementation();
+    loggerErrorSpy = jest.spyOn(Logger.prototype, `error`).mockImplementation(() => undefined);
   });
 
   afterEach(() => {

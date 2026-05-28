@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { NotFoundException } from '@nestjs/common';
 import { type Cache } from 'cache-manager';
 
@@ -6,8 +7,8 @@ import { AdminV2QuickstartsService } from './admin-v2-quickstarts.service';
 describe(`AdminV2QuickstartsService`, () => {
   function buildService() {
     const cacheManager = {
-      get: jest.fn(),
-      set: jest.fn(),
+      get: jest.fn<(...a: any[]) => any>(),
+      set: jest.fn<(...a: any[]) => any>(),
     };
 
     return {

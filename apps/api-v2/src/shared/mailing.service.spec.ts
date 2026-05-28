@@ -1,5 +1,6 @@
+import { expect, it, jest } from '@jest/globals';
 jest.mock(`./resolve-email-api-base-url`, () => ({
-  resolveEmailApiBaseUrl: jest.fn(() => `http://127.0.0.1:3334/api`),
+  resolveEmailApiBaseUrl: jest.fn<(...a: any[]) => any>(() => `http://127.0.0.1:3334/api`),
 }));
 
 jest.mock(`../envs`, () => ({
@@ -24,23 +25,25 @@ import { SignupMailingService } from './signup-mailing.service';
 describe(`MailingService signup verification links`, () => {
   function makeService() {
     const brevoMailService = {
-      sendMail: jest.fn().mockResolvedValue(undefined),
+      sendMail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
     const originResolver = {
-      resolveConsumerOriginByScope: jest.fn((scope?: string) => {
+      resolveConsumerOriginByScope: jest.fn<(...a: any[]) => any>((scope?: string) => {
         if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example.com`;
         return null;
       }),
     };
     const mailTransportSender = {
-      trySendEmail: jest.fn(async (_context: string, options: BrevoSendMailOptions) => {
+      trySendEmail: jest.fn<(...a: any[]) => any>(async (_context: string, options: BrevoSendMailOptions) => {
         await brevoMailService.sendMail(options);
         return true;
       }),
-      sendEmailWithErrorHandling: jest.fn(async (_context: string, options: BrevoSendMailOptions) => {
-        await brevoMailService.sendMail(options);
-      }),
-      sendEmailOrThrow: jest.fn(async (_context: string, options: BrevoSendMailOptions) => {
+      sendEmailWithErrorHandling: jest.fn<(...a: any[]) => any>(
+        async (_context: string, options: BrevoSendMailOptions) => {
+          await brevoMailService.sendMail(options);
+        },
+      ),
+      sendEmailOrThrow: jest.fn<(...a: any[]) => any>(async (_context: string, options: BrevoSendMailOptions) => {
         await brevoMailService.sendMail(options);
       }),
     };
@@ -90,7 +93,7 @@ describe(`MailingService signup verification links`, () => {
       }),
     );
 
-    const html = (brevoMailService.sendMail as jest.Mock).mock.calls[0]?.[0]?.html as string;
+    const html = (brevoMailService.sendMail as jest.Mock<(...a: any[]) => any>).mock.calls[0]?.[0]?.html as string;
     expect(html).not.toMatch(/[?&]email=/);
     expect(html).not.toMatch(/[?&]referer=/);
   });

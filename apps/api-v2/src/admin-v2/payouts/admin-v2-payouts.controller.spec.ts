@@ -22,7 +22,10 @@ describe(`AdminV2PayoutsController integration`, () => {
     const harness = await bootstrapApiTestApp({
       controllers: [AdminV2PayoutsController],
       providers: [
-        { provide: AdminV2PayoutsService, useValue: { listPayouts, getPayoutCase, escalatePayout: jest.fn() } },
+        {
+          provide: AdminV2PayoutsService,
+          useValue: { listPayouts, getPayoutCase, escalatePayout: jest.fn<(...a: any[]) => any>() },
+        },
         { provide: AdminV2AccessService, useValue: { assertCapability } },
       ],
       preset: `validationOnly`,

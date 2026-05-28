@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ServiceUnavailableException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -13,16 +14,16 @@ describe(`StripeWebhookReversalsService`, () => {
   function makeService(overrides?: {
     repository?: Partial<jest.Mocked<StripeWebhookReversalsRepository>>;
     notificationService?: Partial<jest.Mocked<StripeWebhookReversalNotificationService>>;
-    balanceService?: { calculateInTransaction?: jest.Mock };
+    balanceService?: { calculateInTransaction?: jest.Mock<(...a: any[]) => any> };
     stripe?: Partial<Stripe>;
   }) {
     const repository = {
-      appendRefundUpdatedOutcome: jest.fn().mockResolvedValue(undefined),
-      appendStripeReversal: jest.fn().mockResolvedValue(25),
-      createDisputeIfMissing: jest.fn().mockResolvedValue(undefined),
-      hasManualChargebackReversal: jest.fn().mockResolvedValue(false),
-      resolveDisputeLedgerEntryIdByPaymentIntent: jest.fn().mockResolvedValue(`ledger-1`),
-      resolvePaymentRequestByPaymentIntent: jest.fn().mockResolvedValue({
+      appendRefundUpdatedOutcome: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      appendStripeReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue(25),
+      createDisputeIfMissing: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      hasManualChargebackReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue(false),
+      resolveDisputeLedgerEntryIdByPaymentIntent: jest.fn<(...a: any[]) => any>().mockResolvedValue(`ledger-1`),
+      resolvePaymentRequestByPaymentIntent: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         id: `pr-1`,
         amount: 25,
         currencyCode: $Enums.CurrencyCode.USD,
@@ -34,18 +35,18 @@ describe(`StripeWebhookReversalsService`, () => {
     } as unknown as jest.Mocked<StripeWebhookReversalsRepository>;
 
     const notificationService = {
-      sendReversalEmails: jest.fn().mockResolvedValue(undefined),
+      sendReversalEmails: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       ...overrides?.notificationService,
     } as unknown as jest.Mocked<StripeWebhookReversalNotificationService>;
 
     const balanceService = {
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
       ...overrides?.balanceService,
     };
 
     const stripe = {
       charges: {
-        retrieve: jest.fn().mockResolvedValue({
+        retrieve: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `ch_1`,
           payment_intent: `pi_1`,
         }),
@@ -77,7 +78,7 @@ describe(`StripeWebhookReversalsService`, () => {
   it(`skips dispute persistence when the payment intent does not resolve to a ledger entry`, async () => {
     const { service, repository } = makeService({
       repository: {
-        resolveDisputeLedgerEntryIdByPaymentIntent: jest.fn().mockResolvedValue(null),
+        resolveDisputeLedgerEntryIdByPaymentIntent: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
     });
 
@@ -109,7 +110,7 @@ describe(`StripeWebhookReversalsService`, () => {
   it(`skips automatic chargeback reversals when a manual admin chargeback already exists`, async () => {
     const { service, repository, stripe } = makeService({
       repository: {
-        hasManualChargebackReversal: jest.fn().mockResolvedValue(true),
+        hasManualChargebackReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue(true),
       },
     });
 
@@ -121,14 +122,14 @@ describe(`StripeWebhookReversalsService`, () => {
       reason: `fraudulent`,
     } as Stripe.Dispute);
 
-    expect(stripe.charges.retrieve as jest.Mock).toHaveBeenCalledWith(`ch_1`);
+    expect(stripe.charges.retrieve as jest.Mock<(...a: any[]) => any>).toHaveBeenCalledWith(`ch_1`);
     expect(repository.appendStripeReversal).not.toHaveBeenCalled();
   });
 
   it(`keeps chargeback balance policy in the service via repository callback`, async () => {
     const { service, repository, balanceService } = makeService({
       repository: {
-        appendStripeReversal: jest.fn().mockImplementation(async (params) => {
+        appendStripeReversal: jest.fn<(...a: any[]) => any>().mockImplementation(async (params) => {
           await params.assertRequesterBalance?.({
             tx: {} as any,
             requesterId: `requester-1`,
@@ -139,7 +140,7 @@ describe(`StripeWebhookReversalsService`, () => {
         }),
       },
       balanceService: {
-        calculateInTransaction: jest.fn().mockResolvedValue(100),
+        calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
       },
     });
 
@@ -173,7 +174,7 @@ describe(`StripeWebhookReversalsService`, () => {
   it(`raises insufficient balance when the chargeback callback sees too little requester balance`, async () => {
     const { service, repository } = makeService({
       repository: {
-        appendStripeReversal: jest.fn().mockImplementation(async (params) => {
+        appendStripeReversal: jest.fn<(...a: any[]) => any>().mockImplementation(async (params) => {
           await params.assertRequesterBalance?.({
             tx: {} as any,
             requesterId: `requester-1`,
@@ -183,7 +184,7 @@ describe(`StripeWebhookReversalsService`, () => {
         }),
       },
       balanceService: {
-        calculateInTransaction: jest.fn().mockResolvedValue(10),
+        calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(10),
       },
     });
 

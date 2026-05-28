@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { type OAuthStateStoreQuery } from './oauth-state-store.query';
@@ -7,11 +9,11 @@ import { OAuthStateStoreService } from './oauth-state-store.service';
 describe(`OAuthStateStoreService`, () => {
   function makeService() {
     const repository = {
-      createStateRecord: jest.fn(async () => undefined),
-      consumeStatePayload: jest.fn(async () => null),
+      createStateRecord: jest.fn<(...a: any[]) => any>(async () => undefined),
+      consumeStatePayload: jest.fn<(...a: any[]) => any>(async () => null),
     };
     const query = {
-      readStatePayload: jest.fn(async () => null),
+      readStatePayload: jest.fn<(...a: any[]) => any>(async () => null),
     };
     const store = new OAuthStateStoreService(
       query as unknown as OAuthStateStoreQuery,

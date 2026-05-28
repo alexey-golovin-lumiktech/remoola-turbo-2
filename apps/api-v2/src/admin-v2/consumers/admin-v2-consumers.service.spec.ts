@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
@@ -156,7 +157,7 @@ describe(`AdminV2ConsumersService`, () => {
         AdminV2ConsumersService,
         AdminV2ConsumerCaseQuery,
         { provide: PrismaService, useValue: {} },
-        { provide: PrismaTransactionRunner, useValue: { run: jest.fn() } },
+        { provide: PrismaTransactionRunner, useValue: { run: jest.fn<(...a: any[]) => any>() } },
         { provide: ConsumerContractsService, useValue: {} },
         { provide: AdminActionAuditService, useValue: {} },
         { provide: CONSUMER_ADMIN_AUTH_ACTIONS, useValue: {} },
@@ -172,13 +173,13 @@ describe(`AdminV2ConsumersService`, () => {
 
   it(`delegates auth history reads to the activity query with consumer identity context`, async () => {
     const consumerRepository = {
-      findSummaryById: jest.fn().mockResolvedValue({
+      findSummaryById: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         id: `consumer-1`,
         email: `Consumer@Example.com`,
       }),
     };
     const consumerActivityQuery = {
-      getConsumerAuthHistory: jest.fn().mockResolvedValue({
+      getConsumerAuthHistory: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         items: [{ id: `auth-1` }],
         total: 1,
         page: 2,
@@ -224,13 +225,13 @@ describe(`AdminV2ConsumersService`, () => {
 
   it(`delegates action-log reads to the activity query without widening command dependencies`, async () => {
     const consumerRepository = {
-      findSummaryById: jest.fn().mockResolvedValue({
+      findSummaryById: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         id: `consumer-1`,
         email: `consumer@example.com`,
       }),
     };
     const consumerActivityQuery = {
-      getConsumerActionLog: jest.fn().mockResolvedValue({
+      getConsumerActionLog: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         items: [{ id: `action-1` }],
         total: 1,
         page: 1,
@@ -279,18 +280,20 @@ describe(`AdminV2ConsumersService`, () => {
 
   it(`keeps ledger summary and consumer case on dedicated read-side collaborators`, async () => {
     const consumerRepository = {
-      findSummaryById: jest.fn().mockResolvedValue({
+      findSummaryById: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         id: `consumer-1`,
         email: `consumer@example.com`,
       }),
     };
     const consumerLedgerQuery = {
       getLedgerSummary: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockResolvedValue({ consumerId: `consumer-1`, summary: { USD: { completedAmount: `1.00` } } }),
     };
     const consumerCaseQuery = {
-      getConsumerCase: jest.fn().mockResolvedValue({ id: `consumer-1`, email: `consumer@example.com` }),
+      getConsumerCase: jest
+        .fn<(...a: any[]) => any>()
+        .mockResolvedValue({ id: `consumer-1`, email: `consumer@example.com` }),
     };
     const service = new AdminV2ConsumersService(
       consumerRepository as never,
@@ -339,7 +342,7 @@ describe(`AdminV2ConsumersService`, () => {
     function createModels(getState: () => TestState) {
       return {
         consumerAdminNoteModel: {
-          create: jest.fn(async ({ data, select }) => {
+          create: jest.fn<(...a: any[]) => any>(async ({ data, select }) => {
             const row: NoteRow = {
               id: `note-${getState().notes.length + 1}`,
               consumerId: data.consumerId,
@@ -352,11 +355,11 @@ describe(`AdminV2ConsumersService`, () => {
           }),
         },
         consumerFlagModel: {
-          findFirst: jest.fn(async ({ where, select }) => {
+          findFirst: jest.fn<(...a: any[]) => any>(async ({ where, select }) => {
             const row = getState().flags.find((flag) => matchesFlag(flag, where)) ?? null;
             return row ? projectSelection(row as unknown as Record<string, unknown>, select) : null;
           }),
-          create: jest.fn(async ({ data, select }) => {
+          create: jest.fn<(...a: any[]) => any>(async ({ data, select }) => {
             const row: FlagRow = {
               id: `flag-${getState().flags.length + 1}`,
               consumerId: data.consumerId,
@@ -371,7 +374,7 @@ describe(`AdminV2ConsumersService`, () => {
             getState().flags.push(row);
             return projectSelection(row as unknown as Record<string, unknown>, select);
           }),
-          update: jest.fn(async ({ where, data, select }) => {
+          update: jest.fn<(...a: any[]) => any>(async ({ where, data, select }) => {
             const row = getState().flags.find((flag) => flag.id === where.id);
             if (!row) {
               throw new Error(`Flag not found`);
@@ -383,7 +386,7 @@ describe(`AdminV2ConsumersService`, () => {
           }),
         },
         adminActionAuditLogModel: {
-          create: jest.fn(async ({ data }) => {
+          create: jest.fn<(...a: any[]) => any>(async ({ data }) => {
             if (controls.failNextAuditCreate) {
               controls.failNextAuditCreate = false;
               throw new Error(`Audit insert failed`);
@@ -407,9 +410,9 @@ describe(`AdminV2ConsumersService`, () => {
 
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async () => ({ ...consumerState })),
-        update: jest.fn(async () => undefined),
-        updateMany: jest.fn(async ({ where, data }) => {
+        findUnique: jest.fn<(...a: any[]) => any>(async () => ({ ...consumerState })),
+        update: jest.fn<(...a: any[]) => any>(async () => undefined),
+        updateMany: jest.fn<(...a: any[]) => any>(async ({ where, data }) => {
           if (where.id !== consumerState.id) {
             return { count: 0 };
           }
@@ -423,33 +426,35 @@ describe(`AdminV2ConsumersService`, () => {
         }),
       },
       authSessionModel: {
-        count: jest.fn(async () => 0),
+        count: jest.fn<(...a: any[]) => any>(async () => 0),
       },
       ...createModels(() => state),
-      $transaction: jest.fn(async (callback: (tx: ReturnType<typeof createModels>) => Promise<unknown>) => {
-        const txState = cloneState(state);
-        const result = await callback(createModels(() => txState));
-        state = txState;
-        return result;
-      }),
+      $transaction: jest.fn<(...a: any[]) => any>(
+        async (callback: (tx: ReturnType<typeof createModels>) => Promise<unknown>) => {
+          const txState = cloneState(state);
+          const result = await callback(createModels(() => txState));
+          state = txState;
+          return result;
+        },
+      ),
     };
     const consumerContractsService = {
-      getContracts: jest.fn(),
+      getContracts: jest.fn<(...a: any[]) => any>(),
     };
     const adminActionAudit = {
-      record: jest.fn(async () => undefined),
+      record: jest.fn<(...a: any[]) => any>(async () => undefined),
     };
     const consumerAuthService = {
-      revokeAllSessionsByConsumerIdAndAudit: jest.fn(async () => undefined),
-      sendConsumerSuspensionEmail: jest.fn(async () => true),
-      resendSignupVerificationEmail: jest.fn(async () => true),
-      resendPasswordRecoveryEmail: jest.fn(async () => ({
+      revokeAllSessionsByConsumerIdAndAudit: jest.fn<(...a: any[]) => any>(async () => undefined),
+      sendConsumerSuspensionEmail: jest.fn<(...a: any[]) => any>(async () => true),
+      resendSignupVerificationEmail: jest.fn<(...a: any[]) => any>(async () => true),
+      resendPasswordRecoveryEmail: jest.fn<(...a: any[]) => any>(async () => ({
         requestedKind: `password_recovery`,
         dispatchedKind: `password_reset`,
       })),
     };
     const idempotency = {
-      execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+      execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
 
     const consumerLedgerQuery = new AdminV2ConsumerLedgerQuery(prisma as never);
@@ -839,7 +844,7 @@ describe(`AdminV2ConsumersService`, () => {
 
   it(`keeps suspension successful when notification dispatch fails after state change`, async () => {
     const { service, consumerAuthService, adminActionAudit, getConsumerState } = buildService();
-    consumerAuthService.sendConsumerSuspensionEmail = jest.fn(async () => false);
+    consumerAuthService.sendConsumerSuspensionEmail = jest.fn<(...a: any[]) => any>(async () => false);
 
     const result = await service.suspendConsumer(`consumer-1`, `admin-1`, {
       confirmed: true,

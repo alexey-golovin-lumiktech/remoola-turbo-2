@@ -7,11 +7,11 @@ import { type PrismaClient } from '@remoola/database-2';
 
 async function loadMainWithEnv(envOverrides: { NODE_ENV: string; isProductionLike: boolean }): Promise<{
   runDevBootstrapSeed: (logger: Logger, prisma: PrismaClient) => Promise<void>;
-  seedBootstrapData: jest.Mock;
+  seedBootstrapData: jest.Mock<(...a: any[]) => any>;
 }> {
   jest.resetModules();
 
-  const seedBootstrapData = jest.fn(async () => undefined);
+  const seedBootstrapData = jest.fn<(...a: any[]) => any>(async () => undefined);
 
   jest.doMock(`./app.module`, () => ({
     AppModule: class AppModule {},
@@ -20,7 +20,7 @@ async function loadMainWithEnv(envOverrides: { NODE_ENV: string; isProductionLik
     seedBootstrapData,
   }));
   jest.doMock(`./configure-app`, () => ({
-    configureApp: jest.fn(),
+    configureApp: jest.fn<(...a: any[]) => any>(),
   }));
   jest.doMock(`./envs`, () => ({
     envs: {
@@ -89,8 +89,8 @@ describe(`Vercel handler bootstrap`, () => {
     const server = jest.fn<(req: IncomingMessage, res: ServerResponse) => void>();
     const coldStartError = new Error(`cold start failed`);
     const app = {
-      get: jest.fn(() => ({})),
-      init: jest.fn(async () => undefined),
+      get: jest.fn<(...a: any[]) => any>(() => ({})),
+      init: jest.fn<(...a: any[]) => any>(async () => undefined),
     };
     const create = jest.fn<() => Promise<typeof app>>();
 
@@ -99,7 +99,7 @@ describe(`Vercel handler bootstrap`, () => {
 
     jest.doMock(`express`, () => ({
       __esModule: true,
-      default: jest.fn(() => server),
+      default: jest.fn<(...a: any[]) => any>(() => server),
     }));
     jest.doMock(`@nestjs/core`, () => ({
       NestFactory: {
@@ -115,10 +115,10 @@ describe(`Vercel handler bootstrap`, () => {
       AppModule: class AppModule {},
     }));
     jest.doMock(`./configure-app`, () => ({
-      configureApp: jest.fn(),
+      configureApp: jest.fn<(...a: any[]) => any>(),
     }));
     jest.doMock(`./devBootstrapSeed`, () => ({
-      devBootstrapSeed: jest.fn(async () => undefined),
+      devBootstrapSeed: jest.fn<(...a: any[]) => any>(async () => undefined),
     }));
     jest.doMock(`./envs`, () => ({
       envs: {
@@ -136,7 +136,7 @@ describe(`Vercel handler bootstrap`, () => {
       PrismaService: class PrismaService {},
     }));
     jest.doMock(`./waitForDatabase`, () => ({
-      waitForDatabase: jest.fn(async () => undefined),
+      waitForDatabase: jest.fn<(...a: any[]) => any>(async () => undefined),
     }));
 
     const { default: handler } = await import(`./main`);

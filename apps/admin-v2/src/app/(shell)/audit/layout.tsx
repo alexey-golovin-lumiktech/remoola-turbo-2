@@ -45,7 +45,7 @@ export default async function AuditLayout({ children }: AuditLayoutProps): Promi
                   aria-current={isActive ? `page` : undefined}
                   data-active={isActive ? `true` : `false`}
                   className={cn(
-                    `inline-flex shrink-0 items-center gap-2 rounded-pill border border-white/10 bg-white/[0.03] px-3 py-1.5 text-sm text-white/72 transition`,
+                    `inline-flex shrink-0 items-center gap-2 rounded-pill border border-white/10 bg-white/3 px-3 py-1.5 text-sm text-white/72 transition`,
                     `hover:border-white/20 hover:text-white/95`,
                     `data-[active=true]:border-cyan-400/40 data-[active=true]:bg-cyan-500/15 data-[active=true]:text-cyan-100`,
                   )}

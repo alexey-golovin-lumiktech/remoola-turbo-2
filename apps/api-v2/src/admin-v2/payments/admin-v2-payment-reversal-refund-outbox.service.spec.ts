@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { Logger } from '@nestjs/common';
 
 import { $Enums, type Prisma } from '@remoola/database-2';
@@ -44,12 +45,12 @@ describe(`AdminV2PaymentReversalRefundOutboxService`, () => {
 
   function buildService(rows: ReturnType<typeof buildRow>[]) {
     const outboxRepository = {
-      claimDueRows: jest.fn().mockResolvedValue(rows),
-      markSent: jest.fn().mockResolvedValue({ count: 1 }),
-      markFailed: jest.fn().mockResolvedValue({ count: 1 }),
+      claimDueRows: jest.fn<(...a: any[]) => any>().mockResolvedValue(rows),
+      markSent: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
+      markFailed: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
     } as unknown as jest.Mocked<AdminV2PaymentReversalRefundOutboxRepository>;
     const refundFinalizer = {
-      finalizeQueuedPayload: jest.fn().mockResolvedValue(undefined),
+      finalizeQueuedPayload: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<AdminV2PaymentReversalRefundFinalizerService>;
     const service = new AdminV2PaymentReversalRefundOutboxService(outboxRepository, refundFinalizer);
 
@@ -64,7 +65,7 @@ describe(`AdminV2PaymentReversalRefundOutboxService`, () => {
 
     expect(outboxRepository.claimDueRows).toHaveBeenCalledWith({ limit: 3 });
     expect(refundFinalizer.finalizeQueuedPayload).toHaveBeenCalledWith(payload);
-    expect(outboxRepository.markSent).toHaveBeenCalledWith(row);
+    expect(outboxRepository.markSent).toHaveBeenCalledWith(row as any);
     expect(outboxRepository.markFailed).not.toHaveBeenCalled();
   });
 
@@ -81,7 +82,7 @@ describe(`AdminV2PaymentReversalRefundOutboxService`, () => {
       loggerWarn.mockRestore();
     }
 
-    expect(outboxRepository.markFailed).toHaveBeenCalledWith(row, error);
+    expect(outboxRepository.markFailed).toHaveBeenCalledWith(row as any, error);
     expect(outboxRepository.markSent).not.toHaveBeenCalled();
   });
 
@@ -97,6 +98,6 @@ describe(`AdminV2PaymentReversalRefundOutboxService`, () => {
     }
 
     expect(refundFinalizer.finalizeQueuedPayload).not.toHaveBeenCalled();
-    expect(outboxRepository.markFailed).toHaveBeenCalledWith(row, expect.any(Error));
+    expect(outboxRepository.markFailed).toHaveBeenCalledWith(row as any, expect.any(Error));
   });
 });

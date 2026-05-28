@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { type getAdmins } from '../../../../lib/admin-api/admins.server';
 import { type getAdminIdentity } from '../../../../lib/admin-api/identity.server';
-import { type getVerificationCase } from '../../../../lib/admin-api/types';
+import { type VerificationCaseResponse } from '../../../../lib/admin-api/types';
 import { type getVerificationCaseResult } from '../../../../lib/admin-api/verification.server';
 jest.mock(`next/link`, () => ({
   __esModule: true,
@@ -64,7 +64,7 @@ async function loadSubject() {
 
 let VerificationCasePage: Awaited<ReturnType<typeof loadSubject>>;
 
-type VerificationCase = NonNullable<Awaited<ReturnType<typeof getVerificationCase>>>;
+type VerificationCase = VerificationCaseResponse;
 
 const EMPTY_CONSUMER_BASE = {
   accountType: `PERSONAL`,

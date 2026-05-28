@@ -6,6 +6,8 @@
  * - Idempotency keys for duplicate request prevention
  */
 
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
@@ -118,14 +120,16 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
 
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email }),
-        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `recipient@example.com` }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email }),
+        findFirst: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue({ id: recipientId, email: `recipient@example.com` }),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({ id: `ledger-entry-1` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `ledger-entry-1` }),
       },
-      $queryRaw: jest.fn().mockImplementation((query) => {
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockImplementation((query) => {
         const queryStr = queryToString(query);
         queryCallLog.push(queryStr);
         if (queryStr.includes(`pg_advisory_xact_lock`)) {
@@ -136,15 +140,15 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
         }
         return Promise.resolve(undefined);
       }),
-      $transaction: jest.fn(async (fn: (tx: any) => Promise<any>) => {
+      $transaction: jest.fn<(...a: any[]) => any>(async (fn: (tx: any) => Promise<any>) => {
         const txQueryCallLog: string[] = [];
         const tx = {
-          $executeRaw: jest.fn().mockImplementation((query: unknown) => {
+          $executeRaw: jest.fn<(...a: any[]) => any>().mockImplementation((query: unknown) => {
             const queryStr = queryToString(query);
             txQueryCallLog.push(queryStr);
             return Promise.resolve(undefined);
           }),
-          $queryRaw: jest.fn().mockImplementation((query) => {
+          $queryRaw: jest.fn<(...a: any[]) => any>().mockImplementation((query) => {
             const queryStr = queryToString(query);
             txQueryCallLog.push(queryStr);
             if (queryStr.includes(`pg_advisory_xact_lock`)) {
@@ -159,8 +163,8 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
             return Promise.resolve(undefined);
           }),
           ledgerEntryModel: {
-            findFirst: jest.fn().mockResolvedValue(null),
-            create: jest.fn().mockResolvedValue({ id: `ledger-entry-1` }),
+            findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+            create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `ledger-entry-1` }),
           },
         };
 
@@ -179,7 +183,7 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
     const mailingService = {} as any;
     const balanceService = new BalanceCalculationService(new BalanceCalculationRepository(prisma));
     const service = new ConsumerPaymentsService(prisma, mailingService, balanceService);
-    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+    (service as any).ensureLimits = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     return service;
   }
 

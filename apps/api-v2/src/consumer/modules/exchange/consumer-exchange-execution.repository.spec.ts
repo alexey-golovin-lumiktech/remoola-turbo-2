@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { ConsumerExchangeExecutionRepository } from './consumer-exchange-execution.repository';
@@ -13,7 +15,7 @@ describe(`ConsumerExchangeExecutionRepository`, () => {
     const prisma = {
       ledgerEntryModel: {
         findFirst: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockResolvedValueOnce({
             id: `target-entry`,
             ledgerId: `ledger-1`,
@@ -22,7 +24,7 @@ describe(`ConsumerExchangeExecutionRepository`, () => {
           })
           .mockResolvedValueOnce(null),
       },
-      $transaction: jest.fn(),
+      $transaction: jest.fn<(...a: any[]) => any>(),
     } as any;
     const repository = new ConsumerExchangeExecutionRepository(prisma);
 
@@ -35,7 +37,7 @@ describe(`ConsumerExchangeExecutionRepository`, () => {
       metadata: { source: `scheduled` },
       sourceIdempotencyKey: `scheduled:1:source`,
       targetIdempotencyKey: `scheduled:1:target`,
-      assertSufficientBalance: jest.fn(),
+      assertSufficientBalance: jest.fn<(...a: any[]) => any>(),
     });
 
     expect(result).toEqual({
@@ -52,22 +54,24 @@ describe(`ConsumerExchangeExecutionRepository`, () => {
 
   it(`owns the transaction, advisory lock, balance assertion, and paired ledger writes`, async () => {
     const tx = {
-      $executeRaw: jest.fn().mockResolvedValue(undefined),
+      $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       ledgerEntryModel: {
         create: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockResolvedValueOnce({ id: `source-entry`, ledgerId: `ledger-1`, amount: `-100` })
           .mockResolvedValueOnce({ id: `target-entry`, ledgerId: `ledger-1`, amount: `92` }),
       },
     };
     const prisma = {
       ledgerEntryModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
-      $transaction: jest.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (client: typeof tx) => Promise<unknown>) =>
+        callback(tx),
+      ),
     } as any;
     const repository = new ConsumerExchangeExecutionRepository(prisma);
-    const assertSufficientBalance = jest.fn().mockResolvedValue(undefined);
+    const assertSufficientBalance = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     const result = await repository.executeExchange({
       consumerId: `consumer-1`,
@@ -81,7 +85,7 @@ describe(`ConsumerExchangeExecutionRepository`, () => {
 
     expect(assertSufficientBalance).toHaveBeenCalledWith(tx);
     expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
-    const createMock = tx.ledgerEntryModel.create as jest.Mock;
+    const createMock = tx.ledgerEntryModel.create as jest.Mock<(...a: any[]) => any>;
     const firstCallAmount = createMock.mock.calls[0][0].data.amount as Prisma.Decimal;
     const secondCallAmount = createMock.mock.calls[1][0].data.amount as Prisma.Decimal;
     expect(firstCallAmount).toBeInstanceOf(Prisma.Decimal);
@@ -147,17 +151,19 @@ describe(`ConsumerExchangeExecutionRepository`, () => {
       metadata: { rate: 0.95 },
     };
     const tx = {
-      $executeRaw: jest.fn().mockResolvedValue(undefined),
+      $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(recoveredTarget),
-        create: jest.fn().mockRejectedValue(createKnownRequestError(`P2002`)),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValueOnce(null).mockResolvedValueOnce(recoveredTarget),
+        create: jest.fn<(...a: any[]) => any>().mockRejectedValue(createKnownRequestError(`P2002`)),
       },
     };
     const prisma = {
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(existingSource),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValueOnce(null).mockResolvedValueOnce(existingSource),
       },
-      $transaction: jest.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (client: typeof tx) => Promise<unknown>) =>
+        callback(tx),
+      ),
     } as any;
     const repository = new ConsumerExchangeExecutionRepository(prisma);
 
@@ -170,7 +176,7 @@ describe(`ConsumerExchangeExecutionRepository`, () => {
       metadata: { source: `scheduled` },
       sourceIdempotencyKey: `scheduled:1:source`,
       targetIdempotencyKey: `scheduled:1:target`,
-      assertSufficientBalance: jest.fn(),
+      assertSufficientBalance: jest.fn<(...a: any[]) => any>(),
     });
 
     expect(result).toEqual({

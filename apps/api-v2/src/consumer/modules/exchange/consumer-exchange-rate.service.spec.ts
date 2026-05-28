@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -9,7 +10,7 @@ import { ConsumerExchangeRateService } from './consumer-exchange-rate.service';
 describe(`ConsumerExchangeRateService`, () => {
   function buildService() {
     const rateReader = {
-      getRate: jest.fn(async (from: $Enums.CurrencyCode, to: $Enums.CurrencyCode) => {
+      getRate: jest.fn<(...a: any[]) => any>(async (from: $Enums.CurrencyCode, to: $Enums.CurrencyCode) => {
         if (from === $Enums.CurrencyCode.GBP && to === $Enums.CurrencyCode.AUD) {
           throw new NotFoundException(errorCodes.RATE_NOT_AVAILABLE);
         }

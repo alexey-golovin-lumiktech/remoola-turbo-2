@@ -1,22 +1,23 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ConflictException } from '@nestjs/common';
 
 import { AdminV2PaymentMethodsRepository } from './admin-v2-payment-methods.repository';
 
 describe(`AdminV2PaymentMethodsRepository`, () => {
   function buildRepository() {
-    const queryRaw = jest.fn();
+    const queryRaw = jest.fn<(...a: any[]) => any>();
     const paymentMethodModel = {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
-      updateMany: jest.fn(),
+      findUnique: jest.fn<(...a: any[]) => any>(),
+      findMany: jest.fn<(...a: any[]) => any>(),
+      findUniqueOrThrow: jest.fn<(...a: any[]) => any>(),
+      updateMany: jest.fn<(...a: any[]) => any>(),
     };
     const paymentMethodDuplicateEscalationModel = {
-      findUnique: jest.fn(),
-      create: jest.fn(),
+      findUnique: jest.fn<(...a: any[]) => any>(),
+      create: jest.fn<(...a: any[]) => any>(),
     };
     const adminActionAuditLogModel = {
-      create: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
     };
     const tx = {
       $queryRaw: queryRaw,
@@ -26,7 +27,9 @@ describe(`AdminV2PaymentMethodsRepository`, () => {
     };
     const prisma = {
       paymentMethodModel,
-      $transaction: jest.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (client: typeof tx) => Promise<unknown>) =>
+        callback(tx),
+      ),
     };
 
     return {

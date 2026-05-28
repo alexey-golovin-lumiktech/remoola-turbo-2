@@ -152,11 +152,11 @@ export class AdminV2SavedViewsService {
       name?: string;
       description?: string | null;
       queryPayload?: unknown;
-      expectedDeletedAtNull?: number;
+      expectedDeletedAtNull: number;
     },
     meta: SavedViewRequestMeta,
   ): Promise<SavedViewSummary> {
-    assertExpectedDeletedAtNull(Number(body.expectedDeletedAtNull));
+    assertExpectedDeletedAtNull(body.expectedDeletedAtNull);
     const hasName = body.name !== undefined;
     const hasDescription = body.description !== undefined;
     const hasPayload = body.queryPayload !== undefined;
@@ -224,10 +224,10 @@ export class AdminV2SavedViewsService {
   async delete(
     actor: SavedViewActorContext,
     savedViewId: string,
-    body: { expectedDeletedAtNull?: number },
+    body: { expectedDeletedAtNull: number },
     meta: SavedViewRequestMeta,
   ): Promise<{ savedViewId: string; deletedAt: string }> {
-    assertExpectedDeletedAtNull(Number(body.expectedDeletedAtNull));
+    assertExpectedDeletedAtNull(body.expectedDeletedAtNull);
     const adminId = actor.id;
 
     return this.idempotency.execute({

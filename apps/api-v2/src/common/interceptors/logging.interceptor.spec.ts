@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -19,7 +20,7 @@ function mockContext(statusCode = 200): ExecutionContext {
         method: `GET`,
         path: `/api/health`,
         correlationId: `corr-123`,
-        get: jest.fn().mockReturnValue(`jest-agent`),
+        get: jest.fn<(...a: any[]) => any>().mockReturnValue(`jest-agent`),
       }),
       getResponse: () => ({
         statusCode,

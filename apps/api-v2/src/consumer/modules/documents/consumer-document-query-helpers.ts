@@ -21,27 +21,6 @@ export function buildConsumerDocumentPaymentParticipantWhere(consumerId: string,
   ];
 }
 
-export function buildConsumerDocumentContractRelationshipWhere(
-  consumerId: string,
-  consumerEmail: string | null,
-  contractEmail: string,
-) {
-  return {
-    AND: [
-      { deletedAt: null },
-      { OR: buildConsumerDocumentPaymentParticipantWhere(consumerId, consumerEmail) },
-      {
-        OR: [
-          { payer: { email: { equals: contractEmail, mode: `insensitive` as const } } },
-          { requester: { email: { equals: contractEmail, mode: `insensitive` as const } } },
-          { payerEmail: { equals: contractEmail, mode: `insensitive` as const } },
-          { requesterEmail: { equals: contractEmail, mode: `insensitive` as const } },
-        ],
-      },
-    ],
-  };
-}
-
 export function buildConsumerDocumentPaymentParticipantIdsSql(consumerId: string, consumerEmail: string | null) {
   return buildPaymentRequestParticipantIdsSql({
     consumerId,

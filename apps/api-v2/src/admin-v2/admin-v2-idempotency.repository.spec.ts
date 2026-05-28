@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { Prisma } from '@remoola/database-2';
 
 import { AdminV2IdempotencyRepository } from './admin-v2-idempotency.repository';
@@ -7,10 +9,10 @@ describe(`AdminV2IdempotencyRepository`, () => {
   function makeRepository() {
     const prisma = {
       adminActionIdempotencyModel: {
-        create: jest.fn(async () => null),
-        findUnique: jest.fn(async () => null),
-        updateMany: jest.fn(async () => ({ count: 1 })),
-        deleteMany: jest.fn(async () => ({ count: 0 })),
+        create: jest.fn<(...a: any[]) => any>(async () => null),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => null),
+        updateMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
+        deleteMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 0 })),
       },
     };
 
@@ -189,10 +191,10 @@ describe(`AdminV2IdempotencyRepository`, () => {
     const { prisma, repository } = makeRepository();
     const tx = {
       adminActionIdempotencyModel: {
-        create: jest.fn(async () => null),
-        findUnique: jest.fn(async () => null),
-        updateMany: jest.fn(async () => ({ count: 1 })),
-        deleteMany: jest.fn(async () => ({ count: 0 })),
+        create: jest.fn<(...a: any[]) => any>(async () => null),
+        findUnique: jest.fn<(...a: any[]) => any>(async () => null),
+        updateMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
+        deleteMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 0 })),
       },
     };
 

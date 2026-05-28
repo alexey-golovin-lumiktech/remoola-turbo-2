@@ -1,3 +1,4 @@
+import { describe, expect, jest } from '@jest/globals';
 import { type Response } from 'express';
 
 import { CONSUMER_APP_SCOPE_HEADER, CURRENT_CONSUMER_APP_SCOPE, type ConsumerAppScope } from '@remoola/api-types';
@@ -37,14 +38,16 @@ describe(`deviceIdMiddleware`, () => {
     } as RequestWithDeviceId;
   }
 
-  function mockRes(): { cookie: jest.Mock } & Response {
-    return { cookie: jest.fn() } as unknown as { cookie: jest.Mock } & Response;
+  function mockRes(): { cookie: jest.Mock<(...a: any[]) => any> } & Response {
+    return { cookie: jest.fn<(...a: any[]) => any>() } as unknown as {
+      cookie: jest.Mock<(...a: any[]) => any>;
+    } & Response;
   }
 
   it(`sets req.deviceId and sets cookie when path is consumer and no valid cookie`, (done) => {
     const req = mockReq();
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeDefined();
       expect(typeof req.deviceId).toBe(`string`);
       expect(req.deviceId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
@@ -62,7 +65,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`reuses existing valid device cookie when path is consumer`, (done) => {
     const req = mockReq({ signedCookies: { [localDeviceCookieKey]: validUuid } });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBe(validUuid);
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -77,7 +80,7 @@ describe(`deviceIdMiddleware`, () => {
       cookies: { [localDeviceCookieKey]: `invalid` },
     });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBe(validUuid);
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -89,7 +92,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`does not set deviceId for non-consumer path`, (done) => {
     const req = mockReq({ path: `/api/admin-v2/users` });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeUndefined();
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -101,7 +104,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`does not set deviceId for near-match non-consumer prefix`, (done) => {
     const req = mockReq({ path: `/api/consumerx/auth/login` });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeUndefined();
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -113,7 +116,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`rejects when app scope header is missing`, (done) => {
     const req = mockReq({ headers: {} as any });
     const res = mockRes();
-    const next = jest.fn((error?: unknown) => {
+    const next = jest.fn<(...a: any[]) => any>((error?: unknown) => {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toBe(`Invalid app scope`);
       expect(req.deviceId).toBeUndefined();
@@ -127,7 +130,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`skips browser oauth start without requiring app scope header`, (done) => {
     const req = mockReq({ method: `GET`, path: `/api/consumer/auth/google/start`, headers: {} as any });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeUndefined();
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -139,7 +142,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`skips browser oauth callback without requiring app scope header`, (done) => {
     const req = mockReq({ method: `GET`, path: `/api/consumer/auth/google/callback`, headers: {} as any });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeUndefined();
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -151,7 +154,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`skips token-only verification routes without requiring app scope header`, (done) => {
     const req = mockReq({ method: `GET`, path: `/api/consumer/auth/forgot-password/verify`, headers: {} as any });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeUndefined();
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -163,7 +166,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`skips signup verification without requiring app scope header`, (done) => {
     const req = mockReq({ method: `GET`, path: `/api/consumer/auth/signup/verification`, headers: {} as any });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeUndefined();
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -175,7 +178,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`skips stripe webhooks without requiring app scope header`, (done) => {
     const req = mockReq({ method: `POST`, path: `/api/consumer/webhooks`, headers: {} as any });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeUndefined();
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -187,7 +190,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`skips singular stripe webhook path without requiring app scope header`, (done) => {
     const req = mockReq({ method: `POST`, path: `/api/consumer/webhook`, headers: {} as any });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeUndefined();
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -199,7 +202,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`rejects password reset without app scope header because it is BFF-only public`, (done) => {
     const req = mockReq({ method: `POST`, path: `/api/consumer/auth/password/reset`, headers: {} as any });
     const res = mockRes();
-    const next = jest.fn((error?: unknown) => {
+    const next = jest.fn<(...a: any[]) => any>((error?: unknown) => {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toBe(`Invalid app scope`);
       expect(req.deviceId).toBeUndefined();
@@ -217,7 +220,7 @@ describe(`deviceIdMiddleware`, () => {
       headers: {} as any,
     });
     const res = mockRes();
-    const next = jest.fn((error?: unknown) => {
+    const next = jest.fn<(...a: any[]) => any>((error?: unknown) => {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toBe(`Invalid app scope`);
       expect(req.deviceId).toBeUndefined();
@@ -231,7 +234,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`generates new deviceId when cookie value is invalid (not a UUID)`, (done) => {
     const req = mockReq({ cookies: { [localDeviceCookieKey]: `not-a-uuid` } });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeDefined();
       expect(req.deviceId).not.toBe(`not-a-uuid`);
       expect(res.cookie).toHaveBeenCalled();
@@ -244,7 +247,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`generates a new deviceId when cookie value is UUID but not v4`, (done) => {
     const req = mockReq({ signedCookies: { [localDeviceCookieKey]: validNonV4Uuid } });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeDefined();
       expect(req.deviceId).not.toBe(validNonV4Uuid);
       expect(req.deviceId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
@@ -267,7 +270,7 @@ describe(`deviceIdMiddleware`, () => {
       },
     });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBe(validUuid);
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -279,7 +282,7 @@ describe(`deviceIdMiddleware`, () => {
   it(`ignores unsigned legacy cookie values and rotates to a new signed cookie`, (done) => {
     const req = mockReq({ cookies: { [localDeviceCookieKey]: validUuid } });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeDefined();
       expect(req.deviceId).not.toBe(validUuid);
       expect(res.cookie).toHaveBeenCalledWith(
@@ -298,7 +301,7 @@ describe(`deviceIdMiddleware`, () => {
 
     const firstReq = mockReq({ signedCookies: { [localDeviceCookieKey]: firstDeviceId } });
     const firstRes = mockRes();
-    const firstNext = jest.fn();
+    const firstNext = jest.fn<(...a: any[]) => any>();
     deviceIdMiddleware(firstReq, firstRes, firstNext);
 
     expect(firstReq.deviceId).toBe(firstDeviceId);
@@ -308,7 +311,7 @@ describe(`deviceIdMiddleware`, () => {
     // Simulate browser cookie clear, then revisit.
     const revisitReq = mockReq({ cookies: {} });
     const revisitRes = mockRes();
-    const revisitNext = jest.fn();
+    const revisitNext = jest.fn<(...a: any[]) => any>();
     deviceIdMiddleware(revisitReq, revisitRes, revisitNext);
 
     expect(revisitReq.deviceId).toBeDefined();
@@ -325,7 +328,7 @@ describe(`deviceIdMiddleware`, () => {
       signedCookies: { [localDeviceCookieKey]: validUuid },
     });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBe(validUuid);
       expect(res.cookie).not.toHaveBeenCalled();
       done();
@@ -343,7 +346,7 @@ describe(`deviceIdMiddleware`, () => {
       cookies: { [localDeviceCookieKey]: validUuid },
     });
     const res = mockRes();
-    const next = jest.fn(() => {
+    const next = jest.fn<(...a: any[]) => any>(() => {
       expect(req.deviceId).toBeDefined();
       expect(req.deviceId).not.toBe(validUuid);
       expect(res.cookie).toHaveBeenCalledWith(

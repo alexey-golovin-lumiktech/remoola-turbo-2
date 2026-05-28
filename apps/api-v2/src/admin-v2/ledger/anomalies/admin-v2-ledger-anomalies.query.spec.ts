@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { type AdminV2LedgerAnomaliesLatestOutcomeQuery } from './admin-v2-ledger-anomalies-latest-outcome.query';
 import { type AdminV2LedgerAnomaliesValueIntegrityQuery } from './admin-v2-ledger-anomalies-value-integrity.query';
 import { AdminV2LedgerAnomaliesQuery } from './admin-v2-ledger-anomalies.query';
@@ -5,26 +7,26 @@ import { AdminV2LedgerAnomaliesQuery } from './admin-v2-ledger-anomalies.query';
 describe(`AdminV2LedgerAnomaliesQuery`, () => {
   function makeQuery() {
     const latestOutcomeQuery = {
-      countStalePendingEntries: jest.fn(async () => 0),
-      countInconsistentOutcomeChains: jest.fn(async () => 0),
-      listStalePendingEntries: jest.fn(async () => []),
-      listInconsistentOutcomeChains: jest.fn(async () => []),
-      countStalePendingEntriesForRange: jest.fn(async () => 0),
-      countInconsistentOutcomeChainsForRange: jest.fn(async () => 0),
+      countStalePendingEntries: jest.fn<(...a: any[]) => any>(async () => 0),
+      countInconsistentOutcomeChains: jest.fn<(...a: any[]) => any>(async () => 0),
+      listStalePendingEntries: jest.fn<(...a: any[]) => any>(async () => []),
+      listInconsistentOutcomeChains: jest.fn<(...a: any[]) => any>(async () => []),
+      countStalePendingEntriesForRange: jest.fn<(...a: any[]) => any>(async () => 0),
+      countInconsistentOutcomeChainsForRange: jest.fn<(...a: any[]) => any>(async () => 0),
     };
     const valueIntegrityQuery = {
-      countLargeValueOutliers: jest.fn(async () => 0),
-      countOrphanedEntries: jest.fn(async () => 0),
-      countDuplicateIdempotencyRisk: jest.fn(async () => 0),
-      countImpossibleTransitions: jest.fn(async () => 0),
-      listLargeValueOutliers: jest.fn(async () => []),
-      listOrphanedEntries: jest.fn(async () => []),
-      listDuplicateIdempotencyRisk: jest.fn(async () => []),
-      listImpossibleTransitions: jest.fn(async () => []),
-      countLargeValueOutliersForRange: jest.fn(async () => 0),
-      countOrphanedEntriesForRange: jest.fn(async () => 0),
-      countDuplicateIdempotencyRiskForRange: jest.fn(async () => 0),
-      countImpossibleTransitionsForRange: jest.fn(async () => 0),
+      countLargeValueOutliers: jest.fn<(...a: any[]) => any>(async () => 0),
+      countOrphanedEntries: jest.fn<(...a: any[]) => any>(async () => 0),
+      countDuplicateIdempotencyRisk: jest.fn<(...a: any[]) => any>(async () => 0),
+      countImpossibleTransitions: jest.fn<(...a: any[]) => any>(async () => 0),
+      listLargeValueOutliers: jest.fn<(...a: any[]) => any>(async () => []),
+      listOrphanedEntries: jest.fn<(...a: any[]) => any>(async () => []),
+      listDuplicateIdempotencyRisk: jest.fn<(...a: any[]) => any>(async () => []),
+      listImpossibleTransitions: jest.fn<(...a: any[]) => any>(async () => []),
+      countLargeValueOutliersForRange: jest.fn<(...a: any[]) => any>(async () => 0),
+      countOrphanedEntriesForRange: jest.fn<(...a: any[]) => any>(async () => 0),
+      countDuplicateIdempotencyRiskForRange: jest.fn<(...a: any[]) => any>(async () => 0),
+      countImpossibleTransitionsForRange: jest.fn<(...a: any[]) => any>(async () => 0),
     };
 
     return {

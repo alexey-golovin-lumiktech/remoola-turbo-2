@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -24,15 +25,15 @@ function createRule(overrides?: Partial<Record<string, unknown>>) {
 
 function createService() {
   const balanceService = {
-    calculateMultiCurrency: jest.fn().mockResolvedValue({ USD: 100 }),
+    calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ USD: 100 }),
   } as any;
   const conversionService = {
-    convertInternal: jest.fn().mockResolvedValue({ ledgerId: `ledger-1` }),
+    convertInternal: jest.fn<(...a: any[]) => any>().mockResolvedValue({ ledgerId: `ledger-1` }),
   } as any;
   const automationRepository = {
-    countAutoConversionRules: jest.fn().mockResolvedValue(0),
-    listAutoConversionRules: jest.fn().mockResolvedValue([]),
-    createAutoConversionRule: jest.fn().mockImplementation((data) =>
+    countAutoConversionRules: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+    listAutoConversionRules: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+    createAutoConversionRule: jest.fn<(...a: any[]) => any>().mockImplementation((data) =>
       Promise.resolve(
         createRule({
           id: `created-rule`,
@@ -40,8 +41,8 @@ function createService() {
         }),
       ),
     ),
-    findActiveAutoConversionRule: jest.fn().mockResolvedValue(createRule()),
-    updateAutoConversionRule: jest.fn().mockImplementation((ruleId, data) =>
+    findActiveAutoConversionRule: jest.fn<(...a: any[]) => any>().mockResolvedValue(createRule()),
+    updateAutoConversionRule: jest.fn<(...a: any[]) => any>().mockImplementation((ruleId, data) =>
       Promise.resolve(
         createRule({
           id: ruleId,
@@ -49,14 +50,14 @@ function createService() {
         }),
       ),
     ),
-    softDeleteAutoConversionRule: jest.fn().mockResolvedValue(undefined),
-    findDueAutoConversionRules: jest.fn().mockResolvedValue([]),
-    claimDueAutoConversionRule: jest.fn().mockResolvedValue(true),
-    findExecutableAutoConversionRule: jest.fn().mockResolvedValue(createRule()),
-    updateAutoConversionRuleMetadata: jest.fn().mockResolvedValue(undefined),
-    rescheduleAutoConversionRuleFailure: jest.fn().mockResolvedValue(undefined),
-    findAutoConversionRuleById: jest.fn().mockResolvedValue(createRule()),
-    claimAutoConversionRuleNow: jest.fn().mockResolvedValue(true),
+    softDeleteAutoConversionRule: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    findDueAutoConversionRules: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+    claimDueAutoConversionRule: jest.fn<(...a: any[]) => any>().mockResolvedValue(true),
+    findExecutableAutoConversionRule: jest.fn<(...a: any[]) => any>().mockResolvedValue(createRule()),
+    updateAutoConversionRuleMetadata: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    rescheduleAutoConversionRuleFailure: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    findAutoConversionRuleById: jest.fn<(...a: any[]) => any>().mockResolvedValue(createRule()),
+    claimAutoConversionRuleNow: jest.fn<(...a: any[]) => any>().mockResolvedValue(true),
   } as any;
   const service = new ConsumerAutoConversionRuleService(balanceService, conversionService, automationRepository);
 

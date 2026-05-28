@@ -1,15 +1,16 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 
 import { AdminV2OperationalAlertsAuthRefreshReuseQuery } from './admin-v2-operational-alerts-auth-refresh-reuse.query';
 import { AuthRefreshReuseAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-auth-refresh-reuse';
 
 type AuthRefreshReuseQueryMock = {
-  countRefreshReuseSince: jest.Mock<Promise<number>, [Date]>;
+  countRefreshReuseSince: jest.Mock<(since: Date) => Promise<number>>;
 };
 
 function buildHarness(count = 0) {
   const query = {
-    countRefreshReuseSince: jest.fn(async (_since: Date) => count),
+    countRefreshReuseSince: jest.fn<(...a: any[]) => any>(async (_since: Date) => count),
   } satisfies AuthRefreshReuseQueryMock;
   const evaluator = new AuthRefreshReuseAlertEvaluator(
     query as unknown as AdminV2OperationalAlertsAuthRefreshReuseQuery,
@@ -24,7 +25,7 @@ describe(`AuthRefreshReuseAlertEvaluator`, () => {
         AuthRefreshReuseAlertEvaluator,
         {
           provide: AdminV2OperationalAlertsAuthRefreshReuseQuery,
-          useValue: { countRefreshReuseSince: jest.fn(async () => 0) },
+          useValue: { countRefreshReuseSince: jest.fn<(...a: any[]) => any>(async () => 0) },
         },
       ],
     }).compile();

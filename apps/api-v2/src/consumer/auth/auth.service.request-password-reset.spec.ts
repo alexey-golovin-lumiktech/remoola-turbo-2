@@ -1,17 +1,18 @@
 /* eslint-disable import/order */
+import { expect, it, jest } from '@jest/globals';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 jest.mock(`@remoola/security-utils`, () => ({
-  hashTokenToHex: jest.fn((token: string) => `hash-${token}`),
+  hashTokenToHex: jest.fn<(...a: any[]) => any>((token: string) => `hash-${token}`),
   oauthCrypto: {
-    generateOAuthState: jest.fn(() => `generated-token`),
+    generateOAuthState: jest.fn<(...a: any[]) => any>(() => `generated-token`),
   },
 }));
 jest.mock(`../../shared/resolve-email-api-base-url`, () => ({
-  resolveEmailApiBaseUrl: jest.fn(() => `http://127.0.0.1:3334/api`),
+  resolveEmailApiBaseUrl: jest.fn<(...a: any[]) => any>(() => `http://127.0.0.1:3334/api`),
 }));
 
 import { hashTokenToHex, oauthCrypto } from '@remoola/security-utils';
@@ -33,12 +34,16 @@ const mockGenerateOAuthState = oauthCrypto.generateOAuthState as jest.MockedFunc
 describe(`ConsumerAuthService.requestPasswordReset`, () => {
   let service: ConsumerAuthService;
   let prisma: {
-    consumerModel: { findFirst: jest.Mock };
-    resetPasswordModel: { findFirst: jest.Mock; updateMany: jest.Mock; create: jest.Mock };
+    consumerModel: { findFirst: jest.Mock<(...a: any[]) => any> };
+    resetPasswordModel: {
+      findFirst: jest.Mock<(...a: any[]) => any>;
+      updateMany: jest.Mock<(...a: any[]) => any>;
+      create: jest.Mock<(...a: any[]) => any>;
+    };
   };
   let mailingService: {
-    sendConsumerForgotPasswordEmail: jest.Mock;
-    sendConsumerPasswordlessRecoveryEmail: jest.Mock;
+    sendConsumerForgotPasswordEmail: jest.Mock<(...a: any[]) => any>;
+    sendConsumerPasswordlessRecoveryEmail: jest.Mock<(...a: any[]) => any>;
   };
 
   beforeEach(async () => {
@@ -48,38 +53,51 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
 
     prisma = {
       consumerModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       resetPasswordModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-        create: jest.fn().mockResolvedValue({ id: `reset-row-id` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 0 }),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `reset-row-id` }),
       },
     };
     mailingService = {
-      sendConsumerForgotPasswordEmail: jest.fn().mockResolvedValue(undefined),
-      sendConsumerPasswordlessRecoveryEmail: jest.fn().mockResolvedValue(undefined),
+      sendConsumerForgotPasswordEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      sendConsumerPasswordlessRecoveryEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: consumerAuthServiceTestProviders([
         { provide: PrismaService, useValue: prisma },
-        { provide: JwtService, useValue: { signAsync: jest.fn(), verify: jest.fn(), decode: jest.fn() } },
+        {
+          provide: JwtService,
+          useValue: {
+            signAsync: jest.fn<(...a: any[]) => any>(),
+            verify: jest.fn<(...a: any[]) => any>(),
+            decode: jest.fn<(...a: any[]) => any>(),
+          },
+        },
         { provide: RecoveryMailingService, useValue: mailingService },
         { provide: AdminNotificationMailingService, useValue: {} },
         { provide: SignupMailingService, useValue: {} },
-        { provide: AuthAuditService, useValue: { recordAudit: jest.fn(), checkLockoutAndRateLimit: jest.fn() } },
+        {
+          provide: AuthAuditService,
+          useValue: {
+            recordAudit: jest.fn<(...a: any[]) => any>(),
+            checkLockoutAndRateLimit: jest.fn<(...a: any[]) => any>(),
+          },
+        },
         {
           provide: OriginResolverService,
           useValue: {
-            validateConsumerAppScope: jest.fn((scope?: string | null) =>
+            validateConsumerAppScope: jest.fn<(...a: any[]) => any>((scope?: string | null) =>
               scope === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
             ),
-            resolveConsumerOriginByScope: jest.fn((scope?: string) => {
+            resolveConsumerOriginByScope: jest.fn<(...a: any[]) => any>((scope?: string) => {
               if (scope === CURRENT_CONSUMER_APP_SCOPE) return `http://127.0.0.1:3001`;
               return undefined;
             }),
-            getAllowedOrigins: jest.fn(),
+            getAllowedOrigins: jest.fn<(...a: any[]) => any>(),
           },
         },
       ]),

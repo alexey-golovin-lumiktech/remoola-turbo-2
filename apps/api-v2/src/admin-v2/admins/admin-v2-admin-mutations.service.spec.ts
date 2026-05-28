@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
@@ -9,33 +10,33 @@ import { AdminV2AdminMutationsService } from './admin-v2-admin-mutations.service
 describe(`AdminV2AdminMutationsService`, () => {
   async function buildService() {
     const repository = {
-      patchAdminPassword: jest.fn(),
-      updateAdminStatus: jest.fn(),
-      getAdminLifecycleTarget: jest.fn(),
-      getAdminRoleMutationTarget: jest.fn(),
-      getAdminPermissionMutationTarget: jest.fn(),
-      getRoleByKey: jest.fn(),
-      listRelevantPermissions: jest.fn(),
-      deactivateAdmin: jest.fn(),
-      findAdminUpdatedAt: jest.fn(),
-      revokeActiveSessions: jest.fn(),
-      deleteRefreshTokens: jest.fn(),
-      createAuditEntry: jest.fn(),
-      findAdminLifecycleResult: jest.fn(),
-      restoreAdmin: jest.fn(),
-      changeAdminRole: jest.fn(),
-      findAdminRoleResult: jest.fn(),
-      replaceAdminPermissionOverrides: jest.fn(),
-      touchAdminPermissions: jest.fn(),
-      findAdminPermissionResult: jest.fn(),
+      patchAdminPassword: jest.fn<(...a: any[]) => any>(),
+      updateAdminStatus: jest.fn<(...a: any[]) => any>(),
+      getAdminLifecycleTarget: jest.fn<(...a: any[]) => any>(),
+      getAdminRoleMutationTarget: jest.fn<(...a: any[]) => any>(),
+      getAdminPermissionMutationTarget: jest.fn<(...a: any[]) => any>(),
+      getRoleByKey: jest.fn<(...a: any[]) => any>(),
+      listRelevantPermissions: jest.fn<(...a: any[]) => any>(),
+      deactivateAdmin: jest.fn<(...a: any[]) => any>(),
+      findAdminUpdatedAt: jest.fn<(...a: any[]) => any>(),
+      revokeActiveSessions: jest.fn<(...a: any[]) => any>(),
+      deleteRefreshTokens: jest.fn<(...a: any[]) => any>(),
+      createAuditEntry: jest.fn<(...a: any[]) => any>(),
+      findAdminLifecycleResult: jest.fn<(...a: any[]) => any>(),
+      restoreAdmin: jest.fn<(...a: any[]) => any>(),
+      changeAdminRole: jest.fn<(...a: any[]) => any>(),
+      findAdminRoleResult: jest.fn<(...a: any[]) => any>(),
+      replaceAdminPermissionOverrides: jest.fn<(...a: any[]) => any>(),
+      touchAdminPermissions: jest.fn<(...a: any[]) => any>(),
+      findAdminPermissionResult: jest.fn<(...a: any[]) => any>(),
     };
     const idempotency = {
-      executeInTransaction: jest.fn(async ({ execute }: { execute: (tx: unknown) => Promise<unknown> }) =>
-        execute({ tx: true }),
+      executeInTransaction: jest.fn<(...a: any[]) => any>(
+        async ({ execute }: { execute: (tx: unknown) => Promise<unknown> }) => execute({ tx: true }),
       ),
     };
     const auditTrail = {
-      recordAdminActionAudit: jest.fn(async () => undefined),
+      recordAdminActionAudit: jest.fn<(...a: any[]) => any>(async () => undefined),
     };
 
     const moduleRef = await Test.createTestingModule({

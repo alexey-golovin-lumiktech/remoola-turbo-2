@@ -28,6 +28,7 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@jest/globals": "30.2.0",
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/jest-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",

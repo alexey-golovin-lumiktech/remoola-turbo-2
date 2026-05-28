@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -20,10 +21,10 @@ describe(`ExchangeConversionExecutor`, () => {
   function buildExecutor() {
     const calls: string[] = [];
     const persistenceRepository = {
-      acquireConversionAdvisoryLock: jest.fn(async () => {
+      acquireConversionAdvisoryLock: jest.fn<(...a: any[]) => any>(async () => {
         calls.push(`advisoryLock`);
       }),
-      findApprovedRateForConversion: jest.fn(async () => {
+      findApprovedRateForConversion: jest.fn<(...a: any[]) => any>(async () => {
         calls.push(`rateLookup`);
         return {
           id: `rate-1`,
@@ -33,13 +34,13 @@ describe(`ExchangeConversionExecutor`, () => {
           createdAt: new Date(`2026-04-17T11:40:00.000Z`),
         };
       }),
-      createConversionLedgerEntries: jest.fn(async () => {
+      createConversionLedgerEntries: jest.fn<(...a: any[]) => any>(async () => {
         calls.push(`ledgerEntries`);
         return { entryId: `entry-target` };
       }),
     };
     const balanceService = {
-      calculateInTransaction: jest.fn(async () => {
+      calculateInTransaction: jest.fn<(...a: any[]) => any>(async () => {
         calls.push(`balance`);
         return 100;
       }),

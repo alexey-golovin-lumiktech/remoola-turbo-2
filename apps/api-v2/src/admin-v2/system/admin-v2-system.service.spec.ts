@@ -1,20 +1,22 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { type AdminV2SystemQuery } from './admin-v2-system.query';
 import { AdminV2SystemService } from './admin-v2-system.service';
 
 describe(`AdminV2SystemService`, () => {
   function makeService() {
     const query = {
-      getStripeCheckoutLag: jest.fn(async () => ({ count: 0, oldestAt: null })),
-      getStripeReversalLag: jest.fn(async () => ({ count: 0, oldestAt: null })),
-      getLatestProcessedWebhookAt: jest.fn(async () => null),
-      getOverdueScheduledConversions: jest.fn(async () => ({ count: 0, oldestAt: null })),
-      countExpiredResetPasswords: jest.fn(async () => 0),
-      countExpiredOauthStates: jest.fn(async () => 0),
-      listEmailDeliveryIssuePatterns: jest.fn(async () => []),
-      getStaleRateSnapshot: jest.fn(async () => ({ count: 0, oldestReferenceAt: null })),
+      getStripeCheckoutLag: jest.fn<(...a: any[]) => any>(async () => ({ count: 0, oldestAt: null })),
+      getStripeReversalLag: jest.fn<(...a: any[]) => any>(async () => ({ count: 0, oldestAt: null })),
+      getLatestProcessedWebhookAt: jest.fn<(...a: any[]) => any>(async () => null),
+      getOverdueScheduledConversions: jest.fn<(...a: any[]) => any>(async () => ({ count: 0, oldestAt: null })),
+      countExpiredResetPasswords: jest.fn<(...a: any[]) => any>(async () => 0),
+      countExpiredOauthStates: jest.fn<(...a: any[]) => any>(async () => 0),
+      listEmailDeliveryIssuePatterns: jest.fn<(...a: any[]) => any>(async () => []),
+      getStaleRateSnapshot: jest.fn<(...a: any[]) => any>(async () => ({ count: 0, oldestReferenceAt: null })),
     };
     const ledgerAnomalies = {
-      getSummary: jest.fn(async () => ({
+      getSummary: jest.fn<(...a: any[]) => any>(async () => ({
         computedAt: `2026-04-17T12:00:00.000Z`,
         totalCount: 0,
         classes: {
@@ -97,7 +99,7 @@ describe(`AdminV2SystemService`, () => {
     const service = new AdminV2SystemService(
       query as unknown as AdminV2SystemQuery,
       {
-        getSummary: jest.fn(async () => ({
+        getSummary: jest.fn<(...a: any[]) => any>(async () => ({
           computedAt: `2026-04-17T12:00:00.000Z`,
           totalCount: 4,
           classes: {

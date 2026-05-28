@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { ConsumerExchangeAutomationRepository } from './consumer-exchange-automation.repository';
@@ -6,7 +8,7 @@ describe(`ConsumerExchangeAutomationRepository`, () => {
   it(`claims a manual rule run using the previously read nextRunAt value`, async () => {
     const prisma = {
       walletAutoConversionRuleModel: {
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const repository = new ConsumerExchangeAutomationRepository(prisma);
@@ -37,7 +39,7 @@ describe(`ConsumerExchangeAutomationRepository`, () => {
   it(`claims due scheduled conversions by moving them to processing`, async () => {
     const prisma = {
       scheduledFxConversionModel: {
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const repository = new ConsumerExchangeAutomationRepository(prisma);
@@ -62,7 +64,7 @@ describe(`ConsumerExchangeAutomationRepository`, () => {
   it(`reschedules failed auto rules with new metadata`, async () => {
     const prisma = {
       walletAutoConversionRuleModel: {
-        update: jest.fn().mockResolvedValue({}),
+        update: jest.fn<(...a: any[]) => any>().mockResolvedValue({}),
       },
     } as any;
     const repository = new ConsumerExchangeAutomationRepository(prisma);

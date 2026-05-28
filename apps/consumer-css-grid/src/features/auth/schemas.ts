@@ -48,7 +48,7 @@ const searchParamsSchema = z
     session_expired: z.union([z.string(), z.array(z.string())]).optional(),
     [AUTH_NOTICE_QUERY]: z.union([z.string(), z.array(z.string())]).optional(),
   })
-  .passthrough();
+  .loose();
 
 export const parseSearchParams = (searchParams: Record<string, string | string[] | undefined>) => {
   const validated = searchParamsSchema.parse(searchParams);

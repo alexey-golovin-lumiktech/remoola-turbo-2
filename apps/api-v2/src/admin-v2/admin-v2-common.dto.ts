@@ -56,5 +56,5 @@ export class ExpectedDeletedAtNullBody implements AdminV2ExpectedDeletedAtNullBo
   @Expose()
   @Type(() => Number)
   @Equals(0)
-  expectedDeletedAtNull!: number;
+  expectedDeletedAtNull!: 0;
 }

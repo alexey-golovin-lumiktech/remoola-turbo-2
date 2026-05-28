@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 import {
@@ -64,24 +65,24 @@ function releasedRow(overrides: Partial<AssignmentRow> = {}): AssignmentRow {
 
 function buildService() {
   const query = {
-    loadAdminSummary: jest.fn(),
-    getAdminTargetForReassign: jest.fn(),
-    getAssignmentContextForResource: jest.fn(),
-    getActiveAssigneesForResource: jest.fn(),
+    loadAdminSummary: jest.fn<(...a: any[]) => any>(),
+    getAdminTargetForReassign: jest.fn<(...a: any[]) => any>(),
+    getAssignmentContextForResource: jest.fn<(...a: any[]) => any>(),
+    getActiveAssigneesForResource: jest.fn<(...a: any[]) => any>(),
   };
   const repository = {
-    claim: jest.fn(),
-    release: jest.fn(),
-    reassign: jest.fn(),
+    claim: jest.fn<(...a: any[]) => any>(),
+    release: jest.fn<(...a: any[]) => any>(),
+    reassign: jest.fn<(...a: any[]) => any>(),
   };
   const idempotency = {
-    execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+    execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
   };
   const adminActionAudit = {
-    record: jest.fn().mockResolvedValue(undefined),
+    record: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
   };
   const accessService = {
-    getAccessProfile: jest.fn(async (admin: AssignmentActorContext) => ({
+    getAccessProfile: jest.fn<(...a: any[]) => any>(async (admin: AssignmentActorContext) => ({
       role: admin.type === `SUPER` ? `SUPER_ADMIN` : `OPS_ADMIN`,
       capabilities: [] as string[],
       workspaces: [] as string[],

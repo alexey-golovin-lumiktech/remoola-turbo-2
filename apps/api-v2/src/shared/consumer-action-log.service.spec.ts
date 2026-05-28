@@ -1,3 +1,5 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+
 import {
   DEFAULT_CONSUMER_ACTION_LOG_CRITICAL_ACTION_PREFIXES,
   ConsumerActionLogPolicyService,
@@ -9,16 +11,16 @@ import { envs } from '../envs';
 
 describe(`ConsumerActionLogService`, () => {
   let service: ConsumerActionLogService;
-  let repository: { createActionLog: jest.Mock };
+  let repository: { createActionLog: jest.Mock<(...a: any[]) => any> };
   let query: {
-    findTimelineByDeviceId: jest.Mock;
-    findTimelineByConsumerId: jest.Mock;
-    findDistinctDeviceIdsByConsumerId: jest.Mock;
-    findTimelineByDeviceIds: jest.Mock;
+    findTimelineByDeviceId: jest.Mock<(...a: any[]) => any>;
+    findTimelineByConsumerId: jest.Mock<(...a: any[]) => any>;
+    findDistinctDeviceIdsByConsumerId: jest.Mock<(...a: any[]) => any>;
+    findTimelineByDeviceIds: jest.Mock<(...a: any[]) => any>;
   };
-  let dateNowSpy: jest.SpyInstance<number, []>;
-  let warnSpy: jest.SpyInstance;
-  let logSpy: jest.SpyInstance;
+  let dateNowSpy: jest.SpiedFunction<() => number>;
+  let warnSpy: jest.SpiedFunction<(...a: any[]) => any>;
+  let logSpy: jest.SpiedFunction<(...a: any[]) => any>;
   let nowMs: number;
   let initialStoreIpAddress: boolean;
   let initialStoreUserAgent: boolean;
@@ -26,13 +28,13 @@ describe(`ConsumerActionLogService`, () => {
   beforeEach(async () => {
     nowMs = 1700000000000;
     repository = {
-      createActionLog: jest.fn().mockResolvedValue({}),
+      createActionLog: jest.fn<(...a: any[]) => any>().mockResolvedValue({}),
     };
     query = {
-      findTimelineByDeviceId: jest.fn().mockResolvedValue([]),
-      findTimelineByConsumerId: jest.fn().mockResolvedValue([]),
-      findDistinctDeviceIdsByConsumerId: jest.fn().mockResolvedValue([]),
-      findTimelineByDeviceIds: jest.fn().mockResolvedValue([]),
+      findTimelineByDeviceId: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+      findTimelineByConsumerId: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+      findDistinctDeviceIdsByConsumerId: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+      findTimelineByDeviceIds: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
     };
     service = new ConsumerActionLogService(
       query as unknown as ConsumerActionLogQuery,

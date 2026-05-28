@@ -1,4 +1,5 @@
 /* eslint-disable import/order */
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
@@ -16,14 +17,14 @@ import { RecoveryMailingService } from '../../shared/recovery-mailing.service';
 import { SignupMailingService } from '../../shared/signup-mailing.service';
 
 jest.mock(`@remoola/security-utils`, () => ({
-  hashTokenToHex: jest.fn((t: string) => `hash-${t}`),
+  hashTokenToHex: jest.fn<(...a: any[]) => any>((t: string) => `hash-${t}`),
   oauthCrypto: {},
 }));
 jest.mock(`../../shared-common`, () => ({
   passwordUtils: {
-    hashPassword: jest.fn().mockResolvedValue({ hash: `newHash`, salt: `newSalt` }),
+    hashPassword: jest.fn<(...a: any[]) => any>().mockResolvedValue({ hash: `newHash`, salt: `newSalt` }),
   },
-  secureCompare: jest.fn((a: string, b: string) => a === b),
+  secureCompare: jest.fn<(...a: any[]) => any>((a: string, b: string) => a === b),
   constants: { INVALID_EMAIL: `Invalid email` },
   IsValidEmail: () => () => {},
 }));
@@ -36,12 +37,12 @@ const mockSecureCompare = secureCompare as jest.MockedFunction<typeof secureComp
 describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
   let service: ConsumerAuthService;
   let prisma: {
-    resetPasswordModel: { findFirst: jest.Mock; updateMany: jest.Mock };
-    consumerModel: { findFirst: jest.Mock; update: jest.Mock };
-    authSessionModel: { count: jest.Mock; updateMany: jest.Mock };
-    $transaction: jest.Mock;
+    resetPasswordModel: { findFirst: jest.Mock<(...a: any[]) => any>; updateMany: jest.Mock<(...a: any[]) => any> };
+    consumerModel: { findFirst: jest.Mock<(...a: any[]) => any>; update: jest.Mock<(...a: any[]) => any> };
+    authSessionModel: { count: jest.Mock<(...a: any[]) => any>; updateMany: jest.Mock<(...a: any[]) => any> };
+    $transaction: jest.Mock<(...a: any[]) => any>;
   };
-  let authAudit: { recordAudit: jest.Mock };
+  let authAudit: { recordAudit: jest.Mock<(...a: any[]) => any> };
 
   const validRow = {
     id: `reset-row-id`,
@@ -65,34 +66,43 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
 
     prisma = {
       resetPasswordModel: {
-        findFirst: jest.fn().mockResolvedValue(validRow),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(validRow),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
       consumerModel: {
-        findFirst: jest.fn().mockResolvedValue(validConsumer),
-        update: jest.fn().mockResolvedValue(validConsumer),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(validConsumer),
+        update: jest.fn<(...a: any[]) => any>().mockResolvedValue(validConsumer),
       },
       authSessionModel: {
-        count: jest.fn().mockResolvedValue(2),
-        updateMany: jest.fn().mockResolvedValue({ count: 2 }),
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(2),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 2 }),
       },
-      $transaction: jest.fn().mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => {
-        const tx = {
-          resetPasswordModel: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
-          consumerModel: { update: jest.fn().mockResolvedValue(validConsumer) },
-        };
-        return fn(tx as never);
-      }),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => {
+          const tx = {
+            resetPasswordModel: { updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }) },
+            consumerModel: { update: jest.fn<(...a: any[]) => any>().mockResolvedValue(validConsumer) },
+          };
+          return fn(tx as never);
+        }),
     };
 
     authAudit = {
-      recordAudit: jest.fn().mockResolvedValue(undefined),
+      recordAudit: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: consumerAuthServiceTestProviders([
         { provide: PrismaService, useValue: prisma },
-        { provide: JwtService, useValue: { signAsync: jest.fn(), verify: jest.fn(), decode: jest.fn() } },
+        {
+          provide: JwtService,
+          useValue: {
+            signAsync: jest.fn<(...a: any[]) => any>(),
+            verify: jest.fn<(...a: any[]) => any>(),
+            decode: jest.fn<(...a: any[]) => any>(),
+          },
+        },
         { provide: RecoveryMailingService, useValue: {} },
         { provide: AdminNotificationMailingService, useValue: {} },
         { provide: SignupMailingService, useValue: {} },
@@ -100,7 +110,7 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
         {
           provide: OriginResolverService,
           useValue: {
-            getAllowedOrigins: jest.fn(),
+            getAllowedOrigins: jest.fn<(...a: any[]) => any>(),
           },
         },
       ]),
@@ -149,8 +159,8 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
     expect(prisma.$transaction).toHaveBeenCalled();
     const txFn = prisma.$transaction.mock.calls[0][0];
     const tx = {
-      resetPasswordModel: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
-      consumerModel: { update: jest.fn().mockResolvedValue(validConsumer) },
+      resetPasswordModel: { updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }) },
+      consumerModel: { update: jest.fn<(...a: any[]) => any>().mockResolvedValue(validConsumer) },
     };
     await txFn(tx as never);
     expect(tx.resetPasswordModel.updateMany).toHaveBeenCalledWith({
@@ -177,13 +187,13 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
 
   it(`throws INVALID_CHANGE_PASSWORD_TOKEN when token already consumed (updateMany affects 0 rows)`, async () => {
     type TxFn = (tx: {
-      resetPasswordModel: { updateMany: jest.Mock };
-      consumerModel: { update: jest.Mock };
+      resetPasswordModel: { updateMany: jest.Mock<(...a: any[]) => any> };
+      consumerModel: { update: jest.Mock<(...a: any[]) => any> };
     }) => Promise<unknown>;
     prisma.$transaction.mockImplementation(async (fn: TxFn) => {
       const tx = {
-        resetPasswordModel: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
-        consumerModel: { update: jest.fn() },
+        resetPasswordModel: { updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 0 }) },
+        consumerModel: { update: jest.fn<(...a: any[]) => any>() },
       };
       return fn(tx);
     });

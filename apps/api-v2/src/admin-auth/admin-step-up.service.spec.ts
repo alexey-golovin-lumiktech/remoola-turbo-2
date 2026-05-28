@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 
@@ -10,7 +11,7 @@ import { passwordUtils } from '../shared-common';
 
 jest.mock(`../shared-common`, () => ({
   passwordUtils: {
-    verifyPassword: jest.fn(),
+    verifyPassword: jest.fn<(...a: any[]) => any>(),
   },
 }));
 
@@ -18,7 +19,7 @@ const mockVerifyPassword = passwordUtils.verifyPassword as jest.MockedFunction<t
 
 describe(`AdminStepUpService`, () => {
   let service: AdminStepUpService;
-  let prisma: { adminModel: { findFirst: jest.Mock } };
+  let prisma: { adminModel: { findFirst: jest.Mock<(...a: any[]) => any> } };
 
   const adminIdentity = {
     id: `admin-1`,
@@ -31,7 +32,7 @@ describe(`AdminStepUpService`, () => {
 
     prisma = {
       adminModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
     };
 

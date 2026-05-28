@@ -1,13 +1,14 @@
 /* eslint-disable import/order */
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 
 jest.mock(`@remoola/security-utils`, () => ({
-  hashTokenToHex: jest.fn((token: string) => `hex-${token}`),
-  newUuid: jest.fn(() => `00000000-0000-4000-8000-000000000000`),
+  hashTokenToHex: jest.fn<(...a: any[]) => any>((token: string) => `hex-${token}`),
+  newUuid: jest.fn<(...a: any[]) => any>(() => `00000000-0000-4000-8000-000000000000`),
   oauthCrypto: {
-    generateOAuthState: jest.fn(() => `generated-state`),
-    hashOAuthState: jest.fn((token: string) => `hash-${token}`),
+    generateOAuthState: jest.fn<(...a: any[]) => any>(() => `generated-state`),
+    hashOAuthState: jest.fn<(...a: any[]) => any>((token: string) => `hash-${token}`),
   },
 }));
 
@@ -29,10 +30,10 @@ const mockHashOAuthState = oauthCrypto.hashOAuthState as jest.MockedFunction<typ
 describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
   let service: ConsumerAuthService;
   let prisma: {
-    authSessionModel: { create: jest.Mock; update: jest.Mock };
-    $transaction: jest.Mock;
+    authSessionModel: { create: jest.Mock<(...a: any[]) => any>; update: jest.Mock<(...a: any[]) => any> };
+    $transaction: jest.Mock<(...a: any[]) => any>;
   };
-  let jwtService: { signAsync: jest.Mock };
+  let jwtService: { signAsync: jest.Mock<(...a: any[]) => any> };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -40,14 +41,16 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
 
     prisma = {
       authSessionModel: {
-        create: jest.fn().mockResolvedValue({ id: `session-1` }),
-        update: jest.fn().mockResolvedValue({ id: `session-1` }),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `session-1` }),
+        update: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `session-1` }),
       },
-      $transaction: jest.fn().mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
     jwtService = {
       signAsync: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockImplementation(async (payload: { typ?: string }, options?: { secret?: string }) =>
           payload.typ === `access`
             ? `access-token`
@@ -65,15 +68,15 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
         {
           provide: AuthAuditService,
           useValue: {
-            recordAudit: jest.fn(),
-            checkLockoutAndRateLimit: jest.fn(),
-            clearLockout: jest.fn(),
+            recordAudit: jest.fn<(...a: any[]) => any>(),
+            checkLockoutAndRateLimit: jest.fn<(...a: any[]) => any>(),
+            clearLockout: jest.fn<(...a: any[]) => any>(),
           },
         },
         {
           provide: OriginResolverService,
           useValue: {
-            getAllowedOrigins: jest.fn(),
+            getAllowedOrigins: jest.fn<(...a: any[]) => any>(),
           },
         },
       ]),

@@ -1,10 +1,12 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2ExchangeRateQuery } from './admin-v2-exchange-rate.query';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 
 describe(`AdminV2ExchangeRateQuery`, () => {
   it(`lists rates with ordering and total count`, async () => {
-    const count = jest.fn(async () => 1);
-    const findMany = jest.fn(async () => []);
+    const count = jest.fn<(...a: any[]) => any>(async () => 1);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2ExchangeRateQuery({
       exchangeRateModel: { count, findMany },
     } as never);
@@ -27,7 +29,7 @@ describe(`AdminV2ExchangeRateQuery`, () => {
   });
 
   it(`loads rate approval history for exchange_rate approvals`, async () => {
-    const findMany = jest.fn(async () => []);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2ExchangeRateQuery({
       adminActionAuditLogModel: { findMany },
     } as never);

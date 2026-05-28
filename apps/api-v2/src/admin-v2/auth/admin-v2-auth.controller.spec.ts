@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ForbiddenException, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 
 import { AdminV2AuthController } from './admin-v2-auth.controller';
@@ -52,39 +53,39 @@ const buildRequest = () => ({
 });
 
 const buildResponse = () => ({
-  cookie: jest.fn(),
-  clearCookie: jest.fn(),
+  cookie: jest.fn<(...a: any[]) => any>(),
+  clearCookie: jest.fn<(...a: any[]) => any>(),
 });
 
 const buildSupportService = () => ({
-  resolveAdminOrigin: jest.fn(() => `https://admin-v2.example.com`),
-  resolveRequestMeta: jest.fn((req: ReturnType<typeof buildRequest>) => ({
+  resolveAdminOrigin: jest.fn<(...a: any[]) => any>(() => `https://admin-v2.example.com`),
+  resolveRequestMeta: jest.fn<(...a: any[]) => any>((req: ReturnType<typeof buildRequest>) => ({
     ipAddress: req.ip,
     userAgent: req.headers[`user-agent`],
   })),
-  setAuthCookies: jest.fn(),
-  clearAuthCookies: jest.fn(),
-  getRefreshTokenFromRequest: jest.fn(() => `refresh-token`),
-  ensureCsrf: jest.fn(),
+  setAuthCookies: jest.fn<(...a: any[]) => any>(),
+  clearAuthCookies: jest.fn<(...a: any[]) => any>(),
+  getRefreshTokenFromRequest: jest.fn<(...a: any[]) => any>(() => `refresh-token`),
+  ensureCsrf: jest.fn<(...a: any[]) => any>(),
 });
 
 const buildAdminsService = () => ({
-  acceptInvitation: jest.fn(async () => ({ accepted: true })),
-  requestPasswordReset: jest.fn(async () => undefined),
-  resetPasswordWithToken: jest.fn(async () => ({ success: true })),
+  acceptInvitation: jest.fn<(...a: any[]) => any>(async () => ({ accepted: true })),
+  requestPasswordReset: jest.fn<(...a: any[]) => any>(async () => undefined),
+  resetPasswordWithToken: jest.fn<(...a: any[]) => any>(async () => ({ success: true })),
 });
 
 const buildAuthService = () => ({
-  login: jest.fn(),
-  refreshAccess: jest.fn(),
-  revokeSessionByRefreshTokenAndAudit: jest.fn(),
-  revokeSessionByIdAndAudit: jest.fn(),
-  assertSessionBelongsToAdmin: jest.fn(async () => true),
-  listSessionsForAdmin: jest.fn(async () => []),
+  login: jest.fn<(...a: any[]) => any>(),
+  refreshAccess: jest.fn<(...a: any[]) => any>(),
+  revokeSessionByRefreshTokenAndAudit: jest.fn<(...a: any[]) => any>(),
+  revokeSessionByIdAndAudit: jest.fn<(...a: any[]) => any>(),
+  assertSessionBelongsToAdmin: jest.fn<(...a: any[]) => any>(async () => true),
+  listSessionsForAdmin: jest.fn<(...a: any[]) => any>(async () => []),
 });
 
 const buildAuditService = () => ({
-  record: jest.fn(async () => undefined),
+  record: jest.fn<(...a: any[]) => any>(async () => undefined),
 });
 
 const buildController = (overrides?: {

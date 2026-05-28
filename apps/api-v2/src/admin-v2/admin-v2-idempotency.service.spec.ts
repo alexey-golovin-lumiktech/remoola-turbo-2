@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
@@ -186,7 +187,7 @@ describe(`AdminV2IdempotencyService`, () => {
   });
 
   it(`returns the first result for repeated identical requests`, async () => {
-    const execute = jest.fn(async () => ({ ok: true }));
+    const execute = jest.fn<(...a: any[]) => any>(async () => ({ ok: true }));
 
     const first = await service.execute({
       adminId: `admin-1`,
@@ -209,7 +210,7 @@ describe(`AdminV2IdempotencyService`, () => {
   });
 
   it(`replays a stored response across service instances`, async () => {
-    const execute = jest.fn(async () => ({ ok: true, status: `approved` }));
+    const execute = jest.fn<(...a: any[]) => any>(async () => ({ ok: true, status: `approved` }));
 
     const first = await service.execute({
       adminId: `admin-1`,
@@ -225,7 +226,7 @@ describe(`AdminV2IdempotencyService`, () => {
       scope: `verification:approve:consumer-1`,
       key: `same-key`,
       payload: { decision: `approve`, version: 1 },
-      execute: jest.fn(async () => ({ ok: false })),
+      execute: jest.fn<(...a: any[]) => any>(async () => ({ ok: false })),
     });
 
     expect(first).toEqual({ ok: true, status: `approved` });
@@ -241,7 +242,7 @@ describe(`AdminV2IdempotencyService`, () => {
         outcomes: [{ code: `approved`, reasons: [`manual-review`] }],
       },
     };
-    const execute = jest.fn(async () => response);
+    const execute = jest.fn<(...a: any[]) => any>(async () => response);
 
     await service.execute({
       adminId: `admin-1`,
@@ -258,7 +259,7 @@ describe(`AdminV2IdempotencyService`, () => {
         scope: `verification:approve:consumer-1`,
         key: `same-key`,
         payload: { decision: `approve`, version: 1 },
-        execute: jest.fn(async () => ({ ok: false })),
+        execute: jest.fn<(...a: any[]) => any>(async () => ({ ok: false })),
       }),
     ).resolves.toEqual(response);
     expect(execute).toHaveBeenCalledTimes(1);
@@ -285,7 +286,7 @@ describe(`AdminV2IdempotencyService`, () => {
   });
 
   it(`hashes object payloads deterministically regardless of key order`, async () => {
-    const execute = jest.fn(async () => ({ ok: true }));
+    const execute = jest.fn<(...a: any[]) => any>(async () => ({ ok: true }));
 
     await service.execute({
       adminId: `admin-1`,
@@ -355,7 +356,7 @@ describe(`AdminV2IdempotencyService`, () => {
   });
 
   it(`cleans up an unfinished placeholder when execution fails`, async () => {
-    const execute = jest.fn(async () => {
+    const execute = jest.fn<(...a: any[]) => any>(async () => {
       throw new Error(`boom`);
     });
 
@@ -381,7 +382,7 @@ describe(`AdminV2IdempotencyService`, () => {
   });
 
   it(`keeps the pending placeholder when snapshot persistence fails after execution`, async () => {
-    const execute = jest.fn(async () => null);
+    const execute = jest.fn<(...a: any[]) => any>(async () => null);
     const loggerError = jest.spyOn(Logger.prototype, `error`).mockImplementation(() => undefined);
 
     try {
@@ -412,7 +413,7 @@ describe(`AdminV2IdempotencyService`, () => {
   });
 
   it(`rolls back transactional placeholders when snapshot persistence fails`, async () => {
-    const execute = jest.fn(async () => null);
+    const execute = jest.fn<(...a: any[]) => any>(async () => null);
 
     await expect(
       service.executeInTransaction({
@@ -437,7 +438,7 @@ describe(`AdminV2IdempotencyService`, () => {
   });
 
   it(`replays transactional responses without rerunning the callback`, async () => {
-    const execute = jest.fn(async () => ({ ok: true, status: `approved` }));
+    const execute = jest.fn<(...a: any[]) => any>(async () => ({ ok: true, status: `approved` }));
 
     await service.executeInTransaction({
       adminId: `admin-1`,
@@ -454,7 +455,7 @@ describe(`AdminV2IdempotencyService`, () => {
         scope: `verification:approve:consumer-1`,
         key: `same-key`,
         payload: { decision: `approve`, version: 1 },
-        execute: jest.fn(async () => ({ ok: false })),
+        execute: jest.fn<(...a: any[]) => any>(async () => ({ ok: false })),
       }),
     ).resolves.toEqual({ ok: true, status: `approved` });
     expect(execute).toHaveBeenCalledTimes(1);
@@ -491,7 +492,7 @@ describe(`AdminV2IdempotencyService`, () => {
   });
 
   it(`rejects non-JSON idempotency payloads before creating placeholders`, async () => {
-    const execute = jest.fn(async () => ({ ok: true }));
+    const execute = jest.fn<(...a: any[]) => any>(async () => ({ ok: true }));
 
     await expect(
       service.execute({
@@ -506,7 +507,7 @@ describe(`AdminV2IdempotencyService`, () => {
   });
 
   it(`removes expired successful entries before reusing a key`, async () => {
-    const execute = jest.fn(async () => ({ ok: true }));
+    const execute = jest.fn<(...a: any[]) => any>(async () => ({ ok: true }));
 
     await service.execute({
       adminId: `admin-1`,

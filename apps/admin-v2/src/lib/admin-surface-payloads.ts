@@ -25,18 +25,6 @@ export function parseVerificationQueuePayload(raw: unknown): AdminV2Verification
   return parsed.success ? parsed.data : null;
 }
 
-export function appendVerificationQueuePayloadToQuery(
-  query: URLSearchParams,
-  payload: AdminV2VerificationQueuePayload,
-): void {
-  if (payload.status) query.set(`status`, payload.status);
-  if (payload.stripeIdentityStatus) query.set(`stripeIdentityStatus`, payload.stripeIdentityStatus);
-  if (payload.country) query.set(`country`, payload.country);
-  if (payload.contractorKind) query.set(`contractorKind`, payload.contractorKind);
-  if (payload.missingProfileData === true) query.set(`missingProfileData`, `true`);
-  if (payload.missingDocuments === true) query.set(`missingDocuments`, `true`);
-}
-
 export function buildVerificationQueuePayloadFromForm(formData: FormData): AdminV2VerificationQueuePayload {
   return adminV2VerificationQueuePayloadSchema.parse({
     status: parseTrimmedField(formData.get(`status`)),

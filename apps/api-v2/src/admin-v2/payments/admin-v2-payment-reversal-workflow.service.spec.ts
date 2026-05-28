@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2PaymentReversalPolicyProvider } from './admin-v2-payment-reversal-policy';
@@ -10,8 +12,8 @@ import { type PrismaTransactionRunner } from '../../shared/prisma-transaction.ru
 describe(`AdminV2PaymentReversalWorkflowService`, () => {
   function buildWorkflow() {
     const tx = {
-      $executeRaw: jest.fn().mockResolvedValue(undefined),
-    } as unknown as Prisma.TransactionClient & { $executeRaw: jest.Mock };
+      $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    } as unknown as Prisma.TransactionClient & { $executeRaw: jest.Mock<(...a: any[]) => any> };
     const transactions = {
       run<T>(callback: (client: Prisma.TransactionClient) => Promise<T>): Promise<T> {
         return callback(tx);
@@ -21,16 +23,16 @@ describe(`AdminV2PaymentReversalWorkflowService`, () => {
       },
     };
     const repository = {
-      findReversalEntriesForPaymentRequest: jest.fn(),
-      findPayerReversalByIdempotencyKey: jest.fn(),
-      createReversalEntry: jest.fn().mockResolvedValue(undefined),
-      queueRefundFinalization: jest.fn().mockResolvedValue({ count: 1 }),
+      findReversalEntriesForPaymentRequest: jest.fn<(...a: any[]) => any>(),
+      findPayerReversalByIdempotencyKey: jest.fn<(...a: any[]) => any>(),
+      createReversalEntry: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      queueRefundFinalization: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
     };
     const balanceService = {
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     };
     const adminActionAudit = {
-      recordRequiredWithClient: jest.fn().mockResolvedValue(undefined),
+      recordRequiredWithClient: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
 
     const workflow = new AdminV2PaymentReversalWorkflowService(

@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { syncBootstrapAdminSeedAccounts } from './admin-bootstrap-rbac';
@@ -8,7 +10,7 @@ describe(`admin bootstrap RBAC`, () => {
   it(`fails fast when bootstrap schema roles are missing`, async () => {
     const prisma = {
       adminRoleModel: {
-        findMany: jest.fn(async () => []),
+        findMany: jest.fn<(...a: any[]) => any>(async () => []),
       },
       adminModel: {},
     };
@@ -24,8 +26,8 @@ describe(`admin bootstrap RBAC`, () => {
           },
         ],
         passwordAdapter: {
-          hashPassword: jest.fn(),
-          verifyPassword: jest.fn(),
+          hashPassword: jest.fn<(...a: any[]) => any>(),
+          verifyPassword: jest.fn<(...a: any[]) => any>(),
         },
       }),
     ).rejects.toThrow(`Bootstrap seed requires schema admin_role rows: SUPER_ADMIN`);
@@ -54,12 +56,12 @@ describe(`admin bootstrap RBAC`, () => {
 
     const prisma = {
       adminRoleModel: {
-        findMany: jest.fn(async () => [{ id: `role-super`, key: `SUPER_ADMIN` }]),
+        findMany: jest.fn<(...a: any[]) => any>(async () => [{ id: `role-super`, key: `SUPER_ADMIN` }]),
       },
       adminModel: {
-        findFirst: jest.fn(async () => ({ ...state.admin })),
-        create: jest.fn(),
-        update: jest.fn(async ({ data }: { data: Partial<typeof state.admin> }) => {
+        findFirst: jest.fn<(...a: any[]) => any>(async () => ({ ...state.admin })),
+        create: jest.fn<(...a: any[]) => any>(),
+        update: jest.fn<(...a: any[]) => any>(async ({ data }: { data: Partial<typeof state.admin> }) => {
           state.admin = {
             ...state.admin,
             ...data,
@@ -70,7 +72,7 @@ describe(`admin bootstrap RBAC`, () => {
     };
 
     const accessService = new AdminV2AccessService({
-      findAdminAccessRecord: jest.fn(async () =>
+      findAdminAccessRecord: jest.fn<(...a: any[]) => any>(async () =>
         state.admin.roleId
           ? {
               roleKey: `SUPER_ADMIN`,
@@ -104,12 +106,12 @@ describe(`admin bootstrap RBAC`, () => {
         },
       ],
       passwordAdapter: {
-        hashPassword: jest.fn(),
-        verifyPassword: jest.fn(async () => true),
+        hashPassword: jest.fn<(...a: any[]) => any>(),
+        verifyPassword: jest.fn<(...a: any[]) => any>(async () => true),
       },
       logger: {
-        log: jest.fn(),
-        warn: jest.fn(),
+        log: jest.fn<(...a: any[]) => any>(),
+        warn: jest.fn<(...a: any[]) => any>(),
       },
     });
 
@@ -130,16 +132,19 @@ describe(`admin bootstrap RBAC`, () => {
   it(`creates new seeded admins with the resolved schema role id`, async () => {
     const prisma = {
       adminRoleModel: {
-        findMany: jest.fn(async () => [{ id: `role-ops`, key: `OPS_ADMIN` }]),
+        findMany: jest.fn<(...a: any[]) => any>(async () => [{ id: `role-ops`, key: `OPS_ADMIN` }]),
       },
       adminModel: {
-        findFirst: jest.fn(async () => null),
-        create: jest.fn(async ({ data }: { data: Record<string, unknown> }) => data),
-        update: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(async () => null),
+        create: jest.fn<(...a: any[]) => any>(async ({ data }: { data: Record<string, unknown> }) => data),
+        update: jest.fn<(...a: any[]) => any>(),
       },
     };
 
-    const hashPassword = jest.fn(async () => ({ salt: `generated-salt`, hash: `generated-hash` }));
+    const hashPassword = jest.fn<(...a: any[]) => any>(async () => ({
+      salt: `generated-salt`,
+      hash: `generated-hash`,
+    }));
 
     const summary = await syncBootstrapAdminSeedAccounts({
       prisma: prisma as never,
@@ -152,11 +157,11 @@ describe(`admin bootstrap RBAC`, () => {
       ],
       passwordAdapter: {
         hashPassword,
-        verifyPassword: jest.fn(),
+        verifyPassword: jest.fn<(...a: any[]) => any>(),
       },
       logger: {
-        log: jest.fn(),
-        warn: jest.fn(),
+        log: jest.fn<(...a: any[]) => any>(),
+        warn: jest.fn<(...a: any[]) => any>(),
       },
     });
 

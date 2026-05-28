@@ -1,9 +1,11 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2ExchangeRuleQuery } from './admin-v2-exchange-rule.query';
 
 describe(`AdminV2ExchangeRuleQuery`, () => {
   it(`lists rules with consumer include and total count`, async () => {
-    const count = jest.fn(async () => 2);
-    const findMany = jest.fn(async () => []);
+    const count = jest.fn<(...a: any[]) => any>(async () => 2);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2ExchangeRuleQuery({
       walletAutoConversionRuleModel: { count, findMany },
     } as never);
@@ -27,7 +29,7 @@ describe(`AdminV2ExchangeRuleQuery`, () => {
   });
 
   it(`loads a single rule case with consumer include`, async () => {
-    const findFirst = jest.fn(async () => null);
+    const findFirst = jest.fn<(...a: any[]) => any>(async () => null);
     const query = new AdminV2ExchangeRuleQuery({
       walletAutoConversionRuleModel: { findFirst },
     } as never);

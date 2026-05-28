@@ -1,7 +1,6 @@
 export type {
   AdminV2AdminCaseRecordResponse as AdminCaseRecordResponse,
   AdminV2AdminIdentity as AdminIdentity,
-  AdminV2AdminRef as AdminRef,
   AdminV2AdminSessionView as AdminSessionView,
   AdminV2AdminsListResponse as AdminsListResponse,
   AdminV2AssignmentContextHistoryItem as AssignmentHistoryItem,

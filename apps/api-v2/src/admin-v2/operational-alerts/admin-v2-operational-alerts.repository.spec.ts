@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 import { AdminV2OperationalAlertsRepository } from './admin-v2-operational-alerts.repository';
@@ -5,17 +6,19 @@ import { AdminV2OperationalAlertsRepository } from './admin-v2-operational-alert
 describe(`AdminV2OperationalAlertsRepository`, () => {
   function buildRepository() {
     const operationalAlertModel = {
-      create: jest.fn(),
-      update: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
+      update: jest.fn<(...a: any[]) => any>(),
     };
-    const queryRaw = jest.fn();
+    const queryRaw = jest.fn<(...a: any[]) => any>();
     const tx = {
       operationalAlertModel,
       $queryRaw: queryRaw,
     };
     const prisma = {
       operationalAlertModel,
-      $transaction: jest.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (client: typeof tx) => Promise<unknown>) =>
+        callback(tx),
+      ),
     };
 
     return {

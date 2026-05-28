@@ -1,58 +1,60 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2AdminPasswordFlowsRepository } from './admin-v2-admin-password-flows.repository';
 
 describe(`AdminV2AdminPasswordFlowsRepository`, () => {
   function buildRepository() {
     const adminModel = {
-      findFirst: jest.fn(),
-      findUnique: jest.fn(),
+      findFirst: jest.fn<(...a: any[]) => any>(),
+      findUnique: jest.fn<(...a: any[]) => any>(),
     };
     const adminActionAuditLogModel = {
-      update: jest.fn(),
+      update: jest.fn<(...a: any[]) => any>(),
     };
     const resetPasswordModel = {
-      findFirst: jest.fn(),
+      findFirst: jest.fn<(...a: any[]) => any>(),
     };
     type TxMock = {
       resetPasswordModel: {
-        updateMany: jest.Mock;
-        create: jest.Mock;
+        updateMany: jest.Mock<(...a: any[]) => any>;
+        create: jest.Mock<(...a: any[]) => any>;
       };
       adminActionAuditLogModel: {
-        create: jest.Mock;
+        create: jest.Mock<(...a: any[]) => any>;
       };
       adminModel: {
-        update: jest.Mock;
+        update: jest.Mock<(...a: any[]) => any>;
       };
       adminAuthSessionModel: {
-        updateMany: jest.Mock;
+        updateMany: jest.Mock<(...a: any[]) => any>;
       };
       accessRefreshTokenModel: {
-        deleteMany: jest.Mock;
+        deleteMany: jest.Mock<(...a: any[]) => any>;
       };
     };
     const tx: TxMock = {
       resetPasswordModel: {
-        updateMany: jest.fn(),
-        create: jest.fn(),
+        updateMany: jest.fn<(...a: any[]) => any>(),
+        create: jest.fn<(...a: any[]) => any>(),
       },
       adminActionAuditLogModel: {
-        create: jest.fn(),
+        create: jest.fn<(...a: any[]) => any>(),
       },
       adminModel: {
-        update: jest.fn(),
+        update: jest.fn<(...a: any[]) => any>(),
       },
       adminAuthSessionModel: {
-        updateMany: jest.fn(),
+        updateMany: jest.fn<(...a: any[]) => any>(),
       },
       accessRefreshTokenModel: {
-        deleteMany: jest.fn(),
+        deleteMany: jest.fn<(...a: any[]) => any>(),
       },
     };
     const prisma = {
       adminModel,
       adminActionAuditLogModel,
       resetPasswordModel,
-      $transaction: jest.fn(async (callback: (tx: TxMock) => Promise<unknown>) => callback(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: TxMock) => Promise<unknown>) => callback(tx)),
     };
 
     return {

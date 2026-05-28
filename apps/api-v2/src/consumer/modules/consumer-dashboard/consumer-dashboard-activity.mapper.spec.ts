@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { getDashboardPaymentMethodIds, mapFinancialActivityItem } from './consumer-dashboard-activity.mapper';

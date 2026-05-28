@@ -1,38 +1,39 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 import { AdminV2VerificationRepository } from './admin-v2-verification.repository';
 
 function buildRepository() {
   const consumerModel = {
-    findUnique: jest.fn(),
+    findUnique: jest.fn<(...a: any[]) => any>(),
   };
   const adminActionAuditLogModel = {
-    update: jest.fn(),
+    update: jest.fn<(...a: any[]) => any>(),
   };
   type TxMock = {
     consumerModel: {
-      updateMany: jest.Mock;
-      findUnique: jest.Mock;
-      findUniqueOrThrow: jest.Mock;
+      updateMany: jest.Mock<(...a: any[]) => any>;
+      findUnique: jest.Mock<(...a: any[]) => any>;
+      findUniqueOrThrow: jest.Mock<(...a: any[]) => any>;
     };
     adminActionAuditLogModel: {
-      create: jest.Mock;
+      create: jest.Mock<(...a: any[]) => any>;
     };
   };
   const tx: TxMock = {
     consumerModel: {
-      updateMany: jest.fn(),
-      findUnique: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
+      updateMany: jest.fn<(...a: any[]) => any>(),
+      findUnique: jest.fn<(...a: any[]) => any>(),
+      findUniqueOrThrow: jest.fn<(...a: any[]) => any>(),
     },
     adminActionAuditLogModel: {
-      create: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
     },
   };
   const prisma = {
     consumerModel,
     adminActionAuditLogModel,
-    $transaction: jest.fn(async (callback: (tx: TxMock) => Promise<unknown>) => callback(tx)),
+    $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: TxMock) => Promise<unknown>) => callback(tx)),
   };
 
   return {

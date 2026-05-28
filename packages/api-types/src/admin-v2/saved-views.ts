@@ -28,12 +28,7 @@ export type AdminV2SavedViewListQuery = {
   workspace: AdminV2SavedViewWorkspace;
 };
 
-export type AdminV2SavedViewCreateBody = {
-  workspace: AdminV2SavedViewWorkspace;
-  name: string;
-  description?: string | null;
-  queryPayload: unknown;
-};
+export type AdminV2SavedViewCreateBody = z.infer<typeof adminV2SavedViewCreateBodySchema>;
 
 export type AdminV2SavedViewUpdateBody = {
   name?: string;

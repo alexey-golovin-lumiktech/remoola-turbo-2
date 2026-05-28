@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AdminV2PaymentsPresenter } from './admin-v2-payments.presenter';
@@ -5,14 +7,14 @@ import { AdminV2PaymentsService } from './admin-v2-payments.service';
 
 function buildService() {
   const query = {
-    listPaymentRequests: jest.fn(),
-    getPaymentRequestCase: jest.fn(),
-    getPaymentRequestAuditContext: jest.fn(),
-    getPaymentOperationsQueueBuckets: jest.fn(),
+    listPaymentRequests: jest.fn<(...a: any[]) => any>(),
+    getPaymentRequestCase: jest.fn<(...a: any[]) => any>(),
+    getPaymentRequestAuditContext: jest.fn<(...a: any[]) => any>(),
+    getPaymentOperationsQueueBuckets: jest.fn<(...a: any[]) => any>(),
   } as any;
   const assignmentsService = {
-    getActiveAssigneesForResource: jest.fn(),
-    getAssignmentContextForResource: jest.fn(),
+    getActiveAssigneesForResource: jest.fn<(...a: any[]) => any>(),
+    getAssignmentContextForResource: jest.fn<(...a: any[]) => any>(),
   } as any;
   const presenter = new AdminV2PaymentsPresenter();
 

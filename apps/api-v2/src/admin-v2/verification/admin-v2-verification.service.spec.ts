@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -29,32 +30,32 @@ function buildQueueRow(id: string, overrides: Record<string, unknown> = {}) {
 
 function buildService() {
   const query = {
-    getQueueRows: jest.fn(),
-    getQueueCountRows: jest.fn(),
-    countQueue: jest.fn(),
-    getDecisionHistory: jest.fn(),
-    getAuthRiskContext: jest.fn(),
+    getQueueRows: jest.fn<(...a: any[]) => any>(),
+    getQueueCountRows: jest.fn<(...a: any[]) => any>(),
+    countQueue: jest.fn<(...a: any[]) => any>(),
+    getDecisionHistory: jest.fn<(...a: any[]) => any>(),
+    getAuthRiskContext: jest.fn<(...a: any[]) => any>(),
   };
   const repository = {
-    applyDecision: jest.fn(),
-    updateAuditNotificationStatus: jest.fn(),
+    applyDecision: jest.fn<(...a: any[]) => any>(),
+    updateAuditNotificationStatus: jest.fn<(...a: any[]) => any>(),
   };
   const consumersService = {
-    getConsumerCase: jest.fn(),
+    getConsumerCase: jest.fn<(...a: any[]) => any>(),
   };
   const slaService = {
-    getSnapshot: jest.fn(),
-    refreshBreaches: jest.fn(),
+    getSnapshot: jest.fn<(...a: any[]) => any>(),
+    refreshBreaches: jest.fn<(...a: any[]) => any>(),
   };
   const idempotency = {
-    execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+    execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
   };
   const mailingService = {
-    sendAdminV2VerificationDecisionEmail: jest.fn(),
+    sendAdminV2VerificationDecisionEmail: jest.fn<(...a: any[]) => any>(),
   };
   const assignmentsService = {
-    getAssignmentContextForResource: jest.fn(),
-    getActiveAssigneesForResource: jest.fn(),
+    getAssignmentContextForResource: jest.fn<(...a: any[]) => any>(),
+    getActiveAssigneesForResource: jest.fn<(...a: any[]) => any>(),
   };
 
   const queueService = new AdminV2VerificationQueueService(

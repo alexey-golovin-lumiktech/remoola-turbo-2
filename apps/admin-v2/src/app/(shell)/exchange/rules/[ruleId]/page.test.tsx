@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { type getExchangeRuleCaseResult } from '../../../../../lib/admin-api/exchange.server';
 import { type getAdminIdentity } from '../../../../../lib/admin-api/identity.server';
+import { type ExchangeRuleCaseResponse } from '../../../../../lib/admin-api/types';
 const mockedNotFound = jest.fn(() => {
   throw new Error(`NEXT_NOT_FOUND`);
 });
@@ -50,7 +51,7 @@ async function loadSubject() {
 
 let ExchangeRuleCasePage: Awaited<ReturnType<typeof loadSubject>>;
 
-function buildRuleCase() {
+function buildRuleCase(): ExchangeRuleCaseResponse {
   return {
     id: `rule-1`,
     core: {
@@ -74,9 +75,12 @@ function buildRuleCase() {
       canPause: true,
       canResume: false,
       canRunNow: true,
+      allowedActions: [],
     },
     version: 1713341100000,
     updatedAt: `2026-04-17T08:05:00.000Z`,
+    staleWarning: false,
+    dataFreshnessClass: `exact`,
   };
 }
 

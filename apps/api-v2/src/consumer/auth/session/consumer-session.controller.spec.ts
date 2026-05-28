@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, HttpStatus, RequestMethod, UnauthorizedException } from '@nestjs/common';
 import { HTTP_CODE_METADATA, METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { THROTTLER_LIMIT, THROTTLER_TTL } from '@nestjs/throttler/dist/throttler.constants';
@@ -37,21 +38,21 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   let initialNodeEnv: typeof envs.NODE_ENV;
 
   const originResolver = {
-    validateConsumerAppScope: jest.fn((value?: string | null) =>
+    validateConsumerAppScope: jest.fn<(...a: any[]) => any>((value?: string | null) =>
       value === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
     ),
-    validateConsumerAppScopeHeader: jest.fn((value?: string | string[]) => {
+    validateConsumerAppScopeHeader: jest.fn<(...a: any[]) => any>((value?: string | string[]) => {
       const headerValue = Array.isArray(value) ? value[0] : value;
       return headerValue === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined;
     }),
-    resolveConsumerOriginByScope: jest.fn((scope: string) => {
+    resolveConsumerOriginByScope: jest.fn<(...a: any[]) => any>((scope: string) => {
       if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example.com`;
       return null;
     }),
-    getAllowedOrigins: jest.fn().mockReturnValue(new Set([`https://grid.example.com`])),
-    getConsumerAllowedOrigins: jest.fn().mockReturnValue(new Set([`https://grid.example.com`])),
-    normalizeOrigin: jest.fn((value: string) => value),
-  } as unknown as OriginResolverService & Record<string, jest.Mock>;
+    getAllowedOrigins: jest.fn<(...a: any[]) => any>().mockReturnValue(new Set([`https://grid.example.com`])),
+    getConsumerAllowedOrigins: jest.fn<(...a: any[]) => any>().mockReturnValue(new Set([`https://grid.example.com`])),
+    normalizeOrigin: jest.fn<(...a: any[]) => any>((value: string) => value),
+  } as unknown as OriginResolverService & Record<string, jest.Mock<(...a: any[]) => any>>;
 
   const oauthStateStore: Pick<
     OAuthStateStoreService,
@@ -67,23 +68,25 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
     | `saveSignupSession`
     | `readSignupSession`
   > = {
-    createStateToken: jest.fn().mockReturnValue(`state-token`),
-    createEphemeralToken: jest.fn().mockReturnValue(`handoff-token`),
-    save: jest.fn(),
-    read: jest.fn(),
-    consume: jest.fn(),
-    saveLoginHandoff: jest.fn(),
-    saveSignupHandoff: jest.fn(),
-    consumeLoginHandoff: jest.fn(),
-    consumeSignupHandoff: jest.fn(),
-    saveSignupSession: jest.fn(),
-    readSignupSession: jest.fn(),
+    createStateToken: jest.fn<(...a: any[]) => any>().mockReturnValue(`state-token`),
+    createEphemeralToken: jest.fn<(...a: any[]) => any>().mockReturnValue(`handoff-token`),
+    save: jest.fn<(...a: any[]) => any>(),
+    read: jest.fn<(...a: any[]) => any>(),
+    consume: jest.fn<(...a: any[]) => any>(),
+    saveLoginHandoff: jest.fn<(...a: any[]) => any>(),
+    saveSignupHandoff: jest.fn<(...a: any[]) => any>(),
+    consumeLoginHandoff: jest.fn<(...a: any[]) => any>(),
+    consumeSignupHandoff: jest.fn<(...a: any[]) => any>(),
+    saveSignupSession: jest.fn<(...a: any[]) => any>(),
+    readSignupSession: jest.fn<(...a: any[]) => any>(),
   };
 
   const googleOAuthService: Partial<GoogleOAuthService> = {
-    buildAuthorizationUrl: jest.fn().mockReturnValue(`https://accounts.google.com/o/oauth2/v2/auth`),
-    exchangeCodeForPayload: jest.fn(),
-    loginWithPayload: jest.fn(),
+    buildAuthorizationUrl: jest
+      .fn<(...a: any[]) => any>()
+      .mockReturnValue(`https://accounts.google.com/o/oauth2/v2/auth`),
+    exchangeCodeForPayload: jest.fn<(...a: any[]) => any>(),
+    loginWithPayload: jest.fn<(...a: any[]) => any>(),
   };
 
   const makeReq = (
@@ -105,9 +108,9 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
 
   const makeRes = () =>
     ({
-      clearCookie: jest.fn(),
-      cookie: jest.fn(),
-      redirect: jest.fn(),
+      clearCookie: jest.fn<(...a: any[]) => any>(),
+      cookie: jest.fn<(...a: any[]) => any>(),
+      redirect: jest.fn<(...a: any[]) => any>(),
     }) as any;
 
   const getRouteMetadata = (controllerClass: new (...args: never[]) => unknown, methodName: string) => {
@@ -128,23 +131,23 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   };
 
   const mockOAuthStatePreviewAndConsume = (record: Record<string, unknown>) => {
-    (oauthStateStore.read as jest.Mock).mockResolvedValueOnce(record);
-    (oauthStateStore.consume as jest.Mock).mockResolvedValueOnce(record);
+    (oauthStateStore.read as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce(record);
+    (oauthStateStore.consume as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce(record);
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     initialNodeEnv = envs.NODE_ENV;
-    (oauthStateStore.read as jest.Mock).mockResolvedValue(null);
+    (oauthStateStore.read as jest.Mock<(...a: any[]) => any>).mockResolvedValue(null);
     service = {
-      login: jest.fn(),
-      revokeSessionByRefreshTokenAndAudit: jest.fn().mockResolvedValue(undefined),
-      revokeAllSessionsByConsumerIdAndAudit: jest.fn().mockResolvedValue(undefined),
-      refreshAccess: jest.fn().mockResolvedValue({ accessToken: `a`, refreshToken: `r` }),
-      findConsumerByEmail: jest.fn(),
-      issueTokensForConsumer: jest.fn(),
-      completeProfileCreationAndSendVerificationEmail: jest.fn().mockResolvedValue(undefined),
-      createGoogleSignupPayload: jest.fn(((payload) => ({
+      login: jest.fn<(...a: any[]) => any>(),
+      revokeSessionByRefreshTokenAndAudit: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      revokeAllSessionsByConsumerIdAndAudit: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      refreshAccess: jest.fn<(...a: any[]) => any>().mockResolvedValue({ accessToken: `a`, refreshToken: `r` }),
+      findConsumerByEmail: jest.fn<(...a: any[]) => any>(),
+      issueTokensForConsumer: jest.fn<(...a: any[]) => any>(),
+      completeProfileCreationAndSendVerificationEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      createGoogleSignupPayload: jest.fn<(...a: any[]) => any>(((payload) => ({
         type: `google_signup`,
         email: payload.email ?? ``,
         emailVerified: payload.emailVerified ?? true,
@@ -160,12 +163,12 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
         contractorKind: payload.contractorKind ?? null,
         appScope: payload.appScope ?? `consumer`,
       })) as any),
-      validateGoogleSignupPayload: jest.fn((payload) => payload),
-      requestPasswordReset: jest.fn().mockResolvedValue(undefined),
-      validateForgotPasswordTokenAndRedirect: jest.fn().mockResolvedValue(undefined),
-      resetPasswordWithToken: jest.fn().mockResolvedValue(undefined),
-      signup: jest.fn(),
-      signupVerification: jest.fn().mockResolvedValue(undefined),
+      validateGoogleSignupPayload: jest.fn<(...a: any[]) => any>((payload) => payload),
+      requestPasswordReset: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      validateForgotPasswordTokenAndRedirect: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      resetPasswordWithToken: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      signup: jest.fn<(...a: any[]) => any>(),
+      signupVerification: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
 
     const supportService = new ConsumerAuthControllerSupportService(originResolver as OriginResolverService);
@@ -341,7 +344,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   it(`google callback resolves access_denied by stored app scope without requiring a cookie in test env`, async () => {
     const req = makeReq({ cookies: {} });
     const res = makeRes();
-    (oauthStateStore.read as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.read as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       createdAt: Date.now(),
       codeVerifier: `verifier`,
       nonce: `nonce`,
@@ -359,7 +362,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   it(`google callback preserves app scope for access_denied`, async () => {
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
-    (oauthStateStore.read as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.read as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       createdAt: Date.now(),
       codeVerifier: `verifier`,
       nonce: `nonce`,
@@ -388,7 +391,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
       },
     });
     const res = makeRes();
-    (oauthStateStore.read as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.read as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       createdAt: Date.now(),
       codeVerifier: `verifier`,
       nonce: `nonce`,
@@ -408,7 +411,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
     envs.NODE_ENV = envs.ENVIRONMENT.PRODUCTION;
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `different-state` } });
     const res = makeRes();
-    (oauthStateStore.read as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.read as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       createdAt: Date.now(),
       codeVerifier: `verifier`,
       nonce: `nonce`,
@@ -430,16 +433,16 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
       contractorKind: null,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       email: `test@example.com`,
       email_verified: true,
       sub: `sub`,
     });
-    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue({
+    (service.findConsumerByEmail as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       id: `consumer-id`,
       email: `test@example.com`,
     });
-    (googleOAuthService.loginWithPayload as jest.Mock | undefined)?.mockResolvedValue({
+    (googleOAuthService.loginWithPayload as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       id: `consumer-id`,
     });
     const req = makeReq({ cookies: {} });
@@ -460,16 +463,16 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
       contractorKind: null,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       email: `test@example.com`,
       email_verified: true,
       sub: `sub`,
     });
-    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue({
+    (service.findConsumerByEmail as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       id: `consumer-id`,
       email: `test@example.com`,
     });
-    (googleOAuthService.loginWithPayload as jest.Mock | undefined)?.mockResolvedValue({
+    (googleOAuthService.loginWithPayload as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       id: `consumer-id`,
     });
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
@@ -499,16 +502,16 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
       contractorKind: null,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       email: `test@example.com`,
       email_verified: true,
       sub: `sub`,
     });
-    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue({
+    (service.findConsumerByEmail as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       id: `consumer-id`,
       email: `test@example.com`,
     });
-    (googleOAuthService.loginWithPayload as jest.Mock | undefined)?.mockResolvedValue({
+    (googleOAuthService.loginWithPayload as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       id: `consumer-id`,
     });
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
@@ -531,12 +534,12 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
       contractorKind: `ENTITY`,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       email: `new-user@example.com`,
       email_verified: true,
       sub: `sub`,
     });
-    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue(null);
+    (service.findConsumerByEmail as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue(null);
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
 
@@ -562,12 +565,12 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
       contractorKind: null,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       email: `new-user@example.com`,
       email_verified: true,
       sub: `sub`,
     });
-    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue(null);
+    (service.findConsumerByEmail as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue(null);
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
 
@@ -593,12 +596,12 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
       contractorKind: null,
       appScope,
     });
-    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       email: `new-user@example.com`,
       email_verified: true,
       sub: `sub`,
     });
-    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue(null);
+    (service.findConsumerByEmail as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue(null);
     const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
 
@@ -616,7 +619,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
     envs.NODE_ENV = envs.ENVIRONMENT.PRODUCTION;
     const req = makeReq({ cookies: {} });
     const res = makeRes();
-    (oauthStateStore.read as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.read as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       createdAt: Date.now(),
       codeVerifier: `verifier`,
       nonce: `nonce`,
@@ -634,7 +637,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
     envs.NODE_ENV = envs.ENVIRONMENT.STAGING;
     const req = makeReq({ cookies: {} });
     const res = makeRes();
-    (oauthStateStore.read as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.read as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       createdAt: Date.now(),
       codeVerifier: `verifier`,
       nonce: `nonce`,
@@ -649,7 +652,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   });
 
   it(`google signup session rejects invalid claimed app scope`, async () => {
-    (oauthStateStore.readSignupSession as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.readSignupSession as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       email: `new@example.com`,
       emailVerified: true,
       nextPath: `/dashboard`,
@@ -667,7 +670,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   });
 
   it(`google signup session establish rejects invalid claimed app scope`, async () => {
-    (oauthStateStore.consumeSignupHandoff as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.consumeSignupHandoff as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       email: `new@example.com`,
       emailVerified: true,
       nextPath: `/dashboard`,
@@ -687,7 +690,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   });
 
   it(`establishGoogleSignupSession consumes handoff, persists signup session, and sets httpOnly cookie`, async () => {
-    (oauthStateStore.consumeSignupHandoff as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.consumeSignupHandoff as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       email: `new@example.com`,
       emailVerified: true,
       nextPath: `/dashboard`,
@@ -702,7 +705,9 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
       contractorKind: null,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
     });
-    (oauthStateStore.createEphemeralToken as jest.Mock).mockReturnValueOnce(`signup-session-token`);
+    (oauthStateStore.createEphemeralToken as jest.Mock<(...a: any[]) => any>).mockReturnValueOnce(
+      `signup-session-token`,
+    );
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
     const res = makeRes();
 
@@ -732,7 +737,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   });
 
   it(`oauth complete rejects invalid claimed app scope`, async () => {
-    (oauthStateStore.consumeLoginHandoff as jest.Mock).mockResolvedValueOnce({
+    (oauthStateStore.consumeLoginHandoff as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
       identityId: `consumer-id`,
       nextPath: `/dashboard`,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
@@ -880,7 +885,10 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
       undefined,
     );
 
-    const savedRecord = (oauthStateStore.save as jest.Mock).mock.calls[0]?.[1] as Record<string, unknown>;
+    const savedRecord = (oauthStateStore.save as jest.Mock<(...a: any[]) => any>).mock.calls[0]?.[1] as Record<
+      string,
+      unknown
+    >;
     expect(savedRecord).toMatchObject({
       nextPath: `/signup?accountType=BUSINESS`,
       appScope: CURRENT_CONSUMER_APP_SCOPE,
@@ -982,7 +990,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   });
 
   it(`signup rejects invalid claimed app scope for stored google signup sessions`, async () => {
-    (oauthStateStore.readSignupSession as jest.Mock | undefined)?.mockResolvedValue({
+    (oauthStateStore.readSignupSession as jest.Mock<(...a: any[]) => any> | undefined)?.mockResolvedValue({
       nextPath: `/dashboard`,
       email: `new@example.com`,
       emailVerified: true,
@@ -1019,7 +1027,7 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   });
 
   it(`resetPassword propagates BadRequestException from service`, async () => {
-    (service.resetPasswordWithToken as jest.Mock).mockRejectedValueOnce(
+    (service.resetPasswordWithToken as jest.Mock<(...a: any[]) => any>).mockRejectedValueOnce(
       new BadRequestException(`INVALID_CHANGE_PASSWORD_TOKEN`),
     );
     const body = { token: `bad-token`, password: `newPassword8` };

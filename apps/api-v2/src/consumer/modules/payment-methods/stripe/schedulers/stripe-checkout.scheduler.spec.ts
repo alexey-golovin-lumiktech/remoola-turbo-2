@@ -1,3 +1,5 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { StripeCheckoutSchedulerRepository } from './stripe-checkout-scheduler.repository';
@@ -10,22 +12,22 @@ type CheckoutSchedulerSelection =
 describe(`StripeCheckoutScheduler`, () => {
   let scheduler: StripeCheckoutScheduler;
   let checkoutSchedulerRepository: jest.Mocked<StripeCheckoutSchedulerRepository>;
-  let logSpy: jest.SpyInstance;
-  let warnSpy: jest.SpyInstance;
-  let sessionsRetrieveMock: jest.Mock;
-  let finalizeCheckoutSessionSuccessMock: jest.Mock;
+  let logSpy: jest.SpiedFunction<(...a: any[]) => any>;
+  let warnSpy: jest.SpiedFunction<(...a: any[]) => any>;
+  let sessionsRetrieveMock: jest.Mock<(...a: any[]) => any>;
+  let finalizeCheckoutSessionSuccessMock: jest.Mock<(...a: any[]) => any>;
   let selection: CheckoutSchedulerSelection;
 
   beforeEach(() => {
     selection = { skipped: false, sessionIdsForRun: [`cs_test_1`], pendingSessionIds: 1 };
-    sessionsRetrieveMock = jest.fn().mockResolvedValue({
+    sessionsRetrieveMock = jest.fn<(...a: any[]) => any>().mockResolvedValue({
       id: `cs_test_1`,
       payment_status: `paid`,
       metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` },
     });
-    finalizeCheckoutSessionSuccessMock = jest.fn().mockResolvedValue(undefined);
+    finalizeCheckoutSessionSuccessMock = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     checkoutSchedulerRepository = {
-      selectWaitingSessionIdsForRun: jest.fn().mockImplementation(async () => selection),
+      selectWaitingSessionIdsForRun: jest.fn<(...a: any[]) => any>().mockImplementation(async () => selection),
     } as unknown as jest.Mocked<StripeCheckoutSchedulerRepository>;
     scheduler = new StripeCheckoutScheduler(
       checkoutSchedulerRepository,
@@ -107,15 +109,17 @@ describe(`StripeCheckoutSchedulerRepository`, () => {
       }>;
     }>;
   }) {
-    const ledgerEntryFindMany = jest.fn().mockResolvedValue(params?.waitingEntries ?? []);
+    const ledgerEntryFindMany = jest.fn<(...a: any[]) => any>().mockResolvedValue(params?.waitingEntries ?? []);
     const tx = {
-      $queryRaw: jest.fn().mockResolvedValue([{ locked: params?.lockAcquired ?? true }]),
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([{ locked: params?.lockAcquired ?? true }]),
       ledgerEntryModel: {
         findMany: ledgerEntryFindMany,
       },
     };
     const prisma = {
-      $transaction: jest.fn().mockImplementation(async (cb: (innerTx: typeof tx) => Promise<unknown>) => cb(tx)),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (cb: (innerTx: typeof tx) => Promise<unknown>) => cb(tx)),
     } as any;
 
     return {

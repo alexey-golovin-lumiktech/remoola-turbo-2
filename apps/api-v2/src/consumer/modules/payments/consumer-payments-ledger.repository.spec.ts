@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { ConsumerPaymentsLedgerRepository } from './consumer-payments-ledger.repository';
@@ -7,8 +9,8 @@ describe(`ConsumerPaymentsLedgerRepository`, () => {
   function makeRepository() {
     const prisma = {
       ledgerEntryModel: {
-        findFirst: jest.fn(async (_args: unknown) => null),
-        create: jest.fn(async (_args: unknown) => null),
+        findFirst: jest.fn<(...a: any[]) => any>(async (_args: unknown) => null),
+        create: jest.fn<(...a: any[]) => any>(async (_args: unknown) => null),
       },
     };
     return {
@@ -51,7 +53,7 @@ describe(`ConsumerPaymentsLedgerRepository`, () => {
   describe(`lockConsumerOutgoing`, () => {
     it(`acquires a transaction-scoped advisory lock keyed on the consumer outgoing namespace`, async () => {
       const { repository } = makeRepository();
-      const executeRaw = jest.fn(async (_arg: unknown) => 0);
+      const executeRaw = jest.fn<(...a: any[]) => any>(async (_arg: unknown) => 0);
       await repository.lockConsumerOutgoing({ $executeRaw: executeRaw } as never, `consumer-1`);
       expect(executeRaw).toHaveBeenCalledTimes(1);
       const firstCallSql = executeRaw.mock.calls[0]?.[0] as Prisma.Sql;
@@ -61,9 +63,9 @@ describe(`ConsumerPaymentsLedgerRepository`, () => {
 
   describe(`createWithdrawLedgerEntry`, () => {
     function makeTx() {
-      const ledgerEntryModel = { create: jest.fn(async (_args: unknown) => null) };
+      const ledgerEntryModel = { create: jest.fn<(...a: any[]) => any>(async (_args: unknown) => null) };
       return {
-        tx: { $executeRaw: jest.fn(async (_arg: unknown) => 0), ledgerEntryModel },
+        tx: { $executeRaw: jest.fn<(...a: any[]) => any>(async (_arg: unknown) => 0), ledgerEntryModel },
         ledgerEntryModel,
       };
     }
@@ -142,8 +144,8 @@ describe(`ConsumerPaymentsLedgerRepository`, () => {
 
   describe(`createTransferLedgerEntries`, () => {
     it(`writes a negated sender entry and a positive recipient entry with paired idempotency keys`, async () => {
-      const ledgerEntryModel = { create: jest.fn(async (_args: unknown) => null) };
-      const tx = { $executeRaw: jest.fn(async (_arg: unknown) => 0), ledgerEntryModel };
+      const ledgerEntryModel = { create: jest.fn<(...a: any[]) => any>(async (_args: unknown) => null) };
+      const tx = { $executeRaw: jest.fn<(...a: any[]) => any>(async (_arg: unknown) => 0), ledgerEntryModel };
       const { repository } = makeRepository();
 
       await repository.createTransferLedgerEntries(tx as never, {

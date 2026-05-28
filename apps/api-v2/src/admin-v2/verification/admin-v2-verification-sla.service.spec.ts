@@ -1,9 +1,11 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2VerificationSlaService } from './admin-v2-verification-sla.service';
 
 describe(`AdminV2VerificationSlaService`, () => {
   function buildService() {
     const query = {
-      listActiveVerificationSlaCandidates: jest.fn(async () => []),
+      listActiveVerificationSlaCandidates: jest.fn<(...a: any[]) => any>(async () => []),
     };
 
     return {

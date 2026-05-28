@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { type Cache } from 'cache-manager';
 
 import { $Enums, type Prisma } from '@remoola/database-2';
@@ -23,16 +24,16 @@ function queryToString(query: unknown): string {
 describe(`AdminV2OverviewQuery`, () => {
   function makeQuery() {
     const cacheManager = {
-      get: jest.fn(),
-      set: jest.fn(),
+      get: jest.fn<(...a: any[]) => any>(),
+      set: jest.fn<(...a: any[]) => any>(),
     };
     const prisma = {
-      $queryRaw: jest.fn<Promise<unknown[]>, [Prisma.Sql]>(async () => [{ count: 0 }]),
-      consumerModel: { count: jest.fn(async () => 0) },
-      authAuditLogModel: { count: jest.fn(async () => 0) },
-      adminActionAuditLogModel: { findMany: jest.fn(async () => []) },
-      paymentRequestModel: { count: jest.fn(async () => 0) },
-      scheduledFxConversionModel: { count: jest.fn(async () => 0) },
+      $queryRaw: jest.fn<(sql: Prisma.Sql) => Promise<unknown[]>>(async () => [{ count: 0 }]),
+      consumerModel: { count: jest.fn<(...a: any[]) => any>(async () => 0) },
+      authAuditLogModel: { count: jest.fn<(...a: any[]) => any>(async () => 0) },
+      adminActionAuditLogModel: { findMany: jest.fn<(...a: any[]) => any>(async () => []) },
+      paymentRequestModel: { count: jest.fn<(...a: any[]) => any>(async () => 0) },
+      scheduledFxConversionModel: { count: jest.fn<(...a: any[]) => any>(async () => 0) },
     };
 
     return {

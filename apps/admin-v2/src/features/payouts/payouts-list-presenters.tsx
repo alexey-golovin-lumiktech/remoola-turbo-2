@@ -14,7 +14,7 @@ const formatDate = formatDateTime;
 
 type PayoutItem = PayoutsListResponse[`items`][number];
 
-export const BUCKET_ORDER = [`failed`, `stuck`, `processing`, `pending`, `completed`, `reversed`] as const;
+const BUCKET_ORDER = [`failed`, `stuck`, `processing`, `pending`, `completed`, `reversed`] as const;
 
 const BUCKET_COPY: Record<
   (typeof BUCKET_ORDER)[number],

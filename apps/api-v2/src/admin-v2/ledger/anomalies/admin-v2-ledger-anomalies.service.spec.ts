@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
@@ -9,24 +10,24 @@ import { decodeAdminV2Cursor } from '../../admin-v2-cursor';
 describe(`AdminV2LedgerAnomaliesService`, () => {
   function createQueryMock() {
     return {
-      countStalePendingEntries: jest.fn().mockResolvedValue(0),
-      countInconsistentOutcomeChains: jest.fn().mockResolvedValue(0),
-      countLargeValueOutliers: jest.fn().mockResolvedValue(0),
-      countOrphanedEntries: jest.fn().mockResolvedValue(0),
-      countDuplicateIdempotencyRisk: jest.fn().mockResolvedValue(0),
-      countImpossibleTransitions: jest.fn().mockResolvedValue(0),
-      countStalePendingEntriesForRange: jest.fn().mockResolvedValue(0),
-      countInconsistentOutcomeChainsForRange: jest.fn().mockResolvedValue(0),
-      countLargeValueOutliersForRange: jest.fn().mockResolvedValue(0),
-      countOrphanedEntriesForRange: jest.fn().mockResolvedValue(0),
-      countDuplicateIdempotencyRiskForRange: jest.fn().mockResolvedValue(0),
-      countImpossibleTransitionsForRange: jest.fn().mockResolvedValue(0),
-      listStalePendingEntries: jest.fn().mockResolvedValue([]),
-      listInconsistentOutcomeChains: jest.fn().mockResolvedValue([]),
-      listLargeValueOutliers: jest.fn().mockResolvedValue([]),
-      listOrphanedEntries: jest.fn().mockResolvedValue([]),
-      listDuplicateIdempotencyRisk: jest.fn().mockResolvedValue([]),
-      listImpossibleTransitions: jest.fn().mockResolvedValue([]),
+      countStalePendingEntries: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countInconsistentOutcomeChains: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countLargeValueOutliers: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countOrphanedEntries: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countDuplicateIdempotencyRisk: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countImpossibleTransitions: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countStalePendingEntriesForRange: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countInconsistentOutcomeChainsForRange: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countLargeValueOutliersForRange: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countOrphanedEntriesForRange: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countDuplicateIdempotencyRiskForRange: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      countImpossibleTransitionsForRange: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      listStalePendingEntries: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+      listInconsistentOutcomeChains: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+      listLargeValueOutliers: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+      listOrphanedEntries: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+      listDuplicateIdempotencyRisk: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+      listImpossibleTransitions: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
     };
   }
 

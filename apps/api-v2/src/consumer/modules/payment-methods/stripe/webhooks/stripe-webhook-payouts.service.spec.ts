@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { type StripeWebhookPayoutsRepository } from './stripe-webhook-payouts.repository';
@@ -6,7 +8,7 @@ import { StripeWebhookPayoutsService } from './stripe-webhook-payouts.service';
 describe(`StripeWebhookPayoutsService`, () => {
   function createRepositoryMock() {
     return {
-      recordPayoutOutcome: jest.fn().mockResolvedValue(undefined),
+      recordPayoutOutcome: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<StripeWebhookPayoutsRepository>;
   }
 

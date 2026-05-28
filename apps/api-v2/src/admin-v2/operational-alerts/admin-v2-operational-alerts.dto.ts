@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Expose, Transform, Type } from 'class-transformer';
-import { Allow, IsInt, IsOptional, IsString } from 'class-validator';
+import { Allow, IsInt, IsOptional, IsPositive, IsString, Max, Min } from 'class-validator';
 
 import {
   ADMIN_V2_DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES,
@@ -9,9 +9,12 @@ import {
   ADMIN_V2_MAX_OPERATIONAL_ALERT_NAME_LENGTH,
   ADMIN_V2_MAX_OPERATIONAL_ALERT_QUERY_PAYLOAD_BYTES,
   ADMIN_V2_MAX_OPERATIONAL_ALERT_THRESHOLD_PAYLOAD_BYTES,
+  ADMIN_V2_MIN_COUNT_GT_VALUE,
   ADMIN_V2_MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES,
   ADMIN_V2_MIN_OPERATIONAL_ALERT_NAME_LENGTH,
   ADMIN_V2_OPERATIONAL_ALERT_WORKSPACES,
+  AdminV2OperationalAlertThreshold,
+  AdminV2OperationalAlertThresholdQueryPayload,
   getAdminV2JsonPayloadBytes,
   isAdminV2OperationalAlertWorkspace,
   type AdminV2OperationalAlertCreateBody,
@@ -60,6 +63,18 @@ export function assertValidQueryPayload(value: unknown): asserts value is Record
   }
 }
 
+class OperationalAlertThreshold implements AdminV2OperationalAlertThreshold {
+  @Expose()
+  @IsString()
+  type: `count_gt`;
+
+  @Expose()
+  @IsInt()
+  @IsPositive()
+  @Min(ADMIN_V2_MIN_COUNT_GT_VALUE)
+  @Max(ADMIN_V2_MIN_COUNT_GT_VALUE)
+  value: number;
+}
 export class OperationalAlertCreateBody implements AdminV2OperationalAlertCreateBody {
   @Expose()
   @IsString()
@@ -77,12 +92,12 @@ export class OperationalAlertCreateBody implements AdminV2OperationalAlertCreate
   @Expose()
   @Transform(({ obj }) => obj.queryPayload)
   @Allow()
-  queryPayload!: unknown;
+  queryPayload!: AdminV2OperationalAlertThresholdQueryPayload;
 
   @Expose()
   @Transform(({ obj }) => obj.thresholdPayload)
   @Allow()
-  thresholdPayload!: unknown;
+  thresholdPayload!: OperationalAlertThreshold;
 
   @Expose()
   @IsOptional()
@@ -110,7 +125,7 @@ export class OperationalAlertUpdateBody extends ExpectedDeletedAtNullBody implem
   @Expose()
   @Transform(({ obj }) => obj.thresholdPayload)
   @IsOptional()
-  thresholdPayload?: unknown;
+  thresholdPayload?: OperationalAlertThreshold;
 
   @Expose()
   @IsOptional()

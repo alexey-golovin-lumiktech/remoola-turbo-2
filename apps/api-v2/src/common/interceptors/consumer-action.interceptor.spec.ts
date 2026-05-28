@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Logger, type ExecutionContext, type CallHandler } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { of, throwError } from 'rxjs';
@@ -9,17 +10,17 @@ import { TRACK_CONSUMER_ACTION } from '../decorators/track-consumer-action.decor
 
 describe(`ConsumerActionInterceptor`, () => {
   let interceptor: ConsumerActionInterceptor;
-  let consumerActionLog: { record: jest.Mock };
+  let consumerActionLog: { record: jest.Mock<(...a: any[]) => any> };
   let reflector: Reflector;
 
   beforeEach(() => {
-    consumerActionLog = { record: jest.fn().mockResolvedValue(undefined) };
+    consumerActionLog = { record: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined) };
     reflector = new Reflector();
     interceptor = new ConsumerActionInterceptor(consumerActionLog as unknown as ConsumerActionLogService, reflector);
   });
 
   function mockContext(metadata: unknown, request: Record<string, unknown> = {}): ExecutionContext {
-    const handler = jest.fn();
+    const handler = jest.fn<(...a: any[]) => any>();
     jest.spyOn(reflector, `get`).mockImplementation((metadataKey: unknown) => {
       if (metadataKey === TRACK_CONSUMER_ACTION) return metadata;
       return undefined;

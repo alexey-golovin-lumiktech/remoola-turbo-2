@@ -1,3 +1,4 @@
+import { describe, it } from '@jest/globals';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import SignupVerificationPage from './page';

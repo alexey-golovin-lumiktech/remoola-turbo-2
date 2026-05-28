@@ -1,6 +1,6 @@
 /** @jest-environment @remoola/test-db/environment */
 
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
@@ -20,7 +20,7 @@ describe(`ConsumerPaymentsCommandsService DB concurrency`, () => {
   const prismaContext = createPrismaTestContext();
   const { prisma } = prismaContext;
   const mailingService = {
-    sendPaymentRequestEmail: jest.fn(async (_payload: unknown) => undefined),
+    sendPaymentRequestEmail: jest.fn<(...a: any[]) => any>(async (_payload: unknown) => undefined),
   };
   const service = new ConsumerPaymentsCommandsService(
     {

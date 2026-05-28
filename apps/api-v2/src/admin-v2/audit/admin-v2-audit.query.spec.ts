@@ -1,9 +1,11 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2AuditQuery } from './admin-v2-audit.query';
 
 describe(`AdminV2AuditQuery`, () => {
   it(`lists auth audit rows with descending createdAt order and total count`, async () => {
-    const findMany = jest.fn(async () => []);
-    const count = jest.fn(async () => 0);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
+    const count = jest.fn<(...a: any[]) => any>(async () => 0);
     const query = new AdminV2AuditQuery({
       authAuditLogModel: { findMany, count },
     } as never);
@@ -26,8 +28,8 @@ describe(`AdminV2AuditQuery`, () => {
   });
 
   it(`lists admin action audit rows including admin email and total count`, async () => {
-    const findMany = jest.fn(async () => []);
-    const count = jest.fn(async () => 0);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
+    const count = jest.fn<(...a: any[]) => any>(async () => 0);
     const query = new AdminV2AuditQuery({
       adminActionAuditLogModel: { findMany, count },
     } as never);
@@ -51,8 +53,8 @@ describe(`AdminV2AuditQuery`, () => {
   });
 
   it(`lists consumer action audit rows with descending createdAt order and total count`, async () => {
-    const findMany = jest.fn(async () => []);
-    const count = jest.fn(async () => 0);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
+    const count = jest.fn<(...a: any[]) => any>(async () => 0);
     const query = new AdminV2AuditQuery({
       consumerActionLogModel: { findMany, count },
     } as never);

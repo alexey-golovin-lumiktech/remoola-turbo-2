@@ -1,8 +1,10 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2OperationalAlertsEvaluatorRepository } from './admin-v2-operational-alerts-evaluator.repository';
 
 describe(`AdminV2OperationalAlertsEvaluatorRepository`, () => {
   function buildRepository() {
-    const update = jest.fn().mockResolvedValue(undefined);
+    const update = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     return {
       repository: new AdminV2OperationalAlertsEvaluatorRepository({
         operationalAlertModel: { update },

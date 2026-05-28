@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 
 import { AdminV2AdminsController } from './admin-v2-admins.controller';
@@ -6,10 +7,10 @@ describe(`AdminV2AdminsController`, () => {
   describe(`session management endpoints`, () => {
     function buildSessionsHarness(opts?: {
       assertCapabilityImpl?: (identity: unknown, capability: string) => Promise<unknown>;
-      listSessionsForAdmin?: jest.Mock;
-      revokeSessionAsManager?: jest.Mock;
+      listSessionsForAdmin?: jest.Mock<(...a: any[]) => any>;
+      revokeSessionAsManager?: jest.Mock<(...a: any[]) => any>;
     }) {
-      const assertCapability = jest.fn(
+      const assertCapability = jest.fn<(...a: any[]) => any>(
         opts?.assertCapabilityImpl ??
           (async () => ({
             role: `SUPER_ADMIN`,
@@ -20,7 +21,7 @@ describe(`AdminV2AdminsController`, () => {
       );
       const listSessionsForAdmin =
         opts?.listSessionsForAdmin ??
-        jest.fn(async () => ({
+        jest.fn<(...a: any[]) => any>(async () => ({
           sessions: [
             {
               id: `session-foo`,
@@ -36,24 +37,24 @@ describe(`AdminV2AdminsController`, () => {
         }));
       const revokeSessionAsManager =
         opts?.revokeSessionAsManager ??
-        jest.fn(async () => ({
+        jest.fn<(...a: any[]) => any>(async () => ({
           ok: true,
           revokedSessionId: `session-foo`,
           alreadyRevoked: false,
         }));
       const adminsService = {
-        listAdmins: jest.fn(),
-        getAdminCase: jest.fn(),
-        inviteAdmin: jest.fn(),
-        deactivateAdmin: jest.fn(),
-        restoreAdmin: jest.fn(),
-        changeAdminRole: jest.fn(),
-        changeAdminPermissions: jest.fn(),
-        resetAdminPassword: jest.fn(),
-        patchAdminPassword: jest.fn(),
-        updateAdminStatus: jest.fn(),
+        listAdmins: jest.fn<(...a: any[]) => any>(),
+        getAdminCase: jest.fn<(...a: any[]) => any>(),
+        inviteAdmin: jest.fn<(...a: any[]) => any>(),
+        deactivateAdmin: jest.fn<(...a: any[]) => any>(),
+        restoreAdmin: jest.fn<(...a: any[]) => any>(),
+        changeAdminRole: jest.fn<(...a: any[]) => any>(),
+        changeAdminPermissions: jest.fn<(...a: any[]) => any>(),
+        resetAdminPassword: jest.fn<(...a: any[]) => any>(),
+        patchAdminPassword: jest.fn<(...a: any[]) => any>(),
+        updateAdminStatus: jest.fn<(...a: any[]) => any>(),
       };
-      const verifyStepUp = jest.fn(async () => undefined);
+      const verifyStepUp = jest.fn<(...a: any[]) => any>(async () => undefined);
       const controller = new AdminV2AdminsController(
         adminsService as never,
         { assertCapability } as never,

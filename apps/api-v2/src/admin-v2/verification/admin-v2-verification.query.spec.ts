@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2VerificationQuery } from './admin-v2-verification.query';
 
 function buildQueueRow(id: string, overrides: Record<string, unknown> = {}) {
@@ -22,16 +24,16 @@ function buildQueueRow(id: string, overrides: Record<string, unknown> = {}) {
 function buildQuery() {
   const prisma = {
     consumerModel: {
-      findMany: jest.fn(),
-      count: jest.fn(),
-      findUnique: jest.fn(),
+      findMany: jest.fn<(...a: any[]) => any>(),
+      count: jest.fn<(...a: any[]) => any>(),
+      findUnique: jest.fn<(...a: any[]) => any>(),
     },
     adminActionAuditLogModel: {
-      findMany: jest.fn(),
+      findMany: jest.fn<(...a: any[]) => any>(),
     },
     authAuditLogModel: {
-      count: jest.fn(),
-      findMany: jest.fn(),
+      count: jest.fn<(...a: any[]) => any>(),
+      findMany: jest.fn<(...a: any[]) => any>(),
     },
   };
 

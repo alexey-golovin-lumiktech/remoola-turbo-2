@@ -1,22 +1,9 @@
 import { z } from 'zod';
 
-export type AdminV2CursorQuery = {
-  cursor?: string;
-  limit?: number;
-};
-
-export type AdminV2PageQuery = {
-  page?: number;
-  pageSize?: number;
-};
-
-export type AdminV2DateRangeQuery = {
-  dateFrom?: string;
-  dateTo?: string;
-};
-
 export const ADMIN_V2_MIN_AUTH_REFRESH_REUSE_WINDOW_MINUTES = 1;
+
 export const ADMIN_V2_MAX_AUTH_REFRESH_REUSE_WINDOW_MINUTES = 1440;
+
 export const ADMIN_V2_DEFAULT_AUTH_REFRESH_REUSE_WINDOW_MINUTES = 15;
 
 function isIsoDateOnly(value: string): boolean {
@@ -36,36 +23,14 @@ const optionalLimitSchema = z.number().int().min(1).optional();
 const optionalFiniteNumberSchema = z.number().finite().optional();
 const optionalBooleanSchema = z.boolean().optional();
 const optionalDateOnlySchema = z.string().refine(isIsoDateOnly, { message: `Expected YYYY-MM-DD` }).optional();
-
-export const adminV2CursorQuerySchema = z.object({
+const adminV2CursorQuerySchema = z.object({
   cursor: optionalTrimmedStringSchema,
   limit: optionalLimitSchema,
 });
-
-export const adminV2PageQuerySchema = z.object({
+const adminV2PageQuerySchema = z.object({
   page: optionalPageSchema,
   pageSize: optionalPageSchema,
 });
-
-export const adminV2DateRangeQuerySchema = z.object({
-  dateFrom: optionalDateOnlySchema,
-  dateTo: optionalDateOnlySchema,
-});
-
-export type AdminV2PaymentsListQuery = AdminV2CursorQuery & {
-  q?: string;
-  status?: string;
-  paymentRail?: string;
-  currencyCode?: string;
-  amountMin?: number;
-  amountMax?: number;
-  dueDateFrom?: string;
-  dueDateTo?: string;
-  createdFrom?: string;
-  createdTo?: string;
-  overdue?: boolean;
-};
-
 export const adminV2PaymentsListQuerySchema = adminV2CursorQuerySchema.extend({
   q: optionalTrimmedStringSchema,
   status: optionalTrimmedStringSchema,
@@ -78,23 +43,7 @@ export const adminV2PaymentsListQuerySchema = adminV2CursorQuerySchema.extend({
   createdFrom: optionalDateOnlySchema,
   createdTo: optionalDateOnlySchema,
   overdue: optionalBooleanSchema,
-}) satisfies z.ZodType<AdminV2PaymentsListQuery>;
-
-export type AdminV2DocumentsListQuery = AdminV2PageQuery & {
-  q?: string;
-  consumerId?: string;
-  access?: string;
-  mimetype?: string;
-  sizeMin?: number;
-  sizeMax?: number;
-  createdFrom?: string;
-  createdTo?: string;
-  paymentRequestId?: string;
-  tag?: string;
-  tagId?: string;
-  includeDeleted?: boolean;
-};
-
+});
 export const adminV2DocumentsListQuerySchema = adminV2PageQuerySchema.extend({
   q: optionalTrimmedStringSchema,
   consumerId: optionalTrimmedStringSchema,
@@ -108,15 +57,7 @@ export const adminV2DocumentsListQuerySchema = adminV2PageQuerySchema.extend({
   tag: optionalTrimmedStringSchema,
   tagId: optionalTrimmedStringSchema,
   includeDeleted: optionalBooleanSchema,
-}) satisfies z.ZodType<AdminV2DocumentsListQuery>;
-
-export type AdminV2PaymentMethodsListQuery = AdminV2PageQuery & {
-  consumerId?: string;
-  type?: string;
-  defaultSelected?: boolean;
-  fingerprint?: string;
-  includeDeleted?: boolean;
-};
+});
 
 export const adminV2PaymentMethodsListQuerySchema = adminV2PageQuerySchema.extend({
   consumerId: optionalTrimmedStringSchema,
@@ -124,59 +65,25 @@ export const adminV2PaymentMethodsListQuerySchema = adminV2PageQuerySchema.exten
   defaultSelected: optionalBooleanSchema,
   fingerprint: optionalTrimmedStringSchema,
   includeDeleted: optionalBooleanSchema,
-}) satisfies z.ZodType<AdminV2PaymentMethodsListQuery>;
-
-export type AdminV2ExchangeRatesListQuery = AdminV2PageQuery & {
-  fromCurrency?: string;
-  toCurrency?: string;
-  provider?: string;
-  status?: string;
-  stale?: boolean;
-};
-
+});
 export const adminV2ExchangeRatesListQuerySchema = adminV2PageQuerySchema.extend({
   fromCurrency: optionalTrimmedStringSchema,
   toCurrency: optionalTrimmedStringSchema,
   provider: optionalTrimmedStringSchema,
   status: optionalTrimmedStringSchema,
   stale: optionalBooleanSchema,
-}) satisfies z.ZodType<AdminV2ExchangeRatesListQuery>;
-
-export type AdminV2ExchangeRulesListQuery = AdminV2PageQuery & {
-  q?: string;
-  enabled?: boolean;
-  fromCurrency?: string;
-  toCurrency?: string;
-};
-
+});
 export const adminV2ExchangeRulesListQuerySchema = adminV2PageQuerySchema.extend({
   q: optionalTrimmedStringSchema,
   enabled: optionalBooleanSchema,
   fromCurrency: optionalTrimmedStringSchema,
   toCurrency: optionalTrimmedStringSchema,
-}) satisfies z.ZodType<AdminV2ExchangeRulesListQuery>;
-
-export type AdminV2ExchangeScheduledListQuery = AdminV2PageQuery & {
-  q?: string;
-  status?: string;
-};
-
+});
 export const adminV2ExchangeScheduledListQuerySchema = adminV2PageQuerySchema.extend({
   q: optionalTrimmedStringSchema,
   status: optionalTrimmedStringSchema,
-}) satisfies z.ZodType<AdminV2ExchangeScheduledListQuery>;
-
-export type AdminV2PayoutsListQuery = AdminV2CursorQuery;
-
-export const adminV2PayoutsListQuerySchema = adminV2CursorQuerySchema satisfies z.ZodType<AdminV2PayoutsListQuery>;
-
-export type AdminV2ConsumersListQuery = AdminV2PageQuery & {
-  q?: string;
-  accountType?: string;
-  contractorKind?: string;
-  verificationStatus?: string;
-  includeDeleted?: boolean;
-};
+});
+export const adminV2PayoutsListQuerySchema = adminV2CursorQuerySchema;
 
 export const adminV2ConsumersListQuerySchema = adminV2PageQuerySchema.extend({
   q: optionalTrimmedStringSchema,
@@ -184,17 +91,7 @@ export const adminV2ConsumersListQuerySchema = adminV2PageQuerySchema.extend({
   contractorKind: optionalTrimmedStringSchema,
   verificationStatus: optionalTrimmedStringSchema,
   includeDeleted: optionalBooleanSchema,
-}) satisfies z.ZodType<AdminV2ConsumersListQuery>;
-
-export type AdminV2VerificationQueuePayload = {
-  status?: string;
-  stripeIdentityStatus?: string;
-  country?: string;
-  contractorKind?: string;
-  missingProfileData?: boolean;
-  missingDocuments?: boolean;
-};
-
+});
 export const adminV2VerificationQueuePayloadSchema = z
   .object({
     status: optionalTrimmedStringSchema,
@@ -204,17 +101,7 @@ export const adminV2VerificationQueuePayloadSchema = z
     missingProfileData: optionalBooleanSchema,
     missingDocuments: optionalBooleanSchema,
   })
-  .strict() satisfies z.ZodType<AdminV2VerificationQueuePayload>;
-
-export type AdminV2VerificationQueueQuery = AdminV2PageQuery & {
-  status?: string;
-  stripeIdentityStatus?: string;
-  country?: string;
-  contractorKind?: string;
-  missingProfileData?: boolean;
-  missingDocuments?: boolean;
-};
-
+  .strict();
 export const adminV2VerificationQueueQuerySchema = adminV2PageQuerySchema.extend({
   status: optionalTrimmedStringSchema,
   stripeIdentityStatus: optionalTrimmedStringSchema,
@@ -222,12 +109,7 @@ export const adminV2VerificationQueueQuerySchema = adminV2PageQuerySchema.extend
   contractorKind: optionalTrimmedStringSchema,
   missingProfileData: optionalBooleanSchema,
   missingDocuments: optionalBooleanSchema,
-}) satisfies z.ZodType<AdminV2VerificationQueueQuery>;
-
-export type AdminV2AuthRefreshReuseAlertQueryPayload = {
-  windowMinutes: number;
-};
-
+});
 export const adminV2AuthRefreshReuseAlertQueryPayloadSchema = z
   .object({
     windowMinutes: z
@@ -236,30 +118,12 @@ export const adminV2AuthRefreshReuseAlertQueryPayloadSchema = z
       .min(ADMIN_V2_MIN_AUTH_REFRESH_REUSE_WINDOW_MINUTES)
       .max(ADMIN_V2_MAX_AUTH_REFRESH_REUSE_WINDOW_MINUTES),
   })
-  .strict() satisfies z.ZodType<AdminV2AuthRefreshReuseAlertQueryPayload>;
+  .strict();
 
-export type AdminV2ConsumerContractsQuery = AdminV2PageQuery & {
-  role?: string;
-  status?: string;
-};
-
-export const adminV2ConsumerContractsQuerySchema = adminV2PageQuerySchema.extend({
+const adminV2ConsumerContractsQuerySchema = adminV2PageQuerySchema.extend({
   role: optionalTrimmedStringSchema,
   status: optionalTrimmedStringSchema,
-}) satisfies z.ZodType<AdminV2ConsumerContractsQuery>;
-
-export type AdminV2LedgerEntriesListQuery = AdminV2CursorQuery & {
-  q?: string;
-  type?: string;
-  status?: string;
-  currencyCode?: string;
-  paymentRequestId?: string;
-  consumerId?: string;
-  amountSign?: string;
-  dateFrom?: string;
-  dateTo?: string;
-};
-
+});
 export const adminV2LedgerEntriesListQuerySchema = adminV2CursorQuerySchema.extend({
   q: optionalTrimmedStringSchema,
   type: optionalTrimmedStringSchema,
@@ -270,58 +134,25 @@ export const adminV2LedgerEntriesListQuerySchema = adminV2CursorQuerySchema.exte
   amountSign: optionalTrimmedStringSchema,
   dateFrom: optionalDateOnlySchema,
   dateTo: optionalDateOnlySchema,
-}) satisfies z.ZodType<AdminV2LedgerEntriesListQuery>;
-
-export type AdminV2LedgerDisputesQuery = AdminV2CursorQuery & {
-  paymentRequestId?: string;
-  consumerId?: string;
-  q?: string;
-  dateFrom?: string;
-  dateTo?: string;
-};
-
+});
 export const adminV2LedgerDisputesQuerySchema = adminV2CursorQuerySchema.extend({
   paymentRequestId: optionalTrimmedStringSchema,
   consumerId: optionalTrimmedStringSchema,
   q: optionalTrimmedStringSchema,
   dateFrom: optionalDateOnlySchema,
   dateTo: optionalDateOnlySchema,
-}) satisfies z.ZodType<AdminV2LedgerDisputesQuery>;
-
-export type AdminV2LedgerAnomaliesListQuery = AdminV2CursorQuery &
-  Omit<AdminV2DateRangeQuery, `dateFrom`> & {
-    class: string;
-    dateFrom: string;
-  };
-
+});
 export const adminV2LedgerAnomaliesListQuerySchema = adminV2CursorQuerySchema.extend({
   class: z.string().trim().min(1),
   dateFrom: z.string().refine(isIsoDateOnly, { message: `Expected YYYY-MM-DD` }),
   dateTo: optionalDateOnlySchema,
-}) satisfies z.ZodType<AdminV2LedgerAnomaliesListQuery>;
-
-export type AdminV2TimelineQuery = AdminV2PageQuery &
-  AdminV2DateRangeQuery & {
-    event?: string;
-    action?: string;
-  };
-
-export const adminV2TimelineQuerySchema = adminV2PageQuerySchema.extend({
+});
+const adminV2TimelineQuerySchema = adminV2PageQuerySchema.extend({
   dateFrom: optionalDateOnlySchema,
   dateTo: optionalDateOnlySchema,
   event: optionalTrimmedStringSchema,
   action: optionalTrimmedStringSchema,
-}) satisfies z.ZodType<AdminV2TimelineQuery>;
-
-export type AdminV2AuditListQuery = AdminV2PageQuery &
-  AdminV2DateRangeQuery & {
-    event?: string;
-    action?: string;
-    adminId?: string;
-    email?: string;
-    ipAddress?: string;
-    resourceId?: string;
-  };
+});
 
 export const adminV2AuditListQuerySchema = adminV2PageQuerySchema.extend({
   dateFrom: optionalDateOnlySchema,
@@ -332,14 +163,30 @@ export const adminV2AuditListQuerySchema = adminV2PageQuerySchema.extend({
   email: optionalTrimmedStringSchema,
   ipAddress: optionalTrimmedStringSchema,
   resourceId: optionalTrimmedStringSchema,
-}) satisfies z.ZodType<AdminV2AuditListQuery>;
-
-export type AdminV2AdminsListQuery = AdminV2PageQuery & {
-  q?: string;
-  status?: string;
-};
-
+});
 export const adminV2AdminsListQuerySchema = adminV2PageQuerySchema.extend({
   q: optionalTrimmedStringSchema,
   status: optionalTrimmedStringSchema,
-}) satisfies z.ZodType<AdminV2AdminsListQuery>;
+});
+
+export type AdminV2CursorQuery = z.infer<typeof adminV2CursorQuerySchema>;
+export type AdminV2PaymentsListQuery = z.infer<typeof adminV2PaymentsListQuerySchema>;
+export type AdminV2DocumentsListQuery = z.infer<typeof adminV2DocumentsListQuerySchema>;
+export type AdminV2PaymentMethodsListQuery = z.infer<typeof adminV2PaymentMethodsListQuerySchema>;
+export type AdminV2ExchangeRatesListQuery = z.infer<typeof adminV2ExchangeRatesListQuerySchema>;
+export type AdminV2ExchangeRulesListQuery = z.infer<typeof adminV2ExchangeRulesListQuerySchema>;
+export type AdminV2ExchangeScheduledListQuery = z.infer<typeof adminV2ExchangeScheduledListQuerySchema>;
+export type AdminV2PayoutsListQuery = z.infer<typeof adminV2PayoutsListQuerySchema>;
+export type AdminV2ConsumersListQuery = z.infer<typeof adminV2ConsumersListQuerySchema>;
+export type AdminV2VerificationQueuePayload = z.infer<typeof adminV2VerificationQueuePayloadSchema>;
+export type AdminV2VerificationQueueQuery = z.infer<typeof adminV2VerificationQueueQuerySchema>;
+export type AdminV2AuthRefreshReuseAlertQueryPayload = z.infer<typeof adminV2AuthRefreshReuseAlertQueryPayloadSchema>;
+export type AdminV2ConsumerContractsQuery = z.infer<typeof adminV2ConsumerContractsQuerySchema>;
+export type AdminV2LedgerEntriesListQuery = z.infer<typeof adminV2LedgerEntriesListQuerySchema>;
+export type AdminV2LedgerDisputesQuery = z.infer<typeof adminV2LedgerDisputesQuerySchema>;
+export type AdminV2LedgerAnomaliesListQuery = z.infer<typeof adminV2LedgerAnomaliesListQuerySchema>;
+export type AdminV2TimelineQuery = z.infer<typeof adminV2TimelineQuerySchema>;
+export type AdminV2AuditListQuery = z.infer<typeof adminV2AuditListQuerySchema>;
+export type AdminV2AdminsListQuery = z.infer<typeof adminV2AdminsListQuerySchema>;
+export type AdminV2PageQuery = { page?: number; pageSize?: number };
+export type AdminV2DateRangeQuery = { dateFrom?: string; dateTo?: string };

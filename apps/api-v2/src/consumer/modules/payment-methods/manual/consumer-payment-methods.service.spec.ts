@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { type ConsumerPaymentMethodsRepository } from './consumer-payment-methods.repository';
@@ -8,16 +10,16 @@ describe(`ConsumerPaymentMethodsService`, () => {
 
   function createRepositoryMock() {
     return {
-      listForConsumer: jest.fn(),
-      createManualPaymentMethod: jest.fn(),
-      findActiveByIdForConsumer: jest.fn(),
-      clearDefaultForType: jest.fn(),
-      createBillingDetails: jest.fn(),
-      attachBillingDetails: jest.fn(),
-      updateBillingDetails: jest.fn(),
-      updatePaymentMethodDefault: jest.fn(),
-      softDeleteAndPromoteFallback: jest.fn(),
-      invalidateListForConsumer: jest.fn(),
+      listForConsumer: jest.fn<(...a: any[]) => any>(),
+      createManualPaymentMethod: jest.fn<(...a: any[]) => any>(),
+      findActiveByIdForConsumer: jest.fn<(...a: any[]) => any>(),
+      clearDefaultForType: jest.fn<(...a: any[]) => any>(),
+      createBillingDetails: jest.fn<(...a: any[]) => any>(),
+      attachBillingDetails: jest.fn<(...a: any[]) => any>(),
+      updateBillingDetails: jest.fn<(...a: any[]) => any>(),
+      updatePaymentMethodDefault: jest.fn<(...a: any[]) => any>(),
+      softDeleteAndPromoteFallback: jest.fn<(...a: any[]) => any>(),
+      invalidateListForConsumer: jest.fn<(...a: any[]) => any>(),
     } as unknown as jest.Mocked<ConsumerPaymentMethodsRepository>;
   }
 

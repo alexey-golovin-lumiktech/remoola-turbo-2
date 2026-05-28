@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { type default as express } from 'express';
 import Stripe from 'stripe';
 
@@ -124,7 +125,7 @@ jest.mock(`../../../../../envs`, () => ({
   },
 }));
 jest.mock(`../core/ledger-outcome-idempotent`, () => ({
-  createOutcomeIdempotent: jest.fn().mockResolvedValue(undefined),
+  createOutcomeIdempotent: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
 }));
 
 describe(`StripeWebhookService.processStripeEvent`, () => {
@@ -141,8 +142,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
     const service = makeService();
     const req = { rawBody: Buffer.from(`{}`), headers: {} } as any; // partial request for 401 path only
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -164,8 +165,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     const envModule = jest.requireMock(`../../../../../envs`) as {
@@ -178,7 +179,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn(() => {
+        constructEvent: jest.fn<(...a: any[]) => any>(() => {
           throw new Error(`invalid signature`);
         }),
       },
@@ -204,15 +205,17 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   });
 
   it(`logs managed verification processing failures with event context and returns 500`, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const stripeWebhookEventCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const prisma = {
       stripeWebhookEventModel: { create: stripeWebhookEventCreate },
-      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
-        callback({
-          stripeWebhookEventModel: { create: stripeWebhookEventCreate },
-          consumerModel: {},
-        }),
-      ),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+          callback({
+            stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+            consumerModel: {},
+          }),
+        ),
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
     const loggerWarn = jest
@@ -229,11 +232,11 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
     (service as any).router.routeManagedVerificationEvent = jest
-      .fn()
+      .fn<(...a: any[]) => any>()
       .mockRejectedValue(new Error(`column "stripe_identity_status" does not exist`));
 
     const envModule = jest.requireMock(`../../../../../envs`) as {
@@ -246,8 +249,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -278,7 +281,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       type: `identity.verification_session.verified`,
       data: { object: { id: `vs_body_buffer`, metadata: { consumerId: `00000000-0000-4000-8000-000000000001` } } },
     };
-    const constructEvent = jest.fn().mockReturnValue(mockEvent);
+    const constructEvent = jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent);
     (
       service as unknown as {
         stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
@@ -288,7 +291,9 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
         constructEvent,
       },
     };
-    (service as any).router.routeManagedVerificationEvent = jest.fn().mockResolvedValue(undefined);
+    (service as any).router.routeManagedVerificationEvent = jest
+      .fn<(...a: any[]) => any>()
+      .mockResolvedValue(undefined);
 
     const envModule = jest.requireMock(`../../../../../envs`) as {
       envs: { STRIPE_WEBHOOK_SECRET: string };
@@ -300,8 +305,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -311,8 +316,10 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   });
 
   it(`returns 200 without dispatching when the processed-event marker already exists`, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockRejectedValue(makeStripeWebhookDuplicateEventError());
-    const stripeWebhookEventFindUnique = jest.fn().mockResolvedValue({
+    const stripeWebhookEventCreate = jest
+      .fn<(...a: any[]) => any>()
+      .mockRejectedValue(makeStripeWebhookDuplicateEventError());
+    const stripeWebhookEventFindUnique = jest.fn<(...a: any[]) => any>().mockResolvedValue({
       eventId: `evt_dup`,
       status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED,
       processingStartedAt: null,
@@ -321,7 +328,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
         findUnique: stripeWebhookEventFindUnique,
-        updateMany: jest.fn(),
+        updateMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -338,7 +345,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -350,8 +357,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -377,15 +384,17 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   });
 
   it(`returns 503 without dispatching when the event is already in fresh processing`, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockRejectedValue(makeStripeWebhookDuplicateEventError());
+    const stripeWebhookEventCreate = jest
+      .fn<(...a: any[]) => any>()
+      .mockRejectedValue(makeStripeWebhookDuplicateEventError());
     const prisma = {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
           processingStartedAt: new Date(),
         }),
-        updateMany: jest.fn(),
+        updateMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -402,7 +411,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -414,8 +423,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -426,12 +435,14 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   });
 
   it(`reclaims stale processing events and dispatches once`, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockRejectedValue(makeStripeWebhookDuplicateEventError());
-    const stripeWebhookEventUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const stripeWebhookEventCreate = jest
+      .fn<(...a: any[]) => any>()
+      .mockRejectedValue(makeStripeWebhookDuplicateEventError());
+    const stripeWebhookEventUpdateMany = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 });
     const prisma = {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
           processingStartedAt: new Date(Date.now() - 20 * 60 * 1000),
         }),
@@ -452,7 +463,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -464,8 +475,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -503,17 +514,17 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       releaseHandler = resolve;
     });
     const stripeWebhookEventCreate = jest
-      .fn()
+      .fn<(...a: any[]) => any>()
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(makeStripeWebhookDuplicateEventError());
     const prisma = {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSING,
           processingStartedAt: new Date(),
         }),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -533,7 +544,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -547,8 +558,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }) as any;
     const makeRes = () =>
       ({
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn().mockReturnThis(),
+        status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+        json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
       }) as unknown as express.Response;
 
     const firstRes = makeRes();
@@ -571,14 +582,14 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 
   it(`marks the dedupe claim failed when a non-identity handler fails before completion`, async () => {
     const stripeWebhookEventCreate = jest
-      .fn()
+      .fn<(...a: any[]) => any>()
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(makeStripeWebhookDuplicateEventError());
-    const stripeWebhookEventFindUnique = jest.fn().mockResolvedValue({
+    const stripeWebhookEventFindUnique = jest.fn<(...a: any[]) => any>().mockResolvedValue({
       status: STRIPE_WEBHOOK_EVENT_STATUS.FAILED,
       processingStartedAt: null,
     });
-    const stripeWebhookEventUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const stripeWebhookEventUpdateMany = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 });
     const prisma = {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
@@ -603,7 +614,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -615,8 +626,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const firstRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(firstReq, firstRes);
@@ -651,8 +662,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const secondRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(secondReq, secondRes);
@@ -667,12 +678,12 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   });
 
   it(`dispatches charge.refunded events to handleChargeRefunded`, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const stripeWebhookEventCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const prisma = {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
-        findUnique: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -692,7 +703,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -704,8 +715,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -726,12 +737,12 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   });
 
   it(`dispatches charge.refund.updated events to handleRefundUpdated`, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const stripeWebhookEventCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const prisma = {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
-        findUnique: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -751,7 +762,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -763,8 +774,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -785,12 +796,12 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
   });
 
   it(`dispatches charge.dispute.created events to handleChargeDispute`, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const stripeWebhookEventCreate = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
     const prisma = {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
-        findUnique: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -810,7 +821,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -822,8 +833,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -847,16 +858,18 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
     `returns success for duplicate refund.updated event before handler dispatch ` + `when marker already exists`;
 
   it(duplicateRefundUpdatedEventDescription, async () => {
-    const stripeWebhookEventCreate = jest.fn().mockRejectedValue(makeStripeWebhookDuplicateEventError());
+    const stripeWebhookEventCreate = jest
+      .fn<(...a: any[]) => any>()
+      .mockRejectedValue(makeStripeWebhookDuplicateEventError());
     const prisma = {
       stripeWebhookEventModel: {
         create: stripeWebhookEventCreate,
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           eventId: `evt_refund_updated_duplicate`,
           status: STRIPE_WEBHOOK_EVENT_STATUS.PROCESSED,
           processingStartedAt: null,
         }),
-        updateMany: jest.fn(),
+        updateMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -876,7 +889,7 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -888,8 +901,8 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, res);
@@ -904,23 +917,23 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
 describe(`StripeWebhookRouterService`, () => {
   function makeRouter() {
     const paymentMethodsService = {
-      collectPaymentMethodFromCheckout: jest.fn().mockResolvedValue(undefined),
+      collectPaymentMethodFromCheckout: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as StripeWebhookPaymentMethodsService;
     const payoutsService = {
-      handlePayoutPaid: jest.fn().mockResolvedValue(undefined),
-      handlePayoutFailed: jest.fn().mockResolvedValue(undefined),
+      handlePayoutPaid: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      handlePayoutFailed: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as StripeWebhookPayoutsService;
     const settlementsService = {
-      finalizeCheckoutSessionSuccess: jest.fn().mockResolvedValue(undefined),
+      finalizeCheckoutSessionSuccess: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as StripeWebhookSettlementsService;
     const verificationService = {
-      isManagedVerificationEvent: jest.fn().mockReturnValue(false),
-      processManagedVerificationEvent: jest.fn().mockResolvedValue(undefined),
+      isManagedVerificationEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(false),
+      processManagedVerificationEvent: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as StripeWebhookVerificationService;
     const reversalsService = {
-      handleChargeRefunded: jest.fn().mockResolvedValue(undefined),
-      handleRefundUpdated: jest.fn().mockResolvedValue(undefined),
-      handleChargeDispute: jest.fn().mockResolvedValue(undefined),
+      handleChargeRefunded: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      handleRefundUpdated: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      handleChargeDispute: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as StripeWebhookReversalsService;
     const router = new StripeWebhookRouterService(
       paymentMethodsService,
@@ -935,7 +948,10 @@ describe(`StripeWebhookRouterService`, () => {
 
   it(`routes checkout.session.completed to checkout settlement handling`, async () => {
     const { paymentMethodsService, settlementsService, router } = makeRouter();
-    const checkoutSession = { id: `cs_router`, metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` } };
+    const checkoutSession = {
+      id: `cs_router`,
+      metadata: { paymentRequestId: `pr-1`, consumerId: `consumer-1` },
+    };
     const event = {
       id: `evt_router_checkout`,
       type: `checkout.session.completed`,
@@ -945,15 +961,19 @@ describe(`StripeWebhookRouterService`, () => {
     await expect(router.routeEvent(event)).resolves.toBe(`handled`);
 
     expect(settlementsService.finalizeCheckoutSessionSuccess).toHaveBeenCalledWith(
-      checkoutSession,
+      checkoutSession as any,
       expect.objectContaining({
         collectPaymentMethodFromCheckout: expect.any(Function),
       }),
     );
 
-    const [, handlers] = (settlementsService.finalizeCheckoutSessionSuccess as jest.Mock).mock.calls[0];
+    const [, handlers] = (settlementsService.finalizeCheckoutSessionSuccess as jest.Mock<(...a: any[]) => any>).mock
+      .calls[0];
     await handlers.collectPaymentMethodFromCheckout(checkoutSession, `consumer-1`);
-    expect(paymentMethodsService.collectPaymentMethodFromCheckout).toHaveBeenCalledWith(checkoutSession, `consumer-1`);
+    expect(paymentMethodsService.collectPaymentMethodFromCheckout).toHaveBeenCalledWith(
+      checkoutSession as any,
+      `consumer-1`,
+    );
   });
 
   it(`keeps unsupported webhook event types ignored`, async () => {
@@ -979,18 +999,20 @@ describe(`StripeWebhookService payment link scope`, () => {
   it(`routes reversal emails with the stored consumer app scope`, async () => {
     const prisma = {
       ledgerEntryModel: {
-        findMany: jest.fn().mockResolvedValue([{ metadata: { consumerAppScope: CURRENT_CONSUMER_APP_SCOPE } }]),
+        findMany: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ metadata: { consumerAppScope: CURRENT_CONSUMER_APP_SCOPE } }]),
       },
       consumerModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           { id: `payer-1`, email: `payer@example.com` },
           { id: `requester-1`, email: `requester@example.com` },
         ]),
       },
     } as any;
     const mailingService = {
-      sendPaymentRefundEmail: jest.fn().mockResolvedValue(undefined),
-      sendPaymentChargebackEmail: jest.fn().mockResolvedValue(undefined),
+      sendPaymentRefundEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      sendPaymentChargebackEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as any;
     const service = new StripeWebhookService(prisma, mailingService, {} as any, {} as any);
 
@@ -1031,18 +1053,18 @@ describe(`StripeWebhookService payment link scope`, () => {
   it(`does not remap legacy payment-link metadata to the canonical consumer app scope`, async () => {
     const prisma = {
       ledgerEntryModel: {
-        findMany: jest.fn().mockResolvedValue([{ metadata: { consumerAppScope: `consumer` } }]),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([{ metadata: { consumerAppScope: `consumer` } }]),
       },
       consumerModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           { id: `payer-1`, email: `payer@example.com` },
           { id: `requester-1`, email: `requester@example.com` },
         ]),
       },
     } as any;
     const mailingService = {
-      sendPaymentRefundEmail: jest.fn().mockResolvedValue(undefined),
-      sendPaymentChargebackEmail: jest.fn().mockResolvedValue(undefined),
+      sendPaymentRefundEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      sendPaymentChargebackEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as any;
     const service = new StripeWebhookService(prisma, mailingService, {} as any, {} as any);
 
@@ -1078,7 +1100,7 @@ describe(`StripeWebhookService payment link scope`, () => {
     const prisma = {
       ledgerEntryModel: {
         findMany: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockResolvedValueOnce(
             Array.from({ length: 100 }, (_, index) => ({
               id: String(1000 - index).padStart(4, `0`),
@@ -1089,15 +1111,15 @@ describe(`StripeWebhookService payment link scope`, () => {
           .mockResolvedValueOnce([{ metadata: { consumerAppScope: CURRENT_CONSUMER_APP_SCOPE } }]),
       },
       consumerModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           { id: `payer-1`, email: `payer@example.com` },
           { id: `requester-1`, email: `requester@example.com` },
         ]),
       },
     } as any;
     const mailingService = {
-      sendPaymentRefundEmail: jest.fn().mockResolvedValue(undefined),
-      sendPaymentChargebackEmail: jest.fn().mockResolvedValue(undefined),
+      sendPaymentRefundEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      sendPaymentChargebackEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as any;
     const service = new StripeWebhookService(prisma, mailingService, {} as any, {} as any);
 
@@ -1169,7 +1191,7 @@ describe(`StripeWebhookReversalsRepository.resolvePaymentRequestByPaymentIntent`
   it(`prefers the newest outcome-backed payment request before checking fallback ledger rows`, async () => {
     const prisma = {
       ledgerEntryOutcomeModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           ledgerEntry: {
             paymentRequest: {
               id: `pr-outcome`,
@@ -1183,7 +1205,7 @@ describe(`StripeWebhookReversalsRepository.resolvePaymentRequestByPaymentIntent`
         }),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const repository = new StripeWebhookReversalsRepository(prisma);
@@ -1216,10 +1238,10 @@ describe(`StripeWebhookReversalsRepository.resolvePaymentRequestByPaymentIntent`
   it(`falls back to the newest USER_PAYMENT ledger entry when the outcome lookup misses`, async () => {
     const prisma = {
       ledgerEntryOutcomeModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           paymentRequest: {
             id: `pr-fallback`,
             amount: 30,
@@ -1259,14 +1281,14 @@ describe(`StripeWebhookReversalsRepository.resolvePaymentRequestByPaymentIntent`
   it(`returns null when neither lookup resolves a payment request`, async () => {
     const prisma = {
       ledgerEntryOutcomeModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           ledgerEntry: {
             paymentRequest: null,
           },
         }),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
     } as any;
     const repository = new StripeWebhookReversalsRepository(prisma);
@@ -1280,10 +1302,10 @@ describe(`StripeWebhookReversalsRepository.resolveDisputeLedgerEntryIdByPaymentI
   it(`prefers the newest direct USER_PAYMENT ledger row before checking outcomes`, async () => {
     const prisma = {
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue({ id: `ledger-direct` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `ledger-direct` }),
       },
       ledgerEntryOutcomeModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const repository = new StripeWebhookReversalsRepository(prisma);
@@ -1304,10 +1326,10 @@ describe(`StripeWebhookReversalsRepository.resolveDisputeLedgerEntryIdByPaymentI
   it(`falls back to the newest outcome row when no direct USER_PAYMENT ledger row exists`, async () => {
     const prisma = {
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
       ledgerEntryOutcomeModel: {
-        findFirst: jest.fn().mockResolvedValue({ ledgerEntryId: `ledger-outcome` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ ledgerEntryId: `ledger-outcome` }),
       },
     } as any;
     const repository = new StripeWebhookReversalsRepository(prisma);
@@ -1324,10 +1346,10 @@ describe(`StripeWebhookReversalsRepository.resolveDisputeLedgerEntryIdByPaymentI
   it(`returns null when neither direct nor outcome lookup resolves a ledger entry`, async () => {
     const prisma = {
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
       ledgerEntryOutcomeModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
     } as any;
     const repository = new StripeWebhookReversalsRepository(prisma);
@@ -1340,14 +1362,14 @@ describe(`StripeWebhookReversalsRepository.resolveDisputeLedgerEntryIdByPaymentI
 describe(`StripeWebhookSettlementsService.finalizeCheckoutSessionSuccess`, () => {
   function createRepositoryMock(settlementReady = true) {
     return {
-      finalizeCheckoutSettlement: jest.fn().mockResolvedValue(settlementReady),
+      finalizeCheckoutSettlement: jest.fn<(...a: any[]) => any>().mockResolvedValue(settlementReady),
     } as unknown as jest.Mocked<StripeWebhookSettlementsRepository>;
   }
 
   it(`delegates checkout settlement persistence to the repository before collecting payment methods`, async () => {
     const settlementsRepository = createRepositoryMock();
     const service = new StripeWebhookSettlementsService(settlementsRepository);
-    const collectPaymentMethodFromCheckout = jest.fn().mockResolvedValue(undefined);
+    const collectPaymentMethodFromCheckout = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
     await service.finalizeCheckoutSessionSuccess(
       {
@@ -1382,7 +1404,7 @@ describe(`StripeWebhookSettlementsService.finalizeCheckoutSessionSuccess`, () =>
   it(`does not collect payment methods when settlement persistence is skipped`, async () => {
     const settlementsRepository = createRepositoryMock(false);
     const service = new StripeWebhookSettlementsService(settlementsRepository);
-    const collectPaymentMethodFromCheckout = jest.fn();
+    const collectPaymentMethodFromCheckout = jest.fn<(...a: any[]) => any>();
 
     await service.finalizeCheckoutSessionSuccess(
       {
@@ -1403,37 +1425,39 @@ describe(`StripeWebhookSettlementsService.finalizeCheckoutSessionSuccess`, () =>
 
 describe(`StripeWebhookSettlementsRepository.finalizeCheckoutSettlement`, () => {
   it(`stamps completed payment requests with CARD rail without mutating settlement rows`, async () => {
-    const paymentRequestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const paymentRequestUpdateMany = jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 });
     const prisma = {
-      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
-        callback({
-          ledgerEntryModel: {
-            findMany: jest.fn().mockResolvedValue([
-              {
-                id: `ledger-1`,
-                type: $Enums.LedgerEntryType.USER_PAYMENT,
-                status: $Enums.TransactionStatus.PENDING,
-                outcomes: [{ status: $Enums.TransactionStatus.WAITING }],
-              },
-              {
-                id: `ledger-2`,
-                type: $Enums.LedgerEntryType.USER_DEPOSIT,
-                status: $Enums.TransactionStatus.PENDING,
-                outcomes: [],
-              },
-            ]),
-          },
-          paymentRequestModel: {
-            findUnique: jest.fn().mockResolvedValue({
-              amount: 25,
-              currencyCode: $Enums.CurrencyCode.USD,
-              payerId: `consumer-1`,
-              payer: { stripeCustomerId: `cus_1` },
-            }),
-            updateMany: paymentRequestUpdateMany,
-          },
-        }),
-      ),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+          callback({
+            ledgerEntryModel: {
+              findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
+                {
+                  id: `ledger-1`,
+                  type: $Enums.LedgerEntryType.USER_PAYMENT,
+                  status: $Enums.TransactionStatus.PENDING,
+                  outcomes: [{ status: $Enums.TransactionStatus.WAITING }],
+                },
+                {
+                  id: `ledger-2`,
+                  type: $Enums.LedgerEntryType.USER_DEPOSIT,
+                  status: $Enums.TransactionStatus.PENDING,
+                  outcomes: [],
+                },
+              ]),
+            },
+            paymentRequestModel: {
+              findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
+                amount: 25,
+                currencyCode: $Enums.CurrencyCode.USD,
+                payerId: `consumer-1`,
+                payer: { stripeCustomerId: `cus_1` },
+              }),
+              updateMany: paymentRequestUpdateMany,
+            },
+          }),
+        ),
     } as any;
     const repository = new StripeWebhookSettlementsRepository(prisma);
 
@@ -1446,7 +1470,7 @@ describe(`StripeWebhookSettlementsRepository.finalizeCheckoutSettlement`, () => 
       amountTotal: 2500,
       currency: `usd`,
       customerId: `cus_1`,
-      logger: { warn: jest.fn() } as any,
+      logger: { warn: jest.fn<(...a: any[]) => any>() } as any,
     });
 
     expect(paymentRequestUpdateMany).toHaveBeenCalledWith({
@@ -1481,25 +1505,27 @@ describe(`StripeWebhookSettlementsRepository.finalizeCheckoutSettlement`, () => 
   });
 
   it(`skips settlement when checkout amount does not match local payment request`, async () => {
-    const paymentRequestUpdateMany = jest.fn();
-    const ledgerFindMany = jest.fn();
+    const paymentRequestUpdateMany = jest.fn<(...a: any[]) => any>();
+    const ledgerFindMany = jest.fn<(...a: any[]) => any>();
     const prisma = {
-      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
-        callback({
-          ledgerEntryModel: {
-            findMany: ledgerFindMany,
-          },
-          paymentRequestModel: {
-            findUnique: jest.fn().mockResolvedValue({
-              amount: 25,
-              currencyCode: $Enums.CurrencyCode.USD,
-              payerId: `consumer-1`,
-              payer: { stripeCustomerId: `cus_1` },
-            }),
-            updateMany: paymentRequestUpdateMany,
-          },
-        }),
-      ),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+          callback({
+            ledgerEntryModel: {
+              findMany: ledgerFindMany,
+            },
+            paymentRequestModel: {
+              findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
+                amount: 25,
+                currencyCode: $Enums.CurrencyCode.USD,
+                payerId: `consumer-1`,
+                payer: { stripeCustomerId: `cus_1` },
+              }),
+              updateMany: paymentRequestUpdateMany,
+            },
+          }),
+        ),
     } as any;
     const repository = new StripeWebhookSettlementsRepository(prisma);
 
@@ -1512,7 +1538,7 @@ describe(`StripeWebhookSettlementsRepository.finalizeCheckoutSettlement`, () => 
       amountTotal: 2600,
       currency: `usd`,
       customerId: `cus_1`,
-      logger: { warn: jest.fn() } as any,
+      logger: { warn: jest.fn<(...a: any[]) => any>() } as any,
     });
 
     expect(ledgerFindMany).not.toHaveBeenCalled();
@@ -1523,18 +1549,18 @@ describe(`StripeWebhookSettlementsRepository.finalizeCheckoutSettlement`, () => 
 describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, () => {
   function createRepositoryMock() {
     return {
-      storeCheckoutPaymentMethod: jest.fn().mockResolvedValue(undefined),
+      storeCheckoutPaymentMethod: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<StripeWebhookPaymentMethodsRepository>;
   }
 
   function createStripeMock(paymentMethod: Partial<Stripe.PaymentMethod> = {}) {
     return {
       paymentIntents: {
-        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
+        retrieve: jest.fn<(...a: any[]) => any>().mockResolvedValue({ payment_method: `pm_1` }),
       },
       paymentMethods: {
-        attach: jest.fn(),
-        retrieve: jest.fn().mockResolvedValue({
+        attach: jest.fn<(...a: any[]) => any>(),
+        retrieve: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `pm_1`,
           type: `card`,
           customer: `cus_1`,
@@ -1552,7 +1578,7 @@ describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, 
     const service = new StripeWebhookPaymentMethodsService(repository, stripe);
 
     await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
-      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+      ensureStripeCustomer: jest.fn<(...a: any[]) => any>().mockResolvedValue({ customerId: `cus_1` }),
     });
 
     expect(repository.storeCheckoutPaymentMethod).toHaveBeenCalledWith({
@@ -1577,7 +1603,7 @@ describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, 
     const service = new StripeWebhookPaymentMethodsService(repository, stripe);
 
     await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
-      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+      ensureStripeCustomer: jest.fn<(...a: any[]) => any>().mockResolvedValue({ customerId: `cus_1` }),
     });
 
     expect(repository.storeCheckoutPaymentMethod).not.toHaveBeenCalled();
@@ -1587,14 +1613,14 @@ describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, 
     const repository = createRepositoryMock();
     const stripe = {
       paymentIntents: {
-        retrieve: jest.fn().mockResolvedValue({ payment_method: `pm_1` }),
+        retrieve: jest.fn<(...a: any[]) => any>().mockResolvedValue({ payment_method: `pm_1` }),
       },
       paymentMethods: {
-        attach: jest.fn().mockRejectedValue({
+        attach: jest.fn<(...a: any[]) => any>().mockRejectedValue({
           type: `invalid_request_error`,
           message: `This payment method was previously used without being attached to a Customer`,
         }),
-        retrieve: jest.fn().mockResolvedValue({
+        retrieve: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `pm_1`,
           type: `card`,
           customer: null,
@@ -1606,7 +1632,7 @@ describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, 
     const service = new StripeWebhookPaymentMethodsService(repository, stripe);
 
     await service.collectPaymentMethodFromCheckout({ payment_intent: `pi_1` } as any, `consumer-1`, {
-      ensureStripeCustomer: jest.fn().mockResolvedValue({ customerId: `cus_1` }),
+      ensureStripeCustomer: jest.fn<(...a: any[]) => any>().mockResolvedValue({ customerId: `cus_1` }),
     });
 
     expect(repository.storeCheckoutPaymentMethod).not.toHaveBeenCalled();
@@ -1616,19 +1642,19 @@ describe(`StripeWebhookPaymentMethodsService.collectPaymentMethodFromCheckout`, 
 describe(`StripeWebhookPaymentMethodsRepository.storeCheckoutPaymentMethod`, () => {
   it(`serializes duplicate checkout storage and skips create when method already exists`, async () => {
     const tx = {
-      $executeRaw: jest.fn().mockResolvedValue(undefined),
+      $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       billingDetailsModel: {
-        create: jest.fn(),
+        create: jest.fn<(...a: any[]) => any>(),
       },
       paymentMethodModel: {
-        count: jest.fn(),
-        create: jest.fn(),
-        findFirst: jest.fn().mockResolvedValue({ id: `pm-local-1` }),
+        count: jest.fn<(...a: any[]) => any>(),
+        create: jest.fn<(...a: any[]) => any>(),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `pm-local-1` }),
       },
     };
     const prisma = {
       $transaction: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
     } as any;
     const repository = new StripeWebhookPaymentMethodsRepository(prisma);
@@ -1659,20 +1685,20 @@ describe(`StripeWebhookPaymentMethodsRepository.storeCheckoutPaymentMethod`, () 
 
   it(`clears previous defaults before creating the first checkout-backed default method`, async () => {
     const tx = {
-      $executeRaw: jest.fn().mockResolvedValue(undefined),
+      $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       billingDetailsModel: {
-        create: jest.fn().mockResolvedValue({ id: `bd-1` }),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `bd-1` }),
       },
       paymentMethodModel: {
-        count: jest.fn().mockResolvedValue(0),
-        create: jest.fn().mockResolvedValue({ id: `pm-local-1` }),
-        findFirst: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `pm-local-1` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     };
     const prisma = {
       $transaction: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
     } as any;
     const repository = new StripeWebhookPaymentMethodsRepository(prisma);
@@ -1712,23 +1738,23 @@ describe(`StripeWebhookPaymentMethodsRepository.storeCheckoutPaymentMethod`, () 
       code: `P2002`,
     });
     const tx = {
-      $executeRaw: jest.fn().mockResolvedValue(undefined),
+      $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       billingDetailsModel: {
-        create: jest.fn().mockResolvedValue({ id: `bd-1` }),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `bd-1` }),
       },
       paymentMethodModel: {
-        count: jest.fn().mockResolvedValue(0),
-        create: jest.fn().mockRejectedValue(duplicateError),
-        findFirst: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+        create: jest.fn<(...a: any[]) => any>().mockRejectedValue(duplicateError),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 0 }),
       },
     };
     const prisma = {
       $transaction: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
       paymentMethodModel: {
-        findFirst: jest.fn().mockResolvedValue({ id: `pm-visible-after-race` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `pm-visible-after-race` }),
       },
     } as any;
     const repository = new StripeWebhookPaymentMethodsRepository(prisma);
@@ -1761,16 +1787,16 @@ describe(`StripeWebhookPaymentMethodsRepository.storeCheckoutPaymentMethod`, () 
 describe(`StripeWebhookService verification lifecycle`, () => {
   it(`persists pending submission when starting verification`, async () => {
     const consumerPaymentsService = {
-      assertProfileCompleteForVerification: jest.fn().mockResolvedValue(undefined),
+      assertProfileCompleteForVerification: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as any;
-    const create = jest.fn().mockResolvedValue({
+    const create = jest.fn<(...a: any[]) => any>().mockResolvedValue({
       id: `vs_123`,
       client_secret: `vs_secret_123`,
     });
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
@@ -1815,27 +1841,32 @@ describe(`StripeWebhookService verification lifecycle`, () => {
 
   it(`reuses the active verification session instead of creating a duplicate`, async () => {
     const consumerPaymentsService = {
-      assertProfileCompleteForVerification: jest.fn().mockResolvedValue(undefined),
+      assertProfileCompleteForVerification: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as any;
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           stripeIdentityStatus: STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION,
           stripeIdentitySessionId: `vs_existing`,
         }),
-        updateMany: jest.fn(),
+        updateMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
-    const retrieve = jest.fn().mockResolvedValue({
+    const retrieve = jest.fn<(...a: any[]) => any>().mockResolvedValue({
       id: `vs_existing`,
       client_secret: `vs_secret_existing`,
     });
-    const create = jest.fn();
+    const create = jest.fn<(...a: any[]) => any>();
     (
       service as unknown as {
         stripe: {
-          identity: { verificationSessions: { retrieve: (...args: unknown[]) => Promise<unknown>; create: jest.Mock } };
+          identity: {
+            verificationSessions: {
+              retrieve: (...args: unknown[]) => Promise<unknown>;
+              create: jest.Mock<(...a: any[]) => any>;
+            };
+          };
         };
       }
     ).stripe = {
@@ -1859,16 +1890,19 @@ describe(`StripeWebhookService verification lifecycle`, () => {
 
   it(`reuses the Stripe Identity idempotency key across retries after the db write fails`, async () => {
     const consumerPaymentsService = {
-      assertProfileCompleteForVerification: jest.fn().mockResolvedValue(undefined),
+      assertProfileCompleteForVerification: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as any;
-    const create = jest.fn().mockResolvedValue({
+    const create = jest.fn<(...a: any[]) => any>().mockResolvedValue({
       id: `vs_retry`,
       client_secret: `vs_secret_retry`,
     });
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn().mockRejectedValueOnce(new Error(`db write failed`)).mockResolvedValueOnce({ count: 1 }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        updateMany: jest
+          .fn<(...a: any[]) => any>()
+          .mockRejectedValueOnce(new Error(`db write failed`))
+          .mockResolvedValueOnce({ count: 1 }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
@@ -1900,14 +1934,14 @@ describe(`StripeWebhookService verification lifecycle`, () => {
 
   it(`returns one logical session when two first-time starts overlap`, async () => {
     const consumerPaymentsService = {
-      assertProfileCompleteForVerification: jest.fn().mockResolvedValue(undefined),
+      assertProfileCompleteForVerification: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as any;
     let releaseCreate: (() => void) | undefined;
     const createGate = new Promise<void>((resolve) => {
       releaseCreate = resolve;
     });
     let createCallCount = 0;
-    const create = jest.fn().mockImplementation(async () => {
+    const create = jest.fn<(...a: any[]) => any>().mockImplementation(async () => {
       createCallCount += 1;
       if (createCallCount === 1) {
         await createGate;
@@ -1917,18 +1951,25 @@ describe(`StripeWebhookService verification lifecycle`, () => {
         client_secret: `vs_secret_race`,
       };
     });
-    const retrieve = jest.fn().mockResolvedValue({
+    const retrieve = jest.fn<(...a: any[]) => any>().mockResolvedValue({
       id: `vs_race`,
       client_secret: `vs_secret_race`,
     });
-    const findUnique = jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValueOnce({
-      stripeIdentityStatus: STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION,
-      stripeIdentitySessionId: `vs_race`,
-    });
+    const findUnique = jest
+      .fn<(...a: any[]) => any>()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        stripeIdentityStatus: STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION,
+        stripeIdentitySessionId: `vs_race`,
+      });
     const prisma = {
       consumerModel: {
         findUnique,
-        updateMany: jest.fn().mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 }),
+        updateMany: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValueOnce({ count: 1 })
+          .mockResolvedValueOnce({ count: 0 }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
@@ -1974,8 +2015,8 @@ describe(`StripeWebhookService verification lifecycle`, () => {
   it(`stores requires_input state and last error details`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -2009,11 +2050,11 @@ describe(`StripeWebhookService verification lifecycle`, () => {
   });
 
   it(`ignores stale requires_input events from an older verification session`, async () => {
-    const loggerWarn = jest.fn();
+    const loggerWarn = jest.fn<(...a: any[]) => any>();
     const prisma = {
       consumerModel: {
-        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-        findUnique: jest.fn().mockResolvedValue({
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 0 }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `consumer-1`,
           stripeIdentitySessionId: `vs_current`,
         }),
@@ -2052,15 +2093,15 @@ describe(`StripeWebhookService verification lifecycle`, () => {
   });
 
   it(`ignores requires_input replays that would downgrade a verified session`, async () => {
-    const loggerWarn = jest.fn();
+    const loggerWarn = jest.fn<(...a: any[]) => any>();
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           stripeIdentitySessionId: `vs_verified`,
           stripeIdentityStatus: STRIPE_IDENTITY_STATUS.VERIFIED,
           legalVerified: true,
         }),
-        updateMany: jest.fn(),
+        updateMany: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -2091,7 +2132,7 @@ describe(`StripeWebhookService verification lifecycle`, () => {
   it(`stores verified status, clears previous Stripe identity errors, and preserves passport/id data`, async () => {
     const prisma = {
       consumerModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `consumer-1`,
           stripeIdentitySessionId: `vs_789`,
           personalDetails: {
@@ -2102,7 +2143,7 @@ describe(`StripeWebhookService verification lifecycle`, () => {
             passportOrIdNumber: `A1234567`,
           },
         }),
-        update: jest.fn().mockResolvedValue({ id: `consumer-1` }),
+        update: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `consumer-1` }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -2152,7 +2193,7 @@ describe(`StripeWebhookService verification lifecycle`, () => {
     it(`aligns verification flags when session is ${eventType}`, async () => {
       const prisma = {
         consumerModel: {
-          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+          updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
         },
       } as any;
       const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
@@ -2188,14 +2229,16 @@ describe(`StripeWebhookService verification lifecycle`, () => {
   it(`retries verification webhook handling after a transient failure`, async () => {
     const tx = {
       stripeWebhookEventModel: {
-        create: jest.fn().mockResolvedValue(undefined),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       },
       consumerModel: {
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        updateMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const prisma = {
-      $transaction: jest.fn().mockImplementation(async (callback: (arg: unknown) => Promise<unknown>) => callback(tx)),
+      $transaction: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (callback: (arg: unknown) => Promise<unknown>) => callback(tx)),
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
     const envModule = jest.requireMock(`../../../../../envs`) as { envs: { STRIPE_WEBHOOK_SECRET: string } };
@@ -2218,7 +2261,7 @@ describe(`StripeWebhookService verification lifecycle`, () => {
       }
     ).stripe = {
       webhooks: {
-        constructEvent: jest.fn().mockReturnValue(mockEvent),
+        constructEvent: jest.fn<(...a: any[]) => any>().mockReturnValue(mockEvent),
       },
     };
 
@@ -2232,12 +2275,12 @@ describe(`StripeWebhookService verification lifecycle`, () => {
       headers: { 'stripe-signature': `sig_test` },
     } as any;
     const failedRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
     const successRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn<(...a: any[]) => any>().mockReturnThis(),
+      json: jest.fn<(...a: any[]) => any>().mockReturnThis(),
     } as unknown as express.Response;
 
     await service.processStripeEvent(req, failedRes);

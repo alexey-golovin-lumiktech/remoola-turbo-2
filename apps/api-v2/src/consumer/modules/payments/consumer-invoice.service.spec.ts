@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { ConsumerInvoiceRepository } from './consumer-invoice.repository';
@@ -10,10 +12,10 @@ describe(`ConsumerInvoiceService`, () => {
   it(`reuses an existing invoice without exposing the raw waiting-recipient-approval status`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: consumerEmail }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: consumerEmail }),
       },
       paymentRequestModel: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `payment-1`,
           status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
           payerId: `payer-1`,
@@ -26,7 +28,7 @@ describe(`ConsumerInvoiceService`, () => {
         }),
       },
       paymentRequestAttachmentModel: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           resource: {
             id: `resource-1`,
             originalName: `INV-WAITING-12345678.pdf`,
@@ -50,10 +52,10 @@ describe(`ConsumerInvoiceService`, () => {
     const paymentId = `abcdef12-raw-status`;
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: consumerEmail }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: consumerEmail }),
       },
       paymentRequestModel: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: paymentId,
           amount: `100.00`,
           currencyCode: $Enums.CurrencyCode.USD,
@@ -69,21 +71,21 @@ describe(`ConsumerInvoiceService`, () => {
         }),
       },
       paymentRequestAttachmentModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({ id: `attachment-1` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `attachment-1` }),
       },
       resourceModel: {
-        create: jest.fn().mockResolvedValue({
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `resource-2`,
           downloadUrl: `legacy://unused`,
         }),
       },
       consumerResourceModel: {
-        create: jest.fn().mockResolvedValue({ id: `consumer-resource-1` }),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `consumer-resource-1` }),
       },
     } as any;
     const storage = {
-      upload: jest.fn().mockResolvedValue({
+      upload: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         bucket: `local`,
         key: `invoices/test.pdf`,
         downloadUrl: `legacy://unused`,

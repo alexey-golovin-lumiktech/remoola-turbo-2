@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { type getAdmins } from '../../../../../lib/admin-api/admins.server';
 import { type getExchangeScheduledCaseResult } from '../../../../../lib/admin-api/exchange.server';
 import { type getAdminIdentity } from '../../../../../lib/admin-api/identity.server';
+import { type ExchangeScheduledCaseResponse } from '../../../../../lib/admin-api/types';
 const mockedNotFound = jest.fn(() => {
   throw new Error(`NEXT_NOT_FOUND`);
 });
@@ -61,10 +62,11 @@ async function loadSubject() {
 
 let ExchangeScheduledCasePage: Awaited<ReturnType<typeof loadSubject>>;
 
-function buildScheduledCase() {
+function buildScheduledCase(): ExchangeScheduledCaseResponse {
   return {
     id: `conversion-1`,
     core: {
+      id: `conversion-1`,
       status: `PENDING`,
       sourceCurrency: `USD`,
       targetCurrency: `EUR`,
@@ -74,6 +76,8 @@ function buildScheduledCase() {
       processingAt: null,
       executedAt: null,
       failedAt: null,
+      createdAt: `2026-04-17T08:00:00.000Z`,
+      updatedAt: `2026-04-17T08:05:00.000Z`,
     },
     consumer: {
       id: `consumer-1`,
@@ -85,6 +89,7 @@ function buildScheduledCase() {
     actionControls: {
       canForceExecute: true,
       canCancel: true,
+      allowedActions: [],
     },
     assignment: {
       current: null,
@@ -92,6 +97,8 @@ function buildScheduledCase() {
     },
     version: 1713341100000,
     updatedAt: `2026-04-17T08:05:00.000Z`,
+    staleWarning: false,
+    dataFreshnessClass: `exact`,
   };
 }
 

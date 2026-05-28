@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { type StripeWebhookReversalNotificationOutboxRepository } from './stripe-webhook-reversal-notification-outbox.repository'; // eslint-disable-line
@@ -41,12 +43,12 @@ describe(`StripeWebhookReversalNotificationOutboxService`, () => {
   it(`claims, sends, and marks due rows as sent`, async () => {
     const row = makeRow();
     const outboxRepository = {
-      claimDueRows: jest.fn().mockResolvedValue([row]),
-      markSent: jest.fn().mockResolvedValue(undefined),
-      markFailed: jest.fn().mockResolvedValue(undefined),
+      claimDueRows: jest.fn<(...a: any[]) => any>().mockResolvedValue([row]),
+      markSent: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      markFailed: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<StripeWebhookReversalNotificationOutboxRepository>;
     const reversalNotifications = {
-      sendReversalEmail: jest.fn().mockResolvedValue(undefined),
+      sendReversalEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as any;
     const service = new StripeWebhookReversalNotificationOutboxService(outboxRepository, reversalNotifications);
 
@@ -67,12 +69,12 @@ describe(`StripeWebhookReversalNotificationOutboxService`, () => {
   it(`keeps failed sends retryable without touching ledger state`, async () => {
     const row = makeRow({ attemptCount: 1 });
     const outboxRepository = {
-      claimDueRows: jest.fn().mockResolvedValue([row]),
-      markSent: jest.fn().mockResolvedValue(undefined),
-      markFailed: jest.fn().mockResolvedValue(undefined),
+      claimDueRows: jest.fn<(...a: any[]) => any>().mockResolvedValue([row]),
+      markSent: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      markFailed: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<StripeWebhookReversalNotificationOutboxRepository>;
     const reversalNotifications = {
-      sendReversalEmail: jest.fn().mockRejectedValue(new Error(`Brevo down`)),
+      sendReversalEmail: jest.fn<(...a: any[]) => any>().mockRejectedValue(new Error(`Brevo down`)),
     } as any;
     const service = new StripeWebhookReversalNotificationOutboxService(outboxRepository, reversalNotifications);
 
@@ -100,12 +102,12 @@ describe(`StripeWebhookReversalNotificationOutboxService`, () => {
       claimToken: `abandoned-claim`,
     });
     const outboxRepository = {
-      claimDueRows: jest.fn().mockResolvedValue([row]),
-      markSent: jest.fn().mockResolvedValue(undefined),
-      markFailed: jest.fn().mockResolvedValue(undefined),
+      claimDueRows: jest.fn<(...a: any[]) => any>().mockResolvedValue([row]),
+      markSent: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      markFailed: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<StripeWebhookReversalNotificationOutboxRepository>;
     const reversalNotifications = {
-      sendReversalEmail: jest.fn().mockResolvedValue(undefined),
+      sendReversalEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as any;
     const service = new StripeWebhookReversalNotificationOutboxService(outboxRepository, reversalNotifications);
 
@@ -139,12 +141,12 @@ describe(`StripeWebhookReversalNotificationOutboxService`, () => {
   it(`marks exhausted rows dead after max attempts`, async () => {
     const row = makeRow({ attemptCount: 5 });
     const outboxRepository = {
-      claimDueRows: jest.fn().mockResolvedValue([row]),
-      markSent: jest.fn().mockResolvedValue(undefined),
-      markFailed: jest.fn().mockResolvedValue(undefined),
+      claimDueRows: jest.fn<(...a: any[]) => any>().mockResolvedValue([row]),
+      markSent: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      markFailed: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<StripeWebhookReversalNotificationOutboxRepository>;
     const reversalNotifications = {
-      sendReversalEmail: jest.fn().mockRejectedValue(new Error(`Permanent failure`)),
+      sendReversalEmail: jest.fn<(...a: any[]) => any>().mockRejectedValue(new Error(`Permanent failure`)),
     } as any;
     const service = new StripeWebhookReversalNotificationOutboxService(outboxRepository, reversalNotifications);
 

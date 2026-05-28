@@ -18,10 +18,10 @@ describe(`ConsumerPaymentMethodsController integration`, () => {
   };
 
   const service = {
-    list: jest.fn(),
-    createManual: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
+    list: jest.fn<(...a: any[]) => any>(),
+    createManual: jest.fn<(...a: any[]) => any>(),
+    update: jest.fn<(...a: any[]) => any>(),
+    delete: jest.fn<(...a: any[]) => any>(),
   };
 
   beforeAll(async () => {

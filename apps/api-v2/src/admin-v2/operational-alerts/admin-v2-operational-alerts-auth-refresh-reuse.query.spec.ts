@@ -1,9 +1,11 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2OperationalAlertsAuthRefreshReuseQuery } from './admin-v2-operational-alerts-auth-refresh-reuse.query';
 import { AUTH_AUDIT_EVENTS } from '../../shared/auth-audit.service';
 
 describe(`AdminV2OperationalAlertsAuthRefreshReuseQuery`, () => {
   it(`counts admin refresh reuse events since the cutoff`, async () => {
-    const count = jest.fn(async () => 7);
+    const count = jest.fn<(...a: any[]) => any>(async () => 7);
     const query = new AdminV2OperationalAlertsAuthRefreshReuseQuery({
       authAuditLogModel: { count },
     } as never);

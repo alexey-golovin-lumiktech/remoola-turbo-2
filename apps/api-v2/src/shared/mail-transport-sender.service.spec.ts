@@ -1,9 +1,11 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { MailTransportSenderService } from './mail-transport-sender.service';
 
 describe(`MailTransportSenderService`, () => {
   it(`throws from required sends when transport delivery returns false`, async () => {
     const brevoMailService = {
-      sendMail: jest.fn().mockRejectedValue(new Error(`Brevo down`)),
+      sendMail: jest.fn<(...a: any[]) => any>().mockRejectedValue(new Error(`Brevo down`)),
     };
     const service = new MailTransportSenderService(brevoMailService as any);
 

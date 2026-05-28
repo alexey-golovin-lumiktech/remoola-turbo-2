@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -46,34 +47,38 @@ describe(`AdminExchangeRuleCommandsService`, () => {
 
   function buildService() {
     const idempotency = {
-      execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+      execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
     const domainEvents = {
-      publishAfterCommit: jest.fn(async () => undefined),
+      publishAfterCommit: jest.fn<(...a: any[]) => any>(async () => undefined),
     };
     const balanceService = {
-      calculateInTransaction: jest.fn(async () => 150),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>(async () => 150),
     };
     const conversionExecutor = {
-      executeInTransaction: jest.fn(async () => ({ ledgerId: `ledger-1`, entryId: `entry-1`, targetAmount: 22.5 })),
+      executeInTransaction: jest.fn<(...a: any[]) => any>(async () => ({
+        ledgerId: `ledger-1`,
+        entryId: `entry-1`,
+        targetAmount: 22.5,
+      })),
     };
     const preflightRepository = {
-      findActiveRuleById: jest.fn(async () => ({
+      findActiveRuleById: jest.fn<(...a: any[]) => any>(async () => ({
         id: `rule-1`,
         updatedAt,
       })),
     };
     const actionLockRepository = {
-      tryActionLock: jest.fn(async () => true),
+      tryActionLock: jest.fn<(...a: any[]) => any>(async () => true),
     };
     const persistenceRepository = {
-      setRuleEnabled: jest.fn(async (_client, params: { enabled: boolean }) => ({
+      setRuleEnabled: jest.fn<(...a: any[]) => any>(async (_client, params: { enabled: boolean }) => ({
         ruleId: `rule-1`,
         enabled: params.enabled,
         version: deriveVersion(updatedAt),
       })),
-      lockRuleExecutionRow: jest.fn(async () => buildLockedRule()),
-      finalizeRuleExecution: jest.fn(async () => ({
+      lockRuleExecutionRow: jest.fn<(...a: any[]) => any>(async () => buildLockedRule()),
+      finalizeRuleExecution: jest.fn<(...a: any[]) => any>(async () => ({
         ruleId: `rule-1`,
         version: deriveVersion(updatedAt),
         lastRunAt: `2026-04-17T10:00:00.000Z`,
@@ -81,7 +86,9 @@ describe(`AdminExchangeRuleCommandsService`, () => {
       })),
     };
     const transactions = {
-      runLedgerMutation: jest.fn(async (callback: (client: unknown) => Promise<unknown>) => callback(tx)),
+      runLedgerMutation: jest.fn<(...a: any[]) => any>(async (callback: (client: unknown) => Promise<unknown>) =>
+        callback(tx),
+      ),
     };
 
     return {

@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { type getAdminCaseRecordResult, type getAdminSessionsResult } from '../../../../lib/admin-api/admins.server';
 import { type getAdminIdentity } from '../../../../lib/admin-api/identity.server';
-import { type getAdminCaseRecord } from '../../../../lib/admin-api/types';
+import { type AdminCaseRecordResponse } from '../../../../lib/admin-api/types';
 
 const mockedNotFound = jest.fn(() => {
   throw new Error(`NEXT_NOT_FOUND`);
@@ -56,7 +56,7 @@ async function loadSubject() {
 
 let AdminCasePage: Awaited<ReturnType<typeof loadSubject>>;
 
-function buildAdminRecord(): NonNullable<Awaited<ReturnType<typeof getAdminCaseRecord>>> {
+function buildAdminRecord(): AdminCaseRecordResponse {
   return {
     id: `admin-2`,
     core: {

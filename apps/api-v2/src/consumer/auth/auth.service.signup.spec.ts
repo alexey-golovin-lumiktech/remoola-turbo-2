@@ -1,15 +1,18 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 
 jest.mock(`@remoola/security-utils`, () => ({
-  hashTokenToHex: jest.fn((token: string) => `hash-${token}`),
+  hashTokenToHex: jest.fn<(...a: any[]) => any>((token: string) => `hash-${token}`),
   oauthCrypto: {},
 }));
 
 jest.mock(`../../shared-common`, () => ({
   passwordUtils: {
-    hashPassword: jest.fn().mockResolvedValue({ hash: `hashed-password`, salt: `generated-salt` }),
+    hashPassword: jest
+      .fn<(...a: any[]) => any>()
+      .mockResolvedValue({ hash: `hashed-password`, salt: `generated-salt` }),
   },
-  secureCompare: jest.fn((a: string, b: string) => a === b),
+  secureCompare: jest.fn<(...a: any[]) => any>((a: string, b: string) => a === b),
   constants: { INVALID_EMAIL: `Invalid email` },
   IsValidEmail: () => () => {},
 }));
@@ -36,11 +39,11 @@ type SignupCase = {
 describe(`ConsumerAuthService.signup`, () => {
   let service: ConsumerAuthSignupService;
   let consumerIdentityRepository: {
-    findSignupCollisionByEmail: jest.Mock;
-    createSignupConsumer: jest.Mock;
+    findSignupCollisionByEmail: jest.Mock<(...a: any[]) => any>;
+    createSignupConsumer: jest.Mock<(...a: any[]) => any>;
   };
   let googleProfileRepository: {
-    upsertProfile: jest.Mock;
+    upsertProfile: jest.Mock<(...a: any[]) => any>;
   };
   const entitySignupDateOfBirthPlaceholder = new Date(0);
   const entitySignupPassportPlaceholder = `ENTITY_SIGNUP_NOT_APPLICABLE`;
@@ -199,17 +202,19 @@ describe(`ConsumerAuthService.signup`, () => {
     jest.clearAllMocks();
 
     consumerIdentityRepository = {
-      findSignupCollisionByEmail: jest.fn().mockResolvedValue(null),
-      createSignupConsumer: jest.fn().mockImplementation(async (data: Record<string, unknown>) => ({
-        id: `new-consumer-id`,
-        email: data.email,
-        verified: data.verified,
-        accountType: data.accountType,
-        contractorKind: data.contractorKind,
-      })),
+      findSignupCollisionByEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+      createSignupConsumer: jest
+        .fn<(...a: any[]) => any>()
+        .mockImplementation(async (data: Record<string, unknown>) => ({
+          id: `new-consumer-id`,
+          email: data.email,
+          verified: data.verified,
+          accountType: data.accountType,
+          contractorKind: data.contractorKind,
+        })),
     };
     googleProfileRepository = {
-      upsertProfile: jest.fn().mockResolvedValue({}),
+      upsertProfile: jest.fn<(...a: any[]) => any>().mockResolvedValue({}),
     };
 
     service = new ConsumerAuthSignupService(

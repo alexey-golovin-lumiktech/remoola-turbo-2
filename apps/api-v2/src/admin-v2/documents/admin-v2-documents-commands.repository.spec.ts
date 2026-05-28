@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ConflictException } from '@nestjs/common';
 
 import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
@@ -5,24 +6,24 @@ import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-command
 describe(`AdminV2DocumentsCommandsRepository`, () => {
   function buildRepository() {
     const documentTagModel = {
-      create: jest.fn(),
-      updateMany: jest.fn(),
-      findUnique: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
-      deleteMany: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
+      updateMany: jest.fn<(...a: any[]) => any>(),
+      findUnique: jest.fn<(...a: any[]) => any>(),
+      findUniqueOrThrow: jest.fn<(...a: any[]) => any>(),
+      deleteMany: jest.fn<(...a: any[]) => any>(),
     };
     const resourceModel = {
-      updateMany: jest.fn(),
-      findUnique: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
+      updateMany: jest.fn<(...a: any[]) => any>(),
+      findUnique: jest.fn<(...a: any[]) => any>(),
+      findUniqueOrThrow: jest.fn<(...a: any[]) => any>(),
     };
     const resourceTagModel = {
-      count: jest.fn(),
-      deleteMany: jest.fn(),
-      createMany: jest.fn(),
+      count: jest.fn<(...a: any[]) => any>(),
+      deleteMany: jest.fn<(...a: any[]) => any>(),
+      createMany: jest.fn<(...a: any[]) => any>(),
     };
     const adminActionAuditLogModel = {
-      create: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
     };
     const tx = {
       documentTagModel,
@@ -31,7 +32,9 @@ describe(`AdminV2DocumentsCommandsRepository`, () => {
       adminActionAuditLogModel,
     };
     const prisma = {
-      $transaction: jest.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (client: typeof tx) => Promise<unknown>) =>
+        callback(tx),
+      ),
     };
 
     return {

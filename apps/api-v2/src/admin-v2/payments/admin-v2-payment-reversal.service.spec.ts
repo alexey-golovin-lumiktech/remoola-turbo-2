@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
@@ -166,56 +168,56 @@ type ReversalOutboxRepositoryMock = jest.Mocked<
   >
 >;
 type ReversalMailingMock = {
-  sendPaymentRefundEmail: jest.Mock;
-  sendPaymentChargebackEmail: jest.Mock;
+  sendPaymentRefundEmail: jest.Mock<(...a: any[]) => any>;
+  sendPaymentChargebackEmail: jest.Mock<(...a: any[]) => any>;
 };
 type ReversalAuditMock = {
-  recordRequired: jest.Mock;
+  recordRequired: jest.Mock<(...a: any[]) => any>;
 };
 type ReversalStripeMock = {
   refunds: {
-    create: jest.Mock;
-    retrieve: jest.Mock;
+    create: jest.Mock<(...a: any[]) => any>;
+    retrieve: jest.Mock<(...a: any[]) => any>;
   };
 };
 
 function buildService(options: BuildServiceOptions = {}) {
   const query: ReversalQueryMock = {
-    getPaymentRequestForReversal: jest.fn(),
-    resolveStripePaymentIntentId: jest.fn(),
-    getRequesterSettlementEntry: jest.fn(),
-    getNotificationContext: jest.fn(),
+    getPaymentRequestForReversal: jest.fn<(...a: any[]) => any>(),
+    resolveStripePaymentIntentId: jest.fn<(...a: any[]) => any>(),
+    getRequesterSettlementEntry: jest.fn<(...a: any[]) => any>(),
+    getNotificationContext: jest.fn<(...a: any[]) => any>(),
     ...options.query,
   };
   const repository: ReversalRepositoryMock = {
-    finalizeRefundReversal: jest.fn(),
-    markRefundReversalDenied: jest.fn(),
+    finalizeRefundReversal: jest.fn<(...a: any[]) => any>(),
+    markRefundReversalDenied: jest.fn<(...a: any[]) => any>(),
     ...options.repository,
   };
   const outboxRepository: ReversalOutboxRepositoryMock = {
-    queuePending: jest.fn().mockResolvedValue({ count: 1 }),
-    markSentByIdempotencyKey: jest.fn().mockResolvedValue({ count: 1 }),
-    markFailedByIdempotencyKey: jest.fn().mockResolvedValue({ count: 1 }),
-    markDeadByIdempotencyKey: jest.fn().mockResolvedValue({ count: 1 }),
+    queuePending: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
+    markSentByIdempotencyKey: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
+    markFailedByIdempotencyKey: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
+    markDeadByIdempotencyKey: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 1 }),
     ...options.outboxRepository,
   };
   const workflow: ReversalWorkflowMock = {
-    executeReversal: jest.fn(),
+    executeReversal: jest.fn<(...a: any[]) => any>(),
     ...options.workflow,
   };
   const mailingService: ReversalMailingMock = {
-    sendPaymentRefundEmail: jest.fn(),
-    sendPaymentChargebackEmail: jest.fn(),
+    sendPaymentRefundEmail: jest.fn<(...a: any[]) => any>(),
+    sendPaymentChargebackEmail: jest.fn<(...a: any[]) => any>(),
     ...options.mailingService,
   };
   const adminActionAudit: ReversalAuditMock = {
-    recordRequired: jest.fn(),
+    recordRequired: jest.fn<(...a: any[]) => any>(),
     ...options.adminActionAudit,
   };
   const stripe: ReversalStripeMock = {
     refunds: {
-      create: jest.fn(),
-      retrieve: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
+      retrieve: jest.fn<(...a: any[]) => any>(),
       ...options.stripe?.refunds,
     },
   };
@@ -293,21 +295,21 @@ describe(`AdminV2PaymentReversalService`, () => {
   it(`allows reversal for stale raw status with completed settlement outcome`, async () => {
     const { service, query, workflow, mailingService } = buildService({
       query: {
-        getPaymentRequestForReversal: jest.fn().mockResolvedValue(paymentRequest),
-        resolveStripePaymentIntentId: jest.fn().mockResolvedValue(null),
-        getRequesterSettlementEntry: jest.fn().mockResolvedValue({
+        getPaymentRequestForReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue(paymentRequest),
+        resolveStripePaymentIntentId: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        getRequesterSettlementEntry: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           type: $Enums.LedgerEntryType.USER_DEPOSIT,
           ledgerId: `requester-ledger`,
           paymentRequest: { paymentRail: $Enums.PaymentRail.CARD },
         }),
-        getNotificationContext: jest.fn().mockResolvedValue({
+        getNotificationContext: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
           payerEmail: `payer@example.com`,
           requesterEmailResolved: `requester@example.com`,
         }),
       },
       workflow: {
-        executeReversal: jest.fn().mockResolvedValue({
+        executeReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           ledgerId: `reversal-ledger`,
           amount: new Prisma.Decimal(25),
           remaining: new Prisma.Decimal(0),
@@ -341,24 +343,24 @@ describe(`AdminV2PaymentReversalService`, () => {
   it(`creates a Stripe refund and finalizes the persisted reversal`, async () => {
     const { service, repository, stripe, mailingService, tx } = buildService({
       query: {
-        getPaymentRequestForReversal: jest.fn().mockResolvedValue({
+        getPaymentRequestForReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           ...paymentRequest,
           status: $Enums.TransactionStatus.COMPLETED,
         }),
-        resolveStripePaymentIntentId: jest.fn().mockResolvedValue(`pi_123`),
-        getRequesterSettlementEntry: jest.fn().mockResolvedValue({
+        resolveStripePaymentIntentId: jest.fn<(...a: any[]) => any>().mockResolvedValue(`pi_123`),
+        getRequesterSettlementEntry: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           type: $Enums.LedgerEntryType.USER_DEPOSIT,
           ledgerId: `requester-ledger`,
           paymentRequest: { paymentRail: $Enums.PaymentRail.CARD },
         }),
-        getNotificationContext: jest.fn().mockResolvedValue({
+        getNotificationContext: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           consumerAppScope: CURRENT_CONSUMER_APP_SCOPE,
           payerEmail: `payer@example.com`,
           requesterEmailResolved: `requester@example.com`,
         }),
       },
       workflow: {
-        executeReversal: jest.fn().mockResolvedValue({
+        executeReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           ledgerId: `ledger-created`,
           amount: new Prisma.Decimal(25),
           remaining: new Prisma.Decimal(0),
@@ -370,7 +372,7 @@ describe(`AdminV2PaymentReversalService`, () => {
       },
       stripe: {
         refunds: {
-          create: jest.fn().mockResolvedValue({ id: `re_123`, status: `succeeded` }),
+          create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `re_123`, status: `succeeded` }),
         },
       },
     });
@@ -418,19 +420,19 @@ describe(`AdminV2PaymentReversalService`, () => {
     const stripeError = new Error(`stripe down`);
     const { service, repository, outboxRepository, stripe, tx } = buildService({
       query: {
-        getPaymentRequestForReversal: jest.fn().mockResolvedValue({
+        getPaymentRequestForReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           ...paymentRequest,
           status: $Enums.TransactionStatus.COMPLETED,
         }),
-        resolveStripePaymentIntentId: jest.fn().mockResolvedValue(`pi_123`),
-        getRequesterSettlementEntry: jest.fn().mockResolvedValue({
+        resolveStripePaymentIntentId: jest.fn<(...a: any[]) => any>().mockResolvedValue(`pi_123`),
+        getRequesterSettlementEntry: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           type: $Enums.LedgerEntryType.USER_DEPOSIT,
           ledgerId: `requester-ledger`,
           paymentRequest: { paymentRail: $Enums.PaymentRail.CARD },
         }),
       },
       workflow: {
-        executeReversal: jest.fn().mockResolvedValue({
+        executeReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           ledgerId: `ledger-created`,
           amount: new Prisma.Decimal(25),
           remaining: new Prisma.Decimal(0),
@@ -441,11 +443,11 @@ describe(`AdminV2PaymentReversalService`, () => {
         }),
       },
       repository: {
-        markRefundReversalDenied: jest.fn().mockResolvedValue(undefined),
+        markRefundReversalDenied: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
       },
       stripe: {
         refunds: {
-          create: jest.fn().mockRejectedValue(stripeError),
+          create: jest.fn<(...a: any[]) => any>().mockRejectedValue(stripeError),
         },
       },
     });
@@ -466,19 +468,19 @@ describe(`AdminV2PaymentReversalService`, () => {
   it(`replays an existing refund reversal and finalizes it from the stored Stripe refund id`, async () => {
     const { service, repository, adminActionAudit, stripe, mailingService, tx } = buildService({
       query: {
-        getPaymentRequestForReversal: jest.fn().mockResolvedValue({
+        getPaymentRequestForReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           ...paymentRequest,
           status: $Enums.TransactionStatus.COMPLETED,
         }),
-        resolveStripePaymentIntentId: jest.fn().mockResolvedValue(`pi_123`),
-        getRequesterSettlementEntry: jest.fn().mockResolvedValue({
+        resolveStripePaymentIntentId: jest.fn<(...a: any[]) => any>().mockResolvedValue(`pi_123`),
+        getRequesterSettlementEntry: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           type: $Enums.LedgerEntryType.USER_DEPOSIT,
           ledgerId: `requester-ledger`,
           paymentRequest: { paymentRail: $Enums.PaymentRail.CARD },
         }),
       },
       workflow: {
-        executeReversal: jest.fn().mockResolvedValue({
+        executeReversal: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           ledgerId: `ledger-existing`,
           amount: new Prisma.Decimal(25),
           remaining: new Prisma.Decimal(0),
@@ -492,7 +494,7 @@ describe(`AdminV2PaymentReversalService`, () => {
       },
       stripe: {
         refunds: {
-          retrieve: jest.fn().mockResolvedValue({ id: `re_existing`, status: `succeeded` }),
+          retrieve: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `re_existing`, status: `succeeded` }),
         },
       },
     });

@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { type Prisma } from '@remoola/database-2';
 
 import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
@@ -6,15 +8,17 @@ import { type AdminV2AdminAuditTrailRepository } from './admin-v2-admin-audit-tr
 describe(`AdminV2AdminAuditTrail`, () => {
   function makeAuditTrail() {
     const repository = {
-      updateNotificationStatus: jest.fn(async () => null),
-      createAdminAuditEntry: jest.fn(async () => null),
+      updateNotificationStatus: jest.fn<(...a: any[]) => any>(async () => null),
+      createAdminAuditEntry: jest.fn<(...a: any[]) => any>(async () => null),
     };
     const mailingService = {
-      sendAdminV2PasswordResetEmail: jest.fn(async () => true),
-      sendInvitationEmail: jest.fn(async () => undefined),
+      sendAdminV2PasswordResetEmail: jest.fn<(...a: any[]) => any>(async () => true),
+      sendInvitationEmail: jest.fn<(...a: any[]) => any>(async () => undefined),
     };
     const links = {
-      buildPasswordResetUrl: jest.fn((token: string) => `https://admin.test/reset?token=${token}`),
+      buildPasswordResetUrl: jest.fn<(...a: any[]) => any>(
+        (token: string) => `https://admin.test/reset?token=${token}`,
+      ),
     };
 
     return {

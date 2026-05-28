@@ -1,9 +1,11 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2AdminsQuery } from './admin-v2-admins.query';
 
 describe(`AdminV2AdminsQuery`, () => {
   it(`lists admins with count and stable ordering`, async () => {
-    const count = jest.fn(async () => 1);
-    const findMany = jest.fn(async () => []);
+    const count = jest.fn<(...a: any[]) => any>(async () => 1);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2AdminsQuery({
       adminModel: { count, findMany },
     } as never);
@@ -26,7 +28,7 @@ describe(`AdminV2AdminsQuery`, () => {
   });
 
   it(`loads pending and related invitations with the expected filters`, async () => {
-    const findMany = jest.fn(async () => []);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2AdminsQuery({
       adminInvitationModel: { findMany },
     } as never);
@@ -53,7 +55,7 @@ describe(`AdminV2AdminsQuery`, () => {
   });
 
   it(`loads the admin case base projection with settings, overrides, and authored counts`, async () => {
-    const findFirst = jest.fn(async () => null);
+    const findFirst = jest.fn<(...a: any[]) => any>(async () => null);
     const query = new AdminV2AdminsQuery({
       adminModel: { findFirst },
     } as never);

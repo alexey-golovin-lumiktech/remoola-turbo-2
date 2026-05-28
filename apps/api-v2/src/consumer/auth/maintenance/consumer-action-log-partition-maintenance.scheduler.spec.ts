@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { ConsumerActionLogPartitionMaintenanceScheduler } from './consumer-action-log-partition-maintenance.scheduler';
 import { envs } from '../../../envs';
 // eslint-disable-next-line max-len
@@ -6,8 +8,8 @@ import { type ConsumerActionLogMaintenanceRepository } from '../../../shared/con
 describe(`ConsumerActionLogPartitionMaintenanceScheduler`, () => {
   it(`delegates module init to partition maintenance`, async () => {
     const maintenanceRepository = {
-      ensureDefaultPartition: jest.fn(),
-      ensureMonthlyPartition: jest.fn(),
+      ensureDefaultPartition: jest.fn<(...a: any[]) => any>(),
+      ensureMonthlyPartition: jest.fn<(...a: any[]) => any>(),
     } as unknown as ConsumerActionLogMaintenanceRepository;
     const scheduler = new ConsumerActionLogPartitionMaintenanceScheduler(maintenanceRepository);
     const ensureUpcomingPartitionsSpy = jest.spyOn(scheduler, `ensureUpcomingPartitions`).mockResolvedValue();
@@ -19,8 +21,8 @@ describe(`ConsumerActionLogPartitionMaintenanceScheduler`, () => {
 
   it(`creates current and future monthly partitions`, async () => {
     const maintenanceRepository = {
-      ensureDefaultPartition: jest.fn().mockResolvedValue(0),
-      ensureMonthlyPartition: jest.fn().mockResolvedValue(0),
+      ensureDefaultPartition: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
+      ensureMonthlyPartition: jest.fn<(...a: any[]) => any>().mockResolvedValue(0),
     } as unknown as ConsumerActionLogMaintenanceRepository;
     const scheduler = new ConsumerActionLogPartitionMaintenanceScheduler(maintenanceRepository);
 
@@ -39,8 +41,8 @@ describe(`ConsumerActionLogPartitionMaintenanceScheduler`, () => {
 
   it(`does not throw when db call fails`, async () => {
     const maintenanceRepository = {
-      ensureDefaultPartition: jest.fn(),
-      ensureMonthlyPartition: jest.fn().mockRejectedValue(new Error(`db unavailable`)),
+      ensureDefaultPartition: jest.fn<(...a: any[]) => any>(),
+      ensureMonthlyPartition: jest.fn<(...a: any[]) => any>().mockRejectedValue(new Error(`db unavailable`)),
     } as unknown as ConsumerActionLogMaintenanceRepository;
     const scheduler = new ConsumerActionLogPartitionMaintenanceScheduler(maintenanceRepository);
 

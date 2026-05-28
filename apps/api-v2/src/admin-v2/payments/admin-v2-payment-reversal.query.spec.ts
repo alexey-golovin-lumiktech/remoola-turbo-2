@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
@@ -8,27 +9,27 @@ import { PrismaService } from '../../shared/prisma.service';
 
 describe(`AdminV2PaymentReversalQuery`, () => {
   function buildPrisma(overrides: {
-    paymentRequestModel?: { findUnique: jest.Mock };
-    ledgerEntryModel?: { findFirst?: jest.Mock; findMany?: jest.Mock };
-    ledgerEntryOutcomeModel?: { findFirst: jest.Mock };
-    consumerModel?: { findMany: jest.Mock };
+    paymentRequestModel?: { findUnique: jest.Mock<(...a: any[]) => any> };
+    ledgerEntryModel?: { findFirst?: jest.Mock<(...a: any[]) => any>; findMany?: jest.Mock<(...a: any[]) => any> };
+    ledgerEntryOutcomeModel?: { findFirst: jest.Mock<(...a: any[]) => any> };
+    consumerModel?: { findMany: jest.Mock<(...a: any[]) => any> };
   }) {
     return {
       paymentRequestModel: {
-        findUnique: jest.fn(),
+        findUnique: jest.fn<(...a: any[]) => any>(),
         ...overrides.paymentRequestModel,
       },
       ledgerEntryModel: {
-        findFirst: jest.fn(),
-        findMany: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
+        findMany: jest.fn<(...a: any[]) => any>(),
         ...overrides.ledgerEntryModel,
       },
       ledgerEntryOutcomeModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
         ...overrides.ledgerEntryOutcomeModel,
       },
       consumerModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
         ...overrides.consumerModel,
       },
     };
@@ -37,10 +38,10 @@ describe(`AdminV2PaymentReversalQuery`, () => {
   it(`uses the completed stripe outcome externalId as the payment intent fallback`, async () => {
     const prisma = buildPrisma({
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
       },
       ledgerEntryOutcomeModel: {
-        findFirst: jest.fn().mockResolvedValue({ externalId: `pi_from_outcome` }),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue({ externalId: `pi_from_outcome` }),
       },
     });
 
@@ -69,13 +70,13 @@ describe(`AdminV2PaymentReversalQuery`, () => {
     const prisma = buildPrisma({
       ledgerEntryModel: {
         findMany: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockResolvedValue([
             { id: `entry-1`, createdAt: new Date(), metadata: { consumerAppScope: CURRENT_CONSUMER_APP_SCOPE } },
           ]),
       },
       consumerModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           { id: `payer-1`, email: `payer@example.com` },
           { id: `requester-1`, email: `requester@example.com` },
         ]),
@@ -102,13 +103,13 @@ describe(`AdminV2PaymentReversalQuery`, () => {
     const prisma = buildPrisma({
       ledgerEntryModel: {
         findMany: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockResolvedValue([
             { id: `entry-1`, createdAt: new Date(), metadata: { consumerAppScope: `consumer-mobile` } },
           ]),
       },
       consumerModel: {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           { id: `payer-1`, email: `payer@example.com` },
           { id: `requester-1`, email: `requester@example.com` },
         ]),
@@ -138,9 +139,9 @@ describe(`AdminV2PaymentReversalQuery`, () => {
         {
           provide: PrismaService,
           useValue: buildPrisma({
-            paymentRequestModel: { findUnique: jest.fn() },
-            ledgerEntryOutcomeModel: { findFirst: jest.fn() },
-            consumerModel: { findMany: jest.fn() },
+            paymentRequestModel: { findUnique: jest.fn<(...a: any[]) => any>() },
+            ledgerEntryOutcomeModel: { findFirst: jest.fn<(...a: any[]) => any>() },
+            consumerModel: { findMany: jest.fn<(...a: any[]) => any>() },
           }),
         },
       ],

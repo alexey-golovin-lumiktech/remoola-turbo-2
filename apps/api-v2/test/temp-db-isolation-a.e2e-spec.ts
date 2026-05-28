@@ -1,5 +1,7 @@
 /** @jest-environment @remoola/test-db/environment */
 
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+
 import { PrismaClient } from '@remoola/database-2';
 
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';

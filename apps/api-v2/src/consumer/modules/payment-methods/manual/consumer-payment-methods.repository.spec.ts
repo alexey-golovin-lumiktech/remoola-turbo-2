@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { type Cache } from 'cache-manager';
 
 import { ConsumerPaymentMethodsRepository } from './consumer-payment-methods.repository';
@@ -6,13 +7,13 @@ import { type PrismaService } from '../../../../shared/prisma.service';
 describe(`ConsumerPaymentMethodsRepository`, () => {
   function buildRepository() {
     const cacheManager = {
-      get: jest.fn(),
-      set: jest.fn(),
-      del: jest.fn(),
+      get: jest.fn<(...a: any[]) => any>(),
+      set: jest.fn<(...a: any[]) => any>(),
+      del: jest.fn<(...a: any[]) => any>(),
     };
     const prisma = {
       paymentMethodModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
     };
 

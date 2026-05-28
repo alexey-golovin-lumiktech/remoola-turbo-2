@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
 import {
@@ -69,11 +70,11 @@ function activeRow(overrides: Partial<AlertModelRow> = {}): AlertModelRow {
 
 function buildService() {
   const operationalAlertModel = {
-    findMany: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
+    findMany: jest.fn<(...a: any[]) => any>(),
+    create: jest.fn<(...a: any[]) => any>(),
+    update: jest.fn<(...a: any[]) => any>(),
   };
-  const queryRaw = jest.fn();
+  const queryRaw = jest.fn<(...a: any[]) => any>();
   const transactionTx = {
     operationalAlertModel,
     $queryRaw: queryRaw,
@@ -81,13 +82,15 @@ function buildService() {
   const prisma = {
     operationalAlertModel,
     $queryRaw: queryRaw,
-    $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(transactionTx)),
+    $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: unknown) => Promise<unknown>) =>
+      callback(transactionTx),
+    ),
   };
   const idempotency = {
-    execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+    execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
   };
   const adminActionAudit = {
-    record: jest.fn().mockResolvedValue(undefined),
+    record: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
   };
 
   const query = new AdminV2OperationalAlertsQuery(prisma as never);

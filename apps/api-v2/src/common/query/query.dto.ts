@@ -1,7 +1,7 @@
 import { Expose, Transform } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-import { OptionalDateQuery, optionalNumberQuery, OptionalNumberQuery, OptionalStringQuery } from './query-transforms';
+import { optionalNumberQuery, OptionalNumberQuery, OptionalStringQuery } from './query-transforms';
 
 export class PagingQuery {
   @Expose()
@@ -42,18 +42,4 @@ export class SearchWithPagingQuery extends PagingQuery {
   @IsOptional()
   @IsString()
   q?: string;
-}
-
-export class DateRangePaginationWithPagingQuery extends PagingQuery {
-  @Expose()
-  @OptionalDateQuery()
-  @IsOptional()
-  @IsDate()
-  dateFrom?: Date;
-
-  @Expose()
-  @OptionalDateQuery()
-  @IsOptional()
-  @IsDate()
-  dateTo?: Date;
 }

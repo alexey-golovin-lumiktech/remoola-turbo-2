@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { Prisma } from '@remoola/database-2';
 
 import { PrismaTransactionRunner } from './prisma-transaction.runner';
@@ -25,7 +27,9 @@ describe(`PrismaTransactionRunner`, () => {
   function buildRunner() {
     const tx = {};
     const prisma = {
-      $transaction: jest.fn(async (callback: (client: unknown) => Promise<unknown>) => callback(tx)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (client: unknown) => Promise<unknown>) =>
+        callback(tx),
+      ),
     };
 
     return {
@@ -37,7 +41,7 @@ describe(`PrismaTransactionRunner`, () => {
 
   it(`applies default transaction policy`, async () => {
     const { prisma, runner, tx } = buildRunner();
-    const callback = jest.fn(async () => `ok`);
+    const callback = jest.fn<(...a: any[]) => any>(async () => `ok`);
 
     await expect(runner.run(callback)).resolves.toBe(`ok`);
 
@@ -47,7 +51,7 @@ describe(`PrismaTransactionRunner`, () => {
 
   it(`allows callers to override the policy explicitly`, async () => {
     const { prisma, runner } = buildRunner();
-    const callback = jest.fn(async () => `ok`);
+    const callback = jest.fn<(...a: any[]) => any>(async () => `ok`);
 
     await runner.run(callback, { timeout: 30_000 });
 
@@ -56,7 +60,7 @@ describe(`PrismaTransactionRunner`, () => {
 
   it(`applies named policy options for auth and ledger workflows`, async () => {
     const { prisma, runner } = buildRunner();
-    const callback = jest.fn(async () => `ok`);
+    const callback = jest.fn<(...a: any[]) => any>(async () => `ok`);
 
     await runner.runAuthSessionRotation(callback);
     await runner.runLedgerMutation(callback);
@@ -67,7 +71,7 @@ describe(`PrismaTransactionRunner`, () => {
 
   it(`runs callbacks with explicit named policy options`, async () => {
     const { prisma, runner, tx } = buildRunner();
-    const callback = jest.fn(async () => `ok`);
+    const callback = jest.fn<(...a: any[]) => any>(async () => `ok`);
 
     await expect(runner.runLedgerMutation(callback)).resolves.toBe(`ok`);
 
@@ -78,7 +82,7 @@ describe(`PrismaTransactionRunner`, () => {
   it(`retries policy transactions on Prisma P2034 conflicts`, async () => {
     const { prisma, runner } = buildRunner();
     const conflict = { code: `P2034` };
-    const callback = jest.fn(async () => `ok`);
+    const callback = jest.fn<(...a: any[]) => any>(async () => `ok`);
     prisma.$transaction.mockRejectedValueOnce(conflict).mockImplementationOnce(async (fn) => fn({}));
 
     await expect(
@@ -98,7 +102,7 @@ describe(`PrismaTransactionRunner`, () => {
   it(`does not retry non-conflict transaction errors`, async () => {
     const { prisma, runner } = buildRunner();
     const error = new Error(`boom`);
-    const callback = jest.fn(async () => `ok`);
+    const callback = jest.fn<(...a: any[]) => any>(async () => `ok`);
     prisma.$transaction.mockRejectedValueOnce(error);
 
     await expect(
@@ -117,7 +121,7 @@ describe(`PrismaTransactionRunner`, () => {
 
   it(`fails fast when a retry policy configures zero attempts`, async () => {
     const { prisma, runner } = buildRunner();
-    const callback = jest.fn(async () => `ok`);
+    const callback = jest.fn<(...a: any[]) => any>(async () => `ok`);
 
     await expect(
       runner.runWithPolicy(

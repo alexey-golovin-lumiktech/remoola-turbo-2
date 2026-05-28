@@ -18,17 +18,17 @@ describe(`ConsumerDocumentsController integration`, () => {
   };
   const resourceId = `00000000-0000-4000-8000-000000000311`;
 
-  const bulkDeleteDocuments = jest.fn(async () => ({ success: true }));
-  const attachToPayment = jest.fn(async () => ({ success: true }));
-  const setTags = jest.fn(async () => ({ success: true }));
+  const bulkDeleteDocuments = jest.fn<(...a: any[]) => any>(async () => ({ success: true }));
+  const attachToPayment = jest.fn<(...a: any[]) => any>(async () => ({ success: true }));
+  const setTags = jest.fn<(...a: any[]) => any>(async () => ({ success: true }));
   const service = {
-    getDocuments: jest.fn(),
-    openDownload: jest.fn(),
-    uploadDocuments: jest.fn(),
+    getDocuments: jest.fn<(...a: any[]) => any>(),
+    openDownload: jest.fn<(...a: any[]) => any>(),
+    uploadDocuments: jest.fn<(...a: any[]) => any>(),
     bulkDeleteDocuments,
-    deleteDocument: jest.fn(),
+    deleteDocument: jest.fn<(...a: any[]) => any>(),
     attachToPayment,
-    detachFromPayment: jest.fn(),
+    detachFromPayment: jest.fn<(...a: any[]) => any>(),
     setTags,
   };
 
@@ -65,7 +65,9 @@ describe(`ConsumerDocumentsController integration`, () => {
       })
       .expect(201, { success: true });
 
-    expect(service.bulkDeleteDocuments as jest.Mock).toHaveBeenCalledWith(consumerIdentity.id, [`resource-1`]);
+    expect(service.bulkDeleteDocuments as jest.Mock<(...a: any[]) => any>).toHaveBeenCalledWith(consumerIdentity.id, [
+      `resource-1`,
+    ]);
   });
 
   it(`POST /api/consumer/documents/attach-to-payment accepts resourceIds arrays`, async () => {
@@ -76,7 +78,11 @@ describe(`ConsumerDocumentsController integration`, () => {
       })
       .expect(201, { success: true });
 
-    expect(service.attachToPayment as jest.Mock).toHaveBeenCalledWith(consumerIdentity.id, `payment-1`, [`resource-1`]);
+    expect(service.attachToPayment as jest.Mock<(...a: any[]) => any>).toHaveBeenCalledWith(
+      consumerIdentity.id,
+      `payment-1`,
+      [`resource-1`],
+    );
   });
 
   it(`POST /api/consumer/documents/:id/tags accepts string arrays for tags`, async () => {
@@ -86,7 +92,10 @@ describe(`ConsumerDocumentsController integration`, () => {
       })
       .expect(201, { success: true });
 
-    expect(service.setTags as jest.Mock).toHaveBeenCalledWith(consumerIdentity.id, resourceId, [`Urgent`, ` Client `]);
+    expect(service.setTags as jest.Mock<(...a: any[]) => any>).toHaveBeenCalledWith(consumerIdentity.id, resourceId, [
+      `Urgent`,
+      ` Client `,
+    ]);
   });
 
   it(`rejects malformed document route ids before service dispatch`, async () => {
@@ -96,6 +105,6 @@ describe(`ConsumerDocumentsController integration`, () => {
       })
       .expect(400);
 
-    expect(service.setTags as jest.Mock).not.toHaveBeenCalled();
+    expect(service.setTags as jest.Mock<(...a: any[]) => any>).not.toHaveBeenCalled();
   });
 });

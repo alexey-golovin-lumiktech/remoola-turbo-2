@@ -1,15 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { type AdminV2OperationalAlertSummary, type AdminV2OperationalAlertsListResponse } from '@remoola/api-types';
+import {
+  AdminV2OperationalAlertSummaryWorkspace,
+  AdminV2OperationalAlertThreshold,
+  AdminV2OperationalAlertThresholdQueryPayload,
+  type AdminV2OperationalAlertSummary,
+  type AdminV2OperationalAlertsListResponse,
+} from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import {
-  OperationalAlertThreshold,
-  assertValidThresholdPayload,
-  getThresholdPayloadBytes,
-} from './admin-v2-operational-alerts-thresholds';
+import { assertValidThresholdPayload, getThresholdPayloadBytes } from './admin-v2-operational-alerts-thresholds';
 import {
   DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES,
   MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH,
@@ -35,11 +37,11 @@ const OPERATIONAL_ALERT_LIST_HARD_CAP = 200;
 type OperationalAlertRow = {
   id: string;
   ownerId: string;
-  workspace: string;
+  workspace: AdminV2OperationalAlertSummaryWorkspace;
   name: string;
   description: string | null;
-  queryPayload: Prisma.JsonValue;
-  thresholdPayload: Prisma.JsonValue;
+  queryPayload: AdminV2OperationalAlertThresholdQueryPayload;
+  thresholdPayload: AdminV2OperationalAlertThreshold;
   evaluationIntervalMinutes: number;
   lastEvaluatedAt: Date | null;
   lastEvaluationError: string | null;
@@ -53,11 +55,11 @@ type OperationalAlertRow = {
 function toSummary(row: OperationalAlertRow): OperationalAlertSummary {
   return {
     id: row.id,
-    workspace: row.workspace as OperationalAlertWorkspace,
+    workspace: row.workspace,
     name: row.name,
     description: row.description,
-    queryPayload: row.queryPayload as unknown,
-    thresholdPayload: row.thresholdPayload as unknown as OperationalAlertThreshold,
+    queryPayload: row.queryPayload,
+    thresholdPayload: row.thresholdPayload,
     evaluationIntervalMinutes: row.evaluationIntervalMinutes,
     lastEvaluatedAt: row.lastEvaluatedAt ? row.lastEvaluatedAt.toISOString() : null,
     lastEvaluationError: row.lastEvaluationError,
@@ -208,11 +210,11 @@ export class AdminV2OperationalAlertsService {
       queryPayload?: unknown;
       thresholdPayload?: unknown;
       evaluationIntervalMinutes?: number | null;
-      expectedDeletedAtNull?: number;
+      expectedDeletedAtNull: number;
     },
     meta: OperationalAlertRequestMeta,
   ): Promise<OperationalAlertSummary> {
-    assertExpectedDeletedAtNull(Number(body.expectedDeletedAtNull));
+    assertExpectedDeletedAtNull(body.expectedDeletedAtNull);
     const hasName = body.name !== undefined;
     const hasDescription = body.description !== undefined;
     const hasQueryPayload = body.queryPayload !== undefined;
@@ -302,10 +304,10 @@ export class AdminV2OperationalAlertsService {
   async delete(
     actor: OperationalAlertActorContext,
     operationalAlertId: string,
-    body: { expectedDeletedAtNull?: number },
+    body: { expectedDeletedAtNull: number },
     meta: OperationalAlertRequestMeta,
   ): Promise<{ operationalAlertId: string; deletedAt: string }> {
-    assertExpectedDeletedAtNull(Number(body.expectedDeletedAtNull));
+    assertExpectedDeletedAtNull(body.expectedDeletedAtNull);
     const adminId = actor.id;
 
     return this.idempotency.execute({

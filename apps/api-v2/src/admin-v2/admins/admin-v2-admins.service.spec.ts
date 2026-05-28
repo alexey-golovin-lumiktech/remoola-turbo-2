@@ -1,27 +1,29 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2AdminsService } from './admin-v2-admins.service';
 
 describe(`AdminV2AdminsService`, () => {
   function buildService() {
     const queriesService = {
-      listAdmins: jest.fn(),
-      getAdminCase: jest.fn(),
+      listAdmins: jest.fn<(...a: any[]) => any>(),
+      getAdminCase: jest.fn<(...a: any[]) => any>(),
     };
     const mutationsService = {
-      patchAdminPassword: jest.fn(),
-      updateAdminStatus: jest.fn(),
-      deactivateAdmin: jest.fn(),
-      restoreAdmin: jest.fn(),
-      changeAdminRole: jest.fn(),
-      changeAdminPermissions: jest.fn(),
+      patchAdminPassword: jest.fn<(...a: any[]) => any>(),
+      updateAdminStatus: jest.fn<(...a: any[]) => any>(),
+      deactivateAdmin: jest.fn<(...a: any[]) => any>(),
+      restoreAdmin: jest.fn<(...a: any[]) => any>(),
+      changeAdminRole: jest.fn<(...a: any[]) => any>(),
+      changeAdminPermissions: jest.fn<(...a: any[]) => any>(),
     };
     const invitationsService = {
-      inviteAdmin: jest.fn(),
-      acceptInvitation: jest.fn(),
+      inviteAdmin: jest.fn<(...a: any[]) => any>(),
+      acceptInvitation: jest.fn<(...a: any[]) => any>(),
     };
     const passwordFlowsService = {
-      requestPasswordReset: jest.fn(),
-      resetAdminPassword: jest.fn(),
-      resetPasswordWithToken: jest.fn(),
+      requestPasswordReset: jest.fn<(...a: any[]) => any>(),
+      resetAdminPassword: jest.fn<(...a: any[]) => any>(),
+      resetPasswordWithToken: jest.fn<(...a: any[]) => any>(),
     };
 
     return {

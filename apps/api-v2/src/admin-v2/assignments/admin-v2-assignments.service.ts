@@ -80,13 +80,13 @@ export class AdminV2AssignmentsService {
 
   async release(
     actor: AssignmentActorContext,
-    body: { assignmentId?: string; reason?: string | null; expectedReleasedAtNull?: number },
+    body: { assignmentId?: string; reason?: string | null; expectedReleasedAtNull: number },
     meta: AssignmentRequestMeta,
   ) {
     if (!body.assignmentId) {
       throw new BadRequestException(`assignmentId is required`);
     }
-    assertExpectedReleasedAtNull(Number(body.expectedReleasedAtNull));
+    assertExpectedReleasedAtNull(body.expectedReleasedAtNull);
     const reason = validateOptionalAssignmentReason(body.reason);
     const assignmentId = body.assignmentId;
     const adminId = actor.id;
@@ -136,7 +136,7 @@ export class AdminV2AssignmentsService {
       newAssigneeId?: string;
       confirmed?: boolean;
       reason?: string;
-      expectedReleasedAtNull?: number;
+      expectedReleasedAtNull: number;
     },
     meta: AssignmentRequestMeta,
   ) {
@@ -149,7 +149,7 @@ export class AdminV2AssignmentsService {
     if (body.confirmed !== true) {
       throw new BadRequestException(`Confirmation is required for reassign`);
     }
-    assertExpectedReleasedAtNull(Number(body.expectedReleasedAtNull));
+    assertExpectedReleasedAtNull(body.expectedReleasedAtNull);
     const reason = validateMandatoryAssignmentReason(body.reason);
 
     const adminId = actor.id;

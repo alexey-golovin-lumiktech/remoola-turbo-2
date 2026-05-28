@@ -18,9 +18,9 @@ describe(`ConsumerProfileController integration`, () => {
   };
 
   const service = {
-    getProfile: jest.fn(),
-    updateProfile: jest.fn(),
-    changePassword: jest.fn(),
+    getProfile: jest.fn<(...a: any[]) => any>(),
+    updateProfile: jest.fn<(...a: any[]) => any>(),
+    changePassword: jest.fn<(...a: any[]) => any>(),
   };
 
   beforeAll(async () => {

@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
@@ -29,14 +30,14 @@ class TestAdminDocumentService extends AdminDocumentServiceBase {
 
 function createIdempotency() {
   return {
-    execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+    execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
   };
 }
 
 function createAssignmentsService() {
   return {
-    getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
-    getActiveAssigneesForResource: jest.fn(async () => new Map()),
+    getAssignmentContextForResource: jest.fn<(...a: any[]) => any>(async () => ({ current: null, history: [] })),
+    getActiveAssigneesForResource: jest.fn<(...a: any[]) => any>(async () => new Map()),
   };
 }
 
@@ -45,7 +46,7 @@ describe(`AdminDocumentService`, () => {
     const service = new TestAdminDocumentService(
       {
         resourceModel: {
-          findMany: jest.fn(async () => [
+          findMany: jest.fn<(...a: any[]) => any>(async () => [
             {
               id: `doc-1`,
               originalName: `proof.pdf`,
@@ -84,7 +85,7 @@ describe(`AdminDocumentService`, () => {
               ],
             },
           ]),
-          count: jest.fn(async () => 1),
+          count: jest.fn<(...a: any[]) => any>(async () => 1),
         },
       } as never,
       {} as never,
@@ -123,7 +124,7 @@ describe(`AdminDocumentService`, () => {
     const service = new TestAdminDocumentService(
       {
         resourceModel: {
-          findMany: jest.fn(async () => [
+          findMany: jest.fn<(...a: any[]) => any>(async () => [
             {
               id: `doc-1`,
               originalName: `proof.pdf`,
@@ -151,7 +152,7 @@ describe(`AdminDocumentService`, () => {
               attachments: [],
             },
           ]),
-          count: jest.fn(async () => 2),
+          count: jest.fn<(...a: any[]) => any>(async () => 2),
         },
       } as never,
       {} as never,
@@ -170,7 +171,7 @@ describe(`AdminDocumentService`, () => {
     const service = new TestAdminDocumentService(
       {
         resourceModel: {
-          findMany: jest.fn(async () => [
+          findMany: jest.fn<(...a: any[]) => any>(async () => [
             {
               id: `doc-1`,
               originalName: `proof.pdf`,
@@ -200,7 +201,7 @@ describe(`AdminDocumentService`, () => {
               attachments: [],
             },
           ]),
-          count: jest.fn(async () => 1),
+          count: jest.fn<(...a: any[]) => any>(async () => 1),
         },
       } as never,
       {} as never,
@@ -235,7 +236,7 @@ describe(`AdminDocumentService`, () => {
     const service = new TestAdminDocumentService(
       {
         resourceModel: {
-          findFirst: jest.fn(async () => ({
+          findFirst: jest.fn<(...a: any[]) => any>(async () => ({
             id: `doc-1`,
             originalName: `proof.pdf`,
             access: `PRIVATE`,
@@ -323,7 +324,7 @@ describe(`AdminDocumentService`, () => {
     const service = new TestAdminDocumentService(
       {
         resourceModel: {
-          findFirst: jest.fn(async () => ({
+          findFirst: jest.fn<(...a: any[]) => any>(async () => ({
             id: `doc-1`,
             originalName: `proof.pdf`,
             access: `PRIVATE`,
@@ -409,7 +410,7 @@ describe(`AdminDocumentService`, () => {
     const service = new TestAdminDocumentService(
       {
         resourceModel: {
-          findFirst: jest.fn(async () => ({
+          findFirst: jest.fn<(...a: any[]) => any>(async () => ({
             id: `doc-with-assignment`,
             originalName: `evidence.pdf`,
             access: `PRIVATE`,
@@ -446,7 +447,7 @@ describe(`AdminDocumentService`, () => {
     const service = new TestAdminDocumentService(
       {
         documentTagModel: {
-          findMany: jest.fn(async () => [
+          findMany: jest.fn<(...a: any[]) => any>(async () => [
             {
               id: `tag-1`,
               name: `evidence`,
@@ -495,11 +496,11 @@ describe(`AdminDocumentService`, () => {
 
   it(`records document_tag_create with exact audit vocabulary`, async () => {
     const adminActionAuditLogModel = {
-      create: jest.fn(async () => ({ id: `audit-1` })),
+      create: jest.fn<(...a: any[]) => any>(async () => ({ id: `audit-1` })),
     };
     const documentTagModel = {
-      findUnique: jest.fn(async () => null),
-      create: jest.fn(async () => ({
+      findUnique: jest.fn<(...a: any[]) => any>(async () => null),
+      create: jest.fn<(...a: any[]) => any>(async () => ({
         id: `tag-1`,
         name: `evidence`,
         updatedAt: new Date(`2026-04-17T09:00:00.000Z`),
@@ -508,7 +509,9 @@ describe(`AdminDocumentService`, () => {
     const prisma = {
       documentTagModel,
       adminActionAuditLogModel,
-      $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback(prisma),
+      ),
     };
     const service = new TestAdminDocumentService(
       prisma as never,
@@ -540,20 +543,20 @@ describe(`AdminDocumentService`, () => {
 
   it(`short-circuits duplicate tag creates before entering the mutation repository`, async () => {
     const documentTagModel = {
-      findUnique: jest.fn(async () => ({
+      findUnique: jest.fn<(...a: any[]) => any>(async () => ({
         id: `tag-1`,
         name: `evidence`,
         updatedAt: new Date(`2026-04-17T09:00:00.000Z`),
       })),
-      create: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
     };
     const adminActionAuditLogModel = {
-      create: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
     };
     const prisma = {
       documentTagModel,
       adminActionAuditLogModel,
-      $transaction: jest.fn(),
+      $transaction: jest.fn<(...a: any[]) => any>(),
     };
     const service = new TestAdminDocumentService(
       prisma as never,
@@ -585,19 +588,19 @@ describe(`AdminDocumentService`, () => {
     const originalUpdatedAt = new Date(`2026-04-17T10:00:00.000Z`);
     const nextUpdatedAt = new Date(`2026-04-17T10:05:00.000Z`);
     const adminActionAuditLogModel = {
-      create: jest.fn(async () => ({ id: `audit-1` })),
+      create: jest.fn<(...a: any[]) => any>(async () => ({ id: `audit-1` })),
     };
     const documentTagModel = {
       findUnique: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockResolvedValueOnce({
           id: `tag-1`,
           name: `evidence`,
           updatedAt: originalUpdatedAt,
         })
         .mockResolvedValueOnce(null),
-      updateMany: jest.fn(async () => ({ count: 1 })),
-      findUniqueOrThrow: jest.fn(async () => ({
+      updateMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
+      findUniqueOrThrow: jest.fn<(...a: any[]) => any>(async () => ({
         id: `tag-1`,
         name: `verified`,
         updatedAt: nextUpdatedAt,
@@ -606,7 +609,9 @@ describe(`AdminDocumentService`, () => {
     const prisma = {
       documentTagModel,
       adminActionAuditLogModel,
-      $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback(prisma),
+      ),
     };
     const service = new TestAdminDocumentService(
       prisma as never,
@@ -648,16 +653,16 @@ describe(`AdminDocumentService`, () => {
       updatedAt,
     };
     const documentTagModel = {
-      findUnique: jest.fn().mockResolvedValueOnce(tag).mockResolvedValueOnce(tag),
-      updateMany: jest.fn(),
+      findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValueOnce(tag).mockResolvedValueOnce(tag),
+      updateMany: jest.fn<(...a: any[]) => any>(),
     };
     const adminActionAuditLogModel = {
-      create: jest.fn(),
+      create: jest.fn<(...a: any[]) => any>(),
     };
     const prisma = {
       documentTagModel,
       adminActionAuditLogModel,
-      $transaction: jest.fn(),
+      $transaction: jest.fn<(...a: any[]) => any>(),
     };
     const service = new TestAdminDocumentService(
       prisma as never,
@@ -689,23 +694,25 @@ describe(`AdminDocumentService`, () => {
   it(`requires confirmation and records document_tag_delete`, async () => {
     const updatedAt = new Date(`2026-04-17T11:00:00.000Z`);
     const adminActionAuditLogModel = {
-      create: jest.fn(async () => ({ id: `audit-1` })),
+      create: jest.fn<(...a: any[]) => any>(async () => ({ id: `audit-1` })),
     };
     const documentTagModel = {
-      findUnique: jest.fn(async () => ({
+      findUnique: jest.fn<(...a: any[]) => any>(async () => ({
         id: `tag-1`,
         name: `evidence`,
         updatedAt,
       })),
-      deleteMany: jest.fn(async () => ({ count: 1 })),
+      deleteMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
     };
     const prisma = {
       documentTagModel,
       resourceTagModel: {
-        count: jest.fn(async () => 2),
+        count: jest.fn<(...a: any[]) => any>(async () => 2),
       },
       adminActionAuditLogModel,
-      $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback(prisma),
+      ),
     };
     const service = new TestAdminDocumentService(
       prisma as never,
@@ -750,33 +757,35 @@ describe(`AdminDocumentService`, () => {
     const updatedAt = new Date(`2026-04-17T12:00:00.000Z`);
     const nextUpdatedAt = new Date(`2026-04-17T12:05:00.000Z`);
     const adminActionAuditLogModel = {
-      create: jest.fn(async () => ({ id: `audit-1` })),
+      create: jest.fn<(...a: any[]) => any>(async () => ({ id: `audit-1` })),
     };
     const resourceModel = {
-      findFirst: jest.fn(async () => ({
+      findFirst: jest.fn<(...a: any[]) => any>(async () => ({
         id: `doc-1`,
         updatedAt,
         deletedAt: null,
         resourceTags: [{ tag: { id: `tag-0`, name: `old-tag` } }],
       })),
-      updateMany: jest.fn(async () => ({ count: 1 })),
-      findUnique: jest.fn(async () => ({ updatedAt: nextUpdatedAt })),
-      findUniqueOrThrow: jest.fn(async () => ({ updatedAt: nextUpdatedAt })),
+      updateMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
+      findUnique: jest.fn<(...a: any[]) => any>(async () => ({ updatedAt: nextUpdatedAt })),
+      findUniqueOrThrow: jest.fn<(...a: any[]) => any>(async () => ({ updatedAt: nextUpdatedAt })),
     };
     const prisma = {
       resourceModel,
       documentTagModel: {
         findMany: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockResolvedValueOnce([{ id: `tag-reserved`, name: `INVOICE-PENDING` }])
           .mockResolvedValueOnce([{ id: `tag-1`, name: `evidence` }]),
       },
       resourceTagModel: {
-        deleteMany: jest.fn(async () => ({ count: 1 })),
-        createMany: jest.fn(async () => ({ count: 1 })),
+        deleteMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
+        createMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
       },
       adminActionAuditLogModel,
-      $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback(prisma),
+      ),
     };
     const service = new TestAdminDocumentService(
       prisma as never,
@@ -823,30 +832,32 @@ describe(`AdminDocumentService`, () => {
     const updatedAt = new Date(`2026-04-17T12:00:00.000Z`);
     const nextUpdatedAt = new Date(`2026-04-17T12:05:00.000Z`);
     const adminActionAuditLogModel = {
-      create: jest.fn(async () => ({ id: `audit-1` })),
+      create: jest.fn<(...a: any[]) => any>(async () => ({ id: `audit-1` })),
     };
     const resourceModel = {
-      findFirst: jest.fn(async () => ({
+      findFirst: jest.fn<(...a: any[]) => any>(async () => ({
         id: `doc-1`,
         updatedAt,
         deletedAt: null,
         resourceTags: [{ tag: { id: `tag-0`, name: `old-tag` } }],
       })),
-      updateMany: jest.fn(async () => ({ count: 1 })),
-      findUniqueOrThrow: jest.fn(async () => ({ updatedAt: nextUpdatedAt })),
+      updateMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
+      findUniqueOrThrow: jest.fn<(...a: any[]) => any>(async () => ({ updatedAt: nextUpdatedAt })),
     };
-    const createMany = jest.fn(async () => ({ count: 0 }));
+    const createMany = jest.fn<(...a: any[]) => any>(async () => ({ count: 0 }));
     const prisma = {
       resourceModel,
       documentTagModel: {
-        findMany: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
       },
       resourceTagModel: {
-        deleteMany: jest.fn(async () => ({ count: 1 })),
+        deleteMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
         createMany,
       },
       adminActionAuditLogModel,
-      $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback(prisma),
+      ),
     };
     const service = new TestAdminDocumentService(
       prisma as never,
@@ -887,10 +898,10 @@ describe(`AdminDocumentService`, () => {
     const updatedAt1 = new Date(`2026-04-17T13:00:00.000Z`);
     const updatedAt2 = new Date(`2026-04-17T13:10:00.000Z`);
     const adminActionAuditLogModel = {
-      create: jest.fn(async () => ({ id: `audit-1` })),
+      create: jest.fn<(...a: any[]) => any>(async () => ({ id: `audit-1` })),
     };
     const resourceModel = {
-      findMany: jest.fn(async () => [
+      findMany: jest.fn<(...a: any[]) => any>(async () => [
         {
           id: `doc-1`,
           updatedAt: updatedAt1,
@@ -902,18 +913,20 @@ describe(`AdminDocumentService`, () => {
           deletedAt: null,
         },
       ]),
-      updateMany: jest.fn(async () => ({ count: 1 })),
+      updateMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
     };
     const prisma = {
       documentTagModel: {
-        findMany: jest.fn(async () => [{ id: `tag-1`, name: `evidence` }]),
+        findMany: jest.fn<(...a: any[]) => any>(async () => [{ id: `tag-1`, name: `evidence` }]),
       },
       resourceModel,
       resourceTagModel: {
-        createMany: jest.fn(async () => ({ count: 2 })),
+        createMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 2 })),
       },
       adminActionAuditLogModel,
-      $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback(prisma),
+      ),
     };
     const service = new TestAdminDocumentService(
       prisma as never,
@@ -954,29 +967,31 @@ describe(`AdminDocumentService`, () => {
   it(`returns zero created associations when bulk tagging only duplicates`, async () => {
     const updatedAt = new Date(`2026-04-17T13:00:00.000Z`);
     const adminActionAuditLogModel = {
-      create: jest.fn(async () => ({ id: `audit-1` })),
+      create: jest.fn<(...a: any[]) => any>(async () => ({ id: `audit-1` })),
     };
     const resourceModel = {
-      findMany: jest.fn(async () => [
+      findMany: jest.fn<(...a: any[]) => any>(async () => [
         {
           id: `doc-1`,
           updatedAt,
           deletedAt: null,
         },
       ]),
-      updateMany: jest.fn(async () => ({ count: 1 })),
+      updateMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 1 })),
     };
     const resourceTagModel = {
-      createMany: jest.fn(async () => ({ count: 0 })),
+      createMany: jest.fn<(...a: any[]) => any>(async () => ({ count: 0 })),
     };
     const prisma = {
       documentTagModel: {
-        findMany: jest.fn(async () => [{ id: `tag-1`, name: `evidence` }]),
+        findMany: jest.fn<(...a: any[]) => any>(async () => [{ id: `tag-1`, name: `evidence` }]),
       },
       resourceModel,
       resourceTagModel,
       adminActionAuditLogModel,
-      $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
+      $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback(prisma),
+      ),
     };
     const service = new TestAdminDocumentService(
       prisma as never,
@@ -1019,10 +1034,10 @@ describe(`AdminDocumentService`, () => {
 
   it(`opens secure downloads only through the evidence-scoped resource lookup`, async () => {
     const storage = {
-      openDownloadStream: jest.fn(async () => ({ stream: `stream`, filename: `proof.pdf` })),
+      openDownloadStream: jest.fn<(...a: any[]) => any>(async () => ({ stream: `stream`, filename: `proof.pdf` })),
     };
     const resourceModel = {
-      findFirst: jest.fn(async () => ({
+      findFirst: jest.fn<(...a: any[]) => any>(async () => ({
         bucket: `local`,
         key: `consumer-1/proof.pdf`,
         originalName: `proof.pdf`,

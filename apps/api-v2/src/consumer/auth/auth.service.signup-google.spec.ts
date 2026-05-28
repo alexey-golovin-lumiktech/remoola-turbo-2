@@ -1,3 +1,5 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
@@ -14,11 +16,11 @@ describe(`ConsumerAuthService.signup (Google session)`, () => {
 
   let service: ConsumerAuthSignupService;
   let consumerIdentityRepository: {
-    findSignupCollisionByEmail: jest.Mock;
-    createSignupConsumer: jest.Mock;
+    findSignupCollisionByEmail: jest.Mock<(...a: any[]) => any>;
+    createSignupConsumer: jest.Mock<(...a: any[]) => any>;
   };
   let googleProfileRepository: {
-    upsertProfile: jest.Mock;
+    upsertProfile: jest.Mock<(...a: any[]) => any>;
   };
 
   const googlePayload = (email: string): GoogleSignupPayload => ({
@@ -40,8 +42,8 @@ describe(`ConsumerAuthService.signup (Google session)`, () => {
 
   beforeEach(() => {
     consumerIdentityRepository = {
-      findSignupCollisionByEmail: jest.fn().mockResolvedValue(null),
-      createSignupConsumer: jest.fn().mockResolvedValue({
+      findSignupCollisionByEmail: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+      createSignupConsumer: jest.fn<(...a: any[]) => any>().mockResolvedValue({
         id: `new-consumer-id`,
         email: `g@example.com`,
         verified: true,
@@ -49,7 +51,7 @@ describe(`ConsumerAuthService.signup (Google session)`, () => {
       }),
     };
     googleProfileRepository = {
-      upsertProfile: jest.fn().mockResolvedValue({}),
+      upsertProfile: jest.fn<(...a: any[]) => any>().mockResolvedValue({}),
     };
 
     service = new ConsumerAuthSignupService(

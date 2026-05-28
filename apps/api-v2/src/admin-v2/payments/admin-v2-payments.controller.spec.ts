@@ -108,10 +108,13 @@ describe(`AdminV2PaymentsController integration`, () => {
     const harness = await bootstrapApiTestApp({
       controllers: [AdminV2PaymentsController],
       providers: [
-        { provide: AdminV2PaymentsService, useValue: { listPaymentRequests, getPaymentOperationsQueue: jest.fn() } },
+        {
+          provide: AdminV2PaymentsService,
+          useValue: { listPaymentRequests, getPaymentOperationsQueue: jest.fn<(...a: any[]) => any>() },
+        },
         { provide: AdminV2AccessService, useValue: { assertCapability } },
-        { provide: AdminStepUpService, useValue: { verify: jest.fn() } },
-        { provide: AdminV2PaymentReversalService, useValue: { createReversal: jest.fn() } },
+        { provide: AdminStepUpService, useValue: { verify: jest.fn<(...a: any[]) => any>() } },
+        { provide: AdminV2PaymentReversalService, useValue: { createReversal: jest.fn<(...a: any[]) => any>() } },
       ],
       preset: `validationOnly`,
       identity: admin,

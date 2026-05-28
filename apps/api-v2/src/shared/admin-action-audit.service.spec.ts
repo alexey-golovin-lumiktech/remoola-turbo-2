@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { Logger } from '@nestjs/common';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditPolicyService } from './admin-action-audit-policy.service';
@@ -15,7 +16,7 @@ describe(`AdminActionAuditService`, () => {
   it(`record swallows write failures for non-critical audit telemetry`, async () => {
     jest.spyOn(Logger.prototype, `warn`).mockImplementation(() => undefined);
     const repository = {
-      createAuditEntry: jest.fn().mockRejectedValue(new Error(`database unavailable`)),
+      createAuditEntry: jest.fn<(...a: any[]) => any>().mockRejectedValue(new Error(`database unavailable`)),
     } as unknown as AdminActionAuditRepository;
     const service = createService(repository);
 
@@ -30,7 +31,7 @@ describe(`AdminActionAuditService`, () => {
 
   it(`recordRequired propagates write failures for critical audit evidence`, async () => {
     const repository = {
-      createAuditEntry: jest.fn().mockRejectedValue(new Error(`database unavailable`)),
+      createAuditEntry: jest.fn<(...a: any[]) => any>().mockRejectedValue(new Error(`database unavailable`)),
     } as unknown as AdminActionAuditRepository;
     const service = createService(repository);
 
@@ -45,12 +46,12 @@ describe(`AdminActionAuditService`, () => {
 
   it(`recordRequiredWithClient writes through the provided transaction client`, async () => {
     const repository = {
-      createAuditEntry: jest.fn().mockResolvedValue(undefined),
+      createAuditEntry: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     } as unknown as AdminActionAuditRepository;
     const service = createService(repository);
     const tx = {
       adminActionAuditLogModel: {
-        create: jest.fn().mockResolvedValue({ id: `audit-1` }),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `audit-1` }),
       },
     };
 
@@ -75,12 +76,12 @@ describe(`AdminActionAuditService`, () => {
 
   it(`recordRequiredWithClient propagates transaction write failures`, async () => {
     const repository = {
-      createAuditEntry: jest.fn().mockRejectedValue(new Error(`tx failed`)),
+      createAuditEntry: jest.fn<(...a: any[]) => any>().mockRejectedValue(new Error(`tx failed`)),
     } as unknown as AdminActionAuditRepository;
     const service = createService(repository);
     const tx = {
       adminActionAuditLogModel: {
-        create: jest.fn().mockRejectedValue(new Error(`tx failed`)),
+        create: jest.fn<(...a: any[]) => any>().mockRejectedValue(new Error(`tx failed`)),
       },
     };
 
@@ -95,7 +96,7 @@ describe(`AdminActionAuditService`, () => {
 
   it(`exposes action names from the injected policy`, () => {
     const repository = {
-      createAuditEntry: jest.fn(),
+      createAuditEntry: jest.fn<(...a: any[]) => any>(),
     } as unknown as AdminActionAuditRepository;
     const service = createService(repository);
 

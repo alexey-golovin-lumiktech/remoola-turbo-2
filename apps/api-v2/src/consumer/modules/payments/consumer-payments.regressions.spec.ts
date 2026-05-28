@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { ConsumerPaymentRequestNotificationService } from './consumer-payment-request-notification.service';
@@ -86,20 +88,20 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
 
   function createBalanceService() {
     return {
-      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
-      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
-      calculateInTransaction: jest.fn().mockResolvedValue(100),
+      calculateMultiCurrency: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn<(...a: any[]) => any>().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>().mockResolvedValue(100),
     } as any;
   }
 
   it(`includes email-only requester access in the default payment list scope`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: consumerEmail }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: consumerEmail }),
       },
       paymentRequestModel: {
-        count: jest.fn().mockResolvedValue(1),
-        findMany: jest.fn().mockResolvedValue([
+        count: jest.fn<(...a: any[]) => any>().mockResolvedValue(1),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
           {
             id: `pr-requester-email-only`,
             amount: 18,
@@ -140,10 +142,10 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
   it(`allows payment detail access for an email-only requester`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: consumerEmail }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: consumerEmail }),
       },
       paymentRequestModel: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `pr-email-only-requester`,
           payerId: `payer-1`,
           payerEmail: `payer@example.com`,
@@ -175,10 +177,10 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
   it(`hides invoice attachments from the non-generating counterparty`, async () => {
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: `payer@example.com` }),
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: `payer@example.com` }),
       },
       paymentRequestModel: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({
           id: `payment-1`,
           payerId: consumerId,
           payerEmail: `payer@example.com`,
@@ -262,9 +264,9 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
       };
       const prisma = {
         consumerModel: {
-          findUnique: jest.fn().mockResolvedValue({ email: consumerEmail }),
+          findUnique: jest.fn<(...a: any[]) => any>().mockResolvedValue({ email: consumerEmail }),
         },
-        $queryRaw: jest.fn().mockImplementation((query: { strings?: string[] }) => {
+        $queryRaw: jest.fn<(...a: any[]) => any>().mockImplementation((query: { strings?: string[] }) => {
           const sql = query?.strings?.join(` `) ?? ``;
           if (sql.includes(`COUNT(*)::int AS total`)) {
             return Promise.resolve([{ total: 2501 }]);
@@ -275,7 +277,7 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
           return Promise.resolve([]);
         }),
         paymentRequestModel: {
-          findMany: jest.fn().mockResolvedValue([paymentRow]),
+          findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([paymentRow]),
         },
       } as any;
 
@@ -301,7 +303,7 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
 
   it(`collapses payment history to latest DB rows before paginating`, async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([
         {
           id: `entry-history-1`,
           ledgerId: `ledger-history-1`,
@@ -317,7 +319,9 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
         },
       ]),
       paymentMethodModel: {
-        findMany: jest.fn().mockResolvedValue([{ id: `pm-1`, brand: `History Bank`, last4: `1234` }]),
+        findMany: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ id: `pm-1`, brand: `History Bank`, last4: `1234` }]),
       },
     } as any;
 
@@ -340,7 +344,7 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
 
   it(`normalizes raw waiting-recipient-approval history rows for consumers`, async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue([
         {
           id: `entry-history-waiting`,
           ledgerId: `ledger-history-waiting`,
@@ -356,7 +360,7 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
         },
       ]),
       paymentMethodModel: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
       },
     } as any;
 
@@ -379,7 +383,7 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
   it(`filters DB-backed history by the normalized visible payment type`, async () => {
     const queryCalls: string[] = [];
     const prisma = {
-      $queryRaw: jest.fn().mockImplementation((query: { strings?: string[] }) => {
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockImplementation((query: { strings?: string[] }) => {
         queryCalls.push(query?.strings?.join(` `) ?? ``);
         return Promise.resolve([
           {
@@ -398,7 +402,7 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
         ]);
       }),
       paymentMethodModel: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
       },
     } as any;
 

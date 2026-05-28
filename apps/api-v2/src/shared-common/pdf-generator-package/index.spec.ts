@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 type LoadPdfModulesOptions = {
   VERCEL?: number;
   NODE_ENV?: string;
@@ -16,37 +17,37 @@ type PdfIndexModule = {
 type LoadedPdfModules = {
   constants: PdfConstantsModule;
   index: PdfIndexModule;
-  executablePath: jest.Mock<Promise<string>, []>;
-  launch: jest.Mock;
+  executablePath: jest.Mock<() => Promise<string>>;
+  launch: jest.Mock<(...a: any[]) => any>;
   browser: {
-    close: jest.Mock;
-    newPage: jest.Mock;
+    close: jest.Mock<(...a: any[]) => any>;
+    newPage: jest.Mock<(...a: any[]) => any>;
   };
   page: {
-    emulateMediaType: jest.Mock;
-    goto: jest.Mock;
-    pdf: jest.Mock;
-    setContent: jest.Mock;
-    setViewport: jest.Mock;
+    emulateMediaType: jest.Mock<(...a: any[]) => any>;
+    goto: jest.Mock<(...a: any[]) => any>;
+    pdf: jest.Mock<(...a: any[]) => any>;
+    setContent: jest.Mock<(...a: any[]) => any>;
+    setViewport: jest.Mock<(...a: any[]) => any>;
   };
 };
 
 const loadPdfModules = async (options: LoadPdfModulesOptions = {}): Promise<LoadedPdfModules> => {
   jest.resetModules();
 
-  const executablePath = jest.fn<Promise<string>, []>().mockResolvedValue(`/tmp/chromium`);
+  const executablePath = jest.fn<() => Promise<string>>().mockResolvedValue(`/tmp/chromium`);
   const page = {
-    emulateMediaType: jest.fn().mockResolvedValue(undefined),
-    goto: jest.fn().mockResolvedValue(undefined),
-    pdf: jest.fn().mockResolvedValue(Uint8Array.from([1, 2, 3])),
-    setContent: jest.fn().mockResolvedValue(undefined),
-    setViewport: jest.fn().mockResolvedValue(undefined),
+    emulateMediaType: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    goto: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    pdf: jest.fn<(...a: any[]) => any>().mockResolvedValue(Uint8Array.from([1, 2, 3])),
+    setContent: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    setViewport: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
   };
   const browser = {
-    close: jest.fn().mockResolvedValue(undefined),
-    newPage: jest.fn().mockResolvedValue(page),
+    close: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+    newPage: jest.fn<(...a: any[]) => any>().mockResolvedValue(page),
   };
-  const launch = jest.fn().mockResolvedValue(browser);
+  const launch = jest.fn<(...a: any[]) => any>().mockResolvedValue(browser);
 
   jest.doMock(`../../envs`, () => ({
     envs: {

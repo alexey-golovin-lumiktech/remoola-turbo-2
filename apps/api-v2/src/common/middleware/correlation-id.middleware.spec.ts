@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { type NextFunction, type Request, type Response } from 'express';
 
 import { CorrelationIdMiddleware } from './correlation-id.middleware';
@@ -8,13 +9,13 @@ describe(`CorrelationIdMiddleware`, () => {
   let next: jest.MockedFunction<NextFunction>;
   let req: Partial<Request> & { correlationId?: string };
   let res: Partial<Response>;
-  let setHeader: jest.Mock;
+  let setHeader: jest.Mock<(...a: any[]) => any>;
 
   beforeEach(() => {
     middleware = new CorrelationIdMiddleware();
-    next = jest.fn();
+    next = jest.fn<(...a: any[]) => any>();
     req = { headers: {} };
-    setHeader = jest.fn();
+    setHeader = jest.fn<(...a: any[]) => any>();
     res = { setHeader };
   });
 

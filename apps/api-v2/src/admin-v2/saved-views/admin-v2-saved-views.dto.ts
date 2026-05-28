@@ -7,6 +7,7 @@ import {
   ADMIN_V2_MAX_SAVED_VIEW_NAME_LENGTH,
   ADMIN_V2_MAX_SAVED_VIEW_PAYLOAD_BYTES,
   ADMIN_V2_MIN_SAVED_VIEW_NAME_LENGTH,
+  AdminV2OperationalAlertThresholdQueryPayload,
   getAdminV2JsonPayloadBytes,
   isAdminV2SavedViewWorkspace,
   type AdminV2SavedViewCreateBody,
@@ -67,7 +68,7 @@ export class SavedViewCreateBody implements AdminV2SavedViewCreateBody {
   @Expose()
   @Transform(({ obj }) => obj.queryPayload)
   @Allow()
-  queryPayload!: unknown;
+  queryPayload!: AdminV2OperationalAlertThresholdQueryPayload;
 }
 
 export class SavedViewUpdateBody extends ExpectedDeletedAtNullBody implements AdminV2SavedViewUpdateBody {

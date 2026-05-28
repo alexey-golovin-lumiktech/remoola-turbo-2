@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { type Cache } from 'cache-manager';
 
 import { $Enums } from '@remoola/database-2';
@@ -8,12 +9,12 @@ import { type PrismaService } from '../../../shared/prisma.service';
 describe(`ConsumerExchangeRateQuery`, () => {
   function buildQuery() {
     const cacheManager = {
-      get: jest.fn(),
-      set: jest.fn(),
+      get: jest.fn<(...a: any[]) => any>(),
+      set: jest.fn<(...a: any[]) => any>(),
     };
     const prisma = {
       exchangeRateModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
     };
 

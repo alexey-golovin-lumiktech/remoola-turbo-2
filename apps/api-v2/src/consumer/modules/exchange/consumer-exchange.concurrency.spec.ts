@@ -2,6 +2,8 @@
  * Concurrency tests for currency exchange operations.
  * Verifies that concurrent exchanges cannot double-spend the same balance.
  */
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { ConsumerAutoConversionRuleService } from './consumer-auto-conversion-rule.service';
@@ -37,15 +39,17 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
 
     const prisma = {
       exchangeRateModel: {
-        findFirst: jest.fn().mockResolvedValue(mockRate),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(mockRate),
       },
       ledgerEntryModel: {
-        groupBy: jest.fn().mockResolvedValue([{ currencyCode: $Enums.CurrencyCode.USD, _sum: { amount: balance } }]),
-        findMany: jest.fn().mockResolvedValue([]),
-        findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({ id: `ledger-entry-1` }),
+        groupBy: jest
+          .fn<(...a: any[]) => any>()
+          .mockResolvedValue([{ currencyCode: $Enums.CurrencyCode.USD, _sum: { amount: balance } }]),
+        findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+        findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+        create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `ledger-entry-1` }),
       },
-      $queryRaw: jest.fn().mockImplementation((query) => {
+      $queryRaw: jest.fn<(...a: any[]) => any>().mockImplementation((query) => {
         const queryStr = queryToString(query);
         if (queryStr.includes(`pg_advisory_xact_lock`)) {
           return Promise.resolve([]);
@@ -58,15 +62,15 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
         }
         return Promise.resolve(undefined);
       }),
-      $transaction: jest.fn(async (fn: (tx: any) => Promise<any>) => {
+      $transaction: jest.fn<(...a: any[]) => any>(async (fn: (tx: any) => Promise<any>) => {
         const txQueryCallLog: string[] = [];
         const tx = {
-          $executeRaw: jest.fn().mockImplementation((query: unknown) => {
+          $executeRaw: jest.fn<(...a: any[]) => any>().mockImplementation((query: unknown) => {
             const queryStr = queryToString(query);
             txQueryCallLog.push(queryStr);
             return Promise.resolve(undefined);
           }),
-          $queryRaw: jest.fn().mockImplementation((query) => {
+          $queryRaw: jest.fn<(...a: any[]) => any>().mockImplementation((query) => {
             const queryStr = queryToString(query);
             txQueryCallLog.push(queryStr);
             if (queryStr.includes(`pg_advisory_xact_lock`)) {
@@ -84,9 +88,9 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
             return Promise.resolve(undefined);
           }),
           ledgerEntryModel: {
-            findMany: jest.fn().mockResolvedValue([]),
-            findFirst: jest.fn().mockResolvedValue(null),
-            create: jest.fn().mockResolvedValue({ id: `ledger-entry-1` }),
+            findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
+            findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+            create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `ledger-entry-1` }),
           },
         };
         const result = await fn(tx);
@@ -101,7 +105,10 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
 
   function createService(prisma: any) {
     const balanceService = new BalanceCalculationService(new BalanceCalculationRepository(prisma));
-    const cacheManager = { get: jest.fn().mockResolvedValue(undefined), set: jest.fn() };
+    const cacheManager = {
+      get: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      set: jest.fn<(...a: any[]) => any>(),
+    };
     const rateReader = new ConsumerExchangeRateReader(new ConsumerExchangeRateQuery(cacheManager as never, prisma));
     const rateService = new ConsumerExchangeRateService(rateReader);
     const executionRepository = new ConsumerExchangeExecutionRepository(prisma);

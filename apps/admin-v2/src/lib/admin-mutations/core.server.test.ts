@@ -44,7 +44,7 @@ describe(`admin-v2 mutation runtime`, () => {
     });
     mockedCookies.mockResolvedValue({
       toString: () => `admin_refresh=refresh-token; admin_csrf=csrf-token`,
-    });
+    } as never);
   });
 
   afterEach(() => {

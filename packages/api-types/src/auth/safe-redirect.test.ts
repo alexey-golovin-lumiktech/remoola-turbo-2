@@ -3,6 +3,8 @@
  * Covers sanitizeNextForRedirect, removeStaleLoginParams, and cross-app equivalence.
  */
 
+import { describe, expect, it } from '@jest/globals';
+
 import { AUTH_NOTICE_QUERY } from './auth-notice';
 import { removeStaleLoginParams, sanitizeNextForRedirect } from './safe-redirect';
 import { SESSION_EXPIRED_QUERY } from './session-expired-query';

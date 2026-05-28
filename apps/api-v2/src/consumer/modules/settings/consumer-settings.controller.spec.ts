@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
@@ -10,11 +11,11 @@ import { AuthGuard } from '../../../guards';
 describe(`ConsumerSettingsController`, () => {
   let controller: ConsumerSettingsController;
   let service: {
-    getSettings: jest.Mock;
-    patchSettings: jest.Mock;
-    getThemeSettings: jest.Mock;
-    updateThemeSettings: jest.Mock;
-    updatePreferredCurrency: jest.Mock;
+    getSettings: jest.Mock<(...a: any[]) => any>;
+    patchSettings: jest.Mock<(...a: any[]) => any>;
+    getThemeSettings: jest.Mock<(...a: any[]) => any>;
+    updateThemeSettings: jest.Mock<(...a: any[]) => any>;
+    updatePreferredCurrency: jest.Mock<(...a: any[]) => any>;
   };
 
   const consumer = {
@@ -23,11 +24,11 @@ describe(`ConsumerSettingsController`, () => {
 
   beforeEach(async () => {
     service = {
-      getSettings: jest.fn(),
-      patchSettings: jest.fn(),
-      getThemeSettings: jest.fn(),
-      updateThemeSettings: jest.fn(),
-      updatePreferredCurrency: jest.fn(),
+      getSettings: jest.fn<(...a: any[]) => any>(),
+      patchSettings: jest.fn<(...a: any[]) => any>(),
+      getThemeSettings: jest.fn<(...a: any[]) => any>(),
+      updateThemeSettings: jest.fn<(...a: any[]) => any>(),
+      updatePreferredCurrency: jest.fn<(...a: any[]) => any>(),
     };
 
     const module = await Test.createTestingModule({

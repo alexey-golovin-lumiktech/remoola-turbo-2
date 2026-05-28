@@ -24,7 +24,7 @@ export const buildConsumerPaymentListInclude = (consumerId: string) =>
     },
   }) satisfies Prisma.PaymentRequestModelInclude;
 
-export type ConsumerPaymentListRow = Prisma.PaymentRequestModelGetPayload<{
+type ConsumerPaymentListRow = Prisma.PaymentRequestModelGetPayload<{
   include: ReturnType<typeof buildConsumerPaymentListInclude>;
 }>;
 

@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals';
+
 import { emailOptionalSchema, emailSchema, isValidEmail } from './email';
 
 describe(`email validation`, () => {

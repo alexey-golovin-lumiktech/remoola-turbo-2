@@ -1,10 +1,12 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2OperationalAlertsEvaluatorQuery } from './admin-v2-operational-alerts-evaluator.query';
 
 const EVALUATOR_TICK_MAX_ALERTS = 100;
 
 describe(`AdminV2OperationalAlertsEvaluatorQuery`, () => {
   it(`selects due alerts via parameterized raw SQL with the tick limit`, async () => {
-    const queryRaw = jest.fn(async () => []);
+    const queryRaw = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2OperationalAlertsEvaluatorQuery({
       $queryRaw: queryRaw,
     } as never);

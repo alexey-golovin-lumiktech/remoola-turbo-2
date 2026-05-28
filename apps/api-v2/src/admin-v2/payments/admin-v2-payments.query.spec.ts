@@ -1,10 +1,12 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { AdminV2PaymentsQuery } from './admin-v2-payments.query';
 
 describe(`AdminV2PaymentsQuery`, () => {
   it(`applies due-date and created-time filters on payment list`, async () => {
-    const findMany = jest.fn(async () => []);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2PaymentsQuery({
       paymentRequestModel: {
         findMany,
@@ -44,7 +46,7 @@ describe(`AdminV2PaymentsQuery`, () => {
   });
 
   it(`builds queue source reads with stale approval separated from overdue semantics`, async () => {
-    const findMany = jest.fn(async () => []);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2PaymentsQuery({
       paymentRequestModel: {
         findMany,
@@ -83,8 +85,8 @@ describe(`AdminV2PaymentsQuery`, () => {
   });
 
   it(`loads payment case and audit context through dedicated read methods`, async () => {
-    const paymentRequestModelFindUnique = jest.fn(async () => ({ id: `payment-1` }));
-    const auditFindMany = jest.fn(async () => []);
+    const paymentRequestModelFindUnique = jest.fn<(...a: any[]) => any>(async () => ({ id: `payment-1` }));
+    const auditFindMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2PaymentsQuery({
       paymentRequestModel: {
         findUnique: paymentRequestModelFindUnique,
@@ -111,7 +113,7 @@ describe(`AdminV2PaymentsQuery`, () => {
   });
 
   it(`adds overdue status filtering when overdue list mode is requested`, async () => {
-    const findMany = jest.fn(async () => []);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2PaymentsQuery({
       paymentRequestModel: {
         findMany,

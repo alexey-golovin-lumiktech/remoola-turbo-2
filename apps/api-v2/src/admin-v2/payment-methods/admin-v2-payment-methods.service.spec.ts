@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -9,19 +10,19 @@ import { AdminV2PaymentMethodsService } from './admin-v2-payment-methods.service
 describe(`AdminV2PaymentMethodsService`, () => {
   function buildService() {
     const query = {
-      listPaymentMethods: jest.fn(),
-      getPaymentMethodCase: jest.fn(),
-      listFingerprintDuplicates: jest.fn(),
+      listPaymentMethods: jest.fn<(...a: any[]) => any>(),
+      getPaymentMethodCase: jest.fn<(...a: any[]) => any>(),
+      listFingerprintDuplicates: jest.fn<(...a: any[]) => any>(),
     };
     const repository = {
-      getPaymentMethodForMutation: jest.fn(),
-      listFingerprintDuplicateIds: jest.fn(),
-      disablePaymentMethod: jest.fn(),
-      removeDefaultPaymentMethod: jest.fn(),
-      escalateDuplicatePaymentMethod: jest.fn(),
+      getPaymentMethodForMutation: jest.fn<(...a: any[]) => any>(),
+      listFingerprintDuplicateIds: jest.fn<(...a: any[]) => any>(),
+      disablePaymentMethod: jest.fn<(...a: any[]) => any>(),
+      removeDefaultPaymentMethod: jest.fn<(...a: any[]) => any>(),
+      escalateDuplicatePaymentMethod: jest.fn<(...a: any[]) => any>(),
     };
     const idempotency = {
-      execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+      execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
 
     return {

@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Logger } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -7,7 +8,7 @@ import { StripeWebhookReversalsRepository } from './stripe-webhook-reversals.rep
 import { createOutcomeIdempotent } from '../core/ledger-outcome-idempotent';
 
 jest.mock(`../core/ledger-outcome-idempotent`, () => ({
-  createOutcomeIdempotent: jest.fn().mockResolvedValue(undefined),
+  createOutcomeIdempotent: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
 }));
 
 describe(`StripeWebhookReversalsRepository`, () => {
@@ -19,12 +20,12 @@ describe(`StripeWebhookReversalsRepository`, () => {
     it(`uses transition-scoped external ids for refund status updates`, async () => {
       const tx = {
         ledgerEntryModel: {
-          findMany: jest.fn().mockResolvedValue([{ id: `entry-1` }]),
+          findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([{ id: `entry-1` }]),
         },
       };
       const prisma = {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
       } as any;
       const repository = new StripeWebhookReversalsRepository(prisma);
@@ -45,7 +46,7 @@ describe(`StripeWebhookReversalsRepository`, () => {
         select: { id: true },
       });
       expect(createOutcomeIdempotent).toHaveBeenCalledWith(
-        tx,
+        tx as any,
         expect.objectContaining({
           ledgerEntryId: `entry-1`,
           status: $Enums.TransactionStatus.PENDING,
@@ -59,15 +60,15 @@ describe(`StripeWebhookReversalsRepository`, () => {
   describe(`createDisputeIfMissing`, () => {
     it(`creates a missing dispute row`, async () => {
       const tx = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         ledgerEntryDisputeModel: {
-          findFirst: jest.fn().mockResolvedValue(null),
-          create: jest.fn().mockResolvedValue({ id: `dispute-row` }),
+          findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+          create: jest.fn<(...a: any[]) => any>().mockResolvedValue({ id: `dispute-row` }),
         },
       };
       const prisma = {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
       } as any;
       const repository = new StripeWebhookReversalsRepository(prisma);
@@ -99,15 +100,15 @@ describe(`StripeWebhookReversalsRepository`, () => {
         code: `P2002`,
       });
       const tx = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         ledgerEntryDisputeModel: {
-          findFirst: jest.fn().mockResolvedValue(null),
-          create: jest.fn().mockRejectedValue(duplicateError),
+          findFirst: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+          create: jest.fn<(...a: any[]) => any>().mockRejectedValue(duplicateError),
         },
       };
       const prisma = {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
       } as any;
       const repository = new StripeWebhookReversalsRepository(prisma);
@@ -127,26 +128,26 @@ describe(`StripeWebhookReversalsRepository`, () => {
   describe(`appendStripeReversal`, () => {
     it(`creates requester deposit reversals and reversal outbox rows for deposit-backed refunds`, async () => {
       const tx = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         ledgerEntryModel: {
-          findMany: jest.fn().mockResolvedValue([]),
+          findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
           findFirst: jest
-            .fn()
+            .fn<(...a: any[]) => any>()
             .mockResolvedValueOnce({ type: $Enums.LedgerEntryType.USER_DEPOSIT, ledgerId: `settlement-ledger-1` })
             .mockResolvedValueOnce({ ledgerId: `payer-ledger-1` }),
-          create: jest.fn().mockResolvedValue(undefined),
+          create: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         },
         notificationOutboxModel: {
-          createMany: jest.fn().mockResolvedValue({ count: 2 }),
+          createMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 2 }),
         },
       };
       const prisma = {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
       } as any;
       const repository = new StripeWebhookReversalsRepository(prisma);
-      const logger = { debug: jest.fn() } as unknown as Logger;
+      const logger = { debug: jest.fn<(...a: any[]) => any>() } as unknown as Logger;
 
       await repository.appendStripeReversal({
         paymentRequestId: `pr-1`,
@@ -202,7 +203,7 @@ describe(`StripeWebhookReversalsRepository`, () => {
         ]),
         skipDuplicates: true,
       });
-      expect((logger.debug as jest.Mock).mock.calls).toEqual(
+      expect((logger.debug as jest.Mock<(...a: any[]) => any>).mock.calls).toEqual(
         expect.arrayContaining([
           [
             expect.objectContaining({
@@ -217,30 +218,30 @@ describe(`StripeWebhookReversalsRepository`, () => {
 
     it(`runs requester balance assertion inside the repository-owned chargeback transaction`, async () => {
       const tx = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         ledgerEntryModel: {
-          findMany: jest.fn().mockResolvedValue([]),
+          findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([]),
           findFirst: jest
-            .fn()
+            .fn<(...a: any[]) => any>()
             .mockResolvedValueOnce({
               type: $Enums.LedgerEntryType.USER_DEPOSIT,
               ledgerId: `settlement-ledger-1`,
               paymentRequest: { paymentRail: $Enums.PaymentRail.CARD },
             })
             .mockResolvedValueOnce({ ledgerId: `payer-ledger-1` }),
-          create: jest.fn().mockResolvedValue(undefined),
+          create: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         },
         notificationOutboxModel: {
-          createMany: jest.fn().mockResolvedValue({ count: 2 }),
+          createMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 2 }),
         },
       };
       const prisma = {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
       } as any;
       const repository = new StripeWebhookReversalsRepository(prisma);
-      const assertRequesterBalance = jest.fn().mockResolvedValue(undefined);
+      const assertRequesterBalance = jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined);
 
       await repository.appendStripeReversal({
         paymentRequestId: `pr-chargeback`,
@@ -252,7 +253,7 @@ describe(`StripeWebhookReversalsRepository`, () => {
         currencyCode: $Enums.CurrencyCode.USD,
         kind: `CHARGEBACK`,
         stripeObjectId: `dp_1`,
-        logger: { debug: jest.fn() } as any,
+        logger: { debug: jest.fn<(...a: any[]) => any>() } as any,
         assertRequesterBalance,
       });
 
@@ -267,9 +268,9 @@ describe(`StripeWebhookReversalsRepository`, () => {
 
     it(`caps external refunds to the remaining reversible amount`, async () => {
       const tx = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         ledgerEntryModel: {
-          findMany: jest.fn().mockResolvedValue([
+          findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
             {
               amount: 20,
               status: $Enums.TransactionStatus.COMPLETED,
@@ -287,21 +288,21 @@ describe(`StripeWebhookReversalsRepository`, () => {
             },
           ]),
           findFirst: jest
-            .fn()
+            .fn<(...a: any[]) => any>()
             .mockResolvedValueOnce({
               type: $Enums.LedgerEntryType.USER_DEPOSIT,
               ledgerId: `settlement-ledger-remaining`,
             })
             .mockResolvedValueOnce({ ledgerId: `payer-ledger-remaining` }),
-          create: jest.fn().mockResolvedValue(undefined),
+          create: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         },
         notificationOutboxModel: {
-          createMany: jest.fn().mockResolvedValue({ count: 2 }),
+          createMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 2 }),
         },
       };
       const prisma = {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
       } as any;
       const repository = new StripeWebhookReversalsRepository(prisma);
@@ -316,7 +317,7 @@ describe(`StripeWebhookReversalsRepository`, () => {
         currencyCode: $Enums.CurrencyCode.USD,
         kind: `REFUND`,
         stripeObjectId: `re_cap`,
-        logger: { debug: jest.fn() } as any,
+        logger: { debug: jest.fn<(...a: any[]) => any>() } as any,
       });
 
       expect(tx.ledgerEntryModel.create).toHaveBeenNthCalledWith(
@@ -343,29 +344,29 @@ describe(`StripeWebhookReversalsRepository`, () => {
 
     it(`skips fully reversed external events without appending entries`, async () => {
       const tx = {
-        $executeRaw: jest.fn().mockResolvedValue(undefined),
+        $executeRaw: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         ledgerEntryModel: {
-          findMany: jest.fn().mockResolvedValue([
+          findMany: jest.fn<(...a: any[]) => any>().mockResolvedValue([
             {
               amount: 30,
               status: $Enums.TransactionStatus.COMPLETED,
               outcomes: [],
             },
           ]),
-          findFirst: jest.fn(),
-          create: jest.fn().mockResolvedValue(undefined),
+          findFirst: jest.fn<(...a: any[]) => any>(),
+          create: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
         },
         notificationOutboxModel: {
-          createMany: jest.fn().mockResolvedValue({ count: 0 }),
+          createMany: jest.fn<(...a: any[]) => any>().mockResolvedValue({ count: 0 }),
         },
       };
       const prisma = {
         $transaction: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx)),
       } as any;
       const repository = new StripeWebhookReversalsRepository(prisma);
-      const logger = { debug: jest.fn() } as any;
+      const logger = { debug: jest.fn<(...a: any[]) => any>() } as any;
 
       const appendedAmount = await repository.appendStripeReversal({
         paymentRequestId: `pr-fully-reversed`,

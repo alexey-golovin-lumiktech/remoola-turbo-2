@@ -36,7 +36,7 @@ export const consumerPaymentViewInclude = {
   },
 } satisfies Prisma.PaymentRequestModelInclude;
 
-export type ConsumerPaymentViewRow = Prisma.PaymentRequestModelGetPayload<{
+type ConsumerPaymentViewRow = Prisma.PaymentRequestModelGetPayload<{
   include: typeof consumerPaymentViewInclude;
 }>;
 

@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { NotFoundException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -11,17 +12,17 @@ import { type AdminV2AssignmentsService } from '../assignments/admin-v2-assignme
 describe(`AdminV2PayoutQueryService`, () => {
   function buildService() {
     const assignmentsService = {
-      getActiveAssigneesForResource: jest.fn(async () => new Map()),
-      getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
+      getActiveAssigneesForResource: jest.fn<(...a: any[]) => any>(async () => new Map()),
+      getAssignmentContextForResource: jest.fn<(...a: any[]) => any>(async () => ({ current: null, history: [] })),
     };
     const payoutsQuery = {
-      listPayoutRows: jest.fn(),
-      findPayoutCaseEntry: jest.fn(),
-      findRelatedEntries: jest.fn(),
-      findAuditContext: jest.fn(),
+      listPayoutRows: jest.fn<(...a: any[]) => any>(),
+      findPayoutCaseEntry: jest.fn<(...a: any[]) => any>(),
+      findRelatedEntries: jest.fn<(...a: any[]) => any>(),
+      findAuditContext: jest.fn<(...a: any[]) => any>(),
     };
     const highValuePolicy = {
-      getConfig: jest.fn(() => ({
+      getConfig: jest.fn<(...a: any[]) => any>(() => ({
         policy: {
           availability: `configured`,
           source: `env.ADMIN_V2_PAYOUT_HIGH_VALUE_THRESHOLDS`,
@@ -30,15 +31,15 @@ describe(`AdminV2PayoutQueryService`, () => {
         },
         thresholds: new Map(),
       })),
-      assess: jest.fn(() => ({
+      assess: jest.fn<(...a: any[]) => any>(() => ({
         eligibility: `high-value`,
         thresholdAmount: `100`,
         thresholdCurrency: $Enums.CurrencyCode.USD,
       })),
     };
     const paymentMethodResolver = {
-      getPaymentMethodsById: jest.fn(async () => new Map()),
-      resolveDestination: jest.fn(() => ({
+      getPaymentMethodsById: jest.fn<(...a: any[]) => any>(async () => new Map()),
+      resolveDestination: jest.fn<(...a: any[]) => any>(() => ({
         destinationPaymentMethodSummary: null,
         destinationAvailability: `unavailable`,
         destinationLinkageSource: null,

@@ -19,44 +19,46 @@ describe(`Consumer auth controller integration`, () => {
   let close: (() => Promise<void>) | undefined;
 
   const service = {
-    issueTokensForConsumer: jest.fn(),
+    issueTokensForConsumer: jest.fn<(...a: any[]) => any>(),
   };
 
   const originResolver = {
-    validateConsumerAppScope: jest.fn((value?: string | null) =>
+    validateConsumerAppScope: jest.fn<(...a: any[]) => any>((value?: string | null) =>
       value === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined,
     ),
-    validateConsumerAppScopeHeader: jest.fn((value?: string | string[]) => {
+    validateConsumerAppScopeHeader: jest.fn<(...a: any[]) => any>((value?: string | string[]) => {
       const headerValue = Array.isArray(value) ? value[0] : value;
       return headerValue === CURRENT_CONSUMER_APP_SCOPE ? CURRENT_CONSUMER_APP_SCOPE : undefined;
     }),
-    resolveConsumerOriginByScope: jest.fn((scope: string) => {
+    resolveConsumerOriginByScope: jest.fn<(...a: any[]) => any>((scope: string) => {
       if (scope === CURRENT_CONSUMER_APP_SCOPE) return `https://grid.example.com`;
       return null;
     }),
-    getAllowedOrigins: jest.fn().mockReturnValue(new Set([`https://grid.example.com`])),
-    getConsumerAllowedOrigins: jest.fn().mockReturnValue(new Set([`https://grid.example.com`])),
-    normalizeOrigin: jest.fn((value: string) => value),
+    getAllowedOrigins: jest.fn<(...a: any[]) => any>().mockReturnValue(new Set([`https://grid.example.com`])),
+    getConsumerAllowedOrigins: jest.fn<(...a: any[]) => any>().mockReturnValue(new Set([`https://grid.example.com`])),
+    normalizeOrigin: jest.fn<(...a: any[]) => any>((value: string) => value),
   };
 
   const oauthStateStore = {
-    read: jest.fn(),
-    consume: jest.fn(),
-    createStateToken: jest.fn().mockReturnValue(`state-token`),
-    createEphemeralToken: jest.fn().mockReturnValue(`handoff-token`),
-    save: jest.fn(),
-    saveLoginHandoff: jest.fn(),
-    saveSignupHandoff: jest.fn(),
-    consumeLoginHandoff: jest.fn(),
-    consumeSignupHandoff: jest.fn(),
-    saveSignupSession: jest.fn(),
-    readSignupSession: jest.fn(),
+    read: jest.fn<(...a: any[]) => any>(),
+    consume: jest.fn<(...a: any[]) => any>(),
+    createStateToken: jest.fn<(...a: any[]) => any>().mockReturnValue(`state-token`),
+    createEphemeralToken: jest.fn<(...a: any[]) => any>().mockReturnValue(`handoff-token`),
+    save: jest.fn<(...a: any[]) => any>(),
+    saveLoginHandoff: jest.fn<(...a: any[]) => any>(),
+    saveSignupHandoff: jest.fn<(...a: any[]) => any>(),
+    consumeLoginHandoff: jest.fn<(...a: any[]) => any>(),
+    consumeSignupHandoff: jest.fn<(...a: any[]) => any>(),
+    saveSignupSession: jest.fn<(...a: any[]) => any>(),
+    readSignupSession: jest.fn<(...a: any[]) => any>(),
   };
 
   const googleOAuthService = {
-    buildAuthorizationUrl: jest.fn().mockReturnValue(`https://accounts.google.com/o/oauth2/v2/auth`),
-    exchangeCodeForPayload: jest.fn(),
-    loginWithPayload: jest.fn(),
+    buildAuthorizationUrl: jest
+      .fn<(...a: any[]) => any>()
+      .mockReturnValue(`https://accounts.google.com/o/oauth2/v2/auth`),
+    exchangeCodeForPayload: jest.fn<(...a: any[]) => any>(),
+    loginWithPayload: jest.fn<(...a: any[]) => any>(),
   };
 
   beforeAll(async () => {

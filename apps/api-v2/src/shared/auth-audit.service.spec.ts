@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 
 import { errorCodes } from '@remoola/shared-constants';
@@ -9,17 +10,17 @@ import { AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES, AuthAuditService } from './auth
 describe(`AuthAuditService`, () => {
   function buildService() {
     const query = {
-      findLockout: jest.fn(async () => null),
-      countRecentAuditRows: jest.fn(async () => 0),
+      findLockout: jest.fn<(...a: any[]) => any>(async () => null),
+      countRecentAuditRows: jest.fn<(...a: any[]) => any>(async () => 0),
     };
     const repository = {
-      createAuditLog: jest.fn(async () => undefined),
-      upsertFailedAttempt: jest.fn(async () => ({
+      createAuditLog: jest.fn<(...a: any[]) => any>(async () => undefined),
+      upsertFailedAttempt: jest.fn<(...a: any[]) => any>(async () => ({
         attemptCount: 1,
         firstAttemptAt: new Date(`2026-05-15T07:00:00.000Z`),
       })),
-      setLockedUntil: jest.fn(async () => undefined),
-      clearLockout: jest.fn(async () => undefined),
+      setLockedUntil: jest.fn<(...a: any[]) => any>(async () => undefined),
+      clearLockout: jest.fn<(...a: any[]) => any>(async () => undefined),
     };
 
     return {

@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { type Prisma } from '@remoola/database-2';
 
 import { AdminV2SystemQuery } from './admin-v2-system.query';
@@ -20,15 +22,15 @@ function queryToString(query: unknown): string {
 describe(`AdminV2SystemQuery`, () => {
   function makeQuery() {
     const prisma = {
-      $queryRaw: jest.fn<Promise<unknown[]>, [Prisma.Sql]>(async () => []),
+      $queryRaw: jest.fn<(sql: Prisma.Sql) => Promise<unknown[]>>(async () => []),
       stripeWebhookEventModel: {
-        aggregate: jest.fn(async () => ({ _max: { createdAt: null } })),
+        aggregate: jest.fn<(...a: any[]) => any>(async () => ({ _max: { createdAt: null } })),
       },
       resetPasswordModel: {
-        count: jest.fn(async () => 0),
+        count: jest.fn<(...a: any[]) => any>(async () => 0),
       },
       oauthStateModel: {
-        count: jest.fn(async () => 0),
+        count: jest.fn<(...a: any[]) => any>(async () => 0),
       },
     };
 

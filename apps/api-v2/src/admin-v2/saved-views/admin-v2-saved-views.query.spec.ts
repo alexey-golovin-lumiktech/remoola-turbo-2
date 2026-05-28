@@ -1,8 +1,10 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2SavedViewsQuery } from './admin-v2-saved-views.query';
 
 describe(`AdminV2SavedViewsQuery`, () => {
   it(`lists owner-scoped active saved views ordered by name with a hard cap`, async () => {
-    const findMany = jest.fn(async () => []);
+    const findMany = jest.fn<(...a: any[]) => any>(async () => []);
     const query = new AdminV2SavedViewsQuery({
       savedViewModel: { findMany },
     } as never);

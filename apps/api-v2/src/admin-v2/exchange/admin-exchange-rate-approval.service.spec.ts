@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -21,16 +22,16 @@ describe(`AdminExchangeRateApprovalService`, () => {
 
   function buildService() {
     const idempotency = {
-      execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+      execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
     };
     const preflightRepository = {
-      findActiveRateById: jest.fn(async () => ({
+      findActiveRateById: jest.fn<(...a: any[]) => any>(async () => ({
         id: `rate-1`,
         updatedAt,
       })),
     };
     const persistenceRepository = {
-      approveDraftRate: jest.fn(async () => ({
+      approveDraftRate: jest.fn<(...a: any[]) => any>(async () => ({
         rateId: `rate-1`,
         status: $Enums.ExchangeRateStatus.APPROVED,
         approvedAt: `2026-04-17T08:06:00.000Z`,
@@ -38,7 +39,9 @@ describe(`AdminExchangeRateApprovalService`, () => {
       })),
     };
     const transactions = {
-      runLedgerMutation: jest.fn(async (callback: (client: unknown) => Promise<unknown>) => callback(tx)),
+      runLedgerMutation: jest.fn<(...a: any[]) => any>(async (callback: (client: unknown) => Promise<unknown>) =>
+        callback(tx),
+      ),
     };
 
     return {

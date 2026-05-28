@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 
@@ -10,7 +11,7 @@ import { AuthAuditService } from '../../../shared/auth-audit.service';
 import { passwordUtils } from '../../../shared-common';
 
 jest.mock(`../../../shared-common`, () => ({
-  buildConsumerVerificationState: jest.fn().mockReturnValue({
+  buildConsumerVerificationState: jest.fn<(...a: any[]) => any>().mockReturnValue({
     status: `pending`,
     canStart: false,
     profileComplete: false,
@@ -26,8 +27,8 @@ jest.mock(`../../../shared-common`, () => ({
     verifiedAt: null,
   }),
   passwordUtils: {
-    verifyPassword: jest.fn(),
-    hashPassword: jest.fn(),
+    verifyPassword: jest.fn<(...a: any[]) => any>(),
+    hashPassword: jest.fn<(...a: any[]) => any>(),
   },
 }));
 
@@ -37,15 +38,15 @@ const mockHashPassword = passwordUtils.hashPassword as jest.MockedFunction<typeo
 describe(`ConsumerProfileService.changePassword`, () => {
   let service: ConsumerProfileService;
   let profileRepository: {
-    findPasswordCredentials: jest.Mock;
-    findProfileById: jest.Mock;
-    findPersonalDetails: jest.Mock;
-    findAddressDetails: jest.Mock;
-    findOrganizationDetails: jest.Mock;
-    updateProfile: jest.Mock;
-    persistPasswordAndRevokeSessions: jest.Mock;
+    findPasswordCredentials: jest.Mock<(...a: any[]) => any>;
+    findProfileById: jest.Mock<(...a: any[]) => any>;
+    findPersonalDetails: jest.Mock<(...a: any[]) => any>;
+    findAddressDetails: jest.Mock<(...a: any[]) => any>;
+    findOrganizationDetails: jest.Mock<(...a: any[]) => any>;
+    updateProfile: jest.Mock<(...a: any[]) => any>;
+    persistPasswordAndRevokeSessions: jest.Mock<(...a: any[]) => any>;
   };
-  let authAudit: { recordAudit: jest.Mock };
+  let authAudit: { recordAudit: jest.Mock<(...a: any[]) => any> };
 
   const consumer = {
     id: `consumer-id`,
@@ -60,17 +61,17 @@ describe(`ConsumerProfileService.changePassword`, () => {
     mockHashPassword.mockResolvedValue({ hash: `new-hash`, salt: `new-salt` });
 
     profileRepository = {
-      findPasswordCredentials: jest.fn().mockResolvedValue(consumer),
-      findProfileById: jest.fn().mockResolvedValue(null),
-      findPersonalDetails: jest.fn().mockResolvedValue(null),
-      findAddressDetails: jest.fn().mockResolvedValue(null),
-      findOrganizationDetails: jest.fn().mockResolvedValue(null),
-      updateProfile: jest.fn().mockResolvedValue(undefined),
-      persistPasswordAndRevokeSessions: jest.fn().mockResolvedValue(undefined),
+      findPasswordCredentials: jest.fn<(...a: any[]) => any>().mockResolvedValue(consumer),
+      findProfileById: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+      findPersonalDetails: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+      findAddressDetails: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+      findOrganizationDetails: jest.fn<(...a: any[]) => any>().mockResolvedValue(null),
+      updateProfile: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
+      persistPasswordAndRevokeSessions: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
 
     authAudit = {
-      recordAudit: jest.fn().mockResolvedValue(undefined),
+      recordAudit: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({

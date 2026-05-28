@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { Logger } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -16,20 +17,20 @@ describe(`StripePaymentOutcomesRepository`, () => {
   }) {
     const entries = overrides?.ledgerEntries ?? [{ id: `le-1` }];
     const ledgerEntryModel = {
-      findMany: jest.fn(async () => entries),
+      findMany: jest.fn<(...a: any[]) => any>(async () => entries),
     };
     const ledgerEntryOutcomeModel = {
-      create: jest.fn(async (_args: unknown) => ({})),
+      create: jest.fn<(...a: any[]) => any>(async (_args: unknown) => ({})),
     };
     const prisma = {
       ledgerEntryModel,
       ledgerEntryOutcomeModel,
-      $transaction: jest.fn(async <T>(fn: (tx: unknown) => Promise<T>) =>
+      $transaction: jest.fn<(...a: any[]) => any>(async <T>(fn: (tx: unknown) => Promise<T>) =>
         fn({ ledgerEntryModel, ledgerEntryOutcomeModel }),
       ),
     };
     const paymentRequestAccessRepository = {
-      markPaymentRequestCompletedForStripe: jest.fn(async () => undefined),
+      markPaymentRequestCompletedForStripe: jest.fn<(...a: any[]) => any>(async () => undefined),
     };
     return {
       prisma,

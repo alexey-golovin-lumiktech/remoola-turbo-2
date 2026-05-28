@@ -9,7 +9,9 @@ function mockResolved<T>(value: T) {
   return jest.fn<() => Promise<T>>().mockResolvedValue(value);
 }
 
-function createContactsRepositoryMock(overrides: Partial<Record<keyof ConsumerContactsRepository, jest.Mock>> = {}) {
+function createContactsRepositoryMock(
+  overrides: Partial<Record<keyof ConsumerContactsRepository, jest.Mock<(...a: any[]) => any>>> = {},
+) {
   return {
     findByIdForConsumer: mockResolved(null),
     search: mockResolved([]),

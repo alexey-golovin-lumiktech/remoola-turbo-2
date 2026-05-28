@@ -1,8 +1,10 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2AdminSessionsQuery } from './admin-v2-admin-sessions.query';
 
 describe(`AdminV2AdminSessionsQuery`, () => {
   it(`looks up an active admin id with the expected guard filter`, async () => {
-    const findFirst = jest.fn(async () => null);
+    const findFirst = jest.fn<(...a: any[]) => any>(async () => null);
     const query = new AdminV2AdminSessionsQuery({
       adminModel: { findFirst },
     } as never);
@@ -16,7 +18,7 @@ describe(`AdminV2AdminSessionsQuery`, () => {
   });
 
   it(`looks up an owned session id with the expected admin/session filter`, async () => {
-    const findFirst = jest.fn(async () => null);
+    const findFirst = jest.fn<(...a: any[]) => any>(async () => null);
     const query = new AdminV2AdminSessionsQuery({
       adminAuthSessionModel: { findFirst },
     } as never);

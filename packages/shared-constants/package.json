@@ -23,7 +23,6 @@
       "require": "./dist/index.js"
     }
   },
-  "dependencies": {},
   "devDependencies": {
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",

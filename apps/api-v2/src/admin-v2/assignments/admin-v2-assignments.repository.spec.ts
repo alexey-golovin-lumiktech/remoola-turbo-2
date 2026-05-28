@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ConflictException, ForbiddenException } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
@@ -49,7 +50,7 @@ function releasedRow(overrides: Partial<AssignmentRow> = {}): AssignmentRow {
 }
 
 function buildRepository() {
-  const queryRaw = jest.fn();
+  const queryRaw = jest.fn<(...a: any[]) => any>();
   type TxMock = {
     $queryRaw: typeof queryRaw;
   };
@@ -57,10 +58,10 @@ function buildRepository() {
     $queryRaw: queryRaw,
   };
   const prisma = {
-    $transaction: jest.fn(async (callback: (tx: TxMock) => Promise<unknown>) => callback(tx)),
+    $transaction: jest.fn<(...a: any[]) => any>(async (callback: (tx: TxMock) => Promise<unknown>) => callback(tx)),
   };
   const adminActionAudit = {
-    recordRequiredWithClient: jest.fn().mockResolvedValue(undefined),
+    recordRequiredWithClient: jest.fn<(...a: any[]) => any>().mockResolvedValue(undefined),
   };
 
   return {
@@ -155,7 +156,7 @@ describe(`AdminV2AssignmentsRepository`, () => {
   describe(`release`, () => {
     it(`locks the row, delegates the transactional policy hook, and persists the release`, async () => {
       const { repository, queryRaw } = buildRepository();
-      const assertCanReleaseLockedAssignment = jest.fn();
+      const assertCanReleaseLockedAssignment = jest.fn<(...a: any[]) => any>();
       queryRaw.mockResolvedValueOnce([activeRow()]);
       queryRaw.mockResolvedValueOnce([releasedRow()]);
 
@@ -174,7 +175,7 @@ describe(`AdminV2AssignmentsRepository`, () => {
 
     it(`does not update when the service callback rejects the release`, async () => {
       const { repository, queryRaw } = buildRepository();
-      const assertCanReleaseLockedAssignment = jest.fn(async () => {
+      const assertCanReleaseLockedAssignment = jest.fn<(...a: any[]) => any>(async () => {
         throw new ForbiddenException(`not yours`);
       });
       queryRaw.mockResolvedValueOnce([activeRow({ assigned_to: OTHER_ADMIN_ID })]);
@@ -196,7 +197,7 @@ describe(`AdminV2AssignmentsRepository`, () => {
         repository.release({
           assignmentId: `not-a-uuid`,
           adminId: OPS_ADMIN_ID,
-          assertCanReleaseLockedAssignment: jest.fn(),
+          assertCanReleaseLockedAssignment: jest.fn<(...a: any[]) => any>(),
         }),
       ).rejects.toBeInstanceOf(SqlValidationError);
       expect(queryRaw).not.toHaveBeenCalled();

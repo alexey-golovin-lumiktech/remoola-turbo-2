@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 
@@ -16,19 +17,21 @@ import { SignupMailingService } from '../../shared/signup-mailing.service';
 describe(`ConsumerAuthService.resendSignupVerificationEmail`, () => {
   let service: ConsumerAuthService;
   let prisma: {
-    consumerModel: { findFirst: jest.Mock };
+    consumerModel: { findFirst: jest.Mock<(...a: any[]) => any> };
   };
-  let mailingService: { sendConsumerSignupVerificationEmailSafe: jest.Mock };
-  let jwtService: { signAsync: jest.Mock };
+  let mailingService: { sendConsumerSignupVerificationEmailSafe: jest.Mock<(...a: any[]) => any> };
+  let jwtService: { signAsync: jest.Mock<(...a: any[]) => any> };
 
   const consumerId = `11111111-1111-1111-1111-111111111111`;
 
   beforeEach(async () => {
     prisma = {
-      consumerModel: { findFirst: jest.fn() },
+      consumerModel: { findFirst: jest.fn<(...a: any[]) => any>() },
     };
-    mailingService = { sendConsumerSignupVerificationEmailSafe: jest.fn().mockResolvedValue(true) };
-    jwtService = { signAsync: jest.fn().mockResolvedValue(`jwt-token`) };
+    mailingService = {
+      sendConsumerSignupVerificationEmailSafe: jest.fn<(...a: any[]) => any>().mockResolvedValue(true),
+    };
+    jwtService = { signAsync: jest.fn<(...a: any[]) => any>().mockResolvedValue(`jwt-token`) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: consumerAuthServiceTestProviders([
@@ -37,11 +40,11 @@ describe(`ConsumerAuthService.resendSignupVerificationEmail`, () => {
         { provide: RecoveryMailingService, useValue: {} },
         { provide: AdminNotificationMailingService, useValue: {} },
         { provide: SignupMailingService, useValue: mailingService },
-        { provide: AuthAuditService, useValue: { recordAudit: jest.fn() } },
+        { provide: AuthAuditService, useValue: { recordAudit: jest.fn<(...a: any[]) => any>() } },
         {
           provide: OriginResolverService,
           useValue: {
-            validateConsumerAppScope: jest.fn((scope?: string | null) =>
+            validateConsumerAppScope: jest.fn<(...a: any[]) => any>((scope?: string | null) =>
               scope === CURRENT_CONSUMER_APP_SCOPE ? scope : undefined,
             ),
           },

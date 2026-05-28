@@ -59,7 +59,7 @@ export class AssignmentReleaseBody implements AdminV2AssignmentReleaseBody {
   @Expose()
   @Type(() => Number)
   @Equals(0)
-  expectedReleasedAtNull!: number;
+  expectedReleasedAtNull!: 0;
 }
 
 export class AssignmentReassignBody implements AdminV2AssignmentReassignBody {
@@ -84,5 +84,5 @@ export class AssignmentReassignBody implements AdminV2AssignmentReassignBody {
   @Expose()
   @Type(() => Number)
   @Equals(0)
-  expectedReleasedAtNull!: number;
+  expectedReleasedAtNull!: 0;
 }

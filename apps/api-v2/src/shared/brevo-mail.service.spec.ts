@@ -1,3 +1,5 @@
+import { expect, jest } from '@jest/globals';
+
 import { BrevoMailService } from './brevo-mail.service';
 
 jest.mock(`../envs`, () => ({
@@ -11,7 +13,7 @@ jest.mock(`../envs`, () => ({
 
 describe(`BrevoMailService`, () => {
   let service: BrevoMailService;
-  let fetchMock: jest.SpyInstance;
+  let fetchMock: jest.SpiedFunction<(...a: any[]) => any>;
   const transientSocketError = () =>
     Object.assign(new TypeError(`fetch failed`), {
       cause: { code: `UND_ERR_SOCKET` },

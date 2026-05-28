@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -33,8 +34,8 @@ describe(`AdminV2ExchangeService`, () => {
   }) {
     const prisma = {
       exchangeRateModel: {
-        count: jest.fn(async () => 1),
-        findMany: jest.fn(async () => [
+        count: jest.fn<(...a: any[]) => any>(async () => 1),
+        findMany: jest.fn<(...a: any[]) => any>(async () => [
           {
             id: `rate-1`,
             fromCurrency: $Enums.CurrencyCode.USD,
@@ -52,42 +53,42 @@ describe(`AdminV2ExchangeService`, () => {
             updatedAt: new Date(`2026-04-17T08:05:00.000Z`),
           },
         ]),
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       walletAutoConversionRuleModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       scheduledFxConversionModel: {
-        findFirst: jest.fn(),
+        findFirst: jest.fn<(...a: any[]) => any>(),
       },
       ledgerEntryModel: {
-        findMany: jest.fn(async () => []),
+        findMany: jest.fn<(...a: any[]) => any>(async () => []),
       },
       adminActionAuditLogModel: {
-        findMany: jest.fn(async () => []),
+        findMany: jest.fn<(...a: any[]) => any>(async () => []),
       },
-      $queryRaw: jest.fn(),
-      $transaction: jest.fn(),
+      $queryRaw: jest.fn<(...a: any[]) => any>(),
+      $transaction: jest.fn<(...a: any[]) => any>(),
       ...overrides?.prisma,
     } as any;
 
     const idempotency = {
-      execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+      execute: jest.fn<(...a: any[]) => any>(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
       ...overrides?.idempotency,
     } as any;
 
     const balanceService = {
-      calculateInTransaction: jest.fn(async () => 0),
+      calculateInTransaction: jest.fn<(...a: any[]) => any>(async () => 0),
       ...overrides?.balanceService,
     } as any;
 
     const domainEvents = {
-      publishAfterCommit: jest.fn(async () => undefined),
+      publishAfterCommit: jest.fn<(...a: any[]) => any>(async () => undefined),
       ...overrides?.domainEvents,
     } as any;
 
     const assignmentsService = {
-      getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
+      getAssignmentContextForResource: jest.fn<(...a: any[]) => any>(async () => ({ current: null, history: [] })),
       ...overrides?.assignmentsService,
     } as any;
 
@@ -181,7 +182,7 @@ describe(`AdminV2ExchangeService`, () => {
     const { service } = createService({
       prisma: {
         exchangeRateModel: {
-          findFirst: jest.fn(async () => ({
+          findFirst: jest.fn<(...a: any[]) => any>(async () => ({
             id: `rate-1`,
             fromCurrency: $Enums.CurrencyCode.USD,
             toCurrency: $Enums.CurrencyCode.EUR,
@@ -202,7 +203,7 @@ describe(`AdminV2ExchangeService`, () => {
           })),
         },
         adminActionAuditLogModel: {
-          findMany: jest.fn(async () => [
+          findMany: jest.fn<(...a: any[]) => any>(async () => [
             {
               id: `audit-1`,
               action: `exchange_rate_approve`,
@@ -233,8 +234,8 @@ describe(`AdminV2ExchangeService`, () => {
     const { service } = createService({
       prisma: {
         walletAutoConversionRuleModel: {
-          count: jest.fn(async () => 1),
-          findMany: jest.fn(async () => [
+          count: jest.fn<(...a: any[]) => any>(async () => 1),
+          findMany: jest.fn<(...a: any[]) => any>(async () => [
             {
               id: `rule-1`,
               consumer: { id: `consumer-1`, email: `consumer@example.com` },
@@ -250,7 +251,7 @@ describe(`AdminV2ExchangeService`, () => {
               updatedAt,
             },
           ]),
-          findFirst: jest.fn(),
+          findFirst: jest.fn<(...a: any[]) => any>(),
         },
       },
     });
@@ -272,7 +273,7 @@ describe(`AdminV2ExchangeService`, () => {
     const { service } = createService({
       prisma: {
         walletAutoConversionRuleModel: {
-          findFirst: jest.fn(async () => ({
+          findFirst: jest.fn<(...a: any[]) => any>(async () => ({
             id: `rule-1`,
             consumer: { id: `consumer-1`, email: `consumer@example.com` },
             fromCurrency: $Enums.CurrencyCode.USD,
@@ -304,7 +305,7 @@ describe(`AdminV2ExchangeService`, () => {
     const { service, prisma } = createService({
       prisma: {
         exchangeRateModel: {
-          findFirst: jest.fn(async () => ({
+          findFirst: jest.fn<(...a: any[]) => any>(async () => ({
             id: `rate-1`,
             updatedAt,
             deletedAt: null,
@@ -349,7 +350,7 @@ describe(`AdminV2ExchangeService`, () => {
     const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
     const tx = {
       $queryRaw: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockResolvedValueOnce([
           {
             id: `rule-1`,
@@ -370,7 +371,7 @@ describe(`AdminV2ExchangeService`, () => {
         ])
         .mockResolvedValueOnce([{ locked: true }]),
       walletAutoConversionRuleModel: {
-        update: jest.fn(async () => ({
+        update: jest.fn<(...a: any[]) => any>(async () => ({
           id: `rule-1`,
           updatedAt,
           nextRunAt: new Date(`2026-04-17T11:00:00.000Z`),
@@ -378,23 +379,25 @@ describe(`AdminV2ExchangeService`, () => {
         })),
       },
       adminActionAuditLogModel: {
-        create: jest.fn(async () => ({ id: `audit-1` })),
+        create: jest.fn<(...a: any[]) => any>(async () => ({ id: `audit-1` })),
       },
-      $executeRaw: jest.fn(async () => undefined),
+      $executeRaw: jest.fn<(...a: any[]) => any>(async () => undefined),
     } as any;
     const { service, prisma, balanceService, domainEvents } = createService({
       prisma: {
         walletAutoConversionRuleModel: {
-          findFirst: jest.fn(async () => ({
+          findFirst: jest.fn<(...a: any[]) => any>(async () => ({
             id: `rule-1`,
             updatedAt,
             deletedAt: null,
           })),
         },
-        $transaction: jest.fn(async (callback: (client: unknown) => Promise<unknown>) => callback(tx)),
+        $transaction: jest.fn<(...a: any[]) => any>(async (callback: (client: unknown) => Promise<unknown>) =>
+          callback(tx),
+        ),
       },
       balanceService: {
-        calculateInTransaction: jest.fn(async () => 100),
+        calculateInTransaction: jest.fn<(...a: any[]) => any>(async () => 100),
       },
     });
 
@@ -446,7 +449,7 @@ describe(`AdminV2ExchangeService`, () => {
     const rateObservedAt = new Date(now - 30 * 60_000);
     const tx = {
       $queryRaw: jest
-        .fn()
+        .fn<(...a: any[]) => any>()
         .mockResolvedValueOnce([
           {
             id: `scheduled-1`,
@@ -469,9 +472,9 @@ describe(`AdminV2ExchangeService`, () => {
           },
         ])
         .mockResolvedValueOnce([{ locked: true }]),
-      $executeRaw: jest.fn(async () => undefined),
+      $executeRaw: jest.fn<(...a: any[]) => any>(async () => undefined),
       exchangeRateModel: {
-        findFirst: jest.fn(async () => ({
+        findFirst: jest.fn<(...a: any[]) => any>(async () => ({
           id: `rate-1`,
           rate: { valueOf: () => 0.9 } as never,
           fetchedAt: rateObservedAt,
@@ -481,33 +484,35 @@ describe(`AdminV2ExchangeService`, () => {
       },
       ledgerEntryModel: {
         create: jest
-          .fn()
+          .fn<(...a: any[]) => any>()
           .mockResolvedValueOnce({ id: `source-1`, ledgerId: `ledger-1` })
           .mockResolvedValueOnce({ id: `target-1`, ledgerId: `ledger-1` }),
       },
       scheduledFxConversionModel: {
-        update: jest.fn(async () => ({
+        update: jest.fn<(...a: any[]) => any>(async () => ({
           id: `scheduled-1`,
           updatedAt,
         })),
       },
       adminActionAuditLogModel: {
-        create: jest.fn(async () => ({ id: `audit-1` })),
+        create: jest.fn<(...a: any[]) => any>(async () => ({ id: `audit-1` })),
       },
     } as any;
     const { service, prisma, balanceService, domainEvents } = createService({
       prisma: {
         scheduledFxConversionModel: {
-          findFirst: jest.fn(async () => ({
+          findFirst: jest.fn<(...a: any[]) => any>(async () => ({
             id: `scheduled-1`,
             updatedAt,
             deletedAt: null,
           })),
         },
-        $transaction: jest.fn(async (callback: (client: unknown) => Promise<unknown>) => callback(tx)),
+        $transaction: jest.fn<(...a: any[]) => any>(async (callback: (client: unknown) => Promise<unknown>) =>
+          callback(tx),
+        ),
       },
       balanceService: {
-        calculateInTransaction: jest.fn(async () => 100),
+        calculateInTransaction: jest.fn<(...a: any[]) => any>(async () => 100),
       },
     });
 
@@ -576,12 +581,12 @@ describe(`AdminV2ExchangeService`, () => {
     const { service, assignmentsService } = createService({
       prisma: {
         scheduledFxConversionModel: {
-          count: jest.fn(async () => 2),
-          findMany: jest.fn(async () => conversions),
+          count: jest.fn<(...a: any[]) => any>(async () => 2),
+          findMany: jest.fn<(...a: any[]) => any>(async () => conversions),
         },
       },
       assignmentsService: {
-        getActiveAssigneesForResource: jest.fn(
+        getActiveAssigneesForResource: jest.fn<(...a: any[]) => any>(
           async () => new Map([[`scheduled-1`, { id: `admin-1`, name: null, email: `admin-1@example.com` }]]),
         ),
       },
@@ -625,7 +630,7 @@ describe(`AdminV2ExchangeService`, () => {
       const { service, assignmentsService } = createService({
         prisma: {
           scheduledFxConversionModel: {
-            findFirst: jest.fn(async () => buildConversion()),
+            findFirst: jest.fn<(...a: any[]) => any>(async () => buildConversion()),
           },
         },
       });
@@ -642,7 +647,6 @@ describe(`AdminV2ExchangeService`, () => {
           id: `assignment-1`,
           assignedAdminId: `admin-1`,
           assignedAt: `2026-04-17T08:10:00.000Z`,
-          expectedReleasedAtNull: true,
         },
         history: [
           {
@@ -657,11 +661,11 @@ describe(`AdminV2ExchangeService`, () => {
       const { service, assignmentsService } = createService({
         prisma: {
           scheduledFxConversionModel: {
-            findFirst: jest.fn(async () => buildConversion()),
+            findFirst: jest.fn<(...a: any[]) => any>(async () => buildConversion()),
           },
         },
         assignmentsService: {
-          getAssignmentContextForResource: jest.fn(async () => populated),
+          getAssignmentContextForResource: jest.fn<(...a: any[]) => any>(async () => populated),
         },
       });
 
@@ -675,10 +679,10 @@ describe(`AdminV2ExchangeService`, () => {
       const { service } = createService({
         prisma: {
           scheduledFxConversionModel: {
-            findFirst: jest.fn(async () => buildConversion({ ledgerId: `ledger-1` })),
+            findFirst: jest.fn<(...a: any[]) => any>(async () => buildConversion({ ledgerId: `ledger-1` })),
           },
           ledgerEntryModel: {
-            findMany: jest.fn(async () => [
+            findMany: jest.fn<(...a: any[]) => any>(async () => [
               {
                 id: `entry-1`,
                 ledgerId: `ledger-1`,

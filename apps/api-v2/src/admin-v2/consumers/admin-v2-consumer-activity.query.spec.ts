@@ -1,18 +1,20 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
 import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 
 describe(`AdminV2ConsumerActivityQuery`, () => {
   it(`builds auth-history filters from consumer id, lowercased email, and explicit date range`, async () => {
-    const authFindMany = jest.fn().mockResolvedValue([{ id: `auth-1` }]);
-    const authCount = jest.fn().mockResolvedValue(1);
+    const authFindMany = jest.fn<(...a: any[]) => any>().mockResolvedValue([{ id: `auth-1` }]);
+    const authCount = jest.fn<(...a: any[]) => any>().mockResolvedValue(1);
     const prisma = {
       authAuditLogModel: {
         findMany: authFindMany,
         count: authCount,
       },
       consumerActionLogModel: {
-        findMany: jest.fn(),
-        count: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
+        count: jest.fn<(...a: any[]) => any>(),
       },
     } as any;
     const query = new AdminV2ConsumerActivityQuery(prisma);
@@ -57,12 +59,12 @@ describe(`AdminV2ConsumerActivityQuery`, () => {
   it(`builds action-log filters with trimmed action and default date window`, async () => {
     jest.useFakeTimers().setSystemTime(new Date(`2026-05-14T12:00:00.000Z`));
 
-    const actionFindMany = jest.fn().mockResolvedValue([{ id: `action-1` }]);
-    const actionCount = jest.fn().mockResolvedValue(1);
+    const actionFindMany = jest.fn<(...a: any[]) => any>().mockResolvedValue([{ id: `action-1` }]);
+    const actionCount = jest.fn<(...a: any[]) => any>().mockResolvedValue(1);
     const prisma = {
       authAuditLogModel: {
-        findMany: jest.fn(),
-        count: jest.fn(),
+        findMany: jest.fn<(...a: any[]) => any>(),
+        count: jest.fn<(...a: any[]) => any>(),
       },
       consumerActionLogModel: {
         findMany: actionFindMany,

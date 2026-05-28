@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { type Prisma } from '@remoola/database-2';
 
 import { AdminV2LedgerAnomaliesLatestOutcomeQuery } from './admin-v2-ledger-anomalies-latest-outcome.query';
@@ -20,7 +22,7 @@ function queryToString(query: unknown): string {
 describe(`AdminV2LedgerAnomaliesLatestOutcomeQuery`, () => {
   function makeQuery() {
     const prisma = {
-      $queryRaw: jest.fn<Promise<unknown[]>, [Prisma.Sql]>(async () => [{ count: 0 }]),
+      $queryRaw: jest.fn<(sql: Prisma.Sql) => Promise<unknown[]>>(async () => [{ count: 0 }]),
     };
 
     return {

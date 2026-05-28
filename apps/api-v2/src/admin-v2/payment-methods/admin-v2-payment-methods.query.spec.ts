@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from '@jest/globals';
+
 import { $Enums } from '@remoola/database-2';
 
 import { AdminV2PaymentMethodsQuery } from './admin-v2-payment-methods.query';
@@ -5,9 +7,9 @@ import { AdminV2PaymentMethodsQuery } from './admin-v2-payment-methods.query';
 describe(`AdminV2PaymentMethodsQuery`, () => {
   function buildQuery() {
     const paymentMethodModel = {
-      findMany: jest.fn(async () => []),
-      count: jest.fn(async () => 0),
-      findFirst: jest.fn(),
+      findMany: jest.fn<(...a: any[]) => any>(async () => []),
+      count: jest.fn<(...a: any[]) => any>(async () => 0),
+      findFirst: jest.fn<(...a: any[]) => any>(),
     };
     const prisma = {
       paymentMethodModel,

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { type AdminV2AdminRef } from './responses';
+
 export const ADMIN_V2_ASSIGNABLE_RESOURCE_TYPES = [
   `verification`,
   `ledger_entry`,
@@ -13,8 +15,6 @@ export type AdminV2AssignableResourceType = (typeof ADMIN_V2_ASSIGNABLE_RESOURCE
 export const ADMIN_V2_MIN_ASSIGNMENT_REASON_LENGTH = 10;
 export const ADMIN_V2_MAX_ASSIGNMENT_REASON_LENGTH = 500;
 
-export type AdminV2AdminRef = { id: string; name: string | null; email: string | null };
-
 export type AdminV2AssignmentContextSummary = {
   id: string;
   assignedTo: AdminV2AdminRef;
@@ -27,31 +27,6 @@ export type AdminV2AssignmentContextSummary = {
 export type AdminV2AssignmentContextHistoryItem = AdminV2AssignmentContextSummary & {
   releasedAt: string | null;
   releasedBy: AdminV2AdminRef | null;
-};
-
-export type AdminV2AssignmentContext = {
-  current: AdminV2AssignmentContextSummary | null;
-  history: AdminV2AssignmentContextHistoryItem[];
-};
-
-export type AdminV2AssignmentClaimBody = {
-  resourceType: AdminV2AssignableResourceType;
-  resourceId: string;
-  reason?: string;
-};
-
-export type AdminV2AssignmentReleaseBody = {
-  assignmentId: string;
-  reason?: string;
-  expectedReleasedAtNull: number;
-};
-
-export type AdminV2AssignmentReassignBody = {
-  assignmentId: string;
-  newAssigneeId: string;
-  confirmed: boolean;
-  reason: string;
-  expectedReleasedAtNull: number;
 };
 
 export function isAdminV2AssignableResourceType(value: string): value is AdminV2AssignableResourceType {
@@ -77,3 +52,7 @@ export const adminV2AssignmentReassignBodySchema = z.object({
   confirmed: z.boolean(),
   reason: z.string().trim().min(ADMIN_V2_MIN_ASSIGNMENT_REASON_LENGTH).max(ADMIN_V2_MAX_ASSIGNMENT_REASON_LENGTH),
 });
+
+export type AdminV2AssignmentReassignBody = z.infer<typeof adminV2AssignmentReassignBodySchema>;
+export type AdminV2AssignmentReleaseBody = z.infer<typeof adminV2AssignmentReleaseBodySchema>;
+export type AdminV2AssignmentClaimBody = z.infer<typeof adminV2AssignmentClaimBodySchema>;
