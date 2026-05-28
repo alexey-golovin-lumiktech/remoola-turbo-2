@@ -3075,7 +3075,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-27</summary>
 
 - **2026-05-27:**
@@ -3103,6 +3103,28 @@
 
   ### ⚠️ Notes
   - **Additive, migration-free day:** All `@remoola/api-types` changes are additive (new exports only) — verify downstream consumers typecheck against the bumped package before merge. No DB migration landed today; every change is a safe rolling deploy.
+
+</details>
+
+<details open>
+<summary>2026-05-28</summary>
+
+- **2026-05-28:**
+
+  ### 🔐 Security / Production Safety
+  - **Admin-v2 ledger read contract:** Fix a regression from the `9698c71b` read-contract tightening by adding `ledgerId` to the `relatedEntries` Prisma select and projection in both the admin-v2 ledger and payouts emitters, so `adminV2RelatedLedgerEntrySchema` validation no longer fails and ledger/payout case pages render the real data instead of the `AdminSurfaceUnavailable` fallback. Read-only path; append-only ledger invariant untouched and the response is additively widened with an already-persisted field.
+  - **Auth and admin input validation alignment:** Migrate admin-v2 login, forgot-password, invite-admin, and consumer signup enum schemas — plus admin/consumer public API URL and api-v2 / Brevo env parsing — to the `z.email()`, `z.uuid()`, `z.url()` shorthand validators, preserving the existing payload-acceptance contracts across admin UI, server proxy, and api-v2.
+
+  ### 🛠 DevEx
+  - **Schema-derived admin-v2 contracts:** Migrate `@remoola/api-types` admin-v2 request/query/response exports to `z.infer`-derived types, move shared admin refs and assignment/alert contracts behind schema-owned exports, delete the legacy `apps/api-v2/src/dtos/{common,consumer}` barrels, drop the unused admin-v2 verification query serializer and obsolete shared-common balance helper types, and switch consumer auth search-param parsing to the current Zod loose-object API — keeping admin-v2 and consumer-css-grid on a single contract source while preserving optimistic-concurrency `expectedDeletedAtNull` / `expectedReversed*` mutation sentinels and operational-alert payload typing.
+  - **Test tooling alignment:** Update Jest-importing tests and package devDependencies to explicit `@jest/*` imports across `api-v2`, `admin-v2`, `consumer-css-grid`, and shared packages.
+
+  ### 🧪 Testing
+  - **Related-entries projection coverage:** Extend `admin-v2-ledger.service.spec.ts`, `admin-v2-payout-query.service.spec.ts`, and the admin-v2 `payouts/[payoutId]/page.test.tsx` fixture with `ledgerId` on `relatedEntries` so the tightened Prisma select stays covered.
+  - **Validation and contract refresh:** Refresh admin-v2 proxy validation, auth schema, and consumer signup specs to match the migrated Zod shorthand validators and schema-derived contract exports.
+
+  ### ⚠️ Notes
+  - **Migration-free, additive deploy:** No DB migration today. For the `ledgerId` fix prefer shipping api-v2 first (or together with admin-v2) so the field is present when admin-v2 parses the response; the api-v2 / consumer-css-grid packages should be re-verified against the bumped `@remoola/api-types` contracts before merge.
 
 </details>
 
