@@ -1,4 +1,9 @@
-import { buildAuthMutationForwardHeaders, proxyAdminApiRoute, requireJsonBody } from '../../../../../../lib/api-utils';
+import { tokenPasswordSchema } from '../../../../../../features/auth/schemas';
+import {
+  buildAuthMutationForwardHeaders,
+  proxyAdminApiRoute,
+  requireValidatedJsonBody,
+} from '../../../../../../lib/api-utils';
 
 export async function POST(req: Request) {
   return proxyAdminApiRoute({
@@ -10,6 +15,11 @@ export async function POST(req: Request) {
       headers.set(`content-type`, `application/json`);
       return headers;
     },
-    prepareBody: requireJsonBody,
+    prepareBody(request) {
+      return requireValidatedJsonBody(request, tokenPasswordSchema, {
+        code: `VALIDATION_ERROR`,
+        message: `Invalid password-reset payload`,
+      });
+    },
   });
 }

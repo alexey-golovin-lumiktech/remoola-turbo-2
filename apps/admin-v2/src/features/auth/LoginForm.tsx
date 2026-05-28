@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import styles from './AuthForm.module.css';
+import { loginSchema } from './schemas';
 
 export function LoginForm() {
   const router = useRouter();
@@ -15,14 +16,25 @@ export function LoginForm() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
     setError(null);
+
+    const parsed = loginSchema.safeParse({
+      email: email.trim(),
+      password,
+    });
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      setError(fieldErrors.email?.[0] ?? fieldErrors.password?.[0] ?? `Login failed`);
+      return;
+    }
+
+    setPending(true);
 
     try {
       const response = await fetch(`/api/admin-v2/auth/login`, {
         method: `POST`,
         headers: { 'content-type': `application/json` },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { message?: string } | null;

@@ -1,5 +1,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 
+import { adminV2OverviewSummaryResponseSchema } from '@remoola/api-types';
+
 import { type AdminV2OverviewQuery } from './admin-v2-overview.query';
 import { AdminV2OverviewService } from './admin-v2-overview.service';
 
@@ -103,6 +105,7 @@ describe(`AdminV2OverviewService`, () => {
       href: `/exchange/rates?stale=true`,
     });
     expect(summary.signals).not.toHaveProperty(`failedOrStuckPayouts`);
+    expect(adminV2OverviewSummaryResponseSchema.safeParse(summary).success).toBe(true);
   });
 
   it(`keeps temporarily-unavailable as fallback when overview query signals fail`, async () => {
@@ -134,6 +137,7 @@ describe(`AdminV2OverviewService`, () => {
       availability: `temporarily-unavailable`,
       href: `/ledger/anomalies`,
     });
+    expect(adminV2OverviewSummaryResponseSchema.safeParse(summary).success).toBe(true);
   });
 
   it(`keeps payment signals temporarily-unavailable when payment counters fail`, async () => {
@@ -165,5 +169,6 @@ describe(`AdminV2OverviewService`, () => {
       availability: `available`,
       href: `/exchange/scheduled?status=FAILED`,
     });
+    expect(adminV2OverviewSummaryResponseSchema.safeParse(summary).success).toBe(true);
   });
 });

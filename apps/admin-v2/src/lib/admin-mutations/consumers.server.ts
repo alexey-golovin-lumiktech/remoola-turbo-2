@@ -1,9 +1,12 @@
 'use server';
 
 import {
+  adminV2AddConsumerFlagBodySchema,
+  adminV2CreateConsumerNoteBodySchema,
   adminV2ForceLogoutConsumerBodySchema,
   adminV2ResendConsumerEmailBodySchema,
   adminV2SuspendConsumerBodySchema,
+  adminV2RemoveConsumerFlagBodySchema,
 } from '@remoola/api-types';
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
@@ -18,7 +21,8 @@ export async function createConsumerNoteAction(consumerId: string, formData: For
   if (!content) {
     throw new Error(`content is required`);
   }
-  await postAdminMutation(`/admin-v2/consumers/${consumerId}/notes`, { content }, `Failed to create note`);
+  const body = adminV2CreateConsumerNoteBodySchema.parse({ content });
+  await postAdminMutation(`/admin-v2/consumers/${consumerId}/notes`, body, `Failed to create note`);
   revalidateConsumerPaths(consumerId);
 }
 
@@ -41,11 +45,8 @@ export async function addConsumerFlagAction(consumerId: string, formData: FormDa
   if (!flag) {
     throw new Error(`flag is required`);
   }
-  await postAdminMutation(
-    `/admin-v2/consumers/${consumerId}/flags`,
-    { flag, reason: reason || null },
-    `Failed to add flag`,
-  );
+  const body = adminV2AddConsumerFlagBodySchema.parse({ flag, reason: reason || null });
+  await postAdminMutation(`/admin-v2/consumers/${consumerId}/flags`, body, `Failed to add flag`);
   revalidateConsumerPaths(consumerId);
 }
 
@@ -64,11 +65,8 @@ export async function addConsumerFlagFormAction(
 
 export async function removeConsumerFlagAction(consumerId: string, flagId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
-  await patchAdminMutation(
-    `/admin-v2/consumers/${consumerId}/flags/${flagId}/remove`,
-    { version },
-    `Failed to remove flag`,
-  );
+  const body = adminV2RemoveConsumerFlagBodySchema.parse({ version });
+  await patchAdminMutation(`/admin-v2/consumers/${consumerId}/flags/${flagId}/remove`, body, `Failed to remove flag`);
   revalidateConsumerPaths(consumerId);
 }
 

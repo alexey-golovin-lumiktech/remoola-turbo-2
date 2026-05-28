@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import styles from './AuthForm.module.css';
+import { tokenPasswordSchema } from './schemas';
 
-const PASSWORD_RE = /(?!.* )(?=(.*[A-Z]){2,})(?=.*?[a-z])(?=.*[1-9]{1,})(?=.*?[#?!@$%^&*-]).{8,}$/;
 const PASSWORD_REQUIREMENTS_MESSAGE = `Use at least 8 characters, 2 uppercase letters, 1 lowercase letter, 1 number, and 1 special character, with no spaces.`;
 
 type TokenPasswordFormProps = {
@@ -39,12 +39,15 @@ export function TokenPasswordForm({
       setError(`The token is missing from this link.`);
       return;
     }
-    if (!PASSWORD_RE.test(password)) {
-      setError(PASSWORD_REQUIREMENTS_MESSAGE);
-      return;
-    }
     if (password !== confirmPassword) {
       setError(`Passwords do not match.`);
+      return;
+    }
+
+    const parsed = tokenPasswordSchema.safeParse({ token: token.trim(), password });
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      setError(fieldErrors.password?.[0] ?? fieldErrors.token?.[0] ?? PASSWORD_REQUIREMENTS_MESSAGE);
       return;
     }
 
@@ -53,7 +56,7 @@ export function TokenPasswordForm({
       const response = await fetch(submitPath, {
         method: `POST`,
         headers: { 'content-type': `application/json` },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { message?: string } | null;

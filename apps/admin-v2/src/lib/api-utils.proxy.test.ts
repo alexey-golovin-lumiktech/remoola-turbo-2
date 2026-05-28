@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { z } from 'zod';
 
+import { adminV2TokenPasswordBodySchema } from '@remoola/api-types';
+
 type MockFetch = jest.MockedFunction<typeof fetch>;
 
 describe(`admin-v2 proxy helpers`, () => {
@@ -144,25 +146,56 @@ describe(`admin-v2 proxy helpers`, () => {
     expect(response.headers.get(`set-cookie`)).toContain(`admin_access=new-token`);
   });
 
-  it(`passes through upstream text bodies for raw JSON routes`, async () => {
-    const { proxyAdminApiRoute, requireJsonBody, buildAuthMutationForwardHeaders } = await import(`./api-utils`);
+  it(`validates invitation acceptance payloads before proxying them upstream`, async () => {
+    const { proxyAdminApiRoute, requireValidatedJsonBody, buildAuthMutationForwardHeaders } = await import(
+      `./api-utils`
+    );
 
     mockFetch.mockResolvedValueOnce(new Response(`accepted`, { status: 202 }));
 
     const response = await proxyAdminApiRoute({
       req: new Request(`https://admin-v2.example.com/api/admin-v2/auth/invitations/accept`, {
         method: `POST`,
-        body: JSON.stringify({ token: `invite-token`, password: `Current1!@#abc` }),
+        body: JSON.stringify({ token: `invite-token`, password: `AAvalid1!` }),
         headers: { 'content-type': `application/json` },
       }),
       method: `POST`,
       upstreamPath: `/admin-v2/auth/invitations/accept`,
       buildHeaders: buildAuthMutationForwardHeaders,
-      prepareBody: requireJsonBody,
+      prepareBody: (req) =>
+        requireValidatedJsonBody(req, adminV2TokenPasswordBodySchema, {
+          code: `VALIDATION_ERROR`,
+          message: `Invalid invitation-acceptance payload`,
+        }),
     });
 
     expect(response.status).toBe(202);
     await expect(response.text()).resolves.toBe(`accepted`);
+  });
+
+  it(`rejects malformed token-password auth payloads with a controlled 400`, async () => {
+    const { requireValidatedJsonBody } = await import(`./api-utils`);
+
+    const result = await requireValidatedJsonBody(
+      new Request(`https://admin-v2.example.com/api/admin-v2/auth/password/reset`, {
+        method: `POST`,
+        body: JSON.stringify({ token: `reset-token`, password: `password` }),
+        headers: { 'content-type': `application/json` },
+      }),
+      adminV2TokenPasswordBodySchema,
+      { code: `VALIDATION_ERROR`, message: `Invalid password-reset payload` },
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      throw new Error(`Expected validation error`);
+    }
+    expect(result.response.status).toBe(400);
+    await expect(result.response.json()).resolves.toMatchObject({
+      code: `VALIDATION_ERROR`,
+      message: `Invalid password-reset payload`,
+      fieldErrors: { password: expect.any(Array) },
+    });
   });
 
   it(`supports no-body proxy requests`, async () => {

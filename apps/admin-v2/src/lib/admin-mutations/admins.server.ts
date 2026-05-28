@@ -5,6 +5,7 @@ import {
   adminV2ChangeAdminRoleBodySchema,
   adminV2DeactivateAdminBodySchema,
   adminV2InviteAdminBodySchema,
+  adminV2RevokeAdminSessionBodySchema,
   adminV2StepUpVersionedMutationBodySchema,
 } from '@remoola/api-types';
 
@@ -77,10 +78,8 @@ export async function resetAdminPasswordAction(adminId: string, formData: FormDa
 
 export async function revokeMyAdminSessionAction(formData: FormData): Promise<void> {
   const sessionId = String(formData.get(`sessionId`) ?? ``).trim();
-  if (!sessionId) {
-    throw new Error(`sessionId is required`);
-  }
-  await postAdminMutation(`/admin-v2/auth/revoke-session`, { sessionId }, `Failed to revoke own session`);
+  const body = adminV2RevokeAdminSessionBodySchema.parse({ sessionId });
+  await postAdminMutation(`/admin-v2/auth/revoke-session`, body, `Failed to revoke own session`);
   revalidateAdminSessionPaths();
 }
 

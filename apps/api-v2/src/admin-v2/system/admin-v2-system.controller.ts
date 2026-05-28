@@ -2,6 +2,8 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
+import { type AdminV2SystemSummaryResponse } from '@remoola/api-types';
+
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2SystemService } from './admin-v2-system.service';
@@ -17,7 +19,7 @@ export class AdminV2SystemController {
   ) {}
 
   @Get(`summary`)
-  async getSummary(@Identity() admin: IIdentityContext) {
+  async getSummary(@Identity() admin: IIdentityContext): Promise<AdminV2SystemSummaryResponse> {
     await this.accessService.assertCapability(admin, `system.read`);
     return this.service.getSummary();
   }

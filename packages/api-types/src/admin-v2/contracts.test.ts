@@ -10,8 +10,11 @@ import {
   ADMIN_V2_SAVED_VIEW_WORKSPACES,
   adminV2AdminIdentitySchema,
   adminV2AdminPasswordPatchBodySchema,
+  adminV2AddConsumerFlagBodySchema,
+  adminV2AuthOkResponseSchema,
   adminV2AdminsListQuerySchema,
   adminV2AdminsListResponseSchema,
+  adminV2AcceptAdminInvitationResponseSchema,
   adminV2ApproveRateBodySchema,
   adminV2AuthRefreshReuseAlertQueryPayloadSchema,
   adminV2ChangeAdminPermissionsBodySchema,
@@ -21,15 +24,28 @@ import {
   adminV2AssignmentReleaseBodySchema,
   adminV2ConsumerCaseResponseSchema,
   adminV2ConsumersListResponseSchema,
+  adminV2CreateConsumerNoteBodySchema,
   adminV2DeactivateAdminBodySchema,
+  adminV2DocumentBulkTagBodySchema,
+  adminV2DocumentTagCreateBodySchema,
+  adminV2DocumentTagDeleteBodySchema,
+  adminV2DocumentTagUpdateBodySchema,
+  adminV2DocumentRetagBodySchema,
   adminV2InviteAdminBodySchema,
   adminV2ListAdminSessionsResponseSchema,
   adminV2LegacyAdminStatusBodySchema,
+  adminV2LoginBodySchema,
   adminV2OperationalAlertThresholdSchema,
   adminV2OverviewSummaryResponseSchema,
   adminV2PaymentReversalBodySchema,
   adminV2QuickstartsListResponseSchema,
+  adminV2RequestPasswordResetBodySchema,
+  adminV2RequestPasswordResetResponseSchema,
+  adminV2ResetPasswordWithTokenResponseSchema,
+  adminV2RevokeAdminSessionBodySchema,
+  adminV2RevokeAdminSessionResponseSchema,
   adminV2SavedViewCreateBodySchema,
+  adminV2TokenPasswordBodySchema,
   adminV2VerificationQueuePayloadSchema,
   adminV2VerificationQueueQuerySchema,
   adminV2VerificationQueueResponseSchema,
@@ -46,6 +62,18 @@ describe(`admin-v2 shared contracts`, () => {
       method: `POST`,
       path: `/admin-v2/payments/:id/refund`,
       body: `AdminV2PaymentReversalBody`,
+    });
+    expect(ADMIN_V2_ENDPOINTS.authLogin).toMatchObject({
+      method: `POST`,
+      path: `/admin-v2/auth/login`,
+      body: `AdminV2LoginBody`,
+      response: `AdminV2AuthOkResponse`,
+    });
+    expect(ADMIN_V2_ENDPOINTS.authAcceptInvitation).toMatchObject({
+      method: `POST`,
+      path: `/admin-v2/auth/invitations/accept`,
+      body: `AdminV2TokenPasswordBody`,
+      response: `AdminV2AcceptAdminInvitationResponse`,
     });
     expect(ADMIN_V2_ENDPOINTS.operationalAlertsCreate).toMatchObject({
       method: `POST`,
@@ -132,6 +160,54 @@ describe(`admin-v2 shared contracts`, () => {
   });
 
   it(`keeps sensitive admin mutation bodies aligned with backend DTO field names`, () => {
+    expect(
+      adminV2LoginBodySchema.safeParse({
+        email: `ops@example.com`,
+        password: `Current1!@#abc`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2LoginBodySchema.safeParse({
+        email: `not-an-email`,
+        password: `Current1!@#abc`,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      adminV2RequestPasswordResetBodySchema.safeParse({
+        email: `ops@example.com`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2RequestPasswordResetBodySchema.safeParse({
+        email: `not-an-email`,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      adminV2TokenPasswordBodySchema.safeParse({
+        token: `invite-token`,
+        password: `AAvalid1!`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2TokenPasswordBodySchema.safeParse({
+        token: `invite-token`,
+        password: `password`,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      adminV2RevokeAdminSessionBodySchema.safeParse({
+        sessionId: `123e4567-e89b-42d3-a456-426614174000`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2RevokeAdminSessionBodySchema.safeParse({
+        sessionId: `session-1`,
+      }).success,
+    ).toBe(false);
+
     expect(
       adminV2PaymentReversalBodySchema.safeParse({
         amount: 25,
@@ -225,6 +301,47 @@ describe(`admin-v2 shared contracts`, () => {
         reason: `Fresh provider sample`,
       }).success,
     ).toBe(false);
+
+    expect(
+      adminV2CreateConsumerNoteBodySchema.safeParse({
+        content: `follow up with customer`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2AddConsumerFlagBodySchema.safeParse({
+        flag: `high_risk`,
+        reason: `risk review`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2DocumentTagCreateBodySchema.safeParse({
+        name: `manual-review`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2DocumentTagUpdateBodySchema.safeParse({
+        version: 1,
+        name: `manual-review`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2DocumentTagDeleteBodySchema.safeParse({
+        version: 1,
+        confirmed: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2DocumentRetagBodySchema.safeParse({
+        version: 1,
+        tagIds: [`tag-1`],
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2DocumentBulkTagBodySchema.safeParse({
+        tagIds: [`tag-1`],
+        resources: [{ resourceId: `doc-1`, version: 2 }],
+      }).success,
+    ).toBe(true);
   });
 
   it(`keeps assignment mutation bodies aligned with backend expectedReleasedAtNull`, () => {
@@ -560,5 +677,47 @@ describe(`admin-v2 shared contracts`, () => {
       const invalidResult = testCase.schema.safeParse(testCase.invalid);
       expect(invalidResult.success).toBe(false);
     }
+  });
+
+  it(`keeps auth response contracts explicit and strict`, () => {
+    expect(
+      adminV2AuthOkResponseSchema.safeParse({
+        ok: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2RequestPasswordResetResponseSchema.safeParse({
+        message: `If an active admin account exists, we sent recovery instructions.`,
+        recoveryMode: `generic`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2AcceptAdminInvitationResponseSchema.safeParse({
+        adminId: `admin-1`,
+        email: `ops@example.com`,
+        accepted: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2ResetPasswordWithTokenResponseSchema.safeParse({
+        success: true,
+        adminId: `admin-1`,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2RevokeAdminSessionResponseSchema.safeParse({
+        ok: true,
+        revokedSessionId: `session-1`,
+        alreadyRevoked: false,
+      }).success,
+    ).toBe(true);
+    expect(
+      adminV2RevokeAdminSessionResponseSchema.safeParse({
+        ok: true,
+        revokedSessionId: `session-1`,
+        alreadyRevoked: false,
+        extra: `nope`,
+      }).success,
+    ).toBe(false);
   });
 });

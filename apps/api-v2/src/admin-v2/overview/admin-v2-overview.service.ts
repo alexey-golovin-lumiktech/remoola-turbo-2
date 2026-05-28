@@ -152,7 +152,7 @@ export class AdminV2OverviewService {
             resource: item.resource,
             resourceId: item.resourceId,
             adminEmail: item.admin.email,
-            createdAt: item.createdAt,
+            createdAt: item.createdAt.toISOString(),
           })),
         },
         suspiciousAuthEvents: {

@@ -1,5 +1,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 
+import { adminV2SystemSummaryResponseSchema } from '@remoola/api-types';
+
 import { type AdminV2SystemQuery } from './admin-v2-system.query';
 import { AdminV2SystemService } from './admin-v2-system.service';
 
@@ -92,6 +94,7 @@ describe(`AdminV2SystemService`, () => {
       emailDeliveryIssuePatterns: expect.objectContaining({ label: `Email delivery issue patterns` }),
       staleExchangeRateAlerts: expect.objectContaining({ label: `Stale exchange rate alerts` }),
     });
+    expect(adminV2SystemSummaryResponseSchema.safeParse(summary).success).toBe(true);
   });
 
   it(`marks ledger anomalies as watch when the read-only queue reports backlog`, async () => {

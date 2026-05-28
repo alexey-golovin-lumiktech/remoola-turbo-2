@@ -1,6 +1,14 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ForbiddenException, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 
+import {
+  adminV2AcceptAdminInvitationResponseSchema,
+  adminV2ListAdminSessionsResponseSchema,
+  adminV2RequestPasswordResetResponseSchema,
+  adminV2ResetPasswordWithTokenResponseSchema,
+  adminV2RevokeAdminSessionResponseSchema,
+} from '@remoola/api-types';
+
 import { AdminV2AuthController } from './admin-v2-auth.controller';
 
 type ControllerCtorArgs = ConstructorParameters<typeof AdminV2AuthController>;
@@ -176,11 +184,41 @@ describe(`AdminV2AuthController`, () => {
     it(`returns a generic recovery response and delegates to admins service`, async () => {
       const { controller, adminsService } = buildController();
 
-      await expect(controller.requestPasswordReset({ email: `admin@example.com` })).resolves.toEqual({
+      const result = await controller.requestPasswordReset({ email: `admin@example.com` });
+
+      expect(result).toEqual({
         message: `If an active admin account exists, we sent recovery instructions.`,
         recoveryMode: `generic`,
       });
+      expect(adminV2RequestPasswordResetResponseSchema.safeParse(result).success).toBe(true);
       expect(adminsService.requestPasswordReset).toHaveBeenCalledWith({ email: `admin@example.com` });
+    });
+  });
+
+  describe(`public auth responses`, () => {
+    it(`returns shared invitation-acceptance and password-reset wire contracts`, async () => {
+      const { controller, adminsService } = buildController();
+      adminsService.acceptInvitation.mockResolvedValueOnce({
+        adminId: `admin-2`,
+        email: `invitee@example.com`,
+        accepted: true,
+      });
+      adminsService.resetPasswordWithToken.mockResolvedValueOnce({
+        success: true,
+        adminId: `admin-2`,
+      });
+
+      const invitation = await controller.acceptInvitation({
+        token: `invite-token`,
+        password: `AAvalid1!`,
+      });
+      const passwordReset = await controller.resetPassword({
+        token: `reset-token`,
+        password: `AAvalid1!`,
+      });
+
+      expect(adminV2AcceptAdminInvitationResponseSchema.safeParse(invitation).success).toBe(true);
+      expect(adminV2ResetPasswordWithTokenResponseSchema.safeParse(passwordReset).success).toBe(true);
     });
   });
 
@@ -222,6 +260,7 @@ describe(`AdminV2AuthController`, () => {
         userAgent: `jest-test-agent`,
       });
       expect(result).toEqual({ ok: true, revokedSessionId: `session-1`, alreadyRevoked: false });
+      expect(adminV2RevokeAdminSessionResponseSchema.safeParse(result).success).toBe(true);
     });
 
     it(`does NOT write admin_session_revoke when service throws`, async () => {
@@ -360,6 +399,7 @@ describe(`AdminV2AuthController`, () => {
       expect(result.sessions).toHaveLength(2);
       expect(result.sessions[0]).toMatchObject({ id: `session-1`, current: true });
       expect(result.sessions[1]).toMatchObject({ id: `session-2`, current: false });
+      expect(adminV2ListAdminSessionsResponseSchema.safeParse(result).success).toBe(true);
     });
   });
 });

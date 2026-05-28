@@ -15,6 +15,14 @@ import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import {
+  type AdminV2AcceptAdminInvitationResponse,
+  type AdminV2AuthOkResponse,
+  type AdminV2RequestPasswordResetResponse,
+  type AdminV2RevokeAdminSessionResponse,
+  type AdminV2ResetPasswordWithTokenResponse,
+} from '@remoola/api-types';
+
+import {
   AcceptAdminInvitationBody,
   RequestAdminV2PasswordResetBody,
   ResetAdminV2PasswordBody,
@@ -41,7 +49,7 @@ export class AdminV2AuthController {
   @PublicEndpoint()
   @Post(`invitations/accept`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  async acceptInvitation(@Body() body: AcceptAdminInvitationBody) {
+  async acceptInvitation(@Body() body: AcceptAdminInvitationBody): Promise<AdminV2AcceptAdminInvitationResponse> {
     return this.adminsService.acceptInvitation(body);
   }
 
@@ -49,7 +57,9 @@ export class AdminV2AuthController {
   @Post(`forgot-password`)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async requestPasswordReset(@Body() body: RequestAdminV2PasswordResetBody) {
+  async requestPasswordReset(
+    @Body() body: RequestAdminV2PasswordResetBody,
+  ): Promise<AdminV2RequestPasswordResetResponse> {
     await this.adminsService.requestPasswordReset(body);
     return {
       message: `If an active admin account exists, we sent recovery instructions.`,
@@ -61,7 +71,7 @@ export class AdminV2AuthController {
   @Post(`password/reset`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() body: ResetAdminV2PasswordBody) {
+  async resetPassword(@Body() body: ResetAdminV2PasswordBody): Promise<AdminV2ResetPasswordWithTokenResponse> {
     return this.adminsService.resetPasswordWithToken(body);
   }
 
@@ -71,7 +81,11 @@ export class AdminV2AuthController {
   @ApiOperation({ operationId: `admin_v2_auth_login` })
   @ApiOkResponse({ type: BackofficeAccess })
   @TransformResponse(BackofficeAccess)
-  async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: BackofficeCredentials) {
+  async login(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res,
+    @Body() body: BackofficeCredentials,
+  ): Promise<AdminV2AuthOkResponse> {
     this.supportService.resolveAdminOrigin(req);
     const { ipAddress, userAgent } = this.supportService.resolveRequestMeta(req);
     const data = await this.service.login(body, {
@@ -89,7 +103,10 @@ export class AdminV2AuthController {
   @ApiOperation({ operationId: `admin_v2_refresh_access` })
   @ApiOkResponse({ type: BackofficeAccess })
   @TransformResponse(BackofficeAccess)
-  async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+  async refreshAccess(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res: express.Response,
+  ): Promise<AdminV2AuthOkResponse> {
     this.supportService.ensureCsrf(req);
     const refreshToken = this.supportService.getRefreshTokenFromRequest(req);
     const data = await this.service.refreshAccess(refreshToken);
@@ -100,7 +117,10 @@ export class AdminV2AuthController {
   @Post(`logout`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiCookieAuth()
-  async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+  async logout(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res: express.Response,
+  ): Promise<AdminV2AuthOkResponse> {
     this.supportService.ensureCsrf(req);
     await this.service.revokeSessionByRefreshTokenAndAudit(this.supportService.getRefreshTokenFromRequest(req), {
       ...this.supportService.resolveRequestMeta(req),
@@ -117,7 +137,7 @@ export class AdminV2AuthController {
     @Identity() identity: IIdentityContext,
     @Res({ passthrough: true }) res: express.Response,
     @Body() body: RevokeAdminSessionBody,
-  ) {
+  ): Promise<AdminV2RevokeAdminSessionResponse> {
     this.supportService.ensureCsrf(req);
     const targetSessionId = body.sessionId ?? identity.sessionId;
     if (!targetSessionId) {

@@ -5,28 +5,45 @@ export const ADMIN_V2_ENDPOINTS = {
     path: `/admin-v2/auth/me/sessions`,
     response: `AdminV2ListAdminSessionsResponse`,
   },
-  authLogin: { method: `POST`, path: `/admin-v2/auth/login`, body: `AdminV2LoginBody` },
-  authRefreshAccess: { method: `POST`, path: `/admin-v2/auth/refresh-access` },
-  authLogout: { method: `POST`, path: `/admin-v2/auth/logout` },
+  authLogin: {
+    method: `POST`,
+    path: `/admin-v2/auth/login`,
+    body: `AdminV2LoginBody`,
+    response: `AdminV2AuthOkResponse`,
+  },
+  authRefreshAccess: {
+    method: `POST`,
+    path: `/admin-v2/auth/refresh-access`,
+    response: `AdminV2AuthOkResponse`,
+  },
+  authLogout: {
+    method: `POST`,
+    path: `/admin-v2/auth/logout`,
+    response: `AdminV2AuthOkResponse`,
+  },
   authRevokeSession: {
     method: `POST`,
     path: `/admin-v2/auth/revoke-session`,
     body: `AdminV2RevokeAdminSessionBody`,
+    response: `AdminV2RevokeAdminSessionResponse`,
   },
   authAcceptInvitation: {
     method: `POST`,
     path: `/admin-v2/auth/invitations/accept`,
     body: `AdminV2TokenPasswordBody`,
+    response: `AdminV2AcceptAdminInvitationResponse`,
   },
   authForgotPassword: {
     method: `POST`,
     path: `/admin-v2/auth/forgot-password`,
     body: `AdminV2RequestPasswordResetBody`,
+    response: `AdminV2RequestPasswordResetResponse`,
   },
   authResetPassword: {
     method: `POST`,
     path: `/admin-v2/auth/password/reset`,
     body: `AdminV2TokenPasswordBody`,
+    response: `AdminV2ResetPasswordWithTokenResponse`,
   },
   overviewSummary: { method: `GET`, path: `/admin-v2/overview/summary`, response: `AdminV2OverviewSummaryResponse` },
   systemSummary: { method: `GET`, path: `/admin-v2/system/summary`, response: `AdminV2SystemSummaryResponse` },
@@ -298,17 +315,17 @@ export const ADMIN_V2_ENDPOINTS = {
   exchangeRulesPause: {
     method: `POST`,
     path: `/admin-v2/exchange/rules/:id/pause`,
-    body: `AdminV2VersionedMutationBody`,
+    body: `AdminV2PauseExchangeRuleBody`,
   },
   exchangeRulesResume: {
     method: `POST`,
     path: `/admin-v2/exchange/rules/:id/resume`,
-    body: `AdminV2VersionedMutationBody`,
+    body: `AdminV2ResumeExchangeRuleBody`,
   },
   exchangeRulesRunNow: {
     method: `POST`,
     path: `/admin-v2/exchange/rules/:id/run-now`,
-    body: `AdminV2VersionedMutationBody`,
+    body: `AdminV2RunExchangeRuleBody`,
   },
   exchangeScheduledList: {
     method: `GET`,
@@ -358,7 +375,7 @@ export const ADMIN_V2_ENDPOINTS = {
   adminsGet: { method: `GET`, path: `/admin-v2/admins/:id`, response: `AdminV2AdminCaseRecordResponse` },
   adminsInvite: { method: `POST`, path: `/admin-v2/admins/invite`, body: `AdminV2InviteAdminBody` },
   adminsDeactivate: { method: `POST`, path: `/admin-v2/admins/:id/deactivate`, body: `AdminV2DeactivateAdminBody` },
-  adminsRestore: { method: `POST`, path: `/admin-v2/admins/:id/restore`, body: `AdminV2VersionedMutationBody` },
+  adminsRestore: { method: `POST`, path: `/admin-v2/admins/:id/restore`, body: `AdminV2RestoreAdminBody` },
   adminsRoleChange: { method: `POST`, path: `/admin-v2/admins/:id/role-change`, body: `AdminV2ChangeAdminRoleBody` },
   adminsPermissionsChange: {
     method: `POST`,
@@ -368,7 +385,7 @@ export const ADMIN_V2_ENDPOINTS = {
   adminsPasswordReset: {
     method: `POST`,
     path: `/admin-v2/admins/:id/password-reset`,
-    body: `AdminV2VersionedMutationBody`,
+    body: `AdminV2ResetAdminPasswordBody`,
   },
   adminsPasswordPatch: {
     method: `PATCH`,

@@ -1,5 +1,13 @@
 'use server';
 
+import {
+  adminV2DocumentBulkTagBodySchema,
+  adminV2DocumentRetagBodySchema,
+  adminV2DocumentTagCreateBodySchema,
+  adminV2DocumentTagDeleteBodySchema,
+  adminV2DocumentTagUpdateBodySchema,
+} from '@remoola/api-types';
+
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation, patchAdminMutation, deleteAdminMutation } from './core.server';
 import {
@@ -18,7 +26,8 @@ export async function createDocumentTagAction(formData: FormData): Promise<void>
   if (!name) {
     throw new Error(`Tag name is required`);
   }
-  await postAdminMutation(`/admin-v2/documents/tags`, { name }, `Failed to create document tag`);
+  const body = adminV2DocumentTagCreateBodySchema.parse({ name });
+  await postAdminMutation(`/admin-v2/documents/tags`, body, `Failed to create document tag`);
   revalidateDocumentsPaths();
 }
 
@@ -40,25 +49,24 @@ export async function updateDocumentTagAction(tagId: string, formData: FormData)
   if (!name) {
     throw new Error(`Tag name is required`);
   }
-  await patchAdminMutation(`/admin-v2/documents/tags/${tagId}`, { version, name }, `Failed to update document tag`);
+  const body = adminV2DocumentTagUpdateBodySchema.parse({ version, name });
+  await patchAdminMutation(`/admin-v2/documents/tags/${tagId}`, body, `Failed to update document tag`);
   revalidateDocumentsPaths();
 }
 
 export async function deleteDocumentTagAction(tagId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
-  await deleteAdminMutation(
-    `/admin-v2/documents/tags/${tagId}`,
-    { version, confirmed },
-    `Failed to delete document tag`,
-  );
+  const body = adminV2DocumentTagDeleteBodySchema.parse({ version, confirmed });
+  await deleteAdminMutation(`/admin-v2/documents/tags/${tagId}`, body, `Failed to delete document tag`);
   revalidateDocumentsPaths();
 }
 
 export async function retagDocumentAction(documentId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   const tagIds = parseStringList(formData, `tagIds`);
-  await postAdminMutation(`/admin-v2/documents/${documentId}/retag`, { version, tagIds }, `Failed to retag document`);
+  const body = adminV2DocumentRetagBodySchema.parse({ version, tagIds });
+  await postAdminMutation(`/admin-v2/documents/${documentId}/retag`, body, `Failed to retag document`);
   revalidateDocumentsPaths(documentId);
 }
 
@@ -75,11 +83,8 @@ export async function bulkTagDocumentsAction(formData: FormData): Promise<void> 
       version,
     };
   });
-  await postAdminMutation(
-    `/admin-v2/documents/bulk-tag`,
-    { tagIds, resources },
-    `Failed to bulk tag selected documents`,
-  );
+  const body = adminV2DocumentBulkTagBodySchema.parse({ tagIds, resources });
+  await postAdminMutation(`/admin-v2/documents/bulk-tag`, body, `Failed to bulk tag selected documents`);
   revalidateDocumentsPaths();
 }
 
