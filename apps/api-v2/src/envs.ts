@@ -78,7 +78,7 @@ const database = {
 const nest = {
   PORT: z.coerce.number().optional().default(3000),
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
-  PUBLIC_BRAND_WEBSITE_URL: z.string().url().default(`https://remoola.app`),
+  PUBLIC_BRAND_WEBSITE_URL: z.url().default(`https://remoola.app`),
   CONSUMER_CSS_GRID_APP_ORIGIN: z.string().default(`CONSUMER_CSS_GRID_APP_ORIGIN`),
   ADMIN_V2_APP_ORIGIN: z.string().default(`ADMIN_V2_APP_ORIGIN`),
 };
@@ -104,7 +104,7 @@ const authLockout = {
 
 const mail = {
   BREVO_API_KEY: z.string().default(`BREVO_API_KEY`),
-  BREVO_API_BASE_URL: z.string().url().default(`https://api.brevo.com/v3`),
+  BREVO_API_BASE_URL: z.url().default(`https://api.brevo.com/v3`),
   BREVO_DEFAULT_FROM_EMAIL: z.string().default(`BREVO_DEFAULT_FROM_EMAIL`),
   BREVO_DEFAULT_FROM_NAME: z.string().default(`Wirebill`),
   BREVO_VERIFY_ON_BOOT: zBoolean(true).optional().default(false),
@@ -279,7 +279,7 @@ function assertProductionLikePolicy(
   }
 
   const brevoFromEmail = normalizeConfiguredValue(data.BREVO_DEFAULT_FROM_EMAIL);
-  if (!z.string().email().safeParse(brevoFromEmail).success) {
+  if (!z.email().safeParse(brevoFromEmail).success) {
     throw new Error(`BREVO_DEFAULT_FROM_EMAIL must be a valid email address when NODE_ENV=${data.NODE_ENV}`);
   }
 }

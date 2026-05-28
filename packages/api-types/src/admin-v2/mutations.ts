@@ -200,7 +200,7 @@ export const adminV2ApproveRateBodySchema = adminV2StepUpConfirmedVersionedMutat
 });
 
 export const adminV2InviteAdminBodySchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   roleKey: z.string().min(1),
   passwordConfirmation: z.string().min(1).max(256),
 });

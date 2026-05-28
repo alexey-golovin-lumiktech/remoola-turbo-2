@@ -60,20 +60,20 @@ export function isAdminV2AssignableResourceType(value: string): value is AdminV2
 
 export const adminV2AssignmentClaimBodySchema = z.object({
   resourceType: z.enum(ADMIN_V2_ASSIGNABLE_RESOURCE_TYPES),
-  resourceId: z.string().uuid(),
+  resourceId: z.uuid(),
   reason: z.string().trim().max(ADMIN_V2_MAX_ASSIGNMENT_REASON_LENGTH).optional(),
 });
 
 export const adminV2AssignmentReleaseBodySchema = z.object({
   expectedReleasedAtNull: z.literal(0),
-  assignmentId: z.string().uuid(),
+  assignmentId: z.uuid(),
   reason: z.string().trim().max(ADMIN_V2_MAX_ASSIGNMENT_REASON_LENGTH).optional(),
 });
 
 export const adminV2AssignmentReassignBodySchema = z.object({
   expectedReleasedAtNull: z.literal(0),
-  assignmentId: z.string().uuid(),
-  newAssigneeId: z.string().uuid(),
+  assignmentId: z.uuid(),
+  newAssigneeId: z.uuid(),
   confirmed: z.boolean(),
   reason: z.string().trim().min(ADMIN_V2_MIN_ASSIGNMENT_REASON_LENGTH).max(ADMIN_V2_MAX_ASSIGNMENT_REASON_LENGTH),
 });

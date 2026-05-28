@@ -73,7 +73,7 @@ describe(`admin-v2 proxy helpers`, () => {
         headers: { 'content-type': `application/json` },
       }),
       z.object({
-        email: z.string().email(),
+        email: z.email(),
         password: z.string().min(8),
       }),
       { code: `VALIDATION_ERROR`, message: `Invalid login payload` },
@@ -121,7 +121,7 @@ describe(`admin-v2 proxy helpers`, () => {
         requireValidatedJsonBody(
           req,
           z.object({
-            email: z.string().email(),
+            email: z.email(),
             password: z.string().min(8),
           }),
           { code: `VALIDATION_ERROR`, message: `Invalid login payload` },

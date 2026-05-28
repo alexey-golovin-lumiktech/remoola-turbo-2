@@ -90,7 +90,7 @@ export const individualDetailsSchema = z.object({
     .refine(isAtLeast18YearsOld, `You must be at least 18 years old`),
   citizenOf: requiredTrimmedString(`Citizenship is required`),
   countryOfTaxResidence: requiredTrimmedString(`Country of tax residence is required`),
-  legalStatus: z.nativeEnum(LEGAL_STATUS, { error: () => ({ message: `Legal status is required` }) }),
+  legalStatus: z.enum(LEGAL_STATUS, { error: () => ({ message: `Legal status is required` }) }),
   taxId: z.string().trim().min(1, `Tax ID is required`).refine(taxIdRefine, `Please enter a valid Tax ID`),
   passportOrIdNumber: requiredTrimmedString(`Passport or ID number is required`),
   phoneNumber: requiredTrimmedString(`Phone number is required`).refine(
@@ -101,17 +101,17 @@ export const individualDetailsSchema = z.object({
 
 export const organizationDetailsSchema = z.object({
   name: requiredTrimmedString(`Organization name is required`),
-  consumerRole: z.nativeEnum(CONSUMER_ROLE, { error: () => ({ message: `Role in the organization is required` }) }),
-  size: z.nativeEnum(ORGANIZATION_SIZE, { error: () => ({ message: `Organization size is required` }) }),
+  consumerRole: z.enum(CONSUMER_ROLE, { error: () => ({ message: `Role in the organization is required` }) }),
+  size: z.enum(ORGANIZATION_SIZE, { error: () => ({ message: `Organization size is required` }) }),
 });
 
 const signupDetailsBaseSchema = z.object({
   email: emailSchema,
   password: z.string(),
   confirmPassword: z.string(),
-  accountType: z.nativeEnum(ACCOUNT_TYPE, { error: () => ({ message: `Account type is required` }) }),
-  contractorKind: z.nativeEnum(CONTRACTOR_KIND).nullable(),
-  howDidHearAboutUs: z.nativeEnum(HOW_DID_HEAR_ABOUT_US).nullable(),
+  accountType: z.enum(ACCOUNT_TYPE, { error: () => ({ message: `Account type is required` }) }),
+  contractorKind: z.enum(CONTRACTOR_KIND).nullable(),
+  howDidHearAboutUs: z.enum(HOW_DID_HEAR_ABOUT_US).nullable(),
   howDidHearAboutUsOther: z.string().nullable(),
 });
 

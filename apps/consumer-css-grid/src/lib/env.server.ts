@@ -3,11 +3,11 @@ import 'server-only';
 import { z } from 'zod';
 
 const envSchema = z.object({
-  NEXT_PUBLIC_API_BASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_API_BASE_URL: z.url().optional(),
   COOKIE_SECURE: z.string().optional(),
   VERCEL: z.string().optional(),
   VERCEL_AUTOMATION_BYPASS_SECRET: z.string().optional(),
-  DEV_LOGIN_EMAIL: z.string().email().optional(),
+  DEV_LOGIN_EMAIL: z.email().optional(),
   DEV_LOGIN_PASSWORD: z.string().optional(),
 });
 
