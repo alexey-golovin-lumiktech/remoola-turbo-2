@@ -140,6 +140,7 @@ export class AdminV2PayoutsRepository {
       orderBy: [{ createdAt: `asc` }, { id: `asc` }],
       select: {
         id: true,
+        ledgerId: true,
         type: true,
         amount: true,
         currencyCode: true,

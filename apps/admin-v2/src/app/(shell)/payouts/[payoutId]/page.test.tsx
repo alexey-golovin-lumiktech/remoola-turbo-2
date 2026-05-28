@@ -105,6 +105,7 @@ function buildPayoutCase() {
     relatedEntries: [
       {
         id: `payout-1`,
+        ledgerId: `ledger-1`,
         type: `USER_PAYOUT`,
         amount: `-48.00`,
         currencyCode: `USD`,
@@ -113,6 +114,7 @@ function buildPayoutCase() {
       },
       {
         id: `payout-reversal`,
+        ledgerId: `ledger-1`,
         type: `USER_PAYOUT_REVERSAL`,
         amount: `48.00`,
         currencyCode: `USD`,

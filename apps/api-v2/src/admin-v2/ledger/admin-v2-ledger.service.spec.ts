@@ -156,6 +156,7 @@ describe(`AdminV2LedgerService`, () => {
       relatedEntries: [
         {
           id: `ledger-1`,
+          ledgerId: `ledger-group-1`,
           type: $Enums.LedgerEntryType.USER_PAYMENT,
           amount: new Prisma.Decimal(`48.00`),
           currencyCode: $Enums.CurrencyCode.USD,

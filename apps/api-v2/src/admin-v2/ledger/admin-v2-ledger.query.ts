@@ -90,6 +90,7 @@ const ledgerCaseSelect = Prisma.validator<Prisma.LedgerEntryModelSelect>()({
 
 const relatedLedgerEntrySelect = Prisma.validator<Prisma.LedgerEntryModelSelect>()({
   id: true,
+  ledgerId: true,
   type: true,
   amount: true,
   currencyCode: true,

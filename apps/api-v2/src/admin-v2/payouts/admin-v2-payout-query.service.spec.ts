@@ -191,6 +191,7 @@ describe(`AdminV2PayoutQueryService`, () => {
     payoutsQuery.findRelatedEntries.mockResolvedValueOnce([
       {
         id: `payout-case`,
+        ledgerId: `payout-ledger-group-1`,
         type: $Enums.LedgerEntryType.USER_PAYOUT,
         amount: new Prisma.Decimal(`-120.00`),
         currencyCode: $Enums.CurrencyCode.USD,

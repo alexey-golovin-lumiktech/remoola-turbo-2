@@ -204,6 +204,7 @@ export class AdminV2PayoutQueryService {
       })),
       relatedEntries: relatedEntries.map((item) => ({
         id: item.id,
+        ledgerId: item.ledgerId,
         type: item.type,
         amount: item.amount.toString(),
         currencyCode: item.currencyCode,
