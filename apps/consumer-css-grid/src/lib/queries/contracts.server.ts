@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { type ConsumerContractDetailsResponse, type ConsumerContractsResponse } from '@remoola/api-types';
+
 import { encodeApiPathSegment } from '../api-path';
 import {
   fetchConsumerApi,
@@ -7,7 +9,6 @@ import {
   type ConsumerApiRequestOptions,
   type ConsumerApiResult,
 } from '../consumer-api-fetch.server';
-import { type ContractDetailsResponse, type ContractsResponse } from '../consumer-api.types';
 import { normalizeDocumentDownloadUrl } from '../document-download-url';
 
 export async function getContracts(
@@ -21,7 +22,7 @@ export async function getContracts(
     sort?: string;
   },
   options?: ConsumerApiRequestOptions,
-): Promise<ContractsResponse | null> {
+): Promise<ConsumerContractsResponse | null> {
   const searchParams = new URLSearchParams({
     page: String(params?.page ?? 1),
     pageSize: String(params?.pageSize ?? 10),
@@ -31,7 +32,7 @@ export async function getContracts(
   if (params?.hasDocuments && params.hasDocuments !== `all`) searchParams.set(`hasDocuments`, params.hasDocuments);
   if (params?.hasPayments && params.hasPayments !== `all`) searchParams.set(`hasPayments`, params.hasPayments);
   if (params?.sort && params.sort !== `recent_activity`) searchParams.set(`sort`, params.sort);
-  return fetchConsumerApi<ContractsResponse>(`/consumer/contracts?${searchParams.toString()}`, options);
+  return fetchConsumerApi<ConsumerContractsResponse>(`/consumer/contracts?${searchParams.toString()}`, options);
 }
 
 export async function getContractsResult(
@@ -45,7 +46,7 @@ export async function getContractsResult(
     sort?: string;
   },
   options?: ConsumerApiRequestOptions,
-): Promise<ConsumerApiResult<ContractsResponse>> {
+): Promise<ConsumerApiResult<ConsumerContractsResponse>> {
   const searchParams = new URLSearchParams({
     page: String(params?.page ?? 1),
     pageSize: String(params?.pageSize ?? 10),
@@ -55,13 +56,13 @@ export async function getContractsResult(
   if (params?.hasDocuments && params.hasDocuments !== `all`) searchParams.set(`hasDocuments`, params.hasDocuments);
   if (params?.hasPayments && params.hasPayments !== `all`) searchParams.set(`hasPayments`, params.hasPayments);
   if (params?.sort && params.sort !== `recent_activity`) searchParams.set(`sort`, params.sort);
-  return fetchConsumerApiResult<ContractsResponse>(`/consumer/contracts?${searchParams.toString()}`, options);
+  return fetchConsumerApiResult<ConsumerContractsResponse>(`/consumer/contracts?${searchParams.toString()}`, options);
 }
 
-export async function getContractDetails(contractId: string): Promise<ContractDetailsResponse | null> {
+export async function getContractDetails(contractId: string): Promise<ConsumerContractDetailsResponse | null> {
   const id = contractId.trim();
   if (!id) return null;
-  const contract = await fetchConsumerApi<ContractDetailsResponse>(
+  const contract = await fetchConsumerApi<ConsumerContractDetailsResponse>(
     `/consumer/contracts/${encodeApiPathSegment(id)}/details`,
   );
   if (!contract) return null;

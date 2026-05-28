@@ -2,18 +2,25 @@ import { BadRequestException, Body, Controller, Param, Post, Query, Req, Unautho
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
-import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
+import {
+  CONSUMER_APP_SCOPE_HEADER,
+  consumerPaymentMethodItemSchema,
+  consumerPayWithSavedMethodResponseSchema,
+  consumerStripeCheckoutSessionResponseSchema,
+  consumerStripeSetupIntentResponseSchema,
+  type ConsumerAppScope,
+  type ConsumerPayWithSavedMethodResponse,
+  type ConsumerStripeCheckoutSessionResponse,
+  type ConsumerStripeSetupIntentResponse,
+} from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerStripeService } from './stripe.service';
 import { Identity, TrackConsumerAction } from '../../../../../common';
 import { OriginResolverService } from '../../../../../shared/origin-resolver.service';
-import {
-  ConfirmStripeSetupIntent,
-  CreateStripeSetupIntentResponse,
-  PayWithSavedPaymentMethod,
-} from '../../dto/payment-method.dto';
+import { toConsumerWireContract } from '../../../../consumer-wire-contract';
+import { ConfirmStripeSetupIntent, PayWithSavedPaymentMethod } from '../../dto/payment-method.dto';
 
 @ApiTags(`Consumer: stripe`)
 @Controller(`consumer/stripe`)
@@ -68,25 +75,34 @@ export class ConsumerStripeController {
     @Query(`contractId`) contractId: string | undefined,
     @Query(`returnTo`) returnTo: string | undefined,
     @Req() req: express.Request,
-  ) {
+  ): Promise<ConsumerStripeCheckoutSessionResponse> {
     const frontendBaseUrl = this.resolveFrontendBaseUrl(this.requireClaimedConsumerAppScope(req, appScope));
-    return this.service.createStripeSession(
-      consumer.id,
-      paymentRequestId,
-      frontendBaseUrl,
-      contractId || returnTo ? { contractId, returnTo } : undefined,
+    return toConsumerWireContract(
+      consumerStripeCheckoutSessionResponseSchema,
+      await this.service.createStripeSession(
+        consumer.id,
+        paymentRequestId,
+        frontendBaseUrl,
+        contractId || returnTo ? { contractId, returnTo } : undefined,
+      ),
     );
   }
 
   @Post(`intents`)
-  async createStripeSetupIntent(@Identity() consumer: ConsumerModel): Promise<CreateStripeSetupIntentResponse> {
-    return this.service.createStripeSetupIntent(consumer.id);
+  async createStripeSetupIntent(@Identity() consumer: ConsumerModel): Promise<ConsumerStripeSetupIntentResponse> {
+    return toConsumerWireContract(
+      consumerStripeSetupIntentResponseSchema,
+      await this.service.createStripeSetupIntent(consumer.id),
+    );
   }
 
   @TrackConsumerAction({ action: `consumer.payments.confirm`, resource: `payments` })
   @Post(`confirm`)
   async confirmStripeSetupIntent(@Identity() consumer: ConsumerModel, @Body() body: ConfirmStripeSetupIntent) {
-    return this.service.confirmStripeSetupIntent(consumer.id, body);
+    return toConsumerWireContract(
+      consumerPaymentMethodItemSchema,
+      await this.service.confirmStripeSetupIntent(consumer.id, body),
+    );
   }
 
   @TrackConsumerAction({ action: `consumer.payments.pay_with_saved_method`, resource: `payments` })
@@ -97,9 +113,12 @@ export class ConsumerStripeController {
     @Body() body: PayWithSavedPaymentMethod,
     @Query(`appScope`) appScope: string | undefined,
     @Req() req: express.Request,
-  ) {
+  ): Promise<ConsumerPayWithSavedMethodResponse> {
     this.requireClaimedConsumerAppScope(req, appScope);
     const idempotencyKey = this.resolveIdempotencyKey(req.get(`idempotency-key`));
-    return this.service.payWithSavedPaymentMethod(consumer.id, paymentRequestId, body, idempotencyKey);
+    return toConsumerWireContract(
+      consumerPayWithSavedMethodResponseSchema,
+      await this.service.payWithSavedPaymentMethod(consumer.id, paymentRequestId, body, idempotencyKey),
+    );
   }
 }

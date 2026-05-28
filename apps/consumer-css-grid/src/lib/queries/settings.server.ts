@@ -1,12 +1,13 @@
 import 'server-only';
 
-import { fetchConsumerApi, type ConsumerApiRequestOptions } from '../consumer-api-fetch.server';
-import { type ProfileResponse, type SettingsResponse } from '../consumer-api.types';
+import { type ConsumerProfileResponse, type ConsumerSettingsResponse } from '@remoola/api-types';
 
-export async function getProfile(options?: ConsumerApiRequestOptions): Promise<ProfileResponse | null> {
-  return fetchConsumerApi<ProfileResponse>(`/consumer/profile/me`, options);
+import { fetchConsumerApi, type ConsumerApiRequestOptions } from '../consumer-api-fetch.server';
+
+export async function getProfile(options?: ConsumerApiRequestOptions): Promise<ConsumerProfileResponse | null> {
+  return fetchConsumerApi<ConsumerProfileResponse>(`/consumer/profile/me`, options);
 }
 
-export async function getSettings(options?: ConsumerApiRequestOptions): Promise<SettingsResponse | null> {
-  return fetchConsumerApi<SettingsResponse>(`/consumer/settings`, options);
+export async function getSettings(options?: ConsumerApiRequestOptions): Promise<ConsumerSettingsResponse | null> {
+  return fetchConsumerApi<ConsumerSettingsResponse>(`/consumer/settings`, options);
 }

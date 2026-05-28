@@ -2,7 +2,15 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res } fr
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
+import {
+  consumerForgotPasswordResponseSchema,
+  consumerSuccessResponseSchema,
+  type ConsumerForgotPasswordResponse,
+  type ConsumerSuccessResponse,
+} from '@remoola/api-types';
+
 import { PublicEndpoint, TrackConsumerAction } from '../../../common';
+import { toConsumerWireContract } from '../../consumer-wire-contract';
 import { ConsumerAuthService } from '../auth.service';
 import { ConsumerAuthControllerSupportService } from '../consumer-auth-controller-support.service';
 import { ForgotPasswordBody, ResetPassword } from '../dto';
@@ -30,21 +38,21 @@ export class ConsumerPasswordController {
     @Req() req: express.Request,
     @Body() body: ForgotPasswordBody,
     @Query(`appScope`) appScope?: string,
-  ) {
+  ): Promise<ConsumerForgotPasswordResponse> {
     const consumerScope = this.supportService.requireClaimedConsumerAppScope(req, appScope);
     await this.service.requestPasswordReset(body.email, consumerScope);
-    return {
+    return toConsumerWireContract(consumerForgotPasswordResponseSchema, {
       message: `If an account exists, we sent recovery instructions.`,
       recoveryMode: `provider_aware`,
-    };
+    });
   }
 
   @PublicEndpoint()
   @Post(`password/reset`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() body: ResetPassword) {
+  async resetPassword(@Body() body: ResetPassword): Promise<ConsumerSuccessResponse> {
     await this.service.resetPasswordWithToken(body.token, body.password);
-    return { success: true };
+    return toConsumerWireContract(consumerSuccessResponseSchema, { success: true });
   }
 }

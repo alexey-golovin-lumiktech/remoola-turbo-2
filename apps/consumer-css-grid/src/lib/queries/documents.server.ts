@@ -1,12 +1,13 @@
 import 'server-only';
 
+import { type ConsumerDocumentsResponse } from '@remoola/api-types';
+
 import {
   fetchConsumerApi,
   fetchConsumerApiResult,
   type ConsumerApiRequestOptions,
   type ConsumerApiResult,
 } from '../consumer-api-fetch.server';
-import { type DocumentsResponse } from '../consumer-api.types';
 import { normalizeDocumentDownloadUrl } from '../document-download-url';
 
 export async function getDocuments(
@@ -16,7 +17,7 @@ export async function getDocuments(
   filters?: {
     contactId?: string;
   },
-): Promise<DocumentsResponse | null> {
+): Promise<ConsumerDocumentsResponse | null> {
   const searchParams = new URLSearchParams({
     page: String(page),
     pageSize: String(pageSize),
@@ -24,7 +25,7 @@ export async function getDocuments(
   if (filters?.contactId?.trim()) {
     searchParams.set(`contactId`, filters.contactId.trim());
   }
-  const documents = await fetchConsumerApi<DocumentsResponse>(
+  const documents = await fetchConsumerApi<ConsumerDocumentsResponse>(
     `/consumer/documents?${searchParams.toString()}`,
     options,
   );
@@ -46,7 +47,7 @@ export async function getDocumentsResult(
   filters?: {
     contactId?: string;
   },
-): Promise<ConsumerApiResult<DocumentsResponse>> {
+): Promise<ConsumerApiResult<ConsumerDocumentsResponse>> {
   const searchParams = new URLSearchParams({
     page: String(page),
     pageSize: String(pageSize),
@@ -54,7 +55,7 @@ export async function getDocumentsResult(
   if (filters?.contactId?.trim()) {
     searchParams.set(`contactId`, filters.contactId.trim());
   }
-  const result = await fetchConsumerApiResult<DocumentsResponse>(
+  const result = await fetchConsumerApiResult<ConsumerDocumentsResponse>(
     `/consumer/documents?${searchParams.toString()}`,
     options,
   );

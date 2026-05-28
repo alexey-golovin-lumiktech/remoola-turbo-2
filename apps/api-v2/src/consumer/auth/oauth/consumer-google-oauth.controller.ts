@@ -16,7 +16,13 @@ import { ApiBody, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
+import {
+  consumerGoogleSignupSessionResponseSchema,
+  consumerOAuthCompleteResponseSchema,
+  type ConsumerAppScope,
+  type ConsumerGoogleSignupSessionResponse,
+  type ConsumerOAuthCompleteResponse,
+} from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from '../auth.service';
@@ -29,6 +35,7 @@ import { PublicEndpoint, TrackConsumerAction } from '../../../common';
 import { envs } from '../../../envs';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
 import { getApiOAuthStateCookieKey } from '../../../shared-common';
+import { toConsumerWireContract } from '../../consumer-wire-contract';
 
 @ApiTags(`Consumer: Auth`)
 @Controller(`consumer/auth`)
@@ -285,8 +292,14 @@ export class ConsumerGoogleOAuthController {
   @PublicEndpoint()
   @Get(`google/signup-session`)
   @ApiOkResponse({ type: GoogleSignupSessionResponse })
-  async googleSignupSession(@Req() req: express.Request, @Query(`appScope`) appScope?: string) {
-    return this.flowService.getSignupSession(req, appScope);
+  async googleSignupSession(
+    @Req() req: express.Request,
+    @Query(`appScope`) appScope?: string,
+  ): Promise<ConsumerGoogleSignupSessionResponse> {
+    return toConsumerWireContract(
+      consumerGoogleSignupSessionResponseSchema,
+      await this.flowService.getSignupSession(req, appScope),
+    );
   }
 
   @PublicEndpoint()
@@ -301,7 +314,7 @@ export class ConsumerGoogleOAuthController {
     @Res({ passthrough: true }) res,
     @Body() body: HandoffTokenRequest,
     @Query(`appScope`) appScope?: string,
-  ) {
+  ): Promise<ConsumerGoogleSignupSessionResponse> {
     const result = await this.flowService.establishSignupSession(req, body.handoffToken, appScope);
     this.supportService.setGoogleSignupSessionCookie(
       req,
@@ -310,8 +323,7 @@ export class ConsumerGoogleOAuthController {
       result.claimedAppScope,
       this.googleSignupSessionTtlMs,
     );
-
-    return result.response;
+    return toConsumerWireContract(consumerGoogleSignupSessionResponseSchema, result.response);
   }
 
   @PublicEndpoint()
@@ -326,9 +338,9 @@ export class ConsumerGoogleOAuthController {
     @Res({ passthrough: true }) res,
     @Body() body: HandoffTokenRequest,
     @Query(`appScope`) appScope?: string,
-  ) {
+  ): Promise<ConsumerOAuthCompleteResponse> {
     const result = await this.flowService.completeOAuth(req, body.handoffToken, appScope);
     this.supportService.setAuthCookies(req, res, result.accessToken, result.refreshToken, result.claimedAppScope);
-    return { ok: true, next: result.next };
+    return toConsumerWireContract(consumerOAuthCompleteResponseSchema, { ok: true, next: result.next });
   }
 }

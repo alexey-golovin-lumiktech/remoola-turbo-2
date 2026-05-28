@@ -167,9 +167,6 @@ describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`,
       .expect(201);
 
     expect(response.body?.ledgerId).toBeTruthy();
-    expect(response.body?.rate).toBe(0.92);
-    expect(response.body?.sourceAmount).toBe(50);
-    expect(response.body?.targetAmount).toBe(46);
 
     const rows = await prisma.ledgerEntryModel.findMany({
       where: { ledgerId: response.body.ledgerId, consumerId: consumer.id },

@@ -2,13 +2,19 @@ import { BadRequestException, Body, Controller, Param, Post, Query, Req, Unautho
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
-import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
+import {
+  CONSUMER_APP_SCOPE_HEADER,
+  consumerCreatePaymentRequestResponseSchema,
+  type ConsumerAppScope,
+  type ConsumerCreatePaymentRequestResponse,
+} from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { CreatePaymentRequest } from './dto';
 import { Identity } from '../../../common';
 import { OriginResolverService } from '../../../shared/origin-resolver.service';
+import { toConsumerWireContract } from '../../consumer-wire-contract';
 
 @ApiTags(`Consumer: Payment Requests`)
 @Controller(`consumer/payment-requests`)
@@ -33,8 +39,14 @@ export class ConsumerPaymentRequestsController {
   }
 
   @Post()
-  create(@Identity() consumer: ConsumerModel, @Body() body: CreatePaymentRequest) {
-    return this.service.createPaymentRequest(consumer.id, body);
+  async create(
+    @Identity() consumer: ConsumerModel,
+    @Body() body: CreatePaymentRequest,
+  ): Promise<ConsumerCreatePaymentRequestResponse> {
+    return toConsumerWireContract(
+      consumerCreatePaymentRequestResponseSchema,
+      await this.service.createPaymentRequest(consumer.id, body),
+    );
   }
 
   @Post(`:paymentRequestId/send`)
@@ -43,7 +55,9 @@ export class ConsumerPaymentRequestsController {
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Query(`appScope`) appScope: string | undefined,
     @Req() req: express.Request,
-  ) {
-    return this.service.sendPaymentRequest(consumer.id, paymentRequestId, this.resolveConsumerAppScope(req, appScope));
+  ): Promise<ConsumerCreatePaymentRequestResponse> {
+    return this.service
+      .sendPaymentRequest(consumer.id, paymentRequestId, this.resolveConsumerAppScope(req, appScope))
+      .then((result) => toConsumerWireContract(consumerCreatePaymentRequestResponseSchema, result));
   }
 }

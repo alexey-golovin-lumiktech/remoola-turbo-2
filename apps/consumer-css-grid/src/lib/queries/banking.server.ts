@@ -1,42 +1,47 @@
 import 'server-only';
 
+import { type ConsumerBalanceResponse, type ConsumerPaymentMethodsResponse } from '@remoola/api-types';
+
 import {
   fetchConsumerApi,
   fetchConsumerApiResult,
   type ConsumerApiRequestOptions,
   type ConsumerApiResult,
 } from '../consumer-api-fetch.server';
-import { type BalanceResponse, type PaymentMethodsResponse } from '../consumer-api.types';
 function majorBalanceToMinorUnits(amount: number): number {
   return Math.round(amount * 100);
 }
 
-function normalizeBalanceResponse(raw: BalanceResponse): BalanceResponse {
+function normalizeBalanceResponse(raw: ConsumerBalanceResponse): ConsumerBalanceResponse {
   return Object.fromEntries(
     Object.entries(raw).map(([currency, amount]) => [currency, majorBalanceToMinorUnits(Number(amount))]),
-  ) as BalanceResponse;
+  ) as ConsumerBalanceResponse;
 }
 
-export async function getPaymentMethods(options?: ConsumerApiRequestOptions): Promise<PaymentMethodsResponse | null> {
-  return fetchConsumerApi<PaymentMethodsResponse>(`/consumer/payment-methods`, options);
+export async function getPaymentMethods(
+  options?: ConsumerApiRequestOptions,
+): Promise<ConsumerPaymentMethodsResponse | null> {
+  return fetchConsumerApi<ConsumerPaymentMethodsResponse>(`/consumer/payment-methods`, options);
 }
 
-export async function getBalances(options?: ConsumerApiRequestOptions): Promise<BalanceResponse | null> {
-  const raw = await fetchConsumerApi<BalanceResponse>(`/consumer/payments/balance`, options);
+export async function getBalances(options?: ConsumerApiRequestOptions): Promise<ConsumerBalanceResponse | null> {
+  const raw = await fetchConsumerApi<ConsumerBalanceResponse>(`/consumer/payments/balance`, options);
   if (!raw) return null;
   return normalizeBalanceResponse(raw);
 }
 
-export async function getAvailableBalances(options?: ConsumerApiRequestOptions): Promise<BalanceResponse | null> {
-  const raw = await fetchConsumerApi<BalanceResponse>(`/consumer/payments/balance/available`, options);
+export async function getAvailableBalances(
+  options?: ConsumerApiRequestOptions,
+): Promise<ConsumerBalanceResponse | null> {
+  const raw = await fetchConsumerApi<ConsumerBalanceResponse>(`/consumer/payments/balance/available`, options);
   if (!raw) return null;
   return normalizeBalanceResponse(raw);
 }
 
 export async function getAvailableBalancesResult(
   options?: ConsumerApiRequestOptions,
-): Promise<ConsumerApiResult<BalanceResponse>> {
-  const result = await fetchConsumerApiResult<BalanceResponse>(`/consumer/payments/balance/available`, options);
+): Promise<ConsumerApiResult<ConsumerBalanceResponse>> {
+  const result = await fetchConsumerApiResult<ConsumerBalanceResponse>(`/consumer/payments/balance/available`, options);
   if (!result.data) return result;
   return {
     ...result,

@@ -16,11 +16,12 @@ import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
+import { consumerSignupResponseSchema, type ConsumerAppScope, type ConsumerSignupResponse } from '@remoola/api-types';
 
 import { PublicEndpoint, TrackConsumerAction } from '../../../common';
 import { TransformResponse } from '../../../interceptors';
 import { removeNil } from '../../../shared-common';
+import { toConsumerWireContract } from '../../consumer-wire-contract';
 import { ConsumerAuthService } from '../auth.service';
 import { ConsumerAuthControllerSupportService } from '../consumer-auth-controller-support.service';
 import { ConsumerSignup, SignupResponse } from '../dto';
@@ -99,22 +100,22 @@ export class ConsumerSignupController {
     @Res({ passthrough: true }) res,
     @Body() body: ConsumerSignup,
     @Query(`appScope`) appScope?: string,
-  ) {
+  ): Promise<ConsumerSignupResponse> {
     const payload = removeNil(body);
     const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
     const googleSignupPayload = await this.getGoogleSignupPayloadFromSession(req, appScope);
     const consumer = await this.service.signup(payload, googleSignupPayload);
     if (!googleSignupPayload) {
-      return { consumer };
+      return toConsumerWireContract(consumerSignupResponseSchema, { consumer });
     }
 
     const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id, consumerScope);
     this.setAuthCookies(req, res, accessToken, refreshToken, consumerScope);
     this.clearGoogleSignupSessionCookie(req, res, consumerScope);
-    return {
+    return toConsumerWireContract(consumerSignupResponseSchema, {
       consumer,
       next: this.normalizeSignupCompletionPath(googleSignupPayload.nextPath ?? undefined),
-    };
+    });
   }
 
   @PublicEndpoint()

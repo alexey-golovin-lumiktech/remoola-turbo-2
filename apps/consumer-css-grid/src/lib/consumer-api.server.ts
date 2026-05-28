@@ -1,28 +1,31 @@
 import 'server-only';
 
 export type {
-  BalanceResponse,
-  ContactDetailsResponse,
-  ContactResponse,
-  ContactsResponse,
-  ContactSearchItem,
-  ContractDetailsResponse,
-  ContractsResponse,
+  ConsumerBalanceResponse as BalanceResponse,
+  ConsumerContactDetailsResponse as ContactDetailsResponse,
+  ConsumerContactResponse as ContactResponse,
+  ConsumerContactSearchItem as ContactSearchItem,
+  ConsumerContactsResponse as ContactsResponse,
+  ConsumerContractDetailsResponse as ContractDetailsResponse,
+  ConsumerContractsResponse as ContractsResponse,
+  ConsumerDocumentsResponse as DocumentsResponse,
+  ConsumerExchangeCurrency as ExchangeCurrency,
+  ConsumerExchangeRate as ExchangeRate,
+  ConsumerExchangeRule as ExchangeRule,
+  ConsumerPaymentHistoryResponse as PaymentHistoryResponse,
+  ConsumerPaymentMethodsResponse as PaymentMethodsResponse,
+  ConsumerPaymentsResponse as PaymentsResponse,
+  ConsumerPaymentViewResponse as PaymentViewResponse,
+  ConsumerProfileResponse as ProfileResponse,
+  ConsumerScheduledConversion as ScheduledConversion,
+  ConsumerSettingsResponse as SettingsResponse,
+} from '@remoola/api-types';
+
+export type {
   DashboardData,
   DashboardDataResult,
-  DocumentsResponse,
-  ExchangeCurrency,
-  ExchangeRate,
   ExchangeRateCard,
   ExchangeRatesBatchResult,
-  ExchangeRule,
-  PaymentHistoryResponse,
-  PaymentMethodsResponse,
-  PaymentsResponse,
-  PaymentViewResponse,
-  ProfileResponse,
-  ScheduledConversion,
-  SettingsResponse,
 } from './consumer-api.types';
 
 export { getDocuments, getDocumentsResult } from './queries/documents.server';

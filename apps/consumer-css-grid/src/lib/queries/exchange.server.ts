@@ -1,19 +1,21 @@
 import 'server-only';
 
 import {
+  type ConsumerExchangeCurrenciesResponse,
+  type ConsumerExchangeCurrency,
+  type ConsumerExchangeRatesBatchResponse,
+  type ConsumerExchangeRulesResponse,
+  type ConsumerScheduledConversionsResponse,
+} from '@remoola/api-types';
+
+import {
   fetchConsumerApi,
   fetchConsumerApiResult,
   postConsumerApi,
   type ConsumerApiRequestOptions,
   type ConsumerApiResult,
 } from '../consumer-api-fetch.server';
-import {
-  type ExchangeCurrency,
-  type ExchangeRateCard,
-  type ExchangeRatesBatchResult,
-  type ExchangeRule,
-  type ScheduledConversion,
-} from '../consumer-api.types';
+import { type ExchangeRateCard, type ExchangeRatesBatchResult } from '../consumer-api.types';
 
 interface ExchangeRateBatchItem {
   from?: string;
@@ -22,14 +24,16 @@ interface ExchangeRateBatchItem {
   code?: string;
 }
 
-export async function getExchangeCurrencies(options?: ConsumerApiRequestOptions): Promise<ExchangeCurrency[] | null> {
-  return fetchConsumerApi<ExchangeCurrency[]>(`/consumer/exchange/currencies`, options);
+export async function getExchangeCurrencies(
+  options?: ConsumerApiRequestOptions,
+): Promise<ConsumerExchangeCurrency[] | null> {
+  return fetchConsumerApi<ConsumerExchangeCurrenciesResponse>(`/consumer/exchange/currencies`, options);
 }
 
 export async function getExchangeCurrenciesResult(
   options?: ConsumerApiRequestOptions,
-): Promise<ConsumerApiResult<ExchangeCurrency[]>> {
-  return fetchConsumerApiResult<ExchangeCurrency[]>(`/consumer/exchange/currencies`, options);
+): Promise<ConsumerApiResult<ConsumerExchangeCurrency[]>> {
+  return fetchConsumerApiResult<ConsumerExchangeCurrenciesResponse>(`/consumer/exchange/currencies`, options);
 }
 
 function normalizeExchangeRateBatchItem(
@@ -68,9 +72,11 @@ export async function getExchangeRatesBatch(
 ): Promise<ExchangeRatesBatchResult> {
   if (pairs.length === 0) return { items: [], unavailable: false };
 
-  const raw = await postConsumerApi<{
-    data?: ExchangeRateBatchItem[];
-  }>(`/consumer/exchange/rates/batch`, { pairs }, options);
+  const raw = await postConsumerApi<ConsumerExchangeRatesBatchResponse>(
+    `/consumer/exchange/rates/batch`,
+    { pairs },
+    options,
+  );
 
   if (!Array.isArray(raw?.data)) {
     return { items: [], unavailable: true };
@@ -92,8 +98,8 @@ export async function getExchangeRules(
   page = 1,
   pageSize = 10,
   options?: ConsumerApiRequestOptions,
-): Promise<{ items: ExchangeRule[]; total: number } | null> {
-  return fetchConsumerApi<{ items: ExchangeRule[]; total: number }>(
+): Promise<ConsumerExchangeRulesResponse | null> {
+  return fetchConsumerApi<ConsumerExchangeRulesResponse>(
     `/consumer/exchange/rules?page=${page}&pageSize=${pageSize}`,
     options,
   );
@@ -103,8 +109,8 @@ export async function getExchangeRulesResult(
   page = 1,
   pageSize = 10,
   options?: ConsumerApiRequestOptions,
-): Promise<ConsumerApiResult<{ items: ExchangeRule[]; total: number }>> {
-  return fetchConsumerApiResult<{ items: ExchangeRule[]; total: number }>(
+): Promise<ConsumerApiResult<ConsumerExchangeRulesResponse>> {
+  return fetchConsumerApiResult<ConsumerExchangeRulesResponse>(
     `/consumer/exchange/rules?page=${page}&pageSize=${pageSize}`,
     options,
   );
@@ -114,8 +120,8 @@ export async function getScheduledConversions(
   page = 1,
   pageSize = 10,
   options?: ConsumerApiRequestOptions,
-): Promise<{ items: ScheduledConversion[]; total: number } | null> {
-  return fetchConsumerApi<{ items: ScheduledConversion[]; total: number }>(
+): Promise<ConsumerScheduledConversionsResponse | null> {
+  return fetchConsumerApi<ConsumerScheduledConversionsResponse>(
     `/consumer/exchange/scheduled?page=${page}&pageSize=${pageSize}`,
     options,
   );
@@ -125,8 +131,8 @@ export async function getScheduledConversionsResult(
   page = 1,
   pageSize = 10,
   options?: ConsumerApiRequestOptions,
-): Promise<ConsumerApiResult<{ items: ScheduledConversion[]; total: number }>> {
-  return fetchConsumerApiResult<{ items: ScheduledConversion[]; total: number }>(
+): Promise<ConsumerApiResult<ConsumerScheduledConversionsResponse>> {
+  return fetchConsumerApiResult<ConsumerScheduledConversionsResponse>(
     `/consumer/exchange/scheduled?page=${page}&pageSize=${pageSize}`,
     options,
   );

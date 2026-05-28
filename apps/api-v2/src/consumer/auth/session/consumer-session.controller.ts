@@ -14,13 +14,20 @@ import { ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swa
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
+import {
+  consumerAuthLogoutResponseSchema,
+  consumerLoginResponseSchema,
+  type ConsumerAppScope,
+  type ConsumerAuthLogoutResponse,
+  type ConsumerLoginResponse,
+} from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { LoginBody } from '../../../auth/dto/login.dto';
 import { Identity, type IIdentityContext, PublicEndpoint, TrackConsumerAction } from '../../../common';
 import { TransformResponse } from '../../../interceptors';
 import { getApiOAuthStateCookieKey } from '../../../shared-common';
+import { toConsumerWireContract } from '../../consumer-wire-contract';
 import { ConsumerAuthService } from '../auth.service';
 import { ConsumerAuthControllerSupportService } from '../consumer-auth-controller-support.service';
 import { LoginResponse } from '../dto';
@@ -86,7 +93,7 @@ export class ConsumerSessionController {
     @Res({ passthrough: true }) res,
     @Body() body: LoginBody,
     @Query(`appScope`) appScope?: string,
-  ) {
+  ): Promise<ConsumerLoginResponse> {
     const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
     const userAgent = req.headers[`user-agent`] ?? null;
@@ -95,14 +102,14 @@ export class ConsumerSessionController {
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
     this.setAuthCookies(req, res, data.accessToken, data.refreshToken, consumerScope);
-    return { ok: true as const };
+    return toConsumerWireContract(consumerLoginResponseSchema, { ok: true as const });
   }
 
   @PublicEndpoint()
   @Post(`logout`)
   @HttpCode(HttpStatus.OK)
   @ApiCookieAuth()
-  async logout(@Req() req: express.Request, @Res({ passthrough: true }) res) {
+  async logout(@Req() req: express.Request, @Res({ passthrough: true }) res): Promise<ConsumerAuthLogoutResponse> {
     this.ensureCsrf(req);
     const consumerScope = this.requireRequestConsumerAppScope(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
@@ -118,7 +125,7 @@ export class ConsumerSessionController {
     this.clearAuthCookies(req, res, consumerScope);
     this.clearGoogleSignupSessionCookie(req, res, consumerScope);
     res.clearCookie(getApiOAuthStateCookieKey(req, consumerScope), this.getOAuthClearCookieOptions(req));
-    return { ok: true };
+    return toConsumerWireContract(consumerAuthLogoutResponseSchema, { ok: true });
   }
 
   @PublicEndpoint()
@@ -128,7 +135,7 @@ export class ConsumerSessionController {
   @ApiCookieAuth()
   @ApiOperation({ operationId: `refresh_access` })
   @ApiOkResponse({ type: LoginResponse })
-  async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res) {
+  async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res): Promise<ConsumerLoginResponse> {
     this.ensureCsrf(req);
     const consumerScope = this.requireRequestConsumerAppScope(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
@@ -140,7 +147,7 @@ export class ConsumerSessionController {
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
     this.setAuthCookies(req, res, data.accessToken, data.refreshToken, consumerScope);
-    return { ok: true as const };
+    return toConsumerWireContract(consumerLoginResponseSchema, { ok: true as const });
   }
 
   @Post(`logout-all`)
@@ -150,7 +157,7 @@ export class ConsumerSessionController {
     @Req() req: express.Request,
     @Identity() identity: IIdentityContext,
     @Res({ passthrough: true }) res,
-  ) {
+  ): Promise<ConsumerAuthLogoutResponse> {
     this.ensureCsrf(req);
     const consumerScope = this.requireRequestConsumerAppScope(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
@@ -162,7 +169,7 @@ export class ConsumerSessionController {
     this.clearAuthCookies(req, res, consumerScope);
     this.clearGoogleSignupSessionCookie(req, res, consumerScope);
     res.clearCookie(getApiOAuthStateCookieKey(req, consumerScope), this.getOAuthClearCookieOptions(req));
-    return { ok: true };
+    return toConsumerWireContract(consumerAuthLogoutResponseSchema, { ok: true });
   }
 
   @TrackConsumerAction({ action: `consumer.auth.me`, resource: `auth` })

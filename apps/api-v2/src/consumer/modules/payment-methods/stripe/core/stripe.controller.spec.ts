@@ -24,7 +24,7 @@ describe(`ConsumerStripeController`, () => {
 
   beforeEach(() => {
     service.createStripeSession.mockResolvedValue({ url: `https://checkout.stripe.test/session` });
-    service.payWithSavedPaymentMethod.mockResolvedValue({ ok: true });
+    service.payWithSavedPaymentMethod.mockResolvedValue({ success: true });
     originResolver.validateConsumerAppScope.mockReturnValue(CURRENT_CONSUMER_APP_SCOPE);
     originResolver.validateConsumerAppScopeHeader.mockReturnValue(CURRENT_CONSUMER_APP_SCOPE);
     originResolver.resolveConsumerOriginByScope.mockReturnValue(`https://grid.example.com`);

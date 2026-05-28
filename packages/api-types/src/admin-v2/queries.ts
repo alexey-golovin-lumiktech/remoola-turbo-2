@@ -120,10 +120,6 @@ export const adminV2AuthRefreshReuseAlertQueryPayloadSchema = z
   })
   .strict();
 
-const adminV2ConsumerContractsQuerySchema = adminV2PageQuerySchema.extend({
-  role: optionalTrimmedStringSchema,
-  status: optionalTrimmedStringSchema,
-});
 export const adminV2LedgerEntriesListQuerySchema = adminV2CursorQuerySchema.extend({
   q: optionalTrimmedStringSchema,
   type: optionalTrimmedStringSchema,
@@ -147,13 +143,6 @@ export const adminV2LedgerAnomaliesListQuerySchema = adminV2CursorQuerySchema.ex
   dateFrom: z.string().refine(isIsoDateOnly, { message: `Expected YYYY-MM-DD` }),
   dateTo: optionalDateOnlySchema,
 });
-const adminV2TimelineQuerySchema = adminV2PageQuerySchema.extend({
-  dateFrom: optionalDateOnlySchema,
-  dateTo: optionalDateOnlySchema,
-  event: optionalTrimmedStringSchema,
-  action: optionalTrimmedStringSchema,
-});
-
 export const adminV2AuditListQuerySchema = adminV2PageQuerySchema.extend({
   dateFrom: optionalDateOnlySchema,
   dateTo: optionalDateOnlySchema,
@@ -181,11 +170,19 @@ export type AdminV2ConsumersListQuery = z.infer<typeof adminV2ConsumersListQuery
 export type AdminV2VerificationQueuePayload = z.infer<typeof adminV2VerificationQueuePayloadSchema>;
 export type AdminV2VerificationQueueQuery = z.infer<typeof adminV2VerificationQueueQuerySchema>;
 export type AdminV2AuthRefreshReuseAlertQueryPayload = z.infer<typeof adminV2AuthRefreshReuseAlertQueryPayloadSchema>;
-export type AdminV2ConsumerContractsQuery = z.infer<typeof adminV2ConsumerContractsQuerySchema>;
+export type AdminV2ConsumerContractsQuery = AdminV2PageQuery & {
+  role?: string;
+  status?: string;
+};
 export type AdminV2LedgerEntriesListQuery = z.infer<typeof adminV2LedgerEntriesListQuerySchema>;
 export type AdminV2LedgerDisputesQuery = z.infer<typeof adminV2LedgerDisputesQuerySchema>;
 export type AdminV2LedgerAnomaliesListQuery = z.infer<typeof adminV2LedgerAnomaliesListQuerySchema>;
-export type AdminV2TimelineQuery = z.infer<typeof adminV2TimelineQuerySchema>;
+export type AdminV2TimelineQuery = AdminV2PageQuery & {
+  dateFrom?: string;
+  dateTo?: string;
+  event?: string;
+  action?: string;
+};
 export type AdminV2AuditListQuery = z.infer<typeof adminV2AuditListQuerySchema>;
 export type AdminV2AdminsListQuery = z.infer<typeof adminV2AdminsListQuerySchema>;
 export type AdminV2PageQuery = { page?: number; pageSize?: number };
