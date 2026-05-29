@@ -3106,7 +3106,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-28</summary>
 
 - **2026-05-28:**
@@ -3132,6 +3132,28 @@
   ### ⚠️ Notes
   - **Migration-free, additive deploy:** No DB migration today. For the `ledgerId` fix prefer shipping api-v2 first (or together with admin-v2) so the field is present when admin-v2 parses the response; the api-v2 / consumer-css-grid packages should be re-verified against the bumped `@remoola/api-types` contracts before merge.
   - **New runtime failure mode at the wire boundary:** Consumer Zod contract drift now throws HTTP 500 instead of failing silently. Auth-critical endpoints (`login`, `refresh`) are guarded by the new contracts test, but the `parse` is hard — a future change drifting an auth response shape without updating the schema would lock users out until realigned. Non-blocking follow-up: consider `safeParse` with a structured warn-log passthrough for auth-critical routes.
+
+</details>
+
+<details open>
+<summary>2026-05-29</summary>
+
+- **2026-05-29:**
+
+  ### 🔐 Security / Production Safety
+  - **Consumer auth middleware split:** Refactor `apps/consumer-css-grid/src/middleware.ts` into a thin auth/session dispatcher with dedicated `auth-middleware` helpers for request policy, token shape screening, refresh orchestration, and telemetry. Callback bypass, auth-page redirects, protected-page gating, server-action non-redirect behavior, same-origin refresh, `/api/me` probe flow, CSRF forwarding, and request-derived localhost / `127.0.0.1` origin handling are preserved. Cookie merge precedence is made explicit so the first incoming auth cookie is preserved before upstream `Set-Cookie` overwrites are applied.
+  - **Consumer server-access consolidation:** Align consumer mutation modules on `src/lib/mutations/mutation-runtime.server.ts`, remove duplicated fetch/config/error/validation helpers from `banking`, `contacts`, `documents`, `exchange`, and related modules, delete `src/lib/actions/payments.server.ts` and `src/lib/consumer-mutations.server.ts`, and migrate consumer payment clients and contract inline actions to import directly from `src/lib/mutations/payments.server.ts`. Introduce `src/lib/bff-proxy.server.ts` as the consumer route-class proxy layer above `api-utils.ts` and migrate auth, signup, `me`, and document proxy routes to shared `proxyTextRoute` / `proxyJsonRoute` / `proxyBinaryRoute`. CSRF, cookie forwarding, app-scope forwarding, and upstream `set-cookie` propagation are preserved; `logout` and `logout-all` routes intentionally left out of scope.
+
+  ### 🛠 DevEx
+  - **Admin-v2 ledger list page decomposition (WS-01):** Decompose `apps/admin-v2/src/app/(shell)/ledger/page.tsx` (~580 LOC) into a thin orchestrator plus route-local `page.params.ts` (searchParams parsing, `adminV2LedgerEntriesListQuerySchema` / `adminV2LedgerDisputesQuerySchema` construction, `buildHref` factory), `page.loader.ts` (conditional `getLedgerEntries` / `getLedgerDisputes` reads), `page.view.tsx` (composition only), and `sections/{LedgerContextRail,LedgerFilters,LedgerEntriesPanel,LedgerDisputesPanel,ledger-shared}.tsx`. Move-only extraction; URLs, searchParam names, API call shapes, and JSX output preserved verbatim. Shipped as two commits (`d08e93d3` params/loader/view skeleton, `f79251ea` sections).
+  - **Admin-v2 consumer case page decomposition (WS-01):** Decompose `apps/admin-v2/src/app/(shell)/consumers/[consumerId]/page.tsx` (719 LOC → orchestration only) into `page.loader.ts` (single `Promise.all` over `getAdminIdentity`, `getConsumerCaseResult`, `getConsumerContracts`, `getConsumerLedgerSummary`, `getConsumerAuthHistory`, `getConsumerActionLog`, plus `readReturnTo`), `page.permissions.ts` (`deriveConsumerPagePermissions` covering `consumers.notes` / `flags` / `force_logout` / `suspend` / `email_resend` and `canResendSignupVerification`), `page.view.tsx`, ten route-local `sections/`, six route-local `forms/`, and a `preview-helpers.tsx` module. Capability gating, Server Action wiring, hidden inputs (`confirmed`, `confirmedSubmit`, `emailKind`, `appScope`, `version`), and the `.bind(null, consumerId[, flagId])` boundary are preserved verbatim.
+  - **Consumer-css-grid client decomposition:** Decompose `ContactsClient`, `ContractsClient`, `ContractDetailView`, `DocumentsClient`, `ExchangeClient`, `PaymentsClient`, and `WithdrawFlowClient` into focused view-model hooks (`useContactFormState`, `useContactsPageState`, `contracts-list-state`, `contract-detail-model`, `documents-view-model`, `exchange-convert-state`, `payments-filters-state`, `withdraw-view-model`), presentational section components (`ContactsSections`, `contracts-list-sections`, `contract-detail-sections`), and pure helpers (`displayContactAddress`, `toEditableContact`, `buildContactsQueryHref`, `buildContactsPageHref`). Inline URL/search-param mutation logic is replaced with pure href builders. No package or contract changes; mutations (`createContactMutation`, `updateContactMutation`, `deleteContactMutation`, …) consumed unchanged from `lib/mutations/*.server`. `sanitizeContactsReturnTo` continues to gate `returnTo` redirects — invocation now lives in the page-state hook but the open-redirect invariant is preserved.
+
+  ### 🧪 Testing
+  - **Consumer page-state and middleware coverage:** Add jsdom-based render tests for `ContactsClient` (search, pagination, create/edit flows via mocked server mutations) and pure-function tests for every new state module and href builder (contacts, contracts list, contract detail, documents, exchange convert, payments filters, withdraw). Add focused coverage for the new auth-middleware helpers — request classification, token shape validation, and cookie merge precedence — and extend `middleware.test.ts` with a duplicate-cookie refresh merge regression. Behavioral coverage moved out of the deleted `consumer-mutations.server.test.ts` into direct module tests for `contacts`, `exchange`, and the remaining mutation modules; help source-map references updated to the canonical payments mutation path.
+
+  ### ⚠️ Notes
+  - **Pure-frontend, migration-free day:** All changes are structural refactors in `apps/admin-v2` and `apps/consumer-css-grid` plus a route-class proxy layer in the consumer BFF. No DB migration, no API contract change, no infra change; safe rolling deploy with straight-revert rollback. Watch for visual or interaction regressions on consumer `/contacts`, `/contracts`, `/contracts/[id]`, `/documents`, `/exchange`, `/payments`, `/withdraw`, and on admin-v2 `/ledger` and `/consumers/[consumerId]` after deploy.
 
 </details>
 
