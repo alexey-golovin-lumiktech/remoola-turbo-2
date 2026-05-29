@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 
   return proxyTextRoute({
-    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/google/signup-session`, [
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/api/consumer/auth/google/signup-session`, [
       [`appScope`, CURRENT_CONSUMER_APP_SCOPE],
     ]),
     method: `GET`,

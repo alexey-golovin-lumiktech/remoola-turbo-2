@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   forwardHeaders.set(`content-type`, `application/json`);
 
   return proxyTextRoute({
-    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/google/signup-session/establish`, [
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/api/consumer/auth/google/signup-session/establish`, [
       [`appScope`, CURRENT_CONSUMER_APP_SCOPE],
     ]),
     method: `POST`,

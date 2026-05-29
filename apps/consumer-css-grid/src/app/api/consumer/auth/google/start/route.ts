@@ -17,6 +17,6 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.redirect(
-    buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/google/start`, searchParams),
+    buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/api/consumer/auth/google/start`, searchParams),
   );
 }

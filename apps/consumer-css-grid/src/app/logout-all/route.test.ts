@@ -61,7 +61,7 @@ describe(`logout-all route`, () => {
     expect(location.pathname).toBe(`/login`);
     expect(location.searchParams.get(AUTH_NOTICE_QUERY)).toBe(`signed_out_all_sessions`);
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch.mock.calls[0]?.[0].toString()).toBe(`https://api.example.com/consumer/auth/logout-all`);
+    expect(mockFetch.mock.calls[0]?.[0].toString()).toBe(`https://api.example.com/api/consumer/auth/logout-all`);
     expect(mockFetch.mock.calls[0]?.[1]?.method).toBe(`POST`);
     const forwardedHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers;
     expect(forwardedHeaders.get(`x-csrf-token`)).toBe(`csrf-token`);
