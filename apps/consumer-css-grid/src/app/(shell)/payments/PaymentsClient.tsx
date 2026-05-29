@@ -1,12 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
 
 import { type CreatePaymentRequestFormProps } from './CreatePaymentRequestForm';
 import { CreatePaymentRequestPanel } from './CreatePaymentRequestPanel';
-import { buildPaymentsListQuery, formatPaymentTypeLabel, PAYMENT_TYPE_OPTIONS } from './payments-list-query';
+import { buildPaymentsPageMetrics, usePaymentsFiltersState } from './payments-filters-state';
+import { formatPaymentTypeLabel, PAYMENT_TYPE_OPTIONS } from './payments-list-query';
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
@@ -70,27 +69,14 @@ export function PaymentsClient({
   paymentRequestContacts,
   paymentRequestCurrencies,
 }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isFilterPending, startFilterTransition] = useTransition();
-  const [search, setSearch] = useState(initialSearch);
-  const [status, setStatus] = useState(initialStatus);
-  const [type, setType] = useState(initialType);
-  const [role, setRole] = useState(initialRole);
-  const hasActiveFilters = search !== `` || status !== `` || type !== `` || role !== ``;
-
-  const distinctCurrencies = Array.from(new Set(payments.map((payment) => payment.currencyCode)));
-  const hasSingleCurrency = distinctCurrencies.length === 1;
-  const incomingAmount = payments
-    .filter((payment) => payment.role === `REQUESTER`)
-    .reduce((sum, payment) => sum + payment.amount, 0);
-  const outgoingAmount = payments
-    .filter((payment) => payment.role === `PAYER`)
-    .reduce((sum, payment) => sum + payment.amount, 0);
-  const incomingCount = payments.filter((payment) => payment.role === `REQUESTER`).length;
-  const outgoingCount = payments.filter((payment) => payment.role === `PAYER`).length;
-  const processingCount = payments.filter((payment) => payment.status.toLowerCase() !== `completed`).length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const filterState = usePaymentsFiltersState({
+    pageSize,
+    initialSearch,
+    initialStatus,
+    initialType,
+    initialRole,
+  });
+  const metrics = buildPaymentsPageMetrics(payments, total, pageSize);
   const emptyStateHelpGuides = getContextualHelpGuides({
     route: HELP_CONTEXT_ROUTE.PAYMENTS,
     preferredSlugs: [
@@ -99,40 +85,6 @@ export function PaymentsClient({
       HELP_GUIDE_SLUG.PAYMENTS_START_PAYMENT,
     ],
   });
-
-  const applyFilters = (nextPage = 1) => {
-    const params = buildPaymentsListQuery({
-      search,
-      status,
-      type,
-      role,
-      page: nextPage,
-      pageSize,
-    });
-    startFilterTransition(() => {
-      router.push(`${pathname}?${params}`);
-    });
-  };
-
-  const clearFilters = () => {
-    setSearch(``);
-    setStatus(``);
-    setType(``);
-    setRole(``);
-
-    const params = buildPaymentsListQuery({
-      search: ``,
-      status: ``,
-      type: ``,
-      role: ``,
-      page: 1,
-      pageSize,
-    });
-
-    startFilterTransition(() => {
-      router.push(`${pathname}?${params}`);
-    });
-  };
 
   return (
     <div className="space-y-5">
@@ -147,47 +99,55 @@ export function PaymentsClient({
           icon="↑"
           label="Incoming"
           value={
-            hasSingleCurrency && incomingCount > 0
-              ? formatMajorCurrency(incomingAmount, distinctCurrencies[0] ?? preferredCurrency)
-              : `${incomingCount}`
+            metrics.hasSingleCurrency && metrics.incomingCount > 0
+              ? formatMajorCurrency(metrics.incomingAmount, metrics.distinctCurrencies[0] ?? preferredCurrency)
+              : `${metrics.incomingCount}`
           }
-          sublabel={hasSingleCurrency && incomingCount > 0 ? `Visible on this page` : `Incoming payments on this page`}
+          sublabel={
+            metrics.hasSingleCurrency && metrics.incomingCount > 0
+              ? `Visible on this page`
+              : `Incoming payments on this page`
+          }
           accent="text-(--app-success-text)"
         />
         <MetricCard
           icon="↓"
           label="Outgoing"
           value={
-            hasSingleCurrency && outgoingCount > 0
-              ? formatMajorCurrency(outgoingAmount, distinctCurrencies[0] ?? preferredCurrency)
-              : `${outgoingCount}`
+            metrics.hasSingleCurrency && metrics.outgoingCount > 0
+              ? formatMajorCurrency(metrics.outgoingAmount, metrics.distinctCurrencies[0] ?? preferredCurrency)
+              : `${metrics.outgoingCount}`
           }
-          sublabel={hasSingleCurrency && outgoingCount > 0 ? `Visible on this page` : `Outgoing payments on this page`}
+          sublabel={
+            metrics.hasSingleCurrency && metrics.outgoingCount > 0
+              ? `Visible on this page`
+              : `Outgoing payments on this page`
+          }
         />
         <MetricCard
           icon="◎"
           label="Processing"
-          value={String(processingCount)}
+          value={String(metrics.processingCount)}
           sublabel="Non-completed payments on this page"
         />
       </section>
 
       <Panel
         title="Payments filters"
-        aside={hasActiveFilters ? `${total} total · filters active` : `${total} total`}
+        aside={filterState.hasActiveFilters ? `${total} total · filters active` : `${total} total`}
         data-testid="payments-filters"
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_auto]">
           <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            value={filterState.search}
+            onChange={(event) => filterState.setSearch(event.target.value)}
             placeholder="Search by description or counterparty"
             aria-label="Search payments by description or counterparty"
             className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
           />
           <select
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
+            value={filterState.status}
+            onChange={(event) => filterState.setStatus(event.target.value)}
             aria-label="Filter by payment status"
             className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
           >
@@ -198,8 +158,8 @@ export function PaymentsClient({
             ))}
           </select>
           <select
-            value={type}
-            onChange={(event) => setType(event.target.value)}
+            value={filterState.type}
+            onChange={(event) => filterState.setType(event.target.value)}
             aria-label="Filter by payment type"
             className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
           >
@@ -210,8 +170,8 @@ export function PaymentsClient({
             ))}
           </select>
           <select
-            value={role}
-            onChange={(event) => setRole(event.target.value)}
+            value={filterState.role}
+            onChange={(event) => filterState.setRole(event.target.value)}
             aria-label="Filter by role"
             className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
           >
@@ -224,17 +184,17 @@ export function PaymentsClient({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              disabled={isFilterPending}
-              onClick={() => applyFilters(1)}
+              disabled={filterState.isFilterPending}
+              onClick={() => filterState.applyFilters(1)}
               className="rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isFilterPending ? `Applying...` : `Apply`}
+              {filterState.isFilterPending ? `Applying...` : `Apply`}
             </button>
-            {hasActiveFilters ? (
+            {filterState.hasActiveFilters ? (
               <button
                 type="button"
-                disabled={isFilterPending}
-                onClick={clearFilters}
+                disabled={filterState.isFilterPending}
+                onClick={filterState.clearFilters}
                 className="rounded-2xl border border-(--app-border) px-4 py-3 font-medium text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Clear filters
@@ -246,7 +206,7 @@ export function PaymentsClient({
 
       <Panel
         title="Recent payments"
-        aside={`Page ${page} of ${totalPages} · ${payments.length} shown · ${total} total`}
+        aside={`Page ${page} of ${metrics.totalPages} · ${payments.length} shown · ${total} total`}
         data-testid="payments-list"
       >
         {payments.length === 0 ? (
@@ -304,16 +264,16 @@ export function PaymentsClient({
         <div className="mt-5 flex flex-wrap gap-2">
           <button
             type="button"
-            disabled={isFilterPending || page <= 1}
-            onClick={() => applyFilters(page - 1)}
+            disabled={filterState.isFilterPending || page <= 1}
+            onClick={() => filterState.applyFilters(page - 1)}
             className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Previous
           </button>
           <button
             type="button"
-            disabled={isFilterPending || page >= totalPages}
-            onClick={() => applyFilters(page + 1)}
+            disabled={filterState.isFilterPending || page >= metrics.totalPages}
+            onClick={() => filterState.applyFilters(page + 1)}
             className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next

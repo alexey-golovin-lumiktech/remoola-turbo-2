@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
+import { applyExchangeConvertFormPatch, buildExchangeConvertState } from './exchange-convert-state';
 import {
   type CreateRuleData,
   type Currency,
   FieldHint,
   formatMajorCurrency,
   formatMinorCurrency,
-  getExchangeCurrencyOptions,
   type ExchangeRate,
   type ExchangeRule,
   type ScheduledConversion,
@@ -113,7 +113,7 @@ export function ExchangeClient({
     to: initialToCurrency,
     amount: ``,
   });
-  const currencyOptions = getExchangeCurrencyOptions(currencies);
+  const convertState = buildExchangeConvertState({ balances, convertForm, currencies });
 
   useEffect(() => {
     setLiveRates(exchangeRates);
@@ -121,19 +121,10 @@ export function ExchangeClient({
   }, [exchangeRates, exchangeRatesUnavailable]);
 
   const updateConvertForm = (patch: Partial<typeof convertForm>) => {
-    setConvertForm((current) => ({ ...current, ...patch }));
+    setConvertForm((current) => applyExchangeConvertFormPatch(current, patch));
     setQuote(null);
     setMessage(null);
   };
-  const convertCurrenciesDiffer = convertForm.from !== convertForm.to;
-  const convertAvailableBalanceMinor = balances?.[convertForm.from] ?? 0;
-  const convertAmountValue = convertForm.amount.trim();
-  const parsedConvertAmount = Number(convertAmountValue);
-  const convertAmountValid =
-    convertAmountValue !== `` && Number.isFinite(parsedConvertAmount) && parsedConvertAmount > 0;
-  const requestedConvertMinorAmount = convertAmountValid ? Math.round(parsedConvertAmount * 100) : 0;
-  const convertHasInsufficientFunds = convertAmountValid && requestedConvertMinorAmount > convertAvailableBalanceMinor;
-  const convertFormValid = convertCurrenciesDiffer && convertAmountValid;
   const handleCreateRule = (input: CreateRuleData) => createExchangeRuleMutation(input);
   const handleUpdateRule = (ruleId: string, input: UpdateRuleData) => updateExchangeRuleMutation(ruleId, input);
   const handleDeleteRule = (ruleId: string) => deleteExchangeRuleMutation(ruleId);
@@ -163,7 +154,7 @@ export function ExchangeClient({
                 onChange={(event) => updateConvertForm({ from: event.target.value })}
                 className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
               >
-                {currencyOptions.map((currency) => (
+                {convertState.currencyOptions.map((currency) => (
                   <option key={`from-${currency.code}`} value={currency.code}>
                     From: {currency.code}
                   </option>
@@ -174,30 +165,32 @@ export function ExchangeClient({
                 onChange={(event) => updateConvertForm({ to: event.target.value })}
                 className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
               >
-                {currencyOptions.map((currency) => (
+                {convertState.currencyOptions.map((currency) => (
                   <option key={`to-${currency.code}`} value={currency.code}>
                     To: {currency.code}
                   </option>
                 ))}
               </select>
             </div>
-            {!convertCurrenciesDiffer ? <FieldHint message="Choose two different currencies." tone="error" /> : null}
+            {!convertState.convertCurrenciesDiffer ? (
+              <FieldHint message="Choose two different currencies." tone="error" />
+            ) : null}
             <input
               value={convertForm.amount}
               onChange={(event) => updateConvertForm({ amount: event.target.value })}
               placeholder="Amount to convert"
-              aria-invalid={convertAmountValue !== `` && !convertAmountValid}
+              aria-invalid={convertState.convertAmountValue !== `` && !convertState.convertAmountValid}
               className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
             />
-            {convertAmountValue === `` ? <FieldHint message="Enter an amount greater than zero." /> : null}
-            {convertAmountValue !== `` && !convertAmountValid ? (
+            {convertState.convertAmountValue === `` ? <FieldHint message="Enter an amount greater than zero." /> : null}
+            {convertState.convertAmountValue !== `` && !convertState.convertAmountValid ? (
               <FieldHint message="Amount must be greater than zero." tone="error" />
             ) : null}
             <MetricLine
               label="Available balance"
-              value={formatMinorCurrency(convertAvailableBalanceMinor, convertForm.from)}
+              value={formatMinorCurrency(convertState.convertAvailableBalanceMinor, convertForm.from)}
             />
-            {convertHasInsufficientFunds ? (
+            {convertState.convertHasInsufficientFunds ? (
               <FieldHint message="Amount exceeds the currently available balance." tone="error" />
             ) : null}
             {quote ? (
@@ -216,7 +209,7 @@ export function ExchangeClient({
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <button
                 type="button"
-                disabled={isPending || !convertFormValid}
+                disabled={isPending || !convertState.convertFormValid}
                 onClick={() => {
                   setMessage(null);
                   startTransition(async () => {
@@ -236,7 +229,7 @@ export function ExchangeClient({
               </button>
               <button
                 type="button"
-                disabled={isPending || !convertFormValid || convertHasInsufficientFunds}
+                disabled={isPending || !convertState.convertFormValid || convertState.convertHasInsufficientFunds}
                 onClick={() => {
                   setMessage(null);
                   startTransition(async () => {
@@ -256,7 +249,7 @@ export function ExchangeClient({
               >
                 {isPending
                   ? `Submitting...`
-                  : convertHasInsufficientFunds
+                  : convertState.convertHasInsufficientFunds
                     ? `Amount exceeds available balance`
                     : `Convert now`}
               </button>

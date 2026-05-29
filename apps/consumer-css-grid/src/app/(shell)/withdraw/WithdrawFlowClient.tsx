@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import { buildWithdrawViewModel } from './withdraw-view-model';
 import { submitTransferAction, submitWithdrawAction } from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { Field } from '../../../shared/ui/shell-primitives';
@@ -49,44 +50,18 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  const hasBankMethod = bankMethods.length > 0;
-  const hasPositiveBalance = Object.values(balances ?? {}).some((value) => value > 0);
-  const withdrawSelectedBalance = balances?.[withdrawCurrency] ?? 0;
-  const transferSelectedBalance = balances?.[transferCurrency] ?? 0;
-  const parsedWithdrawAmount = Number(withdrawAmount);
-  const isWithdrawAmountValid = Number.isFinite(parsedWithdrawAmount) && parsedWithdrawAmount > 0;
-  const requestedWithdrawMinorAmount = isWithdrawAmountValid ? Math.round(parsedWithdrawAmount * 100) : 0;
-  const hasWithdrawInsufficientFunds = isWithdrawAmountValid && requestedWithdrawMinorAmount > withdrawSelectedBalance;
-  const parsedTransferAmount = Number(transferAmount);
-  const isTransferAmountValid = Number.isFinite(parsedTransferAmount) && parsedTransferAmount > 0;
-  const requestedTransferMinorAmount = isTransferAmountValid ? Math.round(parsedTransferAmount * 100) : 0;
-  const hasTransferInsufficientFunds = isTransferAmountValid && requestedTransferMinorAmount > transferSelectedBalance;
-  const withdrawSubmitDisabled =
-    isPending ||
-    !hasBankMethod ||
-    !hasPositiveBalance ||
-    !paymentMethodId ||
-    !isWithdrawAmountValid ||
-    hasWithdrawInsufficientFunds;
-  const transferSubmitDisabled =
-    isPending || !hasPositiveBalance || !recipient.trim() || !isTransferAmountValid || hasTransferInsufficientFunds;
-  const withdrawSubmitLabel = !hasBankMethod
-    ? `Connect a bank account to continue`
-    : !hasPositiveBalance
-      ? `No withdrawable balance available`
-      : hasWithdrawInsufficientFunds
-        ? `Amount exceeds available balance`
-        : isPending
-          ? `Submitting...`
-          : `Create withdrawal`;
-  const transferSubmitLabel = !hasPositiveBalance
-    ? `No transferable balance available`
-    : hasTransferInsufficientFunds
-      ? `Amount exceeds available balance`
-      : isPending
-        ? `Submitting...`
-        : `Send transfer`;
+  const viewModel = buildWithdrawViewModel({
+    activeTab,
+    balances,
+    bankMethods,
+    isPending,
+    paymentMethodId,
+    recipient,
+    transferAmount,
+    transferCurrency,
+    withdrawAmount,
+    withdrawCurrency,
+  });
 
   function clearFeedback() {
     setError(null);
@@ -135,20 +110,17 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
 
       <Field
         label="Available balance"
-        value={formatCurrency(
-          activeTab === `withdraw` ? withdrawSelectedBalance : transferSelectedBalance,
-          activeTab === `withdraw` ? withdrawCurrency : transferCurrency,
-        )}
+        value={formatCurrency(viewModel.activeBalanceAmount, viewModel.activeBalanceCurrency)}
       />
 
       {activeTab === `withdraw` ? (
         <>
-          {!hasBankMethod ? (
+          {!viewModel.hasBankMethod ? (
             <div className="rounded-2xl border border-(--app-warning-soft) bg-(--app-warning-soft) px-4 py-3 text-sm text-(--app-warning-text)">
               Add a bank account in the Banking section before creating a withdrawal.
             </div>
           ) : null}
-          {!hasPositiveBalance ? (
+          {!viewModel.hasPositiveBalance ? (
             <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-muted)">
               Withdrawals unlock once at least one balance becomes positive.
             </div>
@@ -171,7 +143,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
                 className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
                 placeholder="0.00"
               />
-              {hasWithdrawInsufficientFunds ? (
+              {viewModel.hasWithdrawInsufficientFunds ? (
                 <div className="mt-2 text-sm text-(--app-danger-text)">
                   Entered amount is greater than the available balance.
                 </div>
@@ -251,7 +223,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
             Transfers move available balance to an existing consumer account already registered under the recipient
             email or phone number.
           </div>
-          {!hasPositiveBalance ? (
+          {!viewModel.hasPositiveBalance ? (
             <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-muted)">
               Transfers unlock once at least one balance becomes positive.
             </div>
@@ -294,7 +266,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
                 className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
                 placeholder="0.00"
               />
-              {hasTransferInsufficientFunds ? (
+              {viewModel.hasTransferInsufficientFunds ? (
                 <div className="mt-2 text-sm text-(--app-danger-text)">
                   Entered amount is greater than the available balance.
                 </div>
@@ -339,7 +311,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
       ) : null}
       <button
         type="button"
-        disabled={activeTab === `withdraw` ? withdrawSubmitDisabled : transferSubmitDisabled}
+        disabled={activeTab === `withdraw` ? viewModel.withdrawSubmitDisabled : viewModel.transferSubmitDisabled}
         onClick={() => {
           clearFeedback();
           startTransition(async () => {
@@ -378,7 +350,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
         }}
         className="w-full rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {activeTab === `withdraw` ? withdrawSubmitLabel : transferSubmitLabel}
+        {activeTab === `withdraw` ? viewModel.withdrawSubmitLabel : viewModel.transferSubmitLabel}
       </button>
     </div>
   );

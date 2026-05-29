@@ -9,10 +9,9 @@ import { getDeleteBlockedMessage, isDeleteBlocked, type DocumentItem } from './d
 import { buildDocumentUploadFormData, uploadDocuments } from './document-upload-helpers';
 import { DocumentList } from './DocumentList';
 import { DocumentPreviewPanel } from './DocumentPreviewPanel';
+import { buildDocumentsViewModel } from './documents-view-model';
 import { DocumentSelectionToolbar } from './DocumentSelectionToolbar';
 import { DocumentUploadControl } from './DocumentUploadControl';
-import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
-import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides, HelpInlineGuides } from '../../../features/help/ui';
 import {
   bulkDeleteDocumentsMutation,
@@ -55,54 +54,18 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
   const [editingTagsId, setEditingTagsId] = useState<string | null>(null);
   const [tagsDraft, setTagsDraft] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement | null>(null);
-
-  const contractsCount = documents.filter((doc) => doc.kind === `CONTRACT`).length;
-  const complianceCount = documents.filter((doc) => doc.kind === `COMPLIANCE`).length;
-  const paymentCount = documents.filter((doc) => doc.kind === `PAYMENT`).length;
-  const generalCount = documents.filter((doc) => doc.kind === `GENERAL`).length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const hasDocumentsOnAnotherPage = documents.length === 0 && total > 0;
-  const isContractMode = Boolean(contractContext);
-  const filteredDocuments = useMemo(() => {
-    if (filterKind === `all`) return documents;
-    return documents.filter((document) => document.kind === filterKind);
-  }, [documents, filterKind]);
-  const deletableDocumentIds = useMemo(
-    () => filteredDocuments.filter((doc) => !isDeleteBlocked(doc)).map((doc) => doc.id),
-    [filteredDocuments],
+  const viewModel = useMemo(
+    () =>
+      buildDocumentsViewModel({
+        documents,
+        total,
+        pageSize,
+        contractContext,
+        filterKind,
+        selectedDocumentIds,
+      }),
+    [contractContext, documents, filterKind, pageSize, selectedDocumentIds, total],
   );
-  const deletableDocumentIdSet = useMemo(() => new Set(deletableDocumentIds), [deletableDocumentIds]);
-  const blockedDraftDeleteCount = filteredDocuments.filter(
-    (doc) => doc.isAttachedToDraftPaymentRequest && !doc.isAttachedToNonDraftPaymentRequest,
-  ).length;
-  const blockedNonDraftDeleteCount = filteredDocuments.filter((doc) => doc.isAttachedToNonDraftPaymentRequest).length;
-  const allDeletableSelected =
-    deletableDocumentIds.length > 0 &&
-    deletableDocumentIds.every((documentId) => selectedDocumentIds.includes(documentId));
-  const documentsHelpGuides = getContextualHelpGuides({
-    route: HELP_CONTEXT_ROUTE.DOCUMENTS,
-    preferredSlugs: [
-      HELP_GUIDE_SLUG.DOCUMENTS_OVERVIEW,
-      HELP_GUIDE_SLUG.DOCUMENTS_UPLOAD_AND_ATTACH,
-      HELP_GUIDE_SLUG.DOCUMENTS_COMMON_ISSUES,
-    ],
-    limit: 3,
-  });
-  const emptyStateHelpGuides = getContextualHelpGuides({
-    route: HELP_CONTEXT_ROUTE.DOCUMENTS,
-    preferredSlugs: [HELP_GUIDE_SLUG.DOCUMENTS_UPLOAD_AND_ATTACH, HELP_GUIDE_SLUG.DOCUMENTS_OVERVIEW],
-    limit: 2,
-  });
-  const blockedStateHelpGuides = getContextualHelpGuides({
-    route: HELP_CONTEXT_ROUTE.DOCUMENTS,
-    preferredSlugs: [HELP_GUIDE_SLUG.DOCUMENTS_COMMON_ISSUES, HELP_GUIDE_SLUG.DOCUMENTS_UPLOAD_AND_ATTACH],
-    limit: 2,
-  });
-  const deleteBlockedHelpGuides = getContextualHelpGuides({
-    route: HELP_CONTEXT_ROUTE.DOCUMENTS,
-    preferredSlugs: [HELP_GUIDE_SLUG.DOCUMENTS_COMMON_ISSUES],
-    limit: 1,
-  });
 
   const applyPage = (nextPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -139,11 +102,11 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
   };
 
   const handleDeleteSelected = () => {
-    const blockedSelected = selectedDocumentIds.filter((id) => !deletableDocumentIdSet.has(id));
+    const blockedSelected = selectedDocumentIds.filter((id) => !viewModel.deletableDocumentIdSet.has(id));
     if (blockedSelected.length > 0) {
       setMessage({
         type: `error`,
-        text: getDeleteBlockedMessage(blockedSelected, filteredDocuments),
+        text: viewModel.getDeleteBlockedMessageForSelection(blockedSelected),
       });
       return;
     }
@@ -228,13 +191,13 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
             </div>
             <div className="mt-1 text-sm text-(--app-text-muted)">
               {contractContext
-                ? `Preview, tag, and attach files already connected to this contract. Page ${page} of ${totalPages} shows ${documents.length} of ${total} files.`
-                : `Upload new files or remove outdated ones. Page ${page} of ${totalPages} shows ${documents.length} of ${total} documents.`}
+                ? `Preview, tag, and attach files already connected to this contract. Page ${page} of ${viewModel.totalPages} shows ${documents.length} of ${total} files.`
+                : `Upload new files or remove outdated ones. Page ${page} of ${viewModel.totalPages} shows ${documents.length} of ${total} documents.`}
             </div>
           </div>
         </div>
         <HelpContextualGuides
-          guides={documentsHelpGuides}
+          guides={viewModel.documentsHelpGuides}
           compact
           className="mb-4"
           title={contractContext ? `Need help using contract-linked files?` : `Need help managing documents?`}
@@ -244,7 +207,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
               : `These guides explain uploads, attachments, and the delete restrictions that appear once a file becomes part of a payment flow.`
           }
         />
-        {isContractMode ? (
+        {viewModel.isContractMode ? (
           <div className="mb-4 text-sm text-(--app-text-muted)">
             Upload remains in the full document library. This mode stays focused on files already tied to the current
             contractor relationship.
@@ -275,7 +238,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
         {documents.length === 0 ? (
           <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
             <div>
-              {hasDocumentsOnAnotherPage
+              {viewModel.hasDocumentsOnAnotherPage
                 ? contractContext
                   ? `No files are visible on this page right now.`
                   : `No documents are visible on this page right now.`
@@ -283,7 +246,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
                   ? `No files are linked to this contract yet.`
                   : `No documents uploaded yet.`}
             </div>
-            {hasDocumentsOnAnotherPage ? (
+            {viewModel.hasDocumentsOnAnotherPage ? (
               <div className="mt-3">
                 <button
                   type="button"
@@ -295,9 +258,9 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
               </div>
             ) : null}
             <HelpInlineGuides
-              guides={emptyStateHelpGuides}
+              guides={viewModel.emptyStateHelpGuides}
               title={
-                hasDocumentsOnAnotherPage
+                viewModel.hasDocumentsOnAnotherPage
                   ? contractContext
                     ? `Need help getting back to the first contract files page?`
                     : `Need help getting back to the first documents page?`
@@ -311,13 +274,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
         ) : (
           <div>
             <div className="mb-4 flex flex-wrap gap-2">
-              {[
-                { value: `all`, label: `All`, count: documents.length },
-                { value: `PAYMENT`, label: `Payment`, count: paymentCount },
-                { value: `COMPLIANCE`, label: `Compliance`, count: complianceCount },
-                { value: `CONTRACT`, label: `Contract`, count: contractsCount },
-                { value: `GENERAL`, label: `General`, count: generalCount },
-              ].map((filter) => (
+              {[...viewModel.filterOptions].map((filter) => (
                 <button
                   key={filter.value}
                   type="button"
@@ -336,22 +293,24 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
               ))}
             </div>
             <div className="space-y-3">
-              {filteredDocuments.length > 1 ? (
+              {viewModel.filteredDocuments.length > 1 ? (
                 <DocumentSelectionToolbar
-                  allDeletableSelected={allDeletableSelected}
-                  blockedDraftDeleteCount={blockedDraftDeleteCount}
-                  blockedNonDraftDeleteCount={blockedNonDraftDeleteCount}
-                  blockedStateHelpGuides={blockedStateHelpGuides}
+                  allDeletableSelected={viewModel.allDeletableSelected}
+                  blockedDraftDeleteCount={viewModel.blockedDraftDeleteCount}
+                  blockedNonDraftDeleteCount={viewModel.blockedNonDraftDeleteCount}
+                  blockedStateHelpGuides={viewModel.blockedStateHelpGuides}
                   isPending={isPending}
                   selectedDocumentCount={selectedDocumentIds.length}
                   onDeleteSelected={handleDeleteSelected}
-                  onToggleAllDeletable={() => setSelectedDocumentIds(allDeletableSelected ? [] : deletableDocumentIds)}
+                  onToggleAllDeletable={() =>
+                    setSelectedDocumentIds(viewModel.allDeletableSelected ? [] : viewModel.deletableDocumentIds)
+                  }
                 />
               ) : null}
               <DocumentList
                 contractContext={contractContext}
-                deleteBlockedHelpGuides={deleteBlockedHelpGuides}
-                documents={filteredDocuments}
+                deleteBlockedHelpGuides={viewModel.deleteBlockedHelpGuides}
+                documents={viewModel.filteredDocuments}
                 editingTagsId={editingTagsId}
                 isPending={isPending}
                 pendingDeleteId={pendingDeleteId}
@@ -404,7 +363,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
           </button>
           <button
             type="button"
-            disabled={isPending || page >= totalPages}
+            disabled={isPending || page >= viewModel.totalPages}
             onClick={() => applyPage(page + 1)}
             className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -420,9 +379,9 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
         <div className="space-y-4">
           <MetricLine label="Visible on page" value={String(documents.length)} />
           <MetricLine label={contractContext ? `Total contract files` : `Total files`} value={String(total)} />
-          <MetricLine label="Compliance docs" value={String(complianceCount)} />
-          <MetricLine label="Payment docs" value={String(paymentCount)} />
-          <MetricLine label="Contracts" value={String(contractsCount)} />
+          <MetricLine label="Compliance docs" value={String(viewModel.complianceCount)} />
+          <MetricLine label="Payment docs" value={String(viewModel.paymentCount)} />
+          <MetricLine label="Contracts" value={String(viewModel.contractsCount)} />
           {contractContext ? (
             <MetricLine label="Draft payments in scope" value={String(contractContext.draftPaymentRequestIds.length)} />
           ) : null}
