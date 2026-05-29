@@ -15,7 +15,9 @@ export function parseCookieHeader(header: string | null): Map<string, string> {
     if (!trimmed) continue;
     const idx = trimmed.indexOf(`=`);
     if (idx <= 0) continue;
-    cookies.set(trimmed.slice(0, idx), trimmed.slice(idx + 1));
+    const name = trimmed.slice(0, idx);
+    if (cookies.has(name)) continue;
+    cookies.set(name, trimmed.slice(idx + 1));
   }
   return cookies;
 }

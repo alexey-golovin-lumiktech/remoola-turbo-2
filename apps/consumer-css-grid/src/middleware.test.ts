@@ -429,4 +429,31 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
 
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${request.nextUrl.origin}/api/consumer/auth/refresh`);
   });
+
+  it(`preserves the first incoming refresh cookie when middleware merges refreshed auth cookies`, async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(undefined, {
+        status: 200,
+        headers: {
+          [`set-cookie`]: `${secureAccessCookieKey}=new-a; Path=/; HttpOnly; SameSite=Lax`,
+        },
+      }),
+    );
+
+    const request = createRequest(
+      `/settings`,
+      {},
+      {
+        headers: {
+          cookie: `${secureRefreshCookieKey}=first-r; ${secureRefreshCookieKey}=second-r; ${secureCsrfCookieKey}=csrf`,
+        },
+      },
+    );
+
+    const response = await middleware(request);
+
+    expect(response.headers.get(`x-middleware-request-cookie`)).toContain(`${secureRefreshCookieKey}=first-r`);
+    expect(response.headers.get(`x-middleware-request-cookie`)).not.toContain(`${secureRefreshCookieKey}=second-r`);
+    expect(response.headers.get(`x-middleware-request-cookie`)).toContain(`${secureAccessCookieKey}=new-a`);
+  });
 });
