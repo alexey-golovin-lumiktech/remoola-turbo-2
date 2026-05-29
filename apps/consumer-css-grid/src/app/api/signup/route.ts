@@ -3,70 +3,70 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { encodeApiPathSegment } from '../../../lib/api-path';
-import {
-  appendSetCookies,
-  buildAuthMutationForwardHeaders,
-  fetchUpstream,
-  requireJsonBody,
-} from '../../../lib/api-utils';
-import { getEnv } from '../../../lib/env.server';
+import { buildAuthMutationForwardHeaders, getSetCookieValues, requireJsonBody } from '../../../lib/api-utils';
+import { buildConsumerUpstreamUrl, getConsumerApiBaseUrlResponse, proxyTextRoute } from '../../../lib/bff-proxy.server';
 
 export async function POST(req: NextRequest) {
   const bodyResult = await requireJsonBody(req);
   if (!bodyResult.ok) return bodyResult.response;
 
-  const env = getEnv();
-  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
-  if (!baseUrl) {
-    return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
-  }
+  const baseUrlResult = getConsumerApiBaseUrlResponse();
+  if (!baseUrlResult.ok) return baseUrlResult.response;
 
-  const url = new URL(`${baseUrl}/consumer/auth/signup`);
-  url.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 
-  const res = await fetchUpstream(url, {
+  return proxyTextRoute({
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/signup`, [
+      [`appScope`, CURRENT_CONSUMER_APP_SCOPE],
+    ]),
     method: `POST`,
-    headers: forwardHeaders,
-    body: bodyResult.body,
-    cache: `no-store`,
-  });
+    init: {
+      headers: forwardHeaders,
+      body: bodyResult.body,
+      cache: `no-store`,
+    },
+    appendUpstreamSetCookies: true,
+    buildResponse: async (signupResponse, data, responseHeaders) => {
+      if (signupResponse.ok) {
+        try {
+          const parsed = JSON.parse(data) as { consumer?: { id?: string }; next?: string };
+          const consumerId = parsed.consumer?.id?.trim();
+          // Google signup already completes the handoff when `next` is returned.
+          const needsEmailVerificationFollowUp = consumerId && typeof parsed.next !== `string`;
+          if (needsEmailVerificationFollowUp) {
+            const completionResponse = await proxyTextRoute({
+              url: buildConsumerUpstreamUrl(
+                baseUrlResult.baseUrl,
+                `/consumer/auth/signup/${encodeApiPathSegment(consumerId)}/complete-profile-creation`,
+                [[`appScope`, CURRENT_CONSUMER_APP_SCOPE]],
+              ),
+              method: `GET`,
+              init: {
+                headers: forwardHeaders,
+                cache: `no-store`,
+              },
+              appendUpstreamSetCookies: true,
+            }).catch((err: unknown) => {
+              console.error(`[signup] complete-profile-creation network error`, err);
+              return null;
+            });
 
-  const data = await res.text();
-  const responseHeaders = new Headers();
-  appendSetCookies(responseHeaders, res.headers);
-
-  if (res.ok) {
-    try {
-      const parsed = JSON.parse(data) as { consumer?: { id?: string }; next?: string };
-      const consumerId = parsed.consumer?.id?.trim();
-      // Google signup already completes the handoff when `next` is returned.
-      const needsEmailVerificationFollowUp = consumerId && typeof parsed.next !== `string`;
-      if (needsEmailVerificationFollowUp) {
-        const completionRes = await fetchUpstream(
-          `${baseUrl}/consumer/auth/signup/${encodeApiPathSegment(consumerId)}/complete-profile-creation?appScope=${encodeURIComponent(CURRENT_CONSUMER_APP_SCOPE)}`,
-          {
-            method: `GET`,
-            headers: forwardHeaders,
-            cache: `no-store`,
-          },
-        ).catch((err: unknown) => {
-          console.error(`[signup] complete-profile-creation network error`, err);
-          return null;
-        });
-
-        if (completionRes) {
-          if (!completionRes.ok) {
-            console.error(`[signup] complete-profile-creation returned ${completionRes.status}`);
+            if (completionResponse) {
+              if (!completionResponse.ok) {
+                console.error(`[signup] complete-profile-creation returned ${completionResponse.status}`);
+              }
+              for (const cookie of getSetCookieValues(completionResponse.headers)) {
+                responseHeaders.append(`set-cookie`, cookie);
+              }
+            }
           }
-          appendSetCookies(responseHeaders, completionRes.headers);
+        } catch (err) {
+          console.error(`[signup] profile completion follow-up failed`, err);
         }
       }
-    } catch (err) {
-      console.error(`[signup] profile completion follow-up failed`, err);
-    }
-  }
 
-  return new NextResponse(data, { status: res.status, headers: responseHeaders });
+      return new NextResponse(data, { status: signupResponse.status, headers: responseHeaders });
+    },
+  });
 }

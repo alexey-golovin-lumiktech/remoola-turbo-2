@@ -14,7 +14,7 @@ export const withdrawalGuideSourceMap = [
     ],
     frontendDataHelpers: [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
-      `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
+      `apps/consumer-css-grid/src/lib/mutations/payments.server.ts`,
     ],
     backendSurfaces: [
       `apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-payment-methods.controller.ts`,
@@ -40,7 +40,7 @@ export const withdrawalGuideSourceMap = [
     ],
     frontendDataHelpers: [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
-      `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
+      `apps/consumer-css-grid/src/lib/mutations/payments.server.ts`,
     ],
     backendSurfaces: [
       `apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-payment-methods.controller.ts`,
@@ -66,7 +66,7 @@ export const withdrawalGuideSourceMap = [
     ],
     frontendDataHelpers: [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
-      `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
+      `apps/consumer-css-grid/src/lib/mutations/payments.server.ts`,
     ],
     backendSurfaces: [
       `apps/api-v2/src/consumer/modules/payment-methods/manual/consumer-payment-methods.controller.ts`,

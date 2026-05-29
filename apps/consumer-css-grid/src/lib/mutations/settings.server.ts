@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 
 import {
   type ConsumerChangePasswordPayload,
@@ -9,64 +8,15 @@ import {
   type ConsumerUpdateSettingsPayload,
 } from '@remoola/api-types';
 
-import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
-import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
-import { getEnv } from '../env.server';
-
-type MutationResult =
-  | { ok: true; message?: string }
-  | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
-
-const NETWORK_ERROR_MESSAGE = `The request could not be completed because the network request failed. Please try again.`;
-
-async function fetch(input: string | URL, init?: RequestInit): Promise<Response> {
-  try {
-    return await globalThis.fetch(input, init);
-  } catch {
-    return new Response(JSON.stringify({ code: `NETWORK_ERROR`, message: NETWORK_ERROR_MESSAGE }), {
-      status: 503,
-      headers: { 'content-type': `application/json` },
-    });
-  }
-}
-
-function invalid(message: string, fields?: Record<string, string>): MutationResult {
-  return {
-    ok: false,
-    error: {
-      code: `VALIDATION_ERROR`,
-      message,
-      ...(fields ? { fields } : {}),
-    },
-  };
-}
-
-async function parseError(res: Response, fallbackMessage: string) {
-  if (res.status === 401) {
-    return {
-      code: SESSION_EXPIRED_ERROR_CODE,
-      message: `Your session has expired. Please sign in again.`,
-    };
-  }
-
-  const payload = (await res.json().catch(() => null)) as { code?: string; message?: string } | null;
-  return {
-    code: payload?.code ?? `API_ERROR`,
-    message: payload?.message ?? fallbackMessage,
-  };
-}
-
-function configuredBaseUrl(): string | null {
-  const env = getEnv();
-  return env.NEXT_PUBLIC_API_BASE_URL || null;
-}
-
-function normalizePhone(value: string) {
-  const trimmed = value.trim();
-  const digits = trimmed.replace(/\D/g, ``).slice(0, 15);
-  if (!digits) return ``;
-  return trimmed.startsWith(`+`) ? `+${digits}` : digits;
-}
+import {
+  configuredBaseUrl,
+  consumerMutationHeaders,
+  fetch,
+  invalid,
+  normalizePhone,
+  parseError,
+  type MutationResult,
+} from './mutation-runtime.server';
 
 function hasOwn<T extends object>(value: T, key: keyof T) {
   return Object.prototype.hasOwnProperty.call(value, key);
@@ -126,12 +76,11 @@ export async function updateProfileMutation(input: ConsumerUpdateProfilePayload)
     ...(organizationDetails && Object.keys(organizationDetails).length > 0 ? { organizationDetails } : {}),
   };
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/profile`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify(body),
     cache: `no-store`,
@@ -165,12 +114,11 @@ export async function updateSettingsMutation(input: {
     };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/settings`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify({
       ...(theme ? { theme } : {}),
@@ -219,12 +167,11 @@ export async function changePasswordMutation(
     };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/profile/password`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify({
       ...(currentPassword ? { currentPassword } : {}),

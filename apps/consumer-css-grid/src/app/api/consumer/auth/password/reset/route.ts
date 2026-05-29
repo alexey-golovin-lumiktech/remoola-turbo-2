@@ -1,29 +1,29 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { type NextRequest } from 'next/server';
 
-import { buildAuthMutationForwardHeaders, fetchUpstream, requireJsonBody } from '../../../../../../lib/api-utils';
-import { getEnv } from '../../../../../../lib/env.server';
+import { buildAuthMutationForwardHeaders, requireJsonBody } from '../../../../../../lib/api-utils';
+import {
+  buildConsumerUpstreamUrl,
+  getConsumerApiBaseUrlResponse,
+  proxyTextRoute,
+} from '../../../../../../lib/bff-proxy.server';
 
 export async function POST(req: NextRequest) {
   const bodyResult = await requireJsonBody(req);
   if (!bodyResult.ok) return bodyResult.response;
 
-  const env = getEnv();
-  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
-  if (!baseUrl) {
-    return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
-  }
+  const baseUrlResult = getConsumerApiBaseUrlResponse();
+  if (!baseUrlResult.ok) return baseUrlResult.response;
 
-  const url = new URL(`${baseUrl}/consumer/auth/password/reset`);
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 
-  const res = await fetchUpstream(url, {
+  return proxyTextRoute({
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/password/reset`),
     method: `POST`,
-    headers: forwardHeaders,
-    body: bodyResult.body,
-    cache: `no-store`,
+    init: {
+      headers: forwardHeaders,
+      body: bodyResult.body,
+      cache: `no-store`,
+    },
   });
-
-  const data = await res.text();
-  return new NextResponse(data, { status: res.status });
 }

@@ -3,11 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
+import { type DraftPaymentRequestOption } from '../../../lib/actions/payments.types';
 import {
   attachDocumentToDraftPaymentRequestsMutation,
   getDraftPaymentRequestsAction,
-} from '../../../lib/actions/payments.server';
-import { type DraftPaymentRequestOption } from '../../../lib/actions/payments.types';
+} from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 
 const DEFAULT_PAGE_SIZE = 20;

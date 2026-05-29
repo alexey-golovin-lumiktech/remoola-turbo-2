@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 import { type DashboardVerificationState, getVerificationBannerAction } from './verification-banner';
-import { startVerificationSessionMutation } from '../../../lib/actions/payments.server';
+import { startVerificationSessionMutation } from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
 

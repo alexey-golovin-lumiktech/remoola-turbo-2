@@ -13,7 +13,7 @@ export const dashboardGuideSourceMap = [
     ],
     frontendDataHelpers: [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
-      `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
+      `apps/consumer-css-grid/src/lib/mutations/payments.server.ts`,
     ],
     backendSurfaces: [`apps/api-v2/src/consumer/modules/consumer-dashboard/consumer-dashboard.controller.ts`],
     sharedContracts: [],
@@ -31,7 +31,7 @@ export const dashboardGuideSourceMap = [
     ],
     frontendDataHelpers: [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
-      `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
+      `apps/consumer-css-grid/src/lib/mutations/payments.server.ts`,
     ],
     backendSurfaces: [`apps/api-v2/src/consumer/modules/consumer-dashboard/consumer-dashboard.controller.ts`],
     sharedContracts: [],

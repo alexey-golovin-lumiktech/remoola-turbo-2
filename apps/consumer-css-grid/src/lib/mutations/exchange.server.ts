@@ -1,17 +1,18 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 
 import { encodeApiPathSegment } from '../api-path';
-import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
 import { getExchangeRatesBatch, type ExchangeRatesBatchResult } from '../consumer-api.server';
-import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
-import { getEnv } from '../env.server';
-
-type MutationResult =
-  | { ok: true; message?: string }
-  | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
+import {
+  configuredBaseUrl,
+  consumerMutationHeaders,
+  fetch,
+  invalid,
+  parseError,
+  parseMajorAmountInput,
+  type MutationResult,
+} from './mutation-runtime.server';
 
 type QuoteResult =
   | {
@@ -32,57 +33,6 @@ type ExchangeRatesRefreshResult =
       data: ExchangeRatesBatchResult;
     }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
-
-const NETWORK_ERROR_MESSAGE = `The request could not be completed because the network request failed. Please try again.`;
-
-async function fetch(input: string | URL, init?: RequestInit): Promise<Response> {
-  try {
-    return await globalThis.fetch(input, init);
-  } catch {
-    return new Response(JSON.stringify({ code: `NETWORK_ERROR`, message: NETWORK_ERROR_MESSAGE }), {
-      status: 503,
-      headers: { 'content-type': `application/json` },
-    });
-  }
-}
-
-function parseMajorAmountInput(value: string): number {
-  const trimmed = value.trim();
-  if (!/^\d+(?:\.\d+)?$/.test(trimmed)) return Number.NaN;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
-}
-
-function invalid(message: string, fields?: Record<string, string>): MutationResult {
-  return {
-    ok: false,
-    error: {
-      code: `VALIDATION_ERROR`,
-      message,
-      ...(fields ? { fields } : {}),
-    },
-  };
-}
-
-async function parseError(res: Response, fallbackMessage: string) {
-  if (res.status === 401) {
-    return {
-      code: SESSION_EXPIRED_ERROR_CODE,
-      message: `Your session has expired. Please sign in again.`,
-    };
-  }
-
-  const payload = (await res.json().catch(() => null)) as { code?: string; message?: string } | null;
-  return {
-    code: payload?.code ?? `API_ERROR`,
-    message: payload?.message ?? fallbackMessage,
-  };
-}
-
-function configuredBaseUrl(): string | null {
-  const env = getEnv();
-  return env.NEXT_PUBLIC_API_BASE_URL || null;
-}
 
 export async function getExchangeQuoteMutation(input: {
   from: string;
@@ -108,12 +58,11 @@ export async function getExchangeQuoteMutation(input: {
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/exchange/quote`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify({ from, to, amount }),
     cache: `no-store`,
@@ -195,12 +144,11 @@ export async function convertExchangeMutation(input: {
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/exchange/convert`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify({ from, to, amount }),
     cache: `no-store`,
@@ -250,12 +198,11 @@ export async function createExchangeRuleMutation(input: {
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/exchange/rules`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify({
       from,
@@ -328,12 +275,11 @@ export async function updateExchangeRuleMutation(
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/exchange/rules/${encodeApiPathSegment(ruleId)}`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify(payload),
     cache: `no-store`,
@@ -356,11 +302,10 @@ export async function deleteExchangeRuleMutation(ruleId: string): Promise<Mutati
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/exchange/rules/${encodeApiPathSegment(ruleId)}`, {
     method: `DELETE`,
     headers: {
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     cache: `no-store`,
   });
@@ -403,12 +348,11 @@ export async function scheduleExchangeMutation(input: {
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/exchange/scheduled`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify({
       from,
@@ -436,11 +380,10 @@ export async function cancelScheduledExchangeMutation(conversionId: string): Pro
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/exchange/scheduled/${encodeApiPathSegment(conversionId)}/cancel`, {
     method: `POST`,
     headers: {
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     cache: `no-store`,
   });

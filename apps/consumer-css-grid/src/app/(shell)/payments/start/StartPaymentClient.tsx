@@ -13,8 +13,8 @@ import {
   START_PAYMENT_DRAFT_STORAGE_KEY,
   type StartPaymentDraft,
 } from './start-payment-draft-flow';
-import { startPaymentMutation } from '../../../../lib/actions/payments.server';
 import { createContactMutation, hasSavedContactByEmailQuery } from '../../../../lib/mutations/contacts.server';
+import { startPaymentMutation } from '../../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../../lib/session-expired';
 import { Panel } from '../../../../shared/ui/shell-primitives';
 

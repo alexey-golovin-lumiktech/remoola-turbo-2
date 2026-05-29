@@ -2,23 +2,21 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import { getEnv } from '../../../../../../lib/env.server';
+import { buildConsumerUpstreamUrl, getConsumerApiBaseUrlResponse } from '../../../../../../lib/bff-proxy.server';
 
 const ALLOWED_QUERY_PARAMS = [`next`, `signupPath`, `accountType`, `contractorKind`] as const;
 
 export async function GET(req: NextRequest) {
-  const env = getEnv();
-  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
-  if (!baseUrl) {
-    return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
-  }
+  const baseUrlResult = getConsumerApiBaseUrlResponse();
+  if (!baseUrlResult.ok) return baseUrlResult.response;
 
-  const url = new URL(`${baseUrl}/consumer/auth/google/start`);
-  url.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
+  const searchParams = new URLSearchParams([[`appScope`, CURRENT_CONSUMER_APP_SCOPE]]);
   for (const key of ALLOWED_QUERY_PARAMS) {
     const value = req.nextUrl.searchParams.get(key);
-    if (value) url.searchParams.set(key, value);
+    if (value) searchParams.set(key, value);
   }
 
-  return NextResponse.redirect(url);
+  return NextResponse.redirect(
+    buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/google/start`, searchParams),
+  );
 }

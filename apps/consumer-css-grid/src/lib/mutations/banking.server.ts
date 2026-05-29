@@ -3,16 +3,18 @@
 import { randomUUID } from 'crypto';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 
 import { encodeApiPathSegment } from '../api-path';
-import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
-import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
-import { getEnv } from '../env.server';
-
-type MutationResult =
-  | { ok: true; message?: string }
-  | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
+import {
+  configuredBaseUrl,
+  consumerMutationHeaders,
+  fetch,
+  invalid,
+  isValidEmail,
+  normalizePhone,
+  parseError,
+  type MutationResult,
+} from './mutation-runtime.server';
 
 type StripeSetupIntentResult =
   | {
@@ -22,61 +24,6 @@ type StripeSetupIntentResult =
       };
     }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
-
-const NETWORK_ERROR_MESSAGE = `The request could not be completed because the network request failed. Please try again.`;
-
-async function fetch(input: string | URL, init?: RequestInit): Promise<Response> {
-  try {
-    return await globalThis.fetch(input, init);
-  } catch {
-    return new Response(JSON.stringify({ code: `NETWORK_ERROR`, message: NETWORK_ERROR_MESSAGE }), {
-      status: 503,
-      headers: { 'content-type': `application/json` },
-    });
-  }
-}
-
-function invalid(message: string, fields?: Record<string, string>): MutationResult {
-  return {
-    ok: false,
-    error: {
-      code: `VALIDATION_ERROR`,
-      message,
-      ...(fields ? { fields } : {}),
-    },
-  };
-}
-
-async function parseError(res: Response, fallbackMessage: string) {
-  if (res.status === 401) {
-    return {
-      code: SESSION_EXPIRED_ERROR_CODE,
-      message: `Your session has expired. Please sign in again.`,
-    };
-  }
-
-  const payload = (await res.json().catch(() => null)) as { code?: string; message?: string } | null;
-  return {
-    code: payload?.code ?? `API_ERROR`,
-    message: payload?.message ?? fallbackMessage,
-  };
-}
-
-function configuredBaseUrl(): string | null {
-  const env = getEnv();
-  return env.NEXT_PUBLIC_API_BASE_URL || null;
-}
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function normalizePhone(value: string) {
-  const trimmed = value.trim();
-  const digits = trimmed.replace(/\D/g, ``).slice(0, 15);
-  if (!digits) return ``;
-  return trimmed.startsWith(`+`) ? `+${digits}` : digits;
-}
 
 export async function addBankAccountMutation(input: {
   bankName: string;
@@ -107,12 +54,11 @@ export async function addBankAccountMutation(input: {
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/payment-methods`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
       'x-correlation-id': randomUUID(),
     },
     body: JSON.stringify({
@@ -143,11 +89,10 @@ export async function createReusableCardSetupIntentMutation(): Promise<StripeSet
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/stripe/intents`, {
     method: `POST`,
     headers: {
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     cache: `no-store`,
   });
@@ -188,12 +133,11 @@ export async function confirmReusableCardSetupIntentMutation(setupIntentId: stri
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/stripe/confirm`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify({ setupIntentId: normalizedSetupIntentId }),
     cache: `no-store`,
@@ -246,12 +190,11 @@ export async function addCardMutation(input: {
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/payment-methods`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
       'x-correlation-id': randomUUID(),
     },
     body: JSON.stringify({
@@ -285,12 +228,11 @@ export async function setDefaultPaymentMethodMutation(paymentMethodId: string): 
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/payment-methods/${encodeApiPathSegment(paymentMethodId)}`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
       'x-correlation-id': randomUUID(),
     },
     body: JSON.stringify({ defaultSelected: true }),
@@ -315,11 +257,10 @@ export async function deletePaymentMethodMutation(paymentMethodId: string): Prom
     return { ok: false, error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` } };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/payment-methods/${encodeApiPathSegment(paymentMethodId)}`, {
     method: `DELETE`,
     headers: {
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
       'x-correlation-id': randomUUID(),
     },
     cache: `no-store`,

@@ -1,26 +1,23 @@
-import { NextResponse } from 'next/server';
-
-import { appendSetCookies, buildAuthMutationForwardHeaders, fetchUpstream } from '../../../../../lib/api-utils';
-import { getEnv } from '../../../../../lib/env.server';
+import { buildAuthMutationForwardHeaders } from '../../../../../lib/api-utils';
+import {
+  buildConsumerUpstreamUrl,
+  getConsumerApiBaseUrlResponse,
+  proxyTextRoute,
+} from '../../../../../lib/bff-proxy.server';
 
 export async function POST(req: Request) {
-  const env = getEnv();
-  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
-  if (!baseUrl) {
-    return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
-  }
+  const baseUrlResult = getConsumerApiBaseUrlResponse();
+  if (!baseUrlResult.ok) return baseUrlResult.response;
 
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 
-  const url = new URL(`${baseUrl}/consumer/auth/refresh`);
-  const res = await fetchUpstream(url, {
+  return proxyTextRoute({
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/refresh`),
     method: `POST`,
-    headers: forwardHeaders,
-    cache: `no-store`,
+    init: {
+      headers: forwardHeaders,
+      cache: `no-store`,
+    },
+    appendUpstreamSetCookies: true,
   });
-
-  const data = await res.text();
-  const responseHeaders = new Headers();
-  appendSetCookies(responseHeaders, res.headers);
-  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }

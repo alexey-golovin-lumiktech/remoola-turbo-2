@@ -6,11 +6,11 @@ import { useMemo, useRef, useState, useTransition } from 'react';
 
 import { getPaymentAttachmentsLibraryState } from './payment-attachments-library-state';
 import { buildPaymentDocumentsHref } from './payment-flow-context';
+import { SESSION_EXPIRED_ERROR_CODE } from '../../../lib/auth-failure';
 import {
   attachDocumentsToPaymentRequestMutation,
   detachDocumentFromPaymentRequestMutation,
-} from '../../../lib/actions/payments.server';
-import { SESSION_EXPIRED_ERROR_CODE } from '../../../lib/auth-failure';
+} from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 
 type Attachment = {

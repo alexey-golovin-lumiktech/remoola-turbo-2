@@ -8,7 +8,7 @@ import { createRoot } from 'react-dom/client';
 
 import { type PaymentFlowContext } from '../payments/payment-flow-context';
 
-import type * as PaymentsActions from '../../../lib/actions/payments.server';
+import type * as PaymentsActions from '../../../lib/mutations/payments.server';
 
 const mockedCreatePaymentCheckoutSessionMutation =
   jest.fn<typeof PaymentsActions.createPaymentCheckoutSessionMutation>();
@@ -37,7 +37,7 @@ jest.mock(`next/link`, () => ({
     React.createElement(`a`, { href, ...props }, children),
 }));
 
-jest.mock(`../../../lib/actions/payments.server`, () => ({
+jest.mock(`../../../lib/mutations/payments.server`, () => ({
   createPaymentCheckoutSessionMutation: mockedCreatePaymentCheckoutSessionMutation,
   generateInvoiceMutation: mockedGenerateInvoiceMutation,
   sendPaymentRequestMutation: mockedSendPaymentRequestMutation,

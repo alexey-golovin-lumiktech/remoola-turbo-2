@@ -1,8 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { encodeApiPathSegment } from '../../../../../lib/api-path';
-import { appendSetCookies, buildForwardHeaders, fetchUpstream } from '../../../../../lib/api-utils';
-import { getEnv } from '../../../../../lib/env.server';
+import { buildForwardHeaders } from '../../../../../lib/api-utils';
+import {
+  buildConsumerUpstreamUrl,
+  getConsumerApiBaseUrlResponse,
+  proxyBinaryRoute,
+} from '../../../../../lib/bff-proxy.server';
 
 const RESPONSE_HEADER_ALLOWLIST = new Set([`cache-control`, `content-disposition`, `content-length`, `content-type`]);
 
@@ -16,11 +20,8 @@ async function readDocumentId(context: RouteContext): Promise<string> {
 }
 
 export async function GET(req: NextRequest, context: RouteContext) {
-  const env = getEnv();
-  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
-  if (!baseUrl) {
-    return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
-  }
+  const baseUrlResult = getConsumerApiBaseUrlResponse();
+  if (!baseUrlResult.ok) return baseUrlResult.response;
 
   const documentId = await readDocumentId(context);
   if (!documentId) {
@@ -30,23 +31,17 @@ export async function GET(req: NextRequest, context: RouteContext) {
   const forwardHeaders = buildForwardHeaders(req.headers);
   forwardHeaders.delete(`host`);
 
-  const url = new URL(`${baseUrl}/consumer/documents/${encodeApiPathSegment(documentId)}/download`);
-  const res = await fetchUpstream(url, {
+  return proxyBinaryRoute({
+    url: buildConsumerUpstreamUrl(
+      baseUrlResult.baseUrl,
+      `/consumer/documents/${encodeApiPathSegment(documentId)}/download`,
+    ),
     method: `GET`,
-    headers: forwardHeaders,
-    cache: `no-store`,
-  });
-
-  const responseHeaders = new Headers();
-  appendSetCookies(responseHeaders, res.headers);
-  for (const [name, value] of res.headers.entries()) {
-    if (RESPONSE_HEADER_ALLOWLIST.has(name.toLowerCase())) {
-      responseHeaders.set(name, value);
-    }
-  }
-
-  return new NextResponse(res.body, {
-    status: res.status,
-    headers: responseHeaders,
+    init: {
+      headers: forwardHeaders,
+      cache: `no-store`,
+    },
+    appendUpstreamSetCookies: true,
+    responseHeaderAllowlist: RESPONSE_HEADER_ALLOWLIST,
   });
 }

@@ -71,6 +71,13 @@ export function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+export function normalizePhone(value: string) {
+  const trimmed = value.trim();
+  const digits = trimmed.replace(/\D/g, ``).slice(0, 15);
+  if (!digits) return ``;
+  return trimmed.startsWith(`+`) ? `+${digits}` : digits;
+}
+
 export function parseMajorAmountInput(value: string): number {
   const trimmed = value.trim();
   if (!/^\d+(?:\.\d+)?$/.test(trimmed)) return Number.NaN;

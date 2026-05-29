@@ -1,61 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 
 import { encodeApiPathSegment } from '../api-path';
-import { SESSION_EXPIRED_ERROR_CODE } from '../auth-failure';
 import { findContactByExactEmail } from '../consumer-api.server';
-import { buildConsumerMutationHeaders } from '../consumer-auth-headers.server';
-import { getEnv } from '../env.server';
-
-type MutationResult =
-  | { ok: true; message?: string }
-  | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
-
-const NETWORK_ERROR_MESSAGE = `The request could not be completed because the network request failed. Please try again.`;
-
-async function fetch(input: string | URL, init?: RequestInit): Promise<Response> {
-  try {
-    return await globalThis.fetch(input, init);
-  } catch {
-    return new Response(JSON.stringify({ code: `NETWORK_ERROR`, message: NETWORK_ERROR_MESSAGE }), {
-      status: 503,
-      headers: { 'content-type': `application/json` },
-    });
-  }
-}
-
-function invalid(message: string, fields?: Record<string, string>): MutationResult {
-  return {
-    ok: false,
-    error: {
-      code: `VALIDATION_ERROR`,
-      message,
-      ...(fields ? { fields } : {}),
-    },
-  };
-}
-
-async function parseError(res: Response, fallbackMessage: string) {
-  if (res.status === 401) {
-    return {
-      code: SESSION_EXPIRED_ERROR_CODE,
-      message: `Your session has expired. Please sign in again.`,
-    };
-  }
-
-  const payload = (await res.json().catch(() => null)) as { code?: string; message?: string } | null;
-  return {
-    code: payload?.code ?? `API_ERROR`,
-    message: payload?.message ?? fallbackMessage,
-  };
-}
-
-function configuredBaseUrl(): string | null {
-  const env = getEnv();
-  return env.NEXT_PUBLIC_API_BASE_URL || null;
-}
+import {
+  configuredBaseUrl,
+  consumerMutationHeaders,
+  fetch,
+  invalid,
+  parseError,
+  type MutationResult,
+} from './mutation-runtime.server';
 
 export async function createContactMutation(input: {
   email: string;
@@ -81,8 +37,7 @@ export async function createContactMutation(input: {
     return invalid(`Please enter a valid email address`, { email: `Valid email is required` });
   }
 
-  const env = getEnv();
-  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
+  const baseUrl = configuredBaseUrl();
   if (!baseUrl) {
     return {
       ok: false,
@@ -90,12 +45,11 @@ export async function createContactMutation(input: {
     };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/contacts`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify({
       email,
@@ -151,8 +105,7 @@ export async function deleteContactMutation(contactId: string): Promise<Mutation
     return invalid(`Invalid contact id`);
   }
 
-  const env = getEnv();
-  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
+  const baseUrl = configuredBaseUrl();
   if (!baseUrl) {
     return {
       ok: false,
@@ -160,11 +113,10 @@ export async function deleteContactMutation(contactId: string): Promise<Mutation
     };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/contacts/${encodeApiPathSegment(contactId)}`, {
     method: `DELETE`,
     headers: {
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     cache: `no-store`,
   });
@@ -218,12 +170,11 @@ export async function updateContactMutation(
     };
   }
 
-  const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}/consumer/contacts/${encodeApiPathSegment(contactId)}`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      ...buildConsumerMutationHeaders(cookieStore.toString()),
+      ...(await consumerMutationHeaders()),
     },
     body: JSON.stringify({
       email,

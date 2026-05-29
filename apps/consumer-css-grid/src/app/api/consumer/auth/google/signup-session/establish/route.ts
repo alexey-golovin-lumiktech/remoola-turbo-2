@@ -1,39 +1,32 @@
-import { NextResponse } from 'next/server';
-
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
+import { buildAuthMutationForwardHeaders, requireJsonBody } from '../../../../../../../lib/api-utils';
 import {
-  appendSetCookies,
-  buildAuthMutationForwardHeaders,
-  fetchUpstream,
-  requireJsonBody,
-} from '../../../../../../../lib/api-utils';
-import { getEnv } from '../../../../../../../lib/env.server';
+  buildConsumerUpstreamUrl,
+  getConsumerApiBaseUrlResponse,
+  proxyTextRoute,
+} from '../../../../../../../lib/bff-proxy.server';
 
 export async function POST(req: Request) {
   const bodyResult = await requireJsonBody(req);
   if (!bodyResult.ok) return bodyResult.response;
 
-  const env = getEnv();
-  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
-  if (!baseUrl) {
-    return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
-  }
+  const baseUrlResult = getConsumerApiBaseUrlResponse();
+  if (!baseUrlResult.ok) return baseUrlResult.response;
 
-  const url = new URL(`${baseUrl}/consumer/auth/google/signup-session/establish`);
-  url.searchParams.set(`appScope`, CURRENT_CONSUMER_APP_SCOPE);
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 
-  const res = await fetchUpstream(url, {
+  return proxyTextRoute({
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/google/signup-session/establish`, [
+      [`appScope`, CURRENT_CONSUMER_APP_SCOPE],
+    ]),
     method: `POST`,
-    headers: forwardHeaders,
-    body: bodyResult.body,
-    cache: `no-store`,
+    init: {
+      headers: forwardHeaders,
+      body: bodyResult.body,
+      cache: `no-store`,
+    },
+    appendUpstreamSetCookies: true,
   });
-
-  const data = await res.text();
-  const responseHeaders = new Headers();
-  appendSetCookies(responseHeaders, res.headers);
-  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }

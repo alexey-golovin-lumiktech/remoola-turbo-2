@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { submitTransferAction, submitWithdrawAction } from '../../../lib/actions/payments.server';
+import { submitTransferAction, submitWithdrawAction } from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { Field } from '../../../shared/ui/shell-primitives';
 

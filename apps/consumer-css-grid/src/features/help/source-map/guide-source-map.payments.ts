@@ -14,7 +14,7 @@ export const paymentsGuideSourceMap = [
     ],
     frontendDataHelpers: [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
-      `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
+      `apps/consumer-css-grid/src/lib/mutations/payments.server.ts`,
     ],
     backendSurfaces: [
       `apps/api-v2/src/consumer/modules/payments/consumer-payments.controller.ts`,
@@ -35,7 +35,7 @@ export const paymentsGuideSourceMap = [
     ],
     frontendDataHelpers: [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
-      `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
+      `apps/consumer-css-grid/src/lib/mutations/payments.server.ts`,
     ],
     backendSurfaces: [`apps/api-v2/src/consumer/modules/payments/consumer-payment-requests.controller.ts`],
     sharedContracts: [`packages/api-types/src/currency.ts`],
@@ -53,7 +53,7 @@ export const paymentsGuideSourceMap = [
     ],
     frontendDataHelpers: [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
-      `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
+      `apps/consumer-css-grid/src/lib/mutations/payments.server.ts`,
     ],
     backendSurfaces: [`apps/api-v2/src/consumer/modules/payments/consumer-payments.controller.ts`],
     sharedContracts: [`packages/api-types/src/payments/constants.ts`, `packages/api-types/src/currency.ts`],
@@ -86,7 +86,7 @@ export const paymentsGuideSourceMap = [
     ],
     frontendDataHelpers: [
       `apps/consumer-css-grid/src/lib/consumer-api.server.ts`,
-      `apps/consumer-css-grid/src/lib/actions/payments.server.ts`,
+      `apps/consumer-css-grid/src/lib/mutations/payments.server.ts`,
     ],
     backendSurfaces: [`apps/api-v2/src/consumer/modules/payments/consumer-payments.controller.ts`],
     sharedContracts: [`packages/api-types/src/payments/constants.ts`],
