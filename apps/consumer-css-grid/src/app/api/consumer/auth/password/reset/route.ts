@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   forwardHeaders.set(`content-type`, `application/json`);
 
   return proxyTextRoute({
-    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/password/reset`),
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/api/consumer/auth/password/reset`),
     method: `POST`,
     init: {
       headers: forwardHeaders,

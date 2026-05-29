@@ -39,7 +39,7 @@ describe(`consumer-css-grid google start route`, () => {
     const location = response.headers.get(`location`);
 
     expect(response.status).toBe(307);
-    expect(location).toContain(`/consumer/auth/google/start`);
+    expect(location).toContain(`/api/consumer/auth/google/start`);
     expect(location).toContain(`appScope=${CURRENT_CONSUMER_APP_SCOPE}`);
     expect(location).toContain(`next=%2Fsignup`);
     expect(location).toContain(`accountType=BUSINESS`);

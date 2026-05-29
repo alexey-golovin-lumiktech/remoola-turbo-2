@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   forwardHeaders.delete(`host`);
 
   return proxyJsonRoute({
-    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/me`),
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/api/consumer/auth/me`),
     method: `GET`,
     init: {
       headers: forwardHeaders,

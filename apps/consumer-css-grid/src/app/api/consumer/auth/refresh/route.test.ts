@@ -43,7 +43,7 @@ describe(`refresh route`, () => {
     const forwardedHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
     expect(response.status).toBe(200);
-    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/refresh`);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/api/consumer/auth/refresh`);
     expect(forwardedHeaders?.get(`host`)).toBeNull();
     expect(forwardedHeaders?.get(`cookie`)).toBe(`refresh_cookie=token; csrf_cookie=csrf`);
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf`);

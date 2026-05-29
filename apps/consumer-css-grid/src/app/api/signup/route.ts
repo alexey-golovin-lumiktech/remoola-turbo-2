@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   forwardHeaders.set(`content-type`, `application/json`);
 
   return proxyTextRoute({
-    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/signup`, [
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/api/consumer/auth/signup`, [
       [`appScope`, CURRENT_CONSUMER_APP_SCOPE],
     ]),
     method: `POST`,
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
             const completionResponse = await proxyTextRoute({
               url: buildConsumerUpstreamUrl(
                 baseUrlResult.baseUrl,
-                `/consumer/auth/signup/${encodeApiPathSegment(consumerId)}/complete-profile-creation`,
+                `/api/consumer/auth/signup/${encodeApiPathSegment(consumerId)}/complete-profile-creation`,
                 [[`appScope`, CURRENT_CONSUMER_APP_SCOPE]],
               ),
               method: `GET`,

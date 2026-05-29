@@ -56,7 +56,7 @@ describe(`consumer-css-grid oauth complete route`, () => {
     const forwardedHeaders = fetchSpy.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
     expect(String(fetchSpy.mock.calls[0]?.[0])).toContain(
-      `/consumer/auth/oauth/complete?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
+      `/api/consumer/auth/oauth/complete?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
     );
     expect(forwardedHeaders?.get(`origin`)).toBe(`https://grid.example.com`);
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf-cookie`);

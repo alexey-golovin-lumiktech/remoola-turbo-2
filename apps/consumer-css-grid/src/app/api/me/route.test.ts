@@ -45,7 +45,7 @@ describe(`me route`, () => {
     const forwardedHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
     expect(response.status).toBe(200);
-    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/me`);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/api/consumer/auth/me`);
     expect(forwardedHeaders?.get(`authorization`)).toBeNull();
     expect(forwardedHeaders?.get(`cookie`)).toBe(`consumer_session=session-cookie`);
     expect(forwardedHeaders?.get(`host`)).toBeNull();

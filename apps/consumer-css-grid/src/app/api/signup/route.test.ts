@@ -57,10 +57,10 @@ describe(`signup route`, () => {
     expect(response.status).toBe(201);
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(
-      `https://api.example.com/consumer/auth/signup?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
+      `https://api.example.com/api/consumer/auth/signup?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
     );
     expect(String(mockFetch.mock.calls[1]?.[0])).toBe(
-      `https://api.example.com/consumer/auth/signup/consumer-123/complete-profile-creation?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
+      `https://api.example.com/api/consumer/auth/signup/consumer-123/complete-profile-creation?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
     );
     expect(mockFetch.mock.calls[1]?.[1]?.method).toBe(`GET`);
     const firstRequestHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
@@ -104,7 +104,7 @@ describe(`signup route`, () => {
     expect(response.status).toBe(201);
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(
-      `https://api.example.com/consumer/auth/signup?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
+      `https://api.example.com/api/consumer/auth/signup?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
     );
     expect(setCookies.some((cookie) => cookie.startsWith(`auth=`))).toBe(true);
   });

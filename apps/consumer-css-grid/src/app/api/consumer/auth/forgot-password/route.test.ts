@@ -43,7 +43,7 @@ describe(`consumer-css-grid forgot-password route`, () => {
 
     expect(response.status).toBe(200);
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(
-      `https://api.example.com/consumer/auth/forgot-password?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
+      `https://api.example.com/api/consumer/auth/forgot-password?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
     );
     expect(forwardedHeaders?.get(`origin`)).toBe(`https://grid.example.com`);
     expect(forwardedHeaders?.get(`host`)).toBeNull();

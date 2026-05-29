@@ -45,7 +45,7 @@ describe(`consumer-css-grid google signup-session establish route`, () => {
     const forwardedUrl = String(fetchSpy.mock.calls[0]?.[0]);
 
     expect(res.status).toBe(200);
-    expect(forwardedUrl).toContain(`/consumer/auth/google/signup-session/establish`);
+    expect(forwardedUrl).toContain(`/api/consumer/auth/google/signup-session/establish`);
     expect(forwardedUrl).toContain(`appScope=${CURRENT_CONSUMER_APP_SCOPE}`);
     expect(getSetCookieValues(res.headers).some((c) => c.startsWith(`google_signup_session=`))).toBe(true);
   });

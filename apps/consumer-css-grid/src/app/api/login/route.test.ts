@@ -48,7 +48,7 @@ describe(`login route`, () => {
 
     expect(response.status).toBe(200);
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(
-      `https://api.example.com/consumer/auth/login?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
+      `https://api.example.com/api/consumer/auth/login?appScope=${CURRENT_CONSUMER_APP_SCOPE}`,
     );
     expect(forwardedHeaders?.get(`host`)).toBeNull();
     expect(forwardedHeaders?.get(`cookie`)).toBe(`consumer_session=session-cookie`);

@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 
   return proxyTextRoute({
-    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/auth/refresh`),
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/api/consumer/auth/refresh`),
     method: `POST`,
     init: {
       headers: forwardHeaders,
