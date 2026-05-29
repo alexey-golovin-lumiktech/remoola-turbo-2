@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       if (csrfToken) {
         forwardHeaders.set(`x-csrf-token`, csrfToken);
       }
-      const backendResponse = await fetchUpstream(new URL(`${apiBase}/consumer/auth/logout`), {
+      const backendResponse = await fetchUpstream(new URL(`${apiBase}/api/consumer/auth/logout`), {
         method: `POST`,
         headers: forwardHeaders,
         credentials: `include`,
