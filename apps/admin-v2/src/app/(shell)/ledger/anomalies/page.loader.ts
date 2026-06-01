@@ -1,4 +1,5 @@
-import { type LedgerAnomaliesPageParams, SAVED_VIEW_WORKSPACE } from './page.params';
+import { SAVED_VIEW_WORKSPACE } from './anomalies-shared';
+import { type LedgerAnomaliesPageParams } from './page.params';
 import { type LedgerAnomaliesPagePermissions } from './page.permissions';
 import { getLedgerAnomalies, getLedgerAnomaliesSummary } from '../../../../lib/admin-api/ledger.server';
 import { getSavedViews } from '../../../../lib/admin-api/overview.server';

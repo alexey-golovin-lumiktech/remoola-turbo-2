@@ -1,25 +1,10 @@
 import { adminV2LedgerAnomaliesListQuerySchema } from '@remoola/api-types';
 
+import { type BuildHrefFn, type LedgerAnomaliesSavedViewPayload, defaultDateRange } from './anomalies-shared';
 import { type LedgerAnomalyClass } from '../../../../lib/admin-api/types';
-import { getDefaultLookbackDateOnlyRange } from '../../../../lib/admin-format';
 import { isLedgerAnomalyClass } from '../../../../lib/admin-surface-meta';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { dateSearchParam, type SearchParamValue, trimmedSearchParam } from '../../../../lib/query-contract';
-
-export const SAVED_VIEW_WORKSPACE = `ledger_anomalies` as const;
-
-export type LedgerAnomaliesSavedViewPayload = {
-  class: LedgerAnomalyClass;
-  dateFrom: string;
-  dateTo: string;
-};
-
-export type BuildHrefFn = (next: {
-  className?: LedgerAnomalyClass;
-  dateFrom?: string;
-  dateTo?: string;
-  cursor?: string | null;
-}) => string;
 
 export type LedgerAnomaliesPageParams = {
   className: LedgerAnomalyClass;
@@ -33,7 +18,7 @@ export type LedgerAnomaliesPageParams = {
 export function parseLedgerAnomaliesSearchParams(
   params: Record<string, SearchParamValue> | undefined,
 ): LedgerAnomaliesPageParams {
-  const defaults = getDefaultLookbackDateOnlyRange();
+  const defaults = defaultDateRange();
   const requestedClass = trimmedSearchParam(params?.class);
   const query = adminV2LedgerAnomaliesListQuerySchema.parse({
     class: isLedgerAnomalyClass(requestedClass) ? requestedClass : `stalePendingEntries`,
