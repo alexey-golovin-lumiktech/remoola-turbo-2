@@ -4,17 +4,16 @@ import { type AdminV2AdminRef as AdminRef, type AdminV2AssignmentContext } from 
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import {
+  derivePaymentRail as derivePaymentRailPolicy,
+  getEffectivePaymentStatus as getEffectivePaymentStatusPolicy,
+} from './admin-v2-payment-status.presenter';
+import {
   AdminV2PaymentsQuery,
   type AdminV2PaymentsListRow,
   type AdminV2PaymentsQueueRow,
 } from './admin-v2-payments.query';
-import { parseLedgerMetadata } from '../../shared/json-metadata.utils';
 import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
 
-const PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES = [
-  $Enums.LedgerEntryType.USER_PAYMENT,
-  $Enums.LedgerEntryType.USER_DEPOSIT,
-] as const;
 const PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET = 25;
 const OVERDUE_OPERATOR_PROMPT = [
   `Review overdue payment requests and continue investigation`,
@@ -44,28 +43,6 @@ export class AdminV2PaymentsPresenter {
     return resource?.resourceTags?.some((resourceTag) => resourceTag.tag.name.startsWith(`INVOICE-`)) ?? false;
   }
 
-  private getLatestSettlementEntry(
-    paymentRequest:
-      | {
-          ledgerEntries?: Array<{
-            status: $Enums.TransactionStatus;
-            createdAt: Date;
-            type: $Enums.LedgerEntryType;
-            outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-          }>;
-        }
-      | null
-      | undefined,
-  ) {
-    return [...(paymentRequest?.ledgerEntries ?? [])]
-      .filter((entry) =>
-        PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES.includes(
-          entry.type as (typeof PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES)[number],
-        ),
-      )
-      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())[0];
-  }
-
   getEffectivePaymentStatus(
     paymentRequest:
       | {
@@ -80,12 +57,7 @@ export class AdminV2PaymentsPresenter {
       | null
       | undefined,
   ): $Enums.TransactionStatus | null {
-    if (!paymentRequest) {
-      return null;
-    }
-
-    const latestEntry = this.getLatestSettlementEntry(paymentRequest);
-    return latestEntry ? getEffectiveLedgerStatus(latestEntry) : paymentRequest.status;
+    return getEffectivePaymentStatusPolicy(paymentRequest);
   }
 
   derivePaymentRail(
@@ -100,22 +72,7 @@ export class AdminV2PaymentsPresenter {
       | null
       | undefined,
   ): $Enums.PaymentRail | null {
-    if (!paymentRequest) {
-      return null;
-    }
-
-    if (paymentRequest.paymentRail) {
-      return paymentRequest.paymentRail;
-    }
-
-    for (const entry of paymentRequest.ledgerEntries ?? []) {
-      const metadata = parseLedgerMetadata(entry.metadata);
-      if (metadata.rail) {
-        return metadata.rail;
-      }
-    }
-
-    return null;
+    return derivePaymentRailPolicy(paymentRequest);
   }
 
   mapPaymentListItem(row: AdminV2PaymentsListRow) {
