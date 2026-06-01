@@ -1,66 +1,19 @@
+import { ChargebackPaymentForm } from './forms/ChargebackPaymentForm';
+import { RefundPaymentForm } from './forms/RefundPaymentForm';
 import { type PaymentPageData } from './page.loader';
 import { type PaymentPagePermissions } from './page.permissions';
-import { ActionGhost } from '../../../../components/action-ghost';
+import { PaymentAttachmentsAndLedgerSection } from './sections/PaymentAttachmentsAndLedgerSection';
+import { PaymentContextRail } from './sections/PaymentContextRail';
+import { PaymentHeaderPanel } from './sections/PaymentHeaderPanel';
+import { PaymentSummarySection } from './sections/PaymentSummarySection';
+import { PaymentTimelineAndAuditSection } from './sections/PaymentTimelineAndAuditSection';
 import { AssignmentCard } from '../../../../components/assignment-card';
-import { ContextStat } from '../../../../components/context-stat';
-import { Panel } from '../../../../components/panel';
-import { TinyPill } from '../../../../components/tiny-pill';
-import {
-  actionGroupClass,
-  actionGroupLabelClass,
-  checkboxFieldClass,
-  checkboxInputClass,
-  dangerButtonClass,
-  fieldClass,
-  fieldLabelClass,
-  monoMutedTextClass,
-  mutedTextClass,
-  nestedPanelClass,
-  operatorFormActionsClass,
-  operatorFormClass,
-  operatorFormConfirmClass,
-  operatorFormFieldsClass,
-  operatorFormFullWidthCtaClass,
-  operatorFormIntroClass,
-  operatorFormSectionClass,
-  rawDataClass,
-  stackClass,
-  textAreaClass,
-  textInputClass,
-} from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { getAdminDocumentDownloadHref } from '../../../../lib/admin-document-download';
-import { formatDateTime } from '../../../../lib/admin-format';
 import {
   claimPaymentRequestAssignmentAction,
   reassignPaymentRequestAssignmentAction,
-  refundPaymentAction,
   releasePaymentRequestAssignmentAction,
-  chargebackPaymentAction,
 } from '../../../../lib/admin-mutations/payments.server';
-
-function renderActorLabel(actor: { email?: string | null; id?: string | null }): string {
-  return actor.email ?? actor.id ?? `-`;
-}
-
-const formatDate = formatDateTime;
-
-function renderMetadata(value: Record<string, unknown> | null | undefined) {
-  if (!value || Object.keys(value).length === 0) {
-    return <p className={mutedTextClass}>No metadata.</p>;
-  }
-
-  const keys = Object.keys(value);
-
-  return (
-    <details className={nestedPanelClass}>
-      <summary className="cursor-pointer text-sm text-white/72">
-        Metadata ({keys.length} key{keys.length === 1 ? `` : `s`})
-      </summary>
-      <pre className={rawDataClass}>{JSON.stringify(value, null, 2)}</pre>
-    </details>
-  );
-}
 
 export function PaymentCasePageView({
   data,
@@ -71,148 +24,17 @@ export function PaymentCasePageView({
 }) {
   const { paymentCase, reassignCandidates, backToQueueHref } = data;
   const { canReverse, canClaim, canRelease, canReassign } = permissions;
-  const currentAssignment = paymentCase.assignment.current;
-
-  const context = (
-    <>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-        <ContextStat label="Effective status" value={paymentCase.core.effectiveStatus} tone="cyan" />
-        <ContextStat
-          label="Assignment"
-          value={currentAssignment ? `Assigned` : `Unassigned`}
-          tone={currentAssignment ? `cyan` : `neutral`}
-        />
-        <ContextStat label="Attachments" value={paymentCase.attachments.length} />
-        <ContextStat label="Ledger entries" value={paymentCase.ledgerEntries.length} />
-      </div>
-      <div className="contextRailSection">
-        <h4>Quick links</h4>
-        <div className="contextRailLinks">
-          <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
-          {paymentCase.payer.id ? (
-            <ActionGhost href={`/consumers/${paymentCase.payer.id}`}>Payer case</ActionGhost>
-          ) : null}
-          {paymentCase.requester.id ? (
-            <ActionGhost href={`/consumers/${paymentCase.requester.id}`}>Requester case</ActionGhost>
-          ) : null}
-          <ActionGhost href={`/audit/admin-actions?resourceId=${paymentCase.id}`}>Related admin actions</ActionGhost>
-        </div>
-      </div>
-    </>
-  );
 
   return (
     <WorkspaceLayout
       workspace="payment-case"
-      context={context}
+      context={<PaymentContextRail paymentCase={paymentCase} backToQueueHref={backToQueueHref} />}
       contextTitle="Payment snapshot"
       contextDescription="Current status, linked investigations, and quick navigation for the payment request."
     >
       <>
-        <Panel
-          eyebrow="Payment case"
-          title="Payment Request"
-          description={paymentCase.id}
-          actions={
-            <div className="flex flex-wrap gap-4">
-              <div className={actionGroupClass}>
-                <span className={actionGroupLabelClass}>Queue</span>
-                <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
-                <ActionGhost href={`/audit/admin-actions?resourceId=${paymentCase.id}`}>
-                  Related admin actions
-                </ActionGhost>
-              </div>
-              <div className={actionGroupClass}>
-                <span className={actionGroupLabelClass}>Linked cases</span>
-                {paymentCase.payer.id ? (
-                  <ActionGhost href={`/consumers/${paymentCase.payer.id}`}>Payer case</ActionGhost>
-                ) : null}
-                {paymentCase.requester.id ? (
-                  <ActionGhost href={`/consumers/${paymentCase.requester.id}`}>Requester case</ActionGhost>
-                ) : null}
-              </div>
-            </div>
-          }
-          surface="primary"
-        >
-          <p className={mutedTextClass}>
-            Investigation summary for payment state, linked parties, assignment status, ledger context, and related
-            audit history.
-          </p>
-          <p className={monoMutedTextClass}>{paymentCase.id}</p>
-          <div className="pillRow">
-            <TinyPill>{paymentCase.core.effectiveStatus}</TinyPill>
-            <TinyPill tone="cyan">
-              {paymentCase.core.amount} {paymentCase.core.currencyCode}
-            </TinyPill>
-            <TinyPill>{paymentCase.core.currencyCode}</TinyPill>
-            {paymentCase.core.paymentRail ? <TinyPill>{paymentCase.core.paymentRail}</TinyPill> : null}
-            {paymentCase.staleWarning ? <TinyPill>Persisted status stale</TinyPill> : null}
-            {paymentCase.core.deletedAt ? <TinyPill>Soft-deleted request</TinyPill> : null}
-          </div>
-        </Panel>
-
-        <section className="statsGrid">
-          <Panel surface="meta">
-            <h3>Case summary</h3>
-            <p className={mutedTextClass}>
-              Amount: {paymentCase.core.amount} {paymentCase.core.currencyCode}
-            </p>
-            <p className={mutedTextClass}>Payment rail: {paymentCase.core.paymentRail ?? `-`}</p>
-            <p className={mutedTextClass}>Payer: {renderActorLabel(paymentCase.payer)}</p>
-            <p className={mutedTextClass}>Requester: {renderActorLabel(paymentCase.requester)}</p>
-            <p className={mutedTextClass}>Updated: {formatDate(paymentCase.updatedAt)}</p>
-          </Panel>
-          <Panel surface="meta">
-            <h3>Operational posture</h3>
-            <p className={mutedTextClass}>Effective: {paymentCase.core.effectiveStatus}</p>
-            <p className={mutedTextClass}>Persisted: {paymentCase.core.persistedStatus}</p>
-            <p className={mutedTextClass}>Data freshness: {paymentCase.dataFreshnessClass}</p>
-            <p className={mutedTextClass}>Assignment: {currentAssignment ? `Assigned` : `Unassigned`}</p>
-            <p className={mutedTextClass}>Linked ledger entries: {paymentCase.ledgerEntries.length}</p>
-          </Panel>
-          <Panel surface="meta">
-            <h3>Navigation</h3>
-            <p className={mutedTextClass}>
-              Queue and related-case navigation stay in the header above. Assignment controls stay separated so they do
-              not compete with the case summary.
-            </p>
-            <div className="pillRow">
-              <span className="pill">{canClaim ? `Claim available` : `Claim unavailable`}</span>
-              <span className="pill">{canRelease ? `Release available` : `Release unavailable`}</span>
-              <span className="pill">{canReassign ? `Reassign available` : `Reassign unavailable`}</span>
-            </div>
-          </Panel>
-          <Panel>
-            <h3>Request core</h3>
-            <p className={mutedTextClass}>
-              Amount: {paymentCase.core.amount} {paymentCase.core.currencyCode}
-            </p>
-            <p className={mutedTextClass}>Persisted: {paymentCase.core.persistedStatus}</p>
-            <p className={mutedTextClass}>Effective: {paymentCase.core.effectiveStatus}</p>
-            <p className={mutedTextClass}>
-              Current status follows the latest linked ledger outcome, not the earliest one.
-            </p>
-            <p className={mutedTextClass}>Description: {paymentCase.core.description ?? `-`}</p>
-          </Panel>
-          <Panel>
-            <h3>Participants</h3>
-            <p className={mutedTextClass}>Payer: {paymentCase.payer.email ?? paymentCase.payer.id ?? `-`}</p>
-            <p className={mutedTextClass}>
-              Requester: {paymentCase.requester.email ?? paymentCase.requester.id ?? `-`}
-            </p>
-            <p className={mutedTextClass}>Data freshness: {paymentCase.dataFreshnessClass}</p>
-          </Panel>
-          <Panel>
-            <h3>Dates</h3>
-            <p className={mutedTextClass}>Created: {formatDate(paymentCase.core.createdAt)}</p>
-            <p className={mutedTextClass}>Sent: {formatDate(paymentCase.core.sentDate)}</p>
-            <p className={mutedTextClass}>Due: {formatDate(paymentCase.core.dueDate)}</p>
-            <p className={mutedTextClass}>Updated: {formatDate(paymentCase.updatedAt)}</p>
-            <p className={mutedTextClass}>Version: {paymentCase.version}</p>
-          </Panel>
-        </section>
-
+        <PaymentHeaderPanel paymentCase={paymentCase} backToQueueHref={backToQueueHref} />
+        <PaymentSummarySection paymentCase={paymentCase} permissions={permissions} />
         <AssignmentCard
           resourceId={paymentCase.id}
           assignment={paymentCase.assignment}
@@ -225,233 +47,20 @@ export function PaymentCasePageView({
           }}
           copy={{ claimReasonPlaceholder: `Why are you claiming this payment request?` }}
         />
-
-        <section className="detailGrid">
-          <Panel title="Attachments / documents">
-            <div className={stackClass}>
-              {paymentCase.attachments.length === 0 ? <p className={mutedTextClass}>No attachments.</p> : null}
-              {paymentCase.attachments.map((attachment) => (
-                <div className={nestedPanelClass} key={attachment.id}>
-                  <strong>{attachment.name}</strong>
-                  <p className={mutedTextClass}>{attachment.mimetype}</p>
-                  <p className={mutedTextClass}>
-                    {attachment.size} bytes · {formatDate(attachment.createdAt)}
-                  </p>
-                  {attachment.deletedAt ? (
-                    <p className={mutedTextClass}>Attachment soft-deleted: {formatDate(attachment.deletedAt)}</p>
-                  ) : null}
-                  {attachment.resourceDeletedAt ? (
-                    <p className={mutedTextClass}>Resource soft-deleted: {formatDate(attachment.resourceDeletedAt)}</p>
-                  ) : null}
-                  <div className="actionsRow">
-                    {paymentCase.requester.id ? (
-                      <ActionGhost href={`/consumers/${paymentCase.requester.id}`}>
-                        Requester documents context
-                      </ActionGhost>
-                    ) : null}
-                    <a
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-input border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90"
-                      href={getAdminDocumentDownloadHref(attachment.resourceId)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Download
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="Related ledger entries">
-            <div className={stackClass}>
-              {paymentCase.ledgerEntries.length === 0 ? <p className={mutedTextClass}>No ledger entries.</p> : null}
-              {paymentCase.ledgerEntries.map((entry) => (
-                <div className={nestedPanelClass} key={entry.id}>
-                  <strong>{entry.type}</strong>
-                  <p className={mutedTextClass}>
-                    {entry.amount} {entry.currencyCode}
-                  </p>
-                  <p className={mutedTextClass}>Effective status: {entry.effectiveStatus}</p>
-                  {entry.deletedAt ? (
-                    <p className={mutedTextClass}>Ledger entry soft-deleted: {formatDate(entry.deletedAt)}</p>
-                  ) : null}
-                  <div className="actionsRow">
-                    <ActionGhost href={`/ledger/${entry.id}`}>Open ledger case</ActionGhost>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-        </section>
-
-        <section className="detailGrid">
-          <Panel title="Timeline">
-            <div className={stackClass}>
-              {paymentCase.timeline.map((item, index) => (
-                <div className={nestedPanelClass} key={`${item.event}-${index}`}>
-                  <strong>{item.event}</strong>
-                  <p className={mutedTextClass}>{formatDate(item.timestamp)}</p>
-                  <p className={mutedTextClass}>
-                    {item.metadata && Object.keys(item.metadata).length > 0
-                      ? `${Object.keys(item.metadata).length} metadata field${Object.keys(item.metadata).length === 1 ? `` : `s`}`
-                      : `No metadata`}
-                  </p>
-                  {renderMetadata(item.metadata)}
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="Audit context">
-            <div className={stackClass}>
-              {paymentCase.auditContext.length === 0 ? (
-                <p className={mutedTextClass}>No related admin actions.</p>
-              ) : null}
-              {paymentCase.auditContext.map((item) => (
-                <div className={nestedPanelClass} key={item.id}>
-                  <strong>{item.action}</strong>
-                  <p className={mutedTextClass}>{item.adminEmail ?? `Unknown admin`}</p>
-                  <p className={mutedTextClass}>{formatDate(item.createdAt)}</p>
-                </div>
-              ))}
-            </div>
-          </Panel>
-        </section>
-
+        <PaymentAttachmentsAndLedgerSection paymentCase={paymentCase} />
+        <PaymentTimelineAndAuditSection paymentCase={paymentCase} />
         {canReverse ? (
           <section className="detailGrid">
-            <Panel title="Refund">
-              <form
-                action={refundPaymentAction.bind(
-                  null,
-                  paymentCase.id,
-                  paymentCase.payer.id ?? null,
-                  paymentCase.requester.id ?? null,
-                )}
-                className={operatorFormClass}
-              >
-                <div className={operatorFormSectionClass}>
-                  <div className={operatorFormIntroClass}>
-                    <p className="text-sm font-medium text-white/90">Issue refund</p>
-                    <p className={mutedTextClass}>
-                      Initiates a Stripe refund for this payment. Leave amount blank to reverse the remaining reversible
-                      amount (prior partial reversals reduce this). Requires step-up password confirmation.
-                    </p>
-                  </div>
-                  <div className={operatorFormFieldsClass}>
-                    <label className={fieldClass}>
-                      <span className={fieldLabelClass}>Amount (optional)</span>
-                      <input
-                        className={textInputClass}
-                        name="amount"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="Leave blank to reverse remaining reversible amount"
-                      />
-                    </label>
-                    <label className={fieldClass}>
-                      <span className={fieldLabelClass}>Reason (optional)</span>
-                      <textarea
-                        className={textAreaClass}
-                        name="reason"
-                        maxLength={500}
-                        placeholder="Optional context for the audit trail."
-                      />
-                    </label>
-                    <label className={fieldClass}>
-                      <span className={fieldLabelClass}>Current password</span>
-                      <input
-                        className={textInputClass}
-                        name="passwordConfirmation"
-                        type="password"
-                        autoComplete="current-password"
-                        required
-                        placeholder="Confirm with your current password"
-                      />
-                    </label>
-                  </div>
-                  <div className={operatorFormConfirmClass}>
-                    <label className={checkboxFieldClass}>
-                      <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
-                      <span className={fieldLabelClass}>I confirm this refund is correct</span>
-                    </label>
-                  </div>
-                  <div className={operatorFormActionsClass}>
-                    <button className={`${dangerButtonClass} ${operatorFormFullWidthCtaClass}`} type="submit">
-                      Issue refund
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </Panel>
-
-            <Panel title="Chargeback">
-              <form
-                action={chargebackPaymentAction.bind(
-                  null,
-                  paymentCase.id,
-                  paymentCase.payer.id ?? null,
-                  paymentCase.requester.id ?? null,
-                )}
-                className={operatorFormClass}
-              >
-                <div className={operatorFormSectionClass}>
-                  <div className={operatorFormIntroClass}>
-                    <p className="text-sm font-medium text-white/90">Record chargeback</p>
-                    <p className={mutedTextClass}>
-                      Records a manual chargeback for this payment. Leave amount blank to apply the remaining reversible
-                      amount (prior partial reversals reduce this). Requires step-up password confirmation.
-                    </p>
-                  </div>
-                  <div className={operatorFormFieldsClass}>
-                    <label className={fieldClass}>
-                      <span className={fieldLabelClass}>Amount (optional)</span>
-                      <input
-                        className={textInputClass}
-                        name="amount"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="Leave blank to apply remaining reversible amount"
-                      />
-                    </label>
-                    <label className={fieldClass}>
-                      <span className={fieldLabelClass}>Reason (optional)</span>
-                      <textarea
-                        className={textAreaClass}
-                        name="reason"
-                        maxLength={500}
-                        placeholder="Optional context for the audit trail."
-                      />
-                    </label>
-                    <label className={fieldClass}>
-                      <span className={fieldLabelClass}>Current password</span>
-                      <input
-                        className={textInputClass}
-                        name="passwordConfirmation"
-                        type="password"
-                        autoComplete="current-password"
-                        required
-                        placeholder="Confirm with your current password"
-                      />
-                    </label>
-                  </div>
-                  <div className={operatorFormConfirmClass}>
-                    <label className={checkboxFieldClass}>
-                      <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
-                      <span className={fieldLabelClass}>I confirm this chargeback is correct</span>
-                    </label>
-                  </div>
-                  <div className={operatorFormActionsClass}>
-                    <button className={`${dangerButtonClass} ${operatorFormFullWidthCtaClass}`} type="submit">
-                      Record chargeback
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </Panel>
+            <RefundPaymentForm
+              paymentCaseId={paymentCase.id}
+              payerId={paymentCase.payer.id ?? null}
+              requesterId={paymentCase.requester.id ?? null}
+            />
+            <ChargebackPaymentForm
+              paymentCaseId={paymentCase.id}
+              payerId={paymentCase.payer.id ?? null}
+              requesterId={paymentCase.requester.id ?? null}
+            />
           </section>
         ) : null}
       </>
