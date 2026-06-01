@@ -1,6 +1,6 @@
 # Changelog
 
-- [September 2025](#changelog-september-2025) · [October 2025](#changelog-october-2025) · [November 2025](#changelog-november-2025) · [December 2025](#changelog-december-2025) · [January 2026](#changelog-january-2026) · [February 2026](#changelog-february-2026) · [March 2026](#changelog-march-2026) · [April 2026](#changelog-april-2026) · [May 2026](#changelog-may-2026)
+- [September 2025](#changelog-september-2025) · [October 2025](#changelog-october-2025) · [November 2025](#changelog-november-2025) · [December 2025](#changelog-december-2025) · [January 2026](#changelog-january-2026) · [February 2026](#changelog-february-2026) · [March 2026](#changelog-march-2026) · [April 2026](#changelog-april-2026) · [May 2026](#changelog-may-2026) · [June 2026](#changelog-june-2026)
 
 ---
 
@@ -2797,7 +2797,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary><strong>Changelog (May 2026)</strong></summary>
 
 # Changelog (May 2026)
@@ -3135,7 +3135,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-05-29</summary>
 
 - **2026-05-29:**
@@ -3154,6 +3154,31 @@
 
   ### ⚠️ Notes
   - **Pure-frontend, migration-free day:** All changes are structural refactors in `apps/admin-v2` and `apps/consumer-css-grid` plus a route-class proxy layer in the consumer BFF. No DB migration, no API contract change, no infra change; safe rolling deploy with straight-revert rollback. Watch for visual or interaction regressions on consumer `/contacts`, `/contracts`, `/contracts/[id]`, `/documents`, `/exchange`, `/payments`, `/withdraw`, and on admin-v2 `/ledger` and `/consumers/[consumerId]` after deploy.
+
+</details>
+
+</details>
+
+<details open>
+<summary><strong>Changelog (June 2026)</strong></summary>
+
+# Changelog (June 2026)
+
+<details open>
+<summary>2026-06-01</summary>
+
+- **2026-06-01:**
+
+  ### 🧪 Testing
+  - **Admin-v2 payments presenter characterization coverage:** Expand `apps/api-v2/src/admin-v2/payments/admin-v2-payments.presenter.spec.ts` to pin status selection, rail derivation, case mapping, stale-warning semantics, timeline shaping, attachments, ledger-entry shaping, assignment passthrough, and `dataFreshnessClass` before the presenter extraction; the presenter refactor commits also record reruns of payments service, controller, and query specs plus `typecheck`, `lint`, and `build`.
+  - **Route-level regression checks:** The route decomposition commits record existing tests staying green for verification (`5/5`), admin case (`4/4`), and ledger anomalies (`3/3`) after the loader/view/sections extraction wave.
+
+  ### 🛠 DevEx
+  - **Admin-v2 route decomposition:** Split the documents list, ledger anomalies list, payment case, admin case, verification case, and payout case pages into page-local `params`, `loader`, `permissions`, and `view` modules as applicable, then extract large `page.view.tsx` files into focused section, form, and shared-helper modules. In today's sequence, documents, ledger anomalies, payments, admins, and verification advance to the composition-plus-sections shape, while payouts stop at the page-level extraction.
+  - **api-v2 payment presenter extraction and debt-report tooling:** Pull `AdminV2PaymentsPresenter` status/rail-policy and case-mapping logic into dedicated presenter helpers, and extract reusable boundary-scan / debt-report helpers plus shared allowlists for `module-boundaries.spec.ts` and `scripts/api-v2-debt-report.ts`.
+
+  ### ⚠️ Notes
+  - **Refactor-only day:** Today's commits are page, presenter, and tooling refactors plus characterization tests. The recorded commit scope does not include DB migrations or new product surface rollout.
 
 </details>
 
