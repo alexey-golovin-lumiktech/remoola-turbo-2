@@ -19,6 +19,7 @@
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "typecheck:watch": "tsc -p tsconfig.typecheck.json --watch --preserveWatchOutput",
     "clean": "rm -rf ./node_modules ./dist",
+    "debt:report": "ts-node scripts/api-v2-debt-report.ts",
     "dev:envs": "dotenv -e ./.env.development -e ./.env --",
     "seed:bootstrap": "yarn dev:envs ts-node -r tsconfig-paths/register src/bootstrap/bootstrap-seed.ts",
     "start:dev": "yarn dev:envs nest start --watch",
