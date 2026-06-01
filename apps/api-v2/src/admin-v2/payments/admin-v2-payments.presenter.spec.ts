@@ -489,6 +489,147 @@ describe(`AdminV2PaymentsPresenter`, () => {
       );
       expect(paymentCase.version).toBe(paymentCase.updatedAt.getTime());
     });
+
+    it(`passes through assignment context and preserves exact dataFreshnessClass`, () => {
+      const presenter = buildPresenter();
+      const assignment = buildAssignmentContext({
+        current: {
+          id: `assignment-active`,
+          assignedTo: { id: `admin-7`, name: null, email: `ops@example.com` },
+          assignedBy: { id: `admin-9`, name: `Lead`, email: `lead@example.com` },
+          assignedAt: `2026-04-21T08:00:00.000Z`,
+          reason: `Investigating discrepancy`,
+          expiresAt: null,
+        },
+        history: [
+          {
+            id: `assignment-active`,
+            assignedTo: { id: `admin-7`, name: null, email: `ops@example.com` },
+            assignedBy: { id: `admin-9`, name: `Lead`, email: `lead@example.com` },
+            assignedAt: `2026-04-21T08:00:00.000Z`,
+            releasedAt: null,
+            releasedBy: null,
+            reason: `Investigating discrepancy`,
+            expiresAt: null,
+          },
+        ],
+      });
+
+      const paymentCase = presenter.mapPaymentRequestCase(buildCaseRow(), [], assignment);
+      const unassignedPaymentCase = presenter.mapPaymentRequestCase(buildCaseRow(), [], buildAssignmentContext());
+
+      expect(paymentCase.assignment).toEqual(assignment);
+      expect(paymentCase.assignment.current).toEqual(assignment.current);
+      expect(paymentCase.assignment.history).toEqual(assignment.history);
+      expect(paymentCase.dataFreshnessClass).toBe(`exact`);
+      expect(unassignedPaymentCase.assignment.current).toBeNull();
+      expect(unassignedPaymentCase.assignment.history).toEqual([]);
+      expect(unassignedPaymentCase.dataFreshnessClass).toBe(`exact`);
+    });
+
+    it(`returns staleWarning false when effective status matches persisted status`, () => {
+      const presenter = buildPresenter();
+      const paymentCase = presenter.mapPaymentRequestCase(
+        buildCaseRow({
+          paymentRail: $Enums.PaymentRail.CARD,
+          ledgerEntries: [
+            buildSettlementEntry({
+              status: $Enums.TransactionStatus.PENDING,
+              outcomes: [buildOutcome({ status: $Enums.TransactionStatus.PENDING })],
+            }),
+          ],
+        }),
+        [],
+        buildAssignmentContext(),
+      );
+
+      expect(paymentCase.core.persistedStatus).toBe($Enums.TransactionStatus.PENDING);
+      expect(paymentCase.core.effectiveStatus).toBe($Enums.TransactionStatus.PENDING);
+      expect(paymentCase.core.effectiveStatus).toBe(paymentCase.core.persistedStatus);
+      expect(paymentCase.staleWarning).toBe(false);
+    });
+
+    it(`maps forensic attachments with exact output shape and preserves deleted metadata`, () => {
+      const presenter = buildPresenter();
+      const paymentRequest = buildCaseRow();
+      const paymentCase = presenter.mapPaymentRequestCase(paymentRequest, [], buildAssignmentContext());
+
+      expect(paymentCase.attachments).toEqual([
+        {
+          id: paymentRequest.attachments[0].id,
+          resourceId: paymentRequest.attachments[0].resource.id,
+          name: paymentRequest.attachments[0].resource.originalName,
+          size: paymentRequest.attachments[0].resource.size,
+          mimetype: paymentRequest.attachments[0].resource.mimetype,
+          downloadUrl: paymentRequest.attachments[0].resource.downloadUrl,
+          createdAt: paymentRequest.attachments[0].resource.createdAt,
+          deletedAt: paymentRequest.attachments[0].deletedAt,
+          resourceDeletedAt: paymentRequest.attachments[0].resource.deletedAt,
+        },
+        {
+          id: paymentRequest.attachments[1].id,
+          resourceId: paymentRequest.attachments[1].resource.id,
+          name: paymentRequest.attachments[1].resource.originalName,
+          size: paymentRequest.attachments[1].resource.size,
+          mimetype: paymentRequest.attachments[1].resource.mimetype,
+          downloadUrl: paymentRequest.attachments[1].resource.downloadUrl,
+          createdAt: paymentRequest.attachments[1].resource.createdAt,
+          deletedAt: paymentRequest.attachments[1].deletedAt,
+          resourceDeletedAt: paymentRequest.attachments[1].resource.deletedAt,
+        },
+      ]);
+      expect(paymentCase.attachments.map((attachment) => attachment.id)).toEqual([
+        paymentRequest.attachments[0].id,
+        paymentRequest.attachments[1].id,
+      ]);
+      expect(paymentCase.attachments[1]).toEqual(
+        expect.objectContaining({
+          deletedAt: new Date(`2026-04-13T00:00:00.000Z`),
+          resourceDeletedAt: new Date(`2026-04-13T00:00:00.000Z`),
+        }),
+      );
+    });
+
+    it(`maps forensic ledger entries with exact output shape and stringifies amount`, () => {
+      const presenter = buildPresenter();
+      const paymentRequest = buildCaseRow();
+      const paymentCase = presenter.mapPaymentRequestCase(paymentRequest, [], buildAssignmentContext());
+
+      expect(paymentCase.ledgerEntries).toEqual([
+        {
+          id: paymentRequest.ledgerEntries[0].id,
+          ledgerId: paymentRequest.ledgerEntries[0].ledgerId,
+          type: paymentRequest.ledgerEntries[0].type,
+          amount: paymentRequest.ledgerEntries[0].amount.toString(),
+          currencyCode: paymentRequest.ledgerEntries[0].currencyCode,
+          effectiveStatus: $Enums.TransactionStatus.COMPLETED,
+          createdAt: paymentRequest.ledgerEntries[0].createdAt,
+          deletedAt: paymentRequest.ledgerEntries[0].deletedAt,
+        },
+        {
+          id: paymentRequest.ledgerEntries[1].id,
+          ledgerId: paymentRequest.ledgerEntries[1].ledgerId,
+          type: paymentRequest.ledgerEntries[1].type,
+          amount: paymentRequest.ledgerEntries[1].amount.toString(),
+          currencyCode: paymentRequest.ledgerEntries[1].currencyCode,
+          effectiveStatus: $Enums.TransactionStatus.COMPLETED,
+          createdAt: paymentRequest.ledgerEntries[1].createdAt,
+          deletedAt: paymentRequest.ledgerEntries[1].deletedAt,
+        },
+      ]);
+      expect(paymentCase.ledgerEntries.map((entry) => entry.id)).toEqual([
+        paymentRequest.ledgerEntries[0].id,
+        paymentRequest.ledgerEntries[1].id,
+      ]);
+      expect(paymentCase.ledgerEntries[0].effectiveStatus).toBe($Enums.TransactionStatus.COMPLETED);
+      expect(paymentRequest.ledgerEntries[0].status).toBe($Enums.TransactionStatus.PENDING);
+      expect(paymentCase.ledgerEntries[0].amount).toBe(paymentRequest.ledgerEntries[0].amount.toString());
+      expect(paymentCase.ledgerEntries[1]).toEqual(
+        expect.objectContaining({
+          deletedAt: new Date(`2026-04-14T00:00:00.000Z`),
+        }),
+      );
+    });
   });
 
   describe(`mapPaymentOperationsQueueItem`, () => {
