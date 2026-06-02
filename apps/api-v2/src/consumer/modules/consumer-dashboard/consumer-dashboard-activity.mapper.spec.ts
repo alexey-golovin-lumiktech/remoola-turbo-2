@@ -45,4 +45,27 @@ describe(`consumer dashboard activity mapper`, () => {
       kind: `withdrawal`,
     });
   });
+
+  it(`falls back to payment request rail metadata when the ledger metadata omits rail`, () => {
+    const item = mapFinancialActivityItem(
+      buildRow({
+        type: $Enums.LedgerEntryType.USER_PAYMENT,
+        amount: -27.54,
+        currencyCode: $Enums.CurrencyCode.GBP,
+        metadata: {},
+        paymentRequestId: `payment-request-1`,
+        paymentRequest: { paymentRail: $Enums.PaymentRail.CARD },
+        outcomes: [{ status: $Enums.TransactionStatus.PENDING }],
+      }),
+      new Map(),
+    );
+
+    expect(item).toEqual({
+      id: `ledger-1`,
+      label: `Payment sent`,
+      description: `Pending • 27.54 GBP • via card`,
+      createdAt: `2026-03-25T17:23:20.000Z`,
+      kind: `payment_sent`,
+    });
+  });
 });

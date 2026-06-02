@@ -42,6 +42,35 @@ function createDashboardQueryMock(
   } as unknown as ConsumerDashboardQuery;
 }
 
+function createEmptySummary() {
+  return {
+    balanceCents: 0,
+    balanceCurrencyCode: $Enums.CurrencyCode.USD,
+    availableBalanceCents: 0,
+    availableBalanceCurrencyCode: $Enums.CurrencyCode.USD,
+    activeRequests: 0,
+    lastPaymentAt: null,
+  };
+}
+
+function createPendingVerificationState() {
+  return {
+    status: `pending_submission`,
+    canStart: true,
+    profileComplete: false,
+    legalVerified: false,
+    effectiveVerified: false,
+    reviewStatus: `not_started`,
+    stripeStatus: `not_started`,
+    sessionId: null,
+    lastErrorCode: null,
+    lastErrorReason: null,
+    startedAt: null,
+    updatedAt: null,
+    verifiedAt: null,
+  };
+}
+
 describe(`ConsumerDashboardService`, () => {
   it(`excludes effectively completed requests from pending list and active summary`, async () => {
     const consumerId = `consumer-1`;
@@ -575,5 +604,400 @@ describe(`ConsumerDashboardService`, () => {
         }),
       ]),
     );
+  });
+
+  it(`falls back to setup activity with current timestamp defaults when financial activity is empty`, async () => {
+    const consumerId = `consumer-setup-fallback`;
+    const now = new Date(`2026-04-03T10:11:12.000Z`);
+    jest.useFakeTimers().setSystemTime(now);
+
+    try {
+      const dashboardQuery = createDashboardQueryMock({
+        findSetupConsumer: mockResolved({
+          personalDetails: null,
+          paymentMethods: [],
+          consumerResources: [],
+        }),
+      });
+      const balanceService = {
+        calculateMultiCurrency: mockResolved({ balances: {} }),
+      } as any;
+
+      const service = new ConsumerDashboardService(dashboardQuery, balanceService);
+      jest.spyOn(service as any, `buildSummary`).mockResolvedValue(createEmptySummary());
+      jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
+      jest.spyOn(service as any, `buildTasks`).mockResolvedValue([]);
+      jest.spyOn(service as any, `buildQuickDocs`).mockResolvedValue([]);
+      jest.spyOn(service as any, `buildVerification`).mockResolvedValue(createPendingVerificationState());
+
+      const result = await service.getDashboardData(consumerId);
+
+      expect(result.activity).toStrictEqual([
+        {
+          id: `kyc_pending`,
+          label: `Identity verification pending`,
+          createdAt: now.toISOString(),
+          kind: `kyc_in_review`,
+        },
+        {
+          id: `bank_pending`,
+          label: `Bank details pending`,
+          createdAt: now.toISOString(),
+          kind: `bank_pending`,
+        },
+      ]);
+      expect(dashboardQuery.findFinancialActivityRows).toHaveBeenCalledWith(consumerId);
+      expect(dashboardQuery.findSetupConsumer).toHaveBeenCalledWith(consumerId);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it(`preserves setup activity wording and task asymmetry for verified non-bank methods`, async () => {
+    const consumerId = `consumer-setup-asymmetry`;
+    const verifiedAt = new Date(`2026-04-03T15:00:00.000Z`);
+    const w9CreatedAt = new Date(`2026-04-03T14:00:00.000Z`);
+    const cardCreatedAt = new Date(`2026-04-03T13:00:00.000Z`);
+    const dashboardQuery = createDashboardQueryMock({
+      findSetupConsumer: mockResolved({
+        accountType: $Enums.AccountType.CONTRACTOR,
+        contractorKind: $Enums.ContractorKind.INDIVIDUAL,
+        legalVerified: true,
+        verificationStatus: $Enums.VerificationStatus.PENDING,
+        stripeIdentityVerifiedAt: verifiedAt,
+        personalDetails: {
+          legalStatus: `SOLE_PROPRIETOR`,
+          taxId: `12-3456789`,
+          passportOrIdNumber: `P1234567`,
+          phoneNumber: null,
+        },
+        paymentMethods: [
+          {
+            type: `CARD_ONLY`,
+            createdAt: cardCreatedAt,
+          },
+        ],
+        consumerResources: [
+          {
+            resource: {
+              originalName: `IRS-W-9.pdf`,
+              createdAt: w9CreatedAt,
+            },
+          },
+        ],
+      }),
+    });
+    const balanceService = {
+      calculateMultiCurrency: mockResolved({ balances: {} }),
+    } as any;
+
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
+    jest.spyOn(service as any, `buildSummary`).mockResolvedValue(createEmptySummary());
+    jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildQuickDocs`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildVerification`).mockResolvedValue(createPendingVerificationState());
+
+    const result = await service.getDashboardData(consumerId);
+
+    expect(result.activity).toStrictEqual([
+      {
+        id: `kyc`,
+        label: `Identity verified`,
+        createdAt: verifiedAt.toISOString(),
+        kind: `kyc_completed`,
+      },
+      {
+        id: `w9`,
+        label: `W-9 pack ready`,
+        createdAt: w9CreatedAt.toISOString(),
+        kind: `w9_ready`,
+      },
+      {
+        id: `bank`,
+        label: `Bank account added`,
+        createdAt: cardCreatedAt.toISOString(),
+        kind: `bank_added`,
+      },
+    ]);
+    expect(result.tasks).toStrictEqual([
+      {
+        id: `kyc`,
+        label: `Complete KYC`,
+        completed: true,
+      },
+      {
+        id: `profile`,
+        label: `Complete your profile`,
+        completed: true,
+      },
+      {
+        id: `w9`,
+        label: `Upload W-9 form`,
+        completed: true,
+      },
+      {
+        id: `bank`,
+        label: `Add bank account`,
+        completed: false,
+      },
+    ]);
+  });
+
+  it(`preserves quick docs query order, current field mapping, and empty createdAt fallback`, async () => {
+    const consumerId = `consumer-quick-docs`;
+    const dashboardQuery = createDashboardQueryMock({
+      findQuickDocs: mockResolved([
+        {
+          resource: {
+            id: `doc-2`,
+            originalName: `Later.pdf`,
+            createdAt: null,
+            mimetype: `application/pdf`,
+            size: 4096,
+            downloadUrl: `https://files.example/later.pdf`,
+          },
+        },
+        {
+          resource: {
+            id: `doc-1`,
+            originalName: `Earlier.pdf`,
+            createdAt: new Date(`2026-04-02T10:00:00.000Z`),
+            mimetype: `application/pdf`,
+            size: 2048,
+            downloadUrl: `https://files.example/earlier.pdf`,
+          },
+        },
+      ]),
+    });
+    const balanceService = {
+      calculateMultiCurrency: mockResolved({ balances: {} }),
+    } as any;
+
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
+    jest.spyOn(service as any, `buildSummary`).mockResolvedValue(createEmptySummary());
+    jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildActivity`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildTasks`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildVerification`).mockResolvedValue(createPendingVerificationState());
+
+    const result = await service.getDashboardData(consumerId);
+
+    expect(result.quickDocs).toStrictEqual([
+      {
+        id: `doc-2`,
+        name: `Later.pdf`,
+        createdAt: ``,
+      },
+      {
+        id: `doc-1`,
+        name: `Earlier.pdf`,
+        createdAt: `2026-04-02T10:00:00.000Z`,
+      },
+    ]);
+    expect(result.quickDocs[0]).not.toHaveProperty(`mimetype`);
+    expect(result.quickDocs[0]).not.toHaveProperty(`size`);
+    expect(result.quickDocs[0]).not.toHaveProperty(`downloadUrl`);
+  });
+
+  it(`logs and rethrows the original error when a dashboard builder fails`, async () => {
+    const consumerId = `consumer-dashboard-error`;
+    const failure = new Error(`quick docs exploded`);
+    const dashboardQuery = createDashboardQueryMock({
+      findQuickDocs: jest.fn<() => Promise<never>>().mockRejectedValue(failure),
+    });
+    const balanceService = {
+      calculateMultiCurrency: mockResolved({ balances: {} }),
+    } as any;
+
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
+    jest.spyOn(service as any, `buildSummary`).mockResolvedValue(createEmptySummary());
+    jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildActivity`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildTasks`).mockResolvedValue([]);
+    const loggerErrorSpy = jest.spyOn((service as any).logger, `error`).mockImplementation(() => undefined);
+
+    await expect(service.getDashboardData(consumerId)).rejects.toBe(failure);
+    expect(loggerErrorSpy).toHaveBeenCalledWith(`Failed to build dashboard data`, {
+      consumerId,
+      error: failure.message,
+      stack: failure.stack,
+    });
+  });
+
+  it(`keeps first activity row per ledger, applies bank-label fallback, and limits to eight items`, async () => {
+    const consumerId = `consumer-activity-dedupe`;
+    const dashboardQuery = createDashboardQueryMock({
+      findFinancialActivityRows: mockResolved([
+        {
+          id: `entry-dup-first`,
+          ledgerId: `ledger-dup`,
+          type: $Enums.LedgerEntryType.USER_PAYOUT,
+          status: $Enums.TransactionStatus.PENDING,
+          amount: -10,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T18:00:00.000Z`),
+          metadata: { paymentMethodId: `pm-fallback` },
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.PENDING }],
+          paymentRequest: null,
+        },
+        {
+          id: `entry-dup-second`,
+          ledgerId: `ledger-dup`,
+          type: $Enums.LedgerEntryType.USER_PAYOUT,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: -10,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T17:59:00.000Z`),
+          metadata: { paymentMethodId: `pm-fallback` },
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+        {
+          id: `entry-a`,
+          ledgerId: `ledger-a`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: 1,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T17:58:00.000Z`),
+          metadata: null,
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+        {
+          id: `entry-b`,
+          ledgerId: `ledger-b`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: 1,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T17:57:00.000Z`),
+          metadata: null,
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+        {
+          id: `entry-c`,
+          ledgerId: `ledger-c`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: 1,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T17:56:00.000Z`),
+          metadata: null,
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+        {
+          id: `entry-d`,
+          ledgerId: `ledger-d`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: 1,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T17:55:00.000Z`),
+          metadata: null,
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+        {
+          id: `entry-e`,
+          ledgerId: `ledger-e`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: 1,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T17:54:00.000Z`),
+          metadata: null,
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+        {
+          id: `entry-f`,
+          ledgerId: `ledger-f`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: 1,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T17:53:00.000Z`),
+          metadata: null,
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+        {
+          id: `entry-g`,
+          ledgerId: `ledger-g`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: 1,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T17:52:00.000Z`),
+          metadata: null,
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+        {
+          id: `entry-h`,
+          ledgerId: `ledger-h`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: 1,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-04-03T17:51:00.000Z`),
+          metadata: null,
+          paymentRequestId: null,
+          outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          paymentRequest: null,
+        },
+      ]),
+      findPaymentMethodLabels: mockResolved([
+        {
+          id: `pm-fallback`,
+          brand: ``,
+          last4: `4321`,
+        },
+      ]),
+    });
+    const balanceService = {
+      calculateMultiCurrency: mockResolved({ balances: {} }),
+    } as any;
+
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
+    jest.spyOn(service as any, `buildSummary`).mockResolvedValue(createEmptySummary());
+    jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildTasks`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildQuickDocs`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildVerification`).mockResolvedValue(createPendingVerificationState());
+
+    const result = await service.getDashboardData(consumerId);
+
+    expect(result.activity).toHaveLength(8);
+    expect(result.activity[0]).toStrictEqual({
+      id: `ledger-dup`,
+      label: `Withdrawal`,
+      description: `Pending • 10.00 USD • to Bank account •••• 4321`,
+      createdAt: `2026-04-03T18:00:00.000Z`,
+      kind: `withdrawal`,
+    });
+    expect(result.activity.map((item) => item.id)).toStrictEqual([
+      `ledger-dup`,
+      `ledger-a`,
+      `ledger-b`,
+      `ledger-c`,
+      `ledger-d`,
+      `ledger-e`,
+      `ledger-f`,
+      `ledger-g`,
+    ]);
+    expect(result.activity.map((item) => item.id)).not.toContain(`ledger-h`);
   });
 });
