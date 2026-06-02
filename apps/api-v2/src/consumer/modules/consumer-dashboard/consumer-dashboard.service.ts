@@ -13,6 +13,8 @@ import {
   getPendingDashboardRequestLastActivityAt,
   isActiveDashboardPaymentRequest,
 } from './consumer-dashboard-payment-request.policy';
+import { mapDashboardQuickDocs } from './consumer-dashboard-quick-docs.presenter';
+import { buildDashboardSetupActivity, buildDashboardTasks } from './consumer-dashboard-setup.presenter';
 import { ConsumerDashboardQuery, type DashboardActivityLedgerRow } from './consumer-dashboard.query';
 import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { BalanceCalculationService, BalanceCalculationMode } from '../../../shared/balance-calculation.service';
@@ -63,70 +65,7 @@ export class ConsumerDashboardService {
   private async buildSetupActivity(consumerId: string): Promise<ActivityItem[]> {
     const consumer = await this.dashboardQuery.findSetupConsumer(consumerId);
     const verification = buildConsumerVerificationState(consumer);
-
-    const items: ActivityItem[] = [];
-
-    if (verification.effectiveVerified) {
-      items.push({
-        id: `kyc`,
-        label: `Identity verified`,
-        createdAt: verification.verifiedAt ?? verification.updatedAt ?? new Date().toISOString(),
-        kind: `kyc_completed`,
-      });
-    } else if (verification.status === `requires_input` || verification.status === `more_info`) {
-      items.push({
-        id: `kyc_attention`,
-        label: `Verification needs attention`,
-        createdAt: verification.updatedAt ?? new Date().toISOString(),
-        kind: `kyc_requires_input`,
-      });
-    } else if (verification.status === `pending_submission`) {
-      items.push({
-        id: `kyc_started`,
-        label: `Verification started`,
-        createdAt: verification.startedAt ?? new Date().toISOString(),
-        kind: `kyc_started`,
-      });
-    } else {
-      items.push({
-        id: `kyc_pending`,
-        label: `Identity verification pending`,
-        createdAt: new Date().toISOString(),
-        kind: `kyc_in_review`,
-      });
-    }
-
-    const w9 = consumer.consumerResources.find(
-      (cr) =>
-        cr.resource.originalName.toLowerCase().includes(`w9`) || cr.resource.originalName.toLowerCase().includes(`w-9`),
-    );
-
-    if (w9) {
-      items.push({
-        id: `w9`,
-        label: `W-9 pack ready`,
-        createdAt: w9.resource.createdAt?.toISOString() ?? new Date().toISOString(),
-        kind: `w9_ready`,
-      });
-    }
-
-    if (consumer.paymentMethods.length > 0) {
-      items.push({
-        id: `bank`,
-        label: `Bank account added`,
-        createdAt: consumer.paymentMethods[0].createdAt?.toISOString() ?? new Date().toISOString(),
-        kind: `bank_added`,
-      });
-    } else {
-      items.push({
-        id: `bank_pending`,
-        label: `Bank details pending`,
-        createdAt: new Date().toISOString(),
-        kind: `bank_pending`,
-      });
-    }
-
-    return items.sort((a, b) => new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf());
+    return buildDashboardSetupActivity(consumer, verification);
   }
 
   /** Main entry point */
@@ -251,34 +190,7 @@ export class ConsumerDashboardService {
   private async buildTasks(consumerId: string): Promise<ComplianceTask[]> {
     const consumer = await this.dashboardQuery.findSetupConsumer(consumerId);
     const verification = buildConsumerVerificationState(consumer);
-
-    const hasW9 = consumer.consumerResources.some((consumerResource) => {
-      const originalName = consumerResource.resource.originalName.toLowerCase();
-      return originalName.includes(`w9`) || originalName.includes(`w-9`);
-    });
-
-    return [
-      {
-        id: `kyc`,
-        label: `Complete KYC`,
-        completed: verification.effectiveVerified,
-      },
-      {
-        id: `profile`,
-        label: `Complete your profile`,
-        completed: verification.profileComplete,
-      },
-      {
-        id: `w9`,
-        label: `Upload W-9 form`,
-        completed: hasW9,
-      },
-      {
-        id: `bank`,
-        label: `Add bank account`,
-        completed: consumer.paymentMethods.filter((x) => x.type === `BANK_ACCOUNT`).length > 0,
-      },
-    ];
+    return buildDashboardTasks(consumer, verification);
   }
 
   private async buildVerification(consumerId: string) {
@@ -289,11 +201,6 @@ export class ConsumerDashboardService {
 
   private async buildQuickDocs(consumerId: string): Promise<QuickDoc[]> {
     const consumerResources = await this.dashboardQuery.findQuickDocs(consumerId);
-
-    return consumerResources.map((consumerResource) => ({
-      id: consumerResource.resource.id,
-      name: consumerResource.resource.originalName,
-      createdAt: consumerResource.resource.createdAt?.toISOString() ?? ``,
-    }));
+    return mapDashboardQuickDocs(consumerResources);
   }
 }
