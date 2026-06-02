@@ -633,6 +633,69 @@ describe(`AdminV2PaymentsPresenter`, () => {
   });
 
   describe(`mapPaymentOperationsQueueItem`, () => {
+    it(`returns the exact current public output shape for a representative queue item`, () => {
+      const presenter = buildPresenter();
+      const assignedTo = buildAssignee({ id: `admin-shape`, email: `shape@example.com` });
+      const row = buildQueueRow({
+        id: `payment-shape`,
+        amount: new Prisma.Decimal(`88.40`),
+        currencyCode: $Enums.CurrencyCode.EUR,
+        status: $Enums.TransactionStatus.PENDING,
+        paymentRail: $Enums.PaymentRail.BANK_TRANSFER,
+        dueDate: new Date(`2026-04-21T00:00:00.000Z`),
+        createdAt: new Date(`2026-04-19T10:00:00.000Z`),
+        updatedAt: new Date(`2026-04-20T11:00:00.000Z`),
+        payer: { id: `payer-88`, email: `payer-88@example.com` },
+        requester: { id: `requester-88`, email: `requester-88@example.com` },
+        payerEmail: `payer-fallback@example.com`,
+        requesterEmail: `requester-fallback@example.com`,
+        attachments: [
+          {
+            id: `attachment-shape-a`,
+            resource: { id: `resource-shape-a`, resourceTags: [{ tag: { name: `INVOICE-88` } }] },
+          },
+          {
+            id: `attachment-shape-b`,
+            resource: { id: `resource-shape-b`, resourceTags: [{ tag: { name: `MISC-88` } }] },
+          },
+        ],
+        ledgerEntries: [
+          {
+            id: `ledger-shape`,
+            type: $Enums.LedgerEntryType.USER_PAYMENT,
+            status: $Enums.TransactionStatus.PENDING,
+            createdAt: new Date(`2026-04-20T09:00:00.000Z`),
+            outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+          },
+        ],
+      });
+
+      expect(presenter.mapPaymentOperationsQueueItem(row, assignedTo)).toStrictEqual({
+        id: `payment-shape`,
+        amount: `88.4`,
+        currencyCode: $Enums.CurrencyCode.EUR,
+        persistedStatus: $Enums.TransactionStatus.PENDING,
+        effectiveStatus: $Enums.TransactionStatus.COMPLETED,
+        staleWarning: true,
+        paymentRail: $Enums.PaymentRail.BANK_TRANSFER,
+        payer: {
+          id: `payer-88`,
+          email: `payer-88@example.com`,
+        },
+        requester: {
+          id: `requester-88`,
+          email: `requester-88@example.com`,
+        },
+        dueDate: new Date(`2026-04-21T00:00:00.000Z`),
+        createdAt: new Date(`2026-04-19T10:00:00.000Z`),
+        updatedAt: new Date(`2026-04-20T11:00:00.000Z`),
+        attachmentsCount: 2,
+        invoiceTaggedAttachmentsCount: 1,
+        dataFreshnessClass: `bounded-snapshot`,
+        assignedTo,
+      });
+    });
+
     it(`computes stale warnings and invoice-tagged attachment counts from current public output`, () => {
       const presenter = buildPresenter();
 
@@ -685,6 +748,24 @@ describe(`AdminV2PaymentsPresenter`, () => {
   });
 
   describe(`mapPaymentOperationsQueue`, () => {
+    it(`passes through generatedAt exactly from the input queue payload`, () => {
+      const presenter = buildPresenter();
+      const now = new Date(`2026-05-15T12:34:56.789Z`);
+
+      const queue = presenter.mapPaymentOperationsQueue({
+        now,
+        overdueRows: [],
+        uncollectibleRows: [],
+        staleApprovalRows: [],
+        inconsistentRows: [],
+        missingAttachmentRows: [],
+        assigneeMap: new Map(),
+      });
+
+      expect(queue.generatedAt).toBe(now);
+      expect(queue.generatedAt.toISOString()).toBe(`2026-05-15T12:34:56.789Z`);
+    });
+
     it(`returns buckets in the current order with exact operator prompts and follow-up reasons`, () => {
       const presenter = buildPresenter();
       const assignee = buildAssignee();
@@ -776,6 +857,13 @@ describe(`AdminV2PaymentsPresenter`, () => {
         `inconsistent_status`,
         `missing_attachment_or_invoice_linkage`,
       ]);
+      expect(queue.buckets.map((bucket) => bucket.label)).toEqual([
+        `Overdue requests`,
+        `UNCOLLECTIBLE requests`,
+        `Stale WAITING_RECIPIENT_APPROVAL`,
+        `Inconsistent status cases`,
+        `Missing attachment or invoice linkage`,
+      ]);
       expect(queue.buckets.map((bucket) => bucket.operatorPrompt)).toEqual([
         `Review overdue payment requests and continue investigation from the payment detail view.`,
         [
@@ -831,6 +919,94 @@ describe(`AdminV2PaymentsPresenter`, () => {
             followUpReason: `Payment request has no invoice-tagged attachment linkage`,
           }),
         ]),
+      );
+    });
+
+    it(`applies assignedTo decoration consistently across all queue bucket types`, () => {
+      const presenter = buildPresenter();
+      const overdueAssignee = buildAssignee({ id: `admin-overdue`, email: `overdue@example.com` });
+      const uncollectibleAssignee = buildAssignee({ id: `admin-uncollectible`, email: `uncollectible@example.com` });
+      const staleApprovalAssignee = buildAssignee({ id: `admin-stale`, email: `stale@example.com` });
+      const inconsistentAssignee = buildAssignee({ id: `admin-inconsistent`, email: `inconsistent@example.com` });
+      const missingAssignee = buildAssignee({ id: `admin-missing`, email: `missing@example.com` });
+      const queue = presenter.mapPaymentOperationsQueue({
+        now: new Date(`2026-05-15T00:00:00.000Z`),
+        overdueRows: [buildQueueRow({ id: `payment-overdue-assigned` })],
+        uncollectibleRows: [
+          buildQueueRow({
+            id: `payment-uncollectible-assigned`,
+            status: $Enums.TransactionStatus.UNCOLLECTIBLE,
+            dueDate: null,
+          }),
+        ],
+        staleApprovalRows: [
+          buildQueueRow({
+            id: `payment-stale-assigned`,
+            status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
+            dueDate: null,
+          }),
+        ],
+        inconsistentRows: [
+          buildQueueRow({
+            id: `payment-inconsistent-assigned`,
+            status: $Enums.TransactionStatus.PENDING,
+            dueDate: null,
+            ledgerEntries: [
+              {
+                id: `ledger-inconsistent-assigned`,
+                type: $Enums.LedgerEntryType.USER_PAYMENT,
+                status: $Enums.TransactionStatus.PENDING,
+                createdAt: new Date(`2026-04-12T00:00:00.000Z`),
+                outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+              },
+            ],
+          }),
+        ],
+        missingAttachmentRows: [
+          buildQueueRow({
+            id: `payment-missing-assigned`,
+            dueDate: null,
+            attachments: [],
+          }),
+        ],
+        assigneeMap: new Map([
+          [`payment-overdue-assigned`, overdueAssignee],
+          [`payment-uncollectible-assigned`, uncollectibleAssignee],
+          [`payment-stale-assigned`, staleApprovalAssignee],
+          [`payment-inconsistent-assigned`, inconsistentAssignee],
+          [`payment-missing-assigned`, missingAssignee],
+        ]),
+      });
+
+      expect(queue.buckets.find((bucket) => bucket.key === `overdue_requests`)?.items[0]).toEqual(
+        expect.objectContaining({
+          id: `payment-overdue-assigned`,
+          assignedTo: overdueAssignee,
+        }),
+      );
+      expect(queue.buckets.find((bucket) => bucket.key === `uncollectible_requests`)?.items[0]).toEqual(
+        expect.objectContaining({
+          id: `payment-uncollectible-assigned`,
+          assignedTo: uncollectibleAssignee,
+        }),
+      );
+      expect(queue.buckets.find((bucket) => bucket.key === `stale_waiting_recipient_approval`)?.items[0]).toEqual(
+        expect.objectContaining({
+          id: `payment-stale-assigned`,
+          assignedTo: staleApprovalAssignee,
+        }),
+      );
+      expect(queue.buckets.find((bucket) => bucket.key === `inconsistent_status`)?.items[0]).toEqual(
+        expect.objectContaining({
+          id: `payment-inconsistent-assigned`,
+          assignedTo: inconsistentAssignee,
+        }),
+      );
+      expect(queue.buckets.find((bucket) => bucket.key === `missing_attachment_or_invoice_linkage`)?.items[0]).toEqual(
+        expect.objectContaining({
+          id: `payment-missing-assigned`,
+          assignedTo: missingAssignee,
+        }),
       );
     });
 
