@@ -10,7 +10,7 @@ export const formatDate = formatDateTime;
 export type LedgerEntryItem = LedgerEntriesListResponse[`items`][number];
 export type DisputeItem = LedgerDisputesResponse[`items`][number];
 
-export function renderMetadata(value: Record<string, unknown>) {
+function renderMetadata(value: Record<string, unknown>) {
   if (Object.keys(value).length === 0) {
     return <p className="muted">No metadata.</p>;
   }

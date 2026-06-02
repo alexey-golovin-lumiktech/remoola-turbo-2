@@ -4,7 +4,7 @@ import { SESSION_EXPIRED_QUERY, sanitizeNextForRedirect } from '@remoola/api-typ
 
 import { clearConsumerAuthCookies } from '../auth-cookie-policy';
 
-export type MiddlewareRequestKind = `callback` | `logout_route` | `auth_page` | `protected_page`;
+type MiddlewareRequestKind = `callback` | `logout_route` | `auth_page` | `protected_page`;
 
 export interface MiddlewareRequestPolicy {
   kind: MiddlewareRequestKind;

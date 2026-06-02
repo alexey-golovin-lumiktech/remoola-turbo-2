@@ -12,7 +12,7 @@ export interface RefreshAttemptTelemetry {
   statusCode?: number;
 }
 
-export function appendServerTiming(existingServerTiming: string | null, metric: string): string {
+function appendServerTiming(existingServerTiming: string | null, metric: string): string {
   return existingServerTiming ? `${existingServerTiming}, ${metric}` : metric;
 }
 

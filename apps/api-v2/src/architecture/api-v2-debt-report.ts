@@ -43,7 +43,7 @@ type DateUsageSummary = {
   totalNewDate: number;
 };
 
-export type ApiV2DebtReport = {
+type ApiV2DebtReport = {
   boundaryAllowlists: BoundaryAllowlistSummary;
   controllerCount: number;
   controllers: string[];

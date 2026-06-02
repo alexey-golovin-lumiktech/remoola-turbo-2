@@ -16,7 +16,7 @@ export type AdminCasePageData = {
   backToQueueHref: string;
 };
 
-export type AdminCasePageLoadResult =
+type AdminCasePageLoadResult =
   | { status: `ready`; data: AdminCasePageData }
   | { status: `not_found` }
   | { status: `forbidden` }

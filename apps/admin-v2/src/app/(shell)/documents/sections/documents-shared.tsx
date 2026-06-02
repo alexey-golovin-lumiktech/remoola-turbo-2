@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { type getDocuments } from '../../../../lib/admin-api/documents.server';
 import { formatBytes } from '../../../../lib/admin-format';
 
-export type DocumentItem = NonNullable<NonNullable<Awaited<ReturnType<typeof getDocuments>>>>[`items`][number];
+type DocumentItem = NonNullable<NonNullable<Awaited<ReturnType<typeof getDocuments>>>>[`items`][number];
 
 export function renderDocumentSelection(document: DocumentItem) {
   return <input type="checkbox" name="resourceVersion" value={`${document.id}:${document.version}`} />;

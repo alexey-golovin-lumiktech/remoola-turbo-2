@@ -10,7 +10,7 @@ import {
 
 export type DocumentsPageRawParams = Record<string, string | string[] | undefined>;
 
-export type DocumentsPageQuery = ReturnType<typeof adminV2DocumentsListQuerySchema.parse>;
+type DocumentsPageQuery = ReturnType<typeof adminV2DocumentsListQuerySchema.parse>;
 
 export type DocumentsPageParams = {
   raw: DocumentsPageRawParams;

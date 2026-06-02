@@ -1,9 +1,7 @@
-import { readFileSync } from 'fs';
-
 import { expect } from '@jest/globals';
 import { MODULE_METADATA } from '@nestjs/common/constants';
 
-export function exportedProviders(moduleClass: object): unknown[] {
+function exportedProviders(moduleClass: object): unknown[] {
   return Reflect.getMetadata(MODULE_METADATA.EXPORTS, moduleClass) ?? [];
 }
 
@@ -15,13 +13,6 @@ export function expectNotExported(moduleClass: object, forbidden: unknown[]): vo
   const exported = new Set(exportedProviders(moduleClass));
   for (const provider of forbidden) {
     expect(exported.has(provider)).toBe(false);
-  }
-}
-
-export function expectSourceNotToContain(file: string, patterns: RegExp[]): void {
-  const source = readFileSync(file, `utf8`);
-  for (const pattern of patterns) {
-    expect(source).not.toMatch(pattern);
   }
 }
 

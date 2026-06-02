@@ -8,7 +8,7 @@ const PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES = [
   $Enums.LedgerEntryType.USER_DEPOSIT,
 ] as const;
 
-export type PaymentStatusPolicyInput =
+type PaymentStatusPolicyInput =
   | {
       status: $Enums.TransactionStatus;
       ledgerEntries?: Array<{
@@ -21,7 +21,7 @@ export type PaymentStatusPolicyInput =
   | null
   | undefined;
 
-export type PaymentRailPolicyInput =
+type PaymentRailPolicyInput =
   | {
       paymentRail?: $Enums.PaymentRail | null;
       ledgerEntries?: Array<{
@@ -32,7 +32,7 @@ export type PaymentRailPolicyInput =
   | null
   | undefined;
 
-export function getLatestSettlementEntry(paymentRequest: PaymentStatusPolicyInput) {
+function getLatestSettlementEntry(paymentRequest: PaymentStatusPolicyInput) {
   return [...(paymentRequest?.ledgerEntries ?? [])]
     .filter((entry) =>
       PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES.includes(

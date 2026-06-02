@@ -25,7 +25,7 @@ import { getPreferredCookieValue, hasPotentialAccessToken, isObviouslyInvalidCoo
 
 const REFRESH_PATH = `/api/consumer/auth/refresh`;
 
-export interface MiddlewareSessionState {
+interface MiddlewareSessionState {
   runtime: OAuthCookieRuntime;
   accessCookieKey: string;
   refreshCookieKey: string;
@@ -42,7 +42,7 @@ interface RefreshResult {
   telemetry: RefreshAttemptTelemetry;
 }
 
-export interface SessionHandlingResult {
+interface SessionHandlingResult {
   response: NextResponse;
   telemetry?: RefreshAttemptTelemetry;
 }

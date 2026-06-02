@@ -16,7 +16,7 @@ export type VerificationCasePageData = {
   backToQueueHref: string;
 };
 
-export type VerificationCasePageLoadResult =
+type VerificationCasePageLoadResult =
   | { status: `ready`; data: VerificationCasePageData }
   | { status: `not_found` }
   | { status: `forbidden` }

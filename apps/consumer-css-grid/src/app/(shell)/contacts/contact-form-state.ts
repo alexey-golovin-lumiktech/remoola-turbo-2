@@ -15,7 +15,7 @@ export type Contact = {
   } | null;
 };
 
-export type EditableContactForm = {
+type EditableContactForm = {
   email: string;
   name: string;
   street: string;
@@ -25,7 +25,7 @@ export type EditableContactForm = {
   country: string;
 };
 
-export type ContactMessage = { type: `error` | `success`; text: string } | null;
+type ContactMessage = { type: `error` | `success`; text: string } | null;
 
 type UseContactFormStateInput = {
   createMode: boolean;

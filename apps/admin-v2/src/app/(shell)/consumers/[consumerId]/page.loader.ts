@@ -26,7 +26,7 @@ export type ConsumerPageData = {
   backToQueueHref: string;
 };
 
-export type ConsumerPageLoadResult =
+type ConsumerPageLoadResult =
   | { status: `ready`; data: ConsumerPageData }
   | { status: `not_found` }
   | { status: `forbidden` }

@@ -28,7 +28,7 @@ export type ContractListItem = {
   completedPaymentsCount: number;
 };
 
-export type ContractListRow = {
+type ContractListRow = {
   contract: ContractListItem;
   contractDetailHref: string;
   contractFilesHref: string;
@@ -36,13 +36,13 @@ export type ContractListRow = {
   workflowActions: ReturnType<typeof resolveContractWorkflowActions>;
 };
 
-export type ContractListMetrics = {
+type ContractListMetrics = {
   completedCount: number;
   withLatestPaymentCount: number;
   withDocumentsCount: number;
 };
 
-export type UseContractsListStateInput = {
+type UseContractsListStateInput = {
   contracts: ContractListItem[];
   total: number;
   page: number;

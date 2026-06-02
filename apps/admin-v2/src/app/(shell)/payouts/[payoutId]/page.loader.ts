@@ -16,7 +16,7 @@ export type PayoutCasePageData = {
   backToQueueHref: string;
 };
 
-export type PayoutCasePageLoadResult =
+type PayoutCasePageLoadResult =
   | { status: `ready`; data: PayoutCasePageData }
   | { status: `not_found` }
   | { status: `forbidden` }

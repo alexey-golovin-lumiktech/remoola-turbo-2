@@ -6,7 +6,7 @@ import {
 } from './contract-workflow-actions';
 import { type ContractDetailsResponse } from '../../../lib/consumer-api.server';
 
-export type RelationshipTimelineItem = {
+type RelationshipTimelineItem = {
   id: string;
   createdAt: string;
   createdAtLabel: string;
@@ -16,13 +16,13 @@ export type RelationshipTimelineItem = {
   statusLabel?: string;
 };
 
-export type ContractDetailPaymentItem = ContractDetailsResponse[`payments`][number] & {
+type ContractDetailPaymentItem = ContractDetailsResponse[`payments`][number] & {
   createdAtLabel: string;
   statusLabel: string;
   href: string;
 };
 
-export type ContractDetailDocumentItem = ContractDetailsResponse[`documents`][number] & {
+type ContractDetailDocumentItem = ContractDetailsResponse[`documents`][number] & {
   createdAtLabel: string;
 };
 
@@ -54,7 +54,7 @@ export type ContractDetailViewModel = {
 
 const OPERATING_PAYMENT_STATUS_PRIORITY = [`draft`, `pending`, `waiting`] as const;
 
-export function formatContractDateTime(value: string | null | undefined) {
+function formatContractDateTime(value: string | null | undefined) {
   if (!value) return `—`;
   return new Date(value).toLocaleString(`en-US`, {
     year: `numeric`,
@@ -65,7 +65,7 @@ export function formatContractDateTime(value: string | null | undefined) {
   });
 }
 
-export function formatContractDateOnly(value: string | null | undefined) {
+function formatContractDateOnly(value: string | null | undefined) {
   if (!value) return `—`;
   return new Date(value).toLocaleDateString(`en-US`, {
     year: `numeric`,
@@ -74,7 +74,7 @@ export function formatContractDateOnly(value: string | null | undefined) {
   });
 }
 
-export function formatContractStatusLabel(status: string | null | undefined) {
+function formatContractStatusLabel(status: string | null | undefined) {
   if (!status) return `No activity`;
   return status
     .toLowerCase()
@@ -83,7 +83,7 @@ export function formatContractStatusLabel(status: string | null | undefined) {
     .join(` `);
 }
 
-export function formatContractAddress(contract: ContractDetailsResponse | null) {
+function formatContractAddress(contract: ContractDetailsResponse | null) {
   if (!contract?.address) return `No address details`;
   const parts = [
     contract.address.street,
@@ -95,11 +95,11 @@ export function formatContractAddress(contract: ContractDetailsResponse | null) 
   return parts.length > 0 ? parts.join(`, `) : `No address details`;
 }
 
-export function getContractTitle(contract: ContractDetailsResponse | null, contractId: string) {
+function getContractTitle(contract: ContractDetailsResponse | null, contractId: string) {
   return contract?.name || contract?.email || `Contract ${contractId.slice(0, 8)}`;
 }
 
-export function getContractInitials(contract: ContractDetailsResponse | null, contractId: string) {
+function getContractInitials(contract: ContractDetailsResponse | null, contractId: string) {
   const seed = contract?.name?.trim() || contract?.email?.trim() || contractId.slice(0, 2);
   const parts = seed.split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
@@ -108,14 +108,14 @@ export function getContractInitials(contract: ContractDetailsResponse | null, co
   return seed.slice(0, 2).toUpperCase();
 }
 
-export function getLatestPayment(payments: ContractDetailsResponse[`payments`]) {
+function getLatestPayment(payments: ContractDetailsResponse[`payments`]) {
   return (
     [...payments].sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())[0] ??
     null
   );
 }
 
-export function getOperatingPayment(payments: ContractDetailsResponse[`payments`]) {
+function getOperatingPayment(payments: ContractDetailsResponse[`payments`]) {
   const orderedPayments = [...payments].sort(
     (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
   );
@@ -130,7 +130,7 @@ export function getOperatingPayment(payments: ContractDetailsResponse[`payments`
   return orderedPayments[0] ?? null;
 }
 
-export function buildRelationshipTimeline(
+function buildRelationshipTimeline(
   contract: ContractDetailsResponse,
   contractId: string,
   returnToContractsHref?: string,
@@ -189,7 +189,7 @@ export function buildRelationshipTimeline(
     .slice(0, 12);
 }
 
-export function describeOperationalReadiness(status: string | null | undefined, paymentsCount: number) {
+function describeOperationalReadiness(status: string | null | undefined, paymentsCount: number) {
   if (paymentsCount === 0 || !status) {
     return {
       label: `Ready to request payment`,

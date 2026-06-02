@@ -17,7 +17,7 @@ export type PaymentPageData = {
   backToQueueHref: string;
 };
 
-export type PaymentPageLoadResult =
+type PaymentPageLoadResult =
   | { status: `ready`; data: PaymentPageData }
   | { status: `not_found` }
   | { status: `forbidden` }
