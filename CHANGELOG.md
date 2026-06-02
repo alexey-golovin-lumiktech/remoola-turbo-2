@@ -3164,7 +3164,7 @@
 
 # Changelog (June 2026)
 
-<details open>
+<details>
 <summary>2026-06-01</summary>
 
 - **2026-06-01:**
@@ -3179,6 +3179,28 @@
 
   ### ⚠️ Notes
   - **Refactor-only day:** Today's commits are page, presenter, and tooling refactors plus characterization tests. The recorded commit scope does not include DB migrations or new product surface rollout.
+
+</details>
+
+<details open>
+<summary>2026-06-02</summary>
+
+- **2026-06-02:**
+
+  ### 🔐 Security / Production Safety
+  - **Consumer documents BFF upstream path fix:** Restore the `/api` global prefix on the consumer Next.js BFF proxy paths for document download and upload (`apps/consumer-css-grid/src/app/api/documents/[documentId]/download/route.ts`, `.../documents/upload/route.ts`). The Nest backend mounts at `/api/consumer/documents/...`; the previous absolute path passed to `buildConsumerUpstreamUrl` discarded the base URL's pathname via `new URL(path, baseUrl)`, so the proxy received `Cannot GET /consumer/documents/<id>/download` from Nest regardless of `NEXT_PUBLIC_API_BASE_URL` shape.
+
+  ### 🧪 Testing
+  - **api-v2 characterization wave:** Harden the `READ-1` raw read-model characterization, broaden consumer dashboard coverage with new setup/task and payment-request/currency characterizations, and pin admin payments queue mapping characterization ahead of the queue presenter extraction.
+
+  ### 🛠 DevEx
+  - **Admin-v2 route decomposition continues:** Split the exchange rates, exchange rules, exchange scheduled-conversion, ledger entry, document detail, and payment-method detail pages into page-local `params`/`loader`/`permissions`/`view` modules, then extract large `page.view.tsx` files into focused section and shared-helper modules for rates, rules, scheduled conversions, the ledger entry, and the document detail page.
+  - **Shared admin assignment helpers:** Introduce shared `assignment-permission` derivation (`deriveAssignmentPermissions`) and a shared `loadReassignCandidates` loader in `apps/admin-v2/.../lib/admin-permissions`, then adopt them from the per-route `page.permissions` and `page.loader` modules so the reassignment surface stops drifting across cases.
+  - **api-v2 presenter extractions:** Extract consumer dashboard setup, quick-doc, payment-request, and currency mapping into pure presenter helpers, and pull admin payments queue mapping into a dedicated presenter; pair each extraction with the matching characterization rerun.
+  - **Unused-export pruning:** Trim unused exports across admin-v2 route modules (`page.loader`, `page.params`, section shareds for documents/ledger/payouts/payments/admins/consumers/verification), the api-v2 status presenter, debt-report and module-boundary helpers, and consumer-css-grid contacts/contracts state plus auth-middleware helpers to keep public surfaces minimal.
+
+  ### ⚠️ Notes
+  - **Refactor-and-fix day:** Aside from the consumer documents BFF prefix fix, the day's commits are admin-v2 route decomposition, api-v2 presenter extractions, characterization tests, and unused-export cleanup. No DB migrations, no API contract changes, no new product surface.
 
 </details>
 
