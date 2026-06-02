@@ -743,6 +743,211 @@ describe(`ConsumerDashboardService`, () => {
     ]);
   });
 
+  it.each([
+    {
+      label: `requires_input`,
+      setupConsumer: {
+        personalDetails: null,
+        verificationStatus: $Enums.VerificationStatus.PENDING,
+        stripeIdentityStatus: `requires_input`,
+        stripeIdentityUpdatedAt: new Date(`2026-04-04T12:00:00.000Z`),
+        paymentMethods: [{ type: `CARD_ONLY`, createdAt: new Date(`2026-04-04T13:00:00.000Z`) }],
+        consumerResources: [
+          {
+            resource: {
+              originalName: `tax-w9-pack.pdf`,
+              createdAt: new Date(`2026-04-04T11:00:00.000Z`),
+            },
+          },
+        ],
+      },
+    },
+    {
+      label: `more_info`,
+      setupConsumer: {
+        personalDetails: null,
+        verificationStatus: $Enums.VerificationStatus.MORE_INFO,
+        stripeIdentityUpdatedAt: new Date(`2026-04-04T12:00:00.000Z`),
+        paymentMethods: [{ type: `CARD_ONLY`, createdAt: new Date(`2026-04-04T13:00:00.000Z`) }],
+        consumerResources: [
+          {
+            resource: {
+              originalName: `forms-w-9-checklist.pdf`,
+              createdAt: new Date(`2026-04-04T11:00:00.000Z`),
+            },
+          },
+        ],
+      },
+    },
+  ])(`preserves $label setup activity attention branch ordering and W-9 seam`, async ({ setupConsumer }) => {
+    const consumerId = `consumer-setup-attention`;
+    const dashboardQuery = createDashboardQueryMock({
+      findSetupConsumer: mockResolved(setupConsumer),
+    });
+    const balanceService = {
+      calculateMultiCurrency: mockResolved({ balances: {} }),
+    } as any;
+
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
+    jest.spyOn(service as any, `buildSummary`).mockResolvedValue(createEmptySummary());
+    jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildQuickDocs`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildVerification`).mockResolvedValue(createPendingVerificationState());
+
+    const result = await service.getDashboardData(consumerId);
+
+    expect(result.activity).toStrictEqual([
+      {
+        id: `bank`,
+        label: `Bank account added`,
+        createdAt: `2026-04-04T13:00:00.000Z`,
+        kind: `bank_added`,
+      },
+      {
+        id: `kyc_attention`,
+        label: `Verification needs attention`,
+        createdAt: `2026-04-04T12:00:00.000Z`,
+        kind: `kyc_requires_input`,
+      },
+      {
+        id: `w9`,
+        label: `W-9 pack ready`,
+        createdAt: `2026-04-04T11:00:00.000Z`,
+        kind: `w9_ready`,
+      },
+    ]);
+    expect(result.tasks).toStrictEqual([
+      {
+        id: `kyc`,
+        label: `Complete KYC`,
+        completed: false,
+      },
+      {
+        id: `profile`,
+        label: `Complete your profile`,
+        completed: false,
+      },
+      {
+        id: `w9`,
+        label: `Upload W-9 form`,
+        completed: true,
+      },
+      {
+        id: `bank`,
+        label: `Add bank account`,
+        completed: false,
+      },
+    ]);
+  });
+
+  it(`preserves pending_submission setup activity wording and ordering`, async () => {
+    const consumerId = `consumer-setup-pending-submission`;
+    const dashboardQuery = createDashboardQueryMock({
+      findSetupConsumer: mockResolved({
+        personalDetails: null,
+        verificationStatus: $Enums.VerificationStatus.PENDING,
+        stripeIdentityStatus: `pending_submission`,
+        stripeIdentityStartedAt: new Date(`2026-04-05T12:00:00.000Z`),
+        paymentMethods: [{ type: `CARD_ONLY`, createdAt: new Date(`2026-04-05T13:00:00.000Z`) }],
+        consumerResources: [
+          {
+            resource: {
+              originalName: `consumer-w-9.pdf`,
+              createdAt: new Date(`2026-04-05T11:00:00.000Z`),
+            },
+          },
+        ],
+      }),
+    });
+    const balanceService = {
+      calculateMultiCurrency: mockResolved({ balances: {} }),
+    } as any;
+
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
+    jest.spyOn(service as any, `buildSummary`).mockResolvedValue(createEmptySummary());
+    jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildQuickDocs`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildVerification`).mockResolvedValue(createPendingVerificationState());
+
+    const result = await service.getDashboardData(consumerId);
+
+    expect(result.activity).toStrictEqual([
+      {
+        id: `bank`,
+        label: `Bank account added`,
+        createdAt: `2026-04-05T13:00:00.000Z`,
+        kind: `bank_added`,
+      },
+      {
+        id: `kyc_started`,
+        label: `Verification started`,
+        createdAt: `2026-04-05T12:00:00.000Z`,
+        kind: `kyc_started`,
+      },
+      {
+        id: `w9`,
+        label: `W-9 pack ready`,
+        createdAt: `2026-04-05T11:00:00.000Z`,
+        kind: `w9_ready`,
+      },
+    ]);
+  });
+
+  it(`preserves no-W9 and BANK_ACCOUNT task completion semantics through getDashboardData`, async () => {
+    const consumerId = `consumer-tasks-bank-account`;
+    const dashboardQuery = createDashboardQueryMock({
+      findSetupConsumer: mockResolved({
+        accountType: $Enums.AccountType.CONTRACTOR,
+        contractorKind: $Enums.ContractorKind.INDIVIDUAL,
+        legalVerified: false,
+        verificationStatus: $Enums.VerificationStatus.PENDING,
+        personalDetails: {
+          legalStatus: `SOLE_PROPRIETOR`,
+          taxId: `12-3456789`,
+          passportOrIdNumber: `P1234567`,
+          phoneNumber: null,
+        },
+        paymentMethods: [{ type: `BANK_ACCOUNT`, createdAt: new Date(`2026-04-06T10:00:00.000Z`) }],
+        consumerResources: [],
+      }),
+    });
+    const balanceService = {
+      calculateMultiCurrency: mockResolved({ balances: {} }),
+    } as any;
+
+    const service = new ConsumerDashboardService(dashboardQuery, balanceService);
+    jest.spyOn(service as any, `buildSummary`).mockResolvedValue(createEmptySummary());
+    jest.spyOn(service as any, `buildPendingRequests`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildActivity`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildQuickDocs`).mockResolvedValue([]);
+    jest.spyOn(service as any, `buildVerification`).mockResolvedValue(createPendingVerificationState());
+
+    const result = await service.getDashboardData(consumerId);
+
+    expect(result.tasks).toStrictEqual([
+      {
+        id: `kyc`,
+        label: `Complete KYC`,
+        completed: false,
+      },
+      {
+        id: `profile`,
+        label: `Complete your profile`,
+        completed: true,
+      },
+      {
+        id: `w9`,
+        label: `Upload W-9 form`,
+        completed: false,
+      },
+      {
+        id: `bank`,
+        label: `Add bank account`,
+        completed: true,
+      },
+    ]);
+  });
+
   it(`preserves quick docs query order, current field mapping, and empty createdAt fallback`, async () => {
     const consumerId = `consumer-quick-docs`;
     const dashboardQuery = createDashboardQueryMock({
