@@ -1,13 +1,11 @@
-import { getAdmins } from '../../../../lib/admin-api/admins.server';
 import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { getVerificationCaseResult } from '../../../../lib/admin-api/verification.server';
+import { loadReassignCandidates, type ReassignCandidate } from '../../../../lib/admin-permissions/reassign-candidates';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 type VerificationCaseResult = Awaited<ReturnType<typeof getVerificationCaseResult>>;
 type VerificationCaseReady = Extract<VerificationCaseResult, { status: `ready` }>;
 type Identity = Awaited<ReturnType<typeof getAdminIdentity>>;
-type AdminsResponse = Awaited<ReturnType<typeof getAdmins>>;
-type ReassignCandidate = NonNullable<AdminsResponse>[`items`][number];
 
 export type VerificationCasePageData = {
   identity: Identity;
@@ -45,12 +43,10 @@ export async function loadVerificationCasePage({
   }
 
   const verificationCase = verificationCaseResult.data;
-  const currentAssignment = verificationCase.assignment.current;
-  const canReassign = Boolean(currentAssignment && verificationCase.decisionControls.canReassignAssignments);
-  const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
-  const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
-    (admin) => admin.id !== currentAssignment?.assignedTo.id,
+  const canReassign = Boolean(
+    verificationCase.assignment.current && verificationCase.decisionControls.canReassignAssignments,
   );
+  const reassignCandidates = await loadReassignCandidates({ canReassign, assignment: verificationCase.assignment });
   const backToQueueHref = readReturnTo(searchParams?.from, `/verification`);
 
   return {

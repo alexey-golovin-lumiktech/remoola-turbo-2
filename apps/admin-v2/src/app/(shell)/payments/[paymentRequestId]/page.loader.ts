@@ -1,14 +1,12 @@
 import { derivePaymentPagePermissions } from './page.permissions';
-import { getAdmins } from '../../../../lib/admin-api/admins.server';
 import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { getPaymentCaseResult } from '../../../../lib/admin-api/payments.server';
+import { loadReassignCandidates, type ReassignCandidate } from '../../../../lib/admin-permissions/reassign-candidates';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 type PaymentCaseResult = Awaited<ReturnType<typeof getPaymentCaseResult>>;
 type PaymentCaseReady = Extract<PaymentCaseResult, { status: `ready` }>;
 type Identity = Awaited<ReturnType<typeof getAdminIdentity>>;
-type AdminsResponse = NonNullable<Awaited<ReturnType<typeof getAdmins>>>;
-type ReassignCandidate = AdminsResponse[`items`][number];
 
 export type PaymentPageData = {
   identity: Identity;
@@ -44,11 +42,7 @@ export async function loadPaymentPage({
 
   const paymentCase = paymentCaseResult.data;
   const { canReassign } = derivePaymentPagePermissions(identity, paymentCase);
-  const currentAssignment = paymentCase.assignment.current;
-  const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
-  const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
-    (admin) => admin.id !== currentAssignment?.assignedTo.id,
-  );
+  const reassignCandidates = await loadReassignCandidates({ canReassign, assignment: paymentCase.assignment });
   const backToQueueHref = readReturnTo(searchParams?.from, `/payments`);
 
   return {

@@ -1,12 +1,13 @@
-import { getAdmins } from '../../../../../lib/admin-api/admins.server';
 import { getExchangeScheduledCaseResult } from '../../../../../lib/admin-api/exchange.server';
 import { getAdminIdentity } from '../../../../../lib/admin-api/identity.server';
+import {
+  loadReassignCandidates,
+  type ReassignCandidate,
+} from '../../../../../lib/admin-permissions/reassign-candidates';
 
 type ConversionResult = Awaited<ReturnType<typeof getExchangeScheduledCaseResult>>;
 type ConversionReady = Extract<ConversionResult, { status: `ready` }>;
 type Identity = Awaited<ReturnType<typeof getAdminIdentity>>;
-type AdminsResponse = Awaited<ReturnType<typeof getAdmins>>;
-type ReassignCandidate = NonNullable<AdminsResponse>[`items`][number];
 
 export type ExchangeScheduledCasePageData = {
   identity: Identity;
@@ -41,13 +42,8 @@ export async function loadExchangeScheduledCasePage({
   }
 
   const conversion = conversionResult.data;
-  const currentAssignment = conversion.assignment.current;
-  const canReassignAssignments = identity?.role === `SUPER_ADMIN`;
-  const canReassign = Boolean(currentAssignment && canReassignAssignments);
-  const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
-  const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
-    (admin) => admin.id !== currentAssignment?.assignedTo.id,
-  );
+  const canReassign = Boolean(conversion.assignment.current && identity?.role === `SUPER_ADMIN`);
+  const reassignCandidates = await loadReassignCandidates({ canReassign, assignment: conversion.assignment });
 
   return {
     status: `ready`,
