@@ -1,0 +1,237 @@
+import Link from 'next/link';
+
+import { type DocumentCasePageData } from './page.loader';
+import { type DocumentCasePagePermissions } from './page.permissions';
+import { ActionGhost } from '../../../../components/action-ghost';
+import { AssignmentCard } from '../../../../components/assignment-card';
+import { ContextStat } from '../../../../components/context-stat';
+import { Panel } from '../../../../components/panel';
+import {
+  operatorFormActionsClass,
+  operatorFormClass,
+  operatorFormFieldsClass,
+  operatorFormFullWidthCtaClass,
+  operatorFormIntroClass,
+  operatorFormPillGroupClass,
+  operatorFormSectionClass,
+} from '../../../../components/ui-classes';
+import { WorkspaceLayout } from '../../../../components/workspace-layout';
+import { getAdminDocumentDownloadHref } from '../../../../lib/admin-document-download';
+import { formatBytes, formatDateTime } from '../../../../lib/admin-format';
+import {
+  reassignDocumentAssignmentAction,
+  releaseDocumentAssignmentAction,
+  retagDocumentAction,
+  claimDocumentAssignmentAction,
+} from '../../../../lib/admin-mutations/documents.server';
+
+export function DocumentCasePageView({
+  data,
+  permissions,
+}: {
+  data: DocumentCasePageData;
+  permissions: DocumentCasePagePermissions;
+}) {
+  const { documentCase, tags, reassignCandidates, backToQueueHref } = data;
+  const { canManage, canClaim, canRelease, canReassign } = permissions;
+
+  const selectedTags = new Set(documentCase.tags.map((tag) => tag.id));
+  const tagMetadata = new Map((tags?.items ?? []).map((tag) => [tag.id, tag]));
+  const currentAssignment = documentCase.assignment.current;
+
+  const context = (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        <ContextStat label="Access" value={documentCase.core.access} tone="cyan" />
+        <ContextStat label="Tags" value={documentCase.tags.length} />
+        <ContextStat label="Linked payments" value={documentCase.linkedPaymentRequests.length} />
+        <ContextStat
+          label="Assignment"
+          value={currentAssignment ? `Assigned` : `Open`}
+          tone={currentAssignment ? `cyan` : `neutral`}
+        />
+      </div>
+      <div className="contextRailSection">
+        <h4>Quick links</h4>
+        <div className="contextRailLinks">
+          <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+          <ActionGhost href="/documents/tags">Tags</ActionGhost>
+          {documentCase.consumer ? (
+            <ActionGhost href={`/consumers/${documentCase.consumer.id}`}>Consumer case</ActionGhost>
+          ) : null}
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <WorkspaceLayout
+      workspace="document-case"
+      context={context}
+      contextTitle="Document snapshot"
+      contextDescription="Evidence context, assignment state, and linked-case shortcuts for the current document."
+    >
+      <>
+        <Panel
+          eyebrow="Evidence detail"
+          title="Document detail"
+          description={documentCase.core.originalName}
+          actions={
+            <div className="flex flex-wrap gap-2">
+              <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+              <ActionGhost href="/documents/tags">Tags</ActionGhost>
+              <a
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-input border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90"
+                href={getAdminDocumentDownloadHref(documentCase.id)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Secure open
+              </a>
+            </div>
+          }
+          surface="primary"
+        >
+          <p className="muted mono">{documentCase.id}</p>
+          <div className="pillRow">
+            <span className="pill">{documentCase.core.access}</span>
+            <span className="pill">{documentCase.core.mimeType ?? `Unknown MIME`}</span>
+            {documentCase.core.deletedAt ? <span className="pill">Soft-deleted</span> : null}
+          </div>
+        </Panel>
+
+        <section className="statsGrid">
+          <article className="panel">
+            <h3>Core evidence context</h3>
+            <p className="muted">Created: {formatDateTime(documentCase.core.createdAt)}</p>
+            <p className="muted">Updated: {formatDateTime(documentCase.updatedAt)}</p>
+            <p className="muted">Size: {formatBytes(documentCase.core.size)}</p>
+            <p className="muted">Data freshness: {documentCase.dataFreshnessClass}</p>
+            <p className="muted">Version: {documentCase.version}</p>
+          </article>
+
+          <article className="panel">
+            <h3>Owner case links</h3>
+            {!documentCase.consumer ? (
+              <p className="muted">No active owner link is available.</p>
+            ) : (
+              <div className="formStack">
+                <strong>{documentCase.consumer.email ?? documentCase.consumer.id}</strong>
+                <div className="actionsRow">
+                  <Link className="secondaryButton" href={`/consumers/${documentCase.consumer.id}`}>
+                    Consumer case
+                  </Link>
+                  <Link className="secondaryButton" href={`/verification/${documentCase.consumer.id}`}>
+                    Verification case
+                  </Link>
+                </div>
+              </div>
+            )}
+          </article>
+
+          <article className="panel">
+            <h3>Payment linkage</h3>
+            {documentCase.linkedPaymentRequests.length === 0 ? (
+              <p className="muted">No linked payment request is confirmed for this document.</p>
+            ) : (
+              <div className="formStack">
+                {documentCase.linkedPaymentRequests.map((payment) => (
+                  <div key={payment.id} className="formStack">
+                    <Link href={`/payments/${payment.id}`}>{payment.id}</Link>
+                    <p className="muted">
+                      {payment.amount} · {payment.status}
+                    </p>
+                    <p className="muted">Created: {formatDateTime(payment.createdAt)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </article>
+        </section>
+
+        <section className="detailGrid">
+          <article className="panel">
+            <h2>Visible tags</h2>
+            <div className="pillRow">
+              {documentCase.tags.length === 0 ? <span className="muted">No tags assigned.</span> : null}
+              {documentCase.tags.map((tag) => (
+                <span className="pill" key={tag.id}>
+                  {tag.name}
+                  {tagMetadata.get(tag.id)?.reserved ? ` (system-managed)` : ``}
+                </span>
+              ))}
+            </div>
+          </article>
+
+          <article className="panel">
+            <h2>Boundary notes</h2>
+            <p className="muted">
+              This case shows evidence context only. There is no document review queue, upload console, bucket
+              diagnostics, or generic admin patch endpoint in this slice.
+            </p>
+          </article>
+        </section>
+
+        <AssignmentCard
+          resourceId={documentCase.id}
+          assignment={documentCase.assignment}
+          reassignCandidates={reassignCandidates}
+          capabilities={{ canClaim, canRelease, canReassign }}
+          actions={{
+            claim: claimDocumentAssignmentAction,
+            release: releaseDocumentAssignmentAction,
+            reassign: reassignDocumentAssignmentAction,
+          }}
+          copy={{ claimReasonPlaceholder: `Why are you claiming this document?` }}
+        />
+
+        {canManage ? (
+          <section className="panel">
+            <div className="pageHeader">
+              <div>
+                <h2>Retag document</h2>
+                <p className="muted">Exact `document_retag` action only. Reserved invoice tags remain read-only.</p>
+              </div>
+            </div>
+
+            {documentCase.core.deletedAt ? (
+              <p className="muted">Soft-deleted documents stay investigation-only. Retagging is disabled.</p>
+            ) : (
+              <form action={retagDocumentAction.bind(null, documentCase.id)} className={operatorFormClass}>
+                <input type="hidden" name="version" value={String(documentCase.version)} />
+                <div className={operatorFormSectionClass}>
+                  <div className={operatorFormIntroClass}>
+                    <p className="text-sm font-medium text-white/90">Retag document</p>
+                    <p className="muted">Reserved tags remain visible but read-only inside the same selection grid.</p>
+                  </div>
+                  <div className={operatorFormFieldsClass}>
+                    <div className={operatorFormPillGroupClass}>
+                      {(tags?.items ?? []).map((tag) => (
+                        <label className="pill" key={tag.id}>
+                          <input
+                            type="checkbox"
+                            name="tagIds"
+                            value={tag.id}
+                            defaultChecked={selectedTags.has(tag.id)}
+                            disabled={tag.reserved}
+                          />
+                          {tag.name}
+                          {tag.reserved ? ` (system-managed)` : ``}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={operatorFormActionsClass}>
+                    <button className={`secondaryButton ${operatorFormFullWidthCtaClass}`} type="submit">
+                      Save tags
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </section>
+        ) : null}
+      </>
+    </WorkspaceLayout>
+  );
+}
