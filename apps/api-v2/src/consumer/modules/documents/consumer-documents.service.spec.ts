@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
@@ -661,6 +661,32 @@ describe(`ConsumerDocumentsService.getDocuments`, () => {
     });
     expect(prisma.consumerResourceModel.findMany).not.toHaveBeenCalled();
     expect(prisma.$queryRaw).toHaveBeenCalled();
+  });
+
+  it(`surfaces CONTACT_NOT_FOUND for unknown contact-scoped document listings without falling back`, async () => {
+    const { service, prisma } = makeService();
+    prisma.contactModel.findFirst.mockResolvedValue(null);
+
+    await expect(
+      service.getDocuments(consumerId, undefined, 1, 10, `http://localhost:3334`, `missing-contact`),
+    ).rejects.toThrow(NotFoundException);
+    await expect(
+      service.getDocuments(consumerId, undefined, 1, 10, `http://localhost:3334`, `missing-contact`),
+    ).rejects.toThrow(errorCodes.CONTACT_NOT_FOUND);
+
+    expect(prisma.contactModel.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: `missing-contact`,
+        consumerId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
+    expect(prisma.consumerResourceModel.findMany).not.toHaveBeenCalled();
   });
 
   it(`ignores soft-deleted relationship attachments in document listings`, async () => {

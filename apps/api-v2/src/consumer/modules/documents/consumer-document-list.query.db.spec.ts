@@ -15,6 +15,8 @@ describe(`ConsumerDocumentListRepository DB smoke`, () => {
   let ownerId = ``;
   let contactAlphaId = ``;
   let ownedOnlyResourceId = ``;
+  let ownedComplianceResourceId = ``;
+  let ownedContractResourceId = ``;
   let sharedResourceId = ``;
   let alphaResourceId = ``;
   let betaResourceId = ``;
@@ -70,6 +72,48 @@ describe(`ConsumerDocumentListRepository DB smoke`, () => {
         consumerId: owner.id,
         resourceId: ownedOnlyResource.id,
         createdAt: new Date(`2026-05-10T08:00:00.000Z`),
+      },
+    });
+
+    const ownedComplianceResource = await prisma.resourceModel.create({
+      data: {
+        access: $Enums.ResourceAccess.PRIVATE,
+        originalName: `signed-w9.pdf`,
+        mimetype: `application/pdf`,
+        size: 48,
+        bucket: `local`,
+        key: `documents/signed-w9.pdf`,
+        downloadUrl: `legacy://signed-w9`,
+        createdAt: new Date(`2026-05-10T08:30:00.000Z`),
+      },
+    });
+    ownedComplianceResourceId = ownedComplianceResource.id;
+    await prisma.consumerResourceModel.create({
+      data: {
+        consumerId: owner.id,
+        resourceId: ownedComplianceResource.id,
+        createdAt: new Date(`2026-05-10T08:30:00.000Z`),
+      },
+    });
+
+    const ownedContractResource = await prisma.resourceModel.create({
+      data: {
+        access: $Enums.ResourceAccess.PRIVATE,
+        originalName: `master-contract.pdf`,
+        mimetype: `application/pdf`,
+        size: 64,
+        bucket: `local`,
+        key: `documents/master-contract.pdf`,
+        downloadUrl: `legacy://master-contract`,
+        createdAt: new Date(`2026-05-10T08:45:00.000Z`),
+      },
+    });
+    ownedContractResourceId = ownedContractResource.id;
+    await prisma.consumerResourceModel.create({
+      data: {
+        consumerId: owner.id,
+        resourceId: ownedContractResource.id,
+        createdAt: new Date(`2026-05-10T08:45:00.000Z`),
       },
     });
 
@@ -211,17 +255,33 @@ describe(`ConsumerDocumentListRepository DB smoke`, () => {
   it(`returns empty pages with the DB-backed total count preserved`, async () => {
     const page = await query.list({
       consumerId: ownerId,
-      page: 3,
+      page: 4,
       pageSize: 2,
       backendBaseUrl: `http://localhost:3334`,
     });
 
     expect(page).toEqual({
       items: [],
-      total: 4,
-      page: 3,
+      total: 6,
+      page: 4,
       pageSize: 2,
     });
+  });
+
+  it.each([
+    [`non-numeric inputs`, { page: `wat` as any, pageSize: `nope` as any }, { page: 1, pageSize: 10 }],
+    [`zero inputs`, { page: 0 as any, pageSize: 0 as any }, { page: 1, pageSize: 10 }],
+    [`oversized page size`, { page: -3 as any, pageSize: 500 as any }, { page: 1, pageSize: 100 }],
+  ])(`clamps %s to the current response pagination`, async (_label, params, expected) => {
+    const result = await query.list({
+      consumerId: ownerId,
+      backendBaseUrl: `http://localhost:3334`,
+      ...params,
+    });
+
+    expect(result.page).toBe(expected.page);
+    expect(result.pageSize).toBe(expected.pageSize);
+    expect(result.total).toBe(6);
   });
 
   it(`scopes contactId listings to one counterparty relationship`, async () => {
@@ -255,6 +315,27 @@ describe(`ConsumerDocumentListRepository DB smoke`, () => {
     expect(result.items.map((item) => item.id)).not.toContain(ownedOnlyResourceId);
   });
 
+  it.each([`COMPLIANCE`, `CONTRACT`, `GENERAL`])(
+    `returns an early empty page for contact-scoped %s filters`,
+    async (kind) => {
+      const result = await query.list({
+        consumerId: ownerId,
+        contactId: contactAlphaId,
+        kind,
+        page: 2,
+        pageSize: 3,
+        backendBaseUrl: `http://localhost:3334`,
+      });
+
+      expect(result).toEqual({
+        items: [],
+        total: 0,
+        page: 2,
+        pageSize: 3,
+      });
+    },
+  );
+
   it(`merges owned and attached rows with attachment arrays and tags`, async () => {
     const result = await query.list({
       consumerId: ownerId,
@@ -276,6 +357,40 @@ describe(`ConsumerDocumentListRepository DB smoke`, () => {
         isAttachedToNonDraftPaymentRequest: true,
         attachedNonDraftPaymentRequestIds: [completedPaymentId],
       }),
+    );
+  });
+
+  it(`keeps SQL kind classification aligned with the current filename and attachment heuristics`, async () => {
+    const result = await query.list({
+      consumerId: ownerId,
+      page: 1,
+      pageSize: 10,
+      backendBaseUrl: `http://localhost:3334`,
+    });
+
+    expect(result.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: ownedComplianceResourceId,
+          name: `signed-w9.pdf`,
+          kind: `COMPLIANCE`,
+        }),
+        expect.objectContaining({
+          id: ownedContractResourceId,
+          name: `master-contract.pdf`,
+          kind: `CONTRACT`,
+        }),
+        expect.objectContaining({
+          id: ownedOnlyResourceId,
+          name: `owned-general-note.txt`,
+          kind: `GENERAL`,
+        }),
+        expect.objectContaining({
+          id: betaResourceId,
+          name: `beta-payment-proof.pdf`,
+          kind: `PAYMENT`,
+        }),
+      ]),
     );
   });
 });

@@ -387,4 +387,61 @@ describe(`ConsumerContractsService DB smoke`, () => {
       }),
     );
   });
+
+  it(`preserves filtered totals for empty deep pages through the raw recount query`, async () => {
+    const result = await rawService.getContracts(ownerId, 2, 1, undefined, `completed`);
+
+    expect(result).toEqual({
+      items: [],
+      total: 1,
+      page: 2,
+      pageSize: 1,
+    });
+  });
+
+  it(`keeps raw lastRequestId and lastActivity asymmetric when priority and recency diverge`, async () => {
+    await createContact({
+      email: `foxtrot-priority@local.test`,
+      name: `Foxtrot Priority`,
+      updatedAt: new Date(`2026-05-01T14:00:00.000Z`),
+    });
+    const priorityCompletedPayment = await createPayment({
+      contactEmail: `foxtrot-priority@local.test`,
+      status: $Enums.TransactionStatus.COMPLETED,
+      amount: 70,
+      createdAt: new Date(`2026-05-06T08:00:00.000Z`),
+      updatedAt: new Date(`2026-05-06T09:00:00.000Z`),
+      ledgerId: `00000000-0000-4000-8000-000000000106`,
+    });
+    const priorityDraftPayment = await createPayment({
+      contactEmail: `foxtrot-priority@local.test`,
+      status: $Enums.TransactionStatus.DRAFT,
+      amount: 80,
+      createdAt: new Date(`2026-05-05T08:00:00.000Z`),
+      updatedAt: new Date(`2026-05-05T09:00:00.000Z`),
+      ledgerId: `00000000-0000-4000-8000-000000000107`,
+    });
+    const result = await rawService.getContracts(ownerId, 1, 10, `foxtrot-priority`);
+
+    expect(result).toEqual({
+      items: [
+        {
+          id: expect.any(String),
+          name: `Foxtrot Priority`,
+          email: `foxtrot-priority@local.test`,
+          lastRequestId: priorityDraftPayment.id,
+          lastStatus: `draft`,
+          lastActivity: new Date(`2026-05-06T09:00:00.000Z`),
+          docs: 0,
+          paymentsCount: 2,
+          completedPaymentsCount: 1,
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 10,
+    });
+
+    expect(result.items[0].lastRequestId).not.toBe(priorityCompletedPayment.id);
+  });
 });
