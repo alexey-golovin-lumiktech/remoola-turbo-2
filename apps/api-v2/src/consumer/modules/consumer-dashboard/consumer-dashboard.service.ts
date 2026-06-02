@@ -7,10 +7,15 @@ import {
   getDashboardPaymentMethodIds,
   mapFinancialActivityItem,
 } from './consumer-dashboard-activity.mapper';
+import { pickDashboardSummaryCurrencyCode } from './consumer-dashboard-currency.policy';
+import {
+  getDashboardPaymentRequestEffectiveStatus,
+  getPendingDashboardRequestLastActivityAt,
+  isActiveDashboardPaymentRequest,
+} from './consumer-dashboard-payment-request.policy';
 import { ConsumerDashboardQuery, type DashboardActivityLedgerRow } from './consumer-dashboard.query';
 import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { BalanceCalculationService, BalanceCalculationMode } from '../../../shared/balance-calculation.service';
-import { getEffectivePaymentRequestStatus as getEffectivePaymentRequestStatusForEntry } from '../../../shared/transaction-status.utils'; // eslint-disable-line
 import { buildConsumerVerificationState } from '../../../shared-common';
 
 @Injectable()
@@ -20,86 +25,6 @@ export class ConsumerDashboardService {
     private readonly dashboardQuery: ConsumerDashboardQuery,
     private readonly balanceService: BalanceCalculationService,
   ) {}
-
-  private getEffectivePaymentRequestStatus(
-    paymentRequest:
-      | {
-          status: $Enums.TransactionStatus;
-          ledgerEntries?: Array<{
-            status: $Enums.TransactionStatus;
-            outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-          }>;
-        }
-      | null
-      | undefined,
-  ): $Enums.TransactionStatus | null {
-    if (!paymentRequest) return null;
-    return getEffectivePaymentRequestStatusForEntry(paymentRequest.status, paymentRequest.ledgerEntries?.[0]);
-  }
-
-  private isActiveDashboardPaymentRequest(
-    paymentRequest:
-      | {
-          status: $Enums.TransactionStatus;
-          ledgerEntries?: Array<{
-            status: $Enums.TransactionStatus;
-            outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-          }>;
-        }
-      | null
-      | undefined,
-  ): boolean {
-    return this.getEffectivePaymentRequestStatus(paymentRequest) !== $Enums.TransactionStatus.COMPLETED;
-  }
-
-  private pickSummaryCurrencyCode(
-    preferredCurrency: $Enums.CurrencyCode | null | undefined,
-    ...balanceMaps: Array<Partial<Record<$Enums.CurrencyCode, number>>>
-  ): $Enums.CurrencyCode {
-    const hasNonZeroBalance = (currency: $Enums.CurrencyCode) =>
-      balanceMaps.some((balanceMap) => Math.abs(balanceMap[currency] ?? 0) > 0.000001);
-
-    if (preferredCurrency && hasNonZeroBalance(preferredCurrency)) {
-      return preferredCurrency;
-    }
-
-    const nonZeroCurrencies = new Set<$Enums.CurrencyCode>();
-    for (const balanceMap of balanceMaps) {
-      for (const [currency, balance] of Object.entries(balanceMap)) {
-        if (Math.abs(balance ?? 0) > 0.000001) {
-          nonZeroCurrencies.add(currency as $Enums.CurrencyCode);
-        }
-      }
-    }
-
-    if (nonZeroCurrencies.size === 1) {
-      return [...nonZeroCurrencies][0];
-    }
-
-    if (preferredCurrency && nonZeroCurrencies.size === 0) {
-      return preferredCurrency;
-    }
-
-    return $Enums.CurrencyCode.USD;
-  }
-
-  private getPendingRequestLastActivityAt(
-    paymentRequest:
-      | {
-          updatedAt: Date;
-          ledgerEntries?: Array<{
-            createdAt: Date;
-            outcomes?: Array<{ createdAt: Date }>;
-          }>;
-        }
-      | null
-      | undefined,
-  ): Date | null {
-    if (!paymentRequest) return null;
-    const latestConsumerEntry = paymentRequest.ledgerEntries?.[0];
-    const latestOutcomeAt = latestConsumerEntry?.outcomes?.[0]?.createdAt ?? null;
-    return latestOutcomeAt ?? latestConsumerEntry?.createdAt ?? paymentRequest.updatedAt;
-  }
 
   private async buildFinancialActivity(consumerId: string): Promise<ActivityItem[]> {
     const rows = await this.dashboardQuery.findFinancialActivityRows(consumerId);
@@ -251,13 +176,13 @@ export class ConsumerDashboardService {
         this.dashboardQuery.findSettings(consumerId),
       ]);
     const activeRequests = activeRequestCandidates.filter((paymentRequest) =>
-      this.isActiveDashboardPaymentRequest(paymentRequest),
+      isActiveDashboardPaymentRequest(paymentRequest),
     ).length;
 
     const settledBalanceByCurrency = settledBalanceResult.balances as Partial<Record<$Enums.CurrencyCode, number>>;
     const availableBalanceByCurrency = availableBalanceResult.balances as Partial<Record<$Enums.CurrencyCode, number>>;
     const preferredCurrency = settings?.preferredCurrency ?? null;
-    const balanceCurrencyCode = this.pickSummaryCurrencyCode(
+    const balanceCurrencyCode = pickDashboardSummaryCurrencyCode(
       preferredCurrency,
       settledBalanceByCurrency,
       availableBalanceByCurrency,
@@ -282,8 +207,8 @@ export class ConsumerDashboardService {
 
     return paymentRequests
       .map((paymentRequest) => {
-        const effectiveStatus = this.getEffectivePaymentRequestStatus(paymentRequest) ?? paymentRequest.status;
-        const lastActivityAt = this.getPendingRequestLastActivityAt(paymentRequest);
+        const effectiveStatus = getDashboardPaymentRequestEffectiveStatus(paymentRequest) ?? paymentRequest.status;
+        const lastActivityAt = getPendingDashboardRequestLastActivityAt(paymentRequest);
         return {
           id: paymentRequest.id,
           counterpartyName: paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? ``,
