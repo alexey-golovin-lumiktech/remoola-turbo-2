@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const forwardHeaders = buildForwardHeaders(req.headers);
   forwardHeaders.delete(`host`);
   return proxyBinaryRoute({
-    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/consumer/documents/upload`),
+    url: buildConsumerUpstreamUrl(baseUrlResult.baseUrl, `/api/consumer/documents/upload`),
     method: `POST`,
     init: {
       body: req.body,

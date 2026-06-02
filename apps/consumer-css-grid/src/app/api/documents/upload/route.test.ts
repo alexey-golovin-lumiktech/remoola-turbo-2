@@ -47,7 +47,7 @@ describe(`documents upload route`, () => {
     const fetchOptions = mockFetch.mock.calls[0]?.[1] as (RequestInit & { duplex?: string }) | undefined;
 
     expect(response.status).toBe(201);
-    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/documents/upload`);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/api/consumer/documents/upload`);
     expect(fetchOptions?.credentials).toBe(`include`);
     expect(fetchOptions?.duplex).toBe(`half`);
     expect(forwardedHeaders?.get(`cookie`)).toBe(`consumer_session=session-cookie`);

@@ -49,7 +49,9 @@ describe(`documents download route`, () => {
     const forwardedHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
     expect(response.status).toBe(200);
-    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/documents/resource-1/download`);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(
+      `https://api.example.com/api/consumer/documents/resource-1/download`,
+    );
     expect(forwardedHeaders?.get(`cookie`)).toBe(`consumer_session=session-cookie`);
     expect(forwardedHeaders?.get(`host`)).toBeNull();
     expect(response.headers.get(`content-type`)).toBe(`application/pdf`);

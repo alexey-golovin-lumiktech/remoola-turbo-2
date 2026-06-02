@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
   return proxyBinaryRoute({
     url: buildConsumerUpstreamUrl(
       baseUrlResult.baseUrl,
-      `/consumer/documents/${encodeApiPathSegment(documentId)}/download`,
+      `/api/consumer/documents/${encodeApiPathSegment(documentId)}/download`,
     ),
     method: `GET`,
     init: {
