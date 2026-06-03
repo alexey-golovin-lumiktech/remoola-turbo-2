@@ -5,22 +5,24 @@ import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import {
+  buildExecutedRuleExecution,
+  buildFailedRuleExecution,
+  buildFailedRuleExecutionFromError,
+  buildRuleExecutionEvent,
+  decideAmountToConvert,
+} from './admin-exchange-rule-execution-helpers';
+import {
   AdminExchangeRulePersistenceRepository,
   type ExchangeRuleExecutionResult,
   type LockedRuleExecutionRow,
 } from './admin-exchange-rule-persistence.repository';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { ExchangeConversionExecutor } from './exchange-conversion-executor';
-import {
-  buildExchangeExecutionSummary,
-  type ExchangeExecutionSummary,
-  mapExchangeExecutionFailureReason,
-} from './exchange-execution-summary';
+import { type ExchangeExecutionSummary } from './exchange-execution-summary';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
-import { getCurrencyFractionDigits } from '../../shared-common';
 import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
-import { type AdminV2DomainEvent, AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
+import { AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 
@@ -208,39 +210,10 @@ export class AdminExchangeRuleCommandsService {
     params: { source: string; actorId: string; idempotencyKey: string; now: Date },
   ) {
     const available = await this.lockedBalance(tx, rule.consumer_id, rule.from_currency);
-    const targetBalance = Number(rule.target_balance);
-    let amountToConvert = available - targetBalance;
+    const amountDecision = decideAmountToConvert(available, rule.target_balance, rule.max_convert_amount);
 
-    if (available <= targetBalance) {
-      return {
-        executionState: `failed` as const,
-        summary: buildExchangeExecutionSummary({
-          status: `failed`,
-          reason: `balance_below_target`,
-          executedAt: params.now,
-          source: params.source,
-          actorId: params.actorId,
-          idempotencyKey: params.idempotencyKey,
-        }),
-      };
-    }
-
-    if (rule.max_convert_amount != null) {
-      amountToConvert = Math.min(amountToConvert, Number(rule.max_convert_amount));
-    }
-
-    if (!Number.isFinite(amountToConvert) || amountToConvert <= 0) {
-      return {
-        executionState: `failed` as const,
-        summary: buildExchangeExecutionSummary({
-          status: `failed`,
-          reason: `no_amount_to_convert`,
-          executedAt: params.now,
-          source: params.source,
-          actorId: params.actorId,
-          idempotencyKey: params.idempotencyKey,
-        }),
-      };
+    if (amountDecision.kind === `failed`) {
+      return buildFailedRuleExecution(params, amountDecision.reason);
     }
 
     try {
@@ -248,7 +221,7 @@ export class AdminExchangeRuleCommandsService {
         consumerId: rule.consumer_id,
         fromCurrency: rule.from_currency,
         toCurrency: rule.to_currency,
-        amount: amountToConvert,
+        amount: amountDecision.amountToConvert,
         now: params.now,
         createdBy: adminIdOrConsumer(rule.consumer_id, params.actorId),
         updatedBy: adminIdOrConsumer(rule.consumer_id, params.actorId),
@@ -260,32 +233,9 @@ export class AdminExchangeRuleCommandsService {
         },
       });
 
-      return {
-        executionState: `executed` as const,
-        summary: buildExchangeExecutionSummary({
-          status: `executed`,
-          reason: `conversion_executed`,
-          executedAt: params.now,
-          ledgerId: conversion.ledgerId,
-          targetAmount: conversion.targetAmount.toString(),
-          sourceAmount: amountToConvert.toFixed(getCurrencyFractionDigits(rule.from_currency)),
-          source: params.source,
-          actorId: params.actorId,
-          idempotencyKey: params.idempotencyKey,
-        }),
-      };
+      return buildExecutedRuleExecution(params, rule.from_currency, amountDecision.amountToConvert, conversion);
     } catch (error) {
-      return {
-        executionState: `failed` as const,
-        summary: buildExchangeExecutionSummary({
-          status: `failed`,
-          reason: mapExchangeExecutionFailureReason(error),
-          executedAt: params.now,
-          source: params.source,
-          actorId: params.actorId,
-          idempotencyKey: params.idempotencyKey,
-        }),
-      };
+      return buildFailedRuleExecutionFromError(params, error);
     }
   }
 
@@ -296,20 +246,7 @@ export class AdminExchangeRuleCommandsService {
   }
 
   private async publishRuleEvent(adminId: string, ruleId: string, version: number, summary: ExchangeExecutionSummary) {
-    const event: AdminV2DomainEvent = {
-      eventType: summary.status === `executed` ? `exchange.executed` : `exchange.failed`,
-      timestamp: new Date().toISOString(),
-      actorId: adminId,
-      resourceType: `exchange_rule`,
-      resourceId: ruleId,
-      producerVersion: version,
-      metadata: {
-        reason: summary.reason,
-        ledgerId: summary.ledgerId ?? null,
-        sourceAmount: summary.sourceAmount ?? null,
-        targetAmount: summary.targetAmount ?? null,
-      },
-    };
+    const event = buildRuleExecutionEvent(adminId, ruleId, version, summary);
     await this.domainEvents.publishAfterCommit(event);
   }
 }
