@@ -1,4 +1,4 @@
-import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../../components/ui-classes';
+import { PasswordConfirmationField } from '../../../../../../components/admin-form-fields/password-confirmation-field';
 import {
   resumeExchangeRuleAction,
   runExchangeRuleNowAction,
@@ -47,17 +47,7 @@ export function ExchangeRuleActionsSection({
               Manual run is protected by a strong idempotency key, strict version checks and single active execution
               lock.
             </p>
-            <label className={fieldClass}>
-              <span className={fieldLabelClass}>Current password</span>
-              <input
-                className={textInputClass}
-                name="passwordConfirmation"
-                type="password"
-                autoComplete="current-password"
-                required
-                placeholder="Confirm with your current password"
-              />
-            </label>
+            <PasswordConfirmationField />
             <button className="secondaryButton" type="submit">
               Run now
             </button>

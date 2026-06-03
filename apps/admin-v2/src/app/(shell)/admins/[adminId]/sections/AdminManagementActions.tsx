@@ -1,3 +1,4 @@
+import { PasswordConfirmationField } from '../../../../../components/admin-form-fields/password-confirmation-field';
 import {
   operatorFormActionsClass,
   operatorFormClass,
@@ -16,7 +17,6 @@ import {
   restoreAdminAction,
 } from '../../../../../lib/admin-mutations/admins.server';
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../../../lib/admin-rbac';
-import { StepUpPasswordField } from '../admin-shared';
 import { type AdminCasePageData } from '../page.loader';
 
 export function AdminManagementActions({ admin, isSelf }: { admin: AdminCasePageData[`admin`]; isSelf: boolean }) {
@@ -56,7 +56,7 @@ export function AdminManagementActions({ admin, isSelf }: { admin: AdminCasePage
                     <span>Confirm</span>
                     <input type="checkbox" name="confirmed" value="true" required disabled={isSelf} />
                   </label>
-                  <StepUpPasswordField disabled={isSelf} />
+                  <PasswordConfirmationField disabled={isSelf} />
                   {isSelf ? <p className="errorText mt-2">Self-deactivate is blocked.</p> : null}
                 </div>
                 <div className={operatorFormActionsClass}>
@@ -81,7 +81,7 @@ export function AdminManagementActions({ admin, isSelf }: { admin: AdminCasePage
                   <p className="muted">Re-enables the admin record without changing current role configuration.</p>
                 </div>
                 <div className={operatorFormFieldsClass}>
-                  <StepUpPasswordField />
+                  <PasswordConfirmationField />
                 </div>
                 <div className={operatorFormActionsClass}>
                   <button className={`primaryButton ${operatorFormFullWidthCtaClass}`} type="submit">
@@ -100,7 +100,7 @@ export function AdminManagementActions({ admin, isSelf }: { admin: AdminCasePage
                 <p className="muted">Secondary recovery action for active admins only.</p>
               </div>
               <div className={operatorFormFieldsClass}>
-                <StepUpPasswordField />
+                <PasswordConfirmationField />
               </div>
               <div className={operatorFormActionsClass}>
                 <button
@@ -144,7 +144,7 @@ export function AdminManagementActions({ admin, isSelf }: { admin: AdminCasePage
                 <span>Confirm</span>
                 <input type="checkbox" name="confirmed" value="true" required />
               </label>
-              <StepUpPasswordField />
+              <PasswordConfirmationField />
             </div>
             <div className={operatorFormActionsClass}>
               <button
@@ -183,7 +183,7 @@ export function AdminManagementActions({ admin, isSelf }: { admin: AdminCasePage
                   </select>
                 </label>
               ))}
-              <StepUpPasswordField />
+              <PasswordConfirmationField />
             </div>
             <div className={operatorFormActionsClass}>
               <button className={`primaryButton ${operatorFormFullWidthCtaClass}`} type="submit">

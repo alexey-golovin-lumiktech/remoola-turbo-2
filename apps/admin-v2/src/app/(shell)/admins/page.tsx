@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { adminV2AdminsListQuerySchema } from '@remoola/api-types';
 
 import { ActionGhost } from '../../../components/action-ghost';
+import { PasswordConfirmationField } from '../../../components/admin-form-fields/password-confirmation-field';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
@@ -221,17 +222,7 @@ export default async function AdminsPage({
                     ))}
                   </select>
                 </label>
-                <label className={fieldClass}>
-                  <span className={fieldLabelClass}>Current password</span>
-                  <input
-                    className={textInputClass}
-                    name="passwordConfirmation"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    placeholder="Confirm with your current password"
-                  />
-                </label>
+                <PasswordConfirmationField />
                 <div className={buttonRowClass}>
                   <ActionGhost type="submit">Send invitation</ActionGhost>
                 </div>

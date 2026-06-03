@@ -1,4 +1,4 @@
-import { fieldClass, fieldLabelClass, textInputClass } from '../../../../../../components/ui-classes';
+import { PasswordConfirmationField } from '../../../../../../components/admin-form-fields/password-confirmation-field';
 import { approveExchangeRateAction } from '../../../../../../lib/admin-mutations/exchange.server';
 import { type ExchangeRateCasePageData } from '../page.loader';
 
@@ -28,17 +28,7 @@ export function ExchangeRateActionsSection({
             <span>Confirmation</span>
             <input type="checkbox" name="confirmed" value="true" required />
           </label>
-          <label className={fieldClass}>
-            <span className={fieldLabelClass}>Current password</span>
-            <input
-              className={textInputClass}
-              name="passwordConfirmation"
-              type="password"
-              autoComplete="current-password"
-              required
-              placeholder="Confirm with your current password"
-            />
-          </label>
+          <PasswordConfirmationField />
           <button className="secondaryButton" type="submit" name="confirmedSubmit" value="true">
             Approve exchange rate
           </button>

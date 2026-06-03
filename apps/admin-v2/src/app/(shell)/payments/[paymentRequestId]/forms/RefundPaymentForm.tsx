@@ -1,3 +1,4 @@
+import { PasswordConfirmationField } from '../../../../../components/admin-form-fields/password-confirmation-field';
 import { Panel } from '../../../../../components/panel';
 import {
   checkboxFieldClass,
@@ -59,17 +60,7 @@ export function RefundPaymentForm({
                 placeholder="Optional context for the audit trail."
               />
             </label>
-            <label className={fieldClass}>
-              <span className={fieldLabelClass}>Current password</span>
-              <input
-                className={textInputClass}
-                name="passwordConfirmation"
-                type="password"
-                autoComplete="current-password"
-                required
-                placeholder="Confirm with your current password"
-              />
-            </label>
+            <PasswordConfirmationField />
           </div>
           <div className={operatorFormConfirmClass}>
             <label className={checkboxFieldClass}>
