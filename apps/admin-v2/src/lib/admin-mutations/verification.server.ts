@@ -2,15 +2,15 @@
 
 import { adminV2VerificationDecisionBodySchema } from '@remoola/api-types';
 
-import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation } from './core.server';
-import {
-  buildAssignmentClaimBody,
-  buildAssignmentReleaseBody,
-  buildAssignmentReassignBody,
-  parseRequiredVersion,
-} from './form-helpers';
+import { parseRequiredVersion } from './form-helpers';
 import { revalidateVerificationAssignmentPaths, revalidateVerificationDecisionPaths } from './revalidation';
+import { parseConfirmedFormValue } from '../admin-confirmation';
+import {
+  runAssignmentClaim,
+  runAssignmentReassign,
+  runAssignmentRelease,
+} from '../admin-permissions/assignment-action-core';
 
 async function applyVerificationDecision(
   consumerId: string,
@@ -47,28 +47,32 @@ export async function flagVerificationAction(consumerId: string, formData: FormD
 }
 
 export async function claimVerificationAssignmentAction(consumerId: string, formData: FormData): Promise<void> {
-  if (!consumerId) {
-    throw new Error(`consumerId is required`);
-  }
-  const body = buildAssignmentClaimBody(`verification`, consumerId, formData);
-  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim verification assignment`);
-  revalidateVerificationAssignmentPaths(consumerId);
+  return runAssignmentClaim({
+    resourceType: `verification`,
+    resourceId: consumerId,
+    idLabel: `consumerId`,
+    errorMessage: `Failed to claim verification assignment`,
+    formData,
+    revalidate: () => revalidateVerificationAssignmentPaths(consumerId),
+  });
 }
 
 export async function releaseVerificationAssignmentAction(consumerId: string, formData: FormData): Promise<void> {
-  if (!consumerId) {
-    throw new Error(`consumerId is required`);
-  }
-  const body = buildAssignmentReleaseBody(formData);
-  await postAdminMutation(`/admin-v2/assignments/release`, body, `Failed to release verification assignment`);
-  revalidateVerificationAssignmentPaths(consumerId);
+  return runAssignmentRelease({
+    resourceId: consumerId,
+    idLabel: `consumerId`,
+    errorMessage: `Failed to release verification assignment`,
+    formData,
+    revalidate: () => revalidateVerificationAssignmentPaths(consumerId),
+  });
 }
 
 export async function reassignVerificationAssignmentAction(consumerId: string, formData: FormData): Promise<void> {
-  if (!consumerId) {
-    throw new Error(`consumerId is required`);
-  }
-  const body = buildAssignmentReassignBody(formData);
-  await postAdminMutation(`/admin-v2/assignments/reassign`, body, `Failed to reassign verification`);
-  revalidateVerificationAssignmentPaths(consumerId);
+  return runAssignmentReassign({
+    resourceId: consumerId,
+    idLabel: `consumerId`,
+    errorMessage: `Failed to reassign verification`,
+    formData,
+    revalidate: () => revalidateVerificationAssignmentPaths(consumerId),
+  });
 }
