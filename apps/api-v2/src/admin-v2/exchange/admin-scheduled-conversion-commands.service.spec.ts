@@ -128,6 +128,24 @@ describe(`AdminScheduledConversionCommandsService`, () => {
     expect(idempotency.execute).not.toHaveBeenCalled();
   });
 
+  it(`rejects missing scheduled conversions in preflight before force-execute or cancel transactions`, async () => {
+    const { domainEvents, persistenceRepository, preflightRepository, service, transactions } = buildService();
+    preflightRepository.findActiveScheduledConversionById.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+
+    await expect(
+      service.forceExecuteScheduledConversion(`scheduled-1`, `admin-1`, { confirmed: true, version: 1 }, meta),
+    ).rejects.toMatchObject({ response: { message: adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND } });
+
+    await expect(
+      service.cancelScheduledConversion(`scheduled-1`, `admin-1`, { confirmed: true, version: 1 }, meta),
+    ).rejects.toMatchObject({ response: { message: adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND } });
+
+    expect(transactions.runLedgerMutation).not.toHaveBeenCalled();
+    expect(persistenceRepository.lockScheduledExecutionRow).not.toHaveBeenCalled();
+    expect(persistenceRepository.cancelScheduledConversion).not.toHaveBeenCalled();
+    expect(domainEvents.publishAfterCommit).not.toHaveBeenCalled();
+  });
+
   it(`preserves force-execute idempotency scope, action lock, summary, and event publish`, async () => {
     const {
       actionLockRepository,
@@ -205,6 +223,9 @@ describe(`AdminScheduledConversionCommandsService`, () => {
         },
       }),
     );
+    expect(persistenceRepository.finalizeScheduledExecution.mock.invocationCallOrder[0]).toBeLessThan(
+      domainEvents.publishAfterCommit.mock.invocationCallOrder[0]!,
+    );
     expect(result).toEqual(
       expect.objectContaining({
         conversionId: `scheduled-1`,
@@ -243,6 +264,51 @@ describe(`AdminScheduledConversionCommandsService`, () => {
     expect(domainEvents.publishAfterCommit).not.toHaveBeenCalled();
   });
 
+  it(`normalizes scheduled conversion metadata.ruleId before conversion execution`, async () => {
+    const { conversionExecutor, service } = buildService();
+
+    await service.forceExecuteScheduledConversion(
+      `scheduled-1`,
+      `admin-1`,
+      { confirmed: true, version: deriveVersion(updatedAt) },
+      meta,
+    );
+    await service.forceExecuteScheduledConversion(
+      `scheduled-1`,
+      `admin-1`,
+      { confirmed: true, version: deriveVersion(updatedAt) },
+      { ...meta, idempotencyKey: `99999999-9999-4999-8999-999999999999` },
+    );
+    await service.forceExecuteScheduledConversion(
+      `scheduled-1`,
+      `admin-1`,
+      { confirmed: true, version: deriveVersion(updatedAt) },
+      { ...meta, idempotencyKey: `aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa` },
+    );
+
+    expect(conversionExecutor.executeInTransaction).toHaveBeenNthCalledWith(
+      1,
+      tx,
+      expect.objectContaining({
+        metadata: expect.objectContaining({ ruleId: `rule-1` }),
+      }),
+    );
+    expect(conversionExecutor.executeInTransaction).toHaveBeenNthCalledWith(
+      2,
+      tx,
+      expect.objectContaining({
+        metadata: expect.objectContaining({ ruleId: `rule-1` }),
+      }),
+    );
+    expect(conversionExecutor.executeInTransaction).toHaveBeenNthCalledWith(
+      3,
+      tx,
+      expect.objectContaining({
+        metadata: expect.objectContaining({ ruleId: `rule-1` }),
+      }),
+    );
+  });
+
   it(`rejects stale scheduled conversion versions before transaction writes`, async () => {
     const { persistenceRepository, service, transactions } = buildService();
 
@@ -258,6 +324,54 @@ describe(`AdminScheduledConversionCommandsService`, () => {
 
     expect(transactions.runLedgerMutation).not.toHaveBeenCalled();
     expect(persistenceRepository.lockScheduledExecutionRow).not.toHaveBeenCalled();
+  });
+
+  it(`rejects missing, deleted, and stale locked rows before action lock or finalize`, async () => {
+    const { actionLockRepository, conversionExecutor, domainEvents, persistenceRepository, service } = buildService();
+
+    persistenceRepository.lockScheduledExecutionRow.mockResolvedValueOnce(null);
+    await expect(
+      service.forceExecuteScheduledConversion(
+        `scheduled-1`,
+        `admin-1`,
+        { confirmed: true, version: deriveVersion(updatedAt) },
+        meta,
+      ),
+    ).rejects.toMatchObject({ response: { message: adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND } });
+
+    persistenceRepository.lockScheduledExecutionRow.mockResolvedValueOnce(
+      buildLockedConversion({ deleted_at: new Date(`2026-04-17T10:01:00.000Z`) }),
+    );
+    await expect(
+      service.forceExecuteScheduledConversion(
+        `scheduled-1`,
+        `admin-1`,
+        { confirmed: true, version: deriveVersion(updatedAt) },
+        meta,
+      ),
+    ).rejects.toMatchObject({ response: { message: adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND } });
+
+    persistenceRepository.lockScheduledExecutionRow.mockResolvedValueOnce(
+      buildLockedConversion({ updated_at: new Date(`2026-04-17T10:05:00.000Z`) }),
+    );
+    await expect(
+      service.forceExecuteScheduledConversion(
+        `scheduled-1`,
+        `admin-1`,
+        { confirmed: true, version: deriveVersion(updatedAt) },
+        meta,
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        error: `STALE_VERSION`,
+        currentVersion: new Date(`2026-04-17T10:05:00.000Z`).getTime(),
+      },
+    });
+
+    expect(actionLockRepository.tryActionLock).not.toHaveBeenCalled();
+    expect(conversionExecutor.executeInTransaction).not.toHaveBeenCalled();
+    expect(persistenceRepository.finalizeScheduledExecution).not.toHaveBeenCalled();
+    expect(domainEvents.publishAfterCommit).not.toHaveBeenCalled();
   });
 
   it(`rejects terminal and concurrent force-execute states before conversion execution`, async () => {
@@ -300,8 +414,48 @@ describe(`AdminScheduledConversionCommandsService`, () => {
     expect(conversionExecutor.executeInTransaction).not.toHaveBeenCalled();
   });
 
+  it(`allows re-running failed scheduled conversions through conversion and publish flow`, async () => {
+    const { actionLockRepository, conversionExecutor, domainEvents, persistenceRepository, service } = buildService();
+    persistenceRepository.lockScheduledExecutionRow.mockResolvedValueOnce(
+      buildLockedConversion({
+        status: $Enums.ScheduledFxConversionStatus.FAILED,
+        failed_at: new Date(`2026-04-17T09:45:00.000Z`),
+        last_error: errorCodes.RATE_STALE,
+        metadata: null,
+      }),
+    );
+
+    const result = await service.forceExecuteScheduledConversion(
+      `scheduled-1`,
+      `admin-1`,
+      { confirmed: true, version: deriveVersion(updatedAt) },
+      meta,
+    );
+
+    expect(actionLockRepository.tryActionLock).toHaveBeenCalledWith(tx, `exchange_scheduled_force_execute:scheduled-1`);
+    expect(conversionExecutor.executeInTransaction).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({
+        metadata: expect.objectContaining({ ruleId: null }),
+      }),
+    );
+    expect(persistenceRepository.finalizeScheduledExecution).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({
+        summary: expect.objectContaining({ status: `executed`, reason: `conversion_executed` }),
+      }),
+    );
+    expect(domainEvents.publishAfterCommit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: `exchange.executed`,
+        resourceType: `scheduled_fx_conversion`,
+      }),
+    );
+    expect(result.executionState).toBe(`executed`);
+  });
+
   it(`preserves cancel validation, idempotency scope, and transaction-scoped cancel write`, async () => {
-    const { idempotency, persistenceRepository, service, transactions } = buildService();
+    const { domainEvents, idempotency, persistenceRepository, service, transactions } = buildService();
 
     await expect(
       service.cancelScheduledConversion(`scheduled-1`, `admin-1`, { confirmed: false, version: 1 }, meta),
@@ -310,18 +464,19 @@ describe(`AdminScheduledConversionCommandsService`, () => {
       service.cancelScheduledConversion(`scheduled-1`, `admin-1`, { confirmed: true, version: 0 }, meta),
     ).rejects.toBeInstanceOf(BadRequestException);
 
+    const nonUuidMeta = { ...meta, idempotencyKey: `plain-cancel-key` };
     const result = await service.cancelScheduledConversion(
       `scheduled-1`,
       `admin-1`,
       { confirmed: true, version: deriveVersion(updatedAt) },
-      meta,
+      nonUuidMeta,
     );
 
     expect(idempotency.execute).toHaveBeenLastCalledWith(
       expect.objectContaining({
         adminId: `admin-1`,
         scope: `exchange-scheduled-cancel:scheduled-1`,
-        key: idempotencyKey,
+        key: `plain-cancel-key`,
         payload: {
           conversionId: `scheduled-1`,
           expectedVersion: deriveVersion(updatedAt),
@@ -334,12 +489,32 @@ describe(`AdminScheduledConversionCommandsService`, () => {
       conversionId: `scheduled-1`,
       expectedVersion: deriveVersion(updatedAt),
       adminId: `admin-1`,
-      meta,
+      meta: nonUuidMeta,
     });
+    expect(domainEvents.publishAfterCommit).not.toHaveBeenCalled();
     expect(result).toEqual({
       conversionId: `scheduled-1`,
       status: $Enums.ScheduledFxConversionStatus.CANCELLED,
       version: deriveVersion(updatedAt),
     });
+  });
+
+  it(`bubbles cancel repository conflicts for non-pending statuses without publish side effects`, async () => {
+    const { domainEvents, persistenceRepository, service, transactions } = buildService();
+    persistenceRepository.cancelScheduledConversion.mockRejectedValueOnce(
+      new ConflictException(`Only pending scheduled conversions can be cancelled`),
+    );
+
+    await expect(
+      service.cancelScheduledConversion(
+        `scheduled-1`,
+        `admin-1`,
+        { confirmed: true, version: deriveVersion(updatedAt) },
+        meta,
+      ),
+    ).rejects.toMatchObject({ response: { message: `Only pending scheduled conversions can be cancelled` } });
+
+    expect(transactions.runLedgerMutation).toHaveBeenCalledTimes(1);
+    expect(domainEvents.publishAfterCommit).not.toHaveBeenCalled();
   });
 });
