@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
@@ -199,6 +199,41 @@ describe(`AdminExchangeRuleCommandsService`, () => {
     expect(persistenceRepository.finalizeRuleExecution).not.toHaveBeenCalled();
   });
 
+  it(`rejects missing, deleted, and stale locked rule rows before downstream execution`, async () => {
+    const { actionLockRepository, balanceService, conversionExecutor, domainEvents, persistenceRepository, service } =
+      buildService();
+
+    persistenceRepository.lockRuleExecutionRow.mockResolvedValueOnce(null);
+    await expect(
+      service.runRuleNow(`rule-1`, `admin-1`, { version: deriveVersion(updatedAt) }, meta),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    persistenceRepository.lockRuleExecutionRow.mockResolvedValueOnce(
+      buildLockedRule({ deleted_at: new Date(`2026-04-17T10:01:00.000Z`) }),
+    );
+    await expect(
+      service.runRuleNow(`rule-1`, `admin-1`, { version: deriveVersion(updatedAt) }, meta),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    persistenceRepository.lockRuleExecutionRow.mockResolvedValueOnce(
+      buildLockedRule({ updated_at: new Date(`2026-04-17T10:05:00.000Z`) }),
+    );
+    await expect(
+      service.runRuleNow(`rule-1`, `admin-1`, { version: deriveVersion(updatedAt) }, meta),
+    ).rejects.toMatchObject({
+      response: {
+        error: `STALE_VERSION`,
+        currentVersion: new Date(`2026-04-17T10:05:00.000Z`).getTime(),
+      },
+    });
+
+    expect(actionLockRepository.tryActionLock).not.toHaveBeenCalled();
+    expect(balanceService.calculateInTransaction).not.toHaveBeenCalled();
+    expect(conversionExecutor.executeInTransaction).not.toHaveBeenCalled();
+    expect(persistenceRepository.finalizeRuleExecution).not.toHaveBeenCalled();
+    expect(domainEvents.publishAfterCommit).not.toHaveBeenCalled();
+  });
+
   it(`finalizes balance_below_target and no_amount_to_convert summaries and publishes failed events`, async () => {
     const { balanceService, conversionExecutor, domainEvents, persistenceRepository, service } = buildService();
     balanceService.calculateInTransaction.mockResolvedValueOnce(100).mockResolvedValueOnce(150);
@@ -229,9 +264,60 @@ describe(`AdminExchangeRuleCommandsService`, () => {
     );
   });
 
+  it(`finalizes mapped conversion failures and publishes failed downstream triggers after commit`, async () => {
+    const { conversionExecutor, domainEvents, persistenceRepository, service } = buildService();
+    conversionExecutor.executeInTransaction.mockRejectedValueOnce(new BadRequestException(errorCodes.RATE_STALE));
+
+    const result = await service.runRuleNow(`rule-1`, `admin-1`, { version: deriveVersion(updatedAt) }, meta);
+
+    expect(result.executionState).toBe(`failed`);
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        status: `failed`,
+        reason: errorCodes.RATE_STALE,
+        source: `admin_rule_run`,
+        actorId: `admin-1`,
+        idempotencyKey,
+      }),
+    );
+    expect(persistenceRepository.finalizeRuleExecution).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({
+        summary: expect.objectContaining({
+          status: `failed`,
+          reason: errorCodes.RATE_STALE,
+        }),
+      }),
+    );
+    expect(domainEvents.publishAfterCommit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: `exchange.failed`,
+        resourceType: `exchange_rule`,
+        resourceId: `rule-1`,
+        metadata: {
+          reason: errorCodes.RATE_STALE,
+          ledgerId: null,
+          sourceAmount: null,
+          targetAmount: null,
+        },
+      }),
+    );
+    expect(persistenceRepository.finalizeRuleExecution.mock.invocationCallOrder[0]).toBeLessThan(
+      domainEvents.publishAfterCommit.mock.invocationCallOrder[0],
+    );
+  });
+
   it(`preserves successful run-now conversion summary and event publishing`, async () => {
-    const { actionLockRepository, balanceService, conversionExecutor, domainEvents, idempotency, service } =
-      buildService();
+    const {
+      actionLockRepository,
+      balanceService,
+      conversionExecutor,
+      domainEvents,
+      idempotency,
+      persistenceRepository,
+      service,
+    } = buildService();
+    persistenceRepository.lockRuleExecutionRow.mockResolvedValueOnce(buildLockedRule({ max_convert_amount: 25 }));
 
     const result = await service.runRuleNow(`rule-1`, `admin-1`, { version: deriveVersion(updatedAt) }, meta);
 
@@ -247,11 +333,14 @@ describe(`AdminExchangeRuleCommandsService`, () => {
     expect(balanceService.calculateInTransaction).toHaveBeenCalledWith(tx, `consumer-1`, $Enums.CurrencyCode.USD, {
       mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
     });
+    expect(actionLockRepository.tryActionLock.mock.invocationCallOrder[0]).toBeLessThan(
+      balanceService.calculateInTransaction.mock.invocationCallOrder[0],
+    );
     expect(conversionExecutor.executeInTransaction).toHaveBeenCalledWith(
       tx,
       expect.objectContaining({
         consumerId: `consumer-1`,
-        amount: 50,
+        amount: 25,
         createdBy: `admin-1`,
         updatedBy: `admin-1`,
         idempotencyKeyPrefix: idempotencyKey,
@@ -262,6 +351,31 @@ describe(`AdminExchangeRuleCommandsService`, () => {
         },
       }),
     );
+    expect(balanceService.calculateInTransaction.mock.invocationCallOrder[0]).toBeLessThan(
+      conversionExecutor.executeInTransaction.mock.invocationCallOrder[0],
+    );
+    expect(persistenceRepository.finalizeRuleExecution).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({
+        expectedVersion: deriveVersion(updatedAt),
+        adminId: `admin-1`,
+        idempotencyKey,
+        summary: expect.objectContaining({
+          status: `executed`,
+          reason: `conversion_executed`,
+          ledgerId: `ledger-1`,
+          sourceAmount: `25.00`,
+          targetAmount: `22.5`,
+          source: `admin_rule_run`,
+        }),
+      }),
+    );
+    expect(conversionExecutor.executeInTransaction.mock.invocationCallOrder[0]).toBeLessThan(
+      persistenceRepository.finalizeRuleExecution.mock.invocationCallOrder[0],
+    );
+    expect(persistenceRepository.finalizeRuleExecution.mock.invocationCallOrder[0]).toBeLessThan(
+      domainEvents.publishAfterCommit.mock.invocationCallOrder[0],
+    );
     expect(result).toEqual(
       expect.objectContaining({
         ruleId: `rule-1`,
@@ -271,7 +385,7 @@ describe(`AdminExchangeRuleCommandsService`, () => {
           status: `executed`,
           reason: `conversion_executed`,
           ledgerId: `ledger-1`,
-          sourceAmount: `50.00`,
+          sourceAmount: `25.00`,
           targetAmount: `22.5`,
           source: `admin_rule_run`,
         }),
@@ -285,7 +399,7 @@ describe(`AdminExchangeRuleCommandsService`, () => {
         metadata: {
           reason: `conversion_executed`,
           ledgerId: `ledger-1`,
-          sourceAmount: `50.00`,
+          sourceAmount: `25.00`,
           targetAmount: `22.5`,
         },
       }),
