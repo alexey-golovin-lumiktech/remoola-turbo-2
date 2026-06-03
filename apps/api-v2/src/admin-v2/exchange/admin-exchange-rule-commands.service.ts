@@ -5,13 +5,6 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import {
-  buildExecutedRuleExecution,
-  buildFailedRuleExecution,
-  buildFailedRuleExecutionFromError,
-  buildRuleExecutionEvent,
-  decideAmountToConvert,
-} from './admin-exchange-rule-execution-helpers';
-import {
   assertExchangeRuleFound,
   assertExpectedExchangeRuleVersion,
   assertLockedExchangeRuleFound,
@@ -23,6 +16,13 @@ import {
   type ExchangeRuleExecutionResult,
   type LockedRuleExecutionRow,
 } from './admin-exchange-rule-persistence.repository';
+import {
+  buildExecutedRuleExecution,
+  buildFailedRuleExecution,
+  buildFailedRuleExecutionFromError,
+  buildRuleExecutionEvent,
+  decideAmountToConvert,
+} from './admin-exchange-rule-result-helpers';
 import { AdminV2ExchangePreflightRepository } from './admin-v2-exchange-preflight.repository';
 import { ExchangeConversionExecutor } from './exchange-conversion-executor';
 import { type ExchangeExecutionSummary } from './exchange-execution-summary';
