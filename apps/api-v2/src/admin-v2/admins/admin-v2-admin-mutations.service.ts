@@ -1,23 +1,47 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { hashPassword } from '../../shared-common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
+import {
+  assertActiveAdminTarget,
+  assertAdminFound,
+  assertAvailableCapabilityOverrides,
+  assertExpectedVersion,
+  assertKnownCapabilityOverrides,
+  buildAdminStatusAuditPayload,
+  buildAdminStatusResult,
+  buildAlreadyActiveResult,
+  buildAlreadyAppliedPermissionResult,
+  buildAlreadyAppliedRoleResult,
+  buildAlreadyInactiveResult,
+  buildChangedPermissionResult,
+  buildChangedRoleResult,
+  buildDeactivatedResult,
+  buildDeactivationAuditEntry,
+  buildPermissionChangeAuditEntry,
+  buildPermissionIdByCapability,
+  buildPermissionOverrideChanges,
+  buildRestoreAuditEntry,
+  buildRestoredResult,
+  buildRoleChangeAuditEntry,
+  buildTouchedPermissionIds,
+  normalizeCapabilityOverrides,
+  requireAllowedRoleKey,
+  requireConfirmation,
+  requireDistinctAdminTarget,
+  requireValidVersion,
+  throwStaleMutationConflict,
+} from './admin-v2-admin-mutation-helpers';
 import { AdminV2AdminMutationsRepository } from './admin-v2-admin-mutations.repository';
 import {
   ADMIN_PERMISSION_OVERRIDE_CAPABILITIES,
-  ADMIN_PERMISSION_OVERRIDE_MODES,
-  ALLOWED_ROLE_KEYS,
-  type AdminPermissionOverrideMode,
   type RequestMeta,
-  buildStaleVersionPayload,
   deriveStatus,
   deriveVersion,
   normalizeReason,
   toAdminType,
-  toNullableIso,
-  toPermissionOverrideGrant,
 } from './admin-v2-admins.utils';
 
 @Injectable()
@@ -60,23 +84,9 @@ export class AdminV2AdminMutationsService {
   ) {
     const updated = await this.repository.updateAdminStatus({ targetAdminId, action });
 
-    await this.auditTrail.recordAdminActionAudit({
-      adminId: actorAdminId,
-      action: action === `delete` ? ADMIN_ACTION_AUDIT_ACTIONS.admin_delete : ADMIN_ACTION_AUDIT_ACTIONS.admin_restore,
-      resourceId: updated.id,
-      metadata: {
-        targetEmail: updated.email,
-      },
-      ipAddress: meta.ipAddress ?? null,
-      userAgent: meta.userAgent ?? null,
-    });
+    await this.auditTrail.recordAdminActionAudit(buildAdminStatusAuditPayload(actorAdminId, updated, action, meta));
 
-    return {
-      adminId: updated.id,
-      status: deriveStatus(updated.deletedAt),
-      deletedAt: toNullableIso(updated.deletedAt),
-      version: deriveVersion(updated.updatedAt),
-    };
+    return buildAdminStatusResult(updated);
   }
 
   async deactivateAdmin(
@@ -85,17 +95,10 @@ export class AdminV2AdminMutationsService {
     body: { version?: number; confirmed?: boolean; reason?: string | null },
     meta: RequestMeta,
   ) {
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for admin deactivation`);
-    }
-    if (targetAdminId === actorAdminId) {
-      throw new ConflictException(`You cannot deactivate your own admin account`);
-    }
+    requireConfirmation(body.confirmed, `Confirmation is required for admin deactivation`);
+    requireDistinctAdminTarget(targetAdminId, actorAdminId, `You cannot deactivate your own admin account`);
 
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
+    const expectedVersion = requireValidVersion(body.version);
     const reason = normalizeReason(body.reason);
 
     return this.idempotency.executeInTransaction({
@@ -110,20 +113,10 @@ export class AdminV2AdminMutationsService {
       },
       execute: async (tx) => {
         const target = await this.repository.getAdminLifecycleTarget(targetAdminId);
-        if (!target) {
-          throw new NotFoundException(`Admin not found`);
-        }
-        if (deriveVersion(target.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(target.updatedAt));
-        }
+        assertAdminFound(target);
+        assertExpectedVersion(target.updatedAt, expectedVersion);
         if (target.deletedAt) {
-          return {
-            adminId: target.id,
-            status: `INACTIVE`,
-            deletedAt: target.deletedAt.toISOString(),
-            version: deriveVersion(target.updatedAt),
-            alreadyInactive: true,
-          };
+          return buildAlreadyInactiveResult(target);
         }
 
         const deactivatedAt = new Date();
@@ -135,42 +128,21 @@ export class AdminV2AdminMutationsService {
         });
         if (updated.count === 0) {
           const current = await this.repository.findAdminUpdatedAt(tx, target.id);
-          throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
+          throwStaleMutationConflict(current);
         }
 
         await this.repository.revokeActiveSessions(tx, target.id, deactivatedAt);
         await this.repository.deleteRefreshTokens(tx, target.id);
-        await this.repository.createAuditEntry(tx, {
-          adminId: actorAdminId,
-          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_deactivate,
-          resource: `admin`,
-          resourceId: target.id,
-          metadata: {
-            targetEmail: target.email,
-            confirmed: true,
-            reason,
-          },
-          ipAddress: meta.ipAddress ?? null,
-          userAgent: meta.userAgent ?? null,
-        });
+        await this.repository.createAuditEntry(tx, buildDeactivationAuditEntry(actorAdminId, target, reason, meta));
 
         const fresh = await this.repository.findAdminLifecycleResult(tx, target.id);
-        return {
-          adminId: fresh.id,
-          status: `INACTIVE` as const,
-          deletedAt: fresh.deletedAt?.toISOString() ?? deactivatedAt.toISOString(),
-          version: deriveVersion(fresh.updatedAt),
-          alreadyInactive: false,
-        };
+        return buildDeactivatedResult(fresh, deactivatedAt);
       },
     });
   }
 
   async restoreAdmin(targetAdminId: string, actorAdminId: string, body: { version?: number }, meta: RequestMeta) {
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
+    const expectedVersion = requireValidVersion(body.version);
 
     return this.idempotency.executeInTransaction({
       adminId: actorAdminId,
@@ -179,19 +151,10 @@ export class AdminV2AdminMutationsService {
       payload: { targetAdminId, expectedVersion },
       execute: async (tx) => {
         const target = await this.repository.getAdminLifecycleTarget(targetAdminId);
-        if (!target) {
-          throw new NotFoundException(`Admin not found`);
-        }
-        if (deriveVersion(target.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(target.updatedAt));
-        }
+        assertAdminFound(target);
+        assertExpectedVersion(target.updatedAt, expectedVersion);
         if (!target.deletedAt) {
-          return {
-            adminId: target.id,
-            status: `ACTIVE`,
-            version: deriveVersion(target.updatedAt),
-            alreadyActive: true,
-          };
+          return buildAlreadyActiveResult(target);
         }
 
         const updated = await this.repository.restoreAdmin(tx, {
@@ -200,29 +163,13 @@ export class AdminV2AdminMutationsService {
         });
         if (updated.count === 0) {
           const current = await this.repository.findAdminUpdatedAt(tx, target.id);
-          throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
+          throwStaleMutationConflict(current);
         }
 
-        await this.repository.createAuditEntry(tx, {
-          adminId: actorAdminId,
-          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_restore,
-          resource: `admin`,
-          resourceId: target.id,
-          metadata: {
-            targetEmail: target.email,
-          },
-          ipAddress: meta.ipAddress ?? null,
-          userAgent: meta.userAgent ?? null,
-        });
+        await this.repository.createAuditEntry(tx, buildRestoreAuditEntry(actorAdminId, target, meta));
 
         const fresh = await this.repository.findAdminLifecycleResult(tx, target.id);
-        return {
-          adminId: fresh.id,
-          status: `ACTIVE` as const,
-          deletedAt: toNullableIso(fresh.deletedAt),
-          version: deriveVersion(fresh.updatedAt),
-          alreadyActive: false,
-        };
+        return buildRestoredResult(fresh);
       },
     });
   }
@@ -233,17 +180,9 @@ export class AdminV2AdminMutationsService {
     body: { version?: number; confirmed?: boolean; roleKey?: string },
     meta: RequestMeta,
   ) {
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for admin role change`);
-    }
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
-    const nextRoleKey = String(body.roleKey ?? ``).trim();
-    if (!ALLOWED_ROLE_KEYS.has(nextRoleKey)) {
-      throw new BadRequestException(`Unsupported admin role`);
-    }
+    requireConfirmation(body.confirmed, `Confirmation is required for admin role change`);
+    const expectedVersion = requireValidVersion(body.version);
+    const nextRoleKey = requireAllowedRoleKey(body.roleKey);
 
     return this.idempotency.executeInTransaction({
       adminId: actorAdminId,
@@ -257,22 +196,11 @@ export class AdminV2AdminMutationsService {
       },
       execute: async (tx) => {
         const target = await this.repository.getAdminRoleMutationTarget(targetAdminId);
-        if (!target) {
-          throw new NotFoundException(`Admin not found`);
-        }
-        if (deriveVersion(target.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(target.updatedAt));
-        }
-        if (target.deletedAt) {
-          throw new ConflictException(`Inactive admins cannot change roles until restored`);
-        }
+        assertAdminFound(target);
+        assertExpectedVersion(target.updatedAt, expectedVersion);
+        assertActiveAdminTarget(target.deletedAt, `Inactive admins cannot change roles until restored`);
         if (target.role?.key === nextRoleKey) {
-          return {
-            adminId: target.id,
-            roleKey: nextRoleKey,
-            version: deriveVersion(target.updatedAt),
-            alreadyApplied: true,
-          };
+          return buildAlreadyAppliedRoleResult(target, nextRoleKey);
         }
 
         const nextRole = await this.repository.getRoleByKey(nextRoleKey);
@@ -288,33 +216,16 @@ export class AdminV2AdminMutationsService {
         });
         if (updated.count === 0) {
           const current = await this.repository.findAdminUpdatedAt(tx, target.id);
-          throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
+          throwStaleMutationConflict(current);
         }
 
-        await this.repository.createAuditEntry(tx, {
-          adminId: actorAdminId,
-          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_role_change,
-          resource: `admin`,
-          resourceId: target.id,
-          metadata: {
-            targetEmail: target.email,
-            confirmed: true,
-            previousRoleKey: target.role?.key ?? null,
-            nextRoleKey,
-            previousType: target.type,
-            nextType: toAdminType(nextRole.key),
-          },
-          ipAddress: meta.ipAddress ?? null,
-          userAgent: meta.userAgent ?? null,
-        });
+        await this.repository.createAuditEntry(
+          tx,
+          buildRoleChangeAuditEntry(actorAdminId, target, nextRole, nextRoleKey, meta),
+        );
 
         const fresh = await this.repository.findAdminRoleResult(tx, target.id);
-        return {
-          adminId: target.id,
-          roleKey: fresh.role?.key ?? nextRoleKey,
-          version: deriveVersion(fresh.updatedAt),
-          alreadyApplied: false,
-        };
+        return buildChangedRoleResult(target.id, fresh, nextRoleKey);
       },
     });
   }
@@ -325,29 +236,9 @@ export class AdminV2AdminMutationsService {
     body: { version?: number; capabilityOverrides?: Array<{ capability: string; mode: string }> },
     meta: RequestMeta,
   ) {
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
-    const requestedOverrides = Array.isArray(body.capabilityOverrides) ? body.capabilityOverrides : [];
-    const normalizedOverrides = requestedOverrides.map((override) => {
-      const capability = String(override.capability ?? ``).trim();
-      const mode = String(override.mode ?? ``).trim() as AdminPermissionOverrideMode;
-      return {
-        capability,
-        mode,
-      };
-    });
-    if (
-      normalizedOverrides.some(
-        (override) =>
-          !override.capability ||
-          !ADMIN_PERMISSION_OVERRIDE_CAPABILITIES.has(override.capability) ||
-          !ADMIN_PERMISSION_OVERRIDE_MODES.has(override.mode),
-      )
-    ) {
-      throw new BadRequestException(`Only known admin-v2 capability overrides are supported`);
-    }
+    const expectedVersion = requireValidVersion(body.version);
+    const normalizedOverrides = normalizeCapabilityOverrides(body.capabilityOverrides);
+    assertKnownCapabilityOverrides(normalizedOverrides);
 
     return this.idempotency.executeInTransaction({
       adminId: actorAdminId,
@@ -360,55 +251,25 @@ export class AdminV2AdminMutationsService {
       },
       execute: async (tx) => {
         const target = await this.repository.getAdminPermissionMutationTarget(targetAdminId);
-        if (!target) {
-          throw new NotFoundException(`Admin not found`);
-        }
-        if (deriveVersion(target.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(target.updatedAt));
-        }
-        if (target.deletedAt) {
-          throw new ConflictException(`Inactive admins cannot change permission overrides until restored`);
-        }
+        assertAdminFound(target);
+        assertExpectedVersion(target.updatedAt, expectedVersion);
+        assertActiveAdminTarget(target.deletedAt, `Inactive admins cannot change permission overrides until restored`);
 
         const relevantPermissions = await this.repository.listRelevantPermissions([
           ...ADMIN_PERMISSION_OVERRIDE_CAPABILITIES,
         ]);
-        const permissionIdByCapability = new Map(
-          relevantPermissions.map((permission) => [permission.capability, permission.id]),
-        );
-        if (normalizedOverrides.some((override) => !permissionIdByCapability.has(override.capability))) {
-          throw new BadRequestException(`One or more requested capabilities are unavailable`);
-        }
+        const permissionIdByCapability = buildPermissionIdByCapability(relevantPermissions);
+        assertAvailableCapabilityOverrides(normalizedOverrides, permissionIdByCapability);
 
-        const currentOverrideMap = new Map(
-          target.permissionOverrides
-            .filter((override) => ADMIN_PERMISSION_OVERRIDE_CAPABILITIES.has(override.permission.capability))
-            .map((override) => [override.permission.capability, override.granted]),
-        );
-        const nextOverrideMap = new Map<string, boolean | null>();
-        for (const override of normalizedOverrides) {
-          nextOverrideMap.set(override.capability, toPermissionOverrideGrant(override.mode));
-        }
-        const changes = [...ADMIN_PERMISSION_OVERRIDE_CAPABILITIES].flatMap((capability) => {
-          const current = currentOverrideMap.has(capability) ? currentOverrideMap.get(capability)! : null;
-          const next = nextOverrideMap.has(capability) ? nextOverrideMap.get(capability)! : null;
-          return current === next ? [] : [{ capability, previous: current, next }];
-        });
+        const changes = buildPermissionOverrideChanges(target, normalizedOverrides);
         if (changes.length === 0) {
-          return {
-            adminId: target.id,
-            version: deriveVersion(target.updatedAt),
-            overrides: normalizedOverrides,
-            alreadyApplied: true,
-          };
+          return buildAlreadyAppliedPermissionResult(target, normalizedOverrides);
         }
 
         await this.repository.replaceAdminPermissionOverrides(tx, {
           adminId: target.id,
           normalizedOverrides,
-          touchedPermissionIds: [
-            ...new Set(normalizedOverrides.map((override) => permissionIdByCapability.get(override.capability)!)),
-          ],
+          touchedPermissionIds: buildTouchedPermissionIds(normalizedOverrides, permissionIdByCapability),
           permissionIdByCapability,
         });
 
@@ -420,34 +281,16 @@ export class AdminV2AdminMutationsService {
         });
         if (updated.count === 0) {
           const current = await this.repository.findAdminUpdatedAt(tx, target.id);
-          throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Admin has changed`);
+          throwStaleMutationConflict(current);
         }
 
-        await this.repository.createAuditEntry(tx, {
-          adminId: actorAdminId,
-          action: ADMIN_ACTION_AUDIT_ACTIONS.admin_permissions_change,
-          resource: `admin`,
-          resourceId: target.id,
-          metadata: {
-            targetEmail: target.email,
-            changes,
-          },
-          ipAddress: meta.ipAddress ?? null,
-          userAgent: meta.userAgent ?? null,
-        });
+        await this.repository.createAuditEntry(
+          tx,
+          buildPermissionChangeAuditEntry(actorAdminId, target, changes, meta),
+        );
 
         const fresh = await this.repository.findAdminPermissionResult(tx, target.id);
-        return {
-          adminId: target.id,
-          version: deriveVersion(fresh.updatedAt),
-          overrides: fresh.permissionOverrides
-            .filter((override) => ADMIN_PERMISSION_OVERRIDE_CAPABILITIES.has(override.permission.capability))
-            .map((override) => ({
-              capability: override.permission.capability,
-              granted: override.granted,
-            })),
-          alreadyApplied: false,
-        };
+        return buildChangedPermissionResult(target.id, fresh);
       },
     });
   }
