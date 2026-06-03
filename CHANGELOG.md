@@ -3182,7 +3182,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-06-02</summary>
 
 - **2026-06-02:**
@@ -3201,6 +3201,26 @@
 
   ### ⚠️ Notes
   - **Refactor-and-fix day:** Aside from the consumer documents BFF prefix fix, the day's commits are admin-v2 route decomposition, api-v2 presenter extractions, characterization tests, and unused-export cleanup. No DB migrations, no API contract changes, no new product surface.
+
+</details>
+
+<details open>
+<summary>2026-06-03</summary>
+
+- **2026-06-03:**
+
+  ### 🧪 Testing
+  - **api-v2 characterization hardening for exchange and admin mutations:** Expand `AdminScheduledConversionCommandsService`-adjacent exchange coverage by characterizing `AdminExchangeRuleCommandsService` lock-row, failure-mapping, clamp, and publish-after-commit ordering behavior, and harden `AdminV2AdminMutationsService` coverage for lifecycle, role, and permission-override mutation paths before the corresponding helper extractions. The commit sequence records reruns of targeted service/controller specs plus `module-boundaries.spec.ts`, `typecheck`, `lint`, and `build`.
+  - **Admin-v2 shared-action and form-field regression coverage:** Add unit coverage for the new shared `assignment-action-core` helper and the promoted `PasswordConfirmationField`, then rerun the existing admin-v2 suites and production build as the verification assignment actions and the remaining assignment-action domains move onto the shared core.
+
+  ### 🛠 DevEx
+  - **READ-1 raw read-model ownership cleanup completed in api-v2:** Extract consumer document-list SQL and mapping ownership into dedicated helpers while keeping `ConsumerDocumentListRepository` as the facade, then do the same for consumer contracts by moving raw-list SQL builders and row/result shaping out of `ConsumerContractsQuery` without changing public APIs, SQL semantics, recount logic, or fallback/detail paths.
+  - **Admin mutation and exchange command helper extraction:** Reduce service responsibility density in `AdminV2AdminMutationsService` by pulling shared guard, stale/no-op result, audit-payload, and permission-diff helpers into a dedicated helper module; then apply the same staged extraction pattern to `AdminExchangeRuleCommandsService` by moving pure execution-summary/event builders, exchange-rule guards, and a dedicated result-helper entrypoint out of the facade while keeping idempotency, transaction orchestration, action locking, finalize, and publish-after-commit behavior in place.
+  - **Admin-v2 assignment-action and password-confirmation consolidation:** Add a shared `assignment-action-core` execution helper, pilot it on verification, roll it out across the remaining documents, ledger, payouts, payments, and exchange assignment server actions, and promote a shared `PasswordConfirmationField` component so the step-up field contract stops drifting across inline admin forms.
+  - **Public-surface pruning:** Remove unused type exports in `apps/api-v2` after the extraction wave, and trim unused route-level exports during the admin-v2 cleanup so the exposed surface stays narrow.
+
+  ### ⚠️ Notes
+  - **Refactor-only day across api-v2 and admin-v2:** Today's commits are characterization-first tests, behavior-preserving helper extractions, shared-action consolidation, and minor public-surface cleanup. The recorded scope does not include DB migrations, DTO/controller contract changes, or new product-surface rollout.
 
 </details>
 
