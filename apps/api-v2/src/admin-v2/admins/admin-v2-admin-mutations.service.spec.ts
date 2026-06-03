@@ -66,6 +66,15 @@ describe(`AdminV2AdminMutationsService`, () => {
     };
   }
 
+  function buildRoleTarget(overrides: Record<string, unknown> = {}) {
+    return {
+      ...buildLifecycleTarget(),
+      type: `ADMIN`,
+      role: { id: `role-1`, key: `OPS_ADMIN` },
+      ...overrides,
+    };
+  }
+
   it(`records compatibility audit after patching an admin password through the repository`, async () => {
     const { service, repository, auditTrail } = await buildService();
     repository.patchAdminPassword.mockResolvedValueOnce({
@@ -442,6 +451,259 @@ describe(`AdminV2AdminMutationsService`, () => {
     expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
     expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
     expect(repository.createAuditEntry).not.toHaveBeenCalled();
+  });
+
+  it(`rejects changeAdminRole when confirmation is missing before idempotency`, async () => {
+    const { service, repository, idempotency } = await buildService();
+
+    await expect(
+      service.changeAdminRole(
+        `admin-2`,
+        `admin-1`,
+        { version: 1, confirmed: false, roleKey: `SUPER_ADMIN` },
+        { idempotencyKey: `idem-role-confirm` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        message: `Confirmation is required for admin role change`,
+        error: `Bad Request`,
+        statusCode: 400,
+      },
+    });
+
+    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
+    expect(repository.getAdminRoleMutationTarget).not.toHaveBeenCalled();
+    expect(repository.changeAdminRole).not.toHaveBeenCalled();
+  });
+
+  it(`rejects changeAdminRole when version is invalid before idempotency`, async () => {
+    const { service, repository, idempotency } = await buildService();
+
+    await expect(
+      service.changeAdminRole(
+        `admin-2`,
+        `admin-1`,
+        { version: 0, confirmed: true, roleKey: `SUPER_ADMIN` },
+        { idempotencyKey: `idem-role-version` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        message: `Valid version is required`,
+        error: `Bad Request`,
+        statusCode: 400,
+      },
+    });
+
+    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
+    expect(repository.getAdminRoleMutationTarget).not.toHaveBeenCalled();
+    expect(repository.changeAdminRole).not.toHaveBeenCalled();
+  });
+
+  it(`returns alreadyApplied without writing or auditing when changeAdminRole keeps the same role`, async () => {
+    const { service, repository, idempotency } = await buildService();
+    const target = buildRoleTarget({
+      role: { id: `role-2`, key: `SUPER_ADMIN` },
+    });
+    repository.getAdminRoleMutationTarget.mockResolvedValueOnce(target);
+
+    const result = await service.changeAdminRole(
+      `admin-2`,
+      `admin-1`,
+      { version: target.updatedAt.getTime(), confirmed: true, roleKey: `SUPER_ADMIN` },
+      { idempotencyKey: `idem-role-noop` },
+    );
+
+    expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminId: `admin-1`,
+        scope: `admin-role-change:admin-2`,
+        key: `idem-role-noop`,
+        payload: {
+          targetAdminId: `admin-2`,
+          expectedVersion: target.updatedAt.getTime(),
+          confirmed: true,
+          nextRoleKey: `SUPER_ADMIN`,
+        },
+      }),
+    );
+    expect(repository.getRoleByKey).not.toHaveBeenCalled();
+    expect(repository.changeAdminRole).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      adminId: `admin-2`,
+      roleKey: `SUPER_ADMIN`,
+      version: target.updatedAt.getTime(),
+      alreadyApplied: true,
+    });
+  });
+
+  it(`rejects changeAdminRole for inactive targets without mutation side effects`, async () => {
+    const { service, repository } = await buildService();
+    const target = buildRoleTarget({
+      deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
+    });
+    repository.getAdminRoleMutationTarget.mockResolvedValueOnce(target);
+
+    await expect(
+      service.changeAdminRole(
+        `admin-2`,
+        `admin-1`,
+        { version: target.updatedAt.getTime(), confirmed: true, roleKey: `SUPER_ADMIN` },
+        { idempotencyKey: `idem-role-inactive` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        message: `Inactive admins cannot change roles until restored`,
+        error: `Conflict`,
+        statusCode: 409,
+      },
+    });
+
+    expect(repository.getRoleByKey).not.toHaveBeenCalled();
+    expect(repository.changeAdminRole).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
+  });
+
+  it(`rejects changeAdminRole when the requested target role is unavailable`, async () => {
+    const { service, repository } = await buildService();
+    const target = buildRoleTarget();
+    repository.getAdminRoleMutationTarget.mockResolvedValueOnce(target);
+    repository.getRoleByKey.mockResolvedValueOnce(null);
+
+    await expect(
+      service.changeAdminRole(
+        `admin-2`,
+        `admin-1`,
+        { version: target.updatedAt.getTime(), confirmed: true, roleKey: `SUPER_ADMIN` },
+        { idempotencyKey: `idem-role-missing` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        message: `Target role is unavailable`,
+        error: `Bad Request`,
+        statusCode: 400,
+      },
+    });
+
+    expect(repository.changeAdminRole).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+    expect(repository.findAdminRoleResult).not.toHaveBeenCalled();
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
+  });
+
+  it(`changes roles through idempotency, repository mutation, and audit persistence`, async () => {
+    const { service, repository, idempotency } = await buildService();
+    const target = buildRoleTarget();
+    const nextRole = { id: `role-2`, key: `SUPER_ADMIN` };
+    const freshUpdatedAt = new Date(`2026-04-17T10:10:00.000Z`);
+    repository.getAdminRoleMutationTarget.mockResolvedValueOnce(target);
+    repository.getRoleByKey.mockResolvedValueOnce(nextRole);
+    repository.changeAdminRole.mockResolvedValueOnce({ count: 1 });
+    repository.findAdminRoleResult.mockResolvedValueOnce({
+      updatedAt: freshUpdatedAt,
+      role: { id: `role-2`, key: `SUPER_ADMIN` },
+    });
+
+    const result = await service.changeAdminRole(
+      `admin-2`,
+      `admin-1`,
+      { version: target.updatedAt.getTime(), confirmed: true, roleKey: ` SUPER_ADMIN ` },
+      { idempotencyKey: `idem-role-ok`, ipAddress: `127.0.0.1`, userAgent: `jest` },
+    );
+
+    expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminId: `admin-1`,
+        scope: `admin-role-change:admin-2`,
+        key: `idem-role-ok`,
+        payload: {
+          targetAdminId: `admin-2`,
+          expectedVersion: target.updatedAt.getTime(),
+          confirmed: true,
+          nextRoleKey: `SUPER_ADMIN`,
+        },
+      }),
+    );
+    expect(repository.getRoleByKey).toHaveBeenCalledWith(`SUPER_ADMIN`);
+    expect(repository.changeAdminRole).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        targetId: `admin-2`,
+        expectedUpdatedAt: target.updatedAt,
+        nextRoleId: `role-2`,
+        nextType: `SUPER`,
+      }),
+    );
+    expect(repository.createAuditEntry).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        adminId: `admin-1`,
+        action: `admin_role_change`,
+        resource: `admin`,
+        resourceId: `admin-2`,
+        metadata: {
+          targetEmail: `ops@example.com`,
+          confirmed: true,
+          previousRoleKey: `OPS_ADMIN`,
+          nextRoleKey: `SUPER_ADMIN`,
+          previousType: `ADMIN`,
+          nextType: `SUPER`,
+        },
+        ipAddress: `127.0.0.1`,
+        userAgent: `jest`,
+      }),
+    );
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
+    expect(repository.getRoleByKey.mock.invocationCallOrder[0]).toBeLessThan(
+      repository.changeAdminRole.mock.invocationCallOrder[0],
+    );
+    expect(repository.changeAdminRole.mock.invocationCallOrder[0]).toBeLessThan(
+      repository.createAuditEntry.mock.invocationCallOrder[0],
+    );
+    expect(repository.createAuditEntry.mock.invocationCallOrder[0]).toBeLessThan(
+      repository.findAdminRoleResult.mock.invocationCallOrder[0],
+    );
+    expect(result).toEqual({
+      adminId: `admin-2`,
+      roleKey: `SUPER_ADMIN`,
+      version: freshUpdatedAt.getTime(),
+      alreadyApplied: false,
+    });
+  });
+
+  it(`surfaces stale changeAdminRole conflicts from the count=0 fallback lookup without auditing`, async () => {
+    const { service, repository } = await buildService();
+    const target = buildRoleTarget();
+    const currentUpdatedAt = new Date(`2026-04-17T10:06:00.000Z`);
+    repository.getAdminRoleMutationTarget.mockResolvedValueOnce(target);
+    repository.getRoleByKey.mockResolvedValueOnce({ id: `role-2`, key: `SUPER_ADMIN` });
+    repository.changeAdminRole.mockResolvedValueOnce({ count: 0 });
+    repository.findAdminUpdatedAt.mockResolvedValueOnce({ updatedAt: currentUpdatedAt });
+
+    await expect(
+      service.changeAdminRole(
+        `admin-2`,
+        `admin-1`,
+        { version: target.updatedAt.getTime(), confirmed: true, roleKey: `SUPER_ADMIN` },
+        { idempotencyKey: `idem-role-stale` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        error: `STALE_VERSION`,
+        currentVersion: currentUpdatedAt.getTime(),
+      },
+    });
+
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+    expect(repository.findAdminRoleResult).not.toHaveBeenCalled();
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
   });
 
   it(`rejects non-overridable capabilities before hitting the repository`, async () => {
