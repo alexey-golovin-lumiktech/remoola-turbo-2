@@ -17,7 +17,7 @@ export type ContractListCountRow = {
   totalCount: number | bigint;
 };
 
-export function mapContractListRow(row: ContractListRow): ConsumerContractItem {
+function mapContractListRow(row: ContractListRow): ConsumerContractItem {
   return {
     id: row.id,
     name: row.name,

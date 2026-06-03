@@ -64,12 +64,12 @@ type PermissionRecord = {
 
 type AuditMeta = Pick<RequestMeta, `ipAddress` | `userAgent`>;
 
-export type NormalizedCapabilityOverride = {
+type NormalizedCapabilityOverride = {
   capability: string;
   mode: AdminPermissionOverrideMode;
 };
 
-export type PermissionOverrideChange = {
+type PermissionOverrideChange = {
   capability: string;
   previous: boolean | null;
   next: boolean | null;

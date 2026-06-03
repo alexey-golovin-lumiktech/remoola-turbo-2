@@ -20,12 +20,12 @@ type DashboardPaymentRequestLedgerActivity = {
   outcomes?: DashboardPaymentRequestLedgerOutcomeTimestamp[];
 };
 
-export type DashboardPaymentRequestStatusLike = {
+type DashboardPaymentRequestStatusLike = {
   status: $Enums.TransactionStatus;
   ledgerEntries?: DashboardPaymentRequestLedgerStatus[];
 };
 
-export type DashboardPaymentRequestActivityLike = {
+type DashboardPaymentRequestActivityLike = {
   updatedAt: Date;
   ledgerEntries?: DashboardPaymentRequestLedgerActivity[];
 };

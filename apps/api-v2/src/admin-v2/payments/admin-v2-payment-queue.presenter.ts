@@ -40,7 +40,7 @@ type PaymentOperationsQueueInput = {
   assigneeMap: Map<string, AdminRef>;
 };
 
-export function isInvoiceTaggedResource(
+function isInvoiceTaggedResource(
   resource: { resourceTags?: Array<{ tag: { name: string } }> } | null | undefined,
 ): boolean {
   return resource?.resourceTags?.some((resourceTag) => resourceTag.tag.name.startsWith(`INVOICE-`)) ?? false;

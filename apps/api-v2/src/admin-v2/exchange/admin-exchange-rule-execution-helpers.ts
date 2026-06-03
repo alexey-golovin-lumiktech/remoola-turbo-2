@@ -8,14 +8,14 @@ import {
 import { getCurrencyFractionDigits } from '../../shared-common';
 import { type AdminV2DomainEvent } from '../admin-v2-domain-events.service';
 
-export type RuleExecutionSummaryParams = {
+type RuleExecutionSummaryParams = {
   source: string;
   actorId: string;
   idempotencyKey: string;
   now: Date;
 };
 
-export type AmountDecision =
+type AmountDecision =
   | { kind: `failed`; reason: `balance_below_target` | `no_amount_to_convert` }
   | { kind: `convert`; amountToConvert: number };
 
