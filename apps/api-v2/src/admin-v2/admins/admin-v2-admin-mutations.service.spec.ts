@@ -56,6 +56,16 @@ describe(`AdminV2AdminMutationsService`, () => {
     };
   }
 
+  function buildLifecycleTarget(overrides: Record<string, unknown> = {}) {
+    return {
+      id: `admin-2`,
+      email: `ops@example.com`,
+      updatedAt: new Date(`2026-04-17T10:00:00.000Z`),
+      deletedAt: null,
+      ...overrides,
+    };
+  }
+
   it(`records compatibility audit after patching an admin password through the repository`, async () => {
     const { service, repository, auditTrail } = await buildService();
     repository.patchAdminPassword.mockResolvedValueOnce({
@@ -94,6 +104,183 @@ describe(`AdminV2AdminMutationsService`, () => {
     });
   });
 
+  it.each([
+    {
+      action: `delete` as const,
+      deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
+      expectedAuditAction: `admin_delete`,
+      expectedStatus: `INACTIVE`,
+    },
+    {
+      action: `restore` as const,
+      deletedAt: null,
+      expectedAuditAction: `admin_restore`,
+      expectedStatus: `ACTIVE`,
+    },
+  ])(
+    `keeps updateAdminStatus %s as a direct repository write plus compatibility audit`,
+    async ({ action, deletedAt, expectedAuditAction, expectedStatus }) => {
+      const { service, repository, auditTrail, idempotency } = await buildService();
+      const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
+      repository.updateAdminStatus.mockResolvedValueOnce({
+        id: `admin-2`,
+        email: `ops@example.com`,
+        deletedAt,
+        updatedAt,
+      });
+
+      const result = await service.updateAdminStatus(`admin-2`, action, `admin-1`, {
+        ipAddress: `203.0.113.5`,
+        userAgent: `jest`,
+        idempotencyKey: `idem-status`,
+      });
+
+      expect(repository.updateAdminStatus).toHaveBeenCalledWith({
+        targetAdminId: `admin-2`,
+        action,
+      });
+      expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
+      expect(auditTrail.recordAdminActionAudit).toHaveBeenCalledWith({
+        adminId: `admin-1`,
+        action: expectedAuditAction,
+        resourceId: `admin-2`,
+        metadata: {
+          targetEmail: `ops@example.com`,
+        },
+        ipAddress: `203.0.113.5`,
+        userAgent: `jest`,
+      });
+      expect(result).toEqual({
+        adminId: `admin-2`,
+        status: expectedStatus,
+        deletedAt: deletedAt?.toISOString() ?? null,
+        version: updatedAt.getTime(),
+      });
+    },
+  );
+
+  it(`rejects restoreAdmin before idempotency when version is invalid`, async () => {
+    const { service, repository, idempotency } = await buildService();
+
+    await expect(
+      service.restoreAdmin(`admin-2`, `admin-1`, { version: 0 }, { idempotencyKey: `idem-restore-invalid` }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
+    expect(repository.getAdminLifecycleTarget).not.toHaveBeenCalled();
+  });
+
+  it(`returns alreadyActive without restoring or auditing when restoreAdmin targets an active admin`, async () => {
+    const { service, repository } = await buildService();
+    const target = buildLifecycleTarget();
+    repository.getAdminLifecycleTarget.mockResolvedValueOnce(target);
+
+    const result = await service.restoreAdmin(
+      `admin-2`,
+      `admin-1`,
+      { version: target.updatedAt.getTime() },
+      { idempotencyKey: `idem-restore-noop`, ipAddress: `127.0.0.1`, userAgent: `jest` },
+    );
+
+    expect(repository.restoreAdmin).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      adminId: `admin-2`,
+      status: `ACTIVE`,
+      version: target.updatedAt.getTime(),
+      alreadyActive: true,
+    });
+  });
+
+  it(`restores admins through idempotency, audit persistence, and lifecycle result shaping`, async () => {
+    const { service, repository, idempotency } = await buildService();
+    const target = buildLifecycleTarget({
+      deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
+    });
+    const restoredUpdatedAt = new Date(`2026-04-17T10:10:00.000Z`);
+    repository.getAdminLifecycleTarget.mockResolvedValueOnce(target);
+    repository.restoreAdmin.mockResolvedValueOnce({ count: 1 });
+    repository.findAdminLifecycleResult.mockResolvedValueOnce({
+      id: `admin-2`,
+      updatedAt: restoredUpdatedAt,
+      deletedAt: null,
+    });
+
+    const result = await service.restoreAdmin(
+      `admin-2`,
+      `admin-1`,
+      { version: target.updatedAt.getTime() },
+      { idempotencyKey: `idem-restore-ok`, ipAddress: `127.0.0.1`, userAgent: `jest` },
+    );
+
+    expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminId: `admin-1`,
+        scope: `admin-restore:admin-2`,
+        key: `idem-restore-ok`,
+        payload: {
+          targetAdminId: `admin-2`,
+          expectedVersion: target.updatedAt.getTime(),
+        },
+      }),
+    );
+    expect(repository.restoreAdmin).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        targetId: `admin-2`,
+        expectedUpdatedAt: target.updatedAt,
+      }),
+    );
+    expect(repository.createAuditEntry).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        adminId: `admin-1`,
+        action: `admin_restore`,
+        resource: `admin`,
+        resourceId: `admin-2`,
+        metadata: {
+          targetEmail: `ops@example.com`,
+        },
+        ipAddress: `127.0.0.1`,
+        userAgent: `jest`,
+      }),
+    );
+    expect(result).toEqual({
+      adminId: `admin-2`,
+      status: `ACTIVE`,
+      deletedAt: null,
+      version: restoredUpdatedAt.getTime(),
+      alreadyActive: false,
+    });
+  });
+
+  it(`surfaces stale restoreAdmin conflicts from the count=0 fallback lookup`, async () => {
+    const { service, repository } = await buildService();
+    const target = buildLifecycleTarget({
+      deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
+    });
+    const currentUpdatedAt = new Date(`2026-04-17T10:07:00.000Z`);
+    repository.getAdminLifecycleTarget.mockResolvedValueOnce(target);
+    repository.restoreAdmin.mockResolvedValueOnce({ count: 0 });
+    repository.findAdminUpdatedAt.mockResolvedValueOnce({ updatedAt: currentUpdatedAt });
+
+    await expect(
+      service.restoreAdmin(
+        `admin-2`,
+        `admin-1`,
+        { version: target.updatedAt.getTime() },
+        { idempotencyKey: `idem-restore-stale` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        error: `STALE_VERSION`,
+        currentVersion: currentUpdatedAt.getTime(),
+      },
+    });
+
+    expect(repository.findAdminLifecycleResult).not.toHaveBeenCalled();
+  });
+
   it(`returns alreadyInactive without opening a transaction`, async () => {
     const { service, repository } = await buildService();
     const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
@@ -122,6 +309,44 @@ describe(`AdminV2AdminMutationsService`, () => {
     });
   });
 
+  it(`rejects deactivateAdmin when confirmation is missing before idempotency`, async () => {
+    const { service, repository, idempotency } = await buildService();
+
+    await expect(
+      service.deactivateAdmin(`admin-2`, `admin-1`, { version: 1, confirmed: false }, { idempotencyKey: `idem-a` }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
+    expect(repository.getAdminLifecycleTarget).not.toHaveBeenCalled();
+  });
+
+  it(`rejects deactivateAdmin self-targets before idempotency`, async () => {
+    const { service, repository, idempotency } = await buildService();
+
+    await expect(
+      service.deactivateAdmin(`admin-1`, `admin-1`, { version: 1, confirmed: true }, { idempotencyKey: `idem-self` }),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
+    expect(repository.getAdminLifecycleTarget).not.toHaveBeenCalled();
+  });
+
+  it(`rejects deactivateAdmin when version is invalid before idempotency`, async () => {
+    const { service, repository, idempotency } = await buildService();
+
+    await expect(
+      service.deactivateAdmin(
+        `admin-2`,
+        `admin-1`,
+        { version: 0, confirmed: true },
+        { idempotencyKey: `idem-invalid-version` },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
+    expect(repository.getAdminLifecycleTarget).not.toHaveBeenCalled();
+  });
+
   it(`routes deactivation through idempotency and the transaction runner`, async () => {
     const { service, repository, idempotency } = await buildService();
     const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
@@ -138,18 +363,12 @@ describe(`AdminV2AdminMutationsService`, () => {
       deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
     });
 
-    await expect(
-      service.deactivateAdmin(
-        `admin-2`,
-        `admin-1`,
-        { version: updatedAt.getTime(), confirmed: true, reason: `Ops handoff` },
-        { idempotencyKey: `idem-2`, ipAddress: `127.0.0.1`, userAgent: `jest` },
-      ),
-    ).resolves.toMatchObject({
-      adminId: `admin-2`,
-      status: `INACTIVE`,
-      alreadyInactive: false,
-    });
+    const result = await service.deactivateAdmin(
+      `admin-2`,
+      `admin-1`,
+      { version: updatedAt.getTime(), confirmed: true, reason: `Ops handoff` },
+      { idempotencyKey: `idem-2`, ipAddress: `127.0.0.1`, userAgent: `jest` },
+    );
 
     expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -165,6 +384,64 @@ describe(`AdminV2AdminMutationsService`, () => {
         expectedUpdatedAt: updatedAt,
       }),
     );
+    expect(repository.revokeActiveSessions).toHaveBeenCalledWith(expect.anything(), `admin-2`, expect.any(Date));
+    expect(repository.deleteRefreshTokens).toHaveBeenCalledWith(expect.anything(), `admin-2`);
+    expect(repository.createAuditEntry).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        adminId: `admin-1`,
+        action: `admin_deactivate`,
+        resource: `admin`,
+        resourceId: `admin-2`,
+        metadata: {
+          targetEmail: `ops@example.com`,
+          confirmed: true,
+          reason: `Ops handoff`,
+        },
+        ipAddress: `127.0.0.1`,
+        userAgent: `jest`,
+      }),
+    );
+    expect(repository.revokeActiveSessions.mock.invocationCallOrder[0]).toBeLessThan(
+      repository.deleteRefreshTokens.mock.invocationCallOrder[0],
+    );
+    expect(repository.deleteRefreshTokens.mock.invocationCallOrder[0]).toBeLessThan(
+      repository.createAuditEntry.mock.invocationCallOrder[0],
+    );
+    expect(result).toEqual({
+      adminId: `admin-2`,
+      status: `INACTIVE`,
+      deletedAt: new Date(`2026-04-17T10:05:00.000Z`).toISOString(),
+      version: new Date(`2026-04-17T10:05:00.000Z`).getTime(),
+      alreadyInactive: false,
+    });
+  });
+
+  it(`surfaces stale deactivateAdmin conflicts from the count=0 fallback lookup without side effects`, async () => {
+    const { service, repository } = await buildService();
+    const target = buildLifecycleTarget();
+    const currentUpdatedAt = new Date(`2026-04-17T10:06:00.000Z`);
+    repository.getAdminLifecycleTarget.mockResolvedValueOnce(target);
+    repository.deactivateAdmin.mockResolvedValueOnce({ count: 0 });
+    repository.findAdminUpdatedAt.mockResolvedValueOnce({ updatedAt: currentUpdatedAt });
+
+    await expect(
+      service.deactivateAdmin(
+        `admin-2`,
+        `admin-1`,
+        { version: target.updatedAt.getTime(), confirmed: true, reason: `Ops handoff` },
+        { idempotencyKey: `idem-stale` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        error: `STALE_VERSION`,
+        currentVersion: currentUpdatedAt.getTime(),
+      },
+    });
+
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
   });
 
   it(`rejects non-overridable capabilities before hitting the repository`, async () => {
