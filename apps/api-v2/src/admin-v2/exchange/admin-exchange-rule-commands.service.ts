@@ -1,7 +1,7 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 
 import { $Enums, type Prisma } from '@remoola/database-2';
-import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { AdminExchangeActionLockRepository } from './admin-exchange-action-lock.repository';
 import {
@@ -11,6 +11,13 @@ import {
   buildRuleExecutionEvent,
   decideAmountToConvert,
 } from './admin-exchange-rule-execution-helpers';
+import {
+  assertExchangeRuleFound,
+  assertExpectedExchangeRuleVersion,
+  assertLockedExchangeRuleFound,
+  parseUuidOrThrow,
+  requireValidVersion,
+} from './admin-exchange-rule-guard-helpers';
 import {
   AdminExchangeRulePersistenceRepository,
   type ExchangeRuleExecutionResult,
@@ -24,22 +31,9 @@ import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner'
 import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { AdminV2DomainEventsService } from '../admin-v2-domain-events.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
 
 function adminIdOrConsumer(consumerId: string, adminId: string | null | undefined) {
   return adminId ?? consumerId;
-}
-
-function parseUuidOrThrow(raw: string | null | undefined, headerName: string) {
-  const value = raw?.trim();
-  if (!value) {
-    throw new BadRequestException(`${headerName} header is required`);
-  }
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if (!uuidRegex.test(value)) {
-    throw new BadRequestException(`${headerName} header must be a UUID`);
-  }
-  return value;
 }
 
 @Injectable()
@@ -56,10 +50,7 @@ export class AdminExchangeRuleCommandsService {
   ) {}
 
   async pauseRule(ruleId: string, adminId: string, body: { version?: number }, meta: RequestMeta) {
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
+    const expectedVersion = requireValidVersion(body.version);
 
     return this.idempotency.execute({
       adminId,
@@ -86,10 +77,7 @@ export class AdminExchangeRuleCommandsService {
   }
 
   async resumeRule(ruleId: string, adminId: string, body: { version?: number }, meta: RequestMeta) {
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
+    const expectedVersion = requireValidVersion(body.version);
 
     return this.idempotency.execute({
       adminId,
@@ -117,10 +105,7 @@ export class AdminExchangeRuleCommandsService {
 
   async runRuleNow(ruleId: string, adminId: string, body: { version?: number }, meta: RequestMeta) {
     const idempotencyKey = parseUuidOrThrow(meta.idempotencyKey, `Idempotency-Key`);
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
+    const expectedVersion = requireValidVersion(body.version);
 
     const result = await this.idempotency.execute({
       adminId,
@@ -151,12 +136,8 @@ export class AdminExchangeRuleCommandsService {
 
   private async assertActiveRuleVersion(ruleId: string, expectedVersion: number) {
     const rule = await this.preflightRepository.findActiveRuleById(ruleId);
-    if (!rule) {
-      throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
-    }
-    if (deriveVersion(rule.updatedAt) !== expectedVersion) {
-      throw new ConflictException(buildStaleVersionPayload(`Exchange rule`, rule.updatedAt));
-    }
+    assertExchangeRuleFound(rule);
+    assertExpectedExchangeRuleVersion(rule.updatedAt, expectedVersion);
   }
 
   private async runRuleNowInTransaction(
@@ -170,12 +151,8 @@ export class AdminExchangeRuleCommandsService {
     },
   ): Promise<ExchangeRuleExecutionResult> {
     const locked = await this.persistenceRepository.lockRuleExecutionRow(tx, params.ruleId);
-    if (!locked || locked.deleted_at) {
-      throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
-    }
-    if (deriveVersion(locked.updated_at) !== params.expectedVersion) {
-      throw new ConflictException(buildStaleVersionPayload(`Exchange rule`, locked.updated_at));
-    }
+    assertLockedExchangeRuleFound(locked);
+    assertExpectedExchangeRuleVersion(locked.updated_at, params.expectedVersion);
     if (!(await this.actionLockRepository.tryActionLock(tx, `exchange_rule_run_now:${params.ruleId}`))) {
       throw new ConflictException(errorCodes.CONVERSION_ALREADY_PROCESSING);
     }
