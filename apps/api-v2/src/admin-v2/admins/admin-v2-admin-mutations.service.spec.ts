@@ -75,6 +75,14 @@ describe(`AdminV2AdminMutationsService`, () => {
     };
   }
 
+  function buildPermissionTarget(overrides: Record<string, unknown> = {}) {
+    return {
+      ...buildLifecycleTarget(),
+      permissionOverrides: [],
+      ...overrides,
+    };
+  }
+
   it(`records compatibility audit after patching an admin password through the repository`, async () => {
     const { service, repository, auditTrail } = await buildService();
     repository.patchAdminPassword.mockResolvedValueOnce({
@@ -707,7 +715,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`rejects non-overridable capabilities before hitting the repository`, async () => {
-    const { service, repository } = await buildService();
+    const { service, repository, idempotency } = await buildService();
 
     await expect(
       service.changeAdminPermissions(
@@ -719,19 +727,50 @@ describe(`AdminV2AdminMutationsService`, () => {
         },
         { idempotencyKey: `idem-3` },
       ),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toMatchObject({
+      response: {
+        message: `Only known admin-v2 capability overrides are supported`,
+        error: `Bad Request`,
+        statusCode: 400,
+      },
+    });
 
+    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
     expect(repository.getAdminPermissionMutationTarget).not.toHaveBeenCalled();
+    expect(repository.replaceAdminPermissionOverrides).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+  });
+
+  it(`rejects changeAdminPermissions when version is invalid before idempotency`, async () => {
+    const { service, repository, idempotency } = await buildService();
+
+    await expect(
+      service.changeAdminPermissions(
+        `admin-2`,
+        `admin-1`,
+        {
+          version: 0,
+          capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
+        },
+        { idempotencyKey: `idem-permissions-version` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        message: `Valid version is required`,
+        error: `Bad Request`,
+        statusCode: 400,
+      },
+    });
+
+    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
+    expect(repository.getAdminPermissionMutationTarget).not.toHaveBeenCalled();
+    expect(repository.replaceAdminPermissionOverrides).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
   });
 
   it(`returns alreadyApplied when capability overrides do not change the effective state`, async () => {
-    const { service, repository } = await buildService();
-    const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
-    repository.getAdminPermissionMutationTarget.mockResolvedValueOnce({
-      id: `admin-2`,
-      email: `ops@example.com`,
-      updatedAt,
-      deletedAt: null,
+    const { service, repository, idempotency } = await buildService();
+    const target = buildPermissionTarget({
       permissionOverrides: [
         {
           id: `override-1`,
@@ -741,25 +780,287 @@ describe(`AdminV2AdminMutationsService`, () => {
         },
       ],
     });
+    repository.getAdminPermissionMutationTarget.mockResolvedValueOnce(target);
     repository.listRelevantPermissions.mockResolvedValueOnce([{ id: `perm-1`, capability: `admins.manage` }]);
 
     const result = await service.changeAdminPermissions(
       `admin-2`,
       `admin-1`,
       {
-        version: updatedAt.getTime(),
-        capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
+        version: target.updatedAt.getTime(),
+        capabilityOverrides: [{ capability: ` admins.manage `, mode: ` grant ` }],
       },
       { idempotencyKey: `idem-4` },
     );
 
+    expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminId: `admin-1`,
+        scope: `admin-permissions-change:admin-2`,
+        key: `idem-4`,
+        payload: {
+          targetAdminId: `admin-2`,
+          expectedVersion: target.updatedAt.getTime(),
+          normalizedOverrides: [{ capability: `admins.manage`, mode: `grant` }],
+        },
+      }),
+    );
     expect(repository.replaceAdminPermissionOverrides).not.toHaveBeenCalled();
+    expect(repository.touchAdminPermissions).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
     expect(result).toEqual({
       adminId: `admin-2`,
-      version: updatedAt.getTime(),
+      version: target.updatedAt.getTime(),
       overrides: [{ capability: `admins.manage`, mode: `grant` }],
       alreadyApplied: true,
     });
+  });
+
+  it(`rejects changeAdminPermissions for inactive targets without mutation side effects`, async () => {
+    const { service, repository } = await buildService();
+    const target = buildPermissionTarget({
+      deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
+    });
+    repository.getAdminPermissionMutationTarget.mockResolvedValueOnce(target);
+
+    await expect(
+      service.changeAdminPermissions(
+        `admin-2`,
+        `admin-1`,
+        {
+          version: target.updatedAt.getTime(),
+          capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
+        },
+        { idempotencyKey: `idem-permissions-inactive` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        message: `Inactive admins cannot change permission overrides until restored`,
+        error: `Conflict`,
+        statusCode: 409,
+      },
+    });
+
+    expect(repository.listRelevantPermissions).not.toHaveBeenCalled();
+    expect(repository.replaceAdminPermissionOverrides).not.toHaveBeenCalled();
+    expect(repository.touchAdminPermissions).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
+  });
+
+  it(`rejects changeAdminPermissions when one or more requested capabilities are unavailable`, async () => {
+    const { service, repository } = await buildService();
+    const target = buildPermissionTarget();
+    repository.getAdminPermissionMutationTarget.mockResolvedValueOnce(target);
+    repository.listRelevantPermissions.mockResolvedValueOnce([{ id: `perm-1`, capability: `admins.manage` }]);
+
+    await expect(
+      service.changeAdminPermissions(
+        `admin-2`,
+        `admin-1`,
+        {
+          version: target.updatedAt.getTime(),
+          capabilityOverrides: [
+            { capability: `admins.manage`, mode: `grant` },
+            { capability: `verification.read`, mode: `grant` },
+          ],
+        },
+        { idempotencyKey: `idem-permissions-unavailable` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        message: `One or more requested capabilities are unavailable`,
+        error: `Bad Request`,
+        statusCode: 400,
+      },
+    });
+
+    expect(repository.replaceAdminPermissionOverrides).not.toHaveBeenCalled();
+    expect(repository.touchAdminPermissions).not.toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
+  });
+
+  it(`changes permission overrides through idempotency, canonical diffing, and audit persistence`, async () => {
+    const { service, repository, idempotency } = await buildService();
+    const target = buildPermissionTarget({
+      permissionOverrides: [
+        {
+          id: `override-admins-manage`,
+          granted: true,
+          permissionId: `perm-admins-manage`,
+          permission: { capability: `admins.manage` },
+        },
+        {
+          id: `override-me-read`,
+          granted: true,
+          permissionId: `perm-me-read`,
+          permission: { capability: `me.read` },
+        },
+      ],
+    });
+    const freshUpdatedAt = new Date(`2026-04-17T10:10:00.000Z`);
+    repository.getAdminPermissionMutationTarget.mockResolvedValueOnce(target);
+    repository.listRelevantPermissions.mockResolvedValueOnce([
+      { id: `perm-admins-manage`, capability: `admins.manage` },
+      { id: `perm-verification-read`, capability: `verification.read` },
+    ]);
+    repository.touchAdminPermissions.mockResolvedValueOnce({ count: 1 });
+    repository.findAdminPermissionResult.mockResolvedValueOnce({
+      updatedAt: freshUpdatedAt,
+      permissionOverrides: [
+        {
+          id: `fresh-verification-read`,
+          granted: true,
+          permissionId: `perm-verification-read`,
+          permission: { capability: `verification.read` },
+        },
+        {
+          id: `fresh-admins-manage`,
+          granted: false,
+          permissionId: `perm-admins-manage`,
+          permission: { capability: `admins.manage` },
+        },
+        {
+          id: `fresh-me-read`,
+          granted: true,
+          permissionId: `perm-me-read`,
+          permission: { capability: `me.read` },
+        },
+      ],
+    });
+
+    const result = await service.changeAdminPermissions(
+      `admin-2`,
+      `admin-1`,
+      {
+        version: target.updatedAt.getTime(),
+        capabilityOverrides: [
+          { capability: ` admins.manage `, mode: ` deny ` },
+          { capability: ` verification.read `, mode: ` grant ` },
+        ],
+      },
+      { idempotencyKey: `idem-permissions-ok`, ipAddress: `127.0.0.1`, userAgent: `jest` },
+    );
+
+    expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminId: `admin-1`,
+        scope: `admin-permissions-change:admin-2`,
+        key: `idem-permissions-ok`,
+        payload: {
+          targetAdminId: `admin-2`,
+          expectedVersion: target.updatedAt.getTime(),
+          normalizedOverrides: [
+            { capability: `admins.manage`, mode: `deny` },
+            { capability: `verification.read`, mode: `grant` },
+          ],
+        },
+      }),
+    );
+    expect(repository.listRelevantPermissions).toHaveBeenCalledWith(
+      expect.arrayContaining([`admins.manage`, `verification.read`]),
+    );
+
+    const replaceArgs = repository.replaceAdminPermissionOverrides.mock.calls[0]?.[1];
+    expect(replaceArgs).toEqual(
+      expect.objectContaining({
+        adminId: `admin-2`,
+        normalizedOverrides: [
+          { capability: `admins.manage`, mode: `deny` },
+          { capability: `verification.read`, mode: `grant` },
+        ],
+        touchedPermissionIds: [`perm-admins-manage`, `perm-verification-read`],
+      }),
+    );
+    expect([...replaceArgs.permissionIdByCapability.entries()]).toEqual([
+      [`admins.manage`, `perm-admins-manage`],
+      [`verification.read`, `perm-verification-read`],
+    ]);
+
+    expect(repository.touchAdminPermissions).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        targetId: `admin-2`,
+        expectedUpdatedAt: target.updatedAt,
+        updatedAt: expect.any(Date),
+      }),
+    );
+    expect(repository.createAuditEntry).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        adminId: `admin-1`,
+        action: `admin_permissions_change`,
+        resource: `admin`,
+        resourceId: `admin-2`,
+        metadata: {
+          targetEmail: `ops@example.com`,
+          changes: [
+            { capability: `verification.read`, previous: null, next: true },
+            { capability: `admins.manage`, previous: true, next: false },
+          ],
+        },
+        ipAddress: `127.0.0.1`,
+        userAgent: `jest`,
+      }),
+    );
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
+    expect(repository.replaceAdminPermissionOverrides.mock.invocationCallOrder[0]).toBeLessThan(
+      repository.touchAdminPermissions.mock.invocationCallOrder[0],
+    );
+    expect(repository.touchAdminPermissions.mock.invocationCallOrder[0]).toBeLessThan(
+      repository.createAuditEntry.mock.invocationCallOrder[0],
+    );
+    expect(repository.createAuditEntry.mock.invocationCallOrder[0]).toBeLessThan(
+      repository.findAdminPermissionResult.mock.invocationCallOrder[0],
+    );
+    expect(result).toEqual({
+      adminId: `admin-2`,
+      version: freshUpdatedAt.getTime(),
+      overrides: [
+        { capability: `verification.read`, granted: true },
+        { capability: `admins.manage`, granted: false },
+      ],
+      alreadyApplied: false,
+    });
+  });
+
+  it(`surfaces stale changeAdminPermissions conflicts from the touch fallback without auditing`, async () => {
+    const { service, repository } = await buildService();
+    const target = buildPermissionTarget();
+    const currentUpdatedAt = new Date(`2026-04-17T10:06:00.000Z`);
+    repository.getAdminPermissionMutationTarget.mockResolvedValueOnce(target);
+    repository.listRelevantPermissions.mockResolvedValueOnce([{ id: `perm-1`, capability: `admins.manage` }]);
+    repository.touchAdminPermissions.mockResolvedValueOnce({ count: 0 });
+    repository.findAdminUpdatedAt.mockResolvedValueOnce({ updatedAt: currentUpdatedAt });
+
+    await expect(
+      service.changeAdminPermissions(
+        `admin-2`,
+        `admin-1`,
+        {
+          version: target.updatedAt.getTime(),
+          capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
+        },
+        { idempotencyKey: `idem-permissions-stale` },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        error: `STALE_VERSION`,
+        currentVersion: currentUpdatedAt.getTime(),
+      },
+    });
+
+    expect(repository.replaceAdminPermissionOverrides).toHaveBeenCalled();
+    expect(repository.createAuditEntry).not.toHaveBeenCalled();
+    expect(repository.findAdminPermissionResult).not.toHaveBeenCalled();
+    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
+    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
   });
 
   it(`bubbles up stale version conflicts before delegation`, async () => {
