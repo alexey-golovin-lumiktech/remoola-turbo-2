@@ -11,20 +11,18 @@ import {
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation } from './core.server';
-import {
-  parseRequiredVersion,
-  parseOptionalConsumerId,
-  parsePasswordConfirmation,
-  buildAssignmentClaimBody,
-  buildAssignmentReleaseBody,
-  buildAssignmentReassignBody,
-} from './form-helpers';
+import { parseRequiredVersion, parseOptionalConsumerId, parsePasswordConfirmation } from './form-helpers';
 import {
   revalidateExchangeRatePaths,
   revalidateExchangeRulePaths,
   revalidateExchangeScheduledPaths,
   revalidateFxConversionAssignmentPaths,
 } from './revalidation';
+import {
+  runAssignmentClaim,
+  runAssignmentReassign,
+  runAssignmentRelease,
+} from '../admin-permissions/assignment-action-core';
 
 export async function approveExchangeRateAction(rateId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
@@ -90,36 +88,32 @@ export async function cancelScheduledExchangeAction(conversionId: string, formDa
 }
 
 export async function claimFxConversionAssignmentAction(conversionId: string, formData: FormData): Promise<void> {
-  if (!conversionId) {
-    throw new Error(`conversionId is required`);
-  }
-  const body = buildAssignmentClaimBody(`fx_conversion`, conversionId, formData);
-  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim scheduled FX conversion assignment`);
-  revalidateFxConversionAssignmentPaths(conversionId);
+  return runAssignmentClaim({
+    resourceType: `fx_conversion`,
+    resourceId: conversionId,
+    idLabel: `conversionId`,
+    errorMessage: `Failed to claim scheduled FX conversion assignment`,
+    formData,
+    revalidate: () => revalidateFxConversionAssignmentPaths(conversionId),
+  });
 }
 
 export async function releaseFxConversionAssignmentAction(conversionId: string, formData: FormData): Promise<void> {
-  if (!conversionId) {
-    throw new Error(`conversionId is required`);
-  }
-  const body = buildAssignmentReleaseBody(formData);
-  await postAdminMutation(
-    `/admin-v2/assignments/release`,
-    body,
-    `Failed to release scheduled FX conversion assignment`,
-  );
-  revalidateFxConversionAssignmentPaths(conversionId);
+  return runAssignmentRelease({
+    resourceId: conversionId,
+    idLabel: `conversionId`,
+    errorMessage: `Failed to release scheduled FX conversion assignment`,
+    formData,
+    revalidate: () => revalidateFxConversionAssignmentPaths(conversionId),
+  });
 }
 
 export async function reassignFxConversionAssignmentAction(conversionId: string, formData: FormData): Promise<void> {
-  if (!conversionId) {
-    throw new Error(`conversionId is required`);
-  }
-  const body = buildAssignmentReassignBody(formData);
-  await postAdminMutation(
-    `/admin-v2/assignments/reassign`,
-    body,
-    `Failed to reassign scheduled FX conversion assignment`,
-  );
-  revalidateFxConversionAssignmentPaths(conversionId);
+  return runAssignmentReassign({
+    resourceId: conversionId,
+    idLabel: `conversionId`,
+    errorMessage: `Failed to reassign scheduled FX conversion assignment`,
+    formData,
+    revalidate: () => revalidateFxConversionAssignmentPaths(conversionId),
+  });
 }

@@ -4,13 +4,13 @@ import { adminV2PaymentReversalBodySchema } from '@remoola/api-types';
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation } from './core.server';
-import {
-  parsePasswordConfirmation,
-  buildAssignmentClaimBody,
-  buildAssignmentReleaseBody,
-  buildAssignmentReassignBody,
-} from './form-helpers';
+import { parsePasswordConfirmation } from './form-helpers';
 import { revalidatePaymentPaths, revalidatePaymentRequestAssignmentPaths } from './revalidation';
+import {
+  runAssignmentClaim,
+  runAssignmentReassign,
+  runAssignmentRelease,
+} from '../admin-permissions/assignment-action-core';
 
 export async function refundPaymentAction(
   paymentRequestId: string,
@@ -57,34 +57,38 @@ export async function chargebackPaymentAction(
 }
 
 export async function claimPaymentRequestAssignmentAction(paymentRequestId: string, formData: FormData): Promise<void> {
-  if (!paymentRequestId) {
-    throw new Error(`paymentRequestId is required`);
-  }
-  const body = buildAssignmentClaimBody(`payment_request`, paymentRequestId, formData);
-  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim payment request assignment`);
-  revalidatePaymentRequestAssignmentPaths(paymentRequestId);
+  return runAssignmentClaim({
+    resourceType: `payment_request`,
+    resourceId: paymentRequestId,
+    idLabel: `paymentRequestId`,
+    errorMessage: `Failed to claim payment request assignment`,
+    formData,
+    revalidate: () => revalidatePaymentRequestAssignmentPaths(paymentRequestId),
+  });
 }
 
 export async function releasePaymentRequestAssignmentAction(
   paymentRequestId: string,
   formData: FormData,
 ): Promise<void> {
-  if (!paymentRequestId) {
-    throw new Error(`paymentRequestId is required`);
-  }
-  const body = buildAssignmentReleaseBody(formData);
-  await postAdminMutation(`/admin-v2/assignments/release`, body, `Failed to release payment request assignment`);
-  revalidatePaymentRequestAssignmentPaths(paymentRequestId);
+  return runAssignmentRelease({
+    resourceId: paymentRequestId,
+    idLabel: `paymentRequestId`,
+    errorMessage: `Failed to release payment request assignment`,
+    formData,
+    revalidate: () => revalidatePaymentRequestAssignmentPaths(paymentRequestId),
+  });
 }
 
 export async function reassignPaymentRequestAssignmentAction(
   paymentRequestId: string,
   formData: FormData,
 ): Promise<void> {
-  if (!paymentRequestId) {
-    throw new Error(`paymentRequestId is required`);
-  }
-  const body = buildAssignmentReassignBody(formData);
-  await postAdminMutation(`/admin-v2/assignments/reassign`, body, `Failed to reassign payment request assignment`);
-  revalidatePaymentRequestAssignmentPaths(paymentRequestId);
+  return runAssignmentReassign({
+    resourceId: paymentRequestId,
+    idLabel: `paymentRequestId`,
+    errorMessage: `Failed to reassign payment request assignment`,
+    formData,
+    revalidate: () => revalidatePaymentRequestAssignmentPaths(paymentRequestId),
+  });
 }

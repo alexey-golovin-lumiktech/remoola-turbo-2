@@ -10,14 +10,13 @@ import {
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation, patchAdminMutation, deleteAdminMutation } from './core.server';
-import {
-  buildAssignmentClaimBody,
-  buildAssignmentReassignBody,
-  buildAssignmentReleaseBody,
-  parseRequiredVersion,
-  parseStringList,
-} from './form-helpers';
+import { parseRequiredVersion, parseStringList } from './form-helpers';
 import { revalidateDocumentsPaths, revalidateDocumentAssignmentPaths } from './revalidation';
+import {
+  runAssignmentClaim,
+  runAssignmentReassign,
+  runAssignmentRelease,
+} from '../admin-permissions/assignment-action-core';
 
 import type { FormActionState } from './form-action-state';
 
@@ -89,28 +88,32 @@ export async function bulkTagDocumentsAction(formData: FormData): Promise<void> 
 }
 
 export async function claimDocumentAssignmentAction(documentId: string, formData: FormData): Promise<void> {
-  if (!documentId) {
-    throw new Error(`documentId is required`);
-  }
-  const body = buildAssignmentClaimBody(`document`, documentId, formData);
-  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim document assignment`);
-  revalidateDocumentAssignmentPaths(documentId);
+  return runAssignmentClaim({
+    resourceType: `document`,
+    resourceId: documentId,
+    idLabel: `documentId`,
+    errorMessage: `Failed to claim document assignment`,
+    formData,
+    revalidate: () => revalidateDocumentAssignmentPaths(documentId),
+  });
 }
 
 export async function releaseDocumentAssignmentAction(documentId: string, formData: FormData): Promise<void> {
-  if (!documentId) {
-    throw new Error(`documentId is required`);
-  }
-  const body = buildAssignmentReleaseBody(formData);
-  await postAdminMutation(`/admin-v2/assignments/release`, body, `Failed to release document assignment`);
-  revalidateDocumentAssignmentPaths(documentId);
+  return runAssignmentRelease({
+    resourceId: documentId,
+    idLabel: `documentId`,
+    errorMessage: `Failed to release document assignment`,
+    formData,
+    revalidate: () => revalidateDocumentAssignmentPaths(documentId),
+  });
 }
 
 export async function reassignDocumentAssignmentAction(documentId: string, formData: FormData): Promise<void> {
-  if (!documentId) {
-    throw new Error(`documentId is required`);
-  }
-  const body = buildAssignmentReassignBody(formData);
-  await postAdminMutation(`/admin-v2/assignments/reassign`, body, `Failed to reassign document assignment`);
-  revalidateDocumentAssignmentPaths(documentId);
+  return runAssignmentReassign({
+    resourceId: documentId,
+    idLabel: `documentId`,
+    errorMessage: `Failed to reassign document assignment`,
+    formData,
+    revalidate: () => revalidateDocumentAssignmentPaths(documentId),
+  });
 }

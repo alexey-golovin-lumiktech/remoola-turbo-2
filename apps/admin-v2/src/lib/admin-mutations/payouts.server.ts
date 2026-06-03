@@ -4,14 +4,13 @@ import { adminV2EscalatePayoutBodySchema } from '@remoola/api-types';
 
 import { parseConfirmedFormValue } from '../admin-confirmation';
 import { postAdminMutation } from './core.server';
-import {
-  buildAssignmentClaimBody,
-  buildAssignmentReassignBody,
-  buildAssignmentReleaseBody,
-  parseOptionalConsumerId,
-  parseRequiredVersion,
-} from './form-helpers';
+import { parseOptionalConsumerId, parseRequiredVersion } from './form-helpers';
 import { revalidatePayoutPaths, revalidatePayoutAssignmentPaths } from './revalidation';
+import {
+  runAssignmentClaim,
+  runAssignmentReassign,
+  runAssignmentRelease,
+} from '../admin-permissions/assignment-action-core';
 
 export async function escalatePayoutAction(payoutId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
@@ -28,28 +27,32 @@ export async function escalatePayoutAction(payoutId: string, formData: FormData)
 }
 
 export async function claimPayoutAssignmentAction(payoutId: string, formData: FormData): Promise<void> {
-  if (!payoutId) {
-    throw new Error(`payoutId is required`);
-  }
-  const body = buildAssignmentClaimBody(`payout`, payoutId, formData);
-  await postAdminMutation(`/admin-v2/assignments/claim`, body, `Failed to claim payout assignment`);
-  revalidatePayoutAssignmentPaths(payoutId);
+  return runAssignmentClaim({
+    resourceType: `payout`,
+    resourceId: payoutId,
+    idLabel: `payoutId`,
+    errorMessage: `Failed to claim payout assignment`,
+    formData,
+    revalidate: () => revalidatePayoutAssignmentPaths(payoutId),
+  });
 }
 
 export async function releasePayoutAssignmentAction(payoutId: string, formData: FormData): Promise<void> {
-  if (!payoutId) {
-    throw new Error(`payoutId is required`);
-  }
-  const body = buildAssignmentReleaseBody(formData);
-  await postAdminMutation(`/admin-v2/assignments/release`, body, `Failed to release payout assignment`);
-  revalidatePayoutAssignmentPaths(payoutId);
+  return runAssignmentRelease({
+    resourceId: payoutId,
+    idLabel: `payoutId`,
+    errorMessage: `Failed to release payout assignment`,
+    formData,
+    revalidate: () => revalidatePayoutAssignmentPaths(payoutId),
+  });
 }
 
 export async function reassignPayoutAssignmentAction(payoutId: string, formData: FormData): Promise<void> {
-  if (!payoutId) {
-    throw new Error(`payoutId is required`);
-  }
-  const body = buildAssignmentReassignBody(formData);
-  await postAdminMutation(`/admin-v2/assignments/reassign`, body, `Failed to reassign payout assignment`);
-  revalidatePayoutAssignmentPaths(payoutId);
+  return runAssignmentReassign({
+    resourceId: payoutId,
+    idLabel: `payoutId`,
+    errorMessage: `Failed to reassign payout assignment`,
+    formData,
+    revalidate: () => revalidatePayoutAssignmentPaths(payoutId),
+  });
 }
