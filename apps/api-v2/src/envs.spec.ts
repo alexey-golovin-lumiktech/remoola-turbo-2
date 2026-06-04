@@ -47,6 +47,56 @@ describe(`envs`, () => {
     expect(process.env.DATABASE_URL).toBe(envs.DATABASE_URL);
   });
 
+  it(`derives JWT TTL milliseconds and seconds from duration strings`, async () => {
+    const { envs } = await loadEnvModule({
+      NODE_ENV: `test`,
+      JWT_ACCESS_TOKEN_EXPIRES_IN: `45s`,
+      JWT_REFRESH_TOKEN_EXPIRES_IN: `2d`,
+    });
+
+    expect(envs.JWT_ACCESS_TOKEN_EXPIRES_IN).toBe(45_000);
+    expect(envs.JWT_ACCESS_TTL_SECONDS).toBe(45);
+    expect(envs.JWT_REFRESH_TOKEN_EXPIRES_IN).toBe(172_800_000);
+    expect(envs.JWT_REFRESH_TTL_SECONDS).toBe(172_800);
+  });
+
+  it(`falls back to the current default TTL conversion when a duration string is invalid`, async () => {
+    const { envs } = await loadEnvModule({
+      NODE_ENV: `test`,
+      JWT_ACCESS_TOKEN_EXPIRES_IN: `bogus`,
+      JWT_REFRESH_TOKEN_EXPIRES_IN: `3x`,
+    });
+
+    expect(envs.JWT_ACCESS_TOKEN_EXPIRES_IN).toBe(15 * 60 * 1000);
+    expect(envs.JWT_ACCESS_TTL_SECONDS).toBe(15 * 60);
+    expect(envs.JWT_REFRESH_TOKEN_EXPIRES_IN).toBe(15 * 60 * 1000);
+    expect(envs.JWT_REFRESH_TTL_SECONDS).toBe(15 * 60);
+  });
+
+  it(`defaults NODE_ENV to production and preserves the exported environment shape`, async () => {
+    const { envs } = await loadEnvModule({
+      NODE_ENV: undefined,
+      COOKIE_SECURE: `true`,
+      JWT_ACCESS_SECRET: `secret-access`,
+      JWT_REFRESH_SECRET: `secret-refresh`,
+      SECURE_SESSION_SECRET: `session-secret`,
+      STRIPE_SECRET_KEY: `sk_live_test`,
+      STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+      NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+      ...configuredProductionLikeEnv,
+    });
+
+    expect(envs.NODE_ENV).toBe(`production`);
+    expect(envs.ENVIRONMENT).toEqual({
+      PRODUCTION: `production`,
+      STAGING: `staging`,
+      DEVELOPMENT: `development`,
+      TEST: `test`,
+    });
+    expect(envs.environments).toEqual([`production`, `staging`, `development`, `test`]);
+    expect(envs.isProductionLike).toBe(true);
+  });
+
   it(`fails closed in production-like environments when placeholder secrets are still configured`, async () => {
     await expect(
       loadEnvModule({
@@ -92,6 +142,41 @@ describe(`envs`, () => {
         ...configuredProductionLikeEnv,
       }),
     ).rejects.toThrow(/must be distinct/);
+  });
+
+  it(`fails closed in production-like environments when COOKIE_SECURE is explicitly false`, async () => {
+    await expect(
+      loadEnvModule({
+        NODE_ENV: `production`,
+        COOKIE_SECURE: `false`,
+        JWT_ACCESS_SECRET: `secret-access`,
+        JWT_REFRESH_SECRET: `secret-refresh`,
+        SECURE_SESSION_SECRET: `session-secret`,
+        STRIPE_SECRET_KEY: `sk_live_test`,
+        STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+        NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+        ...configuredProductionLikeEnv,
+      }),
+    ).rejects.toThrow(/COOKIE_SECURE must be true/);
+  });
+
+  it(`fails closed in production-like environments when NGROK_ENABLED is explicitly true`, async () => {
+    await expect(
+      loadEnvModule({
+        NODE_ENV: `staging`,
+        COOKIE_SECURE: `true`,
+        JWT_ACCESS_SECRET: `secret-access`,
+        JWT_REFRESH_SECRET: `secret-refresh`,
+        SECURE_SESSION_SECRET: `session-secret`,
+        STRIPE_SECRET_KEY: `sk_live_test`,
+        STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+        NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+        NGROK_ENABLED: `true`,
+        NGROK_AUTH_TOKEN: `ngrok-live-token`,
+        NGROK_DOMAIN: `test.ngrok.app`,
+        ...configuredProductionLikeEnv,
+      }),
+    ).rejects.toThrow(/NGROK_ENABLED must be false/);
   });
 
   it(`disables public swagger and sensitive health endpoints by default in production-like environments`, async () => {
@@ -257,6 +342,25 @@ describe(`envs`, () => {
 
     expect(envs.BREVO_API_KEY).toBe(`BREVO_API_KEY`);
     expect(envs.BREVO_DEFAULT_FROM_EMAIL).toBe(`BREVO_DEFAULT_FROM_EMAIL`);
+  });
+
+  it(`coerces representative boolean-like strings with the current parser semantics`, async () => {
+    const { envs } = await loadEnvModule({
+      NODE_ENV: `test`,
+      ALLOW_PRODUCTION_BOOTSTRAP_SEED: `yes`,
+      BREVO_VERIFY_ON_BOOT: `1`,
+      COOKIE_SECURE: `n`,
+      HEALTH_TEST_EMAIL_ENABLED: `0`,
+      NGROK_OAUTH_REDIRECT_ENABLED: `true`,
+      PUBLIC_DETAILED_HEALTH_ENABLED: `Y`,
+    });
+
+    expect(envs.ALLOW_PRODUCTION_BOOTSTRAP_SEED).toBe(true);
+    expect(envs.BREVO_VERIFY_ON_BOOT).toBe(true);
+    expect(envs.COOKIE_SECURE).toBe(false);
+    expect(envs.HEALTH_TEST_EMAIL_ENABLED).toBe(false);
+    expect(envs.NGROK_OAUTH_REDIRECT_ENABLED).toBe(true);
+    expect(envs.PUBLIC_DETAILED_HEALTH_ENABLED).toBe(true);
   });
 
   it(`requires explicit non-placeholder ngrok credentials when NGROK_ENABLED=true`, async () => {

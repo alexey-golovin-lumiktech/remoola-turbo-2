@@ -93,6 +93,20 @@ describe(`createApiApp`, () => {
     expect(mockDevBootstrapSeed).toHaveBeenCalledWith(logger, mockPrisma);
   });
 
+  it(`runs create, configure, waitForDatabase, and devBootstrapSeed in the current order`, async () => {
+    const { createApiApp, mockConfigureApp, mockCreate, mockDevBootstrapSeed, mockWaitForDatabase } =
+      await loadFactory();
+    const logger = new Logger(`CreateApiAppSpec`);
+
+    await createApiApp({ logger });
+
+    expect(mockCreate.mock.invocationCallOrder[0]).toBeLessThan(mockConfigureApp.mock.invocationCallOrder[0]);
+    expect(mockConfigureApp.mock.invocationCallOrder[0]).toBeLessThan(mockWaitForDatabase.mock.invocationCallOrder[0]);
+    expect(mockWaitForDatabase.mock.invocationCallOrder[0]).toBeLessThan(
+      mockDevBootstrapSeed.mock.invocationCallOrder[0],
+    );
+  });
+
   it(`creates the Vercel Express-adapter Nest app with the same shared boot steps`, async () => {
     const { createApiApp, mockAdapterServers, mockApp, mockConfigureApp, mockCreate, mockOriginResolver } =
       await loadFactory();
@@ -104,5 +118,41 @@ describe(`createApiApp`, () => {
     expect(mockAdapterServers).toEqual([server]);
     expect(mockCreate).toHaveBeenCalledWith(expect.any(Function), expect.any(Object), { rawBody: true });
     expect(mockConfigureApp).toHaveBeenCalledWith(mockApp, mockOriginResolver);
+  });
+
+  it(`propagates configureApp failures before database startup work begins`, async () => {
+    const { createApiApp, mockConfigureApp, mockDevBootstrapSeed, mockWaitForDatabase } = await loadFactory();
+    const logger = new Logger(`CreateApiAppSpec`);
+    const failure = new Error(`configureApp failed`);
+
+    mockConfigureApp.mockImplementation(() => {
+      throw failure;
+    });
+
+    await expect(createApiApp({ logger })).rejects.toBe(failure);
+    expect(mockWaitForDatabase).not.toHaveBeenCalled();
+    expect(mockDevBootstrapSeed).not.toHaveBeenCalled();
+  });
+
+  it(`propagates waitForDatabase failures before devBootstrapSeed runs`, async () => {
+    const { createApiApp, mockDevBootstrapSeed, mockWaitForDatabase } = await loadFactory();
+    const logger = new Logger(`CreateApiAppSpec`);
+    const failure = new Error(`database unavailable`);
+
+    mockWaitForDatabase.mockRejectedValueOnce(failure);
+
+    await expect(createApiApp({ logger })).rejects.toBe(failure);
+    expect(mockDevBootstrapSeed).not.toHaveBeenCalled();
+  });
+
+  it(`propagates devBootstrapSeed failures after the database wait succeeds`, async () => {
+    const { createApiApp, mockDevBootstrapSeed, mockWaitForDatabase } = await loadFactory();
+    const logger = new Logger(`CreateApiAppSpec`);
+    const failure = new Error(`bootstrap seed failed`);
+
+    mockDevBootstrapSeed.mockRejectedValueOnce(failure);
+
+    await expect(createApiApp({ logger })).rejects.toBe(failure);
+    expect(mockWaitForDatabase).toHaveBeenCalledTimes(1);
   });
 });
