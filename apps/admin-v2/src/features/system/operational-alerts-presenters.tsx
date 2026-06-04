@@ -30,7 +30,7 @@ import {
   type OperationalAlertThreshold,
   type OperationalAlertWorkspace,
 } from '../../lib/admin-api/types';
-import { formatDate } from '../../lib/admin-format';
+import { formatDateTime } from '../../lib/admin-format';
 import {
   createOperationalAlertAction,
   deleteOperationalAlertAction,
@@ -123,7 +123,7 @@ function AlertStateBadges({ alert, now }: { alert: OperationalAlertSummary; now:
         </TinyPill>
       ) : alert.lastFiredAt ? (
         <span className={mutedTextClass} title={alert.lastFireReason ?? undefined}>
-          Last fired: {formatDate(alert.lastFiredAt)}
+          Last fired: {formatDateTime(alert.lastFiredAt)}
         </span>
       ) : (
         <span className={mutedTextClass}>Never fired</span>
@@ -292,7 +292,7 @@ function AlertRow({ alert, now }: { alert: OperationalAlertSummary; now: Date })
         <p className={mutedTextClass}>
           Threshold: {formatThreshold(alert.thresholdPayload)} - every {alert.evaluationIntervalMinutes} min
         </p>
-        <p className={mutedTextClass}>Last evaluated: {formatDate(alert.lastEvaluatedAt)}</p>
+        <p className={mutedTextClass}>Last evaluated: {formatDateTime(alert.lastEvaluatedAt)}</p>
         {alert.lastFireReason ? <p className={mutedTextClass}>Last fire reason: {alert.lastFireReason}</p> : null}
         {alert.lastEvaluationError ? (
           <p className={mutedTextClass}>Evaluation error detail: {alert.lastEvaluationError}</p>

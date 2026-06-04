@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { formatBytes, formatDate } from '../../../../../lib/admin-format';
+import { formatBytes, formatDateTime } from '../../../../../lib/admin-format';
 import { type DocumentCasePageData } from '../page.loader';
 
 export function DocumentSummaryGrid({ documentCase }: { documentCase: DocumentCasePageData[`documentCase`] }) {
@@ -8,8 +8,8 @@ export function DocumentSummaryGrid({ documentCase }: { documentCase: DocumentCa
     <section className="statsGrid">
       <article className="panel">
         <h3>Core evidence context</h3>
-        <p className="muted">Created: {formatDate(documentCase.core.createdAt)}</p>
-        <p className="muted">Updated: {formatDate(documentCase.updatedAt)}</p>
+        <p className="muted">Created: {formatDateTime(documentCase.core.createdAt)}</p>
+        <p className="muted">Updated: {formatDateTime(documentCase.updatedAt)}</p>
         <p className="muted">Size: {formatBytes(documentCase.core.size)}</p>
         <p className="muted">Data freshness: {documentCase.dataFreshnessClass}</p>
         <p className="muted">Version: {documentCase.version}</p>
@@ -46,7 +46,7 @@ export function DocumentSummaryGrid({ documentCase }: { documentCase: DocumentCa
                 <p className="muted">
                   {payment.amount} · {payment.status}
                 </p>
-                <p className="muted">Created: {formatDate(payment.createdAt)}</p>
+                <p className="muted">Created: {formatDateTime(payment.createdAt)}</p>
               </div>
             ))}
           </div>

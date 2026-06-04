@@ -7,7 +7,7 @@ import { TinyPill } from '../../../../components/tiny-pill';
 import { mutedTextClass, stackClass } from '../../../../components/ui-classes';
 import { getPaymentOperationsQueue } from '../../../../lib/admin-api/payments.server';
 import { type PaymentOperationsQueueResponse } from '../../../../lib/admin-api/types';
-import { formatDate, EMPTY_VALUE } from '../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../lib/admin-format';
 
 type QueueBucket = PaymentOperationsQueueResponse[`buckets`][number];
 type QueueItem = QueueBucket[`items`][number];
@@ -58,7 +58,7 @@ export default async function PaymentOperationsQueuePage() {
         description={`Manual review queue for payment cases that need follow-up before drilldown.${visibleBuckets.length ? ` ${visibleBuckets.length} active bucket${visibleBuckets.length === 1 ? `` : `s`} shown first.` : ``}${emptyBuckets.length ? ` ${emptyBuckets.length} empty bucket${emptyBuckets.length === 1 ? `` : `s`} collapsed below.` : ``}`}
         actions={<ActionGhost href="/payments">Back to payments</ActionGhost>}
       >
-        <p className={mutedTextClass}>Generated: {formatDate(queue?.generatedAt)}</p>
+        <p className={mutedTextClass}>Generated: {formatDateTime(queue?.generatedAt)}</p>
       </Panel>
 
       {visibleBuckets.length > 0 ? (
@@ -113,7 +113,7 @@ export default async function PaymentOperationsQueuePage() {
                     </div>
                     <div className="grid gap-2 text-sm text-white/72 sm:grid-cols-2 xl:max-w-[520px] xl:text-right">
                       <p className={mutedTextClass}>
-                        Due: {formatDate(item.dueDate)} · Updated: {formatDate(item.updatedAt)}
+                        Due: {formatDateTime(item.dueDate)} · Updated: {formatDateTime(item.updatedAt)}
                       </p>
                       <p className={mutedTextClass}>
                         Payer: {renderConsumerLink(item.payer)} · Requester: {renderConsumerLink(item.requester)}

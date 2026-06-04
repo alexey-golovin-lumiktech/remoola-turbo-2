@@ -1,5 +1,5 @@
 import { Panel } from '../../../../../components/panel';
-import { formatDate, EMPTY_VALUE } from '../../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { type ConsumerPageData } from '../page.loader';
 import { type ConsumerPagePermissions } from '../page.permissions';
 
@@ -19,7 +19,7 @@ export function ConsumerSummaryGrid({
         <p className="muted">Consumer id: {consumer.id}</p>
         <p className="muted">Account type: {consumer.accountType}</p>
         <p className="muted">Contractor kind: {consumer.contractorKind ?? EMPTY_VALUE}</p>
-        <p className="muted">Updated: {formatDate(consumer.updatedAt)}</p>
+        <p className="muted">Updated: {formatDateTime(consumer.updatedAt)}</p>
       </Panel>
       <Panel surface="meta">
         <h3>Immediate signals</h3>

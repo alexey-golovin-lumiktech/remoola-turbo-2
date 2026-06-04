@@ -1,5 +1,5 @@
 import { nestedPanelClass } from '../../../../../components/ui-classes';
-import { formatDate } from '../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { type LedgerEntryCasePageData } from '../page.loader';
 
 export function LedgerEntryAuditSection({ ledgerCase }: { ledgerCase: LedgerEntryCasePageData[`ledgerCase`] }) {
@@ -12,7 +12,7 @@ export function LedgerEntryAuditSection({ ledgerCase }: { ledgerCase: LedgerEntr
           <div className={nestedPanelClass} key={item.id}>
             <strong>{item.action}</strong>
             <p className="muted">{item.adminEmail ?? `Unknown admin`}</p>
-            <p className="muted">{formatDate(item.createdAt)}</p>
+            <p className="muted">{formatDateTime(item.createdAt)}</p>
           </div>
         ))}
       </div>

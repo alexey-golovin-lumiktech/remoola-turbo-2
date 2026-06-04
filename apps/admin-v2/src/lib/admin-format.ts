@@ -12,7 +12,7 @@ const ADMIN_DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
 
 export const EMPTY_VALUE = `—` as const;
 
-export function formatDate(value: unknown): string {
+export function formatDateTime(value: unknown): string {
   if (typeof value !== `string` || !value) return EMPTY_VALUE;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? EMPTY_VALUE : date.toLocaleString(undefined, ADMIN_DATE_TIME_FORMAT_OPTIONS);

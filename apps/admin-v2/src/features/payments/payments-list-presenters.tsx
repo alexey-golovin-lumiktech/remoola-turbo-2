@@ -7,7 +7,7 @@ import { TabletRow } from '../../components/tablet-row';
 import { TinyPill } from '../../components/tiny-pill';
 import { emptyPanelClass, mutedTextClass, subtleTextClass } from '../../components/ui-classes';
 import { type getPayments } from '../../lib/admin-api/payments.server';
-import { formatDate, EMPTY_VALUE } from '../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../lib/admin-format';
 import { withReturnTo } from '../../lib/navigation-context';
 
 type PaymentItem = NonNullable<Awaited<ReturnType<typeof getPayments>>>[`items`][number];
@@ -114,14 +114,14 @@ export function PaymentsMobileCards({ items, returnTo }: { items: PaymentItem[];
               <div className={mutedTextClass}>
                 {item.staleWarning ? `Persisted status is stale` : `Exact enough for list`}
               </div>
-              <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
+              <div className={mutedTextClass}>Due: {formatDateTime(item.dueDate)}</div>
             </MobileQueueSection>
             <MobileQueueSection title="Participants" compact>
               <PaymentParticipants item={item} returnTo={returnTo} />
             </MobileQueueSection>
             <MobileQueueSection title="Freshness" compact>
               <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
-              <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
+              <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
             </MobileQueueSection>
           </MobileQueueCard>
         ))}
@@ -173,11 +173,11 @@ export function PaymentsTabletRows({ items, returnTo }: { items: PaymentItem[]; 
                 {item.staleWarning ? <div className={mutedTextClass}>Persisted status is stale</div> : null}
               </div>,
               <div key="amount">
-                <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
+                <div className={mutedTextClass}>Due: {formatDateTime(item.dueDate)}</div>
                 <div className={mutedTextClass}>Rail: {item.paymentRail ?? `No rail`}</div>
               </div>,
               <div key="timing-assigned">
-                <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
+                <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
                 {item.assignedTo ? (
                   <div className={mutedTextClass}>
                     Assigned: <PaymentAssignedTo item={item} />
@@ -243,8 +243,8 @@ export function PaymentsDesktopTable({ items, returnTo }: { items: PaymentItem[]
                   <div className="font-semibold text-white/92">
                     {item.amount} {item.currencyCode}
                   </div>
-                  <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
-                  <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
+                  <div className={mutedTextClass}>Due: {formatDateTime(item.dueDate)}</div>
+                  <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
                   {!item.assignedTo ? <div className={subtleTextClass}>Unassigned</div> : null}
                   {!shouldShowFreshnessLabel(item) ? (
                     <div className={subtleTextClass}>Freshness: {item.dataFreshnessClass}</div>

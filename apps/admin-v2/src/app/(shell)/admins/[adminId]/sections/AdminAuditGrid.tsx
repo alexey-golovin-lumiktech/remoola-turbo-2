@@ -1,4 +1,4 @@
-import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../../../lib/admin-format';
 import { renderJson } from '../admin-shared';
 import { type AdminCasePageData } from '../page.loader';
 
@@ -17,7 +17,7 @@ export function AdminAuditGrid({ admin }: { admin: AdminCasePageData[`admin`] })
                 {action.resourceId ? ` · ${action.resourceId}` : ``}
               </p>
               <p className="muted">Actor: {action.actorEmail}</p>
-              <p className="muted">At: {formatDate(action.createdAt)}</p>
+              <p className="muted">At: {formatDateTime(action.createdAt)}</p>
               {renderJson(action.metadata)}
             </div>
           ))}
@@ -31,7 +31,7 @@ export function AdminAuditGrid({ admin }: { admin: AdminCasePageData[`admin`] })
           {admin.recentAuthEvents.map((event) => (
             <div key={event.id} className="panel">
               <strong>{event.event}</strong>
-              <p className="muted">At: {formatDate(event.createdAt)}</p>
+              <p className="muted">At: {formatDateTime(event.createdAt)}</p>
               <p className="muted">IP: {event.ipAddress ?? EMPTY_VALUE}</p>
               <p className="muted">UA: {event.userAgent ?? EMPTY_VALUE}</p>
             </div>
@@ -50,9 +50,9 @@ export function AdminAuditGrid({ admin }: { admin: AdminCasePageData[`admin`] })
                 <span className="pill">{invitation.role}</span>
                 <span className="pill">{invitation.status}</span>
               </div>
-              <p className="muted">Created: {formatDate(invitation.createdAt)}</p>
-              <p className="muted">Accepted: {formatDate(invitation.acceptedAt)}</p>
-              <p className="muted">Expires: {formatDate(invitation.expiresAt)}</p>
+              <p className="muted">Created: {formatDateTime(invitation.createdAt)}</p>
+              <p className="muted">Accepted: {formatDateTime(invitation.acceptedAt)}</p>
+              <p className="muted">Expires: {formatDateTime(invitation.expiresAt)}</p>
             </div>
           ))}
         </div>

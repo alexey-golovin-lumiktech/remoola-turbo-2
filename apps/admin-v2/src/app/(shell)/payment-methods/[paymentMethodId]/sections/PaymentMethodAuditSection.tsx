@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { nestedPanelClass } from '../../../../../components/ui-classes';
-import { formatDate } from '../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { type PaymentMethodCasePageData } from '../page.loader';
 import { renderMethodLabel } from '../payment-method-shared';
 
@@ -27,7 +27,7 @@ export function PaymentMethodAuditSection({
               Escalated by:{` `}
               {paymentMethod.duplicateEscalation.escalatedBy.email ?? paymentMethod.duplicateEscalation.escalatedBy.id}
             </p>
-            <p className="muted">Created: {formatDate(paymentMethod.duplicateEscalation.createdAt)}</p>
+            <p className="muted">Created: {formatDateTime(paymentMethod.duplicateEscalation.createdAt)}</p>
           </div>
         </section>
       ) : null}
@@ -52,8 +52,8 @@ export function PaymentMethodAuditSection({
               <p className="muted">{duplicate.consumer.email ?? duplicate.consumer.id}</p>
               <p className="muted mono">{duplicate.id}</p>
               <p className="muted">Default selected: {duplicate.defaultSelected ? `Yes` : `No`}</p>
-              <p className="muted">Deleted: {formatDate(duplicate.deletedAt)}</p>
-              <p className="muted">Created: {formatDate(duplicate.createdAt)}</p>
+              <p className="muted">Deleted: {formatDateTime(duplicate.deletedAt)}</p>
+              <p className="muted">Created: {formatDateTime(duplicate.createdAt)}</p>
               <div className="actionsRow">
                 <Link className="secondaryButton" href={`/payment-methods/${duplicate.id}`}>
                   Open method

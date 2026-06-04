@@ -14,7 +14,7 @@ import { Panel } from '../../../../components/panel';
 import { TabletRow } from '../../../../components/tablet-row';
 import { TinyPill } from '../../../../components/tiny-pill';
 import { type LedgerEntriesListResponse } from '../../../../lib/admin-api/types';
-import { formatDate } from '../../../../lib/admin-format';
+import { formatDateTime } from '../../../../lib/admin-format';
 
 function LedgerEntriesMobileCards({ items }: { items: LedgerEntryItem[] }) {
   if (items.length === 0) {
@@ -46,7 +46,7 @@ function LedgerEntriesMobileCards({ items }: { items: LedgerEntryItem[] }) {
             <div>{entry.effectiveStatus}</div>
             <div className="muted">Persisted: {entry.persistedStatus}</div>
             <div className="muted">Disputes: {entry.disputeCount}</div>
-            <div className="muted">Created: {formatDate(entry.createdAt)}</div>
+            <div className="muted">Created: {formatDateTime(entry.createdAt)}</div>
             <div className="muted">
               Assigned to: <LedgerEntryAssignedTo entry={entry} />
             </div>
@@ -95,7 +95,7 @@ function LedgerEntriesTabletRows({ items }: { items: LedgerEntryItem[] }) {
               </div>,
               <div key="disputes-assigned">
                 <div className="muted">Disputes: {entry.disputeCount}</div>
-                <div className="muted">Created: {formatDate(entry.createdAt)}</div>
+                <div className="muted">Created: {formatDateTime(entry.createdAt)}</div>
                 {entry.assignedTo ? (
                   <div className="muted">
                     Assigned: <LedgerEntryAssignedTo entry={entry} />
@@ -151,7 +151,7 @@ function LedgerEntriesDesktopTable({ items }: { items: LedgerEntryItem[] }) {
                   )}
                 </td>
                 <td>
-                  <div>{formatDate(entry.createdAt)}</div>
+                  <div>{formatDateTime(entry.createdAt)}</div>
                   {isNegativeAmount(entry.amount) ? <div className="muted">Negative amount</div> : null}
                 </td>
               </tr>

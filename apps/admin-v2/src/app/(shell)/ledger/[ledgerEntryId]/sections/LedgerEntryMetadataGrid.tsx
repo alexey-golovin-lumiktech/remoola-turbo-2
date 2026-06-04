@@ -1,5 +1,5 @@
 import { nestedPanelClass } from '../../../../../components/ui-classes';
-import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../../../lib/admin-format';
 import { renderObject } from '../ledger-entry-shared';
 import { type LedgerEntryCasePageData } from '../page.loader';
 
@@ -19,7 +19,7 @@ export function LedgerEntryMetadataGrid({ ledgerCase }: { ledgerCase: LedgerEntr
               <strong>{outcome.status}</strong>
               <p className="muted">Source: {outcome.source ?? EMPTY_VALUE}</p>
               <p className="muted">External id: {outcome.externalId ?? EMPTY_VALUE}</p>
-              <p className="muted">{formatDate(outcome.createdAt)}</p>
+              <p className="muted">{formatDateTime(outcome.createdAt)}</p>
             </div>
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../../../lib/admin-format';
 import { type LedgerEntryCasePageData } from '../page.loader';
 
 export function LedgerEntrySummaryGrid({ ledgerCase }: { ledgerCase: LedgerEntryCasePageData[`ledgerCase`] }) {
@@ -26,7 +26,7 @@ export function LedgerEntrySummaryGrid({ ledgerCase }: { ledgerCase: LedgerEntry
         <p className="muted">Fees type: {ledgerCase.core.feesType ?? EMPTY_VALUE}</p>
         <p className="muted">Fees amount: {ledgerCase.core.feesAmount ?? EMPTY_VALUE}</p>
         <p className="muted">Data freshness: {ledgerCase.dataFreshnessClass}</p>
-        <p className="muted">Updated: {formatDate(ledgerCase.core.updatedAt)}</p>
+        <p className="muted">Updated: {formatDateTime(ledgerCase.core.updatedAt)}</p>
       </article>
     </section>
   );

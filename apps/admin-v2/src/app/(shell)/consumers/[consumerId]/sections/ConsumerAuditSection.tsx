@@ -1,4 +1,4 @@
-import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../../../lib/admin-format';
 import { type ConsumerPageData } from '../page.loader';
 import { nestedCardClass } from '../preview-helpers';
 
@@ -21,7 +21,7 @@ export function ConsumerAuditSection({
             <div key={String(event.id ?? index)} className={nestedCardClass}>
               <strong>{String(event.event ?? `event`)}</strong>
               <p className="muted">{String(event.email ?? consumer.email)}</p>
-              <p className="muted">{formatDate(event.createdAt)}</p>
+              <p className="muted">{formatDateTime(event.createdAt)}</p>
             </div>
           ))}
         </div>
@@ -35,7 +35,7 @@ export function ConsumerAuditSection({
           {(consumer.recentAdminActions as Array<Record<string, unknown>>).map((event, index) => (
             <div key={String(event.id ?? index)} className={nestedCardClass}>
               <strong>{String(event.action ?? `action`)}</strong>
-              <p className="muted">{formatDate(event.createdAt)}</p>
+              <p className="muted">{formatDateTime(event.createdAt)}</p>
             </div>
           ))}
         </div>
@@ -48,7 +48,7 @@ export function ConsumerAuditSection({
             <div key={String(event.id ?? index)} className={nestedCardClass}>
               <strong>{String(event.action ?? `action`)}</strong>
               <p className="muted">{String(event.resource ?? EMPTY_VALUE)}</p>
-              <p className="muted">{formatDate(event.createdAt)}</p>
+              <p className="muted">{formatDateTime(event.createdAt)}</p>
             </div>
           ))}
         </div>

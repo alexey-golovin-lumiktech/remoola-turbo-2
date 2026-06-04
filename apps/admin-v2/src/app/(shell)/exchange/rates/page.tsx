@@ -9,7 +9,7 @@ import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getExchangeRates } from '../../../../lib/admin-api/exchange.server';
 import { type ExchangeRatesListResponse } from '../../../../lib/admin-api/types';
-import { formatDate, EMPTY_VALUE } from '../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { booleanSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
@@ -43,14 +43,14 @@ function RatesMobileCards({ items }: { items: ExchangeRateItem[] }) {
             <div>
               <StatusPill status={item.status} />
             </div>
-            <div className="muted">Approved: {formatDate(item.approvedAt)}</div>
+            <div className="muted">Approved: {formatDateTime(item.approvedAt)}</div>
             <div className="muted">Provider: {item.provider ?? EMPTY_VALUE}</div>
-            <div className="muted">Fetched: {formatDate(item.fetchedAt)}</div>
+            <div className="muted">Fetched: {formatDateTime(item.fetchedAt)}</div>
             <div className="muted">
               {item.stalenessIndicator.isStale ? `Stale` : `Fresh`} · {item.stalenessIndicator.ageMinutes}m
             </div>
-            <div className="muted">Effective: {formatDate(item.effectiveAt)}</div>
-            <div className="muted">Expires: {formatDate(item.expiresAt)}</div>
+            <div className="muted">Effective: {formatDateTime(item.effectiveAt)}</div>
+            <div className="muted">Expires: {formatDateTime(item.expiresAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -97,8 +97,8 @@ function RatesTabletRows({ items }: { items: ExchangeRateItem[] }) {
                 <div className="muted">{item.stalenessIndicator.ageMinutes}m</div>
               </div>,
               <div key="effective">
-                <div>Eff: {formatDate(item.effectiveAt)}</div>
-                <div className="muted">Exp: {formatDate(item.expiresAt)}</div>
+                <div>Eff: {formatDateTime(item.effectiveAt)}</div>
+                <div className="muted">Exp: {formatDateTime(item.expiresAt)}</div>
               </div>,
             ]}
           />
@@ -138,22 +138,22 @@ function RatesDesktopTable({ items }: { items: ExchangeRateItem[] }) {
                   <div>
                     <StatusPill status={item.status} />
                   </div>
-                  <div className="muted">Approved: {formatDate(item.approvedAt)}</div>
+                  <div className="muted">Approved: {formatDateTime(item.approvedAt)}</div>
                 </td>
                 <td>
                   <div>{item.provider ?? EMPTY_VALUE}</div>
-                  <div className="muted">Fetched: {formatDate(item.fetchedAt)}</div>
+                  <div className="muted">Fetched: {formatDateTime(item.fetchedAt)}</div>
                 </td>
                 <td>
                   <div>{item.stalenessIndicator.isStale ? `Stale` : `Fresh`}</div>
                   <div className="muted">
-                    Reference: {formatDate(item.stalenessIndicator.referenceAt)} ·{` `}
+                    Reference: {formatDateTime(item.stalenessIndicator.referenceAt)} ·{` `}
                     {item.stalenessIndicator.ageMinutes}m
                   </div>
                 </td>
                 <td>
-                  <div>{formatDate(item.effectiveAt)}</div>
-                  <div className="muted">Expires: {formatDate(item.expiresAt)}</div>
+                  <div>{formatDateTime(item.effectiveAt)}</div>
+                  <div className="muted">Expires: {formatDateTime(item.expiresAt)}</div>
                 </td>
               </tr>
             ))}

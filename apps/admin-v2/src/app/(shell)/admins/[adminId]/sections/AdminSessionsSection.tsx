@@ -1,4 +1,4 @@
-import { formatDate } from '../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { revokeAdminSessionAction } from '../../../../../lib/admin-mutations/admins.server';
 import { type AdminCasePageData } from '../page.loader';
 
@@ -32,10 +32,10 @@ export function AdminSessionsSection({
             <p className="muted">
               Family: <span className="mono">{s.sessionFamilyId}</span>
             </p>
-            <p className="muted">Created: {formatDate(s.createdAt)}</p>
-            <p className="muted">Last used: {formatDate(s.lastUsedAt)}</p>
-            <p className="muted">Expires: {formatDate(s.expiresAt)}</p>
-            <p className="muted">Revoked: {formatDate(s.revokedAt)}</p>
+            <p className="muted">Created: {formatDateTime(s.createdAt)}</p>
+            <p className="muted">Last used: {formatDateTime(s.lastUsedAt)}</p>
+            <p className="muted">Expires: {formatDateTime(s.expiresAt)}</p>
+            <p className="muted">Revoked: {formatDateTime(s.revokedAt)}</p>
             {s.invalidatedReason ? <p className="muted">Reason: {s.invalidatedReason}</p> : null}
             {canManage && !s.revokedAt && !isSelf ? (
               <form action={revokeAdminSessionAction.bind(null, admin.core.id, s.id)} className="formStack">

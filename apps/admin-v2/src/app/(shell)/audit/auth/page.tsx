@@ -13,7 +13,7 @@ import {
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAuthAudit } from '../../../../lib/admin-api/audit.server';
-import { formatDate, EMPTY_VALUE } from '../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
@@ -47,7 +47,7 @@ function AuthAuditMobileCards({ items }: { items: AuthAuditRow[] }) {
           >
             <div className="muted">IP: {String(item.ipAddress ?? EMPTY_VALUE)}</div>
             <div className="muted">UA: {String(item.userAgent ?? EMPTY_VALUE)}</div>
-            <div className="muted">Created: {formatDate(item.createdAt)}</div>
+            <div className="muted">Created: {formatDateTime(item.createdAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -84,7 +84,7 @@ function AuthAuditTabletRows({ items }: { items: AuthAuditRow[] }) {
                 UA: {String(item.userAgent ?? EMPTY_VALUE)}
               </div>,
               <div className="muted" key="created">
-                Created: {formatDate(item.createdAt)}
+                Created: {formatDateTime(item.createdAt)}
               </div>,
               null,
             ]}
@@ -110,7 +110,7 @@ function AuthAuditDesktopTable({ items }: { items: AuthAuditRow[] }) {
                 <td>{String(item.event ?? EMPTY_VALUE)}</td>
                 <td>{String(item.ipAddress ?? EMPTY_VALUE)}</td>
                 <td>{String(item.userAgent ?? EMPTY_VALUE)}</td>
-                <td>{formatDate(item.createdAt)}</td>
+                <td>{formatDateTime(item.createdAt)}</td>
               </tr>
             ))}
       </DenseTable>

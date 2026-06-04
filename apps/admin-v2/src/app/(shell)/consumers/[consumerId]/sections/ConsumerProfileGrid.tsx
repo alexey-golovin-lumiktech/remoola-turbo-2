@@ -1,4 +1,4 @@
-import { formatDate } from '../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { type ConsumerPageData } from '../page.loader';
 import { nestedCardClass, renderObject } from '../preview-helpers';
 
@@ -25,7 +25,7 @@ export function ConsumerProfileGrid({
             <div key={contact.id} className={nestedCardClass}>
               <strong>{contact.name ?? contact.email}</strong>
               <p className="muted">{contact.email}</p>
-              <p className="muted">Updated: {formatDate(contact.updatedAt)}</p>
+              <p className="muted">Updated: {formatDateTime(contact.updatedAt)}</p>
             </div>
           ))}
         </div>

@@ -17,7 +17,7 @@ import {
   textInputClass,
 } from './ui-classes';
 import { type AdminsListResponse, type AssignmentHistoryItem, type AssignmentSummary } from '../lib/admin-api/types';
-import { formatDate, EMPTY_VALUE } from '../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../lib/admin-format';
 
 type ReassignCandidate = AdminsListResponse[`items`][number];
 
@@ -79,12 +79,12 @@ export function AssignmentCard({
                 <span className={mutedTextClass}> · {currentAssignment.assignedTo.email}</span>
               ) : null}
             </p>
-            <p className={mutedTextClass}>Since: {formatDate(currentAssignment.assignedAt)}</p>
+            <p className={mutedTextClass}>Since: {formatDateTime(currentAssignment.assignedAt)}</p>
             {currentAssignment.reason ? (
               <p className={mutedTextClass}>Reason: &ldquo;{currentAssignment.reason}&rdquo;</p>
             ) : null}
             {currentAssignment.expiresAt ? (
-              <p className={mutedTextClass}>Expires: {formatDate(currentAssignment.expiresAt)}</p>
+              <p className={mutedTextClass}>Expires: {formatDateTime(currentAssignment.expiresAt)}</p>
             ) : null}
           </div>
         ) : (
@@ -174,11 +174,11 @@ export function AssignmentCard({
               <li className={nestedPanelClass} key={entry.id}>
                 <p>
                   <strong>{describeAdmin(entry.assignedTo)}</strong>
-                  <span className={mutedTextClass}> · claimed {formatDate(entry.assignedAt)}</span>
+                  <span className={mutedTextClass}> · claimed {formatDateTime(entry.assignedAt)}</span>
                 </p>
                 {entry.releasedAt ? (
                   <p className={mutedTextClass}>
-                    Released {formatDate(entry.releasedAt)} by {describeAdmin(entry.releasedBy)}
+                    Released {formatDateTime(entry.releasedAt)} by {describeAdmin(entry.releasedBy)}
                   </p>
                 ) : (
                   <p className={mutedTextClass}>Still active</p>

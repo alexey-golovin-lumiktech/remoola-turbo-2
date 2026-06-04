@@ -15,7 +15,7 @@ import {
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getConsumerActionAudit } from '../../../../lib/admin-api/audit.server';
-import { EMPTY_VALUE, formatDate, getDefaultLookbackIsoRange } from '../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime, getDefaultLookbackIsoRange } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
@@ -53,7 +53,7 @@ function ConsumerActionsMobileCards({ items }: { items: ConsumerActionRow[] }) {
               <span className="muted mono">{String(item.resourceId ?? EMPTY_VALUE)}</span>
             </div>
             <div className="muted mono">{JSON.stringify(item.metadata ?? {})}</div>
-            <div className="muted">Created: {formatDate(item.createdAt)}</div>
+            <div className="muted">Created: {formatDateTime(item.createdAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -91,7 +91,7 @@ function ConsumerActionsTabletRows({ items }: { items: ConsumerActionRow[] }) {
                 {JSON.stringify(item.metadata ?? {})}
               </div>,
               <div className="muted" key="created">
-                {formatDate(item.createdAt)}
+                {formatDateTime(item.createdAt)}
               </div>,
               null,
             ]}
@@ -120,7 +120,7 @@ function ConsumerActionsDesktopTable({ items }: { items: ConsumerActionRow[] }) 
                   <div className="muted mono">{String(item.resourceId ?? EMPTY_VALUE)}</div>
                 </td>
                 <td className="mono">{JSON.stringify(item.metadata ?? {})}</td>
-                <td>{formatDate(item.createdAt)}</td>
+                <td>{formatDateTime(item.createdAt)}</td>
               </tr>
             ))}
       </DenseTable>

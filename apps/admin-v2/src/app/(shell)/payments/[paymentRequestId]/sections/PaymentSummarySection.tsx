@@ -1,6 +1,6 @@
 import { Panel } from '../../../../../components/panel';
 import { mutedTextClass } from '../../../../../components/ui-classes';
-import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../../../lib/admin-format';
 import { type PaymentPageData } from '../page.loader';
 import { type PaymentPagePermissions } from '../page.permissions';
 import { renderActorLabel } from '../payment-shared';
@@ -24,7 +24,7 @@ export function PaymentSummarySection({
         <p className={mutedTextClass}>Payment rail: {paymentCase.core.paymentRail ?? EMPTY_VALUE}</p>
         <p className={mutedTextClass}>Payer: {renderActorLabel(paymentCase.payer)}</p>
         <p className={mutedTextClass}>Requester: {renderActorLabel(paymentCase.requester)}</p>
-        <p className={mutedTextClass}>Updated: {formatDate(paymentCase.updatedAt)}</p>
+        <p className={mutedTextClass}>Updated: {formatDateTime(paymentCase.updatedAt)}</p>
       </Panel>
       <Panel surface="meta">
         <h3>Operational posture</h3>
@@ -66,10 +66,10 @@ export function PaymentSummarySection({
       </Panel>
       <Panel>
         <h3>Dates</h3>
-        <p className={mutedTextClass}>Created: {formatDate(paymentCase.core.createdAt)}</p>
-        <p className={mutedTextClass}>Sent: {formatDate(paymentCase.core.sentDate)}</p>
-        <p className={mutedTextClass}>Due: {formatDate(paymentCase.core.dueDate)}</p>
-        <p className={mutedTextClass}>Updated: {formatDate(paymentCase.updatedAt)}</p>
+        <p className={mutedTextClass}>Created: {formatDateTime(paymentCase.core.createdAt)}</p>
+        <p className={mutedTextClass}>Sent: {formatDateTime(paymentCase.core.sentDate)}</p>
+        <p className={mutedTextClass}>Due: {formatDateTime(paymentCase.core.dueDate)}</p>
+        <p className={mutedTextClass}>Updated: {formatDateTime(paymentCase.updatedAt)}</p>
         <p className={mutedTextClass}>Version: {paymentCase.version}</p>
       </Panel>
     </section>

@@ -1,4 +1,4 @@
-import { EMPTY_VALUE, formatDate } from '../../../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../../../../lib/admin-format';
 import { type ExchangeRuleCasePageData } from '../page.loader';
 
 export function ExchangeRuleSummaryGrid({ rule }: { rule: ExchangeRuleCasePageData[`rule`] }) {
@@ -12,15 +12,15 @@ export function ExchangeRuleSummaryGrid({ rule }: { rule: ExchangeRuleCasePageDa
       </article>
       <article className="panel">
         <h3>Timing</h3>
-        <p className="muted">Last run: {formatDate(rule.core.lastRunAt)}</p>
-        <p className="muted">Next run: {formatDate(rule.core.nextRunAt)}</p>
-        <p className="muted">Updated: {formatDate(rule.updatedAt)}</p>
+        <p className="muted">Last run: {formatDateTime(rule.core.lastRunAt)}</p>
+        <p className="muted">Next run: {formatDateTime(rule.core.nextRunAt)}</p>
+        <p className="muted">Updated: {formatDateTime(rule.updatedAt)}</p>
       </article>
       <article className="panel">
         <h3>Consumer</h3>
         <p className="muted">{rule.consumer.email ?? rule.consumer.id}</p>
         <p className="muted mono">{rule.consumer.id}</p>
-        <p className="muted">Created: {formatDate(rule.core.createdAt)}</p>
+        <p className="muted">Created: {formatDateTime(rule.core.createdAt)}</p>
       </article>
     </section>
   );

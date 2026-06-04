@@ -5,7 +5,7 @@ import { MobileQueueCard } from '../../components/mobile-queue-card';
 import { StatusPill } from '../../components/status-pill';
 import { TabletRow } from '../../components/tablet-row';
 import { type getConsumers } from '../../lib/admin-api/consumers.server';
-import { formatDate, EMPTY_VALUE } from '../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../lib/admin-format';
 
 type ConsumerItem = NonNullable<Awaited<ReturnType<typeof getConsumers>>>[`items`][number];
 
@@ -70,7 +70,7 @@ export function ConsumersMobileCards({ items }: { items: ConsumerItem[] }) {
             <div className="muted">Stripe identity: {consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
             <div className="muted">Flags: {renderConsumerFlagsSummary(consumer)}</div>
             <div className="muted">Notes: {consumer._count.adminNotes}</div>
-            <div className="muted">Updated: {formatDate(consumer.updatedAt)}</div>
+            <div className="muted">Updated: {formatDateTime(consumer.updatedAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -122,7 +122,7 @@ export function ConsumersTabletRows({ items }: { items: ConsumerItem[] }) {
               </div>,
               <div key="notes-updated">
                 <div>{consumer._count.adminNotes} notes</div>
-                <div className="muted">{formatDate(consumer.updatedAt)}</div>
+                <div className="muted">{formatDateTime(consumer.updatedAt)}</div>
               </div>,
             ]}
           />
@@ -163,7 +163,7 @@ export function ConsumersDesktopTable({ items }: { items: ConsumerItem[] }) {
                 </td>
                 <td>{renderConsumerFlags(consumer)}</td>
                 <td>{consumer._count.adminNotes}</td>
-                <td>{formatDate(consumer.updatedAt)}</td>
+                <td>{formatDateTime(consumer.updatedAt)}</td>
               </tr>
             ))}
       </DenseTable>

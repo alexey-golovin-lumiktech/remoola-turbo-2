@@ -5,7 +5,7 @@ import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
 import { getAdminIdentity, getMyAdminSessionsResult } from '../../../../lib/admin-api/identity.server';
 import { type AdminSessionView } from '../../../../lib/admin-api/types';
-import { formatDate } from '../../../../lib/admin-format';
+import { formatDateTime } from '../../../../lib/admin-format';
 import { revokeMyAdminSessionAction } from '../../../../lib/admin-mutations/admins.server';
 
 function statusLabel(s: AdminSessionView, current: boolean): string {
@@ -52,10 +52,10 @@ function SessionsMobileCards({ sessions }: { sessions: AdminSessionView[] }) {
             }
             trailing={<span className="pill">{statusLabel(s, s.current === true)}</span>}
           >
-            <div className="muted">Created: {formatDate(s.createdAt)}</div>
-            <div className="muted">Last used: {formatDate(s.lastUsedAt)}</div>
-            <div className="muted">Expires: {formatDate(s.expiresAt)}</div>
-            <div className="muted">Revoked: {formatDate(s.revokedAt)}</div>
+            <div className="muted">Created: {formatDateTime(s.createdAt)}</div>
+            <div className="muted">Last used: {formatDateTime(s.lastUsedAt)}</div>
+            <div className="muted">Expires: {formatDateTime(s.expiresAt)}</div>
+            <div className="muted">Revoked: {formatDateTime(s.revokedAt)}</div>
             {renderRevokeForm(s)}
           </MobileQueueCard>
         ))}
@@ -90,13 +90,13 @@ function SessionsTabletRows({ sessions }: { sessions: AdminSessionView[] }) {
             }
             cells={[
               <div className="muted" key="created">
-                Created: {formatDate(s.createdAt)}
+                Created: {formatDateTime(s.createdAt)}
               </div>,
               <div className="muted" key="lastUsed">
-                Last used: {formatDate(s.lastUsedAt)}
+                Last used: {formatDateTime(s.lastUsedAt)}
               </div>,
               <div className="muted" key="expires">
-                Expires/Revoked: {formatDate(s.expiresAt)} / {formatDate(s.revokedAt)}
+                Expires/Revoked: {formatDateTime(s.expiresAt)} / {formatDateTime(s.revokedAt)}
               </div>,
               renderRevokeForm(s),
             ]}
@@ -125,10 +125,10 @@ function SessionsDesktopTable({ sessions }: { sessions: AdminSessionView[] }) {
                 <td>
                   <span className="pill">{statusLabel(s, s.current === true)}</span>
                 </td>
-                <td>{formatDate(s.createdAt)}</td>
-                <td>{formatDate(s.lastUsedAt)}</td>
-                <td>{formatDate(s.expiresAt)}</td>
-                <td>{formatDate(s.revokedAt)}</td>
+                <td>{formatDateTime(s.createdAt)}</td>
+                <td>{formatDateTime(s.lastUsedAt)}</td>
+                <td>{formatDateTime(s.expiresAt)}</td>
+                <td>{formatDateTime(s.revokedAt)}</td>
                 <td>{renderRevokeForm(s)}</td>
               </tr>
             ))}

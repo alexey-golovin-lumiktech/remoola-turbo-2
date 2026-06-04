@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { nestedPanelClass } from '../../../../../components/ui-classes';
-import { formatDate } from '../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { renderObject } from '../ledger-entry-shared';
 import { type LedgerEntryCasePageData } from '../page.loader';
 
@@ -15,7 +15,7 @@ export function LedgerEntryDisputesGrid({ ledgerCase }: { ledgerCase: LedgerEntr
           {ledgerCase.disputes.map((dispute) => (
             <div className={nestedPanelClass} key={dispute.id}>
               <strong>{dispute.stripeDisputeId}</strong>
-              <p className="muted">{formatDate(dispute.createdAt)}</p>
+              <p className="muted">{formatDateTime(dispute.createdAt)}</p>
               {renderObject(dispute.metadata)}
             </div>
           ))}

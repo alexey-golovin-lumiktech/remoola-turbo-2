@@ -4,7 +4,7 @@ import { mutedTextClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getSystemSummary } from '../../../lib/admin-api/overview.server';
 import { type SystemSummaryCard } from '../../../lib/admin-api/types';
-import { formatDate, EMPTY_VALUE } from '../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../lib/admin-format';
 
 const cardOrder = [
   `stripeWebhookHealth`,
@@ -43,7 +43,7 @@ export default async function SystemPage() {
                 {watchCount} watch
               </span>
               <ActionGhost href="/system/alerts">Open alerts</ActionGhost>
-              <p className={mutedTextClass}>Computed: {formatDate(summary?.computedAt)}</p>
+              <p className={mutedTextClass}>Computed: {formatDateTime(summary?.computedAt)}</p>
             </div>
           }
           surface="primary"

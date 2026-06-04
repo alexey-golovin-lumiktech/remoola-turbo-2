@@ -9,7 +9,7 @@ import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getExchangeScheduledConversions } from '../../../../lib/admin-api/exchange.server';
 import { type ExchangeScheduledListResponse } from '../../../../lib/admin-api/types';
-import { EMPTY_VALUE, formatDate } from '../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
@@ -61,9 +61,9 @@ function ScheduledMobileCards({ items }: { items: ScheduledConversionItem[] }) {
             <div className="muted">
               Assigned: <ScheduledAssignedTo item={item} />
             </div>
-            <div className="muted">Execute at: {formatDate(item.executeAt)}</div>
-            <div className="muted">Executed: {formatDate(item.executedAt)}</div>
-            <div className="muted">Failed: {formatDate(item.failedAt)}</div>
+            <div className="muted">Execute at: {formatDateTime(item.executeAt)}</div>
+            <div className="muted">Executed: {formatDateTime(item.executedAt)}</div>
+            <div className="muted">Failed: {formatDateTime(item.failedAt)}</div>
             <div className="muted">{item.failureDetail ?? `No failure detail`}</div>
             <div className="muted">Ledger id: {item.ledgerId ?? EMPTY_VALUE}</div>
           </MobileQueueCard>
@@ -111,9 +111,9 @@ function ScheduledTabletRows({ items }: { items: ScheduledConversionItem[] }) {
                 <div className="muted">Rule: {item.linkedRuleId ?? EMPTY_VALUE}</div>
               </div>,
               <div key="timing">
-                <div>Execute: {formatDate(item.executeAt)}</div>
-                <div className="muted">Executed: {formatDate(item.executedAt)}</div>
-                <div className="muted">Failed: {formatDate(item.failedAt)}</div>
+                <div>Execute: {formatDateTime(item.executeAt)}</div>
+                <div className="muted">Executed: {formatDateTime(item.executedAt)}</div>
+                <div className="muted">Failed: {formatDateTime(item.failedAt)}</div>
               </div>,
               <div key="ledger">
                 <div>{item.failureDetail ?? `No failure detail`}</div>
@@ -163,10 +163,10 @@ function ScheduledDesktopTable({ items }: { items: ScheduledConversionItem[] }) 
                   <ScheduledAssignedTo item={item} />
                 </td>
                 <td>
-                  <div>Execute at: {formatDate(item.executeAt)}</div>
-                  <div className="muted">Processing: {formatDate(item.processingAt)}</div>
-                  <div className="muted">Executed: {formatDate(item.executedAt)}</div>
-                  <div className="muted">Failed: {formatDate(item.failedAt)}</div>
+                  <div>Execute at: {formatDateTime(item.executeAt)}</div>
+                  <div className="muted">Processing: {formatDateTime(item.processingAt)}</div>
+                  <div className="muted">Executed: {formatDateTime(item.executedAt)}</div>
+                  <div className="muted">Failed: {formatDateTime(item.failedAt)}</div>
                 </td>
                 <td>
                   <div>{item.failureDetail ?? `No failure detail`}</div>

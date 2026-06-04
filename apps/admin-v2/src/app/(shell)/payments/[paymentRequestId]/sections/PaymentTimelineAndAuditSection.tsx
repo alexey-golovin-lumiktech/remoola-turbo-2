@@ -1,6 +1,6 @@
 import { Panel } from '../../../../../components/panel';
 import { mutedTextClass, nestedPanelClass, stackClass } from '../../../../../components/ui-classes';
-import { formatDate } from '../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { type PaymentPageData } from '../page.loader';
 import { renderMetadata } from '../payment-shared';
 
@@ -12,7 +12,7 @@ export function PaymentTimelineAndAuditSection({ paymentCase }: { paymentCase: P
           {paymentCase.timeline.map((item, index) => (
             <div className={nestedPanelClass} key={`${item.event}-${index}`}>
               <strong>{item.event}</strong>
-              <p className={mutedTextClass}>{formatDate(item.timestamp)}</p>
+              <p className={mutedTextClass}>{formatDateTime(item.timestamp)}</p>
               <p className={mutedTextClass}>
                 {item.metadata && Object.keys(item.metadata).length > 0
                   ? `${Object.keys(item.metadata).length} metadata field${Object.keys(item.metadata).length === 1 ? `` : `s`}`
@@ -31,7 +31,7 @@ export function PaymentTimelineAndAuditSection({ paymentCase }: { paymentCase: P
             <div className={nestedPanelClass} key={item.id}>
               <strong>{item.action}</strong>
               <p className={mutedTextClass}>{item.adminEmail ?? `Unknown admin`}</p>
-              <p className={mutedTextClass}>{formatDate(item.createdAt)}</p>
+              <p className={mutedTextClass}>{formatDateTime(item.createdAt)}</p>
             </div>
           ))}
         </div>

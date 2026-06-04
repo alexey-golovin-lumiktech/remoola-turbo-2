@@ -1,4 +1,4 @@
-import { formatDate, EMPTY_VALUE } from '../../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { type PaymentMethodCasePageData } from '../page.loader';
 
 export function PaymentMethodSummaryGrid({
@@ -19,10 +19,10 @@ export function PaymentMethodSummaryGrid({
         </article>
         <article className="panel">
           <h3>Dates</h3>
-          <p className="muted">Created: {formatDate(paymentMethod.createdAt)}</p>
-          <p className="muted">Updated: {formatDate(paymentMethod.updatedAt)}</p>
-          <p className="muted">Disabled: {formatDate(paymentMethod.disabledAt)}</p>
-          <p className="muted">Deleted: {formatDate(paymentMethod.deletedAt)}</p>
+          <p className="muted">Created: {formatDateTime(paymentMethod.createdAt)}</p>
+          <p className="muted">Updated: {formatDateTime(paymentMethod.updatedAt)}</p>
+          <p className="muted">Disabled: {formatDateTime(paymentMethod.disabledAt)}</p>
+          <p className="muted">Deleted: {formatDateTime(paymentMethod.deletedAt)}</p>
         </article>
         <article className="panel">
           <h3>Bank / card snapshot</h3>
@@ -54,7 +54,7 @@ export function PaymentMethodSummaryGrid({
               <p className="muted">Name: {paymentMethod.billingDetails.name ?? EMPTY_VALUE}</p>
               <p className="muted">Email: {paymentMethod.billingDetails.email ?? EMPTY_VALUE}</p>
               <p className="muted">Phone: {paymentMethod.billingDetails.phone ?? EMPTY_VALUE}</p>
-              <p className="muted">Deleted: {formatDate(paymentMethod.billingDetails.deletedAt)}</p>
+              <p className="muted">Deleted: {formatDateTime(paymentMethod.billingDetails.deletedAt)}</p>
             </div>
           ) : (
             <p className="muted">No billing details linked.</p>

@@ -17,7 +17,7 @@ import {
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminActionAudit } from '../../../../lib/admin-api/audit.server';
 import { getQuickstart } from '../../../../lib/admin-api/overview.server';
-import { EMPTY_VALUE, formatDate } from '../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 import { parseQuickstartId } from '../../../../lib/quickstart-investigations';
@@ -58,7 +58,7 @@ function AdminActionsMobileCards({ items }: { items: AdminActionRow[] }) {
               <span className="muted mono">{renderResourceLink(item)}</span>
             </div>
             <div className="muted mono">{JSON.stringify(item.metadata ?? {})}</div>
-            <div className="muted">Created: {formatDate(item.createdAt)}</div>
+            <div className="muted">Created: {formatDateTime(item.createdAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -96,7 +96,7 @@ function AdminActionsTabletRows({ items }: { items: AdminActionRow[] }) {
                 {JSON.stringify(item.metadata ?? {})}
               </div>,
               <div className="muted" key="created">
-                {formatDate(item.createdAt)}
+                {formatDateTime(item.createdAt)}
               </div>,
               null,
             ]}
@@ -125,7 +125,7 @@ function AdminActionsDesktopTable({ items }: { items: AdminActionRow[] }) {
                 </td>
                 <td>{String(item.adminEmail ?? item.adminId ?? EMPTY_VALUE)}</td>
                 <td className="mono">{JSON.stringify(item.metadata ?? {})}</td>
-                <td>{formatDate(item.createdAt)}</td>
+                <td>{formatDateTime(item.createdAt)}</td>
               </tr>
             ))}
       </DenseTable>

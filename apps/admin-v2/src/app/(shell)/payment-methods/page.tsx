@@ -19,7 +19,7 @@ import {
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getPaymentMethods } from '../../../lib/admin-api/payments.server';
 import { type PaymentMethodsListResponse } from '../../../lib/admin-api/types';
-import { EMPTY_VALUE, formatDate } from '../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../lib/navigation-context';
 import {
   booleanSearchParam,
@@ -56,8 +56,8 @@ function PaymentMethodStatus({ item }: { item: PaymentMethodItem }) {
       <div>
         <StatusPill status={effectiveStatus(item)} />
       </div>
-      {item.disabledAt ? <div className="muted">Disabled: {formatDate(item.disabledAt)}</div> : null}
-      <div className="muted">Created: {formatDate(item.createdAt)}</div>
+      {item.disabledAt ? <div className="muted">Disabled: {formatDateTime(item.disabledAt)}</div> : null}
+      <div className="muted">Created: {formatDateTime(item.createdAt)}</div>
     </>
   );
 }
@@ -93,7 +93,7 @@ function PaymentMethodsMobileCards({ items }: { items: PaymentMethodItem[] }) {
             <div className="muted">Default: {item.defaultSelected ? `Yes` : `No`}</div>
             <div className="muted mono">Fingerprint: {item.stripeFingerprint ?? EMPTY_VALUE}</div>
             <PaymentMethodStatus item={item} />
-            <div className="muted">Updated: {formatDate(item.updatedAt)}</div>
+            <div className="muted">Updated: {formatDateTime(item.updatedAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -136,7 +136,7 @@ function PaymentMethodsTabletRows({ items }: { items: PaymentMethodItem[] }) {
               </div>,
               <PaymentMethodStatus item={item} key="status" />,
               <div className="muted" key="updated">
-                Updated: {formatDate(item.updatedAt)}
+                Updated: {formatDateTime(item.updatedAt)}
               </div>,
             ]}
           />
@@ -175,7 +175,7 @@ function PaymentMethodsDesktopTable({ items }: { items: PaymentMethodItem[] }) {
                 <td>
                   <PaymentMethodStatus item={item} />
                 </td>
-                <td>{formatDate(item.updatedAt)}</td>
+                <td>{formatDateTime(item.updatedAt)}</td>
               </tr>
             ))}
       </DenseTable>

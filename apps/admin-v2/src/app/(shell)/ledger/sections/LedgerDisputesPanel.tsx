@@ -7,7 +7,7 @@ import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { Panel } from '../../../../components/panel';
 import { TabletRow } from '../../../../components/tablet-row';
 import { type LedgerDisputesResponse } from '../../../../lib/admin-api/types';
-import { EMPTY_VALUE, formatDate } from '../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../../lib/admin-format';
 
 function DisputesMobileCards({ items }: { items: DisputeItem[] }) {
   if (items.length === 0) {
@@ -35,7 +35,7 @@ function DisputesMobileCards({ items }: { items: DisputeItem[] }) {
             <div className="muted mono">{dispute.ledgerEntry.id}</div>
             <DisputeLinks dispute={dispute} />
             <div className="muted">Reason: {dispute.reason ?? EMPTY_VALUE}</div>
-            <div className="muted">Captured: {formatDate(dispute.createdAt)}</div>
+            <div className="muted">Captured: {formatDateTime(dispute.createdAt)}</div>
             <DisputeMetadataViewer dispute={dispute} />
           </MobileQueueCard>
         ))}
@@ -76,7 +76,7 @@ function DisputesTabletRows({ items }: { items: DisputeItem[] }) {
                 <div className="muted">Reason: {dispute.reason ?? EMPTY_VALUE}</div>
               </div>,
               <div key="captured">
-                <div className="muted">Captured: {formatDate(dispute.createdAt)}</div>
+                <div className="muted">Captured: {formatDateTime(dispute.createdAt)}</div>
                 <DisputeMetadataViewer dispute={dispute} />
               </div>,
             ]}
@@ -112,7 +112,7 @@ function DisputesDesktopTable({ items }: { items: DisputeItem[] }) {
                 </td>
                 <td>{dispute.disputeStatus ?? EMPTY_VALUE}</td>
                 <td>{dispute.reason ?? EMPTY_VALUE}</td>
-                <td>{formatDate(dispute.createdAt)}</td>
+                <td>{formatDateTime(dispute.createdAt)}</td>
               </tr>
             ))}
       </DenseTable>

@@ -7,7 +7,7 @@ import { TabletRow } from '../../components/tablet-row';
 import { TinyPill } from '../../components/tiny-pill';
 import { emptyPanelClass, mutedTextClass } from '../../components/ui-classes';
 import { type PayoutsListResponse } from '../../lib/admin-api/types';
-import { formatDate, EMPTY_VALUE } from '../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../lib/admin-format';
 import { withReturnTo } from '../../lib/navigation-context';
 
 type PayoutItem = PayoutsListResponse[`items`][number];
@@ -308,7 +308,7 @@ function renderBucketMobileCards(items: PayoutItem[], emptyMessage: string, retu
             <div className={mutedTextClass}>{renderPayoutConsumer(item, true, returnTo)}</div>
             <div className={mutedTextClass}>Destination: {renderDestination(item)}</div>
             <div className={mutedTextClass}>
-              Outcome age: {item.outcomeAgeHours.toFixed(1)}h · Updated: {formatDate(item.updatedAt)}
+              Outcome age: {item.outcomeAgeHours.toFixed(1)}h · Updated: {formatDateTime(item.updatedAt)}
             </div>
             {shouldShowPersisted(item) ? <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div> : null}
             {item.destinationLinkageSource ? (
@@ -363,7 +363,7 @@ function renderBucketTabletRows(items: PayoutItem[], emptyMessage: string, retur
               </div>,
               <div key="timing" className={mutedTextClass}>
                 <div>Outcome age: {item.outcomeAgeHours.toFixed(1)}h</div>
-                <div>Updated: {formatDate(item.updatedAt)}</div>
+                <div>Updated: {formatDateTime(item.updatedAt)}</div>
                 {shouldShowFreshness(item) ? <div>Freshness: {item.dataFreshnessClass}</div> : null}
                 {item.assignedTo ? <div>Assigned: {renderAssignedTo(item)}</div> : null}
               </div>,
@@ -407,7 +407,7 @@ function renderBucketDesktopTable(items: PayoutItem[], emptyMessage: string, ret
                 </td>
                 <td>
                   <div className={mutedTextClass}>Outcome age: {item.outcomeAgeHours.toFixed(1)}h</div>
-                  <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
+                  <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
                   {item.externalReference ? (
                     <div className={mutedTextClass}>External reference: {item.externalReference}</div>
                   ) : null}

@@ -2,7 +2,7 @@ import { ActionGhost } from '../../../../../components/action-ghost';
 import { Panel } from '../../../../../components/panel';
 import { mutedTextClass, nestedPanelClass, stackClass } from '../../../../../components/ui-classes';
 import { getAdminDocumentDownloadHref } from '../../../../../lib/admin-document-download';
-import { formatDate } from '../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { type PaymentPageData } from '../page.loader';
 
 export function PaymentAttachmentsAndLedgerSection({ paymentCase }: { paymentCase: PaymentPageData[`paymentCase`] }) {
@@ -16,13 +16,13 @@ export function PaymentAttachmentsAndLedgerSection({ paymentCase }: { paymentCas
               <strong>{attachment.name}</strong>
               <p className={mutedTextClass}>{attachment.mimetype}</p>
               <p className={mutedTextClass}>
-                {attachment.size} bytes · {formatDate(attachment.createdAt)}
+                {attachment.size} bytes · {formatDateTime(attachment.createdAt)}
               </p>
               {attachment.deletedAt ? (
-                <p className={mutedTextClass}>Attachment soft-deleted: {formatDate(attachment.deletedAt)}</p>
+                <p className={mutedTextClass}>Attachment soft-deleted: {formatDateTime(attachment.deletedAt)}</p>
               ) : null}
               {attachment.resourceDeletedAt ? (
-                <p className={mutedTextClass}>Resource soft-deleted: {formatDate(attachment.resourceDeletedAt)}</p>
+                <p className={mutedTextClass}>Resource soft-deleted: {formatDateTime(attachment.resourceDeletedAt)}</p>
               ) : null}
               <div className="actionsRow">
                 {paymentCase.requester.id ? (
@@ -53,7 +53,7 @@ export function PaymentAttachmentsAndLedgerSection({ paymentCase }: { paymentCas
               </p>
               <p className={mutedTextClass}>Effective status: {entry.effectiveStatus}</p>
               {entry.deletedAt ? (
-                <p className={mutedTextClass}>Ledger entry soft-deleted: {formatDate(entry.deletedAt)}</p>
+                <p className={mutedTextClass}>Ledger entry soft-deleted: {formatDateTime(entry.deletedAt)}</p>
               ) : null}
               <div className="actionsRow">
                 <ActionGhost href={`/ledger/${entry.id}`}>Open ledger case</ActionGhost>

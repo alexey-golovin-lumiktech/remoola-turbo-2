@@ -1,4 +1,4 @@
-import { formatDate } from '../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { RemoveConsumerFlagButton } from '../forms/RemoveConsumerFlagButton';
 import { type ConsumerPageData } from '../page.loader';
 import { type ConsumerPagePermissions } from '../page.permissions';
@@ -25,7 +25,7 @@ export function ConsumerFlagsAndNotesSection({
                   <strong>{flag.flag}</strong>
                   <p className="muted">{flag.reason ?? `No reason`}</p>
                   <p className="muted">
-                    Added by {flag.admin.email} at {formatDate(flag.createdAt)}
+                    Added by {flag.admin.email} at {formatDateTime(flag.createdAt)}
                   </p>
                 </div>
                 {canManageFlags ? (
@@ -44,7 +44,7 @@ export function ConsumerFlagsAndNotesSection({
             <div key={note.id} className={nestedCardClass}>
               <p>{note.content}</p>
               <p className="muted">
-                {note.admin.email} · {formatDate(note.createdAt)}
+                {note.admin.email} · {formatDateTime(note.createdAt)}
               </p>
             </div>
           ))}

@@ -1,4 +1,4 @@
-import { formatDate, EMPTY_VALUE } from '../../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { type ConsumerPageData } from '../page.loader';
 
 export function ConsumerCountsGrid({
@@ -33,11 +33,11 @@ export function ConsumerCountsGrid({
       </article>
       <article className="panel">
         <h3>Dates</h3>
-        <p className="muted">Created: {formatDate(consumer.createdAt)}</p>
-        <p className="muted">Updated: {formatDate(consumer.updatedAt)}</p>
-        <p className="muted">Verification updated: {formatDate(consumer.verificationUpdatedAt)}</p>
-        <p className="muted">Stripe verified: {formatDate(consumer.stripeIdentityVerifiedAt)}</p>
-        <p className="muted">Suspended at: {formatDate(consumer.suspendedAt)}</p>
+        <p className="muted">Created: {formatDateTime(consumer.createdAt)}</p>
+        <p className="muted">Updated: {formatDateTime(consumer.updatedAt)}</p>
+        <p className="muted">Verification updated: {formatDateTime(consumer.verificationUpdatedAt)}</p>
+        <p className="muted">Stripe verified: {formatDateTime(consumer.stripeIdentityVerifiedAt)}</p>
+        <p className="muted">Suspended at: {formatDateTime(consumer.suspendedAt)}</p>
       </article>
     </section>
   );

@@ -8,7 +8,7 @@ import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getExchangeRules } from '../../../../lib/admin-api/exchange.server';
 import { type ExchangeRulesListResponse } from '../../../../lib/admin-api/types';
-import { formatDate, EMPTY_VALUE } from '../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { booleanSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
@@ -47,11 +47,11 @@ function RulesMobileCards({ items }: { items: ExchangeRuleItem[] }) {
             <div className="muted">Max convert: {item.maxConvertAmount ?? EMPTY_VALUE}</div>
             <div className="muted">Interval: {item.minIntervalMinutes} min</div>
             <div>{item.enabled ? `Enabled` : `Paused`}</div>
-            <div className="muted">Last run: {formatDate(item.lastRunAt)}</div>
-            <div className="muted">Next run: {formatDate(item.nextRunAt)}</div>
+            <div className="muted">Last run: {formatDateTime(item.lastRunAt)}</div>
+            <div className="muted">Next run: {formatDateTime(item.nextRunAt)}</div>
             <div>{renderExecutionSummary(item.lastExecution)}</div>
             <div className="muted">
-              Updated: {formatDate(item.updatedAt)} · v{item.version}
+              Updated: {formatDateTime(item.updatedAt)} · v{item.version}
             </div>
           </MobileQueueCard>
         ))}
@@ -97,7 +97,7 @@ function RulesTabletRows({ items }: { items: ExchangeRuleItem[] }) {
               </div>,
               <div key="state">
                 <div>{item.enabled ? `Enabled` : `Paused`}</div>
-                <div className="muted">Next: {formatDate(item.nextRunAt)}</div>
+                <div className="muted">Next: {formatDateTime(item.nextRunAt)}</div>
               </div>,
               <div key="result">
                 <div>{renderExecutionSummary(item.lastExecution)}</div>
@@ -141,13 +141,13 @@ function RulesDesktopTable({ items }: { items: ExchangeRuleItem[] }) {
                 </td>
                 <td>
                   <div>{item.enabled ? `Enabled` : `Paused`}</div>
-                  <div className="muted">Last run: {formatDate(item.lastRunAt)}</div>
-                  <div className="muted">Next run: {formatDate(item.nextRunAt)}</div>
+                  <div className="muted">Last run: {formatDateTime(item.lastRunAt)}</div>
+                  <div className="muted">Next run: {formatDateTime(item.nextRunAt)}</div>
                 </td>
                 <td>
                   <div>{renderExecutionSummary(item.lastExecution)}</div>
                   <div className="muted">
-                    Updated: {formatDate(item.updatedAt)} · Version: {item.version}
+                    Updated: {formatDateTime(item.updatedAt)} · Version: {item.version}
                   </div>
                 </td>
               </tr>

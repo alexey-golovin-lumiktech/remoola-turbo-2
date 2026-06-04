@@ -14,7 +14,7 @@ import {
   renderHighValueThresholds,
 } from '../../../features/payouts/payouts-list-presenters';
 import { getPayouts } from '../../../lib/admin-api/payments.server';
-import { formatDate, EMPTY_VALUE } from '../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../lib/navigation-context';
 import { type SearchParamValue, trimmedSearchParam } from '../../../lib/query-contract';
 
@@ -84,7 +84,7 @@ export default async function PayoutsPage({
           }
           surface="primary"
         >
-          <p className={mutedTextClass}>Generated: {formatDate(data?.generatedAt)}</p>
+          <p className={mutedTextClass}>Generated: {formatDateTime(data?.generatedAt)}</p>
         </Panel>
 
         <Panel

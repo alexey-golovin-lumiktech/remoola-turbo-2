@@ -11,7 +11,7 @@ import { TinyPill } from '../../../components/tiny-pill';
 import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
 import { getOverviewSummary, getQuickstarts } from '../../../lib/admin-api/overview.server';
 import { type OverviewSignalSummary } from '../../../lib/admin-api/types';
-import { EMPTY_VALUE, formatDate } from '../../../lib/admin-format';
+import { EMPTY_VALUE, formatDateTime } from '../../../lib/admin-format';
 import {
   buildQuickstartHref,
   describeQuickstartOperatorModel,
@@ -116,7 +116,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
               <div className="text-[11px] uppercase tracking-[0.2em] text-white/45">Snapshot freshness</div>
-              <div className="mt-2 text-sm font-medium text-white">Computed {formatDate(summary?.computedAt)}</div>
+              <div className="mt-2 text-sm font-medium text-white">Computed {formatDateTime(summary?.computedAt)}</div>
               <p className="mt-2 text-sm leading-6 text-white/60">
                 Use this page for triage, then move into queue surfaces for exact case handling.
               </p>
@@ -224,7 +224,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
                   <div className="text-xs font-mono text-white/55">{String(row.resourceId ?? EMPTY_VALUE)}</div>
                 </td>
                 <td className="px-3 py-3">{String(row.adminEmail ?? EMPTY_VALUE)}</td>
-                <td className="px-3 py-3">{formatDate(row.createdAt)}</td>
+                <td className="px-3 py-3">{formatDateTime(row.createdAt)}</td>
               </tr>
             );
           })}

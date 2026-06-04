@@ -1,4 +1,4 @@
-import { formatDate, EMPTY_VALUE } from '../../../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../../../lib/admin-format';
 import { type ExchangeRateCasePageData } from '../page.loader';
 
 export function ExchangeRateSummaryGrid({ rate }: { rate: ExchangeRateCasePageData[`rate`] }) {
@@ -15,11 +15,11 @@ export function ExchangeRateSummaryGrid({ rate }: { rate: ExchangeRateCasePageDa
         <h3>Provider context</h3>
         <p className="muted">Provider: {rate.core.provider ?? EMPTY_VALUE}</p>
         <p className="muted">Provider rate id: {rate.core.providerRateId ?? EMPTY_VALUE}</p>
-        <p className="muted">Fetched: {formatDate(rate.core.fetchedAt)}</p>
+        <p className="muted">Fetched: {formatDateTime(rate.core.fetchedAt)}</p>
       </article>
       <article className="panel">
         <h3>Staleness</h3>
-        <p className="muted">Reference: {formatDate(rate.stalenessIndicator.referenceAt)}</p>
+        <p className="muted">Reference: {formatDateTime(rate.stalenessIndicator.referenceAt)}</p>
         <p className="muted">Age: {rate.stalenessIndicator.ageMinutes} minutes</p>
         <p className="muted">Threshold: {rate.stalenessIndicator.thresholdMinutes} minutes</p>
       </article>

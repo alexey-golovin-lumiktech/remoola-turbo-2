@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { formatDate, EMPTY_VALUE } from '../../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { type ConsumerPageData } from '../page.loader';
 import { nestedCardClass } from '../preview-helpers';
 
@@ -41,7 +41,7 @@ export function ConsumerRelationshipsSection({
               </strong>
               <p className="muted">{paymentRequest.status}</p>
               <p className="muted">Rail: {paymentRequest.paymentRail ?? EMPTY_VALUE}</p>
-              <p className="muted">Created: {formatDate(paymentRequest.createdAt)}</p>
+              <p className="muted">Created: {formatDateTime(paymentRequest.createdAt)}</p>
             </div>
           ))}
         </div>
@@ -70,10 +70,10 @@ export function ConsumerRelationshipsSection({
               <p className="muted">Default: {paymentMethod.defaultSelected ? `Yes` : `No`}</p>
               <p className="muted">Status: {paymentMethod.status}</p>
               {paymentMethod.disabledAt ? (
-                <p className="muted">Disabled: {formatDate(paymentMethod.disabledAt)}</p>
+                <p className="muted">Disabled: {formatDateTime(paymentMethod.disabledAt)}</p>
               ) : null}
-              <p className="muted">Created: {formatDate(paymentMethod.createdAt)}</p>
-              <p className="muted">Updated: {formatDate(paymentMethod.updatedAt)}</p>
+              <p className="muted">Created: {formatDateTime(paymentMethod.createdAt)}</p>
+              <p className="muted">Updated: {formatDateTime(paymentMethod.updatedAt)}</p>
             </div>
           ))}
         </div>
@@ -86,7 +86,7 @@ export function ConsumerRelationshipsSection({
               <strong>{resource.resource.originalName}</strong>
               <p className="muted">{resource.resource.mimetype}</p>
               <p className="muted">
-                {resource.resource.size} bytes · {formatDate(resource.resource.createdAt)}
+                {resource.resource.size} bytes · {formatDateTime(resource.resource.createdAt)}
               </p>
             </div>
           ))}

@@ -6,7 +6,7 @@ import {
   type LedgerAnomalyListResponse,
   type LedgerAnomalySummaryResponse,
 } from '../../../../../lib/admin-api/types';
-import { formatDate } from '../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../lib/admin-format';
 import { LEDGER_ANOMALY_CLASS_LABELS } from '../../../../../lib/admin-surface-meta';
 
 export function AnomaliesHeaderPanel({
@@ -26,7 +26,7 @@ export function AnomaliesHeaderPanel({
         <div className={buttonRowClass}>
           <TinyPill tone="cyan">{list?.items.length ?? 0} visible</TinyPill>
           <TinyPill>{LEDGER_ANOMALY_CLASS_LABELS[className]}</TinyPill>
-          <TinyPill>Computed {formatDate(summary?.computedAt)}</TinyPill>
+          <TinyPill>Computed {formatDateTime(summary?.computedAt)}</TinyPill>
         </div>
       }
       surface="primary"

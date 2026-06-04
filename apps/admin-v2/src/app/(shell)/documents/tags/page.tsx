@@ -9,7 +9,7 @@ import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getDocumentTags } from '../../../../lib/admin-api/documents.server';
 import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { type DocumentTagsResponse } from '../../../../lib/admin-api/types';
-import { formatDate } from '../../../../lib/admin-format';
+import { formatDateTime } from '../../../../lib/admin-format';
 import {
   deleteDocumentTagAction,
   updateDocumentTagAction,
@@ -85,8 +85,8 @@ function TagsMobileCards({
               <Link href={`/documents?tagId=${encodeURIComponent(tag.id)}`}>Open filtered explorer</Link>
             </div>
             {selectedTagId === tag.id ? <div className="muted">Current filter target</div> : null}
-            <div className="muted">Updated: {formatDate(tag.updatedAt)}</div>
-            <div className="muted">Created: {formatDate(tag.createdAt)}</div>
+            <div className="muted">Updated: {formatDateTime(tag.updatedAt)}</div>
+            <div className="muted">Created: {formatDateTime(tag.createdAt)}</div>
             {renderTagActions(tag, canManage)}
           </MobileQueueCard>
         ))}
@@ -136,8 +136,8 @@ function TagsTabletRows({
                 {selectedTagId === tag.id ? <div className="muted">Current filter</div> : null}
               </div>,
               <div className="muted" key="dates">
-                <div>Updated: {formatDate(tag.updatedAt)}</div>
-                <div>Created: {formatDate(tag.createdAt)}</div>
+                <div>Updated: {formatDateTime(tag.updatedAt)}</div>
+                <div>Created: {formatDateTime(tag.createdAt)}</div>
               </div>,
               renderTagActions(tag, canManage),
             ]}
@@ -168,8 +168,8 @@ function TagsDesktopTable({
                   <div className="formStack">
                     <strong>{tag.name}</strong>
                     <span className="muted mono">{tag.id}</span>
-                    <span className="muted">Updated: {formatDate(tag.updatedAt)}</span>
-                    <span className="muted">Created: {formatDate(tag.createdAt)}</span>
+                    <span className="muted">Updated: {formatDateTime(tag.updatedAt)}</span>
+                    <span className="muted">Created: {formatDateTime(tag.createdAt)}</span>
                   </div>
                 </td>
                 <td>

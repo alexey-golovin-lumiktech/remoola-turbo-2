@@ -1,4 +1,4 @@
-import { formatDate } from '../../../../../../lib/admin-format';
+import { formatDateTime } from '../../../../../../lib/admin-format';
 import { type ExchangeScheduledCasePageData } from '../page.loader';
 
 export function ExchangeScheduledSummaryGrid({
@@ -13,15 +13,15 @@ export function ExchangeScheduledSummaryGrid({
         <p className="muted">
           Amount: {conversion.core.amount} {conversion.core.sourceCurrency}
         </p>
-        <p className="muted">Execute at: {formatDate(conversion.core.executeAt)}</p>
-        <p className="muted">Updated: {formatDate(conversion.updatedAt)}</p>
+        <p className="muted">Execute at: {formatDateTime(conversion.core.executeAt)}</p>
+        <p className="muted">Updated: {formatDateTime(conversion.updatedAt)}</p>
         <p className="muted">Version: {conversion.version}</p>
       </article>
       <article className="panel">
         <h3>Timing</h3>
-        <p className="muted">Processing: {formatDate(conversion.core.processingAt)}</p>
-        <p className="muted">Executed: {formatDate(conversion.core.executedAt)}</p>
-        <p className="muted">Failed: {formatDate(conversion.core.failedAt)}</p>
+        <p className="muted">Processing: {formatDateTime(conversion.core.processingAt)}</p>
+        <p className="muted">Executed: {formatDateTime(conversion.core.executedAt)}</p>
+        <p className="muted">Failed: {formatDateTime(conversion.core.failedAt)}</p>
       </article>
       <article className="panel">
         <h3>Failure detail</h3>

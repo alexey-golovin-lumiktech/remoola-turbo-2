@@ -14,7 +14,7 @@ import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getAdmins } from '../../../lib/admin-api/admins.server';
 import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
 import { type AdminsListResponse } from '../../../lib/admin-api/types';
-import { formatDate } from '../../../lib/admin-format';
+import { formatDateTime } from '../../../lib/admin-format';
 import { inviteAdminAction } from '../../../lib/admin-mutations/admins.server';
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../lib/admin-rbac';
 import { positiveIntegerSearchParam, trimmedSearchParam } from '../../../lib/query-contract';
@@ -52,8 +52,8 @@ function AdminsMobileCards({ admins }: { admins: AdminListItem[] }) {
             subtitle={<span className="mono">{admin.id}</span>}
           >
             <AdminPills admin={admin} />
-            <div className="muted">Last activity: {formatDate(admin.lastActivityAt)}</div>
-            <div className="muted">Updated: {formatDate(admin.updatedAt)}</div>
+            <div className="muted">Last activity: {formatDateTime(admin.lastActivityAt)}</div>
+            <div className="muted">Updated: {formatDateTime(admin.updatedAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -87,10 +87,10 @@ function AdminsTabletRows({ admins }: { admins: AdminListItem[] }) {
             cells={[
               <AdminPills admin={admin} key="pills" />,
               <div className="muted" key="lastActivity">
-                Last activity: {formatDate(admin.lastActivityAt)}
+                Last activity: {formatDateTime(admin.lastActivityAt)}
               </div>,
               <div className="muted" key="updated">
-                Updated: {formatDate(admin.updatedAt)}
+                Updated: {formatDateTime(admin.updatedAt)}
               </div>,
               null,
             ]}
@@ -123,8 +123,8 @@ function AdminsDesktopTable({ admins }: { admins: AdminListItem[] }) {
                 </td>
                 <td>{admin.role ?? admin.type}</td>
                 <td>{admin.type}</td>
-                <td>{formatDate(admin.lastActivityAt)}</td>
-                <td>{formatDate(admin.updatedAt)}</td>
+                <td>{formatDateTime(admin.lastActivityAt)}</td>
+                <td>{formatDateTime(admin.updatedAt)}</td>
               </tr>
             ))}
       </DenseTable>
@@ -246,8 +246,8 @@ export default async function AdminsPage({
                   <span className="pill">{invitation.status}</span>
                 </div>
                 <p className="muted">Invited by: {invitation.invitedBy?.email ?? `Unknown`}</p>
-                <p className="muted">Created: {formatDate(invitation.createdAt)}</p>
-                <p className="muted">Expires: {formatDate(invitation.expiresAt)}</p>
+                <p className="muted">Created: {formatDateTime(invitation.createdAt)}</p>
+                <p className="muted">Expires: {formatDateTime(invitation.expiresAt)}</p>
               </div>
             ))}
           </div>

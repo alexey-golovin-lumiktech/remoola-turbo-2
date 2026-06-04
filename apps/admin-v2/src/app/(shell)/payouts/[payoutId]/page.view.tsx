@@ -28,7 +28,7 @@ import {
   textAreaClass,
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
-import { formatDate, EMPTY_VALUE } from '../../../../lib/admin-format';
+import { formatDateTime, EMPTY_VALUE } from '../../../../lib/admin-format';
 import {
   escalatePayoutAction,
   reassignPayoutAssignmentAction,
@@ -174,7 +174,7 @@ export function PayoutCasePageView({
                 <p className={mutedTextClass}>{renderDestinationLabel(payoutCase.destinationPaymentMethodSummary)}</p>
                 <p className={mutedTextClass}>Linkage: {payoutCase.destinationLinkageSource}</p>
                 <p className={mutedTextClass}>
-                  Deleted: {formatDate(payoutCase.destinationPaymentMethodSummary.deletedAt)}
+                  Deleted: {formatDateTime(payoutCase.destinationPaymentMethodSummary.deletedAt)}
                 </p>
               </>
             ) : (
@@ -204,7 +204,7 @@ export function PayoutCasePageView({
               <p className={mutedTextClass}>Ledger id: {payoutCase.core.ledgerId}</p>
               <p className={mutedTextClass}>External reference: {payoutCase.core.externalReference ?? EMPTY_VALUE}</p>
               <p className={mutedTextClass}>Outcome age: {payoutCase.outcomeAgeHours.toFixed(1)}h</p>
-              <p className={mutedTextClass}>Updated: {formatDate(payoutCase.core.updatedAt)}</p>
+              <p className={mutedTextClass}>Updated: {formatDateTime(payoutCase.core.updatedAt)}</p>
               <p className={mutedTextClass}>Version: {payoutCase.version}</p>
             </div>
             {payoutCase.paymentRequest ? (
@@ -292,7 +292,7 @@ export function PayoutCasePageView({
                     Escalated by:{` `}
                     {payoutCase.payoutEscalation.escalatedBy.email ?? payoutCase.payoutEscalation.escalatedBy.id}
                   </p>
-                  <p className={mutedTextClass}>Created: {formatDate(payoutCase.payoutEscalation.createdAt)}</p>
+                  <p className={mutedTextClass}>Created: {formatDateTime(payoutCase.payoutEscalation.createdAt)}</p>
                   <p className={mutedTextClass}>Confirmed: {payoutCase.payoutEscalation.confirmed ? `Yes` : `No`}</p>
                   <p className={mutedTextClass}>Reason: {payoutCase.payoutEscalation.reason ?? EMPTY_VALUE}</p>
                 </div>
@@ -310,7 +310,7 @@ export function PayoutCasePageView({
                   <strong>{outcome.status}</strong>
                   <p className={mutedTextClass}>Source: {outcome.source ?? EMPTY_VALUE}</p>
                   <p className={mutedTextClass}>External id: {outcome.externalId ?? EMPTY_VALUE}</p>
-                  <p className={mutedTextClass}>{formatDate(outcome?.createdAt)}</p>
+                  <p className={mutedTextClass}>{formatDateTime(outcome?.createdAt)}</p>
                 </div>
               ))}
             </div>
@@ -353,7 +353,7 @@ export function PayoutCasePageView({
               <div className={nestedPanelClass} key={item.id}>
                 <strong>{item.action}</strong>
                 <p className={mutedTextClass}>{item.adminEmail ?? `Unknown admin`}</p>
-                <p className={mutedTextClass}>{formatDate(item?.createdAt)}</p>
+                <p className={mutedTextClass}>{formatDateTime(item?.createdAt)}</p>
               </div>
             ))}
           </div>
