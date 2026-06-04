@@ -3204,7 +3204,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-06-03</summary>
 
 - **2026-06-03:**
@@ -3221,6 +3221,30 @@
 
   ### ⚠️ Notes
   - **Refactor-only day across api-v2 and admin-v2:** Today's commits are characterization-first tests, behavior-preserving helper extractions, shared-action consolidation, and minor public-surface cleanup. The recorded scope does not include DB migrations, DTO/controller contract changes, or new product-surface rollout.
+
+</details>
+
+<details open>
+<summary>2026-06-04</summary>
+
+- **2026-06-04:**
+
+  ### 🚀 Feature
+  - **Admin-v2 date and placeholder rendering alignment:** Consolidate admin-v2 date and empty-value formatting onto a shared helper, rename the existing formatter to `formatDateTime` so its name matches the current medium-date plus short-time output, and add a new UTC date-only `formatDate` for payment `Sent` / `Due` business dates so those payment surfaces stop showing non-meaningful midnight timestamps. The same helper wave also standardizes the empty placeholder glyph across admin-v2.
+
+  ### 🔐 Security / Production Safety
+  - **api-v2 runtime-config and OAuth invariants pinned:** Expand characterization around Google OAuth callback and completion handling, auth-cookie clearing, app-scope gating, production/staging env policy guards, webhook raw-body parsing, Swagger/CORS behavior, bootstrap sequencing, and Node-versus-Vercel startup boundaries; then extract pure env policy and derivation helpers out of `apps/api-v2/src/envs.ts` while preserving `DATABASE_URL` synthesis timing, secure-cookie / ngrok / placeholder-secret enforcement, and the exported runtime config surface.
+
+  ### 🧪 Testing
+  - **api-v2 characterization wave rerun through build guards:** Today's api-v2 commits record targeted reruns for the consumer session controller, env/configure-app/bootstrap/main specs, `module-boundaries.spec.ts`, plus `typecheck`, `lint`, and `build` after the runtime-config and OAuth hardening work.
+  - **Admin-v2 formatter and queue-shell coverage:** Add formatter characterization for date-only rendering and introduce 13 tests for the new generic `RenderQueueView<T>` responsive shell, covering empty-state handling, mobile/tablet/desktop slot contracts, full-array desktop rendering, and the expected responsive class structure.
+
+  ### 🛠 DevEx
+  - **api-v2 env helper extraction:** Reduce responsibility density in `apps/api-v2/src/envs.ts` by moving pure derivation and policy logic into dedicated helper modules while keeping `envs.ts` as the public facade for zod schema ownership, `process.env` parsing, mutation timing, and final export shape.
+  - **Admin-v2 responsive queue-shell consolidation:** Add a domain-agnostic `RenderQueueView<T>` component for the duplicated mobile/tablet/desktop list-presenter shell used across payments, payouts, consumers, and verification, with this commit stopping at additive characterization and no caller migration yet.
+
+  ### ⚠️ Notes
+  - **No migration or contract day:** The recorded commit scope does not include DB migrations or API/DTO contract changes. Product-visible UI diffs are narrow to admin-v2 formatting updates, while the queue-view extraction is additive only and does not change loader, mutation, permission, or server-action behavior in this commit.
 
 </details>
 
