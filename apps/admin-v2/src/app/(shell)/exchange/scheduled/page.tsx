@@ -9,13 +9,11 @@ import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getExchangeScheduledConversions } from '../../../../lib/admin-api/exchange.server';
 import { type ExchangeScheduledListResponse } from '../../../../lib/admin-api/types';
-import { formatDateTime } from '../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDate } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
 type ScheduledConversionItem = ExchangeScheduledListResponse[`items`][number];
-
-const formatDate = formatDateTime;
 
 function ScheduledAssignedTo({ item }: { item: ScheduledConversionItem }) {
   if (!item.assignedTo) {
@@ -59,7 +57,7 @@ function ScheduledMobileCards({ items }: { items: ScheduledConversionItem[] }) {
             <div>
               <StatusPill status={item.status} />
             </div>
-            <div className="muted">Rule link: {item.linkedRuleId ?? `-`}</div>
+            <div className="muted">Rule link: {item.linkedRuleId ?? EMPTY_VALUE}</div>
             <div className="muted">
               Assigned: <ScheduledAssignedTo item={item} />
             </div>
@@ -67,7 +65,7 @@ function ScheduledMobileCards({ items }: { items: ScheduledConversionItem[] }) {
             <div className="muted">Executed: {formatDate(item.executedAt)}</div>
             <div className="muted">Failed: {formatDate(item.failedAt)}</div>
             <div className="muted">{item.failureDetail ?? `No failure detail`}</div>
-            <div className="muted">Ledger id: {item.ledgerId ?? `-`}</div>
+            <div className="muted">Ledger id: {item.ledgerId ?? EMPTY_VALUE}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -110,7 +108,7 @@ function ScheduledTabletRows({ items }: { items: ScheduledConversionItem[] }) {
               </div>,
               <div key="status">
                 <StatusPill status={item.status} />
-                <div className="muted">Rule: {item.linkedRuleId ?? `-`}</div>
+                <div className="muted">Rule: {item.linkedRuleId ?? EMPTY_VALUE}</div>
               </div>,
               <div key="timing">
                 <div>Execute: {formatDate(item.executeAt)}</div>
@@ -119,7 +117,7 @@ function ScheduledTabletRows({ items }: { items: ScheduledConversionItem[] }) {
               </div>,
               <div key="ledger">
                 <div>{item.failureDetail ?? `No failure detail`}</div>
-                <div className="muted">Ledger: {item.ledgerId ?? `-`}</div>
+                <div className="muted">Ledger: {item.ledgerId ?? EMPTY_VALUE}</div>
               </div>,
             ]}
           />
@@ -159,7 +157,7 @@ function ScheduledDesktopTable({ items }: { items: ScheduledConversionItem[] }) 
                   <div>
                     <StatusPill status={item.status} />
                   </div>
-                  <div className="muted">Rule link: {item.linkedRuleId ?? `-`}</div>
+                  <div className="muted">Rule link: {item.linkedRuleId ?? EMPTY_VALUE}</div>
                 </td>
                 <td>
                   <ScheduledAssignedTo item={item} />
@@ -172,8 +170,8 @@ function ScheduledDesktopTable({ items }: { items: ScheduledConversionItem[] }) 
                 </td>
                 <td>
                   <div>{item.failureDetail ?? `No failure detail`}</div>
-                  <div className="muted">Ledger id: {item.ledgerId ?? `-`}</div>
-                  <div className="muted">Linked entry: {item.linkedLedgerEntry?.id ?? `-`}</div>
+                  <div className="muted">Ledger id: {item.ledgerId ?? EMPTY_VALUE}</div>
+                  <div className="muted">Linked entry: {item.linkedLedgerEntry?.id ?? EMPTY_VALUE}</div>
                 </td>
               </tr>
             ))}

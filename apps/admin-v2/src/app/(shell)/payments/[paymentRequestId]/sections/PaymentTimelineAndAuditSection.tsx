@@ -1,7 +1,8 @@
 import { Panel } from '../../../../../components/panel';
 import { mutedTextClass, nestedPanelClass, stackClass } from '../../../../../components/ui-classes';
+import { formatDate } from '../../../../../lib/admin-format';
 import { type PaymentPageData } from '../page.loader';
-import { formatDate, renderMetadata } from '../payment-shared';
+import { renderMetadata } from '../payment-shared';
 
 export function PaymentTimelineAndAuditSection({ paymentCase }: { paymentCase: PaymentPageData[`paymentCase`] }) {
   return (

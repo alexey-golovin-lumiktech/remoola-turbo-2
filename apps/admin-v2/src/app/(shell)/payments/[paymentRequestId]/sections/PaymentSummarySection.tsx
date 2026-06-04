@@ -1,8 +1,9 @@
 import { Panel } from '../../../../../components/panel';
 import { mutedTextClass } from '../../../../../components/ui-classes';
+import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
 import { type PaymentPageData } from '../page.loader';
 import { type PaymentPagePermissions } from '../page.permissions';
-import { formatDate, renderActorLabel } from '../payment-shared';
+import { renderActorLabel } from '../payment-shared';
 
 export function PaymentSummarySection({
   paymentCase,
@@ -20,7 +21,7 @@ export function PaymentSummarySection({
         <p className={mutedTextClass}>
           Amount: {paymentCase.core.amount} {paymentCase.core.currencyCode}
         </p>
-        <p className={mutedTextClass}>Payment rail: {paymentCase.core.paymentRail ?? `-`}</p>
+        <p className={mutedTextClass}>Payment rail: {paymentCase.core.paymentRail ?? EMPTY_VALUE}</p>
         <p className={mutedTextClass}>Payer: {renderActorLabel(paymentCase.payer)}</p>
         <p className={mutedTextClass}>Requester: {renderActorLabel(paymentCase.requester)}</p>
         <p className={mutedTextClass}>Updated: {formatDate(paymentCase.updatedAt)}</p>
@@ -53,12 +54,14 @@ export function PaymentSummarySection({
         <p className={mutedTextClass}>Persisted: {paymentCase.core.persistedStatus}</p>
         <p className={mutedTextClass}>Effective: {paymentCase.core.effectiveStatus}</p>
         <p className={mutedTextClass}>Current status follows the latest linked ledger outcome, not the earliest one.</p>
-        <p className={mutedTextClass}>Description: {paymentCase.core.description ?? `-`}</p>
+        <p className={mutedTextClass}>Description: {paymentCase.core.description ?? EMPTY_VALUE}</p>
       </Panel>
       <Panel>
         <h3>Participants</h3>
-        <p className={mutedTextClass}>Payer: {paymentCase.payer.email ?? paymentCase.payer.id ?? `-`}</p>
-        <p className={mutedTextClass}>Requester: {paymentCase.requester.email ?? paymentCase.requester.id ?? `-`}</p>
+        <p className={mutedTextClass}>Payer: {paymentCase.payer.email ?? paymentCase.payer.id ?? EMPTY_VALUE}</p>
+        <p className={mutedTextClass}>
+          Requester: {paymentCase.requester.email ?? paymentCase.requester.id ?? EMPTY_VALUE}
+        </p>
         <p className={mutedTextClass}>Data freshness: {paymentCase.dataFreshnessClass}</p>
       </Panel>
       <Panel>

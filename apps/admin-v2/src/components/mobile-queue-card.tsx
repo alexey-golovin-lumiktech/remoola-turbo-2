@@ -26,15 +26,15 @@ export function MobileQueueCard({
 }: MobileQueueCardProps): ReactElement {
   const titleNode = href ? (
     <Link href={href} className="min-w-0 text-white transition hover:text-cyan-200">
-      <strong className="block break-words">{title}</strong>
+      <strong className="block wrap-break-word">{title}</strong>
     </Link>
   ) : (
-    <strong className="block break-words text-white">{title}</strong>
+    <strong className="block wrap-break-word text-white">{title}</strong>
   );
 
   return (
     <article
-      className="rounded-card border border-border bg-linear-to-br from-panel via-panel to-white/[0.02] p-4 shadow-[0_18px_44px_rgba(2,6,23,0.18)] transition hover:-translate-y-px hover:border-white/18"
+      className="rounded-card border border-border bg-linear-to-br from-panel via-panel to-white/2 p-4 shadow-[0_18px_44px_rgba(2,6,23,0.18)] transition hover:-translate-y-px hover:border-white/18"
       data-card-id={id}
     >
       <div className="flex items-start justify-between gap-3">
@@ -43,7 +43,7 @@ export function MobileQueueCard({
             <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/42">{eyebrow}</div>
           ) : null}
           {titleNode}
-          {subtitle ? <div className="break-words text-xs text-muted-56">{subtitle}</div> : null}
+          {subtitle ? <div className="wrap-break-word text-xs text-muted-56">{subtitle}</div> : null}
           {badges ? <div className="mt-1 flex flex-wrap items-center gap-1.5">{badges}</div> : null}
         </div>
         {trailing ? <div className="max-w-[40%] shrink-0 text-right text-xs text-white/65">{trailing}</div> : null}
@@ -67,12 +67,12 @@ export function MobileQueueSection({ title, children, compact = false }: MobileQ
   return (
     <section
       className={cn(
-        `rounded-2xl border border-white/8 bg-white/[0.025] px-3 py-2.5`,
+        `rounded-2xl border border-white/8 bg-white/2.5 px-3 py-2.5`,
         compact && `px-0 py-0 border-transparent bg-transparent`,
       )}
     >
       <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">{title}</div>
-      <div className="mt-2 flex flex-col gap-1.5 break-words">{children}</div>
+      <div className="mt-2 flex flex-col gap-1.5 wrap-break-word">{children}</div>
     </section>
   );
 }

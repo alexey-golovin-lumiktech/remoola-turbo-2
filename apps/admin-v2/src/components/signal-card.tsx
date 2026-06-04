@@ -5,6 +5,7 @@ import { cn } from '@remoola/ui';
 
 import { StatusPill } from './status-pill';
 import { panelSurfaceClass } from './ui-classes';
+import { EMPTY_VALUE } from '../lib/admin-format';
 
 export type SignalCardAvailability = `available` | `temporarily-unavailable` | string;
 export type SignalCardPhaseStatus = `live-actionable` | `count-only` | `deferred` | string;
@@ -43,12 +44,12 @@ function availabilityEyebrow(availability: SignalCardAvailability): string | nul
 }
 
 function formatStateLabel(value: string | null | undefined): string {
-  if (!value) return `—`;
+  if (!value) return EMPTY_VALUE;
   if (value === `live-actionable`) return `Live queue`;
   if (value === `count-only`) return `Read-only`;
   if (value === `deferred`) return `Deferred`;
   if (value === `temporarily-unavailable`) return `Temporarily unavailable`;
-  return value.replaceAll(`-`, ` `);
+  return value.replaceAll(EMPTY_VALUE, ` `);
 }
 
 export function SignalCard({
@@ -72,7 +73,7 @@ export function SignalCard({
   const pillStatus = isLive ? `PROCESSING` : isUnavailable ? `Unavailable` : `Observed`;
   const supplemental = availabilityCopy(availability) ?? phaseCopy(phaseStatus);
   const eyebrow = availabilityEyebrow(availability) ?? phaseEyebrow(phaseStatus);
-  const countValue = isUnavailable ? `Unavailable` : count == null ? `—` : String(count);
+  const countValue = isUnavailable ? `Unavailable` : count == null ? EMPTY_VALUE : String(count);
   const operatorCopy = isUnavailable
     ? `Signal delivery is degraded right now. Keep the queue visible and avoid interpreting this state as zero workload.`
     : isDeferred
@@ -84,7 +85,7 @@ export function SignalCard({
   const body = (
     <article className={cardClassName}>
       <div className="flex items-start justify-between gap-3">
-        <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/65">
+        <span className="inline-flex rounded-full border border-white/10 bg-white/4 px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/65">
           {eyebrow}
         </span>
         <span className="text-xs text-white/55">{supplemental ?? `Live workload`}</span>

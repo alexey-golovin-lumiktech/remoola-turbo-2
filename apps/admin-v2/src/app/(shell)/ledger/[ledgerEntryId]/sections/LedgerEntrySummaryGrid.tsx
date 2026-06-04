@@ -1,4 +1,4 @@
-import { formatDate } from '../ledger-entry-shared';
+import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
 import { type LedgerEntryCasePageData } from '../page.loader';
 
 export function LedgerEntrySummaryGrid({ ledgerCase }: { ledgerCase: LedgerEntryCasePageData[`ledgerCase`] }) {
@@ -17,14 +17,14 @@ export function LedgerEntrySummaryGrid({ ledgerCase }: { ledgerCase: LedgerEntry
       <article className="panel">
         <h3>Links</h3>
         <p className="muted">Consumer: {ledgerCase.consumer.email ?? ledgerCase.consumer.id}</p>
-        <p className="muted">Payment request: {ledgerCase.paymentRequest?.id ?? `-`}</p>
-        <p className="muted">Stripe id: {ledgerCase.core.stripeId ?? `-`}</p>
-        <p className="muted">Idempotency key: {ledgerCase.core.idempotencyKey ?? `-`}</p>
+        <p className="muted">Payment request: {ledgerCase.paymentRequest?.id ?? EMPTY_VALUE}</p>
+        <p className="muted">Stripe id: {ledgerCase.core.stripeId ?? EMPTY_VALUE}</p>
+        <p className="muted">Idempotency key: {ledgerCase.core.idempotencyKey ?? EMPTY_VALUE}</p>
       </article>
       <article className="panel">
         <h3>Fees and freshness</h3>
-        <p className="muted">Fees type: {ledgerCase.core.feesType ?? `-`}</p>
-        <p className="muted">Fees amount: {ledgerCase.core.feesAmount ?? `-`}</p>
+        <p className="muted">Fees type: {ledgerCase.core.feesType ?? EMPTY_VALUE}</p>
+        <p className="muted">Fees amount: {ledgerCase.core.feesAmount ?? EMPTY_VALUE}</p>
         <p className="muted">Data freshness: {ledgerCase.dataFreshnessClass}</p>
         <p className="muted">Updated: {formatDate(ledgerCase.core.updatedAt)}</p>
       </article>

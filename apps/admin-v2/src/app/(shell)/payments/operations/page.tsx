@@ -7,9 +7,7 @@ import { TinyPill } from '../../../../components/tiny-pill';
 import { mutedTextClass, stackClass } from '../../../../components/ui-classes';
 import { getPaymentOperationsQueue } from '../../../../lib/admin-api/payments.server';
 import { type PaymentOperationsQueueResponse } from '../../../../lib/admin-api/types';
-import { formatDateTime } from '../../../../lib/admin-format';
-
-const formatDate = formatDateTime;
+import { formatDate, EMPTY_VALUE } from '../../../../lib/admin-format';
 
 type QueueBucket = PaymentOperationsQueueResponse[`buckets`][number];
 type QueueItem = QueueBucket[`items`][number];
@@ -19,7 +17,7 @@ function renderConsumerLink(consumer: QueueItem[`payer`] | QueueItem[`requester`
     return <Link href={`/consumers/${consumer.id}`}>{consumer.email ?? consumer.id}</Link>;
   }
 
-  return consumer.email ?? `-`;
+  return consumer.email ?? EMPTY_VALUE;
 }
 
 function shouldShowFreshness(item: QueueItem): boolean {
@@ -37,7 +35,7 @@ function renderBucketMapLinks(buckets: QueueBucket[]): ReactElement {
         <a
           key={bucket.key}
           href={`#payment-ops-bucket-${bucket.key}`}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-pill border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-pill border border-white/10 bg-white/3 px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/5 hover:text-white/90"
         >
           <span>{bucket.label}</span>
           <TinyPill>{bucket.items.length}</TinyPill>
@@ -94,7 +92,7 @@ export default async function PaymentOperationsQueuePage() {
             </p>
             <div className={stackClass}>
               {bucket.items.map((item) => (
-                <article key={item.id} className="rounded-card border border-white/10 bg-white/[0.02] p-4 shadow-xs">
+                <article key={item.id} className="rounded-card border border-white/10 bg-white/2 p-4 shadow-xs">
                   <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                     <div className="min-w-0 flex-1 space-y-2">
                       <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">

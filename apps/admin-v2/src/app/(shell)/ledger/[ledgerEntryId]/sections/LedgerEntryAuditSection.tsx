@@ -1,5 +1,5 @@
 import { nestedPanelClass } from '../../../../../components/ui-classes';
-import { formatDate } from '../ledger-entry-shared';
+import { formatDate } from '../../../../../lib/admin-format';
 import { type LedgerEntryCasePageData } from '../page.loader';
 
 export function LedgerEntryAuditSection({ ledgerCase }: { ledgerCase: LedgerEntryCasePageData[`ledgerCase`] }) {

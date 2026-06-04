@@ -5,10 +5,8 @@ import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
 import { getAdminIdentity, getMyAdminSessionsResult } from '../../../../lib/admin-api/identity.server';
 import { type AdminSessionView } from '../../../../lib/admin-api/types';
-import { formatDateTime } from '../../../../lib/admin-format';
+import { formatDate } from '../../../../lib/admin-format';
 import { revokeMyAdminSessionAction } from '../../../../lib/admin-mutations/admins.server';
-
-const formatDate = formatDateTime;
 
 function statusLabel(s: AdminSessionView, current: boolean): string {
   if (current) return `Current`;

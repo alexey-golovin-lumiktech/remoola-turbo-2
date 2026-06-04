@@ -1,7 +1,8 @@
+import { formatDate } from '../../../../../lib/admin-format';
 import { RemoveConsumerFlagButton } from '../forms/RemoveConsumerFlagButton';
 import { type ConsumerPageData } from '../page.loader';
 import { type ConsumerPagePermissions } from '../page.permissions';
-import { formatDate, nestedCardClass } from '../preview-helpers';
+import { nestedCardClass } from '../preview-helpers';
 
 export function ConsumerFlagsAndNotesSection({
   consumer,

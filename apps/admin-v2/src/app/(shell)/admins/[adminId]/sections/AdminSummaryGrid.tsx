@@ -1,4 +1,4 @@
-import { formatDate } from '../admin-shared';
+import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
 import { type AdminCasePageData } from '../page.loader';
 
 export function AdminSummaryGrid({ admin }: { admin: AdminCasePageData[`admin`] }) {
@@ -14,9 +14,9 @@ export function AdminSummaryGrid({ admin }: { admin: AdminCasePageData[`admin`] 
       <article className="panel">
         <h3>Access profile</h3>
         <p className="muted">Source: {admin.accessProfile.source}</p>
-        <p className="muted">Resolved role: {admin.accessProfile.resolvedRole ?? `-`}</p>
-        <p className="muted">Schema role: {admin.accessProfile.schemaRoleKey ?? `-`}</p>
-        <p className="muted">Workspaces: {admin.accessProfile.workspaces.join(`, `) || `-`}</p>
+        <p className="muted">Resolved role: {admin.accessProfile.resolvedRole ?? EMPTY_VALUE}</p>
+        <p className="muted">Schema role: {admin.accessProfile.schemaRoleKey ?? EMPTY_VALUE}</p>
+        <p className="muted">Workspaces: {admin.accessProfile.workspaces.join(`, `) || EMPTY_VALUE}</p>
       </article>
       <article className="panel">
         <h3>Historical integrity</h3>

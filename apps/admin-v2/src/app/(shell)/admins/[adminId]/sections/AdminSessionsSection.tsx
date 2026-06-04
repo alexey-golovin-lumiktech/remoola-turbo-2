@@ -1,5 +1,5 @@
+import { formatDate } from '../../../../../lib/admin-format';
 import { revokeAdminSessionAction } from '../../../../../lib/admin-mutations/admins.server';
-import { formatDate } from '../admin-shared';
 import { type AdminCasePageData } from '../page.loader';
 
 export function AdminSessionsSection({

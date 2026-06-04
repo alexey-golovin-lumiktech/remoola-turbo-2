@@ -1,7 +1,3 @@
-import { formatDateTime } from '../../../../lib/admin-format';
-
-export const formatDate = formatDateTime;
-
 export function renderJson(value: Record<string, unknown> | null) {
   if (!value) {
     return <p className="muted">No metadata.</p>;

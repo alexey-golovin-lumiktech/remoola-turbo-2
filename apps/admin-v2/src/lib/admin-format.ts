@@ -10,17 +10,18 @@ const ADMIN_DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   timeZone: `UTC`,
 };
 
-export function formatDateTime(value: string | null | undefined, emptyValue = `-`): string {
-  if (!value) {
-    return emptyValue;
-  }
-  return new Date(value).toLocaleString(undefined, ADMIN_DATE_TIME_FORMAT_OPTIONS);
+export const EMPTY_VALUE = `—` as const;
+
+export function formatDate(value: unknown): string {
+  if (typeof value !== `string` || !value) return EMPTY_VALUE;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? EMPTY_VALUE : date.toLocaleString(undefined, ADMIN_DATE_TIME_FORMAT_OPTIONS);
 }
 
 export function formatBytes(value: number | null | undefined): string {
   const safeValue = value ?? NaN;
   if (!Number.isFinite(safeValue)) {
-    return `-`;
+    return EMPTY_VALUE;
   }
   if (safeValue < KIBIBYTE) {
     return `${safeValue} B`;

@@ -1,7 +1,5 @@
-import { formatDateTime } from '../../../../../../lib/admin-format';
+import { formatDate } from '../../../../../../lib/admin-format';
 import { type ExchangeScheduledCasePageData } from '../page.loader';
-
-const formatDate = formatDateTime;
 
 export function ExchangeScheduledSummaryGrid({
   conversion,

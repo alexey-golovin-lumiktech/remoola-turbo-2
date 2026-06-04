@@ -27,7 +27,7 @@ import {
 } from '../../components/ui-classes';
 import { type SavedViewSummary } from '../../lib/admin-api/types';
 import { type getVerificationQueue } from '../../lib/admin-api/verification.server';
-import { formatDateTime } from '../../lib/admin-format';
+import { EMPTY_VALUE, formatDate } from '../../lib/admin-format';
 import {
   deleteSavedViewAction,
   updateSavedViewAction,
@@ -58,7 +58,7 @@ function renderVerificationAssignee(item: VerificationItem) {
 
 function renderVerificationAssigneeSummary(item: VerificationItem): string {
   if (!item.assignedTo) {
-    return `—`;
+    return EMPTY_VALUE;
   }
 
   return item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id;
@@ -100,14 +100,14 @@ export function VerificationMobileCards({ items, returnTo }: { items: Verificati
               <div className={mutedTextClass}>SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
             </MobileQueueSection>
             <MobileQueueSection title="Identity" compact>
-              <div className={mutedTextClass}>Stripe: {item.stripeIdentityStatus ?? `-`}</div>
+              <div className={mutedTextClass}>Stripe: {item.stripeIdentityStatus ?? EMPTY_VALUE}</div>
               <div>
-                {item.accountType} · {item.country ?? `-`}
+                {item.accountType} · {item.country ?? EMPTY_VALUE}
               </div>
             </MobileQueueSection>
             <MobileQueueSection title="Completion blockers" compact>
               <div className={mutedTextClass}>{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
-              <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
+              <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
             </MobileQueueSection>
           </MobileQueueCard>
         ))}
@@ -149,11 +149,11 @@ export function VerificationTabletRows({ items, returnTo }: { items: Verificatio
             }
             cells={[
               <div key="status">
-                <div className={mutedTextClass}>{item.stripeIdentityStatus ?? `-`}</div>
+                <div className={mutedTextClass}>{item.stripeIdentityStatus ?? EMPTY_VALUE}</div>
               </div>,
               <div key="profile">
                 <div>{item.accountType}</div>
-                <div className={mutedTextClass}>{item.country ?? `-`}</div>
+                <div className={mutedTextClass}>{item.country ?? EMPTY_VALUE}</div>
                 <div className={mutedTextClass}>
                   {item.missingProfileData ? `Missing profile data` : `Profile ready`}
                 </div>
@@ -164,7 +164,7 @@ export function VerificationTabletRows({ items, returnTo }: { items: Verificatio
               </div>,
               <div key="assigned-updated">
                 <div>{renderVerificationAssigneeSummary(item)}</div>
-                <div className={mutedTextClass}>{formatDateTime(item.updatedAt)}</div>
+                <div className={mutedTextClass}>{formatDate(item.updatedAt)}</div>
               </div>,
             ]}
           />
@@ -193,11 +193,11 @@ export function VerificationDesktopTable({ items, returnTo }: { items: Verificat
                   <div>
                     <StatusPill status={item.verificationStatus} />
                   </div>
-                  <div className={mutedTextClass}>{item.stripeIdentityStatus ?? `-`}</div>
+                  <div className={mutedTextClass}>{item.stripeIdentityStatus ?? EMPTY_VALUE}</div>
                 </td>
                 <td>
                   <div>{item.accountType}</div>
-                  <div className={mutedTextClass}>{item.country ?? `-`}</div>
+                  <div className={mutedTextClass}>{item.country ?? EMPTY_VALUE}</div>
                   <div className={mutedTextClass}>
                     {item.missingProfileData ? `Missing profile data` : `Profile ready`}
                   </div>
@@ -205,7 +205,7 @@ export function VerificationDesktopTable({ items, returnTo }: { items: Verificat
                 <td>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</td>
                 <td>{item.slaBreached ? `Breached` : `Within SLA`}</td>
                 <td>{renderVerificationAssignee(item)}</td>
-                <td>{formatDateTime(item.updatedAt)}</td>
+                <td>{formatDate(item.updatedAt)}</td>
               </tr>
             ))}
       </DenseTable>

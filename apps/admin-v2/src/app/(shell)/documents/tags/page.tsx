@@ -9,7 +9,7 @@ import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getDocumentTags } from '../../../../lib/admin-api/documents.server';
 import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { type DocumentTagsResponse } from '../../../../lib/admin-api/types';
-import { formatDateTime } from '../../../../lib/admin-format';
+import { formatDate } from '../../../../lib/admin-format';
 import {
   deleteDocumentTagAction,
   updateDocumentTagAction,
@@ -17,8 +17,6 @@ import {
 } from '../../../../lib/admin-mutations/documents.server';
 
 type DocumentTag = DocumentTagsResponse[`items`][number];
-
-const formatDate = formatDateTime;
 
 function renderTagActions(tag: DocumentTag, canManage: boolean): ReactNode {
   if (!canManage || tag.reserved) {

@@ -3,20 +3,22 @@ import { describe, expect, it } from '@jest/globals';
 import {
   DEFAULT_LOOKBACK_DAYS,
   formatBytes,
-  formatDateTime,
+  formatDate,
+  EMPTY_VALUE,
   getDefaultLookbackDateOnlyRange,
   getDefaultLookbackIsoRange,
 } from './admin-format';
 
 describe(`admin format helpers`, () => {
   it(`formats empty and present datetimes consistently`, () => {
-    expect(formatDateTime(null)).toBe(`-`);
-    expect(formatDateTime(undefined, `—`)).toBe(`—`);
-    expect(formatDateTime(`2026-04-20T12:34:56.000Z`)).toContain(`2026`);
+    expect(formatDate(`not-a-date`)).toBe(EMPTY_VALUE);
+    expect(formatDate(null)).toBe(EMPTY_VALUE);
+    expect(formatDate(undefined)).toBe(EMPTY_VALUE);
+    expect(formatDate(`2026-04-20T12:34:56.000Z`)).toContain(`2026`);
   });
 
   it(`formats datetimes in UTC to avoid operator-local date drift`, () => {
-    const formatted = formatDateTime(`2026-04-20T23:30:00.000Z`);
+    const formatted = formatDate(`2026-04-20T23:30:00.000Z`);
     expect(formatted).toBe(
       new Date(`2026-04-20T23:30:00.000Z`).toLocaleString(undefined, {
         dateStyle: `medium`,
@@ -27,7 +29,7 @@ describe(`admin format helpers`, () => {
   });
 
   it(`formats bytes into human readable units`, () => {
-    expect(formatBytes(null)).toBe(`-`);
+    expect(formatBytes(null)).toBe(EMPTY_VALUE);
     expect(formatBytes(512)).toBe(`512 B`);
     expect(formatBytes(1_536)).toBe(`1.5 KB`);
     expect(formatBytes(2 * 1024 * 1024)).toBe(`2.0 MB`);

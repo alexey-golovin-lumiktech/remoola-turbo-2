@@ -1,7 +1,8 @@
 import Link from 'next/link';
 
+import { formatDate, EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { type ConsumerPageData } from '../page.loader';
-import { formatDate, nestedCardClass } from '../preview-helpers';
+import { nestedCardClass } from '../preview-helpers';
 
 export function ConsumerRelationshipsSection({
   consumer,
@@ -20,7 +21,7 @@ export function ConsumerRelationshipsSection({
             <div key={contract.id} className={nestedCardClass}>
               <strong>{contract.name || contract.email}</strong>
               <p className="muted">{contract.email}</p>
-              <p className="muted">Last status: {contract.lastStatus ?? `-`}</p>
+              <p className="muted">Last status: {contract.lastStatus ?? EMPTY_VALUE}</p>
               <p className="muted">Payments: {contract.paymentsCount}</p>
               <p className="muted">Documents: {contract.docs}</p>
             </div>
@@ -39,7 +40,7 @@ export function ConsumerRelationshipsSection({
                 </Link>
               </strong>
               <p className="muted">{paymentRequest.status}</p>
-              <p className="muted">Rail: {paymentRequest.paymentRail ?? `-`}</p>
+              <p className="muted">Rail: {paymentRequest.paymentRail ?? EMPTY_VALUE}</p>
               <p className="muted">Created: {formatDate(paymentRequest.createdAt)}</p>
             </div>
           ))}
@@ -71,8 +72,8 @@ export function ConsumerRelationshipsSection({
               {paymentMethod.disabledAt ? (
                 <p className="muted">Disabled: {formatDate(paymentMethod.disabledAt)}</p>
               ) : null}
-              <p className="muted">Created: {formatDate(String(paymentMethod.createdAt ?? ``))}</p>
-              <p className="muted">Updated: {formatDate(String(paymentMethod.updatedAt ?? ``))}</p>
+              <p className="muted">Created: {formatDate(paymentMethod.createdAt)}</p>
+              <p className="muted">Updated: {formatDate(paymentMethod.updatedAt)}</p>
             </div>
           ))}
         </div>

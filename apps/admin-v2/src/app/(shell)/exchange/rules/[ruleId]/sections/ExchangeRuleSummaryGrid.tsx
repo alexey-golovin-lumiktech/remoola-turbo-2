@@ -1,7 +1,5 @@
-import { formatDateTime } from '../../../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDate } from '../../../../../../lib/admin-format';
 import { type ExchangeRuleCasePageData } from '../page.loader';
-
-const formatDate = formatDateTime;
 
 export function ExchangeRuleSummaryGrid({ rule }: { rule: ExchangeRuleCasePageData[`rule`] }) {
   return (
@@ -9,7 +7,7 @@ export function ExchangeRuleSummaryGrid({ rule }: { rule: ExchangeRuleCasePageDa
       <article className="panel">
         <h3>Thresholds</h3>
         <p className="muted">Target balance: {rule.core.threshold}</p>
-        <p className="muted">Max convert amount: {rule.core.maxConvertAmount ?? `-`}</p>
+        <p className="muted">Max convert amount: {rule.core.maxConvertAmount ?? EMPTY_VALUE}</p>
         <p className="muted">Interval: {rule.core.minIntervalMinutes} minutes</p>
       </article>
       <article className="panel">

@@ -2,8 +2,8 @@ import { ActionGhost } from '../../../../../components/action-ghost';
 import { Panel } from '../../../../../components/panel';
 import { mutedTextClass, nestedPanelClass, stackClass } from '../../../../../components/ui-classes';
 import { getAdminDocumentDownloadHref } from '../../../../../lib/admin-document-download';
+import { formatDate } from '../../../../../lib/admin-format';
 import { type PaymentPageData } from '../page.loader';
-import { formatDate } from '../payment-shared';
 
 export function PaymentAttachmentsAndLedgerSection({ paymentCase }: { paymentCase: PaymentPageData[`paymentCase`] }) {
   return (
@@ -29,7 +29,7 @@ export function PaymentAttachmentsAndLedgerSection({ paymentCase }: { paymentCas
                   <ActionGhost href={`/consumers/${paymentCase.requester.id}`}>Requester documents context</ActionGhost>
                 ) : null}
                 <a
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-input border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-input border border-white/10 bg-white/3 px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/5 hover:text-white/90"
                   href={getAdminDocumentDownloadHref(attachment.resourceId)}
                   target="_blank"
                   rel="noreferrer"

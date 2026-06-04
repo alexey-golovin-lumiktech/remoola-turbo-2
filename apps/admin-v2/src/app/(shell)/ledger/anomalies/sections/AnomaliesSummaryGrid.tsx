@@ -1,5 +1,6 @@
 import { ActionGhost } from '../../../../../components/action-ghost';
 import { type LedgerAnomalySummaryResponse } from '../../../../../lib/admin-api/types';
+import { EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { LEDGER_ANOMALY_CLASS_ORDER } from '../../../../../lib/admin-surface-meta';
 import { type BuildHrefFn, formatStateLabel } from '../anomalies-shared';
 
@@ -24,7 +25,7 @@ export function AnomaliesSummaryGrid({
               <ActionGhost href={buildHref({ className: key, cursor: null })}>Open</ActionGhost>
             </div>
             <p className="muted">Availability: {item?.availability ?? `temporarily-unavailable`}</p>
-            <p>{item?.count == null ? `-` : String(item.count)} items</p>
+            <p>{item?.count == null ? EMPTY_VALUE : String(item.count)} items</p>
           </article>
         );
       })}

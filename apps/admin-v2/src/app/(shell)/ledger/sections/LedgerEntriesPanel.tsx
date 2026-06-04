@@ -1,7 +1,6 @@
 import Link from 'next/link';
 
 import {
-  formatDate,
   isNegativeAmount,
   LedgerEntryAssignedTo,
   LedgerEntryLinks,
@@ -15,6 +14,7 @@ import { Panel } from '../../../../components/panel';
 import { TabletRow } from '../../../../components/tablet-row';
 import { TinyPill } from '../../../../components/tiny-pill';
 import { type LedgerEntriesListResponse } from '../../../../lib/admin-api/types';
+import { formatDate } from '../../../../lib/admin-format';
 
 function LedgerEntriesMobileCards({ items }: { items: LedgerEntryItem[] }) {
   if (items.length === 0) {

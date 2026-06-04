@@ -1,8 +1,9 @@
 import Link from 'next/link';
 
 import { nestedPanelClass } from '../../../../../components/ui-classes';
+import { formatDate } from '../../../../../lib/admin-format';
 import { type PaymentMethodCasePageData } from '../page.loader';
-import { formatDate, renderMethodLabel } from '../payment-method-shared';
+import { renderMethodLabel } from '../payment-method-shared';
 
 export function PaymentMethodAuditSection({
   paymentMethod,

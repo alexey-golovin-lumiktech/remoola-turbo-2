@@ -11,7 +11,7 @@ import { TinyPill } from '../../../components/tiny-pill';
 import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
 import { getOverviewSummary, getQuickstarts } from '../../../lib/admin-api/overview.server';
 import { type OverviewSignalSummary } from '../../../lib/admin-api/types';
-import { formatDateTime } from '../../../lib/admin-format';
+import { EMPTY_VALUE, formatDate } from '../../../lib/admin-format';
 import {
   buildQuickstartHref,
   describeQuickstartOperatorModel,
@@ -79,7 +79,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
     <div className="flex flex-col gap-6">
       <section
         className={cn(
-          `rounded-card border border-border bg-linear-to-br from-bg via-panel to-cyan-500/[0.04] p-6 shadow-[0_22px_56px_rgba(2,6,23,0.24)]`,
+          `rounded-card border border-border bg-linear-to-br from-bg via-panel to-cyan-500/4 p-6 shadow-[0_22px_56px_rgba(2,6,23,0.24)]`,
         )}
       >
         <div className="flex flex-col gap-5">
@@ -100,7 +100,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-cyan-400/15 bg-linear-to-br from-cyan-500/[0.08] to-cyan-500/[0.03] p-4">
+            <div className="rounded-2xl border border-cyan-400/15 bg-linear-to-br from-cyan-500/8 to-cyan-500/3 p-4">
               <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-200/70">Operational pressure</div>
               <div className="mt-2 text-3xl font-semibold text-white">{activePressureCount}</div>
               <p className="mt-2 text-sm leading-6 text-white/60">
@@ -116,9 +116,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
               <div className="text-[11px] uppercase tracking-[0.2em] text-white/45">Snapshot freshness</div>
-              <div className="mt-2 text-sm font-medium text-white">
-                Computed {formatDateTime(summary?.computedAt, `—`)}
-              </div>
+              <div className="mt-2 text-sm font-medium text-white">Computed {formatDate(summary?.computedAt)}</div>
               <p className="mt-2 text-sm leading-6 text-white/60">
                 Use this page for triage, then move into queue surfaces for exact case handling.
               </p>
@@ -162,11 +160,11 @@ export default async function OverviewPage(): Promise<ReactElement> {
               key={item.id}
               href={buildQuickstartHref(item.targetPath, item.id)}
               className={cn(
-                `group flex min-h-[148px] flex-col gap-3 rounded-card border border-white/10 bg-white/[0.03] p-4 shadow-[0_14px_36px_rgba(2,6,23,0.14)] transition hover:-translate-y-px hover:border-cyan-400/30 hover:bg-white/[0.02]`,
+                `group flex min-h-[148px] flex-col gap-3 rounded-card border border-white/10 bg-white/3 p-4 shadow-[0_14px_36px_rgba(2,6,23,0.14)] transition hover:-translate-y-px hover:border-cyan-400/30 hover:bg-white/2`,
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex rounded-full border border-cyan-400/15 bg-cyan-500/[0.08] px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-cyan-100/85">
+                <span className="inline-flex rounded-full border border-cyan-400/15 bg-cyan-500/8 px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-cyan-100/85">
                   {normalizeQuickstartEyebrow(item.eyebrow)}
                 </span>
                 <span aria-hidden="true" className="text-xs text-white/45 group-hover:text-cyan-200">
@@ -219,16 +217,14 @@ export default async function OverviewPage(): Promise<ReactElement> {
             return (
               <tr key={String(row.id ?? index)} className="text-white/85">
                 <td className="px-3 py-3">
-                  <div className="font-medium text-white">{String(row.action ?? `—`)}</div>
+                  <div className="font-medium text-white">{String(row.action ?? EMPTY_VALUE)}</div>
                 </td>
                 <td className="px-3 py-3">
-                  <div>{String(row.resource ?? `—`)}</div>
-                  <div className="text-xs font-mono text-white/55">{String(row.resourceId ?? `—`)}</div>
+                  <div>{String(row.resource ?? EMPTY_VALUE)}</div>
+                  <div className="text-xs font-mono text-white/55">{String(row.resourceId ?? EMPTY_VALUE)}</div>
                 </td>
-                <td className="px-3 py-3">{String(row.adminEmail ?? `—`)}</td>
-                <td className="px-3 py-3">
-                  {formatDateTime(typeof row.createdAt === `string` ? row.createdAt : null, `—`)}
-                </td>
+                <td className="px-3 py-3">{String(row.adminEmail ?? EMPTY_VALUE)}</td>
+                <td className="px-3 py-3">{formatDate(row.createdAt)}</td>
               </tr>
             );
           })}

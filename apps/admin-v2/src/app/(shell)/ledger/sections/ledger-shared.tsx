@@ -3,9 +3,7 @@ import Link from 'next/link';
 import { cn } from '@remoola/ui';
 
 import { type LedgerDisputesResponse, type LedgerEntriesListResponse } from '../../../../lib/admin-api/types';
-import { formatDateTime } from '../../../../lib/admin-format';
-
-export const formatDate = formatDateTime;
+import { EMPTY_VALUE } from '../../../../lib/admin-format';
 
 export type LedgerEntryItem = LedgerEntriesListResponse[`items`][number];
 export type DisputeItem = LedgerDisputesResponse[`items`][number];
@@ -19,7 +17,7 @@ function renderMetadata(value: Record<string, unknown>) {
 }
 
 export function isNegativeAmount(value: LedgerEntryItem[`amount`]): boolean {
-  return String(value).trim().startsWith(`-`);
+  return String(value).trim().startsWith(EMPTY_VALUE);
 }
 
 export function renderLedgerAmount(entry: LedgerEntryItem) {

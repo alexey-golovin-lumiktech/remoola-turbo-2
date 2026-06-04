@@ -1,7 +1,7 @@
 import { Panel } from '../../../../../components/panel';
 import { mutedTextClass } from '../../../../../components/ui-classes';
+import { formatDate, EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { type VerificationCasePageData } from '../page.loader';
-import { formatDate } from '../verification-shared';
 
 export function VerificationSummaryGrid({
   verificationCase,
@@ -13,9 +13,9 @@ export function VerificationSummaryGrid({
       <Panel>
         <h3>Decision state</h3>
         <p className={mutedTextClass}>Version: {verificationCase.version}</p>
-        <p className={mutedTextClass}>Reason: {verificationCase.verificationReason ?? `-`}</p>
+        <p className={mutedTextClass}>Reason: {verificationCase.verificationReason ?? EMPTY_VALUE}</p>
         <p className={mutedTextClass}>Verification updated: {formatDate(verificationCase.verificationUpdatedAt)}</p>
-        <p className={mutedTextClass}>Stripe status: {verificationCase.stripeIdentityStatus ?? `-`}</p>
+        <p className={mutedTextClass}>Stripe status: {verificationCase.stripeIdentityStatus ?? EMPTY_VALUE}</p>
       </Panel>
       <Panel>
         <h3>Auth risk</h3>

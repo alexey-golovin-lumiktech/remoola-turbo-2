@@ -5,9 +5,7 @@ import { MobileQueueCard } from '../../components/mobile-queue-card';
 import { StatusPill } from '../../components/status-pill';
 import { TabletRow } from '../../components/tablet-row';
 import { type getConsumers } from '../../lib/admin-api/consumers.server';
-import { formatDateTime } from '../../lib/admin-format';
-
-const formatDate = formatDateTime;
+import { formatDate, EMPTY_VALUE } from '../../lib/admin-format';
 
 type ConsumerItem = NonNullable<Awaited<ReturnType<typeof getConsumers>>>[`items`][number];
 
@@ -154,7 +152,7 @@ export function ConsumersDesktopTable({ items }: { items: ConsumerItem[] }) {
                 </td>
                 <td>
                   <div>{consumer.accountType}</div>
-                  <div className="muted">{consumer.contractorKind ?? `-`}</div>
+                  <div className="muted">{consumer.contractorKind ?? EMPTY_VALUE}</div>
                   <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
                 </td>
                 <td>

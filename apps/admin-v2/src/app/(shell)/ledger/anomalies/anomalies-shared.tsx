@@ -1,5 +1,5 @@
 import { type LedgerAnomalyClass, type LedgerAnomalyListResponse } from '../../../../lib/admin-api/types';
-import { getDefaultLookbackDateOnlyRange } from '../../../../lib/admin-format';
+import { EMPTY_VALUE, getDefaultLookbackDateOnlyRange } from '../../../../lib/admin-format';
 import { isLedgerAnomalyClass } from '../../../../lib/admin-surface-meta';
 
 export const SAVED_VIEW_WORKSPACE = `ledger_anomalies` as const;
@@ -49,5 +49,5 @@ export function formatStateLabel(value: string | null | undefined): string {
   if (!value || value === `live-actionable`) return `Action ready`;
   if (value === `count-only`) return `Read-only`;
   if (value === `deferred`) return `Deferred`;
-  return value.replaceAll(`-`, ` `);
+  return value.replaceAll(EMPTY_VALUE, ` `);
 }

@@ -17,15 +17,10 @@ import {
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminActionAudit } from '../../../../lib/admin-api/audit.server';
 import { getQuickstart } from '../../../../lib/admin-api/overview.server';
-import { formatDateTime } from '../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDate } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 import { parseQuickstartId } from '../../../../lib/quickstart-investigations';
-
-function formatDate(value: unknown): string {
-  if (typeof value !== `string`) return `-`;
-  return formatDateTime(value);
-}
 
 type AdminActionRow = Record<string, unknown>;
 
@@ -35,7 +30,7 @@ function renderResourceLink(item: AdminActionRow) {
   if (resource === `consumer` && typeof resourceId === `string`) {
     return <Link href={`/consumers/${resourceId}`}>{resourceId}</Link>;
   }
-  return String(resourceId ?? `-`);
+  return String(resourceId ?? EMPTY_VALUE);
 }
 
 function AdminActionsMobileCards({ items }: { items: AdminActionRow[] }) {
@@ -54,11 +49,11 @@ function AdminActionsMobileCards({ items }: { items: AdminActionRow[] }) {
           <MobileQueueCard
             key={String(item.id ?? index)}
             id={String(item.id ?? index)}
-            title={String(item.action ?? `-`)}
-            subtitle={String(item.adminEmail ?? item.adminId ?? `-`)}
+            title={String(item.action ?? EMPTY_VALUE)}
+            subtitle={String(item.adminEmail ?? item.adminId ?? EMPTY_VALUE)}
           >
             <div>
-              {String(item.resource ?? `-`)}
+              {String(item.resource ?? EMPTY_VALUE)}
               {` `}
               <span className="muted mono">{renderResourceLink(item)}</span>
             </div>
@@ -88,13 +83,13 @@ function AdminActionsTabletRows({ items }: { items: AdminActionRow[] }) {
             key={String(item.id ?? index)}
             primary={
               <>
-                <strong>{String(item.action ?? `-`)}</strong>
-                <div className="muted">{String(item.adminEmail ?? item.adminId ?? `-`)}</div>
+                <strong>{String(item.action ?? EMPTY_VALUE)}</strong>
+                <div className="muted">{String(item.adminEmail ?? item.adminId ?? EMPTY_VALUE)}</div>
               </>
             }
             cells={[
               <div key="resource">
-                {String(item.resource ?? `-`)}
+                {String(item.resource ?? EMPTY_VALUE)}
                 <div className="muted mono">{renderResourceLink(item)}</div>
               </div>,
               <div className="muted mono" key="metadata">
@@ -123,12 +118,12 @@ function AdminActionsDesktopTable({ items }: { items: AdminActionRow[] }) {
           ? null
           : items.map((item, index) => (
               <tr key={String(item.id ?? index)}>
-                <td>{String(item.action ?? `-`)}</td>
+                <td>{String(item.action ?? EMPTY_VALUE)}</td>
                 <td>
-                  {String(item.resource ?? `-`)}
+                  {String(item.resource ?? EMPTY_VALUE)}
                   <div className="muted mono">{renderResourceLink(item)}</div>
                 </td>
-                <td>{String(item.adminEmail ?? item.adminId ?? `-`)}</td>
+                <td>{String(item.adminEmail ?? item.adminId ?? EMPTY_VALUE)}</td>
                 <td className="mono">{JSON.stringify(item.metadata ?? {})}</td>
                 <td>{formatDate(item.createdAt)}</td>
               </tr>

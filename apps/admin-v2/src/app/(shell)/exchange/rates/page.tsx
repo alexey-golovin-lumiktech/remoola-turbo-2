@@ -9,13 +9,11 @@ import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getExchangeRates } from '../../../../lib/admin-api/exchange.server';
 import { type ExchangeRatesListResponse } from '../../../../lib/admin-api/types';
-import { formatDateTime } from '../../../../lib/admin-format';
+import { formatDate, EMPTY_VALUE } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { booleanSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
 type ExchangeRateItem = ExchangeRatesListResponse[`items`][number];
-
-const formatDate = formatDateTime;
 
 function RatesMobileCards({ items }: { items: ExchangeRateItem[] }) {
   if (items.length === 0) {
@@ -38,15 +36,15 @@ function RatesMobileCards({ items }: { items: ExchangeRateItem[] }) {
             subtitle={<span className="mono">{item.id}</span>}
           >
             <div>Rate: {item.rate}</div>
-            <div className="muted">Inverse: {item.inverseRate ?? `-`}</div>
+            <div className="muted">Inverse: {item.inverseRate ?? EMPTY_VALUE}</div>
             <div className="muted">
-              Spread: {item.spreadBps ?? `-`} bps · Confidence: {item.confidence ?? `-`}
+              Spread: {item.spreadBps ?? EMPTY_VALUE} bps · Confidence: {item.confidence ?? EMPTY_VALUE}
             </div>
             <div>
               <StatusPill status={item.status} />
             </div>
             <div className="muted">Approved: {formatDate(item.approvedAt)}</div>
-            <div className="muted">Provider: {item.provider ?? `-`}</div>
+            <div className="muted">Provider: {item.provider ?? EMPTY_VALUE}</div>
             <div className="muted">Fetched: {formatDate(item.fetchedAt)}</div>
             <div className="muted">
               {item.stalenessIndicator.isStale ? `Stale` : `Fresh`} · {item.stalenessIndicator.ageMinutes}m
@@ -88,11 +86,11 @@ function RatesTabletRows({ items }: { items: ExchangeRateItem[] }) {
             cells={[
               <div key="rate">
                 <div>{item.rate}</div>
-                <div className="muted">Inv: {item.inverseRate ?? `-`}</div>
+                <div className="muted">Inv: {item.inverseRate ?? EMPTY_VALUE}</div>
               </div>,
               <div key="status">
                 <StatusPill status={item.status} />
-                <div className="muted">{item.provider ?? `-`}</div>
+                <div className="muted">{item.provider ?? EMPTY_VALUE}</div>
               </div>,
               <div key="staleness">
                 <div>{item.stalenessIndicator.isStale ? `Stale` : `Fresh`}</div>
@@ -131,9 +129,9 @@ function RatesDesktopTable({ items }: { items: ExchangeRateItem[] }) {
                 </td>
                 <td>
                   <div>{item.rate}</div>
-                  <div className="muted">Inverse: {item.inverseRate ?? `-`}</div>
+                  <div className="muted">Inverse: {item.inverseRate ?? EMPTY_VALUE}</div>
                   <div className="muted">
-                    Spread: {item.spreadBps ?? `-`} bps · Confidence: {item.confidence ?? `-`}
+                    Spread: {item.spreadBps ?? EMPTY_VALUE} bps · Confidence: {item.confidence ?? EMPTY_VALUE}
                   </div>
                 </td>
                 <td>
@@ -143,7 +141,7 @@ function RatesDesktopTable({ items }: { items: ExchangeRateItem[] }) {
                   <div className="muted">Approved: {formatDate(item.approvedAt)}</div>
                 </td>
                 <td>
-                  <div>{item.provider ?? `-`}</div>
+                  <div>{item.provider ?? EMPTY_VALUE}</div>
                   <div className="muted">Fetched: {formatDate(item.fetchedAt)}</div>
                 </td>
                 <td>

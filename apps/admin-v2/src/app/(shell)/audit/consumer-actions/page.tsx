@@ -15,7 +15,7 @@ import {
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getConsumerActionAudit } from '../../../../lib/admin-api/audit.server';
-import { formatDateTime, getDefaultLookbackIsoRange } from '../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDate, getDefaultLookbackIsoRange } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
@@ -25,7 +25,7 @@ function renderConsumerLink(item: ConsumerActionRow) {
   if (typeof item.consumerId === `string`) {
     return <Link href={`/consumers/${item.consumerId}`}>{item.consumerId}</Link>;
   }
-  return `-`;
+  return EMPTY_VALUE;
 }
 
 function ConsumerActionsMobileCards({ items }: { items: ConsumerActionRow[] }) {
@@ -44,18 +44,16 @@ function ConsumerActionsMobileCards({ items }: { items: ConsumerActionRow[] }) {
           <MobileQueueCard
             key={String(item.id ?? index)}
             id={String(item.id ?? index)}
-            title={String(item.action ?? `-`)}
+            title={String(item.action ?? EMPTY_VALUE)}
             subtitle={<span className="mono">{renderConsumerLink(item)}</span>}
           >
             <div>
-              {String(item.resource ?? `-`)}
+              {String(item.resource ?? EMPTY_VALUE)}
               {` `}
-              <span className="muted mono">{String(item.resourceId ?? `-`)}</span>
+              <span className="muted mono">{String(item.resourceId ?? EMPTY_VALUE)}</span>
             </div>
             <div className="muted mono">{JSON.stringify(item.metadata ?? {})}</div>
-            <div className="muted">
-              Created: {formatDateTime(typeof item.createdAt === `string` ? item.createdAt : null)}
-            </div>
+            <div className="muted">Created: {formatDate(item.createdAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -80,20 +78,20 @@ function ConsumerActionsTabletRows({ items }: { items: ConsumerActionRow[] }) {
             key={String(item.id ?? index)}
             primary={
               <>
-                <strong>{String(item.action ?? `-`)}</strong>
+                <strong>{String(item.action ?? EMPTY_VALUE)}</strong>
                 <div className="muted mono">{renderConsumerLink(item)}</div>
               </>
             }
             cells={[
               <div key="resource">
-                {String(item.resource ?? `-`)}
-                <div className="muted mono">{String(item.resourceId ?? `-`)}</div>
+                {String(item.resource ?? EMPTY_VALUE)}
+                <div className="muted mono">{String(item.resourceId ?? EMPTY_VALUE)}</div>
               </div>,
               <div className="muted mono" key="metadata">
                 {JSON.stringify(item.metadata ?? {})}
               </div>,
               <div className="muted" key="created">
-                {formatDateTime(typeof item.createdAt === `string` ? item.createdAt : null)}
+                {formatDate(item.createdAt)}
               </div>,
               null,
             ]}
@@ -116,13 +114,13 @@ function ConsumerActionsDesktopTable({ items }: { items: ConsumerActionRow[] }) 
           : items.map((item, index) => (
               <tr key={String(item.id ?? index)}>
                 <td className="mono">{renderConsumerLink(item)}</td>
-                <td>{String(item.action ?? `-`)}</td>
+                <td>{String(item.action ?? EMPTY_VALUE)}</td>
                 <td>
-                  {String(item.resource ?? `-`)}
-                  <div className="muted mono">{String(item.resourceId ?? `-`)}</div>
+                  {String(item.resource ?? EMPTY_VALUE)}
+                  <div className="muted mono">{String(item.resourceId ?? EMPTY_VALUE)}</div>
                 </td>
                 <td className="mono">{JSON.stringify(item.metadata ?? {})}</td>
-                <td>{formatDateTime(typeof item.createdAt === `string` ? item.createdAt : null)}</td>
+                <td>{formatDate(item.createdAt)}</td>
               </tr>
             ))}
       </DenseTable>

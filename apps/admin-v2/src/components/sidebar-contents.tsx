@@ -6,8 +6,7 @@ import { type ReactElement } from 'react';
 
 import { cn } from '@remoola/ui';
 
-import { ActionGhost } from '@/components/action-ghost';
-
+import { ActionGhost } from './action-ghost';
 import { SidebarSection } from './sidebar-section';
 import { type AdminIdentity, type QuickstartCard } from '../lib/admin-api/types';
 import { normalizeActivePath } from '../lib/nav-state';

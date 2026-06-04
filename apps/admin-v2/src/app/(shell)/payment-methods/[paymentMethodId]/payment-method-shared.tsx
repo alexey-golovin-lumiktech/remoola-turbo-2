@@ -1,7 +1,3 @@
-import { formatDateTime } from '../../../../lib/admin-format';
-
-export const formatDate = formatDateTime;
-
 export function renderMethodLabel(paymentMethod: {
   type: string;
   brand: string | null;

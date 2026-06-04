@@ -19,7 +19,7 @@ import {
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getPaymentMethods } from '../../../lib/admin-api/payments.server';
 import { type PaymentMethodsListResponse } from '../../../lib/admin-api/types';
-import { formatDateTime } from '../../../lib/admin-format';
+import { EMPTY_VALUE, formatDate } from '../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../lib/navigation-context';
 import {
   booleanSearchParam,
@@ -29,8 +29,6 @@ import {
 } from '../../../lib/query-contract';
 
 type PaymentMethodItem = PaymentMethodsListResponse[`items`][number];
-
-const formatDate = formatDateTime;
 
 function renderMethodLabel(item: {
   type: string;
@@ -93,7 +91,7 @@ function PaymentMethodsMobileCards({ items }: { items: PaymentMethodItem[] }) {
               <Link href={`/consumers/${item.consumer.id}`}>{item.consumer.email ?? item.consumer.id}</Link>
             </div>
             <div className="muted">Default: {item.defaultSelected ? `Yes` : `No`}</div>
-            <div className="muted mono">Fingerprint: {item.stripeFingerprint ?? `-`}</div>
+            <div className="muted mono">Fingerprint: {item.stripeFingerprint ?? EMPTY_VALUE}</div>
             <PaymentMethodStatus item={item} />
             <div className="muted">Updated: {formatDate(item.updatedAt)}</div>
           </MobileQueueCard>
@@ -134,7 +132,7 @@ function PaymentMethodsTabletRows({ items }: { items: PaymentMethodItem[] }) {
               </div>,
               <div key="defaultFingerprint">
                 <div>Default: {item.defaultSelected ? `Yes` : `No`}</div>
-                <div className="muted mono">{item.stripeFingerprint ?? `-`}</div>
+                <div className="muted mono">{item.stripeFingerprint ?? EMPTY_VALUE}</div>
               </div>,
               <PaymentMethodStatus item={item} key="status" />,
               <div className="muted" key="updated">
@@ -172,7 +170,7 @@ function PaymentMethodsDesktopTable({ items }: { items: PaymentMethodItem[] }) {
                 </td>
                 <td>{item.defaultSelected ? `Yes` : `No`}</td>
                 <td>
-                  <div className="mono">{item.stripeFingerprint ?? `-`}</div>
+                  <div className="mono">{item.stripeFingerprint ?? EMPTY_VALUE}</div>
                 </td>
                 <td>
                   <PaymentMethodStatus item={item} />

@@ -14,12 +14,10 @@ import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getAdmins } from '../../../lib/admin-api/admins.server';
 import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
 import { type AdminsListResponse } from '../../../lib/admin-api/types';
-import { formatDateTime } from '../../../lib/admin-format';
+import { formatDate } from '../../../lib/admin-format';
 import { inviteAdminAction } from '../../../lib/admin-mutations/admins.server';
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../lib/admin-rbac';
 import { positiveIntegerSearchParam, trimmedSearchParam } from '../../../lib/query-contract';
-
-const formatDate = formatDateTime;
 
 type AdminListItem = AdminsListResponse[`items`][number];
 

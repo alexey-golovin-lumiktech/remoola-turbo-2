@@ -1,5 +1,6 @@
+import { formatDate } from '../../../../../lib/admin-format';
 import { type ConsumerPageData } from '../page.loader';
-import { formatDate, nestedCardClass, renderObject } from '../preview-helpers';
+import { nestedCardClass, renderObject } from '../preview-helpers';
 
 export function ConsumerProfileGrid({
   consumer,

@@ -14,11 +14,9 @@ import {
   renderHighValueThresholds,
 } from '../../../features/payouts/payouts-list-presenters';
 import { getPayouts } from '../../../lib/admin-api/payments.server';
-import { formatDateTime } from '../../../lib/admin-format';
+import { formatDate, EMPTY_VALUE } from '../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../lib/navigation-context';
 import { type SearchParamValue, trimmedSearchParam } from '../../../lib/query-contract';
-
-const formatDate = formatDateTime;
 
 export default async function PayoutsPage({
   searchParams,
@@ -96,9 +94,9 @@ export default async function PayoutsPage({
         >
           <div className="grid gap-2 text-sm text-white/72 md:grid-cols-2 xl:grid-cols-4">
             <p>Threshold: {data?.stuckPolicy.thresholdHours ?? 24}h</p>
-            <p>Breach condition: {data?.stuckPolicy.breachCondition ?? `-`}</p>
-            <p>Escalation target: {data?.stuckPolicy.escalationTarget ?? `-`}</p>
-            <p>Automation: {data?.stuckPolicy.automationStatus ?? `-`}</p>
+            <p>Breach condition: {data?.stuckPolicy.breachCondition ?? EMPTY_VALUE}</p>
+            <p>Escalation target: {data?.stuckPolicy.escalationTarget ?? EMPTY_VALUE}</p>
+            <p>Automation: {data?.stuckPolicy.automationStatus ?? EMPTY_VALUE}</p>
           </div>
         </Panel>
 

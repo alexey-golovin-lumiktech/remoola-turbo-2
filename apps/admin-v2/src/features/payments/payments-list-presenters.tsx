@@ -7,10 +7,8 @@ import { TabletRow } from '../../components/tablet-row';
 import { TinyPill } from '../../components/tiny-pill';
 import { emptyPanelClass, mutedTextClass, subtleTextClass } from '../../components/ui-classes';
 import { type getPayments } from '../../lib/admin-api/payments.server';
-import { formatDateTime } from '../../lib/admin-format';
+import { formatDate, EMPTY_VALUE } from '../../lib/admin-format';
 import { withReturnTo } from '../../lib/navigation-context';
-
-const formatDate = formatDateTime;
 
 type PaymentItem = NonNullable<Awaited<ReturnType<typeof getPayments>>>[`items`][number];
 
@@ -23,7 +21,7 @@ function renderConsumerLink(consumer: PaymentItem[`payer`] | PaymentItem[`reques
     return <Link href={withReturnTo(`/consumers/${consumer.id}`, returnTo)}>{consumer.email ?? consumer.id}</Link>;
   }
 
-  return consumer.email ?? `-`;
+  return consumer.email ?? EMPTY_VALUE;
 }
 
 function PaymentParticipants({ item, returnTo }: { item: PaymentItem; returnTo: string }) {

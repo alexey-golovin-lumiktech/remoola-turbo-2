@@ -5,6 +5,7 @@ import { type ReactElement } from 'react';
 
 import { cn } from '@remoola/ui';
 
+import { EMPTY_VALUE } from '../lib/admin-format';
 import { normalizeActivePath } from '../lib/nav-state';
 import { getWorkspaceMeta } from '../lib/workspace-meta';
 import { readCurrentWorkspaceSignalCount, type SignalCount } from '../lib/workspace-signal';
@@ -26,12 +27,12 @@ export function MobilePageHeader({
   const compactChrome = workspaceMeta.mobileChromeMode === `compact`;
   const derivedLiveCount = readCurrentWorkspaceSignalCount(resolvedActivePath, signalCounts);
   const countValue = typeof derivedLiveCount === `number` ? derivedLiveCount : liveCount;
-  const countLabel = typeof countValue === `number` ? String(countValue) : `—`;
+  const countLabel = typeof countValue === `number` ? String(countValue) : EMPTY_VALUE;
 
   return (
     <div
       className={cn(
-        `mx-4 mt-1 rounded-card border border-white/8 bg-linear-to-br from-white/[0.04] to-white/[0.02] px-4 py-3 shadow-[0_12px_30px_rgba(2,6,23,0.16)] lg:hidden`,
+        `mx-4 mt-1 rounded-card border border-white/8 bg-linear-to-br from-white/4 to-white/2 px-4 py-3 shadow-[0_12px_30px_rgba(2,6,23,0.16)] lg:hidden`,
         compactChrome && `md:py-2.5`,
       )}
     >

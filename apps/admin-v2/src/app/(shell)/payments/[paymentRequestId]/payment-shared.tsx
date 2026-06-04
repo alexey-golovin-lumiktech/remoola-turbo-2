@@ -1,11 +1,9 @@
 import { mutedTextClass, nestedPanelClass, rawDataClass } from '../../../../components/ui-classes';
-import { formatDateTime } from '../../../../lib/admin-format';
+import { EMPTY_VALUE } from '../../../../lib/admin-format';
 
 export function renderActorLabel(actor: { email?: string | null; id?: string | null }): string {
-  return actor.email ?? actor.id ?? `-`;
+  return actor.email ?? actor.id ?? EMPTY_VALUE;
 }
-
-export const formatDate = formatDateTime;
 
 export function renderMetadata(value: Record<string, unknown> | null | undefined) {
   if (!value || Object.keys(value).length === 0) {

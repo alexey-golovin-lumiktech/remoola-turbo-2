@@ -8,17 +8,15 @@ import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getExchangeRules } from '../../../../lib/admin-api/exchange.server';
 import { type ExchangeRulesListResponse } from '../../../../lib/admin-api/types';
-import { formatDateTime } from '../../../../lib/admin-format';
+import { formatDate, EMPTY_VALUE } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { booleanSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
 type ExchangeRuleItem = ExchangeRulesListResponse[`items`][number];
 
-const formatDate = formatDateTime;
-
 function renderExecutionSummary(value: Record<string, unknown> | null) {
   if (!value) return `No persisted execution summary`;
-  return `${String(value.status ?? `unknown`)} · ${String(value.reason ?? `-`)}`;
+  return `${String(value.status ?? `unknown`)} · ${String(value.reason ?? EMPTY_VALUE)}`;
 }
 
 function RulesMobileCards({ items }: { items: ExchangeRuleItem[] }) {
@@ -46,7 +44,7 @@ function RulesMobileCards({ items }: { items: ExchangeRuleItem[] }) {
               <Link href={`/consumers/${item.consumer.id}`}>{item.consumer.email ?? item.consumer.id}</Link>
             </div>
             <div>Target balance: {item.threshold}</div>
-            <div className="muted">Max convert: {item.maxConvertAmount ?? `-`}</div>
+            <div className="muted">Max convert: {item.maxConvertAmount ?? EMPTY_VALUE}</div>
             <div className="muted">Interval: {item.minIntervalMinutes} min</div>
             <div>{item.enabled ? `Enabled` : `Paused`}</div>
             <div className="muted">Last run: {formatDate(item.lastRunAt)}</div>
@@ -94,7 +92,7 @@ function RulesTabletRows({ items }: { items: ExchangeRuleItem[] }) {
               </div>,
               <div key="thresholds">
                 <div>Target: {item.threshold}</div>
-                <div className="muted">Max: {item.maxConvertAmount ?? `-`}</div>
+                <div className="muted">Max: {item.maxConvertAmount ?? EMPTY_VALUE}</div>
                 <div className="muted">Interval: {item.minIntervalMinutes}m</div>
               </div>,
               <div key="state">
@@ -138,7 +136,7 @@ function RulesDesktopTable({ items }: { items: ExchangeRuleItem[] }) {
                 </td>
                 <td>
                   <div>Target balance: {item.threshold}</div>
-                  <div className="muted">Max convert: {item.maxConvertAmount ?? `-`}</div>
+                  <div className="muted">Max convert: {item.maxConvertAmount ?? EMPTY_VALUE}</div>
                   <div className="muted">Interval: {item.minIntervalMinutes} min</div>
                 </td>
                 <td>

@@ -8,7 +8,7 @@ import {
   type LedgerAnomalyListResponse,
   type LedgerAnomalySummaryResponse,
 } from '../../../../../lib/admin-api/types';
-import { formatDateTime } from '../../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
 import { type BuildHrefFn, type LedgerAnomalyItem } from '../anomalies-shared';
 
 function AnomalyCards({ items }: { items: LedgerAnomalyItem[] }) {
@@ -42,9 +42,9 @@ function AnomalyCards({ items }: { items: LedgerAnomalyItem[] }) {
               Consumer: <Link href={`/consumers/${item.consumerId}`}>{item.consumerId}</Link>
             </div>
             <div>Status: {item.entryStatus}</div>
-            <div className="muted">Latest outcome: {item.outcomeStatus ?? `-`}</div>
-            <div className="muted">Outcome at: {formatDateTime(item.outcomeAt)}</div>
-            <div className="muted">Created: {formatDateTime(item.createdAt)}</div>
+            <div className="muted">Latest outcome: {item.outcomeStatus ?? EMPTY_VALUE}</div>
+            <div className="muted">Outcome at: {formatDate(item.outcomeAt)}</div>
+            <div className="muted">Created: {formatDate(item.createdAt)}</div>
             <p className="muted">{item.signal.detail}</p>
           </div>
         </article>
@@ -72,15 +72,15 @@ function AnomalyTable({ items }: { items: LedgerAnomalyItem[] }) {
           </td>
           <td className="px-3 py-3">
             <div>{item.entryStatus}</div>
-            <div className="muted">Latest: {item.outcomeStatus ?? `-`}</div>
+            <div className="muted">Latest: {item.outcomeStatus ?? EMPTY_VALUE}</div>
           </td>
           <td className="px-3 py-3">
             {item.amount} {item.currencyCode}
           </td>
           <td className="px-3 py-3">{item.signal.detail}</td>
           <td className="px-3 py-3">
-            <div className="muted">Outcome: {formatDateTime(item.outcomeAt)}</div>
-            <div className="muted">Created: {formatDateTime(item.createdAt)}</div>
+            <div className="muted">Outcome: {formatDate(item.outcomeAt)}</div>
+            <div className="muted">Created: {formatDate(item.createdAt)}</div>
           </td>
         </tr>
       ))}

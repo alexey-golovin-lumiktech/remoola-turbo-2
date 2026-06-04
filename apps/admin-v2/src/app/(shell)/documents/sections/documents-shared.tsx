@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { type getDocuments } from '../../../../lib/admin-api/documents.server';
-import { formatBytes } from '../../../../lib/admin-format';
+import { EMPTY_VALUE, formatBytes } from '../../../../lib/admin-format';
 
 type DocumentItem = NonNullable<NonNullable<Awaited<ReturnType<typeof getDocuments>>>>[`items`][number];
 
@@ -37,7 +37,7 @@ export function renderDocumentAssignee(document: DocumentItem) {
 
 export function renderDocumentAssigneeSummary(document: DocumentItem): string {
   if (!document.assignedTo) {
-    return `—`;
+    return EMPTY_VALUE;
   }
 
   return document.assignedTo.name ?? document.assignedTo.email ?? document.assignedTo.id;

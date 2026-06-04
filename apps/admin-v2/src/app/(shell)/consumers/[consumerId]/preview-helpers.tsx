@@ -1,9 +1,6 @@
 import { nestedPanelClass, rawDataClass } from '../../../../components/ui-classes';
-import { formatDateTime } from '../../../../lib/admin-format';
 
 export const nestedCardClass = nestedPanelClass;
-
-export const formatDate = formatDateTime;
 
 export function renderConsumerLabel(email: string | null | undefined, consumerId: string): string {
   return email ?? consumerId;

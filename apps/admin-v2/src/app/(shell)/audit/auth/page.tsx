@@ -13,14 +13,9 @@ import {
 } from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAuthAudit } from '../../../../lib/admin-api/audit.server';
-import { formatDateTime } from '../../../../lib/admin-format';
+import { formatDate, EMPTY_VALUE } from '../../../../lib/admin-format';
 import { buildPathWithSearch } from '../../../../lib/navigation-context';
 import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
-
-function formatDate(value: unknown): string {
-  if (typeof value !== `string`) return `-`;
-  return formatDateTime(value);
-}
 
 type AuthAuditRow = {
   id?: unknown;
@@ -47,11 +42,11 @@ function AuthAuditMobileCards({ items }: { items: AuthAuditRow[] }) {
           <MobileQueueCard
             key={String(item.id ?? index)}
             id={String(item.id ?? index)}
-            title={String(item.event ?? `-`)}
-            subtitle={String(item.email ?? `-`)}
+            title={String(item.event ?? EMPTY_VALUE)}
+            subtitle={String(item.email ?? EMPTY_VALUE)}
           >
-            <div className="muted">IP: {String(item.ipAddress ?? `-`)}</div>
-            <div className="muted">UA: {String(item.userAgent ?? `-`)}</div>
+            <div className="muted">IP: {String(item.ipAddress ?? EMPTY_VALUE)}</div>
+            <div className="muted">UA: {String(item.userAgent ?? EMPTY_VALUE)}</div>
             <div className="muted">Created: {formatDate(item.createdAt)}</div>
           </MobileQueueCard>
         ))}
@@ -77,16 +72,16 @@ function AuthAuditTabletRows({ items }: { items: AuthAuditRow[] }) {
             key={String(item.id ?? index)}
             primary={
               <>
-                <strong>{String(item.event ?? `-`)}</strong>
-                <div className="muted">{String(item.email ?? `-`)}</div>
+                <strong>{String(item.event ?? EMPTY_VALUE)}</strong>
+                <div className="muted">{String(item.email ?? EMPTY_VALUE)}</div>
               </>
             }
             cells={[
               <div className="muted" key="ip">
-                IP: {String(item.ipAddress ?? `-`)}
+                IP: {String(item.ipAddress ?? EMPTY_VALUE)}
               </div>,
               <div className="muted" key="ua">
-                UA: {String(item.userAgent ?? `-`)}
+                UA: {String(item.userAgent ?? EMPTY_VALUE)}
               </div>,
               <div className="muted" key="created">
                 Created: {formatDate(item.createdAt)}
@@ -111,10 +106,10 @@ function AuthAuditDesktopTable({ items }: { items: AuthAuditRow[] }) {
           ? null
           : items.map((item, index) => (
               <tr key={String(item.id ?? index)}>
-                <td>{String(item.email ?? `-`)}</td>
-                <td>{String(item.event ?? `-`)}</td>
-                <td>{String(item.ipAddress ?? `-`)}</td>
-                <td>{String(item.userAgent ?? `-`)}</td>
+                <td>{String(item.email ?? EMPTY_VALUE)}</td>
+                <td>{String(item.event ?? EMPTY_VALUE)}</td>
+                <td>{String(item.ipAddress ?? EMPTY_VALUE)}</td>
+                <td>{String(item.userAgent ?? EMPTY_VALUE)}</td>
                 <td>{formatDate(item.createdAt)}</td>
               </tr>
             ))}

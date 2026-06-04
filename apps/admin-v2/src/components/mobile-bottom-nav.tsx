@@ -53,7 +53,7 @@ export function MobileBottomNav({ identity, activePath }: MobileBottomNavProps):
               aria-current={active ? `page` : undefined}
               className={cn(
                 `flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border border-transparent px-2 py-2 text-center text-[11px] text-white/62 transition`,
-                `hover:-translate-y-px hover:border-white/10 hover:bg-white/[0.03] hover:text-white/85`,
+                `hover:-translate-y-px hover:border-white/10 hover:bg-white/3 hover:text-white/85`,
                 active && `border-cyan-400/24 bg-cyan-500/10 text-cyan-100 shadow-[0_10px_28px_rgba(8,47,73,0.16)]`,
               )}
             >

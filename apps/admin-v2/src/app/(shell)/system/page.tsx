@@ -4,7 +4,7 @@ import { mutedTextClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getSystemSummary } from '../../../lib/admin-api/overview.server';
 import { type SystemSummaryCard } from '../../../lib/admin-api/types';
-import { formatDateTime } from '../../../lib/admin-format';
+import { formatDate, EMPTY_VALUE } from '../../../lib/admin-format';
 
 const cardOrder = [
   `stripeWebhookHealth`,
@@ -43,7 +43,7 @@ export default async function SystemPage() {
                 {watchCount} watch
               </span>
               <ActionGhost href="/system/alerts">Open alerts</ActionGhost>
-              <p className={mutedTextClass}>Computed: {formatDateTime(summary?.computedAt)}</p>
+              <p className={mutedTextClass}>Computed: {formatDate(summary?.computedAt)}</p>
             </div>
           }
           surface="primary"
@@ -81,10 +81,10 @@ export default async function SystemPage() {
                 {card.facts.map((fact) => (
                   <li
                     key={`${card.label}-${fact.label}`}
-                    className="rounded-2xl border border-white/6 bg-white/[0.025] px-3 py-2.5"
+                    className="rounded-2xl border border-white/6 bg-white/2.5 px-3 py-2.5"
                   >
                     <span className="text-white/45">{fact.label}: </span>
-                    <span>{fact.value == null ? `-` : String(fact.value)}</span>
+                    <span>{fact.value == null ? EMPTY_VALUE : String(fact.value)}</span>
                   </li>
                 ))}
               </ul>

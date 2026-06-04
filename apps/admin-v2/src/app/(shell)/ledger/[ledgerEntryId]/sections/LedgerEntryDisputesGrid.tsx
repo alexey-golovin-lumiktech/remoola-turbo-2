@@ -1,7 +1,8 @@
 import Link from 'next/link';
 
 import { nestedPanelClass } from '../../../../../components/ui-classes';
-import { formatDate, renderObject } from '../ledger-entry-shared';
+import { formatDate } from '../../../../../lib/admin-format';
+import { renderObject } from '../ledger-entry-shared';
 import { type LedgerEntryCasePageData } from '../page.loader';
 
 export function LedgerEntryDisputesGrid({ ledgerCase }: { ledgerCase: LedgerEntryCasePageData[`ledgerCase`] }) {

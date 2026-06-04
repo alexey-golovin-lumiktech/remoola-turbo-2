@@ -3,9 +3,9 @@ import { type ReactElement } from 'react';
 
 import { cn } from '@remoola/ui';
 
-import { ContextStat } from '@/components/context-stat';
-import { Panel } from '@/components/panel';
-import { WorkspaceLayout } from '@/components/workspace-layout';
+import { ContextStat } from '../../../components/context-stat';
+import { Panel } from '../../../components/panel';
+import { WorkspaceLayout } from '../../../components/workspace-layout';
 
 const AUDIT_ENTRIES: ReadonlyArray<{
   href: string;
@@ -75,12 +75,12 @@ export default function AuditOverviewPage(): ReactElement {
                 <Panel
                   className={cn(
                     `h-full rounded-card border border-border bg-panel p-5 transition`,
-                    `hover:border-white/25 hover:bg-white/[0.02]`,
+                    `hover:border-white/25 hover:bg-white/2`,
                   )}
                   surface="meta"
                 >
                   <div className="flex h-full flex-col gap-3">
-                    <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/65">
+                    <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/4 px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/65">
                       {entry.eyebrow}
                     </span>
                     <div className="text-base font-semibold text-white">{entry.title}</div>

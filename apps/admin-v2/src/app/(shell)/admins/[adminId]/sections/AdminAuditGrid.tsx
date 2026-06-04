@@ -1,4 +1,5 @@
-import { formatDate, renderJson } from '../admin-shared';
+import { EMPTY_VALUE, formatDate } from '../../../../../lib/admin-format';
+import { renderJson } from '../admin-shared';
 import { type AdminCasePageData } from '../page.loader';
 
 export function AdminAuditGrid({ admin }: { admin: AdminCasePageData[`admin`] }) {
@@ -31,8 +32,8 @@ export function AdminAuditGrid({ admin }: { admin: AdminCasePageData[`admin`] })
             <div key={event.id} className="panel">
               <strong>{event.event}</strong>
               <p className="muted">At: {formatDate(event.createdAt)}</p>
-              <p className="muted">IP: {event.ipAddress ?? `-`}</p>
-              <p className="muted">UA: {event.userAgent ?? `-`}</p>
+              <p className="muted">IP: {event.ipAddress ?? EMPTY_VALUE}</p>
+              <p className="muted">UA: {event.userAgent ?? EMPTY_VALUE}</p>
             </div>
           ))}
         </div>

@@ -1,5 +1,5 @@
+import { formatDate, EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { type ConsumerPageData } from '../page.loader';
-import { formatDate } from '../preview-helpers';
 
 export function ConsumerCountsGrid({
   consumer,
@@ -24,12 +24,12 @@ export function ConsumerCountsGrid({
         <h3>Verification snapshot</h3>
         <p className="muted">Verified: {String(consumer.verified)}</p>
         <p className="muted">Legal verified: {String(consumer.legalVerified)}</p>
-        <p className="muted">Reason: {consumer.verificationReason ?? `-`}</p>
-        <p className="muted">Stripe status: {consumer.stripeIdentityStatus ?? `-`}</p>
-        <p className="muted">Stripe error code: {consumer.stripeIdentityLastErrorCode ?? `-`}</p>
-        <p className="muted">Stripe error: {consumer.stripeIdentityLastErrorReason ?? `-`}</p>
+        <p className="muted">Reason: {consumer.verificationReason ?? EMPTY_VALUE}</p>
+        <p className="muted">Stripe status: {consumer.stripeIdentityStatus ?? EMPTY_VALUE}</p>
+        <p className="muted">Stripe error code: {consumer.stripeIdentityLastErrorCode ?? EMPTY_VALUE}</p>
+        <p className="muted">Stripe error: {consumer.stripeIdentityLastErrorReason ?? EMPTY_VALUE}</p>
         <p className="muted">Suspended: {consumer.suspendedAt ? `Yes` : `No`}</p>
-        <p className="muted">Suspension reason: {consumer.suspensionReason ?? `-`}</p>
+        <p className="muted">Suspension reason: {consumer.suspensionReason ?? EMPTY_VALUE}</p>
       </article>
       <article className="panel">
         <h3>Dates</h3>

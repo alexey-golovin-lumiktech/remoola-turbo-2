@@ -1,7 +1,5 @@
-import { formatDateTime } from '../../../../../../lib/admin-format';
+import { formatDate, EMPTY_VALUE } from '../../../../../../lib/admin-format';
 import { type ExchangeRateCasePageData } from '../page.loader';
-
-const formatDate = formatDateTime;
 
 export function ExchangeRateSummaryGrid({ rate }: { rate: ExchangeRateCasePageData[`rate`] }) {
   return (
@@ -9,14 +7,14 @@ export function ExchangeRateSummaryGrid({ rate }: { rate: ExchangeRateCasePageDa
       <article className="panel">
         <h3>Rate tuple</h3>
         <p className="muted">Rate: {rate.core.rate}</p>
-        <p className="muted">Inverse: {rate.core.inverseRate ?? `-`}</p>
-        <p className="muted">Spread: {rate.core.spreadBps ?? `-`} bps</p>
-        <p className="muted">Confidence: {rate.core.confidence ?? `-`}</p>
+        <p className="muted">Inverse: {rate.core.inverseRate ?? EMPTY_VALUE}</p>
+        <p className="muted">Spread: {rate.core.spreadBps ?? EMPTY_VALUE} bps</p>
+        <p className="muted">Confidence: {rate.core.confidence ?? EMPTY_VALUE}</p>
       </article>
       <article className="panel">
         <h3>Provider context</h3>
-        <p className="muted">Provider: {rate.core.provider ?? `-`}</p>
-        <p className="muted">Provider rate id: {rate.core.providerRateId ?? `-`}</p>
+        <p className="muted">Provider: {rate.core.provider ?? EMPTY_VALUE}</p>
+        <p className="muted">Provider rate id: {rate.core.providerRateId ?? EMPTY_VALUE}</p>
         <p className="muted">Fetched: {formatDate(rate.core.fetchedAt)}</p>
       </article>
       <article className="panel">

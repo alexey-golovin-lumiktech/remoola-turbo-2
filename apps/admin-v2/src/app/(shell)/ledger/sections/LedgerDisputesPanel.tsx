@@ -1,12 +1,13 @@
 import Link from 'next/link';
 
-import { type DisputeItem, DisputeLinks, DisputeMetadataViewer, formatDate } from './ledger-shared';
+import { type DisputeItem, DisputeLinks, DisputeMetadataViewer } from './ledger-shared';
 import { ActionGhost } from '../../../../components/action-ghost';
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { Panel } from '../../../../components/panel';
 import { TabletRow } from '../../../../components/tablet-row';
 import { type LedgerDisputesResponse } from '../../../../lib/admin-api/types';
+import { EMPTY_VALUE, formatDate } from '../../../../lib/admin-format';
 
 function DisputesMobileCards({ items }: { items: DisputeItem[] }) {
   if (items.length === 0) {
@@ -26,14 +27,14 @@ function DisputesMobileCards({ items }: { items: DisputeItem[] }) {
             id={dispute.id}
             title={dispute.stripeDisputeId}
             subtitle={<span className="mono">{dispute.id}</span>}
-            trailing={dispute.disputeStatus ?? `-`}
+            trailing={dispute.disputeStatus ?? EMPTY_VALUE}
           >
             <div>
               <Link href={`/ledger/${dispute.ledgerEntry.id}`}>{dispute.ledgerEntry.type}</Link>
             </div>
             <div className="muted mono">{dispute.ledgerEntry.id}</div>
             <DisputeLinks dispute={dispute} />
-            <div className="muted">Reason: {dispute.reason ?? `-`}</div>
+            <div className="muted">Reason: {dispute.reason ?? EMPTY_VALUE}</div>
             <div className="muted">Captured: {formatDate(dispute.createdAt)}</div>
             <DisputeMetadataViewer dispute={dispute} />
           </MobileQueueCard>
@@ -71,8 +72,8 @@ function DisputesTabletRows({ items }: { items: DisputeItem[] }) {
               </div>,
               <DisputeLinks dispute={dispute} key="links" />,
               <div key="status">
-                <div>{dispute.disputeStatus ?? `-`}</div>
-                <div className="muted">Reason: {dispute.reason ?? `-`}</div>
+                <div>{dispute.disputeStatus ?? EMPTY_VALUE}</div>
+                <div className="muted">Reason: {dispute.reason ?? EMPTY_VALUE}</div>
               </div>,
               <div key="captured">
                 <div className="muted">Captured: {formatDate(dispute.createdAt)}</div>
@@ -109,8 +110,8 @@ function DisputesDesktopTable({ items }: { items: DisputeItem[] }) {
                 <td>
                   <DisputeLinks dispute={dispute} />
                 </td>
-                <td>{dispute.disputeStatus ?? `-`}</td>
-                <td>{dispute.reason ?? `-`}</td>
+                <td>{dispute.disputeStatus ?? EMPTY_VALUE}</td>
+                <td>{dispute.reason ?? EMPTY_VALUE}</td>
                 <td>{formatDate(dispute.createdAt)}</td>
               </tr>
             ))}

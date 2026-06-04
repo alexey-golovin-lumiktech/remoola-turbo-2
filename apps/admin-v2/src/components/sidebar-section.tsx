@@ -44,8 +44,8 @@ export function SidebarSection({
     <div className="px-2">
       <div
         className={cn(
-          `px-2 text-[11px] uppercase tracking-[0.24em] text-white/[0.32]`,
-          compact && `text-white/[0.38]`,
+          `px-2 text-[11px] uppercase tracking-[0.24em] text-white/32`,
+          compact && `text-white/38`,
           priority === `core` && `text-cyan-200/70`,
         )}
       >
@@ -69,14 +69,14 @@ export function SidebarSection({
                   active
                     ? `border border-cyan-400/25 bg-cyan-500/10 text-white shadow-[0_12px_32px_rgba(8,47,73,0.14)]`
                     : priority === `core`
-                      ? `border border-white/6 bg-white/[0.02] text-white/82 hover:-translate-y-px hover:border-cyan-400/18 hover:bg-cyan-500/[0.04] hover:text-white`
-                      : `border border-transparent text-white/64 hover:border-white/10 hover:bg-white/[0.03] hover:text-white`,
+                      ? `border border-white/6 bg-white/2 text-white/82 hover:-translate-y-px hover:border-cyan-400/18 hover:bg-cyan-500/4 hover:text-white`
+                      : `border border-transparent text-white/64 hover:border-white/10 hover:bg-white/3 hover:text-white`,
                 )}
               >
                 <span
                   className={cn(
-                    `mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-white/6 bg-white/[0.025] text-sm text-white/72 transition`,
-                    active && `border-cyan-400/22 bg-cyan-500/[0.08] text-cyan-100`,
+                    `mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-white/6 bg-white/2.5 text-sm text-white/72 transition`,
+                    active && `border-cyan-400/22 bg-cyan-500/8 text-cyan-100`,
                     `group-hover:border-white/10 group-hover:text-white/88`,
                   )}
                 >

@@ -18,7 +18,7 @@ import { TabletRow } from '../../../../components/tablet-row';
 import { TinyPill } from '../../../../components/tiny-pill';
 import { buttonRowClass, detailsSummaryClass, mutedTextClass, stackClass } from '../../../../components/ui-classes';
 import { type getDocuments, type getDocumentTags } from '../../../../lib/admin-api/documents.server';
-import { formatDateTime } from '../../../../lib/admin-format';
+import { formatDate } from '../../../../lib/admin-format';
 import { bulkTagDocumentsAction } from '../../../../lib/admin-mutations/documents.server';
 
 function ExplorerTable({
@@ -65,7 +65,7 @@ function ExplorerTable({
                   }
                 >
                   <MobileQueueSection title="Evidence summary">
-                    <div className="muted">Created: {formatDateTime(document.createdAt)}</div>
+                    <div className="muted">Created: {formatDate(document.createdAt)}</div>
                     <div className="muted">Assigned: {renderDocumentAssigneeSummary(document)}</div>
                     <div className="muted">Tags: {renderDocumentTagSummary(document)}</div>
                     <div className="muted">Payments: {renderDocumentPaymentSummary(document)}</div>
@@ -97,7 +97,7 @@ function ExplorerTable({
                         <strong>{document.originalName}</strong>
                       </Link>
                       <div className="muted mono">{document.id}</div>
-                      <div className="muted">Created: {formatDateTime(document.createdAt)}</div>
+                      <div className="muted">Created: {formatDate(document.createdAt)}</div>
                     </>
                   }
                   badges={
@@ -147,7 +147,7 @@ function ExplorerTable({
                     <div className="formStack">
                       <strong>{document.originalName}</strong>
                       <span className="muted mono">{document.id}</span>
-                      <span className="muted">Created: {formatDateTime(document.createdAt)}</span>
+                      <span className="muted">Created: {formatDate(document.createdAt)}</span>
                       <div className="actionsRow">
                         <Link className="secondaryButton" href={`/documents/${document.id}`}>
                           Open detail

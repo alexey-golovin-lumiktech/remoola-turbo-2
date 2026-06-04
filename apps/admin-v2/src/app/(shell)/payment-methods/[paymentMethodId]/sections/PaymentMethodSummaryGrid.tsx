@@ -1,5 +1,5 @@
+import { formatDate, EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { type PaymentMethodCasePageData } from '../page.loader';
-import { formatDate } from '../payment-method-shared';
 
 export function PaymentMethodSummaryGrid({
   paymentMethod,
@@ -14,8 +14,8 @@ export function PaymentMethodSummaryGrid({
           <p className="muted">Consumer: {paymentMethod.consumer.email ?? paymentMethod.consumer.id}</p>
           <p className="muted">Status: {paymentMethod.status}</p>
           <p className="muted">Default selected: {paymentMethod.defaultSelected ? `Yes` : `No`}</p>
-          <p className="muted">Fingerprint: {paymentMethod.stripeFingerprint ?? `-`}</p>
-          <p className="muted">Stripe payment method id: {paymentMethod.stripePaymentMethodId ?? `-`}</p>
+          <p className="muted">Fingerprint: {paymentMethod.stripeFingerprint ?? EMPTY_VALUE}</p>
+          <p className="muted">Stripe payment method id: {paymentMethod.stripePaymentMethodId ?? EMPTY_VALUE}</p>
         </article>
         <article className="panel">
           <h3>Dates</h3>
@@ -26,11 +26,11 @@ export function PaymentMethodSummaryGrid({
         </article>
         <article className="panel">
           <h3>Bank / card snapshot</h3>
-          <p className="muted">Brand: {paymentMethod.brand ?? `-`}</p>
-          <p className="muted">Card last4: {paymentMethod.last4 ?? `-`}</p>
-          <p className="muted">Bank last4: {paymentMethod.bankLast4 ?? `-`}</p>
-          <p className="muted">Bank country: {paymentMethod.bankCountry ?? `-`}</p>
-          <p className="muted">Bank currency: {paymentMethod.bankCurrency ?? `-`}</p>
+          <p className="muted">Brand: {paymentMethod.brand ?? EMPTY_VALUE}</p>
+          <p className="muted">Card last4: {paymentMethod.last4 ?? EMPTY_VALUE}</p>
+          <p className="muted">Bank last4: {paymentMethod.bankLast4 ?? EMPTY_VALUE}</p>
+          <p className="muted">Bank country: {paymentMethod.bankCountry ?? EMPTY_VALUE}</p>
+          <p className="muted">Bank currency: {paymentMethod.bankCurrency ?? EMPTY_VALUE}</p>
         </article>
       </section>
 
@@ -39,10 +39,10 @@ export function PaymentMethodSummaryGrid({
           <h2>Detail</h2>
           <div className="formStack">
             <p className="muted">Version: {paymentMethod.version}</p>
-            <p className="muted">Disabled by: {paymentMethod.disabledBy ?? `-`}</p>
-            <p className="muted">Expiry month: {paymentMethod.expMonth ?? `-`}</p>
-            <p className="muted">Expiry year: {paymentMethod.expYear ?? `-`}</p>
-            <p className="muted">Bank name: {paymentMethod.bankName ?? `-`}</p>
+            <p className="muted">Disabled by: {paymentMethod.disabledBy ?? EMPTY_VALUE}</p>
+            <p className="muted">Expiry month: {paymentMethod.expMonth ?? EMPTY_VALUE}</p>
+            <p className="muted">Expiry year: {paymentMethod.expYear ?? EMPTY_VALUE}</p>
+            <p className="muted">Bank name: {paymentMethod.bankName ?? EMPTY_VALUE}</p>
             <p className="muted">Service fee: {paymentMethod.serviceFee}</p>
           </div>
         </article>
@@ -51,9 +51,9 @@ export function PaymentMethodSummaryGrid({
           <h2>Billing details</h2>
           {paymentMethod.billingDetails ? (
             <div className="formStack">
-              <p className="muted">Name: {paymentMethod.billingDetails.name ?? `-`}</p>
-              <p className="muted">Email: {paymentMethod.billingDetails.email ?? `-`}</p>
-              <p className="muted">Phone: {paymentMethod.billingDetails.phone ?? `-`}</p>
+              <p className="muted">Name: {paymentMethod.billingDetails.name ?? EMPTY_VALUE}</p>
+              <p className="muted">Email: {paymentMethod.billingDetails.email ?? EMPTY_VALUE}</p>
+              <p className="muted">Phone: {paymentMethod.billingDetails.phone ?? EMPTY_VALUE}</p>
               <p className="muted">Deleted: {formatDate(paymentMethod.billingDetails.deletedAt)}</p>
             </div>
           ) : (

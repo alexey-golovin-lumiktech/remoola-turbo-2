@@ -1,5 +1,6 @@
 import { ActionGhost } from '../../../../../components/action-ghost';
 import { ContextStat } from '../../../../../components/context-stat';
+import { EMPTY_VALUE } from '../../../../../lib/admin-format';
 import { type AdminCasePageData } from '../page.loader';
 
 export function AdminContextRail({
@@ -21,7 +22,7 @@ export function AdminContextRail({
         />
         <ContextStat
           label="Resolved role"
-          value={admin.accessProfile.resolvedRole ?? admin.core.role ?? `-`}
+          value={admin.accessProfile.resolvedRole ?? admin.core.role ?? EMPTY_VALUE}
           tone="cyan"
         />
         <ContextStat label="Capability count" value={admin.accessProfile.capabilities.length} />

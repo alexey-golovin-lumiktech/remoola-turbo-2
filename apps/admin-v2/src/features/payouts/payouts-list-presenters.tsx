@@ -7,10 +7,8 @@ import { TabletRow } from '../../components/tablet-row';
 import { TinyPill } from '../../components/tiny-pill';
 import { emptyPanelClass, mutedTextClass } from '../../components/ui-classes';
 import { type PayoutsListResponse } from '../../lib/admin-api/types';
-import { formatDateTime } from '../../lib/admin-format';
+import { formatDate, EMPTY_VALUE } from '../../lib/admin-format';
 import { withReturnTo } from '../../lib/navigation-context';
-
-const formatDate = formatDateTime;
 
 type PayoutItem = PayoutsListResponse[`items`][number];
 
@@ -199,7 +197,7 @@ function renderHighValueMobileCards(items: PayoutItem[], returnTo: string): Reac
           >
             {renderHighValueBadges(item)}
             <div className={mutedTextClass}>
-              Threshold: {item.highValue.thresholdCurrency} &gt;= {item.highValue.thresholdAmount ?? `-`}
+              Threshold: {item.highValue.thresholdCurrency} &gt;= {item.highValue.thresholdAmount ?? EMPTY_VALUE}
             </div>
             <div className={mutedTextClass}>Destination: {renderDestination(item)}</div>
             <div className={mutedTextClass}>{renderPayoutConsumer(item, false, returnTo)}</div>
@@ -235,7 +233,7 @@ function renderHighValueTabletRows(items: PayoutItem[], returnTo: string): React
               <div key="status">
                 {renderHighValueBadges(item)}
                 <div className={mutedTextClass}>
-                  Threshold: {item.highValue.thresholdCurrency} &gt;= {item.highValue.thresholdAmount ?? `-`}
+                  Threshold: {item.highValue.thresholdCurrency} &gt;= {item.highValue.thresholdAmount ?? EMPTY_VALUE}
                 </div>
               </div>,
               <div key="assigned" className={mutedTextClass}>
@@ -265,7 +263,7 @@ function renderHighValueDesktopTable(items: PayoutItem[], returnTo: string): Rea
                 <td>{renderDestination(item)}</td>
                 <td>{renderHighValueBadges(item)}</td>
                 <td>
-                  {item.highValue.thresholdCurrency} &gt;= {item.highValue.thresholdAmount ?? `-`}
+                  {item.highValue.thresholdCurrency} &gt;= {item.highValue.thresholdAmount ?? EMPTY_VALUE}
                 </td>
                 <td>{renderAssignedTo(item)}</td>
               </tr>

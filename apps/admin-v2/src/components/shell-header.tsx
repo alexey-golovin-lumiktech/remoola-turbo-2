@@ -33,7 +33,7 @@ export async function ShellHeader(): Promise<ReactElement> {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-xs text-white/42">
-            <span className="rounded-pill border border-white/8 bg-white/[0.03] px-2 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/62">
+            <span className="rounded-pill border border-white/8 bg-white/3 px-2 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/62">
               Admin v2
             </span>
             <span>{workspaceMeta.title}</span>
