@@ -1,20 +1,12 @@
 import z, { type ZodType } from 'zod';
 
-function parseExpiresToMs(value: string): number {
-  const s = String(value).trim();
-  const match = /^(\d+)(s|m|h|d)$/i.exec(s);
-  if (!match) {
-    const fallback = 15 * 60 * 1000;
-    return fallback;
-  }
-  const n = parseInt(match[1], 10);
-  const unit = match[2].toLowerCase();
-  if (unit === `s`) return n * 1000;
-  if (unit === `m`) return n * 60 * 1000;
-  if (unit === `h`) return n * 60 * 60 * 1000;
-  if (unit === `d`) return n * 24 * 60 * 60 * 1000;
-  return 15 * 60 * 1000;
-}
+import { buildDatabaseUrl, deriveJwtTtls } from './envs-derived';
+import {
+  assertNgrokConfiguration,
+  assertProductionLikePolicy,
+  isBootstrapSeedProcess,
+  isProductionLikeNodeEnv,
+} from './envs-policy';
 
 const ENVIRONMENT = {
   PRODUCTION: `production`,
@@ -23,13 +15,6 @@ const ENVIRONMENT = {
   TEST: `test`,
 } as const;
 const environments = Object.values(ENVIRONMENT);
-function isProductionLikeNodeEnv(value: string): boolean {
-  return value === ENVIRONMENT.PRODUCTION || value === ENVIRONMENT.STAGING;
-}
-
-function isBootstrapSeedProcess(): boolean {
-  return process.argv.some((arg) => /(^|[/\\])bootstrap-seed\.[cm]?[jt]s$/.test(arg));
-}
 
 const node = {
   NODE_ENV: z
@@ -197,93 +182,6 @@ const schema = z.object({
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) throw new Error(JSON.stringify(parsed.error, null, 2));
 
-function buildDatabaseUrl(data: z.infer<typeof schema>): string {
-  if (data.DATABASE_URL?.trim()) return data.DATABASE_URL.trim();
-  const user = encodeURIComponent(data.POSTGRES_USER);
-  const password = encodeURIComponent(data.POSTGRES_PASSWORD);
-  const host = data.POSTGRES_HOST.trim();
-  const port = data.POSTGRES_PORT.trim();
-  const db = data.POSTGRES_DB.trim();
-  return `postgresql://${user}:${password}@${host}:${port}/${db}`;
-}
-
-function normalizeConfiguredValue(value: string): string {
-  return String(value).trim();
-}
-
-function assertProductionLikePolicy(
-  data: z.infer<typeof schema> & {
-    DATABASE_URL: string;
-    SWAGGER_ENABLED: boolean;
-    PUBLIC_DETAILED_HEALTH_ENABLED: boolean;
-    PUBLIC_MAIL_TRANSPORT_HEALTH_ENABLED: boolean;
-    HEALTH_TEST_EMAIL_ENABLED: boolean;
-    NGROK_ENABLED: boolean;
-  },
-): void {
-  if (!isProductionLikeNodeEnv(data.NODE_ENV)) return;
-
-  const placeholderLookup = [
-    [`JWT_ACCESS_SECRET`, `JWT_ACCESS_SECRET`],
-    [`JWT_REFRESH_SECRET`, `JWT_REFRESH_SECRET`],
-    [`SECURE_SESSION_SECRET`, `SECURE_SESSION_SECRET`],
-    [`STRIPE_SECRET_KEY`, `STRIPE_SECRET_KEY`],
-    [`STRIPE_WEBHOOK_SECRET`, `STRIPE_WEBHOOK_SECRET`],
-    [`NEST_APP_EXTERNAL_ORIGIN`, `NEST_APP_EXTERNAL_ORIGIN`],
-    [`CONSUMER_CSS_GRID_APP_ORIGIN`, `CONSUMER_CSS_GRID_APP_ORIGIN`],
-    [`ADMIN_V2_APP_ORIGIN`, `ADMIN_V2_APP_ORIGIN`],
-    [`CRON_SECRET`, `CRON_SECRET`],
-    [`BREVO_API_KEY`, `BREVO_API_KEY`],
-    [`BREVO_DEFAULT_FROM_EMAIL`, `BREVO_DEFAULT_FROM_EMAIL`],
-  ] as const;
-
-  for (const [key, placeholder] of placeholderLookup) {
-    const value = normalizeConfiguredValue(data[key]);
-    if (!value || value === placeholder) {
-      throw new Error(
-        `${key} must be configured with a non-placeholder, non-empty value when NODE_ENV=${data.NODE_ENV}`,
-      );
-    }
-  }
-
-  const accessSecret = normalizeConfiguredValue(data.JWT_ACCESS_SECRET);
-  const refreshSecret = normalizeConfiguredValue(data.JWT_REFRESH_SECRET);
-  if (accessSecret === refreshSecret) {
-    throw new Error(`JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be distinct when NODE_ENV=${data.NODE_ENV}`);
-  }
-
-  if (!data.COOKIE_SECURE) {
-    throw new Error(`COOKIE_SECURE must be true when NODE_ENV=${data.NODE_ENV}`);
-  }
-  if (data.NGROK_ENABLED) {
-    throw new Error(`NGROK_ENABLED must be false when NODE_ENV=${data.NODE_ENV}`);
-  }
-  if (data.ALLOW_PRODUCTION_BOOTSTRAP_SEED && !isBootstrapSeedProcess()) {
-    throw new Error(
-      `ALLOW_PRODUCTION_BOOTSTRAP_SEED can only be true for the bootstrap seed script when NODE_ENV=${data.NODE_ENV}`,
-    );
-  }
-  if (data.ALLOW_PRODUCTION_BOOTSTRAP_SEED) {
-    const defaultSeedCredentials = [
-      [`DEFAULT_ADMIN_PASSWORD`, `RegularWirebill@Admin123!`],
-      [`SUPER_ADMIN_PASSWORD`, `SuperWirebill@Admin123!`],
-    ] as const;
-    for (const [key, defaultValue] of defaultSeedCredentials) {
-      const value = normalizeConfiguredValue(data[key]);
-      if (!value || value === defaultValue) {
-        throw new Error(
-          `${key} must be configured with a non-default, non-empty value for production-like bootstrap seed`,
-        );
-      }
-    }
-  }
-
-  const brevoFromEmail = normalizeConfiguredValue(data.BREVO_DEFAULT_FROM_EMAIL);
-  if (!z.email().safeParse(brevoFromEmail).success) {
-    throw new Error(`BREVO_DEFAULT_FROM_EMAIL must be a valid email address when NODE_ENV=${data.NODE_ENV}`);
-  }
-}
-
 const productionLike = isProductionLikeNodeEnv(parsed.data.NODE_ENV);
 const effective = {
   ...parsed.data,
@@ -295,24 +193,14 @@ const effective = {
   NGROK_ENABLED: parsed.data.NGROK_ENABLED ?? false,
 };
 
-if (
-  effective.NGROK_ENABLED &&
-  ([effective.NGROK_AUTH_TOKEN, effective.NGROK_DOMAIN].some((value) => !normalizeConfiguredValue(value)) ||
-    normalizeConfiguredValue(effective.NGROK_AUTH_TOKEN) === `NGROK_AUTH_TOKEN` ||
-    normalizeConfiguredValue(effective.NGROK_DOMAIN) === `NGROK_DOMAIN`)
-) {
-  throw new Error(
-    `NGROK_ENABLED requires NGROK_AUTH_TOKEN and NGROK_DOMAIN to be configured with non-placeholder values`,
-  );
-}
-
-assertProductionLikePolicy(effective);
+assertNgrokConfiguration(effective);
+assertProductionLikePolicy(effective, {
+  isBootstrapSeedEntry: isBootstrapSeedProcess(process.argv),
+});
 process.env.DATABASE_URL = effective.DATABASE_URL;
 
-const JWT_ACCESS_TOKEN_EXPIRES_IN = parseExpiresToMs(effective.JWT_ACCESS_TOKEN_EXPIRES_IN);
-const JWT_REFRESH_TOKEN_EXPIRES_IN = parseExpiresToMs(effective.JWT_REFRESH_TOKEN_EXPIRES_IN);
-const JWT_ACCESS_TTL_SECONDS = Math.round(JWT_ACCESS_TOKEN_EXPIRES_IN / 1000);
-const JWT_REFRESH_TTL_SECONDS = Math.round(JWT_REFRESH_TOKEN_EXPIRES_IN / 1000);
+const { JWT_ACCESS_TOKEN_EXPIRES_IN, JWT_REFRESH_TOKEN_EXPIRES_IN, JWT_ACCESS_TTL_SECONDS, JWT_REFRESH_TTL_SECONDS } =
+  deriveJwtTtls(effective);
 
 export const envs = {
   ...effective,
