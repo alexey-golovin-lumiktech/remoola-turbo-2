@@ -1,6 +1,6 @@
 import { Panel } from '../../../../../components/panel';
 import { mutedTextClass } from '../../../../../components/ui-classes';
-import { EMPTY_VALUE, formatDateTime } from '../../../../../lib/admin-format';
+import { EMPTY_VALUE, formatDate, formatDateTime } from '../../../../../lib/admin-format';
 import { type PaymentPageData } from '../page.loader';
 import { type PaymentPagePermissions } from '../page.permissions';
 import { renderActorLabel } from '../payment-shared';
@@ -67,8 +67,8 @@ export function PaymentSummarySection({
       <Panel>
         <h3>Dates</h3>
         <p className={mutedTextClass}>Created: {formatDateTime(paymentCase.core.createdAt)}</p>
-        <p className={mutedTextClass}>Sent: {formatDateTime(paymentCase.core.sentDate)}</p>
-        <p className={mutedTextClass}>Due: {formatDateTime(paymentCase.core.dueDate)}</p>
+        <p className={mutedTextClass}>Sent: {formatDate(paymentCase.core.sentDate)}</p>
+        <p className={mutedTextClass}>Due: {formatDate(paymentCase.core.dueDate)}</p>
         <p className={mutedTextClass}>Updated: {formatDateTime(paymentCase.updatedAt)}</p>
         <p className={mutedTextClass}>Version: {paymentCase.version}</p>
       </Panel>

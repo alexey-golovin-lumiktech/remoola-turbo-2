@@ -1,8 +1,13 @@
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const KIBIBYTE = 1024;
-const MEBIBYTE = KIBIBYTE * KIBIBYTE;
+const KILOBYTE = 1024;
+const MEGABYTE = KILOBYTE * KILOBYTE;
 
 export const DEFAULT_LOOKBACK_DAYS = 7;
+
+const ADMIN_DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  dateStyle: `medium`,
+  timeZone: `UTC`,
+};
 
 const ADMIN_DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   dateStyle: `medium`,
@@ -11,6 +16,12 @@ const ADMIN_DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
 };
 
 export const EMPTY_VALUE = `—` as const;
+
+export function formatDate(value: unknown): string {
+  if (typeof value !== `string` || !value) return EMPTY_VALUE;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? EMPTY_VALUE : date.toLocaleString(undefined, ADMIN_DATE_FORMAT_OPTIONS);
+}
 
 export function formatDateTime(value: unknown): string {
   if (typeof value !== `string` || !value) return EMPTY_VALUE;
@@ -23,13 +34,13 @@ export function formatBytes(value: number | null | undefined): string {
   if (!Number.isFinite(safeValue)) {
     return EMPTY_VALUE;
   }
-  if (safeValue < KIBIBYTE) {
+  if (safeValue < KILOBYTE) {
     return `${safeValue} B`;
   }
-  if (safeValue < MEBIBYTE) {
-    return `${(safeValue / KIBIBYTE).toFixed(1)} KB`;
+  if (safeValue < MEGABYTE) {
+    return `${(safeValue / KILOBYTE).toFixed(1)} KB`;
   }
-  return `${(safeValue / MEBIBYTE).toFixed(1)} MB`;
+  return `${(safeValue / MEGABYTE).toFixed(1)} MB`;
 }
 
 function toDateOnly(value: Date): string {

@@ -3,6 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import {
   DEFAULT_LOOKBACK_DAYS,
   formatBytes,
+  formatDate,
   formatDateTime,
   EMPTY_VALUE,
   getDefaultLookbackDateOnlyRange,
@@ -10,19 +11,31 @@ import {
 } from './admin-format';
 
 describe(`admin format helpers`, () => {
-  it(`formats empty and present datetimes consistently`, () => {
+  it(`formats empty and present datetime consistently`, () => {
     expect(formatDateTime(`not-a-date`)).toBe(EMPTY_VALUE);
     expect(formatDateTime(null)).toBe(EMPTY_VALUE);
     expect(formatDateTime(undefined)).toBe(EMPTY_VALUE);
     expect(formatDateTime(`2026-04-20T12:34:56.000Z`)).toContain(`2026`);
   });
 
-  it(`formats datetimes in UTC to avoid operator-local date drift`, () => {
+  it(`formats datetime in UTC to avoid operator-local date drift`, () => {
     const formatted = formatDateTime(`2026-04-20T23:30:00.000Z`);
     expect(formatted).toBe(
       new Date(`2026-04-20T23:30:00.000Z`).toLocaleString(undefined, {
         dateStyle: `medium`,
         timeStyle: `short`,
+        timeZone: `UTC`,
+      }),
+    );
+  });
+
+  it(`formats date-only values without time component`, () => {
+    expect(formatDate(`not-a-date`)).toBe(EMPTY_VALUE);
+    expect(formatDate(null)).toBe(EMPTY_VALUE);
+    expect(formatDate(undefined)).toBe(EMPTY_VALUE);
+    expect(formatDate(`2026-04-20T23:30:00.000Z`)).toBe(
+      new Date(`2026-04-20T23:30:00.000Z`).toLocaleString(undefined, {
+        dateStyle: `medium`,
         timeZone: `UTC`,
       }),
     );
