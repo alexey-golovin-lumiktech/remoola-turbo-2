@@ -135,6 +135,25 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
     (oauthStateStore.consume as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce(record);
   };
 
+  const buildOAuthStateRecord = (overrides: Record<string, unknown> = {}) => ({
+    createdAt: Date.now(),
+    codeVerifier: `verifier`,
+    nonce: `nonce`,
+    nextPath: `/dashboard`,
+    accountType: null,
+    contractorKind: null,
+    appScope: CURRENT_CONSUMER_APP_SCOPE,
+    ...overrides,
+  });
+
+  const getCanonicalOauthCookieKey = () =>
+    getScopedConsumerGoogleOAuthStateCookieKey(CURRENT_CONSUMER_APP_SCOPE, {
+      isProduction: false,
+      isVercel: false,
+      cookieSecure: false,
+      isSecureRequest: false,
+    });
+
   beforeEach(() => {
     jest.clearAllMocks();
     initialNodeEnv = envs.NODE_ENV;
@@ -377,13 +396,22 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
     expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/login?oauth=google&error=access_denied`);
   });
 
+  it(`google callback throws invalid oauth state when the state param is missing`, async () => {
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
+    const res = makeRes();
+
+    await expect(
+      googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, undefined, undefined),
+    ).rejects.toThrow(new BadRequestException(`Invalid OAuth state`));
+
+    expect(oauthStateStore.read).not.toHaveBeenCalled();
+    expect(oauthStateStore.consume).not.toHaveBeenCalled();
+    expect(res.clearCookie).not.toHaveBeenCalled();
+    expect(res.redirect).not.toHaveBeenCalled();
+  });
+
   it(`google callback routes callbacks by the canonical stored app scope`, async () => {
-    const cssGridOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(CURRENT_CONSUMER_APP_SCOPE, {
-      isProduction: false,
-      isVercel: false,
-      cookieSecure: false,
-      isSecureRequest: false,
-    });
+    const cssGridOauthCookieKey = getCanonicalOauthCookieKey();
     const req = makeReq({
       cookies: {
         [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `wrong-scope-state`,
@@ -405,6 +433,53 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
     expect(res.clearCookie).toHaveBeenCalledWith(cssGridOauthCookieKey, expect.any(Object));
     expect(oauthStateStore.consume).not.toHaveBeenCalled();
     expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/login?oauth=google&error=access_denied`);
+  });
+
+  it(`google callback redirects expired_state when preview can route but consumed state is missing`, async () => {
+    const canonicalOauthCookieKey = getCanonicalOauthCookieKey();
+    const req = makeReq({ cookies: { [canonicalOauthCookieKey]: `state-token` } });
+    const res = makeRes();
+    (oauthStateStore.read as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce(buildOAuthStateRecord());
+    (oauthStateStore.consume as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce(null);
+
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+
+    expect(oauthStateStore.consume).toHaveBeenCalledWith(`state-token`);
+    expect(res.clearCookie).toHaveBeenCalledWith(canonicalOauthCookieKey, expect.any(Object));
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/login?oauth=google&error=expired_state`);
+    expect(oauthStateStore.saveLoginHandoff).not.toHaveBeenCalled();
+    expect(oauthStateStore.saveSignupHandoff).not.toHaveBeenCalled();
+  });
+
+  it(`google callback redirects expired_state when the consumed state record is too old`, async () => {
+    const canonicalOauthCookieKey = getCanonicalOauthCookieKey();
+    const req = makeReq({ cookies: { [canonicalOauthCookieKey]: `state-token` } });
+    const res = makeRes();
+    const expiredCreatedAt = Date.now() - 5 * 60 * 1000 - 1;
+    mockOAuthStatePreviewAndConsume(buildOAuthStateRecord({ createdAt: expiredCreatedAt }));
+
+    await googleOAuthController.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+
+    expect(res.clearCookie).toHaveBeenCalledWith(canonicalOauthCookieKey, expect.any(Object));
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/login?oauth=google&error=expired_state`);
+    expect(googleOAuthService.exchangeCodeForPayload).not.toHaveBeenCalled();
+    expect(oauthStateStore.saveLoginHandoff).not.toHaveBeenCalled();
+    expect(oauthStateStore.saveSignupHandoff).not.toHaveBeenCalled();
+  });
+
+  it(`google callback redirects missing_code and clears state when code is absent`, async () => {
+    const canonicalOauthCookieKey = getCanonicalOauthCookieKey();
+    const req = makeReq({ cookies: { [canonicalOauthCookieKey]: `state-token` } });
+    const res = makeRes();
+    mockOAuthStatePreviewAndConsume(buildOAuthStateRecord());
+
+    await googleOAuthController.googleOAuthCallback(req, res, undefined, `state-token`, undefined);
+
+    expect(res.clearCookie).toHaveBeenCalledWith(canonicalOauthCookieKey, expect.any(Object));
+    expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/login?oauth=google&error=missing_code`);
+    expect(googleOAuthService.exchangeCodeForPayload).not.toHaveBeenCalled();
+    expect(oauthStateStore.saveLoginHandoff).not.toHaveBeenCalled();
+    expect(oauthStateStore.saveSignupHandoff).not.toHaveBeenCalled();
   });
 
   it(`google callback does not consume valid state when cookie does not match in production`, async () => {
@@ -652,13 +727,6 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   });
 
   it(`google signup session rejects invalid claimed app scope`, async () => {
-    (oauthStateStore.readSignupSession as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
-      email: `new@example.com`,
-      emailVerified: true,
-      nextPath: `/dashboard`,
-      signupEntryPath: `/signup/start`,
-      appScope: CURRENT_CONSUMER_APP_SCOPE,
-    });
     const req = makeReq({
       headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE },
       cookies: { consumer_css_grid_google_signup_session: `signup-session-token` },
@@ -670,13 +738,6 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   });
 
   it(`google signup session establish rejects invalid claimed app scope`, async () => {
-    (oauthStateStore.consumeSignupHandoff as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
-      email: `new@example.com`,
-      emailVerified: true,
-      nextPath: `/dashboard`,
-      signupEntryPath: `/signup/start`,
-      appScope: CURRENT_CONSUMER_APP_SCOPE,
-    });
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
 
     await expect(
@@ -737,17 +798,96 @@ describe(`ConsumerSessionController CSRF and decorator contracts`, () => {
   });
 
   it(`oauth complete rejects invalid claimed app scope`, async () => {
-    (oauthStateStore.consumeLoginHandoff as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
-      identityId: `consumer-id`,
-      nextPath: `/dashboard`,
-      appScope: CURRENT_CONSUMER_APP_SCOPE,
-    });
     const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
 
     await expect(
       googleOAuthController.oauthComplete(req, makeRes(), { handoffToken: `handoff-token` }, `unknown-scope` as never),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(service.issueTokensForConsumer).not.toHaveBeenCalled();
+  });
+
+  it(`oauth complete sets auth cookies and returns the current wire shape on success`, async () => {
+    (oauthStateStore.consumeLoginHandoff as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
+      identityId: `consumer-id`,
+      nextPath: `/dashboard`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
+    });
+    (service.issueTokensForConsumer as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
+      accessToken: `access-token`,
+      refreshToken: `refresh-token`,
+    });
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
+    const res = makeRes();
+
+    const result = await googleOAuthController.oauthComplete(
+      req,
+      res,
+      { handoffToken: `handoff-token` },
+      CURRENT_CONSUMER_APP_SCOPE,
+    );
+
+    expect(oauthStateStore.consumeLoginHandoff).toHaveBeenCalledWith(`handoff-token`);
+    expect(service.issueTokensForConsumer).toHaveBeenCalledWith(`consumer-id`, CURRENT_CONSUMER_APP_SCOPE);
+    expect(res.cookie).toHaveBeenCalledWith(
+      expect.stringMatching(/consumer_css_grid_access_token/),
+      `access-token`,
+      expect.objectContaining({ httpOnly: true }),
+    );
+    expect(res.cookie).toHaveBeenCalledWith(
+      expect.stringMatching(/consumer_css_grid_refresh_token/),
+      `refresh-token`,
+      expect.objectContaining({ httpOnly: true }),
+    );
+    expect(res.cookie).toHaveBeenCalledWith(
+      expect.stringMatching(/consumer_css_grid_csrf_token/),
+      expect.any(String),
+      expect.objectContaining({ httpOnly: false }),
+    );
+    expect(result).toEqual({ ok: true, next: `/dashboard` });
+  });
+
+  it(`oauth complete rejects missing handoff tokens without setting auth cookies`, async () => {
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
+    const res = makeRes();
+
+    await expect(
+      googleOAuthController.oauthComplete(req, res, { handoffToken: `` }, CURRENT_CONSUMER_APP_SCOPE),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(oauthStateStore.consumeLoginHandoff).not.toHaveBeenCalled();
+    expect(service.issueTokensForConsumer).not.toHaveBeenCalled();
+    expect(res.cookie).not.toHaveBeenCalled();
+  });
+
+  it(`oauth complete rejects invalid handoff tokens without setting auth cookies`, async () => {
+    (oauthStateStore.consumeLoginHandoff as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce(null);
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
+    const res = makeRes();
+
+    await expect(
+      googleOAuthController.oauthComplete(req, res, { handoffToken: `handoff-token` }, CURRENT_CONSUMER_APP_SCOPE),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(oauthStateStore.consumeLoginHandoff).toHaveBeenCalledWith(`handoff-token`);
+    expect(service.issueTokensForConsumer).not.toHaveBeenCalled();
+    expect(res.cookie).not.toHaveBeenCalled();
+  });
+
+  it(`oauth complete rejects stored-request app scope mismatches without setting auth cookies`, async () => {
+    (oauthStateStore.consumeLoginHandoff as jest.Mock<(...a: any[]) => any>).mockResolvedValueOnce({
+      identityId: `consumer-id`,
+      nextPath: `/dashboard`,
+      appScope: CURRENT_CONSUMER_APP_SCOPE,
+    });
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: CURRENT_CONSUMER_APP_SCOPE } });
+    const res = makeRes();
+
+    await expect(
+      googleOAuthController.oauthComplete(req, res, { handoffToken: `handoff-token` }, `unknown-scope` as never),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(service.issueTokensForConsumer).not.toHaveBeenCalled();
+    expect(res.cookie).not.toHaveBeenCalled();
   });
 
   it(`google start requires app scope and stores it in state`, async () => {
