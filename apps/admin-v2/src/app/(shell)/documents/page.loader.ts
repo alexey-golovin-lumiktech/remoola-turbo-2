@@ -1,6 +1,7 @@
 import { type DocumentsPageParams } from './page.params';
 import { getDocuments, getDocumentTags } from '../../../lib/admin-api/documents.server';
 import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
+import { ADMIN_CAPABILITIES, hasAdminCapability } from '../../../lib/admin-capabilities';
 
 export type DocumentsPageData = {
   params: DocumentsPageParams;
@@ -31,7 +32,7 @@ export async function loadDocumentsPage(params: DocumentsPageParams): Promise<Do
     }),
     getDocumentTags(),
   ]);
-  const canManage = identity?.capabilities.includes(`documents.manage`) ?? false;
+  const canManage = hasAdminCapability(identity, ADMIN_CAPABILITIES.documentsManage);
 
   return { params, identity, documents, tags, canManage };
 }

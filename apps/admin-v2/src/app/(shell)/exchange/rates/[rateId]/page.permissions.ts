@@ -1,4 +1,5 @@
 import { type ExchangeRateCasePageData } from './page.loader';
+import { ADMIN_CAPABILITIES, hasAdminCapability } from '../../../../../lib/admin-capabilities';
 
 export type ExchangeRateCasePagePermissions = {
   canManage: boolean;
@@ -7,6 +8,6 @@ export type ExchangeRateCasePagePermissions = {
 export function deriveExchangeRateCasePagePermissions(
   identity: ExchangeRateCasePageData[`identity`],
 ): ExchangeRateCasePagePermissions {
-  const canManage = identity?.capabilities.includes(`exchange.manage`) ?? false;
+  const canManage = hasAdminCapability(identity, ADMIN_CAPABILITIES.exchangeManage);
   return { canManage };
 }

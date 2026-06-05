@@ -117,4 +117,83 @@ describe(`admin-v2 mutation runtime`, () => {
       postAdminMutation(`/admin-v2/consumers/consumer-1/notes`, { content: `hello` }, `Failed to create note`),
     ).resolves.toBeUndefined();
   });
+
+  it(`falls back to randomUUID for correlation and idempotency when metadata is not provided`, async () => {
+    const { postAdminMutation } = await loadSubject();
+    const { buildAdminMutationHeaders } = jest.requireMock(`../admin-auth-headers.server`) as {
+      buildAdminMutationHeaders: jest.Mock;
+    };
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await postAdminMutation(`/admin-v2/consumers/consumer-1/notes`, { content: `hello` }, `Failed`);
+
+    expect(buildAdminMutationHeaders).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        'x-correlation-id': `uuid-1`,
+        'Idempotency-Key': `uuid-1`,
+      }),
+    );
+  });
+
+  it(`uses caller-provided correlationId when metadata supplies it`, async () => {
+    const { postAdminMutation } = await loadSubject();
+    const { buildAdminMutationHeaders } = jest.requireMock(`../admin-auth-headers.server`) as {
+      buildAdminMutationHeaders: jest.Mock;
+    };
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await postAdminMutation(`/admin-v2/consumers/consumer-1/notes`, { content: `hello` }, `Failed`, {
+      correlationId: `correlation-abc`,
+    });
+
+    expect(buildAdminMutationHeaders).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        'x-correlation-id': `correlation-abc`,
+        'Idempotency-Key': `uuid-1`,
+      }),
+    );
+  });
+
+  it(`uses caller-provided idempotencyKey when metadata supplies it`, async () => {
+    const { patchAdminMutation } = await loadSubject();
+    const { buildAdminMutationHeaders } = jest.requireMock(`../admin-auth-headers.server`) as {
+      buildAdminMutationHeaders: jest.Mock;
+    };
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await patchAdminMutation(`/admin-v2/consumers/consumer-1/flags/flag-1/remove`, { version: 2 }, `Failed`, {
+      idempotencyKey: `idem-xyz`,
+    });
+
+    expect(buildAdminMutationHeaders).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        'x-correlation-id': `uuid-1`,
+        'Idempotency-Key': `idem-xyz`,
+      }),
+    );
+  });
+
+  it(`propagates both metadata fields when supplied together`, async () => {
+    const { deleteAdminMutation } = await loadSubject();
+    const { buildAdminMutationHeaders } = jest.requireMock(`../admin-auth-headers.server`) as {
+      buildAdminMutationHeaders: jest.Mock;
+    };
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await deleteAdminMutation(`/admin-v2/documents/tags/tag-1`, { version: 1 }, `Failed`, {
+      correlationId: `corr-1`,
+      idempotencyKey: `idem-1`,
+    });
+
+    expect(buildAdminMutationHeaders).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        'x-correlation-id': `corr-1`,
+        'Idempotency-Key': `idem-1`,
+      }),
+    );
+  });
 });

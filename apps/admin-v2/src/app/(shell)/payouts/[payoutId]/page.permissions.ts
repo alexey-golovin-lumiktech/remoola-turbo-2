@@ -1,4 +1,5 @@
 import { type PayoutCasePageData } from './page.loader';
+import { ADMIN_CAPABILITIES, hasAdminCapability } from '../../../../lib/admin-capabilities';
 import {
   deriveAssignmentPermissions,
   type AssignmentPermissions,
@@ -13,7 +14,7 @@ export function derivePayoutCasePagePermissions(
   identity: PayoutCasePageData[`identity`],
   payoutCase: PayoutCasePageData[`payoutCase`],
 ): PayoutCasePagePermissions {
-  const canManageEscalation = identity?.capabilities.includes(`payouts.escalate`) ?? false;
+  const canManageEscalation = hasAdminCapability(identity, ADMIN_CAPABILITIES.payoutsEscalate);
   const canSubmitEscalation = canManageEscalation && payoutCase.actionControls.canEscalate;
   return {
     canManageEscalation,

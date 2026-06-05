@@ -6,11 +6,12 @@ import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { OperationalAlertWorkspaceSection } from '../../../../features/system/operational-alerts-presenters';
 import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { getOperationalAlerts } from '../../../../lib/admin-api/overview.server';
+import { ADMIN_CAPABILITIES, hasAdminCapability } from '../../../../lib/admin-capabilities';
 import { OPERATIONAL_ALERT_WORKSPACE_ORDER } from '../../../../lib/admin-surface-meta';
 
 export default async function OperationalAlertsPage() {
   const identity = await getAdminIdentity();
-  const canManageAlerts = identity?.capabilities.includes(`alerts.manage`) ?? false;
+  const canManageAlerts = hasAdminCapability(identity, ADMIN_CAPABILITIES.alertsManage);
   if (!canManageAlerts) {
     return (
       <AdminSurfaceAccessDenied

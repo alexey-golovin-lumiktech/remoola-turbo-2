@@ -14,6 +14,7 @@ import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getAdmins } from '../../../lib/admin-api/admins.server';
 import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
 import { type AdminsListResponse } from '../../../lib/admin-api/types';
+import { ADMIN_CAPABILITIES, hasAdminCapability } from '../../../lib/admin-capabilities';
 import { formatDateTime } from '../../../lib/admin-format';
 import { inviteAdminAction } from '../../../lib/admin-mutations/admins.server';
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../lib/admin-rbac';
@@ -156,7 +157,7 @@ export default async function AdminsPage({
     }),
   ]);
 
-  const canManage = identity?.capabilities.includes(`admins.manage`) ?? false;
+  const canManage = hasAdminCapability(identity, ADMIN_CAPABILITIES.adminsManage);
 
   return (
     <WorkspaceLayout workspace="admins">

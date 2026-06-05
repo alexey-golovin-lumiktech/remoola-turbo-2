@@ -24,6 +24,7 @@ import {
 import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
 import { getQuickstart, getSavedViews } from '../../../lib/admin-api/overview.server';
 import { getVerificationQueue } from '../../../lib/admin-api/verification.server';
+import { ADMIN_CAPABILITIES, hasAdminCapability } from '../../../lib/admin-capabilities';
 import { parseVerificationQueuePayload } from '../../../lib/admin-surface-payloads';
 import { buildPathWithSearch } from '../../../lib/navigation-context';
 import {
@@ -43,7 +44,7 @@ export default async function VerificationQueuePage({
 }) {
   const params = await searchParams;
   const identity = await getAdminIdentity();
-  const canManageSavedViews = identity?.capabilities.includes(`saved_views.manage`) ?? false;
+  const canManageSavedViews = hasAdminCapability(identity, ADMIN_CAPABILITIES.savedViewsManage);
   const requestedQuickstartId = parseQuickstartId(trimmedSearchParam(params?.quickstart));
   const resolvedQuickstart = requestedQuickstartId ? await getQuickstart(requestedQuickstartId) : null;
   const appliedQuickstart = resolvedQuickstart?.targetPath === `/verification` ? resolvedQuickstart : null;

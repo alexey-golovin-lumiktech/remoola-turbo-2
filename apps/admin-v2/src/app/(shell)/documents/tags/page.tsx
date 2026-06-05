@@ -9,6 +9,7 @@ import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getDocumentTags } from '../../../../lib/admin-api/documents.server';
 import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
 import { type DocumentTagsResponse } from '../../../../lib/admin-api/types';
+import { ADMIN_CAPABILITIES, hasAdminCapability } from '../../../../lib/admin-capabilities';
 import { formatDateTime } from '../../../../lib/admin-format';
 import {
   deleteDocumentTagAction,
@@ -200,7 +201,7 @@ export default async function DocumentTagsPage({
   const params = await searchParams;
   const selectedTagId = typeof params.tagId === `string` ? params.tagId : null;
   const [identity, tags] = await Promise.all([getAdminIdentity(), getDocumentTags()]);
-  const canManage = identity?.capabilities.includes(`documents.manage`) ?? false;
+  const canManage = hasAdminCapability(identity, ADMIN_CAPABILITIES.documentsManage);
   const items: DocumentTag[] = tags?.items ?? [];
 
   return (

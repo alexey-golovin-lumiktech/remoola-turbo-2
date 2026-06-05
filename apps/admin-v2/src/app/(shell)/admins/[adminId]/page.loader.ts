@@ -1,5 +1,6 @@
 import { getAdminCaseRecordResult, getAdminSessionsResult } from '../../../../lib/admin-api/admins.server';
 import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { ADMIN_CAPABILITIES, hasAdminCapability } from '../../../../lib/admin-capabilities';
 import { readReturnTo } from '../../../../lib/navigation-context';
 
 type AdminCaseResult = Awaited<ReturnType<typeof getAdminCaseRecordResult>>;
@@ -42,7 +43,7 @@ export async function loadAdminCasePage({
   }
 
   const admin = adminResult.data;
-  const canReadSessions = identity?.capabilities.includes(`admins.read`) ?? false;
+  const canReadSessions = hasAdminCapability(identity, ADMIN_CAPABILITIES.adminsRead);
   const sessionResult = canReadSessions ? await getAdminSessionsResult(admin.core.id) : null;
   const sessions = sessionResult?.status === `ready` ? sessionResult.data.sessions : [];
   const backToQueueHref = readReturnTo(searchParams?.from, `/admins`);

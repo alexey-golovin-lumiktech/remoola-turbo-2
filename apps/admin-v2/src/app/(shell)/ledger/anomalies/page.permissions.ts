@@ -1,4 +1,5 @@
 import { getAdminIdentity } from '../../../../lib/admin-api/identity.server';
+import { ADMIN_CAPABILITIES, hasAdminCapability } from '../../../../lib/admin-capabilities';
 
 export type LedgerAnomaliesPagePermissions = {
   canManageSavedViews: boolean;
@@ -7,6 +8,6 @@ export type LedgerAnomaliesPagePermissions = {
 export async function loadLedgerAnomaliesPermissions(): Promise<LedgerAnomaliesPagePermissions> {
   const identity = await getAdminIdentity();
   return {
-    canManageSavedViews: identity?.capabilities.includes(`saved_views.manage`) ?? false,
+    canManageSavedViews: hasAdminCapability(identity, ADMIN_CAPABILITIES.savedViewsManage),
   };
 }

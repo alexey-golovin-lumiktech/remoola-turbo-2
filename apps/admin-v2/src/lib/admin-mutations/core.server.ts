@@ -11,6 +11,11 @@ type MutationError = {
   message: string;
 };
 
+export type AdminMutationMetadata = {
+  correlationId?: string;
+  idempotencyKey?: string;
+};
+
 async function parseError(response: Response, fallbackMessage: string): Promise<MutationError> {
   const payload = (await response.json().catch(() => null)) as { code?: string; message?: string } | null;
   return {
@@ -32,6 +37,7 @@ async function sendAdminMutation(
   path: string,
   body: unknown,
   fallbackMessage: string,
+  metadata?: AdminMutationMetadata,
 ): Promise<void> {
   const baseUrl = await requireBaseUrl();
   const cookieStore = await cookies();
@@ -41,8 +47,8 @@ async function sendAdminMutation(
       method,
       headers: buildAdminMutationHeaders(cookieStore.toString(), {
         'content-type': `application/json`,
-        'x-correlation-id': randomUUID(),
-        'Idempotency-Key': randomUUID(),
+        'x-correlation-id': metadata?.correlationId ?? randomUUID(),
+        'Idempotency-Key': metadata?.idempotencyKey ?? randomUUID(),
       }),
       body: JSON.stringify(body),
       cache: `no-store`,
@@ -58,14 +64,29 @@ async function sendAdminMutation(
   }
 }
 
-export async function postAdminMutation(path: string, body: unknown, fallbackMessage: string): Promise<void> {
-  await sendAdminMutation(`POST`, path, body, fallbackMessage);
+export async function postAdminMutation(
+  path: string,
+  body: unknown,
+  fallbackMessage: string,
+  metadata?: AdminMutationMetadata,
+): Promise<void> {
+  await sendAdminMutation(`POST`, path, body, fallbackMessage, metadata);
 }
 
-export async function patchAdminMutation(path: string, body: unknown, fallbackMessage: string): Promise<void> {
-  await sendAdminMutation(`PATCH`, path, body, fallbackMessage);
+export async function patchAdminMutation(
+  path: string,
+  body: unknown,
+  fallbackMessage: string,
+  metadata?: AdminMutationMetadata,
+): Promise<void> {
+  await sendAdminMutation(`PATCH`, path, body, fallbackMessage, metadata);
 }
 
-export async function deleteAdminMutation(path: string, body: unknown, fallbackMessage: string): Promise<void> {
-  await sendAdminMutation(`DELETE`, path, body, fallbackMessage);
+export async function deleteAdminMutation(
+  path: string,
+  body: unknown,
+  fallbackMessage: string,
+  metadata?: AdminMutationMetadata,
+): Promise<void> {
+  await sendAdminMutation(`DELETE`, path, body, fallbackMessage, metadata);
 }
