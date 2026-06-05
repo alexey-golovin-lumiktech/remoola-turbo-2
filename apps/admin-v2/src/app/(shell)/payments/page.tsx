@@ -15,11 +15,7 @@ import {
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import {
-  PaymentsDesktopTable,
-  PaymentsMobileCards,
-  PaymentsTabletRows,
-} from '../../../features/payments/payments-list-presenters';
+import { PaymentsListView } from '../../../features/payments/payments-list-presenters';
 import { getQuickstart } from '../../../lib/admin-api/overview.server';
 import { getPayments } from '../../../lib/admin-api/payments.server';
 import { buildPathWithSearch } from '../../../lib/navigation-context';
@@ -302,9 +298,7 @@ export default async function PaymentsPage({
           }
           surface="support"
         >
-          <PaymentsMobileCards items={items} returnTo={currentQueueHref} />
-          <PaymentsTabletRows items={items} returnTo={currentQueueHref} />
-          <PaymentsDesktopTable items={items} returnTo={currentQueueHref} />
+          <PaymentsListView items={items} returnTo={currentQueueHref} />
         </Panel>
       </>
     </WorkspaceLayout>

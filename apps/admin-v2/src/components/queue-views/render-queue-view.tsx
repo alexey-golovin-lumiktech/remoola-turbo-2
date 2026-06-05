@@ -1,6 +1,7 @@
 type RenderQueueViewProps<T> = {
   items: readonly T[];
   emptyMessage: string;
+  emptyClassName?: string;
   renderMobileItem: (item: T) => React.ReactNode;
   renderTabletItem: (item: T) => React.ReactNode;
   renderDesktopContent: (items: readonly T[]) => React.ReactNode;
@@ -9,6 +10,7 @@ type RenderQueueViewProps<T> = {
 export function RenderQueueView<T>({
   items,
   emptyMessage,
+  emptyClassName = `panel muted`,
   renderMobileItem,
   renderTabletItem,
   renderDesktopContent,
@@ -17,7 +19,7 @@ export function RenderQueueView<T>({
     <>
       <div className="readSurface md:hidden" data-view="mobile">
         {items.length === 0 ? (
-          <div className="panel muted">{emptyMessage}</div>
+          <div className={emptyClassName}>{emptyMessage}</div>
         ) : (
           <div className="queueCards">{items.map(renderMobileItem)}</div>
         )}
@@ -25,7 +27,7 @@ export function RenderQueueView<T>({
 
       <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
         {items.length === 0 ? (
-          <div className="panel muted">{emptyMessage}</div>
+          <div className={emptyClassName}>{emptyMessage}</div>
         ) : (
           <div className="condensedList">{items.map(renderTabletItem)}</div>
         )}
