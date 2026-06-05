@@ -5,8 +5,10 @@ import {
   buildQueryString,
   dateSearchParam,
   finiteNumberSearchParam,
+  pathSegment,
   positiveIntegerSearchParam,
   trimmedSearchParam,
+  withQuery,
 } from './query-contract';
 
 describe(`query contract helpers`, () => {
@@ -50,5 +52,30 @@ describe(`query contract helpers`, () => {
         defaultSelected: false,
       }),
     ).toBe(`q=invoice&amountMax=100&defaultSelected=false`);
+  });
+
+  it(`omits null and undefined values from buildQueryString`, () => {
+    expect(buildQueryString({ a: null, b: undefined, c: `keep` })).toBe(`c=keep`);
+    expect(buildQueryString({ a: null, b: undefined })).toBe(``);
+  });
+
+  it(`returns the bare path from withQuery when every value is omitted`, () => {
+    expect(withQuery(`/admin-v2/consumers`, {})).toBe(`/admin-v2/consumers`);
+    expect(withQuery(`/admin-v2/consumers`, { q: undefined, page: null })).toBe(`/admin-v2/consumers`);
+    expect(withQuery(`/admin-v2/consumers`, { q: `   ` })).toBe(`/admin-v2/consumers`);
+  });
+
+  it(`appends a single ? separator and preserves param ordering in withQuery`, () => {
+    expect(withQuery(`/admin-v2/consumers`, { page: 2, pageSize: 20, q: `inv` })).toBe(
+      `/admin-v2/consumers?page=2&pageSize=20&q=inv`,
+    );
+  });
+
+  it(`encodes path segments and rejects whitespace-only ids in pathSegment`, () => {
+    expect(pathSegment(`consumer-1`)).toBe(`consumer-1`);
+    expect(pathSegment(`  consumer-1  `)).toBe(`consumer-1`);
+    expect(pathSegment(`consumer 1/with?special`)).toBe(`consumer%201%2Fwith%3Fspecial`);
+    expect(pathSegment(`   `)).toBeUndefined();
+    expect(pathSegment(undefined)).toBeUndefined();
   });
 });
