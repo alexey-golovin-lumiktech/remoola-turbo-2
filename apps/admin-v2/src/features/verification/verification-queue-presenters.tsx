@@ -8,6 +8,7 @@ import { ActionPrimary } from '../../components/action-primary';
 import { DenseTable } from '../../components/dense-table';
 import { MobileQueueCard, MobileQueueSection } from '../../components/mobile-queue-card';
 import { Panel } from '../../components/panel';
+import { RenderQueueView } from '../../components/queue-views/render-queue-view';
 import { StatusPill } from '../../components/status-pill';
 import { TabletRow } from '../../components/tablet-row';
 import { TinyPill } from '../../components/tiny-pill';
@@ -64,119 +65,93 @@ function renderVerificationAssigneeSummary(item: VerificationItem): string {
   return item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id;
 }
 
-export function VerificationMobileCards({ items, returnTo }: { items: VerificationItem[]; returnTo: string }) {
-  if (items.length === 0) {
+function renderMobileVerification(returnTo: string) {
+  return function renderItem(item: VerificationItem) {
     return (
-      <div className="readSurface md:hidden" data-view="mobile">
-        <div className={emptyPanelClass}>No verification cases matched the current filters.</div>
-      </div>
+      <MobileQueueCard
+        key={item.id}
+        id={item.id}
+        href={withReturnTo(`/verification/${item.id}`, returnTo)}
+        eyebrow="Verification case"
+        title={item.email}
+        subtitle={item.id}
+        trailing={<StatusPill status={item.verificationStatus} />}
+        badges={
+          <>
+            <TinyPill>{item.accountType}</TinyPill>
+            <TinyPill>{item.country ?? `No country`}</TinyPill>
+          </>
+        }
+      >
+        <MobileQueueSection title="Review summary">
+          <div className={mutedTextClass}>Assigned: {renderVerificationAssigneeSummary(item)}</div>
+          <div className={mutedTextClass}>
+            {item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}
+          </div>
+          <div className={mutedTextClass}>SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
+        </MobileQueueSection>
+        <MobileQueueSection title="Identity" compact>
+          <div className={mutedTextClass}>Stripe: {item.stripeIdentityStatus ?? EMPTY_VALUE}</div>
+          <div>
+            {item.accountType} · {item.country ?? EMPTY_VALUE}
+          </div>
+        </MobileQueueSection>
+        <MobileQueueSection title="Completion blockers" compact>
+          <div className={mutedTextClass}>{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+          <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
+        </MobileQueueSection>
+      </MobileQueueCard>
     );
-  }
-
-  return (
-    <div className="readSurface md:hidden" data-view="mobile">
-      <div className="queueCards">
-        {items.map((item) => (
-          <MobileQueueCard
-            key={item.id}
-            id={item.id}
-            href={withReturnTo(`/verification/${item.id}`, returnTo)}
-            eyebrow="Verification case"
-            title={item.email}
-            subtitle={item.id}
-            trailing={<StatusPill status={item.verificationStatus} />}
-            badges={
-              <>
-                <TinyPill>{item.accountType}</TinyPill>
-                <TinyPill>{item.country ?? `No country`}</TinyPill>
-              </>
-            }
-          >
-            <MobileQueueSection title="Review summary">
-              <div className={mutedTextClass}>Assigned: {renderVerificationAssigneeSummary(item)}</div>
-              <div className={mutedTextClass}>
-                {item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}
-              </div>
-              <div className={mutedTextClass}>SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
-            </MobileQueueSection>
-            <MobileQueueSection title="Identity" compact>
-              <div className={mutedTextClass}>Stripe: {item.stripeIdentityStatus ?? EMPTY_VALUE}</div>
-              <div>
-                {item.accountType} · {item.country ?? EMPTY_VALUE}
-              </div>
-            </MobileQueueSection>
-            <MobileQueueSection title="Completion blockers" compact>
-              <div className={mutedTextClass}>{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
-              <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
-            </MobileQueueSection>
-          </MobileQueueCard>
-        ))}
-      </div>
-    </div>
-  );
+  };
 }
 
-export function VerificationTabletRows({ items, returnTo }: { items: VerificationItem[]; returnTo: string }) {
-  if (items.length === 0) {
+function renderTabletVerification(returnTo: string) {
+  return function renderItem(item: VerificationItem) {
     return (
-      <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-        <div className={emptyPanelClass}>No verification cases matched the current filters.</div>
-      </div>
+      <TabletRow
+        key={item.id}
+        eyebrow="Verification case"
+        primary={
+          <>
+            <Link href={withReturnTo(`/verification/${item.id}`, returnTo)}>
+              <strong>{item.email}</strong>
+            </Link>
+            <div className={monoMutedTextClass}>{item.id}</div>
+          </>
+        }
+        badges={
+          <>
+            <StatusPill status={item.verificationStatus} />
+            <TinyPill>{item.accountType}</TinyPill>
+            <TinyPill>{item.country ?? `No country`}</TinyPill>
+          </>
+        }
+        cells={[
+          <div key="status">
+            <div className={mutedTextClass}>{item.stripeIdentityStatus ?? EMPTY_VALUE}</div>
+          </div>,
+          <div key="profile">
+            <div>{item.accountType}</div>
+            <div className={mutedTextClass}>{item.country ?? EMPTY_VALUE}</div>
+            <div className={mutedTextClass}>{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+          </div>,
+          <div key="docs-sla">
+            <div>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</div>
+            <div className={mutedTextClass}>{item.slaBreached ? `Breached` : `Within SLA`}</div>
+          </div>,
+          <div key="assigned-updated">
+            <div>{renderVerificationAssigneeSummary(item)}</div>
+            <div className={mutedTextClass}>{formatDateTime(item.updatedAt)}</div>
+          </div>,
+        ]}
+      />
     );
-  }
-
-  return (
-    <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-      <div className="condensedList">
-        {items.map((item) => (
-          <TabletRow
-            key={item.id}
-            eyebrow="Verification case"
-            primary={
-              <>
-                <Link href={withReturnTo(`/verification/${item.id}`, returnTo)}>
-                  <strong>{item.email}</strong>
-                </Link>
-                <div className={monoMutedTextClass}>{item.id}</div>
-              </>
-            }
-            badges={
-              <>
-                <StatusPill status={item.verificationStatus} />
-                <TinyPill>{item.accountType}</TinyPill>
-                <TinyPill>{item.country ?? `No country`}</TinyPill>
-              </>
-            }
-            cells={[
-              <div key="status">
-                <div className={mutedTextClass}>{item.stripeIdentityStatus ?? EMPTY_VALUE}</div>
-              </div>,
-              <div key="profile">
-                <div>{item.accountType}</div>
-                <div className={mutedTextClass}>{item.country ?? EMPTY_VALUE}</div>
-                <div className={mutedTextClass}>
-                  {item.missingProfileData ? `Missing profile data` : `Profile ready`}
-                </div>
-              </div>,
-              <div key="docs-sla">
-                <div>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</div>
-                <div className={mutedTextClass}>{item.slaBreached ? `Breached` : `Within SLA`}</div>
-              </div>,
-              <div key="assigned-updated">
-                <div>{renderVerificationAssigneeSummary(item)}</div>
-                <div className={mutedTextClass}>{formatDateTime(item.updatedAt)}</div>
-              </div>,
-            ]}
-          />
-        ))}
-      </div>
-    </div>
-  );
+  };
 }
 
-export function VerificationDesktopTable({ items, returnTo }: { items: VerificationItem[]; returnTo: string }) {
-  return (
-    <div className="readSurface hidden xl:block" data-view="desktop">
+function renderDesktopVerifications(returnTo: string) {
+  return function renderContent(items: readonly VerificationItem[]) {
+    return (
       <DenseTable
         headers={[`Consumer`, `Status`, `Profile`, `Docs`, `SLA`, `Assigned to`, `Updated`]}
         emptyMessage="No verification cases matched the current filters."
@@ -209,7 +184,20 @@ export function VerificationDesktopTable({ items, returnTo }: { items: Verificat
               </tr>
             ))}
       </DenseTable>
-    </div>
+    );
+  };
+}
+
+export function VerificationListView({ items, returnTo }: { items: VerificationItem[]; returnTo: string }) {
+  return (
+    <RenderQueueView
+      items={items}
+      emptyMessage="No verification cases matched the current filters."
+      emptyClassName={emptyPanelClass}
+      renderMobileItem={renderMobileVerification(returnTo)}
+      renderTabletItem={renderTabletVerification(returnTo)}
+      renderDesktopContent={renderDesktopVerifications(returnTo)}
+    />
   );
 }
 

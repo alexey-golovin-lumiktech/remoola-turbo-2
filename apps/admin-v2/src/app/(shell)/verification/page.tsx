@@ -18,9 +18,7 @@ import {
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import {
   SavedViewsSection,
-  VerificationDesktopTable,
-  VerificationMobileCards,
-  VerificationTabletRows,
+  VerificationListView,
   ghostButtonClass,
 } from '../../../features/verification/verification-queue-presenters';
 import { getAdminIdentity } from '../../../lib/admin-api/identity.server';
@@ -301,9 +299,7 @@ export default async function VerificationQueuePage({
           }
           surface="support"
         >
-          <VerificationMobileCards items={items} returnTo={currentQueueHref} />
-          <VerificationTabletRows items={items} returnTo={currentQueueHref} />
-          <VerificationDesktopTable items={items} returnTo={currentQueueHref} />
+          <VerificationListView items={items} returnTo={currentQueueHref} />
         </Panel>
 
         <SavedViewsSection
