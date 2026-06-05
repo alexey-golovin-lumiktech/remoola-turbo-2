@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { DenseTable } from '../../components/dense-table';
 import { MobileQueueCard } from '../../components/mobile-queue-card';
+import { RenderQueueView } from '../../components/queue-views/render-queue-view';
 import { StatusPill } from '../../components/status-pill';
 import { TabletRow } from '../../components/tablet-row';
 import { type getConsumers } from '../../lib/admin-api/consumers.server';
@@ -37,136 +38,118 @@ function renderConsumerFlagsSummary(consumer: ConsumerItem): string {
   return consumer.adminFlags.map((flag) => flag.flag).join(`, `);
 }
 
-export function ConsumersMobileCards({ items }: { items: ConsumerItem[] }) {
-  if (items.length === 0) {
-    return (
-      <div className="readSurface md:hidden" data-view="mobile">
-        <div className="panel muted">No consumers matched the current filters.</div>
-      </div>
-    );
-  }
-
+function renderMobileConsumer(consumer: ConsumerItem) {
   return (
-    <div className="readSurface md:hidden" data-view="mobile">
-      <div className="queueCards">
-        {items.map((consumer) => (
-          <MobileQueueCard
-            key={consumer.id}
-            id={consumer.id}
-            href={`/consumers/${consumer.id}`}
-            eyebrow="Consumer case"
-            title={renderConsumerLabel(consumer)}
-            subtitle={consumer.email ?? `No email`}
-            trailing={<StatusPill status={consumer.verificationStatus} />}
-            badges={
-              <>
-                <span className="pill">{consumer.accountType}</span>
-                {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
-              </>
-            }
-          >
-            <div className="muted mono">{consumer.id}</div>
-            <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
-            <div className="muted">Stripe identity: {consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
-            <div className="muted">Flags: {renderConsumerFlagsSummary(consumer)}</div>
-            <div className="muted">Notes: {consumer._count.adminNotes}</div>
-            <div className="muted">Updated: {formatDateTime(consumer.updatedAt)}</div>
-          </MobileQueueCard>
-        ))}
-      </div>
-    </div>
+    <MobileQueueCard
+      key={consumer.id}
+      id={consumer.id}
+      href={`/consumers/${consumer.id}`}
+      eyebrow="Consumer case"
+      title={renderConsumerLabel(consumer)}
+      subtitle={consumer.email ?? `No email`}
+      trailing={<StatusPill status={consumer.verificationStatus} />}
+      badges={
+        <>
+          <span className="pill">{consumer.accountType}</span>
+          {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
+        </>
+      }
+    >
+      <div className="muted mono">{consumer.id}</div>
+      <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
+      <div className="muted">Stripe identity: {consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
+      <div className="muted">Flags: {renderConsumerFlagsSummary(consumer)}</div>
+      <div className="muted">Notes: {consumer._count.adminNotes}</div>
+      <div className="muted">Updated: {formatDateTime(consumer.updatedAt)}</div>
+    </MobileQueueCard>
   );
 }
 
-export function ConsumersTabletRows({ items }: { items: ConsumerItem[] }) {
-  if (items.length === 0) {
-    return (
-      <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-        <div className="panel muted">No consumers matched the current filters.</div>
-      </div>
-    );
-  }
-
+function renderTabletConsumer(consumer: ConsumerItem) {
   return (
-    <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-      <div className="condensedList">
-        {items.map((consumer) => (
-          <TabletRow
-            key={consumer.id}
-            eyebrow="Consumer case"
-            primary={
-              <>
+    <TabletRow
+      key={consumer.id}
+      eyebrow="Consumer case"
+      primary={
+        <>
+          <Link href={`/consumers/${consumer.id}`}>
+            <strong>{renderConsumerLabel(consumer)}</strong>
+          </Link>
+          <div className="muted">{consumer.email ?? `No email`}</div>
+          <div className="muted mono">{consumer.id}</div>
+        </>
+      }
+      badges={
+        <>
+          <StatusPill status={consumer.verificationStatus} />
+          <span className="pill">{consumer.accountType}</span>
+          {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
+        </>
+      }
+      cells={[
+        <div key="type">
+          <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
+        </div>,
+        <div key="verification">
+          <div className="muted">{consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
+        </div>,
+        <div key="flags" className="muted">
+          {renderConsumerFlagsSummary(consumer)}
+        </div>,
+        <div key="notes-updated">
+          <div>{consumer._count.adminNotes} notes</div>
+          <div className="muted">{formatDateTime(consumer.updatedAt)}</div>
+        </div>,
+      ]}
+    />
+  );
+}
+
+function renderDesktopConsumers(items: readonly ConsumerItem[]) {
+  return (
+    <DenseTable
+      headers={[`Consumer`, `Type`, `Verification`, `Flags`, `Notes`, `Updated`]}
+      emptyMessage="No consumers matched the current filters."
+    >
+      {items.length === 0
+        ? null
+        : items.map((consumer) => (
+            <tr key={consumer.id}>
+              <td>
                 <Link href={`/consumers/${consumer.id}`}>
                   <strong>{renderConsumerLabel(consumer)}</strong>
                 </Link>
                 <div className="muted">{consumer.email ?? `No email`}</div>
                 <div className="muted mono">{consumer.id}</div>
-              </>
-            }
-            badges={
-              <>
-                <StatusPill status={consumer.verificationStatus} />
-                <span className="pill">{consumer.accountType}</span>
-                {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
-              </>
-            }
-            cells={[
-              <div key="type">
+              </td>
+              <td>
+                <div>{consumer.accountType}</div>
+                <div className="muted">{consumer.contractorKind ?? EMPTY_VALUE}</div>
                 <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
-              </div>,
-              <div key="verification">
+              </td>
+              <td>
+                <div>
+                  <StatusPill status={consumer.verificationStatus} />
+                </div>
                 <div className="muted">{consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
-              </div>,
-              <div key="flags" className="muted">
-                {renderConsumerFlagsSummary(consumer)}
-              </div>,
-              <div key="notes-updated">
-                <div>{consumer._count.adminNotes} notes</div>
-                <div className="muted">{formatDateTime(consumer.updatedAt)}</div>
-              </div>,
-            ]}
-          />
-        ))}
-      </div>
-    </div>
+              </td>
+              <td>{renderConsumerFlags(consumer)}</td>
+              <td>{consumer._count.adminNotes}</td>
+              <td>{formatDateTime(consumer.updatedAt)}</td>
+            </tr>
+          ))}
+    </DenseTable>
   );
 }
 
-export function ConsumersDesktopTable({ items }: { items: ConsumerItem[] }) {
+export function ConsumersListView({ items }: { items: ConsumerItem[] }) {
   return (
-    <div className="readSurface hidden xl:block" data-view="desktop">
-      <DenseTable
-        headers={[`Consumer`, `Type`, `Verification`, `Flags`, `Notes`, `Updated`]}
-        emptyMessage="No consumers matched the current filters."
-      >
-        {items.length === 0
-          ? null
-          : items.map((consumer) => (
-              <tr key={consumer.id}>
-                <td>
-                  <Link href={`/consumers/${consumer.id}`}>
-                    <strong>{renderConsumerLabel(consumer)}</strong>
-                  </Link>
-                  <div className="muted">{consumer.email ?? `No email`}</div>
-                  <div className="muted mono">{consumer.id}</div>
-                </td>
-                <td>
-                  <div>{consumer.accountType}</div>
-                  <div className="muted">{consumer.contractorKind ?? EMPTY_VALUE}</div>
-                  <div className="muted">{consumer.deletedAt ? `Deleted` : `Active`}</div>
-                </td>
-                <td>
-                  <div>
-                    <StatusPill status={consumer.verificationStatus} />
-                  </div>
-                  <div className="muted">{consumer.stripeIdentityStatus ?? `No Stripe state`}</div>
-                </td>
-                <td>{renderConsumerFlags(consumer)}</td>
-                <td>{consumer._count.adminNotes}</td>
-                <td>{formatDateTime(consumer.updatedAt)}</td>
-              </tr>
-            ))}
-      </DenseTable>
-    </div>
+    <RenderQueueView
+      items={items}
+      emptyMessage="No consumers matched the current filters."
+      renderMobileItem={renderMobileConsumer}
+      renderTabletItem={renderTabletConsumer}
+      renderDesktopContent={renderDesktopConsumers}
+    />
   );
 }

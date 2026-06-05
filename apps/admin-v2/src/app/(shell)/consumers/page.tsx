@@ -12,11 +12,7 @@ import {
   textInputClass,
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
-import {
-  ConsumersDesktopTable,
-  ConsumersMobileCards,
-  ConsumersTabletRows,
-} from '../../../features/consumers/consumers-list-presenters';
+import { ConsumersListView } from '../../../features/consumers/consumers-list-presenters';
 import { getConsumers } from '../../../lib/admin-api/consumers.server';
 import { buildPathWithSearch } from '../../../lib/navigation-context';
 import { booleanSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../lib/query-contract';
@@ -172,9 +168,7 @@ export default async function ConsumersPage({
             </div>
           }
         >
-          <ConsumersMobileCards items={items} />
-          <ConsumersTabletRows items={items} />
-          <ConsumersDesktopTable items={items} />
+          <ConsumersListView items={items} />
         </Panel>
       </>
     </WorkspaceLayout>
