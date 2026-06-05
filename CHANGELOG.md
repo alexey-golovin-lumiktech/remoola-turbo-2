@@ -3224,7 +3224,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-06-04</summary>
 
 - **2026-06-04:**
@@ -3245,6 +3245,26 @@
 
   ### ⚠️ Notes
   - **No migration or contract day:** The recorded commit scope does not include DB migrations or API/DTO contract changes. Product-visible UI diffs are narrow to admin-v2 formatting updates, while the queue-view extraction is additive only and does not change loader, mutation, permission, or server-action behavior in this commit.
+
+</details>
+
+<details open>
+<summary>2026-06-05</summary>
+
+- **2026-06-05:**
+
+  ### 🔐 Security / Production Safety
+  - **Admin-v2 capability, idempotency, and auth-edge invariants tightened:** Centralize admin capability checks onto typed `ADMIN_CAPABILITIES` / `hasAdminCapability(...)` helpers, extend the shared admin mutation helpers with optional `correlationId` and `idempotencyKey` metadata while preserving the existing UUID fallback, and split the Next middleware auth edge into route-local helpers without changing cookie keys, refresh/probe endpoints, redirect paths, header semantics, matcher scope, or refresh/probe ordering. The same auth refactor adds architecture guardrails that fail the suite if direct capability checks or raw `Idempotency-Key` literals drift back into arbitrary files.
+
+  ### 🧪 Testing
+  - **Admin-v2 regression coverage expanded around the shared primitives:** Today's commits add focused coverage for `admin-capabilities`, optional mutation metadata in `admin-mutations/core.server.ts`, and the extracted middleware auth telemetry / refresh paths plus the new architecture guardrails; the commit sequence also records existing payout-page characterization staying green and ends with the full admin-v2 suite passing at `177/177` across `45` suites alongside clean `typecheck` and `lint`.
+
+  ### 🛠 DevEx
+  - **Responsive queue-shell consolidation continues in admin-v2:** Migrate the consumers, payments, and verification list presenters from three separate mobile/tablet/desktop exports onto single `*ListView` presenters backed by the shared `RenderQueueView`, while keeping the domain-specific rendering, empty-state copy, labels, pills, links, and saved-view surfaces local to each presenter.
+  - **Payout case view decomposition finishes the next page-extraction step:** Reduce `payouts/[payoutId]/page.view.tsx` to composition-only wiring and move the header, context rail, summary, linked records, escalation form, and audit rendering into dedicated section modules without changing URLs, search params, action bindings, escalation field payloads, capability gates, copy, class names, or section ordering.
+
+  ### ⚠️ Notes
+  - **Refactor-only day with deploy-safe boundaries preserved:** The recorded scope is behavior-preserving admin-v2 refactoring plus regression guards. The commit bodies explicitly state no DB or migration impact, no backend contract change, and no cookie-key, endpoint, header, or matcher change.
 
 </details>
 
