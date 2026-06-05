@@ -8,8 +8,8 @@ import { buttonRowClass, mutedTextClass, stackClass } from '../../../components/
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import {
   bucketItems,
-  PayoutBucketViews,
-  PayoutHighValueViews,
+  PayoutBucketListView,
+  PayoutHighValueListView,
   renderBucketMapLinks,
   renderHighValueThresholds,
 } from '../../../features/payouts/payouts-list-presenters';
@@ -123,7 +123,7 @@ export default async function PayoutsPage({
           >
             <p className={mutedTextClass}>Configured thresholds: {renderHighValueThresholds(data)}</p>
             <div className={stackClass}>
-              <PayoutHighValueViews items={highValueItems} returnTo={currentQueueHref} />
+              <PayoutHighValueListView items={highValueItems} returnTo={currentQueueHref} />
             </div>
           </Panel>
         ) : null}
@@ -144,7 +144,7 @@ export default async function PayoutsPage({
               surface="support"
             >
               <div className={stackClass}>
-                <PayoutBucketViews
+                <PayoutBucketListView
                   items={bucket.items}
                   emptyMessage="No payouts in this bucket for the current window."
                   returnTo={currentQueueHref}
