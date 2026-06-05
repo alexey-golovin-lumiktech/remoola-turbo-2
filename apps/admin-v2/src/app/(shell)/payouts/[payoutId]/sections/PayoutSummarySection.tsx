@@ -3,20 +3,15 @@ import { mutedTextClass } from '../../../../../components/ui-classes';
 import { formatDateTime } from '../../../../../lib/admin-format';
 import { type PayoutCasePageData } from '../page.loader';
 
-function renderDestinationLabel(paymentMethod: {
-  type: string;
-  brand: string | null;
-  last4: string | null;
-  bankLast4: string | null;
+export function PayoutSummarySection({
+  payoutCase,
+  highValueThresholdLabel,
+  destinationLabel,
+}: {
+  payoutCase: PayoutCasePageData[`payoutCase`];
+  highValueThresholdLabel: string;
+  destinationLabel: string | null;
 }) {
-  const suffix = paymentMethod.last4 ?? paymentMethod.bankLast4 ?? `----`;
-  return paymentMethod.brand ? `${paymentMethod.brand} •••• ${suffix}` : `${paymentMethod.type} •••• ${suffix}`;
-}
-
-export function PayoutSummarySection({ payoutCase }: { payoutCase: PayoutCasePageData[`payoutCase`] }) {
-  const highValueThresholdLabel = payoutCase.highValue.thresholdAmount
-    ? `${payoutCase.highValue.thresholdCurrency} >= ${payoutCase.highValue.thresholdAmount}`
-    : `not configured`;
   return (
     <section className="statsGrid">
       <Panel>
@@ -34,7 +29,7 @@ export function PayoutSummarySection({ payoutCase }: { payoutCase: PayoutCasePag
         <h3>Destination</h3>
         {payoutCase.destinationPaymentMethodSummary ? (
           <>
-            <p className={mutedTextClass}>{renderDestinationLabel(payoutCase.destinationPaymentMethodSummary)}</p>
+            <p className={mutedTextClass}>{destinationLabel}</p>
             <p className={mutedTextClass}>Linkage: {payoutCase.destinationLinkageSource}</p>
             <p className={mutedTextClass}>
               Deleted: {formatDateTime(payoutCase.destinationPaymentMethodSummary.deletedAt)}

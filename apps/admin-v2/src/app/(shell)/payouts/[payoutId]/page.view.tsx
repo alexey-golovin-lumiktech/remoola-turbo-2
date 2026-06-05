@@ -1,5 +1,6 @@
 import { type PayoutCasePageData } from './page.loader';
 import { type PayoutCasePagePermissions } from './page.permissions';
+import { derivePayoutViewModel } from './payout-view-model';
 import { PayoutAuditSection } from './sections/PayoutAuditSection';
 import { PayoutContextRail } from './sections/PayoutContextRail';
 import { PayoutCoreLinksSection } from './sections/PayoutCoreLinksSection';
@@ -24,6 +25,7 @@ export function PayoutCasePageView({
 }) {
   const { payoutCase, reassignCandidates, backToQueueHref } = data;
   const { canManageEscalation, canSubmitEscalation, canClaim, canRelease, canReassign } = permissions;
+  const viewModel = derivePayoutViewModel(payoutCase, permissions);
 
   return (
     <WorkspaceLayout
@@ -33,10 +35,18 @@ export function PayoutCasePageView({
       contextDescription="Status, escalation posture, and linked-case shortcuts for the current payout."
     >
       <>
-        <PayoutHeaderPanel payoutCase={payoutCase} backToQueueHref={backToQueueHref} />
-        <PayoutSummarySection payoutCase={payoutCase} />
+        <PayoutHeaderPanel payoutCase={payoutCase} backToQueueHref={backToQueueHref} pills={viewModel.pills} />
+        <PayoutSummarySection
+          payoutCase={payoutCase}
+          highValueThresholdLabel={viewModel.highValueThresholdLabel}
+          destinationLabel={viewModel.destinationLabel}
+        />
         <PayoutCoreLinksSection payoutCase={payoutCase} />
-        <PayoutEscalationSection payoutCase={payoutCase} permissions={{ canManageEscalation, canSubmitEscalation }} />
+        <PayoutEscalationSection
+          payoutCase={payoutCase}
+          permissions={{ canManageEscalation, canSubmitEscalation }}
+          viewModel={viewModel.escalation}
+        />
         <PayoutOutcomesSection payoutCase={payoutCase} />
         <AssignmentCard
           resourceId={payoutCase.id}

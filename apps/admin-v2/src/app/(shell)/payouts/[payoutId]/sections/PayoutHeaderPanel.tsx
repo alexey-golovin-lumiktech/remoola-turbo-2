@@ -12,9 +12,11 @@ import { type PayoutCasePageData } from '../page.loader';
 export function PayoutHeaderPanel({
   payoutCase,
   backToQueueHref,
+  pills,
 }: {
   payoutCase: PayoutCasePageData[`payoutCase`];
   backToQueueHref: PayoutCasePageData[`backToQueueHref`];
+  pills: string[];
 }) {
   return (
     <Panel
@@ -50,12 +52,9 @@ export function PayoutHeaderPanel({
         ledger/payment context.
       </p>
       <div className="pillRow">
-        <TinyPill>{payoutCase.core.type}</TinyPill>
-        <TinyPill>{payoutCase.core.derivedStatus}</TinyPill>
-        <TinyPill>{payoutCase.core.currencyCode}</TinyPill>
-        <TinyPill>{payoutCase.highValue.eligibility}</TinyPill>
-        {payoutCase.slaBreachDetected ? <TinyPill>threshold breached</TinyPill> : null}
-        {payoutCase.payoutEscalation ? <TinyPill>escalated</TinyPill> : null}
+        {pills.map((pill) => (
+          <TinyPill key={pill}>{pill}</TinyPill>
+        ))}
       </div>
     </Panel>
   );

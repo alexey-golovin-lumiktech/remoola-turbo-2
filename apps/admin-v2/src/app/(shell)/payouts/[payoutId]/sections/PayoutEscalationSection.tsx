@@ -20,23 +20,26 @@ import { EMPTY_VALUE, formatDateTime } from '../../../../../lib/admin-format';
 import { escalatePayoutAction } from '../../../../../lib/admin-mutations/payouts.server';
 import { type PayoutCasePageData } from '../page.loader';
 import { type PayoutCasePagePermissions } from '../page.permissions';
+import { type PayoutEscalationViewModel } from '../payout-view-model';
 
 export function PayoutEscalationSection({
   payoutCase,
   permissions,
+  viewModel,
 }: {
   payoutCase: PayoutCasePageData[`payoutCase`];
   permissions: Pick<PayoutCasePagePermissions, `canManageEscalation` | `canSubmitEscalation`>;
+  viewModel: PayoutEscalationViewModel;
 }) {
-  const { canManageEscalation, canSubmitEscalation } = permissions;
-  if (!canManageEscalation && !payoutCase.payoutEscalation) {
+  const { canManageEscalation } = permissions;
+  if (!viewModel.show) {
     return null;
   }
   return (
     <section className="detailGrid">
       {canManageEscalation ? (
         <Panel title="Payout escalation marker">
-          {canSubmitEscalation ? (
+          {viewModel.showForm ? (
             <form action={escalatePayoutAction.bind(null, payoutCase.id)} className={operatorFormClass}>
               <input type="hidden" name="version" value={String(payoutCase.version)} />
               <input type="hidden" name="consumerId" value={payoutCase.consumer.id} />
@@ -80,10 +83,7 @@ export function PayoutEscalationSection({
             </form>
           ) : (
             <div className={stackClass}>
-              <p className={mutedTextClass}>
-                {payoutCase.actionControls.escalateBlockedReason ??
-                  `A payout escalation marker is not available for this case.`}
-              </p>
+              <p className={mutedTextClass}>{viewModel.blockedReason}</p>
             </div>
           )}
         </Panel>
