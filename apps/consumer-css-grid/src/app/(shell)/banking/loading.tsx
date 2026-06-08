@@ -1,7 +1,5 @@
+import { ShellLoadingCard } from '../../../shared/ui/ShellLoadingCard';
+
 export default function BankingLoading() {
-  return (
-    <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface) p-5 text-sm text-(--app-text-muted) shadow-(--app-shadow)">
-      Loading banking...
-    </div>
-  );
+  return <ShellLoadingCard>Loading banking...</ShellLoadingCard>;
 }

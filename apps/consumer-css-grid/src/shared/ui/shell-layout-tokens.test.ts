@@ -3,6 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import {
   SHELL_BOTTOM_NAV_CLASS,
   SHELL_CONTENT_OFFSET_CLASS,
+  SHELL_LOADING_CARD_CLASS,
   SHELL_MAIN_PADDING_CLASS,
   SHELL_SIDEBAR_BASE_CLASS,
   SHELL_SIDEBAR_WIDTH_CLASS,
@@ -36,5 +37,11 @@ describe(`shell layout tokens`, () => {
   it(`keeps the bottom nav fixed and mobile-only`, () => {
     expect(SHELL_BOTTOM_NAV_CLASS).toContain(`fixed`);
     expect(SHELL_BOTTOM_NAV_CLASS).toContain(`md:hidden`);
+  });
+
+  it(`pins the loading card class string`, () => {
+    expect(SHELL_LOADING_CARD_CLASS).toContain(`rounded-[28px]`);
+    expect(SHELL_LOADING_CARD_CLASS).toContain(`bg-(--app-surface)`);
+    expect(SHELL_LOADING_CARD_CLASS).toContain(`shadow-(--app-shadow)`);
   });
 });
