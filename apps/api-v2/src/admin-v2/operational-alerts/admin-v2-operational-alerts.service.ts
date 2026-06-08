@@ -1,28 +1,27 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import {
-  AdminV2OperationalAlertSummaryWorkspace,
-  AdminV2OperationalAlertThreshold,
-  AdminV2OperationalAlertThresholdQueryPayload,
-  type AdminV2OperationalAlertSummary,
-  type AdminV2OperationalAlertsListResponse,
-} from '@remoola/api-types';
+import { type AdminV2OperationalAlertsListResponse } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { assertValidThresholdPayload, getThresholdPayloadBytes } from './admin-v2-operational-alerts-thresholds';
 import {
-  DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES,
-  MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH,
-  MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES,
-  MAX_OPERATIONAL_ALERT_NAME_LENGTH,
-  MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES,
-  MIN_OPERATIONAL_ALERT_NAME_LENGTH,
-  OperationalAlertWorkspace,
-  assertOperationalAlertWorkspace,
-  assertValidQueryPayload,
-} from './admin-v2-operational-alerts.dto';
+  assertExpectedDeletedAtNull,
+  assertHasUpdateFields,
+  assertRequiredWorkspace,
+  buildCreateAuditMetadata,
+  buildDeleteAuditMetadata,
+  buildUpdateAuditMetadata,
+  normalizeDescription,
+  normalizeEvaluationInterval,
+  shouldResetEvaluationState,
+  toSummary,
+  trimRequiredName,
+  type OperationalAlertRow,
+  type OperationalAlertSummary,
+} from './admin-v2-operational-alerts-policy';
+import { assertValidThresholdPayload, getThresholdPayloadBytes } from './admin-v2-operational-alerts-thresholds';
+import { assertValidQueryPayload } from './admin-v2-operational-alerts.dto';
 import { AdminV2OperationalAlertsQuery } from './admin-v2-operational-alerts.query';
 import { AdminV2OperationalAlertsRepository } from './admin-v2-operational-alerts.repository';
 import {
@@ -30,89 +29,7 @@ import {
   type AdminV2RequestMeta as OperationalAlertRequestMeta,
 } from '../admin-v2-context.types';
 
-type OperationalAlertSummary = AdminV2OperationalAlertSummary;
-
 const OPERATIONAL_ALERT_LIST_HARD_CAP = 200;
-
-type OperationalAlertRow = {
-  id: string;
-  ownerId: string;
-  workspace: AdminV2OperationalAlertSummaryWorkspace;
-  name: string;
-  description: string | null;
-  queryPayload: AdminV2OperationalAlertThresholdQueryPayload;
-  thresholdPayload: AdminV2OperationalAlertThreshold;
-  evaluationIntervalMinutes: number;
-  lastEvaluatedAt: Date | null;
-  lastEvaluationError: string | null;
-  lastFiredAt: Date | null;
-  lastFireReason: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-};
-
-function toSummary(row: OperationalAlertRow): OperationalAlertSummary {
-  return {
-    id: row.id,
-    workspace: row.workspace,
-    name: row.name,
-    description: row.description,
-    queryPayload: row.queryPayload,
-    thresholdPayload: row.thresholdPayload,
-    evaluationIntervalMinutes: row.evaluationIntervalMinutes,
-    lastEvaluatedAt: row.lastEvaluatedAt ? row.lastEvaluatedAt.toISOString() : null,
-    lastEvaluationError: row.lastEvaluationError,
-    lastFiredAt: row.lastFiredAt ? row.lastFiredAt.toISOString() : null,
-    lastFireReason: row.lastFireReason,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  };
-}
-
-function trimRequiredName(raw: string | null | undefined): string {
-  const trimmed = (raw ?? ``).trim();
-  if (trimmed.length < MIN_OPERATIONAL_ALERT_NAME_LENGTH) {
-    throw new BadRequestException(`name is required`);
-  }
-  if (trimmed.length > MAX_OPERATIONAL_ALERT_NAME_LENGTH) {
-    throw new BadRequestException(`name is too long (max ${MAX_OPERATIONAL_ALERT_NAME_LENGTH} characters)`);
-  }
-  return trimmed;
-}
-
-function normalizeDescription(raw: string | null | undefined): string | null {
-  if (raw == null) return null;
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (trimmed.length > MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH) {
-    throw new BadRequestException(
-      `description is too long (max ${MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH} characters)`,
-    );
-  }
-  return trimmed;
-}
-
-function normalizeEvaluationInterval(raw: number | null | undefined): number {
-  if (raw === undefined || raw === null) {
-    return DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES;
-  }
-  if (typeof raw !== `number` || !Number.isInteger(raw)) {
-    throw new BadRequestException(`evaluationIntervalMinutes must be an integer`);
-  }
-  if (raw < MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES || raw > MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES) {
-    const min = MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES;
-    const max = MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES;
-    throw new BadRequestException(`evaluationIntervalMinutes must be between ${min} and ${max}`);
-  }
-  return raw;
-}
-
-function assertExpectedDeletedAtNull(value: number) {
-  if (value !== 0) {
-    throw new BadRequestException(`expectedDeletedAtNull must be 0`);
-  }
-}
 
 @Injectable()
 export class AdminV2OperationalAlertsService {
@@ -124,10 +41,10 @@ export class AdminV2OperationalAlertsService {
   ) {}
 
   async list(actor: OperationalAlertActorContext, workspace: string): Promise<AdminV2OperationalAlertsListResponse> {
-    assertOperationalAlertWorkspace(workspace);
+    const normalizedWorkspace = assertRequiredWorkspace(workspace);
     const rows = await this.query.listOwnedActiveAlerts({
       ownerId: actor.id,
-      workspace,
+      workspace: normalizedWorkspace,
       take: OPERATIONAL_ALERT_LIST_HARD_CAP,
     });
     return { alerts: rows.map((row) => toSummary(row as OperationalAlertRow)) };
@@ -145,11 +62,7 @@ export class AdminV2OperationalAlertsService {
     },
     meta: OperationalAlertRequestMeta,
   ): Promise<OperationalAlertSummary> {
-    if (!body.workspace || typeof body.workspace !== `string`) {
-      throw new BadRequestException(`workspace is required`);
-    }
-    assertOperationalAlertWorkspace(body.workspace);
-    const workspace: OperationalAlertWorkspace = body.workspace;
+    const workspace = assertRequiredWorkspace(body.workspace);
     const name = trimRequiredName(body.name);
     const description = normalizeDescription(body.description);
     assertValidQueryPayload(body.queryPayload);
@@ -183,15 +96,14 @@ export class AdminV2OperationalAlertsService {
           action: ADMIN_ACTION_AUDIT_ACTIONS.alert_create,
           resource: `operational_alert`,
           resourceId: created.id,
-          metadata: {
+          metadata: buildCreateAuditMetadata({
             workspace,
             name,
             evaluationIntervalMinutes,
             queryPayloadBytes,
             thresholdPayloadBytes,
             thresholdType,
-            severity: `standard`,
-          },
+          }),
           ipAddress: meta.ipAddress ?? null,
           userAgent: meta.userAgent ?? null,
         });
@@ -220,9 +132,7 @@ export class AdminV2OperationalAlertsService {
     const hasQueryPayload = body.queryPayload !== undefined;
     const hasThresholdPayload = body.thresholdPayload !== undefined;
     const hasInterval = body.evaluationIntervalMinutes !== undefined;
-    if (!hasName && !hasDescription && !hasQueryPayload && !hasThresholdPayload && !hasInterval) {
-      throw new BadRequestException(`No fields to update`);
-    }
+    assertHasUpdateFields({ hasName, hasDescription, hasQueryPayload, hasThresholdPayload, hasInterval });
 
     const nextName = hasName ? trimRequiredName(body.name) : undefined;
     const nextDescription = hasDescription ? normalizeDescription(body.description) : undefined;
@@ -232,9 +142,7 @@ export class AdminV2OperationalAlertsService {
     const nextQueryPayloadBytes = hasQueryPayload ? Buffer.byteLength(JSON.stringify(body.queryPayload), `utf8`) : null;
     const nextInterval = hasInterval ? normalizeEvaluationInterval(body.evaluationIntervalMinutes) : undefined;
     const adminId = actor.id;
-    // We cannot validate threshold payload until we know the workspace (loaded under FOR UPDATE);
-    // workspace is immutable so it is the loaded row's workspace. Validation happens inside the txn.
-    const evaluationStateReset = hasQueryPayload || hasThresholdPayload || hasInterval;
+    const evaluationStateReset = shouldResetEvaluationState({ hasQueryPayload, hasThresholdPayload, hasInterval });
 
     return this.idempotency.execute({
       adminId,
@@ -266,13 +174,6 @@ export class AdminV2OperationalAlertsService {
           evaluationStateReset,
         });
 
-        const changedFields = [
-          ...(hasName ? [`name`] : []),
-          ...(hasDescription ? [`description`] : []),
-          ...(hasQueryPayload ? [`queryPayload`] : []),
-          ...(hasThresholdPayload ? [`thresholdPayload`] : []),
-          ...(hasInterval ? [`evaluationIntervalMinutes`] : []),
-        ];
         const nextThresholdBytes = hasThresholdPayload ? getThresholdPayloadBytes(body.thresholdPayload) : null;
         const nextThresholdType = hasThresholdPayload ? (body.thresholdPayload as { type: string }).type : null;
 
@@ -281,17 +182,20 @@ export class AdminV2OperationalAlertsService {
           action: ADMIN_ACTION_AUDIT_ACTIONS.alert_update,
           resource: `operational_alert`,
           resourceId: operationalAlertId,
-          metadata: {
+          metadata: buildUpdateAuditMetadata({
             workspace: result.updated.workspace,
-            changedFields,
-            evaluationStateReset,
-            ...(hasName && nextName !== result.previousName ? { previousName: result.previousName } : {}),
-            ...(nextQueryPayloadBytes !== null ? { queryPayloadBytes: nextQueryPayloadBytes } : {}),
-            ...(nextThresholdBytes !== null ? { thresholdPayloadBytes: nextThresholdBytes } : {}),
-            ...(nextThresholdType !== null ? { thresholdType: nextThresholdType } : {}),
-            ...(hasInterval ? { evaluationIntervalMinutes: nextInterval } : {}),
-            severity: `standard`,
-          },
+            hasName,
+            hasDescription,
+            hasQueryPayload,
+            hasThresholdPayload,
+            hasInterval,
+            previousName: result.previousName,
+            nextName,
+            queryPayloadBytes: nextQueryPayloadBytes,
+            thresholdPayloadBytes: nextThresholdBytes,
+            thresholdType: nextThresholdType,
+            evaluationIntervalMinutes: nextInterval,
+          }),
           ipAddress: meta.ipAddress ?? null,
           userAgent: meta.userAgent ?? null,
         });
@@ -323,11 +227,10 @@ export class AdminV2OperationalAlertsService {
           action: ADMIN_ACTION_AUDIT_ACTIONS.alert_delete,
           resource: `operational_alert`,
           resourceId: operationalAlertId,
-          metadata: {
+          metadata: buildDeleteAuditMetadata({
             workspace: result.lockedWorkspace,
             name: result.lockedName,
-            severity: `standard`,
-          },
+          }),
           ipAddress: meta.ipAddress ?? null,
           userAgent: meta.userAgent ?? null,
         });
