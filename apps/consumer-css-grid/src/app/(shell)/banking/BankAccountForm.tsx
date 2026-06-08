@@ -1,5 +1,7 @@
 import { type BankFormState } from './banking-form-helpers';
 import { digitsOnly, normalizeEmail, normalizePhone } from './banking-helpers';
+import { primaryButtonClass } from '../../../shared/ui/shell-button-tokens';
+import { fieldLabelClass } from '../../../shared/ui/shell-form-tokens';
 
 function FieldHint({ message, tone = `muted` }: { message: string; tone?: `muted` | `error` }) {
   return (
@@ -27,7 +29,7 @@ export function BankAccountForm({ emailValid, form, formValid, isPending, phoneV
         numbers are not stored on this Banking surface.
       </div>
       <div>
-        <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="bank-name">
+        <label className={fieldLabelClass} htmlFor="bank-name">
           Bank name
         </label>
         <input
@@ -39,7 +41,7 @@ export function BankAccountForm({ emailValid, form, formValid, isPending, phoneV
         />
       </div>
       <div>
-        <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="bank-last4">
+        <label className={fieldLabelClass} htmlFor="bank-last4">
           Last 4 digits
         </label>
         <input
@@ -64,7 +66,7 @@ export function BankAccountForm({ emailValid, form, formValid, isPending, phoneV
         ) : null}
       </div>
       <div>
-        <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="bank-billing-name">
+        <label className={fieldLabelClass} htmlFor="bank-billing-name">
           Billing name
         </label>
         <input
@@ -77,7 +79,7 @@ export function BankAccountForm({ emailValid, form, formValid, isPending, phoneV
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="bank-billing-email">
+          <label className={fieldLabelClass} htmlFor="bank-billing-email">
             Billing email
           </label>
           <input
@@ -97,7 +99,7 @@ export function BankAccountForm({ emailValid, form, formValid, isPending, phoneV
           ) : null}
         </div>
         <div>
-          <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="bank-billing-phone">
+          <label className={fieldLabelClass} htmlFor="bank-billing-phone">
             Billing phone
           </label>
           <input
@@ -125,12 +127,7 @@ export function BankAccountForm({ emailValid, form, formValid, isPending, phoneV
         />
         Make this the default payout method
       </label>
-      <button
-        type="button"
-        disabled={isPending || !formValid}
-        onClick={onSubmit}
-        className="w-full rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-primary-contrast) disabled:cursor-not-allowed disabled:opacity-50"
-      >
+      <button type="button" disabled={isPending || !formValid} onClick={onSubmit} className={primaryButtonClass}>
         {isPending ? `Saving...` : formValid ? `Add bank account` : `Complete bank account details`}
       </button>
     </div>
