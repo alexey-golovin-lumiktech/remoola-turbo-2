@@ -1,58 +1,40 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 
-import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
-import { AdminV2AdminMutationsRepository } from './admin-v2-admin-mutations.repository';
-import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { AdminV2AdminMutationsService } from './admin-v2-admin-mutations.service';
+import { AdminV2AdminAccessCommandsService } from './admin-v2-admin-access-commands.service';
+import { type AdminV2AdminMutationsRepository } from './admin-v2-admin-mutations.repository';
+import { type AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
-describe(`AdminV2AdminMutationsService`, () => {
-  async function buildService() {
+describe(`AdminV2AdminAccessCommandsService`, () => {
+  function buildService() {
     const repository = {
-      patchAdminPassword: jest.fn<(...a: any[]) => any>(),
-      updateAdminStatus: jest.fn<(...a: any[]) => any>(),
-      getAdminLifecycleTarget: jest.fn<(...a: any[]) => any>(),
       getAdminRoleMutationTarget: jest.fn<(...a: any[]) => any>(),
       getAdminPermissionMutationTarget: jest.fn<(...a: any[]) => any>(),
       getRoleByKey: jest.fn<(...a: any[]) => any>(),
       listRelevantPermissions: jest.fn<(...a: any[]) => any>(),
-      deactivateAdmin: jest.fn<(...a: any[]) => any>(),
+      changeAdminRole: jest.fn<(...a: any[]) => any>(),
+      replaceAdminPermissionOverrides: jest.fn<(...a: any[]) => any>(),
+      touchAdminPermissions: jest.fn<(...a: any[]) => any>(),
+      createAuditEntry: jest.fn<(...a: any[]) => any>(),
+      findAdminRoleResult: jest.fn<(...a: any[]) => any>(),
+      findAdminPermissionResult: jest.fn<(...a: any[]) => any>(),
       findAdminUpdatedAt: jest.fn<(...a: any[]) => any>(),
       revokeActiveSessions: jest.fn<(...a: any[]) => any>(),
       deleteRefreshTokens: jest.fn<(...a: any[]) => any>(),
-      createAuditEntry: jest.fn<(...a: any[]) => any>(),
-      findAdminLifecycleResult: jest.fn<(...a: any[]) => any>(),
-      restoreAdmin: jest.fn<(...a: any[]) => any>(),
-      changeAdminRole: jest.fn<(...a: any[]) => any>(),
-      findAdminRoleResult: jest.fn<(...a: any[]) => any>(),
-      replaceAdminPermissionOverrides: jest.fn<(...a: any[]) => any>(),
-      touchAdminPermissions: jest.fn<(...a: any[]) => any>(),
-      findAdminPermissionResult: jest.fn<(...a: any[]) => any>(),
     };
     const idempotency = {
       executeInTransaction: jest.fn<(...a: any[]) => any>(
         async ({ execute }: { execute: (tx: unknown) => Promise<unknown> }) => execute({ tx: true }),
       ),
     };
-    const auditTrail = {
-      recordAdminActionAudit: jest.fn<(...a: any[]) => any>(async () => undefined),
-    };
-
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        AdminV2AdminMutationsService,
-        { provide: AdminV2AdminMutationsRepository, useValue: repository },
-        { provide: AdminV2IdempotencyService, useValue: idempotency },
-        { provide: AdminV2AdminAuditTrail, useValue: auditTrail },
-      ],
-    }).compile();
 
     return {
-      service: moduleRef.get(AdminV2AdminMutationsService),
+      service: new AdminV2AdminAccessCommandsService(
+        repository as unknown as AdminV2AdminMutationsRepository,
+        idempotency as unknown as AdminV2IdempotencyService,
+      ),
       repository,
       idempotency,
-      auditTrail,
     };
   }
 
@@ -83,394 +65,13 @@ describe(`AdminV2AdminMutationsService`, () => {
     };
   }
 
-  it(`records compatibility audit after patching an admin password through the repository`, async () => {
-    const { service, repository, auditTrail } = await buildService();
-    repository.patchAdminPassword.mockResolvedValueOnce({
-      id: `admin-2`,
-      email: `ops@example.com`,
-      type: `ADMIN`,
-      deletedAt: null,
-      updatedAt: new Date(`2026-04-17T10:00:00.000Z`),
-    });
-
-    const result = await service.patchAdminPassword(`admin-2`, `VerySecurePass1!`, `admin-1`, {
-      ipAddress: `203.0.113.5`,
-      userAgent: `jest`,
-    });
-
-    expect(repository.patchAdminPassword).toHaveBeenCalledWith(
-      expect.objectContaining({
-        targetAdminId: `admin-2`,
-        hash: expect.any(String),
-        salt: expect.any(String),
-      }),
-    );
-    expect(auditTrail.recordAdminActionAudit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        adminId: `admin-1`,
-        action: `admin_password_change`,
-        resourceId: `admin-2`,
-      }),
-    );
-    expect(result).toEqual({
-      adminId: `admin-2`,
-      email: `ops@example.com`,
-      type: `ADMIN`,
-      status: `ACTIVE`,
-      version: new Date(`2026-04-17T10:00:00.000Z`).getTime(),
-    });
-  });
-
-  it.each([
-    {
-      action: `delete` as const,
-      deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
-      expectedAuditAction: `admin_delete`,
-      expectedStatus: `INACTIVE`,
-    },
-    {
-      action: `restore` as const,
-      deletedAt: null,
-      expectedAuditAction: `admin_restore`,
-      expectedStatus: `ACTIVE`,
-    },
-  ])(
-    `keeps updateAdminStatus %s as a direct repository write plus compatibility audit`,
-    async ({ action, deletedAt, expectedAuditAction, expectedStatus }) => {
-      const { service, repository, auditTrail, idempotency } = await buildService();
-      const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
-      repository.updateAdminStatus.mockResolvedValueOnce({
-        id: `admin-2`,
-        email: `ops@example.com`,
-        deletedAt,
-        updatedAt,
-      });
-
-      const result = await service.updateAdminStatus(`admin-2`, action, `admin-1`, {
-        ipAddress: `203.0.113.5`,
-        userAgent: `jest`,
-        idempotencyKey: `idem-status`,
-      });
-
-      expect(repository.updateAdminStatus).toHaveBeenCalledWith({
-        targetAdminId: `admin-2`,
-        action,
-      });
-      expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
-      expect(auditTrail.recordAdminActionAudit).toHaveBeenCalledWith({
-        adminId: `admin-1`,
-        action: expectedAuditAction,
-        resourceId: `admin-2`,
-        metadata: {
-          targetEmail: `ops@example.com`,
-        },
-        ipAddress: `203.0.113.5`,
-        userAgent: `jest`,
-      });
-      expect(result).toEqual({
-        adminId: `admin-2`,
-        status: expectedStatus,
-        deletedAt: deletedAt?.toISOString() ?? null,
-        version: updatedAt.getTime(),
-      });
-    },
-  );
-
-  it(`rejects restoreAdmin before idempotency when version is invalid`, async () => {
-    const { service, repository, idempotency } = await buildService();
-
-    await expect(
-      service.restoreAdmin(`admin-2`, `admin-1`, { version: 0 }, { idempotencyKey: `idem-restore-invalid` }),
-    ).rejects.toBeInstanceOf(BadRequestException);
-
-    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
-    expect(repository.getAdminLifecycleTarget).not.toHaveBeenCalled();
-  });
-
-  it(`returns alreadyActive without restoring or auditing when restoreAdmin targets an active admin`, async () => {
-    const { service, repository } = await buildService();
-    const target = buildLifecycleTarget();
-    repository.getAdminLifecycleTarget.mockResolvedValueOnce(target);
-
-    const result = await service.restoreAdmin(
-      `admin-2`,
-      `admin-1`,
-      { version: target.updatedAt.getTime() },
-      { idempotencyKey: `idem-restore-noop`, ipAddress: `127.0.0.1`, userAgent: `jest` },
-    );
-
-    expect(repository.restoreAdmin).not.toHaveBeenCalled();
-    expect(repository.createAuditEntry).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      adminId: `admin-2`,
-      status: `ACTIVE`,
-      version: target.updatedAt.getTime(),
-      alreadyActive: true,
-    });
-  });
-
-  it(`restores admins through idempotency, audit persistence, and lifecycle result shaping`, async () => {
-    const { service, repository, idempotency } = await buildService();
-    const target = buildLifecycleTarget({
-      deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
-    });
-    const restoredUpdatedAt = new Date(`2026-04-17T10:10:00.000Z`);
-    repository.getAdminLifecycleTarget.mockResolvedValueOnce(target);
-    repository.restoreAdmin.mockResolvedValueOnce({ count: 1 });
-    repository.findAdminLifecycleResult.mockResolvedValueOnce({
-      id: `admin-2`,
-      updatedAt: restoredUpdatedAt,
-      deletedAt: null,
-    });
-
-    const result = await service.restoreAdmin(
-      `admin-2`,
-      `admin-1`,
-      { version: target.updatedAt.getTime() },
-      { idempotencyKey: `idem-restore-ok`, ipAddress: `127.0.0.1`, userAgent: `jest` },
-    );
-
-    expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        adminId: `admin-1`,
-        scope: `admin-restore:admin-2`,
-        key: `idem-restore-ok`,
-        payload: {
-          targetAdminId: `admin-2`,
-          expectedVersion: target.updatedAt.getTime(),
-        },
-      }),
-    );
-    expect(repository.restoreAdmin).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        targetId: `admin-2`,
-        expectedUpdatedAt: target.updatedAt,
-      }),
-    );
-    expect(repository.createAuditEntry).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        adminId: `admin-1`,
-        action: `admin_restore`,
-        resource: `admin`,
-        resourceId: `admin-2`,
-        metadata: {
-          targetEmail: `ops@example.com`,
-        },
-        ipAddress: `127.0.0.1`,
-        userAgent: `jest`,
-      }),
-    );
-    expect(result).toEqual({
-      adminId: `admin-2`,
-      status: `ACTIVE`,
-      deletedAt: null,
-      version: restoredUpdatedAt.getTime(),
-      alreadyActive: false,
-    });
-  });
-
-  it(`surfaces stale restoreAdmin conflicts from the count=0 fallback lookup`, async () => {
-    const { service, repository } = await buildService();
-    const target = buildLifecycleTarget({
-      deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
-    });
-    const currentUpdatedAt = new Date(`2026-04-17T10:07:00.000Z`);
-    repository.getAdminLifecycleTarget.mockResolvedValueOnce(target);
-    repository.restoreAdmin.mockResolvedValueOnce({ count: 0 });
-    repository.findAdminUpdatedAt.mockResolvedValueOnce({ updatedAt: currentUpdatedAt });
-
-    await expect(
-      service.restoreAdmin(
-        `admin-2`,
-        `admin-1`,
-        { version: target.updatedAt.getTime() },
-        { idempotencyKey: `idem-restore-stale` },
-      ),
-    ).rejects.toMatchObject({
-      response: {
-        error: `STALE_VERSION`,
-        currentVersion: currentUpdatedAt.getTime(),
-      },
-    });
-
-    expect(repository.findAdminLifecycleResult).not.toHaveBeenCalled();
-  });
-
-  it(`returns alreadyInactive without opening a transaction`, async () => {
-    const { service, repository } = await buildService();
-    const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
-    const deletedAt = new Date(`2026-04-17T10:05:00.000Z`);
-    repository.getAdminLifecycleTarget.mockResolvedValueOnce({
-      id: `admin-2`,
-      email: `ops@example.com`,
-      deletedAt,
-      updatedAt,
-    });
-
-    const result = await service.deactivateAdmin(
-      `admin-2`,
-      `admin-1`,
-      { version: updatedAt.getTime(), confirmed: true },
-      { idempotencyKey: `idem-1` },
-    );
-
-    expect(repository.deactivateAdmin).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      adminId: `admin-2`,
-      status: `INACTIVE`,
-      deletedAt: deletedAt.toISOString(),
-      version: updatedAt.getTime(),
-      alreadyInactive: true,
-    });
-  });
-
-  it(`rejects deactivateAdmin when confirmation is missing before idempotency`, async () => {
-    const { service, repository, idempotency } = await buildService();
-
-    await expect(
-      service.deactivateAdmin(`admin-2`, `admin-1`, { version: 1, confirmed: false }, { idempotencyKey: `idem-a` }),
-    ).rejects.toBeInstanceOf(BadRequestException);
-
-    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
-    expect(repository.getAdminLifecycleTarget).not.toHaveBeenCalled();
-  });
-
-  it(`rejects deactivateAdmin self-targets before idempotency`, async () => {
-    const { service, repository, idempotency } = await buildService();
-
-    await expect(
-      service.deactivateAdmin(`admin-1`, `admin-1`, { version: 1, confirmed: true }, { idempotencyKey: `idem-self` }),
-    ).rejects.toBeInstanceOf(ConflictException);
-
-    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
-    expect(repository.getAdminLifecycleTarget).not.toHaveBeenCalled();
-  });
-
-  it(`rejects deactivateAdmin when version is invalid before idempotency`, async () => {
-    const { service, repository, idempotency } = await buildService();
-
-    await expect(
-      service.deactivateAdmin(
-        `admin-2`,
-        `admin-1`,
-        { version: 0, confirmed: true },
-        { idempotencyKey: `idem-invalid-version` },
-      ),
-    ).rejects.toBeInstanceOf(BadRequestException);
-
-    expect(idempotency.executeInTransaction).not.toHaveBeenCalled();
-    expect(repository.getAdminLifecycleTarget).not.toHaveBeenCalled();
-  });
-
-  it(`routes deactivation through idempotency and the transaction runner`, async () => {
-    const { service, repository, idempotency } = await buildService();
-    const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
-    repository.getAdminLifecycleTarget.mockResolvedValueOnce({
-      id: `admin-2`,
-      email: `ops@example.com`,
-      deletedAt: null,
-      updatedAt,
-    });
-    repository.deactivateAdmin.mockResolvedValueOnce({ count: 1 });
-    repository.findAdminLifecycleResult.mockResolvedValueOnce({
-      id: `admin-2`,
-      updatedAt: new Date(`2026-04-17T10:05:00.000Z`),
-      deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
-    });
-
-    const result = await service.deactivateAdmin(
-      `admin-2`,
-      `admin-1`,
-      { version: updatedAt.getTime(), confirmed: true, reason: `Ops handoff` },
-      { idempotencyKey: `idem-2`, ipAddress: `127.0.0.1`, userAgent: `jest` },
-    );
-
-    expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        adminId: `admin-1`,
-        scope: `admin-deactivate:admin-2`,
-        key: `idem-2`,
-      }),
-    );
-    expect(repository.deactivateAdmin).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        targetId: `admin-2`,
-        expectedUpdatedAt: updatedAt,
-      }),
-    );
-    expect(repository.revokeActiveSessions).toHaveBeenCalledWith(expect.anything(), `admin-2`, expect.any(Date));
-    expect(repository.deleteRefreshTokens).toHaveBeenCalledWith(expect.anything(), `admin-2`);
-    expect(repository.createAuditEntry).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        adminId: `admin-1`,
-        action: `admin_deactivate`,
-        resource: `admin`,
-        resourceId: `admin-2`,
-        metadata: {
-          targetEmail: `ops@example.com`,
-          confirmed: true,
-          reason: `Ops handoff`,
-        },
-        ipAddress: `127.0.0.1`,
-        userAgent: `jest`,
-      }),
-    );
-    expect(repository.revokeActiveSessions.mock.invocationCallOrder[0]).toBeLessThan(
-      repository.deleteRefreshTokens.mock.invocationCallOrder[0],
-    );
-    expect(repository.deleteRefreshTokens.mock.invocationCallOrder[0]).toBeLessThan(
-      repository.createAuditEntry.mock.invocationCallOrder[0],
-    );
-    expect(result).toEqual({
-      adminId: `admin-2`,
-      status: `INACTIVE`,
-      deletedAt: new Date(`2026-04-17T10:05:00.000Z`).toISOString(),
-      version: new Date(`2026-04-17T10:05:00.000Z`).getTime(),
-      alreadyInactive: false,
-    });
-  });
-
-  it(`surfaces stale deactivateAdmin conflicts from the count=0 fallback lookup without side effects`, async () => {
-    const { service, repository } = await buildService();
-    const target = buildLifecycleTarget();
-    const currentUpdatedAt = new Date(`2026-04-17T10:06:00.000Z`);
-    repository.getAdminLifecycleTarget.mockResolvedValueOnce(target);
-    repository.deactivateAdmin.mockResolvedValueOnce({ count: 0 });
-    repository.findAdminUpdatedAt.mockResolvedValueOnce({ updatedAt: currentUpdatedAt });
-
-    await expect(
-      service.deactivateAdmin(
-        `admin-2`,
-        `admin-1`,
-        { version: target.updatedAt.getTime(), confirmed: true, reason: `Ops handoff` },
-        { idempotencyKey: `idem-stale` },
-      ),
-    ).rejects.toMatchObject({
-      response: {
-        error: `STALE_VERSION`,
-        currentVersion: currentUpdatedAt.getTime(),
-      },
-    });
-
-    expect(repository.revokeActiveSessions).not.toHaveBeenCalled();
-    expect(repository.deleteRefreshTokens).not.toHaveBeenCalled();
-    expect(repository.createAuditEntry).not.toHaveBeenCalled();
-  });
-
   it(`rejects changeAdminRole when confirmation is missing before idempotency`, async () => {
-    const { service, repository, idempotency } = await buildService();
+    const { service, repository, idempotency } = buildService();
 
     await expect(
-      service.changeAdminRole(
-        `admin-2`,
-        `admin-1`,
-        { version: 1, confirmed: false, roleKey: `SUPER_ADMIN` },
-        { idempotencyKey: `idem-role-confirm` },
-      ),
+      service.changeAdminRole(`admin-2`, `admin-1`, { version: 1, confirmed: false, roleKey: `SUPER_ADMIN` }, {
+        idempotencyKey: `idem-role-confirm`,
+      } as any),
     ).rejects.toMatchObject({
       response: {
         message: `Confirmation is required for admin role change`,
@@ -485,15 +86,12 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`rejects changeAdminRole when version is invalid before idempotency`, async () => {
-    const { service, repository, idempotency } = await buildService();
+    const { service, repository, idempotency } = buildService();
 
     await expect(
-      service.changeAdminRole(
-        `admin-2`,
-        `admin-1`,
-        { version: 0, confirmed: true, roleKey: `SUPER_ADMIN` },
-        { idempotencyKey: `idem-role-version` },
-      ),
+      service.changeAdminRole(`admin-2`, `admin-1`, { version: 0, confirmed: true, roleKey: `SUPER_ADMIN` }, {
+        idempotencyKey: `idem-role-version`,
+      } as any),
     ).rejects.toMatchObject({
       response: {
         message: `Valid version is required`,
@@ -508,7 +106,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`returns alreadyApplied without writing or auditing when changeAdminRole keeps the same role`, async () => {
-    const { service, repository, idempotency } = await buildService();
+    const { service, repository, idempotency } = buildService();
     const target = buildRoleTarget({
       role: { id: `role-2`, key: `SUPER_ADMIN` },
     });
@@ -518,7 +116,7 @@ describe(`AdminV2AdminMutationsService`, () => {
       `admin-2`,
       `admin-1`,
       { version: target.updatedAt.getTime(), confirmed: true, roleKey: `SUPER_ADMIN` },
-      { idempotencyKey: `idem-role-noop` },
+      { idempotencyKey: `idem-role-noop` } as any,
     );
 
     expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
@@ -548,7 +146,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`rejects changeAdminRole for inactive targets without mutation side effects`, async () => {
-    const { service, repository } = await buildService();
+    const { service, repository } = buildService();
     const target = buildRoleTarget({
       deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
     });
@@ -559,7 +157,7 @@ describe(`AdminV2AdminMutationsService`, () => {
         `admin-2`,
         `admin-1`,
         { version: target.updatedAt.getTime(), confirmed: true, roleKey: `SUPER_ADMIN` },
-        { idempotencyKey: `idem-role-inactive` },
+        { idempotencyKey: `idem-role-inactive` } as any,
       ),
     ).rejects.toMatchObject({
       response: {
@@ -577,7 +175,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`rejects changeAdminRole when the requested target role is unavailable`, async () => {
-    const { service, repository } = await buildService();
+    const { service, repository } = buildService();
     const target = buildRoleTarget();
     repository.getAdminRoleMutationTarget.mockResolvedValueOnce(target);
     repository.getRoleByKey.mockResolvedValueOnce(null);
@@ -587,7 +185,7 @@ describe(`AdminV2AdminMutationsService`, () => {
         `admin-2`,
         `admin-1`,
         { version: target.updatedAt.getTime(), confirmed: true, roleKey: `SUPER_ADMIN` },
-        { idempotencyKey: `idem-role-missing` },
+        { idempotencyKey: `idem-role-missing` } as any,
       ),
     ).rejects.toMatchObject({
       response: {
@@ -605,7 +203,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`changes roles through idempotency, repository mutation, and audit persistence`, async () => {
-    const { service, repository, idempotency } = await buildService();
+    const { service, repository, idempotency } = buildService();
     const target = buildRoleTarget();
     const nextRole = { id: `role-2`, key: `SUPER_ADMIN` };
     const freshUpdatedAt = new Date(`2026-04-17T10:10:00.000Z`);
@@ -621,7 +219,7 @@ describe(`AdminV2AdminMutationsService`, () => {
       `admin-2`,
       `admin-1`,
       { version: target.updatedAt.getTime(), confirmed: true, roleKey: ` SUPER_ADMIN ` },
-      { idempotencyKey: `idem-role-ok`, ipAddress: `127.0.0.1`, userAgent: `jest` },
+      { idempotencyKey: `idem-role-ok`, ipAddress: `127.0.0.1`, userAgent: `jest` } as any,
     );
 
     expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
@@ -686,7 +284,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`surfaces stale changeAdminRole conflicts from the count=0 fallback lookup without auditing`, async () => {
-    const { service, repository } = await buildService();
+    const { service, repository } = buildService();
     const target = buildRoleTarget();
     const currentUpdatedAt = new Date(`2026-04-17T10:06:00.000Z`);
     repository.getAdminRoleMutationTarget.mockResolvedValueOnce(target);
@@ -699,7 +297,7 @@ describe(`AdminV2AdminMutationsService`, () => {
         `admin-2`,
         `admin-1`,
         { version: target.updatedAt.getTime(), confirmed: true, roleKey: `SUPER_ADMIN` },
-        { idempotencyKey: `idem-role-stale` },
+        { idempotencyKey: `idem-role-stale` } as any,
       ),
     ).rejects.toMatchObject({
       response: {
@@ -715,7 +313,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`rejects non-overridable capabilities before hitting the repository`, async () => {
-    const { service, repository, idempotency } = await buildService();
+    const { service, repository, idempotency } = buildService();
 
     await expect(
       service.changeAdminPermissions(
@@ -725,7 +323,7 @@ describe(`AdminV2AdminMutationsService`, () => {
           version: 1,
           capabilityOverrides: [{ capability: `me.read`, mode: `grant` }],
         },
-        { idempotencyKey: `idem-3` },
+        { idempotencyKey: `idem-3` } as any,
       ),
     ).rejects.toMatchObject({
       response: {
@@ -742,7 +340,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`rejects changeAdminPermissions when version is invalid before idempotency`, async () => {
-    const { service, repository, idempotency } = await buildService();
+    const { service, repository, idempotency } = buildService();
 
     await expect(
       service.changeAdminPermissions(
@@ -752,7 +350,7 @@ describe(`AdminV2AdminMutationsService`, () => {
           version: 0,
           capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
         },
-        { idempotencyKey: `idem-permissions-version` },
+        { idempotencyKey: `idem-permissions-version` } as any,
       ),
     ).rejects.toMatchObject({
       response: {
@@ -769,7 +367,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`returns alreadyApplied when capability overrides do not change the effective state`, async () => {
-    const { service, repository, idempotency } = await buildService();
+    const { service, repository, idempotency } = buildService();
     const target = buildPermissionTarget({
       permissionOverrides: [
         {
@@ -790,7 +388,7 @@ describe(`AdminV2AdminMutationsService`, () => {
         version: target.updatedAt.getTime(),
         capabilityOverrides: [{ capability: ` admins.manage `, mode: ` grant ` }],
       },
-      { idempotencyKey: `idem-4` },
+      { idempotencyKey: `idem-4` } as any,
     );
 
     expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
@@ -819,7 +417,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`rejects changeAdminPermissions for inactive targets without mutation side effects`, async () => {
-    const { service, repository } = await buildService();
+    const { service, repository } = buildService();
     const target = buildPermissionTarget({
       deletedAt: new Date(`2026-04-17T10:05:00.000Z`),
     });
@@ -833,7 +431,7 @@ describe(`AdminV2AdminMutationsService`, () => {
           version: target.updatedAt.getTime(),
           capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
         },
-        { idempotencyKey: `idem-permissions-inactive` },
+        { idempotencyKey: `idem-permissions-inactive` } as any,
       ),
     ).rejects.toMatchObject({
       response: {
@@ -852,7 +450,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`rejects changeAdminPermissions when one or more requested capabilities are unavailable`, async () => {
-    const { service, repository } = await buildService();
+    const { service, repository } = buildService();
     const target = buildPermissionTarget();
     repository.getAdminPermissionMutationTarget.mockResolvedValueOnce(target);
     repository.listRelevantPermissions.mockResolvedValueOnce([{ id: `perm-1`, capability: `admins.manage` }]);
@@ -868,7 +466,7 @@ describe(`AdminV2AdminMutationsService`, () => {
             { capability: `verification.read`, mode: `grant` },
           ],
         },
-        { idempotencyKey: `idem-permissions-unavailable` },
+        { idempotencyKey: `idem-permissions-unavailable` } as any,
       ),
     ).rejects.toMatchObject({
       response: {
@@ -886,7 +484,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`changes permission overrides through idempotency, canonical diffing, and audit persistence`, async () => {
-    const { service, repository, idempotency } = await buildService();
+    const { service, repository, idempotency } = buildService();
     const target = buildPermissionTarget({
       permissionOverrides: [
         {
@@ -944,7 +542,7 @@ describe(`AdminV2AdminMutationsService`, () => {
           { capability: ` verification.read `, mode: ` grant ` },
         ],
       },
-      { idempotencyKey: `idem-permissions-ok`, ipAddress: `127.0.0.1`, userAgent: `jest` },
+      { idempotencyKey: `idem-permissions-ok`, ipAddress: `127.0.0.1`, userAgent: `jest` } as any,
     );
 
     expect(idempotency.executeInTransaction).toHaveBeenCalledWith(
@@ -1031,7 +629,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`surfaces stale changeAdminPermissions conflicts from the touch fallback without auditing`, async () => {
-    const { service, repository } = await buildService();
+    const { service, repository } = buildService();
     const target = buildPermissionTarget();
     const currentUpdatedAt = new Date(`2026-04-17T10:06:00.000Z`);
     repository.getAdminPermissionMutationTarget.mockResolvedValueOnce(target);
@@ -1047,7 +645,7 @@ describe(`AdminV2AdminMutationsService`, () => {
           version: target.updatedAt.getTime(),
           capabilityOverrides: [{ capability: `admins.manage`, mode: `grant` }],
         },
-        { idempotencyKey: `idem-permissions-stale` },
+        { idempotencyKey: `idem-permissions-stale` } as any,
       ),
     ).rejects.toMatchObject({
       response: {
@@ -1064,7 +662,7 @@ describe(`AdminV2AdminMutationsService`, () => {
   });
 
   it(`bubbles up stale version conflicts before delegation`, async () => {
-    const { service, repository } = await buildService();
+    const { service, repository } = buildService();
     repository.getAdminRoleMutationTarget.mockResolvedValueOnce({
       id: `admin-2`,
       email: `ops@example.com`,
@@ -1079,7 +677,7 @@ describe(`AdminV2AdminMutationsService`, () => {
         `admin-2`,
         `admin-1`,
         { version: new Date(`2026-04-17T10:00:00.000Z`).getTime(), confirmed: true, roleKey: `SUPER_ADMIN` },
-        { idempotencyKey: `idem-5` },
+        { idempotencyKey: `idem-5` } as any,
       ),
     ).rejects.toBeInstanceOf(ConflictException);
 

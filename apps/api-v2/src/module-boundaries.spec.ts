@@ -13,6 +13,11 @@ import {
 } from './admin-v2/admin-v2-idempotency.repository';
 import { AdminV2IdempotencyService } from './admin-v2/admin-v2-idempotency.service';
 import { AdminV2SharedModule } from './admin-v2/admin-v2-shared.module';
+import { AdminV2AdminAccessCommandsService } from './admin-v2/admins/admin-v2-admin-access-commands.service';
+import { AdminV2AdminCredentialsCommandsService } from './admin-v2/admins/admin-v2-admin-credentials-commands.service';
+import { AdminV2AdminLifecycleCommandsService } from './admin-v2/admins/admin-v2-admin-lifecycle-commands.service';
+import { AdminV2AdminMutationsModule } from './admin-v2/admins/admin-v2-admin-mutations.module';
+import { AdminV2AdminMutationsRepository } from './admin-v2/admins/admin-v2-admin-mutations.repository';
 import { AdminV2AdminsModule } from './admin-v2/admins/admin-v2-admins.module';
 import { AdminV2AdminsService } from './admin-v2/admins/admin-v2-admins.service';
 import { AdminV2AssignmentsModule } from './admin-v2/assignments/admin-v2-assignments.module';
@@ -86,6 +91,15 @@ describe(`Nest module provider boundaries`, () => {
     expectExactExports(AdminV2AdminsModule, [AdminV2AdminsService]);
     expectExactExports(AdminV2AssignmentsModule, [AdminV2AssignmentsService]);
     expectExactExports(AdminV2LedgerModule, [AdminV2LedgerService, AdminV2LedgerAnomaliesService]);
+  });
+
+  it(`exports only explicit admin mutation command providers from the mutations module`, () => {
+    expectExactExports(AdminV2AdminMutationsModule, [
+      AdminV2AdminCredentialsCommandsService,
+      AdminV2AdminLifecycleCommandsService,
+      AdminV2AdminAccessCommandsService,
+    ]);
+    expectNotExported(AdminV2AdminMutationsModule, [AdminV2AdminMutationsRepository]);
   });
 
   it(`keeps the shared audit public surface explicit`, () => {
@@ -253,7 +267,10 @@ describe(`Nest module provider boundaries`, () => {
     const adminV2Dir = join(__dirname, `admin-v2`);
 
     expect(sourceFileCounts(adminV2Dir, /idempotency\.executeInTransaction\s*\(/g)).toEqual(
-      new Map([[`admins/admin-v2-admin-mutations.service.ts`, 4]]),
+      new Map([
+        [`admins/admin-v2-admin-access-commands.service.ts`, 2],
+        [`admins/admin-v2-admin-lifecycle-commands.service.ts`, 2],
+      ]),
     );
     expect(sourceFileCounts(adminV2Dir, /idempotency\.execute\s*\(/g)).toEqual(
       mergeAllowlistBuckets(nonTransactionalExecuteAllowlist),

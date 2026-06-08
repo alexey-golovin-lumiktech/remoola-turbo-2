@@ -8,11 +8,15 @@ describe(`AdminV2AdminsService`, () => {
       listAdmins: jest.fn<(...a: any[]) => any>(),
       getAdminCase: jest.fn<(...a: any[]) => any>(),
     };
-    const mutationsService = {
+    const credentialsCommands = {
       patchAdminPassword: jest.fn<(...a: any[]) => any>(),
+    };
+    const lifecycleCommands = {
       updateAdminStatus: jest.fn<(...a: any[]) => any>(),
       deactivateAdmin: jest.fn<(...a: any[]) => any>(),
       restoreAdmin: jest.fn<(...a: any[]) => any>(),
+    };
+    const accessCommands = {
       changeAdminRole: jest.fn<(...a: any[]) => any>(),
       changeAdminPermissions: jest.fn<(...a: any[]) => any>(),
     };
@@ -29,12 +33,16 @@ describe(`AdminV2AdminsService`, () => {
     return {
       service: new AdminV2AdminsService(
         queriesService as never,
-        mutationsService as never,
+        credentialsCommands as never,
+        lifecycleCommands as never,
+        accessCommands as never,
         invitationsService as never,
         passwordFlowsService as never,
       ),
       queriesService,
-      mutationsService,
+      credentialsCommands,
+      lifecycleCommands,
+      accessCommands,
       invitationsService,
       passwordFlowsService,
     };
@@ -58,8 +66,8 @@ describe(`AdminV2AdminsService`, () => {
   });
 
   it(`delegates write-side calls to the split mutation, invitation, and password collaborators`, async () => {
-    const { service, mutationsService, invitationsService, passwordFlowsService } = buildService();
-    mutationsService.changeAdminPermissions.mockResolvedValueOnce({ ok: true });
+    const { service, accessCommands, invitationsService, passwordFlowsService } = buildService();
+    accessCommands.changeAdminPermissions.mockResolvedValueOnce({ ok: true });
     invitationsService.inviteAdmin.mockResolvedValueOnce({ invitationId: `inv-1` });
     passwordFlowsService.resetAdminPassword.mockResolvedValueOnce({ adminId: `admin-2` });
 
@@ -82,7 +90,7 @@ describe(`AdminV2AdminsService`, () => {
       service.resetAdminPassword(`admin-2`, `admin-1`, { version: 2 }, { idempotencyKey: `idem-3` }),
     ).resolves.toEqual({ adminId: `admin-2` });
 
-    expect(mutationsService.changeAdminPermissions).toHaveBeenCalled();
+    expect(accessCommands.changeAdminPermissions).toHaveBeenCalled();
     expect(invitationsService.inviteAdmin).toHaveBeenCalled();
     expect(passwordFlowsService.resetAdminPassword).toHaveBeenCalled();
   });
