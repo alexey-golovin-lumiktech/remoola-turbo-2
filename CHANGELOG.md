@@ -3248,7 +3248,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-06-05</summary>
 
 - **2026-06-05:**
@@ -3265,6 +3265,28 @@
 
   ### ⚠️ Notes
   - **Refactor-only day with deploy-safe boundaries preserved:** The recorded scope is behavior-preserving admin-v2 refactoring plus regression guards. The commit bodies explicitly state no DB or migration impact, no backend contract change, and no cookie-key, endpoint, header, or matcher change.
+
+</details>
+
+<details open>
+<summary>2026-06-08</summary>
+
+- **2026-06-08:**
+
+  ### 🧪 Testing
+  - **api-v2 dashboard and debt-report characterization:** Add focused specs for the extracted `consumer-dashboard` seams (`consumer-dashboard-currency.policy`, `consumer-dashboard-payment-request.policy`, `consumer-dashboard-setup.presenter`, `consumer-dashboard-quick-docs.presenter`) and fixture-based coverage for the `api-v2-debt-report` builder/formatter, pinning preferred-currency fallback, payment-request effective-status and last-activity derivation, setup activity ordering, W-9 detection, quick-doc field mapping, and debt-report metrics/format sections without changing production code (`c4273878`).
+  - **Policy-helper coverage paired with every api-v2 extraction:** Each of today's api-v2 helper extractions lands its own `*-policy.spec.ts` (ledger anomalies, operational alerts, document tagging, payment-method mutations, ledger query helpers, admin mutation credentials/lifecycle/access commands) while the existing service-level specs are kept as the integration-level characterization suites.
+  - **Admin-v2 presenter LOC guardrail:** Add a `features/**/*-presenters.tsx ≤ 350 LOC` check to `lib/architecture-guardrails.test.ts`; the full admin-v2 suite stays green at `192/192` across `46` suites after the presenter split.
+
+  ### 🛠 DevEx
+  - **api-v2 service decomposition into policy helpers:** Slim `AdminV2LedgerAnomaliesService`, `AdminV2OperationalAlertsService`, `AdminDocumentTagService` / `AdminDocumentTaggerService`, `AdminV2PaymentMethodsService`, and `AdminV2LedgerQuery` to facade orchestration by extracting validation, no-op result builders, summary/row mapping, stale-version guards, reserved-tag checks, duplicate-fingerprint cohort checks, list/dispute where builders, page-id assembly, and class-specific detail formatting into dedicated `*-policy.ts` / `*-query-helpers.ts` modules. Public methods, controller-facing behavior, DTO contracts, idempotency scopes, cursor semantics, response payload shapes, and repository interfaces are preserved.
+  - **api-v2 admin mutation commands split into explicit providers:** Replace the aggregate `AdminV2AdminMutationsService` with separate `credentials`, `lifecycle`, and `access` command providers; rewire `AdminV2AdminMutationsModule` exports and `AdminV2AdminsService` usage, tighten `module-boundaries.spec.ts` to enforce the new explicit surface, and preserve the deactivation side-effect order (revoke sessions → delete refresh tokens → write audit entry) and the role/permission mutation order (mutate → audit → read fresh result).
+  - **Admin-v2 oversized presenter split with LOC guardrail:** Decompose three `features/**/*-presenters.tsx` files (`payouts-list-presenters` 391 LOC, `verification-queue-presenters` 384 LOC, `operational-alerts-presenters` 668 LOC) into barrel re-exports plus per-view files (`*-shared`, `*-list-high-value-view`, `*-list-bucket-view`, `verification-queue-list-view`, `verification-queue-saved-views`, `operational-alerts-shared`, `operational-alerts-alert-row`, `operational-alerts-create-forms`). Same JSX, same `className` strings, same hidden form inputs; Server Action imports (`createOperationalAlertAction`, `updateOperationalAlertAction`, `deleteOperationalAlertAction`, `createSavedViewAction`, `updateSavedViewAction`, `deleteSavedViewAction`) are re-exported via the barrel rather than redefined, so route page imports stay unchanged.
+  - **consumer-css-grid shared layout tokens and primitives:** Add `shell-layout-tokens.ts` (`SHELL_SIDEBAR_WIDTH_CLASS`, `SHELL_CONTENT_OFFSET_CLASS`, `SHELL_SIDEBAR_BASE_CLASS`, `SHELL_MAIN_PADDING_CLASS`, `SHELL_BOTTOM_NAV_CLASS`, `SHELL_LOADING_CARD_CLASS`) to remove hidden coupling between `ShellNav.tsx` and `ShellClientWrapper.tsx`; extract `shell-status.ts` (`getShellStatusTone`, `SHELL_STATUS_TONE_CLASS`) and delegate `StatusPill` to it; add `ShellLoadingCard` server component and replace the 5 duplicated route `loading.tsx` files (`banking`, `dashboard`, `documents`, `exchange`, `payments/[paymentRequestId]`) with single-line wrappers; promote `shell-form-tokens.ts` and `shell-button-tokens.ts` from the settings barrel and pilot adoption in `banking/BankAccountForm`; add `shell-grid-tokens.ts` (`shellGridForm2`, `shellGridMetrics4`, `shellGridDetail3`, `shellGridContent2`) and replace 21 inline `className` strings across 14 route files. Rendered output is byte-identical.
+  - **Public-surface pruning:** Demote `export` to module-local for types and helpers consumed only within their defining file across admin-v2 and api-v2 (payout view model, verification-shared, operational-alerts query parsers and helpers, admin capability type, middleware-auth telemetry, document-tagging policy types, ledger query helper row type, and the `envs-derived` `parseExpiresToMs` helper).
+
+  ### ⚠️ Notes
+  - **Refactor-only day:** Today's recorded scope is api-v2 facade-preserving extractions, admin-v2 presenter splits with a new LOC guardrail, consumer-css-grid token/primitive consolidation, and unused-export pruning. No DB migrations, no DTO/controller/API contract changes, no auth or money-flow behavior changes; each slice is independently revertable through its barrel.
 
 </details>
 
