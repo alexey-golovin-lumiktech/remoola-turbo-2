@@ -18,6 +18,7 @@ import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { PaymentsListView } from '../../../features/payments/payments-list-presenters';
 import { getQuickstart } from '../../../lib/admin-api/overview.server';
 import { getPayments } from '../../../lib/admin-api/payments.server';
+import { buildListPageHref, countActiveFilters } from '../../../lib/list-page';
 import { buildPathWithSearch } from '../../../lib/navigation-context';
 import {
   booleanSearchParam,
@@ -82,53 +83,29 @@ export default async function PaymentsPage({
     overdue: overdue ? true : undefined,
   });
 
-  function nextHref(nextCursor: string) {
-    return buildPathWithSearch(`/payments`, {
-      quickstart: requestedQuickstartId,
-      q,
-      status,
-      paymentRail,
-      currencyCode,
-      amountMin,
-      amountMax,
-      dueDateFrom,
-      dueDateTo,
-      createdFrom,
-      createdTo,
-      overdue: overdue ? `true` : undefined,
-      cursor: nextCursor,
-    });
-  }
-
   const items = data?.items ?? [];
-  const activeFilterCount = [
-    q,
-    status,
-    paymentRail,
-    currencyCode,
-    amountMin,
-    amountMax,
-    dueDateFrom,
-    dueDateTo,
-    createdFrom,
-    createdTo,
-    overdue ? `overdue` : ``,
-  ].filter(Boolean).length;
-  const currentQueueHref = buildPathWithSearch(`/payments`, {
+  // overdue is omitted from the URL when false to preserve the existing query-shape contract.
+  const currentQuery = {
     quickstart: requestedQuickstartId,
-    q,
-    status,
-    paymentRail,
-    currencyCode,
-    amountMin,
-    amountMax,
-    dueDateFrom,
-    dueDateTo,
-    createdFrom,
-    createdTo,
-    overdue: overdue ? `true` : undefined,
-    cursor,
-  });
+    q: query.q,
+    status: query.status,
+    paymentRail: query.paymentRail,
+    currencyCode: query.currencyCode,
+    amountMin: query.amountMin,
+    amountMax: query.amountMax,
+    dueDateFrom: query.dueDateFrom,
+    dueDateTo: query.dueDateTo,
+    createdFrom: query.createdFrom,
+    createdTo: query.createdTo,
+    overdue: overdue ? true : undefined,
+    cursor: query.cursor,
+  };
+  const activeFilterCount = countActiveFilters(currentQuery, [`cursor`, `quickstart`]);
+  const currentQueueHref = buildPathWithSearch(`/payments`, currentQuery);
+
+  function nextHref(nextCursor: string) {
+    return buildListPageHref(`/payments`, currentQuery, `cursor`, nextCursor);
+  }
 
   return (
     <WorkspaceLayout
