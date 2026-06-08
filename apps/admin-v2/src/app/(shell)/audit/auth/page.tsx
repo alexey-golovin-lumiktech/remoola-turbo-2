@@ -14,7 +14,7 @@ import {
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAuthAudit } from '../../../../lib/admin-api/audit.server';
 import { formatDateTime, EMPTY_VALUE } from '../../../../lib/admin-format';
-import { buildPathWithSearch } from '../../../../lib/navigation-context';
+import { buildListPageHref } from '../../../../lib/list-page';
 import { dateSearchParam, positiveIntegerSearchParam, trimmedSearchParam } from '../../../../lib/query-contract';
 
 type AuthAuditRow = {
@@ -151,14 +151,7 @@ export default async function AuditAuthPage({
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   function pageHref(nextPage: number) {
-    return buildPathWithSearch(`/audit/auth`, {
-      email: query.email,
-      event: query.event,
-      ipAddress: query.ipAddress,
-      dateFrom: query.dateFrom,
-      dateTo: query.dateTo,
-      page: nextPage,
-    });
+    return buildListPageHref(`/audit/auth`, query, `page`, nextPage);
   }
 
   const items: AuthAuditRow[] = (data?.items ?? []) as AuthAuditRow[];

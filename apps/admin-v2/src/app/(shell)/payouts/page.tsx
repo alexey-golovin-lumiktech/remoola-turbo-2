@@ -15,6 +15,7 @@ import {
 } from '../../../features/payouts/payouts-list-presenters';
 import { getPayouts } from '../../../lib/admin-api/payments.server';
 import { formatDateTime, EMPTY_VALUE } from '../../../lib/admin-format';
+import { buildListPageHref } from '../../../lib/list-page';
 import { buildPathWithSearch } from '../../../lib/navigation-context';
 import { type SearchParamValue, trimmedSearchParam } from '../../../lib/query-contract';
 
@@ -37,10 +38,6 @@ export default async function PayoutsPage({
   const visibleBuckets = buckets.filter((bucket) => bucket.items.length > 0);
   const hiddenBuckets = buckets.filter((bucket) => bucket.items.length === 0);
   const highValueItems = items.filter((item) => item.highValue.eligibility === `high-value`);
-
-  function nextHref(nextCursor: string) {
-    return buildPathWithSearch(`/payouts`, { cursor: nextCursor });
-  }
 
   return (
     <WorkspaceLayout
@@ -78,7 +75,9 @@ export default async function PayoutsPage({
             <div className={buttonRowClass}>
               <ActionGhost href="/ledger">Back to ledger</ActionGhost>
               {data?.pageInfo.nextCursor ? (
-                <ActionGhost href={nextHref(data.pageInfo.nextCursor)}>Next</ActionGhost>
+                <ActionGhost href={buildListPageHref(`/payouts`, query, `cursor`, data.pageInfo.nextCursor)}>
+                  Next
+                </ActionGhost>
               ) : null}
             </div>
           }
