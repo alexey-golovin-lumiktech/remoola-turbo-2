@@ -1,20 +1,23 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { AdminDocumentTagService } from './admin-document-tag.service';
 import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
 import { buildDocumentEvidenceScopeWhere, uniqueIds } from './document-query-helpers';
+import {
+  assertAllowedTagsEditable,
+  assertBulkDocumentReady,
+  assertBulkDocumentsLoaded,
+  assertBulkTagRequest,
+  assertDocumentActive,
+  assertDocumentFound,
+  assertVersionMatches,
+  normalizeBulkTagResources,
+  parseRequiredVersion,
+} from './document-tagging-policy';
 import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
-
-function parseVersion(value: number | undefined, errorMessage: string) {
-  const version = Number(value);
-  if (!Number.isFinite(version) || version < 1) {
-    throw new BadRequestException(errorMessage);
-  }
-  return version;
-}
+import { deriveVersion } from '../admin-v2-version-utils';
 
 @Injectable()
 export class AdminDocumentTaggerService {
@@ -31,7 +34,7 @@ export class AdminDocumentTaggerService {
     body: { version?: number; tagIds?: string[] | null },
     meta?: RequestMeta,
   ) {
-    const expectedVersion = parseVersion(body.version, `Document version is required`);
+    const expectedVersion = parseRequiredVersion(body.version, `Document version is required`);
     const tagIds = uniqueIds(body.tagIds);
 
     return this.idempotency.execute({
@@ -40,25 +43,17 @@ export class AdminDocumentTaggerService {
       key: meta?.idempotencyKey,
       payload: { resourceId, expectedVersion, tagIds },
       execute: async () => {
-        const resource = await this.documentsQuery.findResourceForRetag({
-          id: resourceId,
-          AND: [buildDocumentEvidenceScopeWhere()],
-        });
-
-        if (!resource) {
-          throw new NotFoundException(`Document not found`);
-        }
-        if (resource.deletedAt) {
-          throw new ConflictException(`Soft-deleted documents stay investigation-only`);
-        }
-        if (deriveVersion(resource.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(`Document`, resource.updatedAt));
-        }
+        const resource = assertDocumentFound(
+          await this.documentsQuery.findResourceForRetag({
+            id: resourceId,
+            AND: [buildDocumentEvidenceScopeWhere()],
+          }),
+        );
+        assertDocumentActive(resource);
+        assertVersionMatches(`Document`, resource.updatedAt, expectedVersion);
 
         const allowedTags = await this.tagService.loadTagSelection(tagIds);
-        if (allowedTags.some((tag) => this.tagService.isReservedTag(tag.name))) {
-          throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
-        }
+        assertAllowedTagsEditable(allowedTags);
 
         const result = await this.documentsCommands.replaceDocumentTagsWithAudit({
           resource,
@@ -86,19 +81,8 @@ export class AdminDocumentTaggerService {
     meta?: RequestMeta,
   ) {
     const tagIds = uniqueIds(body.tagIds);
-    const resources = (body.resources ?? [])
-      .map((resource) => ({
-        resourceId: resource.resourceId?.trim() ?? ``,
-        version: Number(resource.version),
-      }))
-      .filter((resource) => resource.resourceId.length > 0);
-
-    if (tagIds.length === 0) {
-      throw new BadRequestException(`At least one tag is required for bulk tagging`);
-    }
-    if (resources.length === 0) {
-      throw new BadRequestException(`At least one document is required for bulk tagging`);
-    }
+    const resources = normalizeBulkTagResources(body.resources);
+    assertBulkTagRequest(tagIds, resources);
 
     return this.idempotency.execute({
       adminId,
@@ -107,35 +91,18 @@ export class AdminDocumentTaggerService {
       payload: { tagIds, resources },
       execute: async () => {
         const allowedTags = await this.tagService.loadTagSelection(tagIds);
-        if (allowedTags.some((tag) => this.tagService.isReservedTag(tag.name))) {
-          throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
-        }
+        assertAllowedTagsEditable(allowedTags);
 
         const resourceIds = resources.map((resource) => resource.resourceId);
         const documents = await this.documentsQuery.findBulkTagDocuments({
           id: { in: resourceIds },
           AND: [buildDocumentEvidenceScopeWhere()],
         });
-
-        if (documents.length !== resourceIds.length) {
-          throw new NotFoundException(`One or more documents were not found`);
-        }
+        assertBulkDocumentsLoaded(documents, resourceIds);
 
         const byId = new Map(documents.map((document) => [document.id, document]));
         for (const resource of resources) {
-          const current = byId.get(resource.resourceId);
-          if (!current) {
-            throw new NotFoundException(`One or more documents were not found`);
-          }
-          if (current.deletedAt) {
-            throw new ConflictException(`Soft-deleted documents stay investigation-only`);
-          }
-          if (!Number.isFinite(resource.version) || resource.version < 1) {
-            throw new BadRequestException(`Every bulk-tag document must include a valid version`);
-          }
-          if (deriveVersion(current.updatedAt) !== resource.version) {
-            throw new ConflictException(buildStaleVersionPayload(`Document`, current.updatedAt));
-          }
+          assertBulkDocumentReady(byId.get(resource.resourceId), resource.version);
         }
 
         return this.documentsCommands.bulkAttachTagsWithAudit({

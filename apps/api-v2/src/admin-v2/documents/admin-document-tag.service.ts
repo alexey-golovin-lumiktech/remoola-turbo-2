@@ -1,31 +1,23 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { AdminV2DocumentsCommandsRepository } from './admin-v2-documents-commands.repository';
 import { AdminV2DocumentsRepository } from './admin-v2-documents.repository';
+import {
+  assertDeleteConfirmed,
+  assertTagEditable,
+  assertTagFound,
+  assertTagNameAvailable,
+  assertTagSelectionComplete,
+  assertVersionMatches,
+  buildAlreadyExistsTagCreateResult,
+  buildUnchangedTagUpdateResult,
+  isReservedTagName,
+  normalizeTagName,
+  parseRequiredVersion,
+} from './document-tagging-policy';
 import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { buildStaleVersionPayload, deriveVersion } from '../admin-v2-version-utils';
-
-const RESERVED_TAG_PREFIX = `INVOICE-`;
-
-function normalizeTagName(value: string | null | undefined) {
-  const normalized = value?.trim().toLowerCase() ?? ``;
-  if (!normalized) {
-    throw new BadRequestException(`Tag name is required`);
-  }
-  if (normalized.startsWith(RESERVED_TAG_PREFIX.toLowerCase())) {
-    throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
-  }
-  return normalized;
-}
-
-function parseVersion(value: number | undefined, errorMessage: string) {
-  const version = Number(value);
-  if (!Number.isFinite(version) || version < 1) {
-    throw new BadRequestException(errorMessage);
-  }
-  return version;
-}
+import { deriveVersion } from '../admin-v2-version-utils';
 
 @Injectable()
 export class AdminDocumentTagService {
@@ -63,13 +55,7 @@ export class AdminDocumentTagService {
         const existing = await this.documentsQuery.findTagByName(name);
 
         if (existing) {
-          return {
-            tagId: existing.id,
-            name: existing.name,
-            version: deriveVersion(existing.updatedAt),
-            updatedAt: existing.updatedAt.toISOString(),
-            alreadyExists: true,
-          };
+          return buildAlreadyExistsTagCreateResult(existing);
         }
 
         const created = await this.documentsCommands.createTagWithAudit({
@@ -96,7 +82,7 @@ export class AdminDocumentTagService {
     meta?: RequestMeta,
   ) {
     const name = normalizeTagName(body.name);
-    const expectedVersion = parseVersion(body.version, `Tag version is required`);
+    const expectedVersion = parseRequiredVersion(body.version, `Tag version is required`);
 
     return this.idempotency.execute({
       adminId,
@@ -104,31 +90,14 @@ export class AdminDocumentTagService {
       key: meta?.idempotencyKey,
       payload: { tagId, name, expectedVersion },
       execute: async () => {
-        const tag = await this.documentsQuery.findTagById(tagId);
-
-        if (!tag) {
-          throw new NotFoundException(`Document tag not found`);
-        }
-        if (this.isReservedTag(tag.name)) {
-          throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
-        }
-        if (deriveVersion(tag.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(`Document tag`, tag.updatedAt));
-        }
+        const tag = assertTagEditable(assertTagFound(await this.documentsQuery.findTagById(tagId)));
+        assertVersionMatches(`Document tag`, tag.updatedAt, expectedVersion);
 
         const duplicate = await this.documentsQuery.findTagByName(name);
-        if (duplicate && duplicate.id !== tag.id) {
-          throw new ConflictException(`Document tag name is already in use`);
-        }
+        assertTagNameAvailable(duplicate, tag.id);
 
         if (tag.name === name) {
-          return {
-            tagId: tag.id,
-            name: tag.name,
-            version: deriveVersion(tag.updatedAt),
-            updatedAt: tag.updatedAt.toISOString(),
-            unchanged: true,
-          };
+          return buildUnchangedTagUpdateResult(tag);
         }
 
         const fresh = await this.documentsCommands.updateTagWithAudit({
@@ -150,10 +119,8 @@ export class AdminDocumentTagService {
   }
 
   async deleteTag(tagId: string, adminId: string, body: { version?: number; confirmed?: boolean }, meta?: RequestMeta) {
-    const expectedVersion = parseVersion(body.version, `Tag version is required`);
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for tag deletion`);
-    }
+    const expectedVersion = parseRequiredVersion(body.version, `Tag version is required`);
+    assertDeleteConfirmed(body.confirmed);
 
     return this.idempotency.execute({
       adminId,
@@ -161,17 +128,8 @@ export class AdminDocumentTagService {
       key: meta?.idempotencyKey,
       payload: { tagId, expectedVersion, confirmed: true },
       execute: async () => {
-        const tag = await this.documentsQuery.findTagById(tagId);
-
-        if (!tag) {
-          throw new NotFoundException(`Document tag not found`);
-        }
-        if (this.isReservedTag(tag.name)) {
-          throw new ConflictException(`Reserved invoice tags are system-managed and cannot be changed from Documents`);
-        }
-        if (deriveVersion(tag.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(`Document tag`, tag.updatedAt));
-        }
+        const tag = assertTagEditable(assertTagFound(await this.documentsQuery.findTagById(tagId)));
+        assertVersionMatches(`Document tag`, tag.updatedAt, expectedVersion);
 
         const result = await this.documentsCommands.deleteTagWithAudit({
           tag,
@@ -194,15 +152,10 @@ export class AdminDocumentTagService {
     }
 
     const tags = await this.documentsQuery.loadTagSelection(tagIds);
-
-    if (tags.length !== tagIds.length) {
-      throw new NotFoundException(`One or more document tags were not found`);
-    }
-
-    return tags;
+    return assertTagSelectionComplete(tags, tagIds);
   }
 
   isReservedTag(name: string) {
-    return name.startsWith(RESERVED_TAG_PREFIX);
+    return isReservedTagName(name);
   }
 }
