@@ -28,13 +28,13 @@ import {
 
 export type WorkspaceResponse = Awaited<ReturnType<typeof getOperationalAlerts>>;
 
-export type LedgerAnomaliesAlertQueryPayload = {
+type LedgerAnomaliesAlertQueryPayload = {
   class: LedgerAnomalyClass;
   dateFrom?: string;
   dateTo?: string;
 };
 
-export function parseLedgerAnomaliesAlertQuery(raw: unknown): LedgerAnomaliesAlertQueryPayload | null {
+function parseLedgerAnomaliesAlertQuery(raw: unknown): LedgerAnomaliesAlertQueryPayload | null {
   if (raw === null || typeof raw !== `object` || Array.isArray(raw)) {
     return null;
   }
@@ -60,7 +60,7 @@ export function formatThreshold(threshold: OperationalAlertThreshold): string {
   return `Unsupported threshold`;
 }
 
-export function isCurrentlyFiring(alert: OperationalAlertSummary, now: Date): boolean {
+function isCurrentlyFiring(alert: OperationalAlertSummary, now: Date): boolean {
   if (!alert.lastFiredAt) return false;
   const firedAt = new Date(alert.lastFiredAt).getTime();
   if (Number.isNaN(firedAt)) return false;

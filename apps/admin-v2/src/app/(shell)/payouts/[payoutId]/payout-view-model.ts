@@ -9,7 +9,7 @@ export type PayoutEscalationViewModel = {
   blockedReason: string;
 };
 
-export type PayoutViewModel = {
+type PayoutViewModel = {
   pills: string[];
   highValueThresholdLabel: string;
   destinationLabel: string | null;

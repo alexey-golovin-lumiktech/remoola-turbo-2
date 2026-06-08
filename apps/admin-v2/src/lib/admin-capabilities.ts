@@ -14,7 +14,7 @@ export const ADMIN_CAPABILITIES = {
   savedViewsManage: `saved_views.manage`,
 } as const;
 
-export type AdminCapability = (typeof ADMIN_CAPABILITIES)[keyof typeof ADMIN_CAPABILITIES];
+type AdminCapability = (typeof ADMIN_CAPABILITIES)[keyof typeof ADMIN_CAPABILITIES];
 
 type CapabilityBearer = { capabilities: ReadonlyArray<string> } | null | undefined;
 

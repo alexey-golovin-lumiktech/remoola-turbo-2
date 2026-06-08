@@ -3,9 +3,9 @@ import { type NextResponse } from 'next/server';
 const AUTH_TELEMETRY_HEADERS_FLAG = `NEXT_PUBLIC_AUTH_TELEMETRY_HEADERS`;
 
 export type RefreshScope = `auth_page` | `protected_page`;
-export type RefreshOutcome = `success` | `http_error` | `network_error`;
+type RefreshOutcome = `success` | `http_error` | `network_error`;
 
-export interface RefreshAttemptTelemetry {
+interface RefreshAttemptTelemetry {
   scope: RefreshScope;
   outcome: RefreshOutcome;
   latencyMs: number;

@@ -11,7 +11,7 @@ import { type getVerificationQueue } from '../../lib/admin-api/verification.serv
 import { EMPTY_VALUE, formatDateTime } from '../../lib/admin-format';
 import { withReturnTo } from '../../lib/navigation-context';
 
-export type VerificationItem = NonNullable<Awaited<ReturnType<typeof getVerificationQueue>>>[`items`][number];
+type VerificationItem = NonNullable<Awaited<ReturnType<typeof getVerificationQueue>>>[`items`][number];
 
 function renderVerificationAssignee(item: VerificationItem) {
   if (!item.assignedTo) {

@@ -28,10 +28,7 @@ import { describeVerificationQueuePayload, parseVerificationQueuePayload } from 
 
 const SAVED_VIEW_WORKSPACE = `verification_queue` as const;
 
-export type BuildVerificationHref = (next: {
-  payload?: AdminV2VerificationQueuePayload | null;
-  page?: number;
-}) => string;
+type BuildVerificationHref = (next: { payload?: AdminV2VerificationQueuePayload | null; page?: number }) => string;
 
 function SavedViewRow({
   view,

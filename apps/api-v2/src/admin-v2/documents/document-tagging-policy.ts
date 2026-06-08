@@ -10,22 +10,22 @@ type VersionedRecord = {
   updatedAt: Date;
 };
 
-export type DocumentTagRecord = VersionedRecord & {
+type DocumentTagRecord = VersionedRecord & {
   id: string;
   name: string;
 };
 
-export type DocumentTagSelectionRecord = {
+type DocumentTagSelectionRecord = {
   id: string;
   name: string;
 };
 
-export type RetaggableDocumentRecord = VersionedRecord & {
+type RetaggableDocumentRecord = VersionedRecord & {
   id: string;
   deletedAt: Date | null;
 };
 
-export type NormalizedBulkTagResource = {
+type NormalizedBulkTagResource = {
   resourceId: string;
   version: number;
 };

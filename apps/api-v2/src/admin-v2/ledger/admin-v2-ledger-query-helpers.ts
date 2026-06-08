@@ -17,7 +17,7 @@ export type LedgerCursor = {
 
 export type AmountSignFilter = `positive` | `negative` | `zero`;
 
-export type PageIdRow = {
+type PageIdRow = {
   id: string;
   created_at: Date;
 };

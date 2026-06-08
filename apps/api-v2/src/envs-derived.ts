@@ -14,7 +14,7 @@ type JwtDurationInputs = {
   JWT_REFRESH_TOKEN_EXPIRES_IN: string;
 };
 
-export function parseExpiresToMs(value: string): number {
+function parseExpiresToMs(value: string): number {
   const s = String(value).trim();
   const match = /^(\d+)(s|m|h|d)$/i.exec(s);
   if (!match) {
