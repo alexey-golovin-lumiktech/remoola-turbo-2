@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { type ReactNode } from 'react';
 
+import { SHELL_STATUS_TONE_CLASS, getShellStatusTone } from './shell-status';
+
 export function PageHeader({
   title,
   subtitle,
@@ -182,16 +184,7 @@ type StatusPillStatus =
   | string;
 
 export function StatusPill({ status }: { status: StatusPillStatus }) {
-  const tone =
-    status === `Signed` ||
-    status === `Completed` ||
-    status === `Connected` ||
-    status === `Default` ||
-    status === `Ready`
-      ? `border-transparent bg-(--app-success-soft) text-(--app-success-text)`
-      : status === `Pending` || status === `Processing` || status === `Review`
-        ? `border-transparent bg-(--app-warning-soft) text-(--app-warning-text)`
-        : `border-(--app-border) bg-(--app-surface-muted) text-(--app-text-soft)`;
+  const tone = SHELL_STATUS_TONE_CLASS[getShellStatusTone(status)];
 
   return <span className={`rounded-full border px-3 py-1 text-xs ${tone}`}>{status}</span>;
 }

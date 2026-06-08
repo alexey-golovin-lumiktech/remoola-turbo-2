@@ -3,6 +3,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import { CommandPalette } from './CommandPalette';
+import { SHELL_CONTENT_OFFSET_CLASS, SHELL_MAIN_PADDING_CLASS } from '../../shared/ui/shell-layout-tokens';
 import { ShellBottomNav, ShellSidebar, ShellTopBar } from '../../shared/ui/ShellNav';
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -68,9 +69,9 @@ export function ShellClientWrapper({ children }: { children: ReactNode }) {
       data-testid="consumer-css-grid-shell"
     >
       <ShellSidebar commandShortcutLabel={commandShortcutLabel} onOpenCommandPalette={openPalette} />
-      <div className="flex min-h-screen flex-col md:ml-[248px]">
+      <div className={`flex min-h-screen flex-col ${SHELL_CONTENT_OFFSET_CLASS}`}>
         <ShellTopBar commandShortcutLabel={commandShortcutLabel} onOpenCommandPalette={openPalette} />
-        <main className="flex-1 px-4 pb-24 pt-5 md:px-6 md:pb-8 md:pt-6">{children}</main>
+        <main className={SHELL_MAIN_PADDING_CLASS}>{children}</main>
         <ShellBottomNav />
       </div>
       <CommandPalette open={paletteOpen} onClose={closePalette} />

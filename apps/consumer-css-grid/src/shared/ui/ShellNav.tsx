@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 
 import { cn, RemoolaCompactLogo, RemoolaLogo, SearchIcon } from '@remoola/ui';
 
-import { ThemeQuickSwitch } from '../theme/ThemeQuickSwitch';
 import { ArrowDownIcon } from './icons/ArrowDownIcon';
 import { BankIcon } from './icons/BankIcon';
 import { CreditCardIcon } from './icons/CreditCardIcon';
@@ -15,6 +14,8 @@ import { HomeIcon } from './icons/HomeIcon';
 import { LightningIcon } from './icons/LightningIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
+import { SHELL_BOTTOM_NAV_CLASS, SHELL_SIDEBAR_BASE_CLASS } from './shell-layout-tokens';
+import { ThemeQuickSwitch } from '../theme/ThemeQuickSwitch';
 import { UsersIcon } from './icons/UsersIcon';
 
 const sidebarItems = [
@@ -95,10 +96,7 @@ export function ShellSidebar({
   const pathname = usePathname();
 
   return (
-    <aside
-      className="border-b border-(--app-border) bg-(--app-shell) backdrop-blur md:fixed md:left-0 md:top-0 md:h-screen md:w-[248px] md:overflow-hidden md:border-b-0 md:border-r"
-      data-testid="consumer-css-grid-shell-sidebar"
-    >
+    <aside className={SHELL_SIDEBAR_BASE_CLASS} data-testid="consumer-css-grid-shell-sidebar">
       <div className="flex items-center justify-between px-4 py-4 md:px-5">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-[60px] items-center overflow-hidden md:w-[136px]">
@@ -224,11 +222,7 @@ export function ShellBottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-(--app-border) bg-(--app-shell) px-2 py-2 backdrop-blur md:hidden"
-      aria-label="Primary"
-      data-testid="consumer-css-grid-shell-bottom-nav"
-    >
+    <nav className={SHELL_BOTTOM_NAV_CLASS} aria-label="Primary" data-testid="consumer-css-grid-shell-bottom-nav">
       <div className="mx-auto grid max-w-md grid-cols-6 gap-1">
         {mobileNavItems.map((item) => {
           const active = isActive(pathname, item.href);
