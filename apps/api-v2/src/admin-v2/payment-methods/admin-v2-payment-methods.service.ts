@@ -1,21 +1,31 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import {
-  buildStaleVersionPayload,
   deriveStatus,
   deriveVersion,
   mapBillingDetails,
   mapConsumer,
   toNullableIso,
 } from './admin-v2-payment-methods-mappers';
+import {
+  assertDuplicateEscalationCohort,
+  assertPaymentMethodDisableAllowed,
+  assertPaymentMethodMutationTargetFound,
+  assertPaymentMethodMutationTargetVersion,
+  assertPaymentMethodRemoveDefaultAllowed,
+  buildAlreadyDisabledPaymentMethodResult,
+  buildAlreadyNotDefaultPaymentMethodResult,
+  requireDisablePaymentMethodConfirmation,
+  requireDisablePaymentMethodReason,
+  requireDuplicateEscalationFingerprint,
+  requirePaymentMethodMutationVersion,
+} from './admin-v2-payment-methods-mutation-policy';
 import { AdminV2PaymentMethodsQuery } from './admin-v2-payment-methods.query';
 import {
   AdminV2PaymentMethodsRepository,
   type AdminV2PaymentMethodsRequestMeta as RequestMeta,
 } from './admin-v2-payment-methods.repository';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-
-const REASON_MAX_LENGTH = 500;
 
 @Injectable()
 export class AdminV2PaymentMethodsService {
@@ -126,22 +136,9 @@ export class AdminV2PaymentMethodsService {
     body: { version?: number; confirmed?: boolean; reason?: string },
     meta?: RequestMeta,
   ) {
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for payment method disable`);
-    }
-
-    const reason = body.reason?.trim();
-    if (!reason) {
-      throw new BadRequestException(`Disable reason is required`);
-    }
-    if (reason.length > REASON_MAX_LENGTH) {
-      throw new BadRequestException(`Disable reason is too long`);
-    }
-
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
+    requireDisablePaymentMethodConfirmation(body.confirmed);
+    const reason = requireDisablePaymentMethodReason(body.reason);
+    const expectedVersion = requirePaymentMethodMutationVersion(body.version);
 
     return this.idempotency.execute({
       adminId,
@@ -151,26 +148,11 @@ export class AdminV2PaymentMethodsService {
       execute: async () => {
         const paymentMethod = await this.repository.getPaymentMethodForMutation(id);
 
-        if (!paymentMethod) {
-          throw new NotFoundException(`Payment method not found`);
-        }
-        if (deriveVersion(paymentMethod.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(paymentMethod.updatedAt));
-        }
-        if (paymentMethod.deletedAt) {
-          throw new ConflictException(`Soft-deleted payment method cannot be disabled`);
-        }
+        assertPaymentMethodMutationTargetFound(paymentMethod);
+        assertPaymentMethodMutationTargetVersion(paymentMethod, expectedVersion);
+        assertPaymentMethodDisableAllowed(paymentMethod);
         if (paymentMethod.disabledAt) {
-          return {
-            paymentMethodId: paymentMethod.id,
-            consumerId: paymentMethod.consumerId,
-            status: `DISABLED`,
-            defaultSelected: false,
-            disabledAt: paymentMethod.disabledAt.toISOString(),
-            version: deriveVersion(paymentMethod.updatedAt),
-            alreadyDisabled: true,
-            defaultCleared: !paymentMethod.defaultSelected,
-          };
+          return buildAlreadyDisabledPaymentMethodResult(paymentMethod);
         }
 
         return this.repository.disablePaymentMethod({
@@ -184,10 +166,7 @@ export class AdminV2PaymentMethodsService {
   }
 
   async removeDefaultPaymentMethod(id: string, adminId: string, body: { version?: number }, meta?: RequestMeta) {
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
+    const expectedVersion = requirePaymentMethodMutationVersion(body.version);
 
     return this.idempotency.execute({
       adminId,
@@ -197,24 +176,11 @@ export class AdminV2PaymentMethodsService {
       execute: async () => {
         const paymentMethod = await this.repository.getPaymentMethodForMutation(id);
 
-        if (!paymentMethod) {
-          throw new NotFoundException(`Payment method not found`);
-        }
-        if (deriveVersion(paymentMethod.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(paymentMethod.updatedAt));
-        }
-        if (paymentMethod.deletedAt) {
-          throw new ConflictException(`Soft-deleted payment method cannot remove default`);
-        }
+        assertPaymentMethodMutationTargetFound(paymentMethod);
+        assertPaymentMethodMutationTargetVersion(paymentMethod, expectedVersion);
+        assertPaymentMethodRemoveDefaultAllowed(paymentMethod);
         if (!paymentMethod.defaultSelected) {
-          return {
-            paymentMethodId: paymentMethod.id,
-            consumerId: paymentMethod.consumerId,
-            defaultSelected: false,
-            status: deriveStatus(paymentMethod),
-            version: deriveVersion(paymentMethod.updatedAt),
-            alreadyNotDefault: true,
-          };
+          return buildAlreadyNotDefaultPaymentMethodResult(paymentMethod);
         }
 
         return this.repository.removeDefaultPaymentMethod({
@@ -227,10 +193,7 @@ export class AdminV2PaymentMethodsService {
   }
 
   async escalateDuplicatePaymentMethod(id: string, adminId: string, body: { version?: number }, meta?: RequestMeta) {
-    const expectedVersion = Number(body.version);
-    if (!Number.isFinite(expectedVersion) || expectedVersion < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
+    const expectedVersion = requirePaymentMethodMutationVersion(body.version);
 
     return this.idempotency.execute({
       adminId,
@@ -240,25 +203,15 @@ export class AdminV2PaymentMethodsService {
       execute: async () => {
         const paymentMethod = await this.repository.getPaymentMethodForMutation(id);
 
-        if (!paymentMethod) {
-          throw new NotFoundException(`Payment method not found`);
-        }
-        if (deriveVersion(paymentMethod.updatedAt) !== expectedVersion) {
-          throw new ConflictException(buildStaleVersionPayload(paymentMethod.updatedAt));
-        }
-
-        const fingerprint = paymentMethod.stripeFingerprint?.trim();
-        if (!fingerprint) {
-          throw new ConflictException(`Duplicate escalation requires a schema-backed fingerprint`);
-        }
+        assertPaymentMethodMutationTargetFound(paymentMethod);
+        assertPaymentMethodMutationTargetVersion(paymentMethod, expectedVersion);
+        const fingerprint = requireDuplicateEscalationFingerprint(paymentMethod);
 
         const duplicatePaymentMethodIds = await this.repository.listFingerprintDuplicateIds(
           fingerprint,
           paymentMethod.id,
         );
-        if (duplicatePaymentMethodIds.length === 0) {
-          throw new ConflictException(`Duplicate escalation requires at least one matching fingerprint duplicate`);
-        }
+        assertDuplicateEscalationCohort(duplicatePaymentMethodIds);
 
         return this.repository.escalateDuplicatePaymentMethod({
           paymentMethod: {
