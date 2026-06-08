@@ -1,18 +1,22 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { type AdminV2SavedViewSummary, type AdminV2SavedViewsListResponse } from '@remoola/api-types';
+import { type AdminV2SavedViewsListResponse } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 
 import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import {
-  MAX_SAVED_VIEW_DESCRIPTION_LENGTH,
-  MAX_SAVED_VIEW_NAME_LENGTH,
-  MIN_SAVED_VIEW_NAME_LENGTH,
-  SavedViewWorkspace,
-  assertSavedViewWorkspace,
-  assertValidPayload,
-} from './admin-v2-saved-views.dto';
+  type SavedViewRow,
+  type SavedViewSummary,
+  assertExpectedDeletedAtNull,
+  buildCreateAuditMetadata,
+  buildDeleteAuditMetadata,
+  buildUpdateAuditMetadata,
+  normalizeDescription,
+  toSummary,
+  trimRequiredName,
+} from './admin-v2-saved-views-policy';
+import { SavedViewWorkspace, assertSavedViewWorkspace, assertValidPayload } from './admin-v2-saved-views.dto';
 import { AdminV2SavedViewsQuery } from './admin-v2-saved-views.query';
 import { AdminV2SavedViewsRepository } from './admin-v2-saved-views.repository';
 import {
@@ -20,60 +24,7 @@ import {
   type AdminV2RequestMeta as SavedViewRequestMeta,
 } from '../admin-v2-context.types';
 
-type SavedViewSummary = AdminV2SavedViewSummary;
-
 const SAVED_VIEW_LIST_HARD_CAP = 200;
-
-type SavedViewRow = {
-  id: string;
-  ownerId: string;
-  workspace: string;
-  name: string;
-  description: string | null;
-  queryPayload: Prisma.JsonValue;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-};
-
-function toSummary(row: SavedViewRow): SavedViewSummary {
-  return {
-    id: row.id,
-    workspace: row.workspace,
-    name: row.name,
-    description: row.description,
-    queryPayload: row.queryPayload as unknown,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  };
-}
-
-function trimRequiredName(raw: string | null | undefined): string {
-  const trimmed = (raw ?? ``).trim();
-  if (trimmed.length < MIN_SAVED_VIEW_NAME_LENGTH) {
-    throw new BadRequestException(`name is required`);
-  }
-  if (trimmed.length > MAX_SAVED_VIEW_NAME_LENGTH) {
-    throw new BadRequestException(`name is too long (max ${MAX_SAVED_VIEW_NAME_LENGTH} characters)`);
-  }
-  return trimmed;
-}
-
-function normalizeDescription(raw: string | null | undefined): string | null {
-  if (raw == null) return null;
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (trimmed.length > MAX_SAVED_VIEW_DESCRIPTION_LENGTH) {
-    throw new BadRequestException(`description is too long (max ${MAX_SAVED_VIEW_DESCRIPTION_LENGTH} characters)`);
-  }
-  return trimmed;
-}
-
-function assertExpectedDeletedAtNull(value: number) {
-  if (value !== 0) {
-    throw new BadRequestException(`expectedDeletedAtNull must be 0`);
-  }
-}
 
 @Injectable()
 export class AdminV2SavedViewsService {
@@ -130,12 +81,7 @@ export class AdminV2SavedViewsService {
           action: ADMIN_ACTION_AUDIT_ACTIONS.saved_view_create,
           resource: `saved_view`,
           resourceId: created.id,
-          metadata: {
-            workspace,
-            name,
-            payloadBytes,
-            severity: `standard`,
-          },
+          metadata: buildCreateAuditMetadata({ workspace, name, payloadBytes }),
           ipAddress: meta.ipAddress ?? null,
           userAgent: meta.userAgent ?? null,
         });
@@ -195,23 +141,20 @@ export class AdminV2SavedViewsService {
           queryPayload: body.queryPayload,
         });
 
-        const changedFields = [
-          ...(hasName ? [`name`] : []),
-          ...(hasDescription ? [`description`] : []),
-          ...(hasPayload ? [`queryPayload`] : []),
-        ];
         await this.adminActionAudit.record({
           adminId,
           action: ADMIN_ACTION_AUDIT_ACTIONS.saved_view_update,
           resource: `saved_view`,
           resourceId: savedViewId,
-          metadata: {
+          metadata: buildUpdateAuditMetadata({
             workspace: result.updated.workspace,
-            changedFields,
-            ...(hasName && nextName !== result.previousName ? { previousName: result.previousName } : {}),
-            ...(nextPayloadBytes !== null ? { payloadBytes: nextPayloadBytes } : {}),
-            severity: `standard`,
-          },
+            hasName,
+            hasDescription,
+            hasPayload,
+            previousName: result.previousName,
+            nextName,
+            payloadBytes: nextPayloadBytes,
+          }),
           ipAddress: meta.ipAddress ?? null,
           userAgent: meta.userAgent ?? null,
         });
@@ -243,11 +186,10 @@ export class AdminV2SavedViewsService {
           action: ADMIN_ACTION_AUDIT_ACTIONS.saved_view_delete,
           resource: `saved_view`,
           resourceId: savedViewId,
-          metadata: {
+          metadata: buildDeleteAuditMetadata({
             workspace: result.lockedWorkspace,
             name: result.lockedName,
-            severity: `standard`,
-          },
+          }),
           ipAddress: meta.ipAddress ?? null,
           userAgent: meta.userAgent ?? null,
         });
