@@ -59,4 +59,13 @@ describe(`admin-v2 architecture guardrails`, () => {
       .filter(({ loc }) => loc > PAGE_TSX_LOC_LIMIT);
     expect(offenders).toEqual([]);
   });
+
+  it(`keeps feature presenter files under the section-extraction size threshold`, () => {
+    const PRESENTER_LOC_LIMIT = 350;
+    const presenters = SOURCE_FILES.filter((rel) => rel.startsWith(`features/`) && rel.endsWith(`-presenters.tsx`));
+    const offenders = presenters
+      .map((rel) => ({ rel, loc: readSource(rel).split(`\n`).length }))
+      .filter(({ loc }) => loc > PRESENTER_LOC_LIMIT);
+    expect(offenders).toEqual([]);
+  });
 });
