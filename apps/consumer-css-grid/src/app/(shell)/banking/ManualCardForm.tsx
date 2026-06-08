@@ -1,5 +1,6 @@
 import { type CardFormState } from './banking-form-helpers';
 import { digitsOnly, normalizeEmail, normalizeMonth, normalizePhone } from './banking-helpers';
+import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
 
 function FieldHint({ message, tone = `muted` }: { message: string; tone?: `muted` | `error` }) {
   return (
@@ -113,7 +114,7 @@ export function ManualCardForm({
           className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
         />
       </div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className={shellGridForm2}>
         <div>
           <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="card-billing-email">
             Billing email

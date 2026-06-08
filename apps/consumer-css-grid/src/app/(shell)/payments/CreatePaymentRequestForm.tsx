@@ -9,6 +9,7 @@ import { buildPaymentDetailHref, type PaymentFlowContext } from './payment-flow-
 import { getTodayDateInputValue, isDateInputTodayOrLater } from '../../../lib/date-input';
 import { createPaymentRequestMutation } from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
 
 export type CreatePaymentRequestFormProps = {
   contacts: Array<{ id: string; email: string; name?: string }>;
@@ -162,7 +163,7 @@ export function CreatePaymentRequestForm({
         submitForm();
       }}
     >
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className={shellGridForm2}>
         <div className="md:col-span-2">
           <label
             className="mb-2 block text-sm text-(--app-text-muted)"

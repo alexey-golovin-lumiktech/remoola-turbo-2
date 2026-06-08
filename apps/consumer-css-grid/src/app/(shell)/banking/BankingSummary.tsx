@@ -1,5 +1,6 @@
 import { type PaymentMethod } from './banking-form-helpers';
 import { getMethodLabel } from './banking-helpers';
+import { shellGridMetrics4 } from '../../../shared/ui/shell-grid-tokens';
 import { MetricCard } from '../../../shared/ui/shell-primitives';
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 
 export function BankingSummary({ accountsCount, defaultBankAccount, defaultCard, reusableCardsCount }: Props) {
   return (
-    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <section className={shellGridMetrics4}>
       <MetricCard icon="◈" label="Accounts" value={String(accountsCount)} sublabel="Connected methods" />
       <MetricCard
         icon="★"

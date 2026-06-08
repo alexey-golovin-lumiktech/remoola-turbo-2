@@ -2,6 +2,7 @@ import { type BankFormState } from './banking-form-helpers';
 import { digitsOnly, normalizeEmail, normalizePhone } from './banking-helpers';
 import { primaryButtonClass } from '../../../shared/ui/shell-button-tokens';
 import { fieldLabelClass } from '../../../shared/ui/shell-form-tokens';
+import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
 
 function FieldHint({ message, tone = `muted` }: { message: string; tone?: `muted` | `error` }) {
   return (
@@ -77,7 +78,7 @@ export function BankAccountForm({ emailValid, form, formValid, isPending, phoneV
           className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
         />
       </div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className={shellGridForm2}>
         <div>
           <label className={fieldLabelClass} htmlFor="bank-billing-email">
             Billing email

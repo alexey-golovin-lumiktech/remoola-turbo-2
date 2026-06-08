@@ -30,6 +30,7 @@ import {
   updateExchangeRuleMutation,
 } from '../../../lib/mutations/exchange.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
 import { MetricLine, Panel } from '../../../shared/ui/shell-primitives';
 
 type Quote = {
@@ -148,7 +149,7 @@ export function ExchangeClient({
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <Panel title="Exchange form" data-testid={`exchange-convert-form`}>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className={shellGridForm2}>
               <select
                 value={convertForm.from}
                 onChange={(event) => updateConvertForm({ from: event.target.value })}
@@ -206,7 +207,7 @@ export function ExchangeClient({
                 </div>
               </div>
             ) : null}
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className={shellGridForm2}>
               <button
                 type="button"
                 disabled={isPending || !convertState.convertFormValid}

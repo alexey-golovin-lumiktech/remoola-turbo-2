@@ -12,6 +12,7 @@ import {
 } from '../../../lib/mutations/banking.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
+import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
 
 type Message = {
   type: `error` | `success`;
@@ -163,7 +164,7 @@ function ReusableCardSetupForm({ onMessage }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className={shellGridForm2}>
         <label className="grid gap-2">
           <span className="text-sm text-(--app-text-muted)">Cardholder name</span>
           <input
@@ -182,7 +183,7 @@ function ReusableCardSetupForm({ onMessage }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className={shellGridForm2}>
         <label className="grid gap-2">
           <span className="text-sm text-(--app-text-muted)">Billing email</span>
           <input

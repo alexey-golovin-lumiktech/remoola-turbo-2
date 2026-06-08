@@ -16,6 +16,7 @@ import {
 import { createContactMutation, hasSavedContactByEmailQuery } from '../../../../lib/mutations/contacts.server';
 import { startPaymentMutation } from '../../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../../lib/session-expired';
+import { shellGridContent2 } from '../../../../shared/ui/shell-grid-tokens';
 import { Panel } from '../../../../shared/ui/shell-primitives';
 
 type Props = {
@@ -188,7 +189,7 @@ export function StartPaymentClient({
             </div>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className={shellGridContent2}>
             <div className="md:col-span-2">
               <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="start-payment-email">
                 Recipient email

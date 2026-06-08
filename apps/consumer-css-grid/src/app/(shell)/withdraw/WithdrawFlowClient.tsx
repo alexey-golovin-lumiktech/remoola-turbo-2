@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { buildWithdrawViewModel } from './withdraw-view-model';
 import { submitTransferAction, submitWithdrawAction } from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellGridContent2 } from '../../../shared/ui/shell-grid-tokens';
 import { Field } from '../../../shared/ui/shell-primitives';
 
 type PaymentMethod = {
@@ -125,7 +126,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
               Withdrawals unlock once at least one balance becomes positive.
             </div>
           ) : null}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className={shellGridContent2}>
             <div>
               <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="withdraw-amount">
                 Amount
@@ -228,7 +229,7 @@ export function WithdrawFlowClient({ balances, bankMethods }: Props) {
               Transfers unlock once at least one balance becomes positive.
             </div>
           ) : null}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className={shellGridContent2}>
             <div className="md:col-span-2">
               <label className="mb-2 block text-sm text-(--app-text-muted)" htmlFor="transfer-recipient">
                 Recipient email or phone

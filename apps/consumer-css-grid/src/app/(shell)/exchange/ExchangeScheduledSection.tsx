@@ -19,6 +19,7 @@ import {
   toDateTimeLocalValue,
 } from './exchange-shared';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
 import { MetricLine, Panel } from '../../../shared/ui/shell-primitives';
 
 type ExchangeScheduledSectionProps = {
@@ -144,11 +145,11 @@ export function ExchangeScheduledSection({
       ) : null}
 
       <div className="mb-4 space-y-3" data-testid={`exchange-schedule-form`}>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className={shellGridForm2}>
           <MetricLine label="Pending" value={String(pendingScheduledCount)} />
           <MetricLine label="History" value={String(historyScheduledCount)} />
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className={shellGridForm2}>
           <select
             aria-label={`Source currency for scheduled conversion`}
             value={scheduleForm.from}

@@ -6,6 +6,7 @@ import { fieldInputClass, fieldLabelClass, primaryButtonClass } from './settings
 import { type HelpGuides, type PasswordPanelCopy } from './settings-types';
 import { HelpInlineGuides } from '../../../../features/help/ui';
 import { type ProfileResponse } from '../../../../lib/consumer-api.server';
+import { shellGridForm2 } from '../../../../shared/ui/shell-grid-tokens';
 import { Panel } from '../../../../shared/ui/shell-primitives';
 import { type PasswordForm, type PasswordValidity } from '../settings-view-model';
 
@@ -47,7 +48,7 @@ export function SettingsPasswordFormPanel({
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className={shellGridForm2}>
           <div>
             <label className={fieldLabelClass} htmlFor="settings-new-password">
               {profile?.hasPassword ? `New password` : `Create password`}

@@ -2,6 +2,7 @@
 
 import { type Dispatch, type SetStateAction } from 'react';
 
+import { shellGridForm2 } from '../../../../shared/ui/shell-grid-tokens';
 import { Panel } from '../../../../shared/ui/shell-primitives';
 import { updateProfilePhoneValue, type ProfileForm } from '../settings-view-model';
 import { fieldInputClass, fieldLabelClass, primaryButtonClass } from './settings-class-tokens';
@@ -22,7 +23,7 @@ export function SettingsProfileForm({
   return (
     <Panel title="Edit profile">
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className={shellGridForm2}>
           <div>
             <label className={fieldLabelClass} htmlFor="settings-first-name">
               First name
@@ -49,7 +50,7 @@ export function SettingsProfileForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className={shellGridForm2}>
           <div>
             <label className={fieldLabelClass} htmlFor="settings-phone-number">
               Phone number
@@ -80,7 +81,7 @@ export function SettingsProfileForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className={shellGridForm2}>
           <div>
             <label className={fieldLabelClass} htmlFor="settings-country">
               Country

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { type ContactDetailsResponse } from '../../../lib/consumer-api.server';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
+import { shellGridDetail3 } from '../../../shared/ui/shell-grid-tokens';
 import { Panel, StatusPill } from '../../../shared/ui/shell-primitives';
 
 function formatDateTime(value: string | null | undefined) {
@@ -127,7 +128,7 @@ export function ContactDetailView({ contact, contactId }: Props) {
             </div>
           </section>
 
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <section className={shellGridDetail3}>
             <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
               <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Matching payments</div>
               <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">{totalPayments}</div>

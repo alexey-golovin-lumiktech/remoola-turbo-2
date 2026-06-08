@@ -13,6 +13,7 @@ import { type VerificationBannerState } from './verification-banner';
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { type DashboardData } from '../../../lib/consumer-api.server';
+import { shellGridMetrics4 } from '../../../shared/ui/shell-grid-tokens';
 import { ActionCard, ChecklistItem, MetricCard, Panel, StatusPill } from '../../../shared/ui/shell-primitives';
 
 type DashboardSummary = DashboardData[`summary`];
@@ -66,7 +67,7 @@ export function DashboardMetricsSection({
 }) {
   return (
     <>
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className={shellGridMetrics4}>
         <MetricCard
           icon="◉"
           label="Settled balance"

@@ -5,6 +5,7 @@ import { type ContractDetailViewModel } from './contract-detail-model';
 import { buildContractFilesWorkspaceHref, buildContractPaymentDetailHref } from './contract-workflow-actions';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
+import { shellGridDetail3 } from '../../../shared/ui/shell-grid-tokens';
 import { MetricLine, Panel, StatusPill } from '../../../shared/ui/shell-primitives';
 
 type Props = {
@@ -47,7 +48,7 @@ export function ContractDetailSections({ inlineActions, returnToContractsHref, v
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <section className={shellGridDetail3}>
           <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
             <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Payment history</div>
             <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">
@@ -75,7 +76,7 @@ export function ContractDetailSections({ inlineActions, returnToContractsHref, v
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <section className={shellGridDetail3}>
           <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
             <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Drafts</div>
             <div className="mt-3 text-3xl font-semibold tracking-tight text-amber-200">
