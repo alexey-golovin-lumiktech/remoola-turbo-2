@@ -3,15 +3,16 @@ import { Injectable } from '@nestjs/common';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import {
-  assertRawDate,
-  assertRawUuid,
-  buildDateRangeSql,
-  buildDescendingCreatedAtIdCursorSql,
-  buildOptionalUuidEqualsSql,
-  isUuid,
-} from '../../shared/prisma-raw.utils';
+  buildLedgerDisputesWhere,
+  buildLedgerListWhere,
+  buildRawPageNextCursor,
+  buildStatusFilteredLedgerPageIdsSql,
+  parsePageIdRows,
+  sortLedgerRowsToPageOrder,
+  type AmountSignFilter,
+  type LedgerCursor,
+} from './admin-v2-ledger-query-helpers';
 import { PrismaService } from '../../shared/prisma.service';
-import { buildCreatedAtIdCursorWhere } from '../admin-v2-query.utils';
 
 const ledgerListInclude = Prisma.validator<Prisma.LedgerEntryModelInclude>()({
   consumer: { select: { email: true } },
@@ -130,38 +131,6 @@ const ledgerDisputeInclude = Prisma.validator<Prisma.LedgerEntryDisputeModelIncl
   },
 });
 
-type LedgerCursor = {
-  createdAt: Date;
-  id: string;
-} | null;
-
-type AmountSignFilter = `positive` | `negative` | `zero`;
-
-type PageIdRow = {
-  id: string;
-  created_at: Date;
-};
-
-function parsePageIdRows(rows: unknown[]): PageIdRow[] {
-  return rows.map((row) => {
-    if (row == null || typeof row !== `object`) {
-      throw new Error(`Invalid ledger raw page row`);
-    }
-
-    return {
-      id: assertRawUuid((row as { id?: unknown }).id, `ledger raw page row id`),
-      created_at: assertRawDate((row as { created_at?: unknown }).created_at, `ledger raw page row created_at`),
-    };
-  });
-}
-
-function dateRangeSqlParams(createdAt?: Prisma.DateTimeFilter): { from?: Date; to?: Date } {
-  return {
-    from: createdAt?.gte instanceof Date ? createdAt.gte : undefined,
-    to: createdAt?.lte instanceof Date ? createdAt.lte : undefined,
-  };
-}
-
 export type AdminV2LedgerListItemRecord = Prisma.LedgerEntryModelGetPayload<{
   include: typeof ledgerListInclude;
 }>;
@@ -199,72 +168,22 @@ export class AdminV2LedgerQuery {
   async listLedgerEntries(params: AdminV2LedgerListQueryParams) {
     const { limit, cursor, search, type, status, currencyCode, paymentRequestId, consumerId, amountSign, createdAt } =
       params;
-    const searchPattern = search ? `%${search}%` : null;
-    const invalidUuidFilter =
-      (paymentRequestId?.trim() ? !isUuid(paymentRequestId) : false) ||
-      (consumerId?.trim() ? !isUuid(consumerId) : false);
 
     if (status) {
-      const deletedSql = Prisma.sql`AND le.deleted_at IS NULL`;
-      const typeSql = type ? Prisma.sql`AND le.type::text = ${type}` : Prisma.empty;
-      const currencySql = currencyCode ? Prisma.sql`AND le.currency_code::text = ${currencyCode}` : Prisma.empty;
-      const paymentRequestSql = buildOptionalUuidEqualsSql(Prisma.sql`le.payment_request_id`, paymentRequestId);
-      const consumerSql = buildOptionalUuidEqualsSql(Prisma.sql`le.consumer_id`, consumerId);
-      const amountSignSql =
-        amountSign === `positive`
-          ? Prisma.sql`AND le.amount > 0`
-          : amountSign === `negative`
-            ? Prisma.sql`AND le.amount < 0`
-            : amountSign === `zero`
-              ? Prisma.sql`AND le.amount = 0`
-              : Prisma.empty;
-      const createdAtSql = buildDateRangeSql(Prisma.sql`le.created_at`, dateRangeSqlParams(createdAt));
-      const searchSql = searchPattern
-        ? Prisma.sql`
-            AND (
-              LOWER(COALESCE(le.stripe_id, '')) LIKE LOWER(${searchPattern})
-              OR LOWER(COALESCE(le.idempotency_key, '')) LIKE LOWER(${searchPattern})
-              ${
-                isUuid(search)
-                  ? Prisma.sql`
-                      OR le.id::text = ${search}
-                      OR le.ledger_id::text = ${search}
-                      OR le.payment_request_id::text = ${search}
-                    `
-                  : Prisma.empty
-              }
-            )
-          `
-        : Prisma.empty;
-      const cursorSql = buildDescendingCreatedAtIdCursorSql({
-        timestampColumn: Prisma.sql`le.created_at`,
-        idColumn: Prisma.sql`le.id`,
-        cursor,
-      });
-
-      const rawPageIdRows = await this.prisma.$queryRaw<unknown[]>(Prisma.sql`
-        SELECT le.id, le.created_at
-        FROM ledger_entry le
-        LEFT JOIN LATERAL (
-          SELECT leo.status
-          FROM ledger_entry_outcome leo
-          WHERE leo.ledger_entry_id = le.id
-          ORDER BY leo.created_at DESC, leo.id DESC
-          LIMIT 1
-        ) latest_outcome ON true
-        WHERE COALESCE(latest_outcome.status::text, le.status::text) = ${status}
-          ${deletedSql}
-          ${typeSql}
-          ${currencySql}
-          ${paymentRequestSql}
-          ${consumerSql}
-          ${amountSignSql}
-          ${createdAtSql}
-          ${searchSql}
-          ${cursorSql}
-        ORDER BY le.created_at DESC, le.id DESC
-        LIMIT ${limit + 1}
-      `);
+      const rawPageIdRows = await this.prisma.$queryRaw<unknown[]>(
+        buildStatusFilteredLedgerPageIdsSql({
+          limit,
+          cursor,
+          search,
+          type,
+          status,
+          currencyCode,
+          paymentRequestId,
+          consumerId,
+          amountSign,
+          createdAt,
+        }),
+      );
       const pageIdRows = parsePageIdRows(rawPageIdRows);
 
       const pageIds = pageIdRows.slice(0, limit).map((row) => row.id);
@@ -275,43 +194,24 @@ export class AdminV2LedgerQuery {
               where: { id: { in: pageIds } },
               include: ledgerListInclude,
             });
-      const positionById = new Map(pageIds.map((id, index) => [id, index]));
-      rows.sort((left, right) => (positionById.get(left.id) ?? 0) - (positionById.get(right.id) ?? 0));
-      const next = pageIdRows[limit];
 
       return {
-        rows,
-        nextCursorSource: next ? { createdAt: next.created_at, id: next.id } : null,
+        rows: sortLedgerRowsToPageOrder(pageIds, rows),
+        nextCursorSource: buildRawPageNextCursor(pageIdRows, limit),
       };
     }
 
     const rows = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        deletedAt: null,
-        ...(invalidUuidFilter ? { id: { in: [] } } : {}),
-        ...buildCreatedAtIdCursorWhere(cursor),
-        ...(type ? { type } : {}),
-        ...(currencyCode ? { currencyCode } : {}),
-        ...(paymentRequestId && isUuid(paymentRequestId) ? { paymentRequestId } : {}),
-        ...(consumerId && isUuid(consumerId) ? { consumerId } : {}),
-        ...(createdAt ? { createdAt } : {}),
-        ...(amountSign === `positive`
-          ? { amount: { gt: 0 } }
-          : amountSign === `negative`
-            ? { amount: { lt: 0 } }
-            : amountSign === `zero`
-              ? { amount: { equals: 0 } }
-              : {}),
-        ...(search
-          ? {
-              OR: [
-                { stripeId: { contains: search, mode: `insensitive` } },
-                { idempotencyKey: { contains: search, mode: `insensitive` } },
-                ...(isUuid(search) ? [{ id: search }, { ledgerId: search }, { paymentRequestId: search }] : []),
-              ],
-            }
-          : {}),
-      },
+      where: buildLedgerListWhere({
+        cursor,
+        search,
+        type,
+        currencyCode,
+        paymentRequestId,
+        consumerId,
+        amountSign,
+        createdAt,
+      }),
       include: ledgerListInclude,
       orderBy: [{ createdAt: `desc` }, { id: `desc` }],
       take: limit + 1,
@@ -364,41 +264,14 @@ export class AdminV2LedgerQuery {
 
   async listDisputes(params: AdminV2LedgerDisputesQueryParams) {
     const { limit, cursor, search, paymentRequestId, consumerId, createdAt } = params;
-    const where: Prisma.LedgerEntryDisputeModelWhereInput[] = [];
-
-    if (createdAt) {
-      where.push({ createdAt });
-    }
-
-    if (cursor) {
-      where.push({
-        OR: [
-          { createdAt: { lt: cursor.createdAt } },
-          { AND: [{ createdAt: cursor.createdAt }, { id: { lt: cursor.id } }] },
-        ],
-      });
-    }
-
-    if (search) {
-      where.push({
-        OR: [
-          { stripeDisputeId: { contains: search, mode: `insensitive` } },
-          ...(isUuid(search) ? [{ id: search }, { ledgerEntryId: search }] : []),
-        ],
-      });
-    }
-
-    if (paymentRequestId || consumerId) {
-      where.push({
-        ledgerEntry: {
-          ...(paymentRequestId ? { paymentRequestId } : {}),
-          ...(consumerId ? { consumerId } : {}),
-        },
-      });
-    }
-
     const rows = await this.prisma.ledgerEntryDisputeModel.findMany({
-      where: where.length > 0 ? { AND: where } : {},
+      where: buildLedgerDisputesWhere({
+        cursor,
+        search,
+        paymentRequestId,
+        consumerId,
+        createdAt,
+      }),
       include: ledgerDisputeInclude,
       orderBy: [{ createdAt: `desc` }, { id: `desc` }],
       take: limit + 1,
