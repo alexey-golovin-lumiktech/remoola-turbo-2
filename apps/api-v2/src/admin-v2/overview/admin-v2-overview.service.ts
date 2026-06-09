@@ -3,9 +3,18 @@ import { Injectable } from '@nestjs/common';
 import { type AdminV2OverviewSignalSummary, type AdminV2OverviewSummaryResponse } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
+import {
+  buildAvailableCountSignal,
+  buildLedgerAnomaliesSignal,
+  buildPendingVerificationsSignal,
+  buildRateStaleCutoff,
+  buildRecentAdminActionsSignal,
+  buildSuspiciousAuthEventsSignal,
+  buildUnavailableCountSignal,
+  buildUnavailableLedgerAnomaliesSignal,
+} from './admin-v2-overview-policy';
 import { AdminV2OverviewQuery } from './admin-v2-overview.query';
 import { envs } from '../../envs';
-import { AUTH_AUDIT_EVENTS } from '../../shared/auth-audit.service';
 import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
 import { AdminV2VerificationSlaService } from '../verification/admin-v2-verification-sla.service';
 
@@ -25,21 +34,16 @@ export class AdminV2OverviewService {
     try {
       const count = await params.loadCount();
 
-      return {
+      return buildAvailableCountSignal({
         label: params.label,
+        href: params.href,
         count,
-        phaseStatus: `live-actionable`,
-        availability: `available`,
-        href: params.href,
-      };
+      });
     } catch {
-      return {
+      return buildUnavailableCountSignal({
         label: params.label,
-        count: null,
-        phaseStatus: `live-actionable`,
-        availability: `temporarily-unavailable`,
         href: params.href,
-      };
+      });
     }
   }
 
@@ -52,9 +56,7 @@ export class AdminV2OverviewService {
   }
 
   private getRateStaleCutoff(now: Date) {
-    const hours = envs.EXCHANGE_RATE_MAX_AGE_HOURS;
-    const ageMs = Number.isFinite(hours) && hours > 0 ? hours * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
-    return new Date(now.getTime() - ageMs);
+    return buildRateStaleCutoff(now, envs.EXCHANGE_RATE_MAX_AGE_HOURS);
   }
 
   private async getFailedScheduledConversionsSignal(): Promise<AdminV2OverviewSignalSummary> {
@@ -68,21 +70,9 @@ export class AdminV2OverviewService {
   private async getLedgerAnomaliesSignal(): Promise<AdminV2OverviewSignalSummary> {
     try {
       const summary = await this.ledgerAnomalies.getSummary();
-      return {
-        label: `Ledger anomalies`,
-        count: summary.totalCount,
-        phaseStatus: `live-actionable`,
-        availability: summary.totalCount == null ? `temporarily-unavailable` : `available`,
-        href: `/ledger/anomalies`,
-      };
+      return buildLedgerAnomaliesSignal(summary.totalCount);
     } catch {
-      return {
-        label: `Ledger anomalies`,
-        count: null,
-        phaseStatus: `live-actionable`,
-        availability: `temporarily-unavailable`,
-        href: `/ledger/anomalies`,
-      };
+      return buildUnavailableLedgerAnomaliesSignal();
     }
   }
 
@@ -133,35 +123,15 @@ export class AdminV2OverviewService {
     return {
       computedAt: now.toISOString(),
       signals: {
-        pendingVerifications: {
-          label: `Pending verifications`,
+        pendingVerifications: buildPendingVerificationsSignal({
           count: pendingVerifications,
-          phaseStatus: `live-actionable`,
-          availability: `available`,
-          href: `/verification`,
           slaBreachedCount: slaSnapshot.breachedConsumerIds.size,
-        },
-        recentAdminActions: {
-          label: `Recent admin actions`,
-          phaseStatus: `live-actionable`,
-          availability: `available`,
-          href: `/audit/admin-actions`,
-          items: recentAdminActions.map((item) => ({
-            id: item.id,
-            action: item.action,
-            resource: item.resource,
-            resourceId: item.resourceId,
-            adminEmail: item.admin.email,
-            createdAt: item.createdAt.toISOString(),
-          })),
-        },
-        suspiciousAuthEvents: {
-          label: `Suspicious auth events`,
+        }),
+        recentAdminActions: buildRecentAdminActionsSignal(recentAdminActions),
+        suspiciousAuthEvents: buildSuspiciousAuthEventsSignal({
           count: suspiciousAuthEvents,
-          phaseStatus: `live-actionable`,
-          availability: `available`,
-          href: `/audit/auth?event=${AUTH_AUDIT_EVENTS.login_failure}&dateFrom=${authWindowStart.toISOString()}`,
-        },
+          authWindowStart,
+        }),
         overduePaymentRequests: overduePaymentRequestsSignal,
         uncollectiblePaymentRequests: uncollectiblePaymentRequestsSignal,
         openDisputes,
