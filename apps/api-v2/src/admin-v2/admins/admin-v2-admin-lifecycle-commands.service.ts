@@ -3,8 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
 import {
-  assertAdminFound,
-  assertExpectedVersion,
   buildAdminStatusAuditPayload,
   buildAdminStatusResult,
   buildAlreadyActiveResult,
@@ -13,8 +11,12 @@ import {
   buildDeactivationAuditEntry,
   buildRestoreAuditEntry,
   buildRestoredResult,
-  requireConfirmation,
   requireDistinctAdminTarget,
+} from './admin-v2-admin-lifecycle-mutation.helpers';
+import {
+  assertAdminFound,
+  assertExpectedVersion,
+  requireConfirmation,
   requireValidVersion,
   throwStaleMutationConflict,
 } from './admin-v2-admin-mutation-helpers';

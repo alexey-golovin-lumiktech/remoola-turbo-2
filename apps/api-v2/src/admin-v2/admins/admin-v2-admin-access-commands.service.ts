@@ -3,9 +3,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import {
   assertActiveAdminTarget,
-  assertAdminFound,
   assertAvailableCapabilityOverrides,
-  assertExpectedVersion,
   assertKnownCapabilityOverrides,
   buildAlreadyAppliedPermissionResult,
   buildAlreadyAppliedRoleResult,
@@ -18,6 +16,10 @@ import {
   buildTouchedPermissionIds,
   normalizeCapabilityOverrides,
   requireAllowedRoleKey,
+} from './admin-v2-admin-access-mutation.helpers';
+import {
+  assertAdminFound,
+  assertExpectedVersion,
   requireConfirmation,
   requireValidVersion,
   throwStaleMutationConflict,
