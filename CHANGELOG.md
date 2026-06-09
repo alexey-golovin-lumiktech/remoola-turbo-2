@@ -3268,7 +3268,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-06-08</summary>
 
 - **2026-06-08:**
@@ -3287,6 +3287,33 @@
 
   ### ⚠️ Notes
   - **Refactor-only day:** Today's recorded scope is api-v2 facade-preserving extractions, admin-v2 presenter splits with a new LOC guardrail, consumer-css-grid token/primitive consolidation, and unused-export pruning. No DB migrations, no DTO/controller/API contract changes, no auth or money-flow behavior changes; each slice is independently revertable through its barrel.
+
+</details>
+
+<details open>
+<summary>2026-06-09</summary>
+
+- **2026-06-09:**
+
+  ### 🔐 Security / Production Safety
+  - **Consumer Google OAuth callback hardening through facade thinning:** Thin `ConsumerGoogleOAuthController` to an HTTP facade over `ConsumerAuthControllerSupportService` and extract callback-local orchestration into `consumer-google-oauth-callback.helpers.ts`, preserving the `consumer/auth/google/start`, `google/callback`, `google/signup-session`, `google/signup-session/establish`, and `oauth/complete` route contracts, request/response shapes, signup vs existing-consumer redirect branching, OAuth state validation, canonical app-scope routing, and state-cookie clearing semantics — and preserving the invariant that auth cookies are set only in `oauthComplete`, never in the Google callback.
+  - **api-v2 envs facade preserved across schema/parser split:** Extract `zBoolean` / `zOptionalBoolean` into `envs-parsers.ts` and `ENVIRONMENT`, `environments`, schema groups, and the aggregated `schema` into `envs-schema.ts`, keeping `envs.ts` as the public facade that still parses envs at module load, derives effective flags, applies policy assertions, and writes `process.env.DATABASE_URL`. Production-like fail-closed validation, ngrok policy checks, bootstrap-seed gating, and the `envs` export shape/mutability are unchanged so auth, cookie, OAuth, Stripe, and bootstrap callers continue to read the same runtime config surface.
+  - **api-v2 configure-app middleware ordering preserved across split:** Extract scoped CORS, middleware/body-parser sequencing, Swagger wiring, and the global validation pipe into dedicated `configure/setup-cors.ts`, `setup-middlewares.ts`, `setup-swagger.ts`, and `setup-validation.ts` modules behind the existing `configure-app.ts` facade, preserving Helmet, compression, correlation IDs, webhook raw-body handling, JSON parsing, cookies, device IDs, root/docs redirects, the scoped CORS behavior for admin/consumer/docs routes including the current `403 "CORS origin denied"` path, and the cookie-first Swagger behavior.
+  - **Admin-v2 assignment policy invariants centralized:** Extend `admin-v2-assignment-policy.ts` with pure guards for required ids, reassign confirmation, super-admin enforcement, self-reassign rejection, and target-admin validation, preserving `AdminV2AssignmentsService` signatures, controller wiring, repository calls, DTO contracts, idempotency scopes/payload shapes for `assignment-claim` / `assignment-release` / `assignment-reassign`, audit sequencing, exception wording, and assignment ownership / `SUPER_ADMIN` authorization invariants for release and reassign flows.
+  - **Admin-v2 overview signal contract pinned through policy extraction:** Move overview signal builders, recent-action mapping, ledger-anomalies fallback mapping, and stale-rate cutoff derivation into `admin-v2-overview-policy.ts` while keeping `AdminV2OverviewService` public method and controller-facing response shape unchanged. Signal keys, ordering, phase vocabulary, availability semantics, schema-valid wire contracts, suspicious-auth signal href generation, ledger-anomalies availability mapping, and stale exchange-rate cutoff fallback behavior are all preserved.
+  - **Admin-v2 consumer mutation invariants centralized:** Expand `admin-v2-consumer-action-policy.ts` with validation, confirmation guards, audit metadata builders, and result builders for consumer note, flag, logout, suspension, and resend-email mutations, preserving DTO contracts, response payload shapes, confirmation gates, version validation, duplicate-flag short-circuiting, suspension/logout idempotency scopes, and the auth/email side-effect sequencing for force logout, suspension, and resend-email paths.
+
+  ### 🧪 Testing
+  - **Policy-helper specs paired with every api-v2 extraction:** Add `admin-v2-overview-policy.spec.ts`, `admin-v2-assignment-policy.spec.ts`, `admin-v2-consumer-action-policy.spec.ts`, and `envs-parsers.spec.ts` for helper-level signal/mapping/cutoff, claim/release/reassign guard, consumer mutation validation/audit-metadata/result-shape, and boolean coercion/optional-parser fallback coverage. Existing service-level specs (`admin-v2-overview.service.spec.ts`, `admin-v2-assignments.service.spec.ts`, `admin-v2-consumers.service.spec.ts`, `envs.spec.ts`, `configure-app.integration.spec.ts`, `main.spec.ts`) are kept as the integration-level characterization suites.
+  - **consumer-css-grid token and primitive contract pins:** Add `shell-card-tokens.ts` with 4 constants (`shellEmptyState`, `shellCardSm`, `shellContainerBase`, `shellBadgePrimary`) plus contract tests pinning each string and its distinguishing trait, extend `shell-layout-tokens.test.ts` with 6 new assertions (exact-string pins and the distinguishing `0.9fr` vs `0.75fr` checks for the new `shellMainAsideBalanced` / `shellMainAsidePrimary` tokens), and add `shell-panel.test.tsx` (6 element/class/title/children/aside contract tests) and `shell-indicators.test.tsx` (8 `StatusPill` tone and `ChecklistItem` line-through tests) alongside the primitive split.
+
+  ### 🛠 DevEx
+  - **consumer-css-grid shell primitives split and barrel retired:** Split `shell-primitives.tsx` (222 lines) into 5 focused files (`shell-page-layout.tsx` for `PageHeader` / `WorkspaceUnavailableBanner`, `shell-panel.tsx` for `Panel`, `shell-data-display.tsx` for `MetricCard` / `MetricLine` / `Field`, `shell-indicators.tsx` for `StatusPill` / `ChecklistItem`, `shell-actions.tsx` for `ActionCard` / `ActionMini`), then migrate all 44 import sites from the barrel to the focused files (`shell-page-layout` × 15, `shell-panel` × 13, `shell-data-display` × 3, `shell-indicators` × 1, `shell-actions` × 1, mixed × 12) and delete the `shell-primitives.tsx` barrel along with the `ContractsClient.test.tsx` / `ContactsClient.test.tsx` `jest.mock` references that pointed at it.
+  - **consumer-css-grid xl ratio convergence:** Add `shellMainAsideBalanced` (`xl:grid-cols-[1.1fr_0.9fr]`) and `shellMainAsidePrimary` (`xl:grid-cols-[1.25fr_0.75fr]`) to `shell-layout-tokens.ts` and converge 13 inline ratio variants across 11 files (banking, contacts, contracts, exchange, payments, settings, withdraw, contacts-sections, contracts-list, documents, help/[slug]) onto the 2 canonical tokens; 4 outliers (dashboard `mt-5`, help/page sum-`2.35fr`, `HelpHubBrowse` `gap-4`, `PaymentsClient` 5-col `minmax`) remain inline by design.
+  - **Admin-v2 admin mutation helpers split by domain:** Decompose `admin-v2-admin-mutation-helpers.ts` (~350 lines) into shared primitives (`requireConfirmation`, `requireValidVersion`, `assertAdminFound`, `assertExpectedVersion`, `throwStaleMutationConflict`) plus new `admin-v2-admin-access-mutation.helpers.ts` (role and capability-override guards and audit payload builders) and `admin-v2-admin-lifecycle-mutation.helpers.ts` (distinct-admin guard, status audit/result/audit-entry builders). `admin-v2-admin-access-commands.service.ts` and `admin-v2-admin-lifecycle-commands.service.ts` rewire to the new modules; optimistic-version checks, confirmation gates, allowed-role/capability whitelists, and admin-action audit payloads are unchanged — only their file location moved, with no new public surface and no controller/DTO/transaction-boundary change.
+
+  ### ⚠️ Notes
+  - **Refactor-only day:** Today's recorded scope is consumer-css-grid token/primitive consolidation with barrel retirement, api-v2 facade-preserving extractions (configure-app split, envs schema/parser split, overview/assignment/consumer-action policy helpers), admin-v2 admin-mutation helper split by domain, and the Google OAuth callback facade thinning. No DB migrations, no DTO/controller/API contract changes, no cookie-key, endpoint, header, or matcher changes, and no auth or money-flow behavior changes.
 
 </details>
 
