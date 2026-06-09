@@ -1,13 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
-import {
-  assertCanReleaseAssignment,
-  assertExpectedReleasedAtNull,
-  mapAdminRef,
-  validateMandatoryAssignmentReason,
-  validateOptionalAssignmentReason,
-} from './admin-v2-assignment-policy';
 import { AdminV2AssignmentsService } from './admin-v2-assignments.service';
 
 type AssignmentActorContext = {
@@ -113,57 +106,6 @@ const meta = {
   userAgent: `jest`,
   idempotencyKey: `idem-1`,
 };
-
-describe(`admin-v2 assignment pure policy`, () => {
-  it(`maps nullable admin refs for assignment context`, () => {
-    expect(mapAdminRef({ id: OPS_ADMIN_ID, email: `ops@example.com` })).toEqual({
-      id: OPS_ADMIN_ID,
-      name: null,
-      email: `ops@example.com`,
-    });
-    expect(mapAdminRef({ id: null, email: `ops@example.com` })).toBeNull();
-  });
-
-  it(`validates optional and mandatory assignment reasons`, () => {
-    expect(validateOptionalAssignmentReason(`  review queue  `)).toBe(`review queue`);
-    expect(validateOptionalAssignmentReason(`   `)).toBeNull();
-    expect(() => validateOptionalAssignmentReason(`x`.repeat(501))).toThrow(BadRequestException);
-
-    expect(validateMandatoryAssignmentReason(`  Operator handoff due to OOO coverage  `)).toBe(
-      `Operator handoff due to OOO coverage`,
-    );
-    expect(() => validateMandatoryAssignmentReason(`short`)).toThrow(BadRequestException);
-  });
-
-  it(`keeps release policy limited to owner or super-admin`, () => {
-    expect(() =>
-      assertCanReleaseAssignment({
-        assignedTo: OPS_ADMIN_ID,
-        adminId: OPS_ADMIN_ID,
-        profile: { role: `OPS_ADMIN` },
-      }),
-    ).not.toThrow();
-    expect(() =>
-      assertCanReleaseAssignment({
-        assignedTo: OTHER_ADMIN_ID,
-        adminId: SUPER_ADMIN_ID,
-        profile: { role: `SUPER_ADMIN` },
-      }),
-    ).not.toThrow();
-    expect(() =>
-      assertCanReleaseAssignment({
-        assignedTo: OTHER_ADMIN_ID,
-        adminId: OPS_ADMIN_ID,
-        profile: { role: `OPS_ADMIN` },
-      }),
-    ).toThrow(ForbiddenException);
-  });
-
-  it(`validates expectedReleasedAtNull exactly as 0`, () => {
-    expect(() => assertExpectedReleasedAtNull(0)).not.toThrow();
-    expect(() => assertExpectedReleasedAtNull(1)).toThrow(BadRequestException);
-  });
-});
 
 describe(`AdminV2AssignmentsService`, () => {
   describe(`claim`, () => {

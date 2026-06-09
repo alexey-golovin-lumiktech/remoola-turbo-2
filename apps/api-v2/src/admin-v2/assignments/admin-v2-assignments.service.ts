@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { newUuid } from '@remoola/security-utils';
 
@@ -7,7 +7,14 @@ import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import {
   assertCanReleaseAssignment,
+  assertConfirmedReassign,
   assertExpectedReleasedAtNull,
+  assertNotSelfReassign,
+  assertSuperAdminReassign,
+  assertTargetAdminForReassign,
+  requireAssignmentId,
+  requireAssignmentResourceType,
+  requireNewAssigneeId,
   validateMandatoryAssignmentReason,
   validateOptionalAssignmentReason,
 } from './admin-v2-assignment-policy';
@@ -35,11 +42,9 @@ export class AdminV2AssignmentsService {
     meta: AssignmentRequestMeta,
   ) {
     const adminId = actor.id;
-    if (!body.resourceType || typeof body.resourceType !== `string`) {
-      throw new BadRequestException(`resourceType is required`);
-    }
-    assertResourceType(body.resourceType);
-    const resourceType: AssignableResourceType = body.resourceType;
+    const rawResourceType = requireAssignmentResourceType(body.resourceType);
+    assertResourceType(rawResourceType);
+    const resourceType: AssignableResourceType = rawResourceType;
     const resourceId = body.resourceId ?? ``;
     const reason = validateOptionalAssignmentReason(body.reason);
 
@@ -83,12 +88,9 @@ export class AdminV2AssignmentsService {
     body: { assignmentId?: string; reason?: string | null; expectedReleasedAtNull: number },
     meta: AssignmentRequestMeta,
   ) {
-    if (!body.assignmentId) {
-      throw new BadRequestException(`assignmentId is required`);
-    }
+    const assignmentId = requireAssignmentId(body.assignmentId);
     assertExpectedReleasedAtNull(body.expectedReleasedAtNull);
     const reason = validateOptionalAssignmentReason(body.reason);
-    const assignmentId = body.assignmentId;
     const adminId = actor.id;
 
     return this.idempotency.execute({
@@ -140,37 +142,20 @@ export class AdminV2AssignmentsService {
     },
     meta: AssignmentRequestMeta,
   ) {
-    if (!body.assignmentId) {
-      throw new BadRequestException(`assignmentId is required`);
-    }
-    if (!body.newAssigneeId) {
-      throw new BadRequestException(`newAssigneeId is required`);
-    }
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for reassign`);
-    }
+    const assignmentId = requireAssignmentId(body.assignmentId);
+    const newAssigneeId = requireNewAssigneeId(body.newAssigneeId);
+    assertConfirmedReassign(body.confirmed);
     assertExpectedReleasedAtNull(body.expectedReleasedAtNull);
     const reason = validateMandatoryAssignmentReason(body.reason);
 
     const adminId = actor.id;
     const profile = await this.accessService.getAccessProfile(actor);
-    if (profile.role !== `SUPER_ADMIN`) {
-      throw new ForbiddenException(`Reassign requires SUPER_ADMIN`);
-    }
+    assertSuperAdminReassign(profile);
 
-    const assignmentId = body.assignmentId;
-    const newAssigneeId = body.newAssigneeId;
-    if (newAssigneeId === adminId) {
-      throw new BadRequestException(`Reassign to self is not allowed; use release + claim instead`);
-    }
+    assertNotSelfReassign(newAssigneeId, adminId);
 
     const targetAdmin = await this.query.getAdminTargetForReassign(newAssigneeId);
-    if (!targetAdmin) {
-      throw new NotFoundException(`Target admin not found`);
-    }
-    if (targetAdmin.deletedAt) {
-      throw new BadRequestException(`Target admin is deactivated`);
-    }
+    assertTargetAdminForReassign(targetAdmin);
 
     return this.idempotency.execute({
       adminId,
