@@ -19,8 +19,9 @@ import {
   toDateTimeLocalValue,
 } from './exchange-shared';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { MetricLine } from '../../../shared/ui/shell-data-display';
 import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
-import { MetricLine, Panel } from '../../../shared/ui/shell-primitives';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 type ExchangeScheduledSectionProps = {
   scheduled: ScheduledConversion[];

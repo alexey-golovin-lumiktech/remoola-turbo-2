@@ -3,7 +3,7 @@
 import { type Dispatch, type SetStateAction } from 'react';
 
 import { shellGridForm2 } from '../../../../shared/ui/shell-grid-tokens';
-import { Panel } from '../../../../shared/ui/shell-primitives';
+import { Panel } from '../../../../shared/ui/shell-panel';
 import { updateProfilePhoneValue, type ProfileForm } from '../settings-view-model';
 import { fieldInputClass, fieldLabelClass, primaryButtonClass } from './settings-class-tokens';
 

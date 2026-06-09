@@ -34,7 +34,7 @@ jest.mock(`../../../lib/mutations/contacts.server`, () => ({
   deleteContactMutation: mockedDeleteContactMutation,
 }));
 
-jest.mock(`../../../shared/ui/shell-primitives`, () => ({
+jest.mock(`../../../shared/ui/shell-actions`, () => ({
   ActionMini: ({ label }: { label: string }) => React.createElement(`div`, null, label),
 }));
 

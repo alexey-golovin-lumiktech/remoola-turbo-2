@@ -3,7 +3,7 @@
 import { type HelpGuides } from './settings-types';
 import { HelpInlineGuides } from '../../../../features/help/ui';
 import { type ProfileResponse } from '../../../../lib/consumer-api.server';
-import { Panel } from '../../../../shared/ui/shell-primitives';
+import { Panel } from '../../../../shared/ui/shell-panel';
 import { DashboardVerificationAction } from '../../dashboard/DashboardVerificationAction';
 import { humanizeStatus, type SettingsVerificationCardState } from '../settings-helpers';
 

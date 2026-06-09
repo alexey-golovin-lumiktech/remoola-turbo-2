@@ -1,7 +1,7 @@
 import { type PaymentMethod } from './banking-form-helpers';
 import { getMethodLabel } from './banking-helpers';
+import { MetricCard } from '../../../shared/ui/shell-data-display';
 import { shellGridMetrics4 } from '../../../shared/ui/shell-grid-tokens';
-import { MetricCard } from '../../../shared/ui/shell-primitives';
 
 type Props = {
   accountsCount: number;

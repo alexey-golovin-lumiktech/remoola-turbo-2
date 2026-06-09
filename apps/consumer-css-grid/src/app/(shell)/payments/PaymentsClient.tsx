@@ -10,7 +10,8 @@ import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/h
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { type PaymentsResponse } from '../../../lib/consumer-api.server';
-import { MetricCard, Panel } from '../../../shared/ui/shell-primitives';
+import { MetricCard } from '../../../shared/ui/shell-data-display';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 type Props = {
   payments: PaymentsResponse[`items`];

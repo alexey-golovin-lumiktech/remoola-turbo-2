@@ -19,8 +19,8 @@ import {
   updateDocumentTagsMutation,
 } from '../../../lib/mutations/documents.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { MetricLine } from '../../../shared/ui/shell-data-display';
 import { shellMainAsidePrimary } from '../../../shared/ui/shell-layout-tokens';
-import { MetricLine } from '../../../shared/ui/shell-primitives';
 
 type Props = {
   documents: DocumentItem[];

@@ -25,9 +25,16 @@ jest.mock(`next/navigation`, () => ({
   useSearchParams: () => mockSearchParams,
 }));
 
-jest.mock(`../../../shared/ui/shell-primitives`, () => ({
+jest.mock(`../../../shared/ui/shell-actions`, () => ({
   ActionMini: ({ label }: { label: string }) => React.createElement(`div`, null, label),
+}));
+
+jest.mock(`../../../shared/ui/shell-indicators`, () => ({
   ChecklistItem: ({ children }: { children: React.ReactNode }) => React.createElement(`div`, null, children),
+  StatusPill: ({ status }: { status: string }) => React.createElement(`span`, null, status),
+}));
+
+jest.mock(`../../../shared/ui/shell-panel`, () => ({
   Panel: ({ title, aside, children }: { title: string; aside?: string; children: React.ReactNode }) =>
     React.createElement(
       `section`,
@@ -36,7 +43,6 @@ jest.mock(`../../../shared/ui/shell-primitives`, () => ({
       aside ? React.createElement(`div`, null, aside) : null,
       children,
     ),
-  StatusPill: ({ status }: { status: string }) => React.createElement(`span`, null, status),
 }));
 
 async function loadSubject() {

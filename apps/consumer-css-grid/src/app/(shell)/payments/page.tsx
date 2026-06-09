@@ -9,7 +9,7 @@ import {
   normalizePaymentRequestCurrencies,
 } from '../../../lib/payment-request-normalizers';
 import { CreditCardIcon } from '../../../shared/ui/icons/CreditCardIcon';
-import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-page-layout';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 

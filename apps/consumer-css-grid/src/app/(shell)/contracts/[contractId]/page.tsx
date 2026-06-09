@@ -1,6 +1,6 @@
 import { getContractDetails } from '../../../../lib/consumer-api.server';
 import { DocumentIcon } from '../../../../shared/ui/icons/DocumentIcon';
-import { PageHeader } from '../../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../../shared/ui/shell-page-layout';
 import { ContractDetailView } from '../ContractDetailView';
 
 type ContractDetailPageSearchParams = {

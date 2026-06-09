@@ -1,6 +1,6 @@
 import { getContactDetails } from '../../../../../lib/consumer-api.server';
 import { UsersIcon } from '../../../../../shared/ui/icons/UsersIcon';
-import { PageHeader } from '../../../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../../../shared/ui/shell-page-layout';
 import { ContactDetailView } from '../../ContactDetailView';
 
 export default async function ContactDetailsPage({ params }: { params: Promise<{ contactId: string }> }) {

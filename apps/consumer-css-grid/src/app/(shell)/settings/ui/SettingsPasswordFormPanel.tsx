@@ -7,7 +7,7 @@ import { type HelpGuides, type PasswordPanelCopy } from './settings-types';
 import { HelpInlineGuides } from '../../../../features/help/ui';
 import { type ProfileResponse } from '../../../../lib/consumer-api.server';
 import { shellGridForm2 } from '../../../../shared/ui/shell-grid-tokens';
-import { Panel } from '../../../../shared/ui/shell-primitives';
+import { Panel } from '../../../../shared/ui/shell-panel';
 import { type PasswordForm, type PasswordValidity } from '../settings-view-model';
 
 export function SettingsPasswordFormPanel({

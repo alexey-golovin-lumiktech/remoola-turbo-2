@@ -11,7 +11,8 @@ import {
 } from '../../../../features/help/help-hub-data';
 import { HelpGuideDetailArticle } from '../../../../features/help/ui';
 import { shellMainAsidePrimary } from '../../../../shared/ui/shell-layout-tokens';
-import { PageHeader, Panel } from '../../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../../shared/ui/shell-page-layout';
+import { Panel } from '../../../../shared/ui/shell-panel';
 
 const helpAudienceStateLabels = {
   guest: `Guest users`,

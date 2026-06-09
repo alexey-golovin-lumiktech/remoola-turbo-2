@@ -5,7 +5,8 @@ import { SearchIcon } from '@remoola/ui';
 import { type PublicHelpGuideRegistryEntry } from '../../../features/help/guide-registry';
 import { helpGuideFeatureLabels, helpGuideTypeLabels, helpHubData } from '../../../features/help/help-hub-data';
 import { HelpHubBrowseClient } from '../../../features/help/ui/HelpHubBrowseClient';
-import { PageHeader, Panel } from '../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../shared/ui/shell-page-layout';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 function GuideCard({
   guide,

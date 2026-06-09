@@ -30,9 +30,10 @@ import {
   updateExchangeRuleMutation,
 } from '../../../lib/mutations/exchange.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { MetricLine } from '../../../shared/ui/shell-data-display';
 import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
 import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
-import { MetricLine, Panel } from '../../../shared/ui/shell-primitives';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 type Quote = {
   from: string;

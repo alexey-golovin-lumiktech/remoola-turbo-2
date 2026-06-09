@@ -1,6 +1,6 @@
 import { type PaymentMethod } from './banking-form-helpers';
 import { getMethodKind, getMethodLabel, getMethodMeta } from './banking-helpers';
-import { StatusPill } from '../../../shared/ui/shell-primitives';
+import { StatusPill } from '../../../shared/ui/shell-indicators';
 
 type PaymentMethodSection = {
   id: string;

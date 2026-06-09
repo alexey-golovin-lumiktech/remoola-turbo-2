@@ -13,8 +13,11 @@ import { type VerificationBannerState } from './verification-banner';
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { type DashboardData } from '../../../lib/consumer-api.server';
+import { ActionCard } from '../../../shared/ui/shell-actions';
+import { MetricCard } from '../../../shared/ui/shell-data-display';
 import { shellGridMetrics4 } from '../../../shared/ui/shell-grid-tokens';
-import { ActionCard, ChecklistItem, MetricCard, Panel, StatusPill } from '../../../shared/ui/shell-primitives';
+import { ChecklistItem, StatusPill } from '../../../shared/ui/shell-indicators';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 type DashboardSummary = DashboardData[`summary`];
 type DashboardVerification = DashboardData[`verification`];

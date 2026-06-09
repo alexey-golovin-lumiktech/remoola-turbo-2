@@ -17,7 +17,7 @@ import { createContactMutation, hasSavedContactByEmailQuery } from '../../../../
 import { startPaymentMutation } from '../../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../../lib/session-expired';
 import { shellGridContent2 } from '../../../../shared/ui/shell-grid-tokens';
-import { Panel } from '../../../../shared/ui/shell-primitives';
+import { Panel } from '../../../../shared/ui/shell-panel';
 
 type Props = {
   preferredCurrency: string;

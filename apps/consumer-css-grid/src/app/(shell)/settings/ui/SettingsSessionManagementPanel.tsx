@@ -2,7 +2,7 @@
 
 import { dangerButtonClass, fieldCardClass, secondaryButtonClass } from './settings-class-tokens';
 import { type PasswordPanelCopy } from './settings-types';
-import { Panel } from '../../../../shared/ui/shell-primitives';
+import { Panel } from '../../../../shared/ui/shell-panel';
 
 export function SettingsSessionManagementPanel({
   passwordPanelCopy,

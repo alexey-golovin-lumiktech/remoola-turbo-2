@@ -6,7 +6,7 @@ import { CURRENCY_CODES, THEMES, type TTheme } from '@remoola/api-types';
 
 import { fieldCardClass, fieldInputClass, fieldLabelClass, primaryButtonClass } from './settings-class-tokens';
 import { THEME_OPTION_LABELS } from '../../../../shared/theme/ThemeQuickSwitch';
-import { Panel } from '../../../../shared/ui/shell-primitives';
+import { Panel } from '../../../../shared/ui/shell-panel';
 import { themeDescription, type PreferencesForm } from '../settings-view-model';
 
 export function SettingsPreferencesPanel({

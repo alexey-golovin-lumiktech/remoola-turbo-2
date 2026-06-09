@@ -11,8 +11,10 @@ import {
   type ContractsListStateResult,
 } from './contracts-list-state';
 import { CONTRACT_PRESENCE_FILTERS, CONTRACT_SORT_OPTIONS, CONTRACT_STATUS_FILTERS } from './contracts-search-params';
+import { ActionMini } from '../../../shared/ui/shell-actions';
+import { ChecklistItem, StatusPill } from '../../../shared/ui/shell-indicators';
 import { shellMainAsidePrimary } from '../../../shared/ui/shell-layout-tokens';
-import { ActionMini, ChecklistItem, Panel, StatusPill } from '../../../shared/ui/shell-primitives';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 type Props = {
   state: ContractsListStateResult;

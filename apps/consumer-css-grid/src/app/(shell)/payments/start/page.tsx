@@ -7,7 +7,7 @@ import { HELP_GUIDE_SLUG } from '../../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../../features/help/ui';
 import { getSettings } from '../../../../lib/consumer-api.server';
 import { CreditCardIcon } from '../../../../shared/ui/icons/CreditCardIcon';
-import { PageHeader } from '../../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../../shared/ui/shell-page-layout';
 import { parsePaymentEntryPrefillEmail } from '../payment-entry-prefill';
 import { buildPaymentEntryHref, getPaymentFlowBackHref, parsePaymentFlowContext } from '../payment-flow-context';
 

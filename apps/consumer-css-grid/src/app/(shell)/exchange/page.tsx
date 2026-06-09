@@ -14,7 +14,7 @@ import {
   getScheduledConversionsResult,
 } from '../../../lib/consumer-api.server';
 import { ExchangeIcon } from '../../../shared/ui/icons/ExchangeIcon';
-import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-page-layout';
 
 export default async function ExchangePage({ searchParams }: { searchParams?: Promise<ExchangeSearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;

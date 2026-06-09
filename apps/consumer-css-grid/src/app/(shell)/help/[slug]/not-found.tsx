@@ -2,7 +2,8 @@ import Link from 'next/link';
 
 import { SearchIcon } from '@remoola/ui';
 
-import { PageHeader, Panel } from '../../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../../shared/ui/shell-page-layout';
+import { Panel } from '../../../../shared/ui/shell-panel';
 
 export default function HelpGuideNotFound() {
   return (

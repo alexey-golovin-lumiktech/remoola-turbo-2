@@ -7,7 +7,7 @@ import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { getContractsResult } from '../../../lib/consumer-api.server';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
-import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-page-layout';
 
 export default async function ContractsPage({ searchParams }: { searchParams?: Promise<ContractsSearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;

@@ -6,7 +6,7 @@ import { fieldCardClass } from './settings-class-tokens';
 import { type PasswordPanelCopy } from './settings-types';
 import { type ProfileResponse, type SettingsResponse } from '../../../../lib/consumer-api.server';
 import { THEME_OPTION_LABELS } from '../../../../shared/theme/ThemeQuickSwitch';
-import { Panel } from '../../../../shared/ui/shell-primitives';
+import { Panel } from '../../../../shared/ui/shell-panel';
 import { displayValue } from '../settings-view-model';
 
 export function SettingsSummaryCards({

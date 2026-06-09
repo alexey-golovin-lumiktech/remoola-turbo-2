@@ -4,7 +4,7 @@ import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { getPaymentMethods } from '../../../lib/consumer-api.server';
 import { BankIcon } from '../../../shared/ui/icons/BankIcon';
-import { PageHeader } from '../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../shared/ui/shell-page-layout';
 
 export default async function BankingPage() {
   const paymentMethodsResponse = await getPaymentMethods({ redirectTo: `/banking` });

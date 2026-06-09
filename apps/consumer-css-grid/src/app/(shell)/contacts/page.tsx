@@ -8,7 +8,7 @@ import { HelpContextualGuides } from '../../../features/help/ui';
 import { getContact, getContactsResult, searchContactsResult } from '../../../lib/consumer-api.server';
 import { parseListPagination } from '../../../lib/pagination';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
-import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../shared/ui/shell-page-layout';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 

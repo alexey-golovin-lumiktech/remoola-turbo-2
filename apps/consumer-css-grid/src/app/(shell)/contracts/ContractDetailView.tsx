@@ -9,7 +9,7 @@ import {
 } from './contract-workflow-actions';
 import { ContractInlineActionsClient } from './ContractInlineActionsClient';
 import { type ContractDetailsResponse } from '../../../lib/consumer-api.server';
-import { Panel } from '../../../shared/ui/shell-primitives';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 type Props = {
   contract: ContractDetailsResponse | null;

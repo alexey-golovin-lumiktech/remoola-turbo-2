@@ -4,8 +4,9 @@ import { type ContactDetailsResponse } from '../../../lib/consumer-api.server';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 import { shellGridDetail3 } from '../../../shared/ui/shell-grid-tokens';
+import { StatusPill } from '../../../shared/ui/shell-indicators';
 import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
-import { Panel, StatusPill } from '../../../shared/ui/shell-primitives';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) return `—`;

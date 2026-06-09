@@ -1,6 +1,6 @@
 import { DocumentsClient } from './DocumentsClient';
 import { getContractDetails, getDocumentsResult } from '../../../lib/consumer-api.server';
-import { WorkspaceUnavailableBanner } from '../../../shared/ui/shell-primitives';
+import { WorkspaceUnavailableBanner } from '../../../shared/ui/shell-page-layout';
 
 export async function DocumentsWorkspaceSection({
   contactId,

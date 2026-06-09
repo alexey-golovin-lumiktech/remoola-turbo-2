@@ -16,7 +16,7 @@ import {
   type UpdateRuleData,
 } from './exchange-shared';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
-import { Panel } from '../../../shared/ui/shell-primitives';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 type ExchangeRulesSectionProps = {
   rules: ExchangeRule[];

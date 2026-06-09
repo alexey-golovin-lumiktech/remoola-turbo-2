@@ -6,8 +6,8 @@ import { useState, useTransition } from 'react';
 import { buildWithdrawViewModel } from './withdraw-view-model';
 import { submitTransferAction, submitWithdrawAction } from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { Field } from '../../../shared/ui/shell-data-display';
 import { shellGridContent2 } from '../../../shared/ui/shell-grid-tokens';
-import { Field } from '../../../shared/ui/shell-primitives';
 
 type PaymentMethod = {
   id: string;

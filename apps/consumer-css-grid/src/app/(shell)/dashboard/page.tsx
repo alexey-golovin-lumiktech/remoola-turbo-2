@@ -13,7 +13,7 @@ import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { getAvailableBalances, getBalances, getDashboardData } from '../../../lib/consumer-api.server';
 import { HomeIcon } from '../../../shared/ui/icons/HomeIcon';
-import { PageHeader } from '../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../shared/ui/shell-page-layout';
 
 export default async function DashboardPage() {
   const [dashboardResult, settledBalances, availableBalances] = await Promise.all([

@@ -4,8 +4,10 @@ import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { getAvailableBalances, getPaymentHistory, getPaymentMethods } from '../../../lib/consumer-api.server';
 import { ArrowDownIcon } from '../../../shared/ui/icons/ArrowDownIcon';
+import { StatusPill } from '../../../shared/ui/shell-indicators';
 import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
-import { PageHeader, Panel, StatusPill } from '../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../shared/ui/shell-page-layout';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 function formatMajorCurrency(amount: number, currencyCode: string) {
   return new Intl.NumberFormat(`en-US`, {

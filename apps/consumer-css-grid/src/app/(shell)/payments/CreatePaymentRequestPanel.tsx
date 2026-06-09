@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 
 import { CreatePaymentRequestForm, type CreatePaymentRequestFormProps } from './CreatePaymentRequestForm';
-import { Panel } from '../../../shared/ui/shell-primitives';
+import { Panel } from '../../../shared/ui/shell-panel';
 
 type Props = {
   contacts: CreatePaymentRequestFormProps[`contacts`];

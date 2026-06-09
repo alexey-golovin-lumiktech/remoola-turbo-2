@@ -4,8 +4,8 @@ import Link from 'next/link';
 
 import { displayContactAddress, type Contact, type ContactFormStateResult } from './contact-form-state';
 import { type ContactsPageStateResult } from './contacts-page-state';
+import { ActionMini } from '../../../shared/ui/shell-actions';
 import { shellMainAsidePrimary } from '../../../shared/ui/shell-layout-tokens';
-import { ActionMini } from '../../../shared/ui/shell-primitives';
 
 type Props = {
   contacts: Contact[];

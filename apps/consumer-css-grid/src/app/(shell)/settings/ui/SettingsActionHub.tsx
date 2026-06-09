@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { BankIcon } from '../../../../shared/ui/icons/BankIcon';
 import { DocumentIcon } from '../../../../shared/ui/icons/DocumentIcon';
-import { Panel } from '../../../../shared/ui/shell-primitives';
+import { Panel } from '../../../../shared/ui/shell-panel';
 
 export function SettingsActionHub() {
   return (

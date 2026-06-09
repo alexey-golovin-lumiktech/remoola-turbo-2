@@ -11,7 +11,7 @@ import {
   updateExchangeRuleMutation,
 } from '../../../../lib/mutations/exchange.server';
 import { ExchangeIcon } from '../../../../shared/ui/icons/ExchangeIcon';
-import { PageHeader, WorkspaceUnavailableBanner } from '../../../../shared/ui/shell-primitives';
+import { PageHeader, WorkspaceUnavailableBanner } from '../../../../shared/ui/shell-page-layout';
 import { type ExchangeSearchParams, parseExchangePaginationParams } from '../exchange-search-params';
 import { pickTopCurrencies } from '../exchange-shared';
 import { ExchangeRulesSection } from '../ExchangeRulesSection';

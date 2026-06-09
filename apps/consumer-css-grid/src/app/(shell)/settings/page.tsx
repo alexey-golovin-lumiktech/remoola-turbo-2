@@ -1,7 +1,7 @@
 import { SettingsClient } from './SettingsClient';
 import { getProfile, getSettings } from '../../../lib/consumer-api.server';
 import { SettingsIcon } from '../../../shared/ui/icons/SettingsIcon';
-import { PageHeader } from '../../../shared/ui/shell-primitives';
+import { PageHeader } from '../../../shared/ui/shell-page-layout';
 
 interface SettingsPageProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
