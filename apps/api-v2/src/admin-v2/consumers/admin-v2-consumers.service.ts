@@ -1,11 +1,21 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { type ConsumerAppScope } from '@remoola/api-types';
 
 import {
-  normalizeFlag,
+  assertConfirmedConsumerSuspension,
+  assertConfirmedForceLogout,
+  assertValidVersion,
+  buildAlreadySuspendedResult,
+  buildForceLogoutAuditMetadata,
+  buildForceLogoutResult,
+  buildResendEmailAuditMetadata,
+  buildSuspendAuditMetadata,
+  buildSuspendedResult,
   normalizeOptionalReason,
+  validateNoteContent,
   validateConsumerSuspensionReason,
+  validateRequiredFlag,
 } from './admin-v2-consumer-action-policy';
 import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
 import { AdminV2ConsumerCaseQuery } from './admin-v2-consumer-case.query';
@@ -22,8 +32,6 @@ import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../share
 import { ConsumerContractsService } from '../../shared/consumer-contracts/consumer-contracts.service';
 import { type AdminV2RequestMeta as RequestMeta } from '../admin-v2-context.types';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-
-const NOTE_MAX_LEN = 4000;
 
 type SuspendConsumerBody = {
   confirmed?: boolean;
@@ -146,23 +154,12 @@ export class AdminV2ConsumersService {
   }
 
   async createNote(consumerId: string, adminId: string, content: string, meta?: RequestMeta) {
-    const normalizedContent = content.trim();
-    if (!normalizedContent) {
-      throw new BadRequestException(`Note content is required`);
-    }
-    if (normalizedContent.length > NOTE_MAX_LEN) {
-      throw new BadRequestException(`Note content is too long`);
-    }
-
+    const normalizedContent = validateNoteContent(content);
     return this.consumerNotesRepository.createWithAudit(consumerId, adminId, normalizedContent, meta);
   }
 
   async addFlag(consumerId: string, adminId: string, flag: string, reason?: string | null, meta?: RequestMeta) {
-    const normalizedFlag = normalizeFlag(flag);
-    if (!normalizedFlag) {
-      throw new BadRequestException(`Flag is required`);
-    }
-
+    const normalizedFlag = validateRequiredFlag(flag);
     const normalizedReason = normalizeOptionalReason(reason);
     const existing = await this.consumerFlagsRepository.findActiveByConsumerAndFlag(consumerId, normalizedFlag);
     if (existing) {
@@ -173,17 +170,12 @@ export class AdminV2ConsumersService {
   }
 
   async removeFlag(consumerId: string, flagId: string, adminId: string, version: number, meta?: RequestMeta) {
-    if (!Number.isFinite(version) || version < 1) {
-      throw new BadRequestException(`Valid version is required`);
-    }
-
+    assertValidVersion(version);
     return this.consumerFlagsRepository.removeWithAudit(consumerId, flagId, adminId, version, meta);
   }
 
   async forceLogout(consumerId: string, adminId: string, body: { confirmed?: boolean }, meta?: RequestMeta) {
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for force logout`);
-    }
+    assertConfirmedForceLogout(body.confirmed);
     const consumer = await this.requireConsumer(consumerId);
     return this.idempotency.execute({
       adminId,
@@ -201,24 +193,17 @@ export class AdminV2ConsumersService {
           action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_force_logout,
           resource: `consumer`,
           resourceId: consumerId,
-          metadata: { activeSessionsBefore, consumerEmail: consumer.email },
+          metadata: buildForceLogoutAuditMetadata({ activeSessionsBefore, consumerEmail: consumer.email }),
           ipAddress: meta?.ipAddress,
           userAgent: meta?.userAgent,
         });
-        return {
-          consumerId,
-          revokedSessionsCount: activeSessionsBefore,
-          alreadyRevoked: activeSessionsBefore === 0,
-        };
+        return buildForceLogoutResult({ consumerId, activeSessionsBefore });
       },
     });
   }
 
   async suspendConsumer(consumerId: string, adminId: string, body: SuspendConsumerBody, meta?: RequestMeta) {
-    if (body.confirmed !== true) {
-      throw new BadRequestException(`Confirmation is required for consumer suspension`);
-    }
-
+    assertConfirmedConsumerSuspension(body.confirmed);
     const reason = validateConsumerSuspensionReason(body.reason);
 
     const consumer = await this.requireConsumer(consumerId);
@@ -232,12 +217,11 @@ export class AdminV2ConsumersService {
         const updated = await this.consumerRepository.suspendIfActive(consumerId, adminId, reason, suspendedAt);
         if (updated.count === 0) {
           const current = await this.requireConsumer(consumerId);
-          return {
+          return buildAlreadySuspendedResult({
             consumerId,
             suspendedAt: current.suspendedAt,
             alreadySuspended: current.suspendedAt != null,
-            emailDispatched: false,
-          };
+          });
         }
 
         await this.consumerAdminAuthActions.revokeAllSessionsByConsumerIdAndAudit(consumerId, {
@@ -257,23 +241,21 @@ export class AdminV2ConsumersService {
           action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_suspend,
           resource: `consumer`,
           resourceId: consumerId,
-          metadata: {
+          metadata: buildSuspendAuditMetadata({
             consumerEmail: consumer.email,
             reason,
             suspendedAt,
-            emailKind: `consumer_suspension`,
             emailDispatched,
-          },
+          }),
           ipAddress: meta?.ipAddress,
           userAgent: meta?.userAgent,
         });
 
-        return {
+        return buildSuspendedResult({
           consumerId,
           suspendedAt,
-          alreadySuspended: false,
           emailDispatched,
-        };
+        });
       },
     });
   }
@@ -324,12 +306,12 @@ export class AdminV2ConsumersService {
           action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_email_resend,
           resource: `consumer`,
           resourceId: consumerId,
-          metadata: {
+          metadata: buildResendEmailAuditMetadata({
             consumerEmail: consumer.email,
             requestedEmailKind: result.requestedKind,
             dispatchedEmailKind: result.dispatchedKind,
             appScope: body.appScope,
-          },
+          }),
           ipAddress: meta?.ipAddress,
           userAgent: meta?.userAgent,
         });

@@ -4,13 +4,11 @@ import { Test } from '@nestjs/testing';
 
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
-import { normalizeOptionalReason, validateConsumerSuspensionReason } from './admin-v2-consumer-action-policy';
 import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
 import { AdminV2ConsumerCaseQuery } from './admin-v2-consumer-case.query';
 import { AdminV2ConsumerFlagsRepository } from './admin-v2-consumer-flags.repository';
 import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
 import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.repository';
-import { mapConsumerDisplayName, mapPaymentMethodStatus } from './admin-v2-consumer-query-helpers';
 import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
 import { AdminV2ConsumersModule } from './admin-v2-consumers.module';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
@@ -110,32 +108,6 @@ function matchesFlag(
   }
   return true;
 }
-
-describe(`admin-v2 consumer pure helpers`, () => {
-  it(`maps consumer display name with existing fallback behavior`, () => {
-    expect(mapConsumerDisplayName({ organizationDetails: { name: `Acme Ltd` } })).toBe(`Acme Ltd`);
-    expect(
-      mapConsumerDisplayName({
-        personalDetails: { firstName: `Ada`, lastName: `Lovelace` },
-      }),
-    ).toBe(`Ada Lovelace`);
-    expect(mapConsumerDisplayName({ personalDetails: { firstName: null, lastName: null } })).toBe(``);
-  });
-
-  it(`maps payment method status from disabledAt only`, () => {
-    expect(mapPaymentMethodStatus({ disabledAt: null })).toBe(`ACTIVE`);
-    expect(mapPaymentMethodStatus({ disabledAt: new Date(`2026-04-20T10:00:00.000Z`) })).toBe(`DISABLED`);
-  });
-
-  it(`normalizes optional reasons and validates suspension reasons`, () => {
-    expect(normalizeOptionalReason(`  needs review  `)).toBe(`needs review`);
-    expect(normalizeOptionalReason(`   `)).toBeNull();
-    expect(normalizeOptionalReason(`x`.repeat(501))).toHaveLength(500);
-    expect(validateConsumerSuspensionReason(`  regulatory block  `)).toBe(`regulatory block`);
-    expect(() => validateConsumerSuspensionReason(`   `)).toThrow(BadRequestException);
-    expect(() => validateConsumerSuspensionReason(`x`.repeat(501))).toThrow(BadRequestException);
-  });
-});
 
 describe(`AdminV2ConsumersService`, () => {
   it(`resolves the consumer case query dependency through Nest DI`, async () => {
