@@ -6,6 +6,7 @@ import { buildContractFilesWorkspaceHref, buildContractPaymentDetailHref } from 
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 import { shellGridDetail3 } from '../../../shared/ui/shell-grid-tokens';
+import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
 import { MetricLine, Panel, StatusPill } from '../../../shared/ui/shell-primitives';
 
 type Props = {
@@ -16,7 +17,7 @@ type Props = {
 
 export function ContractDetailSections({ inlineActions, returnToContractsHref, viewModel }: Props) {
   return (
-    <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+    <section className={shellMainAsideBalanced}>
       <div className="space-y-5">
         <section className="rounded-[28px] border border-(--app-border) bg-(--app-card-gradient) p-5 shadow-(--app-shadow)">
           <div className="grid grid-cols-[auto_1fr] gap-4">

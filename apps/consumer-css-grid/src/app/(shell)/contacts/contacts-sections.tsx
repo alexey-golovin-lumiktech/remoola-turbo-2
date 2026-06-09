@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { displayContactAddress, type Contact, type ContactFormStateResult } from './contact-form-state';
 import { type ContactsPageStateResult } from './contacts-page-state';
+import { shellMainAsidePrimary } from '../../../shared/ui/shell-layout-tokens';
 import { ActionMini } from '../../../shared/ui/shell-primitives';
 
 type Props = {
@@ -26,7 +27,7 @@ export function ContactsSections({
   pageState,
 }: Props) {
   return (
-    <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+    <section className={shellMainAsidePrimary}>
       <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface-muted) p-5 backdrop-blur">
         <div className="mb-4 flex items-center justify-between">
           <div>

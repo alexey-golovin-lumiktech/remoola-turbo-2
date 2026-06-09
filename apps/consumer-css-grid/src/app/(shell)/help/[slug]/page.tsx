@@ -10,6 +10,7 @@ import {
   helpGuideTypeLabels,
 } from '../../../../features/help/help-hub-data';
 import { HelpGuideDetailArticle } from '../../../../features/help/ui';
+import { shellMainAsidePrimary } from '../../../../shared/ui/shell-layout-tokens';
 import { PageHeader, Panel } from '../../../../shared/ui/shell-primitives';
 
 const helpAudienceStateLabels = {
@@ -58,7 +59,7 @@ export default async function HelpGuideDetailPage({ params }: { params: Promise<
         </Link>
       </div>
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+      <section className={shellMainAsidePrimary}>
         <HelpGuideDetailArticle guide={guide} content={content} />
 
         <div className="space-y-5">

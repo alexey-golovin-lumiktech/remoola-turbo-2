@@ -11,6 +11,7 @@ import {
   type ContractsListStateResult,
 } from './contracts-list-state';
 import { CONTRACT_PRESENCE_FILTERS, CONTRACT_SORT_OPTIONS, CONTRACT_STATUS_FILTERS } from './contracts-search-params';
+import { shellMainAsidePrimary } from '../../../shared/ui/shell-layout-tokens';
 import { ActionMini, ChecklistItem, Panel, StatusPill } from '../../../shared/ui/shell-primitives';
 
 type Props = {
@@ -19,7 +20,7 @@ type Props = {
 
 export function ContractsListSections({ state }: Props) {
   return (
-    <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+    <section className={shellMainAsidePrimary}>
       <Panel
         title="Contracts workspace"
         aside={`Page ${state.page} of ${state.totalPages} · ${state.contracts.length} shown · ${state.total} total`}

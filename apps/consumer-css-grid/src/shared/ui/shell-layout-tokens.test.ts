@@ -7,6 +7,8 @@ import {
   SHELL_MAIN_PADDING_CLASS,
   SHELL_SIDEBAR_BASE_CLASS,
   SHELL_SIDEBAR_WIDTH_CLASS,
+  shellMainAsideBalanced,
+  shellMainAsidePrimary,
 } from './shell-layout-tokens';
 
 describe(`shell layout tokens`, () => {
@@ -43,5 +45,35 @@ describe(`shell layout tokens`, () => {
     expect(SHELL_LOADING_CARD_CLASS).toContain(`rounded-[28px]`);
     expect(SHELL_LOADING_CARD_CLASS).toContain(`bg-(--app-surface)`);
     expect(SHELL_LOADING_CARD_CLASS).toContain(`shadow-(--app-shadow)`);
+  });
+});
+
+describe(`shellMainAsideBalanced`, () => {
+  it(`pins the exact class string`, () => {
+    expect(shellMainAsideBalanced).toBe(`grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]`);
+  });
+
+  it(`ends narrow-side with 0.9fr (not 0.75fr)`, () => {
+    expect(shellMainAsideBalanced).toContain(`0.9fr]`);
+    expect(shellMainAsideBalanced).not.toContain(`0.75fr]`);
+  });
+
+  it(`contains grid-cols-1 gap-5`, () => {
+    expect(shellMainAsideBalanced).toContain(`grid-cols-1 gap-5`);
+  });
+});
+
+describe(`shellMainAsidePrimary`, () => {
+  it(`pins the exact class string`, () => {
+    expect(shellMainAsidePrimary).toBe(`grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_0.75fr]`);
+  });
+
+  it(`ends narrow-side with 0.75fr (not 0.9fr)`, () => {
+    expect(shellMainAsidePrimary).toContain(`0.75fr]`);
+    expect(shellMainAsidePrimary).not.toContain(`0.9fr]`);
+  });
+
+  it(`contains grid-cols-1 gap-5`, () => {
+    expect(shellMainAsidePrimary).toContain(`grid-cols-1 gap-5`);
   });
 });

@@ -12,6 +12,7 @@ import {
   type PaymentViewResponse,
 } from '../../../../lib/consumer-api.server';
 import { CreditCardIcon } from '../../../../shared/ui/icons/CreditCardIcon';
+import { shellMainAsideBalanced } from '../../../../shared/ui/shell-layout-tokens';
 import { PageHeader, Panel } from '../../../../shared/ui/shell-primitives';
 import { buildPaymentDetailHref, getPaymentFlowBackHref, parsePaymentFlowContext } from '../payment-flow-context';
 import { PaymentAttachmentsClient } from '../PaymentAttachmentsClient';
@@ -155,7 +156,7 @@ export default async function PaymentDetailPage({
           </div>
         </Panel>
       ) : (
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+        <section className={shellMainAsideBalanced}>
           <div className="space-y-5">
             <Panel title="Overview">
               <div className="space-y-3">

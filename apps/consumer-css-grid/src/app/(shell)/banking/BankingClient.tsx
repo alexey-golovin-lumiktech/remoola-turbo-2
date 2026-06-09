@@ -23,6 +23,7 @@ import {
   setDefaultPaymentMethodMutation,
 } from '../../../lib/mutations/banking.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
 import { Panel } from '../../../shared/ui/shell-primitives';
 
 type Props = {
@@ -163,7 +164,7 @@ export function BankingClient({ accounts }: Props) {
         reusableCardsCount={reusableCards.length}
       />
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.08fr_0.92fr]">
+      <section className={shellMainAsideBalanced}>
         <Panel title="Saved banking methods" aside="Truthful method labels">
           {message ? (
             <div

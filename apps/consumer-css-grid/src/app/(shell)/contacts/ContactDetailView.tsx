@@ -4,6 +4,7 @@ import { type ContactDetailsResponse } from '../../../lib/consumer-api.server';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 import { shellGridDetail3 } from '../../../shared/ui/shell-grid-tokens';
+import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
 import { Panel, StatusPill } from '../../../shared/ui/shell-primitives';
 
 function formatDateTime(value: string | null | undefined) {
@@ -93,7 +94,7 @@ export function ContactDetailView({ contact, contactId }: Props) {
         </Link>
       </div>
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className={shellMainAsideBalanced}>
         <div className="space-y-5">
           <section className="rounded-[28px] border border-(--app-border) bg-(--app-card-gradient) p-5 shadow-(--app-shadow)">
             <div className="grid grid-cols-[auto_1fr] gap-4">

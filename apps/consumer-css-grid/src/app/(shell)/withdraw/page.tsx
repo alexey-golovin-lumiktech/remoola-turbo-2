@@ -4,6 +4,7 @@ import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { getAvailableBalances, getPaymentHistory, getPaymentMethods } from '../../../lib/consumer-api.server';
 import { ArrowDownIcon } from '../../../shared/ui/icons/ArrowDownIcon';
+import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
 import { PageHeader, Panel, StatusPill } from '../../../shared/ui/shell-primitives';
 
 function formatMajorCurrency(amount: number, currencyCode: string) {
@@ -50,8 +51,7 @@ export default async function WithdrawPage() {
         className="mb-5"
       />
 
-      {/* Asymmetric 2-col: xl:grid-cols-[0.9fr_1.1fr] */}
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+      <section className={shellMainAsideBalanced}>
         <Panel title="Withdraw or transfer" aside="Available balance only">
           <WithdrawFlowClient balances={balances} bankMethods={bankMethods} />
         </Panel>

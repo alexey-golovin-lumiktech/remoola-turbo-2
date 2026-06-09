@@ -31,6 +31,7 @@ import {
 } from '../../../lib/mutations/exchange.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
+import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
 import { MetricLine, Panel } from '../../../shared/ui/shell-primitives';
 
 type Quote = {
@@ -146,7 +147,7 @@ export function ExchangeClient({
         </div>
       ) : null}
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+      <section className={shellMainAsideBalanced}>
         <Panel title="Exchange form" data-testid={`exchange-convert-form`}>
           <div className="space-y-4">
             <div className={shellGridForm2}>
@@ -324,7 +325,7 @@ export function ExchangeClient({
         </Panel>
       </section>
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+      <section className={shellMainAsideBalanced}>
         <ExchangeRulesSection
           rules={rules}
           currencies={currencies}

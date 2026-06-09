@@ -19,6 +19,7 @@ import {
   updateDocumentTagsMutation,
 } from '../../../lib/mutations/documents.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellMainAsidePrimary } from '../../../shared/ui/shell-layout-tokens';
 import { MetricLine } from '../../../shared/ui/shell-primitives';
 
 type Props = {
@@ -164,7 +165,7 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
   };
 
   return (
-    <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.3fr_0.7fr]">
+    <section className={shellMainAsidePrimary}>
       <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface-muted) p-5 backdrop-blur">
         {contractContext ? (
           <div className="mb-4 rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-4 text-sm text-(--app-primary)">
