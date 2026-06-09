@@ -12,6 +12,7 @@ import {
   type PaymentViewResponse,
 } from '../../../../lib/consumer-api.server';
 import { CreditCardIcon } from '../../../../shared/ui/icons/CreditCardIcon';
+import { shellContainerBase, shellEmptyState } from '../../../../shared/ui/shell-card-tokens';
 import { shellMainAsideBalanced } from '../../../../shared/ui/shell-layout-tokens';
 import { PageHeader } from '../../../../shared/ui/shell-page-layout';
 import { Panel } from '../../../../shared/ui/shell-panel';
@@ -145,9 +146,7 @@ export default async function PaymentDetailPage({
       {!payment ? (
         <Panel title="Payment details">
           <div className="space-y-4">
-            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-              Payment details are unavailable for this request.
-            </div>
+            <div className={shellEmptyState}>Payment details are unavailable for this request.</div>
             <HelpContextualGuides
               guides={paymentUnavailableHelpGuides}
               compact
@@ -224,16 +223,11 @@ export default async function PaymentDetailPage({
 
             <Panel title="Ledger entries">
               {payment.ledgerEntries.length === 0 ? (
-                <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-                  No ledger entries yet.
-                </div>
+                <div className={shellEmptyState}>No ledger entries yet.</div>
               ) : (
                 <div className="space-y-3">
                   {payment.ledgerEntries.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
-                    >
+                    <div key={entry.id} className={shellContainerBase}>
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <div className="font-medium text-(--app-text)">
@@ -258,13 +252,7 @@ export default async function PaymentDetailPage({
             </Panel>
 
             <Panel title="Attachments">
-              <Suspense
-                fallback={
-                  <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-                    Loading attachments...
-                  </div>
-                }
-              >
+              <Suspense fallback={<div className={shellEmptyState}>Loading attachments...</div>}>
                 <PaymentAttachmentsServerSection
                   attachmentPage={attachmentPage}
                   detailPath={detailPath}

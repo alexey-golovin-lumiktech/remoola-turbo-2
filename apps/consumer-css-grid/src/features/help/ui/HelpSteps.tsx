@@ -1,6 +1,7 @@
 import { cn } from '@remoola/ui';
 
 import { HelpSection } from './HelpSection';
+import { shellContainerBase } from '../../../shared/ui/shell-card-tokens';
 
 export interface HelpStepItem {
   title: string;
@@ -25,10 +26,7 @@ export function HelpSteps({ items, title = `Step-by-step instructions`, descript
     <HelpSection title={title} description={description} className={className}>
       <ol className="space-y-4">
         {items.map((item, index) => (
-          <li
-            key={`${index + 1}-${item.title}`}
-            className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
-          >
+          <li key={`${index + 1}-${item.title}`} className={shellContainerBase}>
             <div className="flex gap-4">
               <span
                 aria-hidden="true"

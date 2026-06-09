@@ -12,6 +12,7 @@ import {
   sendPaymentRequestMutation,
 } from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { Panel } from '../../../shared/ui/shell-panel';
 
 type PaymentMethod = {
@@ -313,9 +314,7 @@ export function PaymentDetailActionsClient({
       ) : null}
 
       {showEmptyState ? (
-        <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-          No additional actions are available for this payment right now.
-        </div>
+        <div className={shellEmptyState}>No additional actions are available for this payment right now.</div>
       ) : null}
     </Panel>
   );

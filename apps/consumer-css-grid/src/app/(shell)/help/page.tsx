@@ -5,6 +5,7 @@ import { SearchIcon } from '@remoola/ui';
 import { type PublicHelpGuideRegistryEntry } from '../../../features/help/guide-registry';
 import { helpGuideFeatureLabels, helpGuideTypeLabels, helpHubData } from '../../../features/help/help-hub-data';
 import { HelpHubBrowseClient } from '../../../features/help/ui/HelpHubBrowseClient';
+import { shellBadgePrimary, shellCardSm } from '../../../shared/ui/shell-card-tokens';
 import { PageHeader } from '../../../shared/ui/shell-page-layout';
 import { Panel } from '../../../shared/ui/shell-panel';
 
@@ -21,11 +22,9 @@ function GuideCard({
   const remainingRouteCount = guide.routeAffinity.length - visibleRoutes.length;
 
   return (
-    <article className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+    <article className={shellCardSm}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
-          {helpGuideTypeLabels[guide.guideType]}
-        </span>
+        <span className={shellBadgePrimary}>{helpGuideTypeLabels[guide.guideType]}</span>
         <span className="rounded-full border border-(--app-border) px-3 py-1 text-xs text-(--app-text-soft)">
           {categoryLabel}
         </span>
@@ -89,12 +88,10 @@ export default function HelpPage() {
                   <Link
                     key={guide.slug}
                     href={`/help/${guide.slug}`}
-                    className="block rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4 transition hover:border-(--app-primary)"
+                    className={`block ${shellCardSm} transition hover:border-(--app-primary)`}
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
-                        {helpGuideTypeLabels[guide.guideType]}
-                      </span>
+                      <span className={shellBadgePrimary}>{helpGuideTypeLabels[guide.guideType]}</span>
                       <span className="rounded-full border border-(--app-border) px-3 py-1 text-xs text-(--app-text-soft)">
                         {categorySection.label}
                       </span>
@@ -118,19 +115,19 @@ export default function HelpPage() {
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+            <div className={shellCardSm}>
               <div className="text-2xl font-semibold text-(--app-text)">{helpHubData.totalGuideCount}</div>
               <div className="mt-1 text-sm text-(--app-text-soft)">Available guides</div>
             </div>
-            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+            <div className={shellCardSm}>
               <div className="text-2xl font-semibold text-(--app-text)">{helpHubData.routeAffinityCount}</div>
               <div className="mt-1 text-sm text-(--app-text-soft)">Workspace pages linked</div>
             </div>
-            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+            <div className={shellCardSm}>
               <div className="text-2xl font-semibold text-(--app-text)">{helpHubData.coveredCategoryCount}</div>
               <div className="mt-1 text-sm text-(--app-text-soft)">Topics to browse</div>
             </div>
-            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+            <div className={shellCardSm}>
               <div className="text-2xl font-semibold text-(--app-text)">{helpHubData.coveredFeatureCount}</div>
               <div className="mt-1 text-sm text-(--app-text-soft)">Task areas included</div>
             </div>
@@ -183,11 +180,7 @@ export default function HelpPage() {
         <Panel title="Browse by category" aside={`${helpHubData.categories.length} sections`}>
           <div className="grid grid-cols-1 gap-5 2xl:grid-cols-2">
             {helpHubData.categories.map((section) => (
-              <section
-                key={section.category}
-                id={section.anchorId}
-                className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4"
-              >
+              <section key={section.category} id={section.anchorId} className={shellCardSm}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-semibold text-(--app-text)">{section.label}</h2>
@@ -206,9 +199,7 @@ export default function HelpPage() {
                         className="rounded-[20px] border border-(--app-border) bg-(--app-surface) p-4"
                       >
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
-                            {helpGuideTypeLabels[guide.guideType]}
-                          </span>
+                          <span className={shellBadgePrimary}>{helpGuideTypeLabels[guide.guideType]}</span>
                           <span className="rounded-full border border-(--app-border) px-3 py-1 text-xs text-(--app-text-soft)">
                             {helpGuideFeatureLabels[guide.feature]}
                           </span>

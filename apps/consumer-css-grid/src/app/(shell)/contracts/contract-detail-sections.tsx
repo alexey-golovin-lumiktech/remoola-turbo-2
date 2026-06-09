@@ -5,6 +5,7 @@ import { type ContractDetailViewModel } from './contract-detail-model';
 import { buildContractFilesWorkspaceHref, buildContractPaymentDetailHref } from './contract-workflow-actions';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
+import { shellCardSm, shellContainerBase, shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { MetricLine } from '../../../shared/ui/shell-data-display';
 import { shellGridDetail3 } from '../../../shared/ui/shell-grid-tokens';
 import { StatusPill } from '../../../shared/ui/shell-indicators';
@@ -52,14 +53,14 @@ export function ContractDetailSections({ inlineActions, returnToContractsHref, v
         </section>
 
         <section className={shellGridDetail3}>
-          <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+          <div className={shellCardSm}>
             <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Payment history</div>
             <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">
               {viewModel.contract.summary.paymentsCount}
             </div>
             <div className="mt-2 text-sm text-(--app-text-muted)">Requests currently connected to this contractor</div>
           </div>
-          <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+          <div className={shellCardSm}>
             <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Completed</div>
             <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-success-text)">
               {viewModel.contract.summary.completedPaymentsCount}
@@ -68,7 +69,7 @@ export function ContractDetailSections({ inlineActions, returnToContractsHref, v
               Effective completed outcomes inside this relationship
             </div>
           </div>
-          <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+          <div className={shellCardSm}>
             <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Files</div>
             <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">
               {viewModel.contract.summary.documentsCount}
@@ -80,7 +81,7 @@ export function ContractDetailSections({ inlineActions, returnToContractsHref, v
         </section>
 
         <section className={shellGridDetail3}>
-          <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+          <div className={shellCardSm}>
             <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Drafts</div>
             <div className="mt-3 text-3xl font-semibold tracking-tight text-amber-200">
               {viewModel.contract.summary.draftPaymentsCount}
@@ -89,14 +90,14 @@ export function ContractDetailSections({ inlineActions, returnToContractsHref, v
               Requester-side drafts still open for this relationship
             </div>
           </div>
-          <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+          <div className={shellCardSm}>
             <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Pending</div>
             <div className="mt-3 text-3xl font-semibold tracking-tight text-(--app-primary)">
               {viewModel.contract.summary.pendingPaymentsCount}
             </div>
             <div className="mt-2 text-sm text-(--app-text-muted)">Payments still waiting for a payer-side action</div>
           </div>
-          <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+          <div className={shellCardSm}>
             <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Waiting</div>
             <div className="mt-3 text-3xl font-semibold tracking-tight text-indigo-200">
               {viewModel.contract.summary.waitingPaymentsCount}
@@ -109,13 +110,11 @@ export function ContractDetailSections({ inlineActions, returnToContractsHref, v
 
         <Panel title="Relationship timeline" aside={`${viewModel.timelineCount} visible`}>
           {viewModel.timelineCount === 0 ? (
-            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-              No relationship events yet.
-            </div>
+            <div className={shellEmptyState}>No relationship events yet.</div>
           ) : (
             <div className="space-y-3">
               {viewModel.timeline.map((event) => (
-                <div key={event.id} className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4">
+                <div key={event.id} className={shellContainerBase}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -148,9 +147,7 @@ export function ContractDetailSections({ inlineActions, returnToContractsHref, v
             one contractor relationship.
           </div>
           {viewModel.contract.summary.paymentsCount === 0 ? (
-            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-              No payment history for this contract yet.
-            </div>
+            <div className={shellEmptyState}>No payment history for this contract yet.</div>
           ) : (
             <div className="space-y-3">
               {viewModel.paymentItems.map((payment) => (
@@ -251,16 +248,11 @@ export function ContractDetailSections({ inlineActions, returnToContractsHref, v
               </div>
             </div>
             {viewModel.contract.summary.documentsCount === 0 ? (
-              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-                No files are attached to this contractor relationship yet.
-              </div>
+              <div className={shellEmptyState}>No files are attached to this contractor relationship yet.</div>
             ) : (
               <div className="space-y-3">
                 {viewModel.documents.map((document) => (
-                  <div
-                    key={document.id}
-                    className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
-                  >
+                  <div key={document.id} className={shellContainerBase}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-3">

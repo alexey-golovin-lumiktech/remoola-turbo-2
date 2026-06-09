@@ -30,6 +30,7 @@ import {
   updateExchangeRuleMutation,
 } from '../../../lib/mutations/exchange.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { MetricLine } from '../../../shared/ui/shell-data-display';
 import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
 import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
@@ -300,9 +301,7 @@ export function ExchangeClient({
             </div>
 
             {liveRatesUnavailable || liveRates.length === 0 ? (
-              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-                Exchange rates are currently unavailable.
-              </div>
+              <div className={shellEmptyState}>Exchange rates are currently unavailable.</div>
             ) : (
               liveRates.map((rate) => {
                 const meta = getExchangeRateCardMeta(rate);

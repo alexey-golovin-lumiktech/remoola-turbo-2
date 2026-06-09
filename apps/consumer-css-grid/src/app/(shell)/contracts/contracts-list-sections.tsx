@@ -12,6 +12,7 @@ import {
 } from './contracts-list-state';
 import { CONTRACT_PRESENCE_FILTERS, CONTRACT_SORT_OPTIONS, CONTRACT_STATUS_FILTERS } from './contracts-search-params';
 import { ActionMini } from '../../../shared/ui/shell-actions';
+import { shellContainerBase, shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { ChecklistItem, StatusPill } from '../../../shared/ui/shell-indicators';
 import { shellMainAsidePrimary } from '../../../shared/ui/shell-layout-tokens';
 import { Panel } from '../../../shared/ui/shell-panel';
@@ -28,7 +29,7 @@ export function ContractsListSections({ state }: Props) {
         aside={`Page ${state.page} of ${state.totalPages} · ${state.contracts.length} shown · ${state.total} total`}
       >
         {state.contracts.length === 0 ? (
-          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
+          <div className={shellEmptyState}>
             {state.searchMode ? `No contracts match the current backend search.` : `No contractor relationships yet.`}
           </div>
         ) : (
@@ -172,10 +173,7 @@ export function ContractsListSections({ state }: Props) {
             </div>
 
             {state.rows.map((row) => (
-              <div
-                key={row.contract.id}
-                className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
-              >
+              <div key={row.contract.id} className={shellContainerBase}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <Link

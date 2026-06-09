@@ -19,6 +19,7 @@ import {
   toDateTimeLocalValue,
 } from './exchange-shared';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellContainerBase, shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { MetricLine } from '../../../shared/ui/shell-data-display';
 import { shellGridForm2 } from '../../../shared/ui/shell-grid-tokens';
 import { Panel } from '../../../shared/ui/shell-panel';
@@ -310,7 +311,7 @@ export function ExchangeScheduledSection({
 
       <div data-testid={`exchange-scheduled-list`}>
         {filteredScheduled.length === 0 ? (
-          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
+          <div className={shellEmptyState}>
             {scheduled.length === 0 ? `No scheduled conversions yet.` : `No conversions match the current filter.`}
           </div>
         ) : (
@@ -318,10 +319,7 @@ export function ExchangeScheduledSection({
             {filteredScheduled.map((conversion) => {
               const statusMeta = formatScheduleStatus(conversion.status);
               return (
-                <div
-                  key={conversion.id}
-                  className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
-                >
+                <div key={conversion.id} className={shellContainerBase}>
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="font-medium text-(--app-text)">

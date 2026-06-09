@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { displayContactAddress, type Contact, type ContactFormStateResult } from './contact-form-state';
 import { type ContactsPageStateResult } from './contacts-page-state';
 import { ActionMini } from '../../../shared/ui/shell-actions';
+import { shellContainerBase, shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { shellMainAsidePrimary } from '../../../shared/ui/shell-layout-tokens';
 
 type Props = {
@@ -223,13 +224,13 @@ export function ContactsSections({
           </button>
         ) : null}
         {contacts.length === 0 ? (
-          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
+          <div className={shellEmptyState}>
             {pageState.searchMode ? `No contacts match the current search.` : `No contacts saved yet.`}
           </div>
         ) : (
           <div className="space-y-3">
             {contacts.map((contact) => (
-              <div key={contact.id} className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4">
+              <div key={contact.id} className={shellContainerBase}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="font-medium text-(--app-text)">

@@ -4,6 +4,7 @@ import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { getAvailableBalances, getPaymentHistory, getPaymentMethods } from '../../../lib/consumer-api.server';
 import { ArrowDownIcon } from '../../../shared/ui/icons/ArrowDownIcon';
+import { shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { StatusPill } from '../../../shared/ui/shell-indicators';
 import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
 import { PageHeader } from '../../../shared/ui/shell-page-layout';
@@ -60,9 +61,7 @@ export default async function WithdrawPage() {
 
         <Panel title="Recent withdrawal requests">
           {withdrawalRows.length === 0 ? (
-            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-              No withdrawal history yet.
-            </div>
+            <div className={shellEmptyState}>No withdrawal history yet.</div>
           ) : (
             <div className="space-y-3">
               {withdrawalRows.map((row) => {

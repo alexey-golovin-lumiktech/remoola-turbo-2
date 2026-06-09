@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { cn } from '@remoola/ui';
 
+import { shellBadgePrimary } from '../../../shared/ui/shell-card-tokens';
 import { type PublicHelpGuideRegistryEntry } from '../guide-registry';
 import { helpGuideTypeLabels } from '../help-hub-data';
 
@@ -60,9 +61,7 @@ export function HelpContextualGuides({
               compact ? `p-3` : `p-4`,
             )}
           >
-            <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
-              {helpGuideTypeLabels[guide.guideType]}
-            </span>
+            <span className={shellBadgePrimary}>{helpGuideTypeLabels[guide.guideType]}</span>
             <h4 className={cn(`font-semibold text-(--app-text)`, compact ? `mt-3 text-sm` : `mt-4 text-base`)}>
               {guide.title}
             </h4>

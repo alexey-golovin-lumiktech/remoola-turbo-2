@@ -10,6 +10,7 @@ import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/h
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { type PaymentsResponse } from '../../../lib/consumer-api.server';
+import { shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { MetricCard } from '../../../shared/ui/shell-data-display';
 import { Panel } from '../../../shared/ui/shell-panel';
 
@@ -212,9 +213,7 @@ export function PaymentsClient({
       >
         {payments.length === 0 ? (
           <div className="mt-5 space-y-4">
-            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-              No payments match the current filters.
-            </div>
+            <div className={shellEmptyState}>No payments match the current filters.</div>
             <HelpContextualGuides
               guides={emptyStateHelpGuides}
               compact

@@ -12,6 +12,7 @@ import {
   detachDocumentFromPaymentRequestMutation,
 } from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 
 type Attachment = {
   id: string;
@@ -351,9 +352,7 @@ export function PaymentAttachmentsClient({
       ) : null}
 
       {attachments.length === 0 ? (
-        <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-          No attachments for this payment.
-        </div>
+        <div className={shellEmptyState}>No attachments for this payment.</div>
       ) : (
         <div className="space-y-3">
           {attachments.map((attachment) => (

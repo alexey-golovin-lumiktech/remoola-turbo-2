@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { type ContactDetailsResponse } from '../../../lib/consumer-api.server';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
+import { shellCardSm, shellContainerBase, shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { shellGridDetail3 } from '../../../shared/ui/shell-grid-tokens';
 import { StatusPill } from '../../../shared/ui/shell-indicators';
 import { shellMainAsideBalanced } from '../../../shared/ui/shell-layout-tokens';
@@ -76,9 +77,7 @@ export function ContactDetailView({ contact, contactId }: Props) {
     return (
       <Panel title="Contact details">
         <div className="space-y-4">
-          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-            Contact details are unavailable for this record.
-          </div>
+          <div className={shellEmptyState}>Contact details are unavailable for this record.</div>
           <Link href="/contacts" className="inline-flex text-sm text-(--app-primary) hover:text-(--app-primary-strong)">
             Back to contacts
           </Link>
@@ -131,14 +130,14 @@ export function ContactDetailView({ contact, contactId }: Props) {
           </section>
 
           <section className={shellGridDetail3}>
-            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+            <div className={shellCardSm}>
               <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Matching payments</div>
               <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">{totalPayments}</div>
               <div className="mt-2 text-sm text-(--app-text-muted)">
                 Records where this email appears as payer or requester
               </div>
             </div>
-            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+            <div className={shellCardSm}>
               <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Completed</div>
               <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-success-text)">
                 {completedPayments}
@@ -147,7 +146,7 @@ export function ContactDetailView({ contact, contactId }: Props) {
                 Based on the effective status returned by the backend
               </div>
             </div>
-            <div className="rounded-[24px] border border-(--app-border) bg-(--app-surface-muted) p-4">
+            <div className={shellCardSm}>
               <div className="text-xs uppercase tracking-[0.18em] text-(--app-text-faint)">Documents</div>
               <div className="mt-3 text-4xl font-semibold tracking-tight text-(--app-text)">{totalDocuments}</div>
               <div className="mt-2 text-sm text-(--app-text-muted)">
@@ -162,9 +161,7 @@ export function ContactDetailView({ contact, contactId }: Props) {
               created date for each record.
             </div>
             {totalPayments === 0 ? (
-              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-                No matching payment records yet.
-              </div>
+              <div className={shellEmptyState}>No matching payment records yet.</div>
             ) : (
               <div className="space-y-3">
                 {contact.paymentRequests.map((payment) => (
@@ -216,16 +213,11 @@ export function ContactDetailView({ contact, contactId }: Props) {
 
           <Panel title="Files from matching payment records" aside={`${totalDocuments} total`}>
             {totalDocuments === 0 ? (
-              <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-                No files are attached to matching payment records yet.
-              </div>
+              <div className={shellEmptyState}>No files are attached to matching payment records yet.</div>
             ) : (
               <div className="space-y-3">
                 {contact.documents.map((document) => (
-                  <div
-                    key={document.id}
-                    className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4"
-                  >
+                  <div key={document.id} className={shellContainerBase}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-3">

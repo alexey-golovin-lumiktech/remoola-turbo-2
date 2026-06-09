@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 
 import { cn } from '@remoola/ui';
 
+import { shellBadgePrimary } from '../../../shared/ui/shell-card-tokens';
 import { type HelpGuideFeature } from '../guide-types';
 import {
   getHelpGuideSearchTokens,
@@ -37,9 +38,7 @@ function SearchResultCard({
       className="block rounded-[24px] border border-(--app-border) bg-(--app-surface) p-4 transition hover:border-(--app-primary)"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
-          {guideTypeLabel}
-        </span>
+        <span className={shellBadgePrimary}>{guideTypeLabel}</span>
         <span className="rounded-full border border-(--app-border) px-3 py-1 text-xs text-(--app-text-soft)">
           {categoryLabel}
         </span>
@@ -190,9 +189,7 @@ export function HelpHubBrowseClient() {
                       className="block rounded-[20px] border border-(--app-border) bg-(--app-surface-muted) p-4 transition hover:border-(--app-primary)"
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-(--app-primary-soft) px-3 py-1 text-xs font-medium text-(--app-primary)">
-                          {helpGuideTypeLabels[guide.guideType]}
-                        </span>
+                        <span className={shellBadgePrimary}>{helpGuideTypeLabels[guide.guideType]}</span>
                         <span className="text-xs text-(--app-text-faint)">{helpGuideFeatureLabels[guide.feature]}</span>
                       </div>
                       <h4 className="mt-3 text-sm font-semibold text-(--app-text)">{guide.title}</h4>

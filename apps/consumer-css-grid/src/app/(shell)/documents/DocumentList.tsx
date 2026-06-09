@@ -12,6 +12,7 @@ import {
 import { DocumentTagEditor } from './DocumentTagEditor';
 import { type PublicHelpGuideRegistryEntry } from '../../../features/help/guide-registry';
 import { HelpInlineGuides } from '../../../features/help/ui';
+import { shellContainerBase, shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 
 type Props = {
   contractContext?: DocumentContractContext;
@@ -51,15 +52,11 @@ export function DocumentList({
   onToggleTags,
 }: Props) {
   if (documents.length === 0) {
-    return (
-      <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-        No documents match the selected filter.
-      </div>
-    );
+    return <div className={shellEmptyState}>No documents match the selected filter.</div>;
   }
 
   return documents.map((document) => (
-    <div key={document.id} className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) p-4">
+    <div key={document.id} className={shellContainerBase}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <input

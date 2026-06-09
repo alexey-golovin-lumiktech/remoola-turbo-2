@@ -1,5 +1,6 @@
 import { type PaymentMethod } from './banking-form-helpers';
 import { getMethodKind, getMethodLabel, getMethodMeta } from './banking-helpers';
+import { shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { StatusPill } from '../../../shared/ui/shell-indicators';
 
 type PaymentMethodSection = {
@@ -28,11 +29,7 @@ export function SavedPaymentMethodsList({
   onSetDefault,
 }: Props) {
   if (accountsCount === 0) {
-    return (
-      <div className="mt-5 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-muted)">
-        No payment methods connected yet.
-      </div>
-    );
+    return <div className={`mt-5 ${shellEmptyState}`}>No payment methods connected yet.</div>;
   }
 
   return (
