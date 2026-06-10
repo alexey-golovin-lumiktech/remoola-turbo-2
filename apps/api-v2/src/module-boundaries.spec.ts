@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { describe, expect, it } from '@jest/globals';
@@ -45,11 +45,18 @@ import {
   nonTransactionalExecuteAllowlist,
 } from './architecture/boundary-allowlists';
 import {
+  expectControllerMatchesAllowlist,
   expectExactExports,
+  expectFileContains,
+  expectFileMissing,
+  expectFileNotContains,
+  expectNoControllerMatches,
+  expectNoSourceMatches,
   expectNotExported,
   mergeAllowlistBuckets,
+  expectSourceMatchesAllowlist,
 } from './architecture/module-boundary-test-helpers';
-import { controllerFileCounts, listRepositoryFiles, sourceFileCounts } from './architecture/source-scan.utils';
+import { listRepositoryFiles, sourceFileCounts } from './architecture/source-scan.utils';
 import { RESPONSE_CONTRACT_METADATA } from './common';
 import { AdminActionAuditRepository } from './shared/admin-action-audit.repository';
 import { AdminActionAuditService } from './shared/admin-action-audit.service';
@@ -63,6 +70,21 @@ import { ConsumerActionLogService } from './shared/consumer-action-log.service';
 import { PrismaTransactionRunner } from './shared/prisma-transaction.runner';
 import { PrismaModule } from './shared/prisma.module';
 import { PrismaService } from './shared/prisma.service';
+
+const adminV2Dir = join(__dirname, `admin-v2`);
+const authDir = join(__dirname, `auth`);
+const adminAuthDir = join(__dirname, `admin-auth`);
+const guardsDir = join(__dirname, `guards`);
+const consumerDir = join(__dirname, `consumer`);
+const sharedDir = join(__dirname, `shared`);
+const commonDir = join(__dirname, `common`);
+const infrastructureDir = join(__dirname, `infrastructure`);
+const sharedCommonDir = join(__dirname, `shared-common`);
+const mainFile = join(__dirname, `main.ts`);
+const createApiAppFile = join(__dirname, `bootstrap/create-api-app.ts`);
+const requestMetaDecoratorFile = join(__dirname, `common/decorators/request-meta.decorator.ts`);
+const consumerDtoBarrel = join(__dirname, `dtos/consumer/index.ts`);
+const backofficeDtoBarrel = join(__dirname, `dtos/backoffice/index.ts`);
 
 describe(`Nest module provider boundaries`, () => {
   it(`keeps the admin-v2 shared public surface explicit`, () => {
@@ -128,68 +150,54 @@ describe(`Nest module provider boundaries`, () => {
   });
 
   it(`routes consumer runtime transactions through PrismaTransactionRunner`, () => {
-    expect(sourceFileCounts(join(__dirname, `consumer`), /\.\$transaction\s*\(/g)).toEqual(new Map());
+    expectNoSourceMatches(consumerDir, /\.\$transaction\s*\(/g);
   });
 
   it(`keeps legacy src/dtos imports out of runtime feature code`, () => {
-    expect(sourceFileCounts(join(__dirname, `auth`), /from\s+[`'"]\.\.\/dtos\//g)).toEqual(new Map());
-    expect(sourceFileCounts(join(__dirname, `admin-auth`), /from\s+[`'"]\.\.\/dtos\//g)).toEqual(new Map());
-    expect(sourceFileCounts(join(__dirname, `guards`), /from\s+[`'"]\.\.\/dtos\//g)).toEqual(new Map());
-    expect(sourceFileCounts(join(__dirname, `consumer`), /from\s+[`'"](?:\.\.\/)+dtos\//g)).toEqual(new Map());
+    expectNoSourceMatches(authDir, /from\s+[`'"]\.\.\/dtos\//g);
+    expectNoSourceMatches(adminAuthDir, /from\s+[`'"]\.\.\/dtos\//g);
+    expectNoSourceMatches(guardsDir, /from\s+[`'"]\.\.\/dtos\//g);
+    expectNoSourceMatches(consumerDir, /from\s+[`'"](?:\.\.\/)+dtos\//g);
   });
 
   it(`keeps auth and backoffice dto barrels free of legacy auth exports`, () => {
-    expect(existsSync(join(__dirname, `dtos/consumer/index.ts`))).toBe(false);
-    expect(existsSync(join(__dirname, `dtos/backoffice/index.ts`))).toBe(false);
+    expectFileMissing(consumerDtoBarrel);
+    expectFileMissing(backofficeDtoBarrel);
   });
 
   it(`keeps consumer and shared read models free of runtime raw-query capability branching`, () => {
-    expect(
-      sourceFileCounts(join(__dirname, `consumer`), /typeof\s+this\.prisma\.\$queryRaw\s*===\s*[`'"]function[`'"]/g),
-    ).toEqual(new Map());
-    expect(sourceFileCounts(join(__dirname, `shared`), /supportsRawContractsQuery\s*\(/g)).toEqual(new Map());
-    expect(
-      sourceFileCounts(
-        join(__dirname, `shared`),
-        /typeof\s+(?:consumerModel|this\.prisma\.\$queryRaw)\.[A-Za-z0-9_$]+\s*!==\s*[`'"]function[`'"]/g,
-      ),
-    ).toEqual(new Map());
+    expectNoSourceMatches(consumerDir, /typeof\s+this\.prisma\.\$queryRaw\s*===\s*[`'"]function[`'"]/g);
+    expectNoSourceMatches(sharedDir, /supportsRawContractsQuery\s*\(/g);
+    expectNoSourceMatches(
+      sharedDir,
+      /typeof\s+(?:consumerModel|this\.prisma\.\$queryRaw)\.[A-Za-z0-9_$]+\s*!==\s*[`'"]function[`'"]/g,
+    );
   });
 
   it(`keeps api bootstrap creation centralized`, () => {
-    const mainSource = readFileSync(join(__dirname, `main.ts`), `utf8`);
-    const factorySource = readFileSync(join(__dirname, `bootstrap/create-api-app.ts`), `utf8`);
-
-    expect(mainSource).toContain(`createApiApp`);
-    expect(mainSource).not.toMatch(/NestFactory\.create/);
-    expect(mainSource).not.toMatch(/waitForDatabase\(/);
-    expect(mainSource).not.toMatch(/devBootstrapSeed\(/);
-    expect(factorySource).toMatch(/NestFactory\.create/);
-    expect(factorySource).toMatch(/configureApp\(/);
-    expect(factorySource).toMatch(/waitForDatabase\(/);
-    expect(factorySource).toMatch(/devBootstrapSeed\(/);
+    expectFileContains(mainFile, `createApiApp`);
+    expectFileNotContains(mainFile, /NestFactory\.create/);
+    expectFileNotContains(mainFile, /waitForDatabase\(/);
+    expectFileNotContains(mainFile, /devBootstrapSeed\(/);
+    expectFileContains(createApiAppFile, /NestFactory\.create/);
+    expectFileContains(createApiAppFile, /configureApp\(/);
+    expectFileContains(createApiAppFile, /waitForDatabase\(/);
+    expectFileContains(createApiAppFile, /devBootstrapSeed\(/);
   });
 
   it(`keeps admin-v2 request metadata extraction in the shared decorator`, () => {
-    const adminV2Dir = join(__dirname, `admin-v2`);
-    const decoratorSource = readFileSync(join(__dirname, `common/decorators/request-meta.decorator.ts`), `utf8`);
-
-    expect(sourceFileCounts(adminV2Dir, /function requestMeta\s*\(/g)).toEqual(new Map());
+    expectNoSourceMatches(adminV2Dir, /function requestMeta\s*\(/g);
     expect(sourceFileCounts(adminV2Dir, /@RequestMeta\(\)/g).size).toBeGreaterThan(0);
-    expect(decoratorSource).toMatch(/idempotency-key/);
-    expect(decoratorSource).toMatch(/x-forwarded-for/);
+    expectFileContains(requestMetaDecoratorFile, /idempotency-key/);
+    expectFileContains(requestMetaDecoratorFile, /x-forwarded-for/);
   });
 
   it(`keeps new admin-v2 bare route id params from expanding`, () => {
-    const adminV2Dir = join(__dirname, `admin-v2`);
-
-    expect(sourceFileCounts(adminV2Dir, /@Param\(`[^`]+`\)\s+\w+:\s+string/g)).toEqual(bareRouteIdParamsAllowlist);
+    expectSourceMatchesAllowlist(adminV2Dir, /@Param\(`[^`]+`\)\s+\w+:\s+string/g, bareRouteIdParamsAllowlist);
   });
 
   it(`keeps new large inline admin-v2 controller DTOs from expanding`, () => {
-    const adminV2Dir = join(__dirname, `admin-v2`);
-
-    expect(controllerFileCounts(adminV2Dir, /^class .*{/gm)).toEqual(new Map());
+    expectNoControllerMatches(adminV2Dir, /^class .*{/gm);
   });
 
   it(`marks migrated admin-v2 plain-object response contracts explicitly`, () => {
@@ -210,62 +218,42 @@ describe(`Nest module provider boundaries`, () => {
   });
 
   it(`keeps fixed scheduler cron expressions behind the shared scheduler policy`, () => {
-    expect(sourceFileCounts(__dirname, /@Cron\(`[^`]+`\)/g)).toEqual(new Map());
+    expectNoSourceMatches(__dirname, /@Cron\(`[^`]+`\)/g);
   });
 
   it(`keeps admin-v2 independent from consumer module implementations`, () => {
-    expect(sourceFileCounts(join(__dirname, `admin-v2`), /from\s+[`'"](?:\.\.\/)+consumer\/modules\//g)).toEqual(
-      new Map(),
-    );
+    expectNoSourceMatches(adminV2Dir, /from\s+[`'"](?:\.\.\/)+consumer\/modules\//g);
   });
 
   it(`keeps infrastructure independent from application verticals`, () => {
-    expect(
-      sourceFileCounts(join(__dirname, `infrastructure`), /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer)\//g),
-    ).toEqual(new Map());
+    expectNoSourceMatches(infrastructureDir, /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer)\//g);
   });
 
   it(`keeps the shared services layer independent from common and feature verticals`, () => {
-    const sharedDir = join(__dirname, `shared`);
-
-    expect(sourceFileCounts(sharedDir, /from\s+[`'"](?:\.\.\/)+common\//g)).toEqual(new Map());
-    expect(sourceFileCounts(sharedDir, /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer|auth|admin-auth)\//g)).toEqual(
-      new Map(),
-    );
+    expectNoSourceMatches(sharedDir, /from\s+[`'"](?:\.\.\/)+common\//g);
+    expectNoSourceMatches(sharedDir, /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer|auth|admin-auth)\//g);
   });
 
   it(`keeps the common HTTP layer independent from feature verticals`, () => {
-    expect(
-      sourceFileCounts(join(__dirname, `common`), /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer|auth|admin-auth)\//g),
-    ).toEqual(new Map());
+    expectNoSourceMatches(commonDir, /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer|auth|admin-auth)\//g);
   });
 
   it(`keeps admin step-up checks on sensitive admin-v2 controllers`, () => {
-    const adminV2Dir = join(__dirname, `admin-v2`);
-
-    expect(controllerFileCounts(adminV2Dir, /adminStepUp\.verify\s*\(/g)).toEqual(adminStepUpVerifyAllowlist);
-    expect(sourceFileCounts(adminV2Dir, /verifyStepUp\s*\(/g)).toEqual(new Map());
+    expectControllerMatchesAllowlist(adminV2Dir, /adminStepUp\.verify\s*\(/g, adminStepUpVerifyAllowlist);
+    expectNoSourceMatches(adminV2Dir, /verifyStepUp\s*\(/g);
   });
 
   it(`keeps shared-common leaf kit free of common and feature-vertical imports`, () => {
-    const sharedCommonDir = join(__dirname, `shared-common`);
-
-    expect(sourceFileCounts(sharedCommonDir, /from\s+[`'"](?:\.\.\/)+common\//g)).toEqual(new Map());
-    expect(
-      sourceFileCounts(sharedCommonDir, /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer|auth|admin-auth)\//g),
-    ).toEqual(new Map());
+    expectNoSourceMatches(sharedCommonDir, /from\s+[`'"](?:\.\.\/)+common\//g);
+    expectNoSourceMatches(sharedCommonDir, /from\s+[`'"](?:\.\.\/)+(?:admin-v2|consumer|auth|admin-auth)\//g);
   });
 
   it(`keeps file storage owned by infrastructure`, () => {
-    expect(sourceFileCounts(__dirname, /consumer\/modules\/files\/(?:file-storage\.service|files\.module)/g)).toEqual(
-      new Map(),
-    );
+    expectNoSourceMatches(__dirname, /consumer\/modules\/files\/(?:file-storage\.service|files\.module)/g);
     expect(sourceFileCounts(__dirname, /infrastructure\/storage\/file-storage\.service/g).size).toBeGreaterThan(0);
   });
 
   it(`keeps admin-v2 idempotency transaction posture explicit`, () => {
-    const adminV2Dir = join(__dirname, `admin-v2`);
-
     expect(sourceFileCounts(adminV2Dir, /idempotency\.executeInTransaction\s*\(/g)).toEqual(
       new Map([
         [`admins/admin-v2-admin-access-commands.service.ts`, 2],
