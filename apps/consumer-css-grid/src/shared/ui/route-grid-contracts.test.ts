@@ -23,13 +23,13 @@ function readRoute(relativePath: string): string {
 
 describe(`route grid contracts`, () => {
   it(`dashboard metrics section uses shellGridMetrics4`, () => {
-    const src = readRoute(`dashboard/DashboardSections.tsx`);
+    const src = readRoute(`dashboard/DashboardMetricsSection.tsx`);
     expect(src).toContain(`shellGridMetrics4`);
     expect(src).toMatch(/from\s+['"`][^'"`]*shell-grid-tokens['"`]/);
   });
 
   it(`dashboard main panels use shellMainAsideWideMain`, () => {
-    const src = readRoute(`dashboard/DashboardSections.tsx`);
+    const src = readRoute(`dashboard/DashboardMainPanelsSection.tsx`);
     expect(src).toContain(`shellMainAsideWideMain`);
   });
 
@@ -38,8 +38,8 @@ describe(`route grid contracts`, () => {
     expect(src).toContain(`shellMainAsideLeftSlight`);
   });
 
-  it(`dashboard does not re-inline mainAside ratios`, () => {
-    const src = readRoute(`dashboard/DashboardSections.tsx`);
+  it(`dashboard main panels do not re-inline mainAside ratios`, () => {
+    const src = readRoute(`dashboard/DashboardMainPanelsSection.tsx`);
     expect(src).not.toContain(`xl:grid-cols-[1.5fr_1fr]`);
   });
 
@@ -48,8 +48,8 @@ describe(`route grid contracts`, () => {
     expect(src).not.toContain(`xl:grid-cols-[1.35fr_1fr]`);
   });
 
-  it(`dashboard empty states use shellEmptyStateFaint (not the raw class)`, () => {
-    const src = readRoute(`dashboard/DashboardSections.tsx`);
+  it(`dashboard main panels use shellEmptyStateFaint (not the raw class)`, () => {
+    const src = readRoute(`dashboard/DashboardMainPanelsSection.tsx`);
     expect(src).toContain(`shellEmptyStateFaint`);
     expect(src).not.toContain(`bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-faint)`);
   });
