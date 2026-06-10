@@ -59,4 +59,30 @@ describe(`route grid contracts`, () => {
     expect(src).toContain(`shellEmptyStateCompact`);
     expect(src).not.toContain(`bg-(--app-surface-muted) px-4 py-8 text-center text-sm text-(--app-text-muted)`);
   });
+
+  it(`contract detail composer uses shellMainAsideBalanced`, () => {
+    const src = readRoute(`contracts/contract-detail-sections.tsx`);
+    expect(src).toContain(`shellMainAsideBalanced`);
+    expect(src).toMatch(/from\s+['"`][^'"`]*shell-layout-tokens['"`]/);
+  });
+
+  it(`contract detail metrics use shellGridDetail3`, () => {
+    const src = readRoute(`contracts/ContractDetailMetricsSection.tsx`);
+    expect(src).toContain(`shellGridDetail3`);
+  });
+
+  it(`contract timeline uses shellEmptyState`, () => {
+    const src = readRoute(`contracts/ContractDetailTimelineSection.tsx`);
+    expect(src).toContain(`shellEmptyState`);
+  });
+
+  it(`contract payment history uses shellEmptyState`, () => {
+    const src = readRoute(`contracts/ContractDetailPaymentHistorySection.tsx`);
+    expect(src).toContain(`shellEmptyState`);
+  });
+
+  it(`contract files section uses shellEmptyState`, () => {
+    const src = readRoute(`contracts/ContractDetailFilesSection.tsx`);
+    expect(src).toContain(`shellEmptyState`);
+  });
 });
