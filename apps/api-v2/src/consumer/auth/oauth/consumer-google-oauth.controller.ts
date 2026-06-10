@@ -96,11 +96,16 @@ export class ConsumerGoogleOAuthController {
     @Query(`error`) error?: string,
   ) {
     const stateRecordPreview = state ? await this.oauthStateStore.read(state) : null;
-    const stateCookie = stateRecordPreview?.appScope
-      ? this.supportService.getOAuthStateCookieFromRequest(req, stateRecordPreview.appScope)
-      : undefined;
 
-    const { clearStateCookie, failureRedirect, consumeStateAppScope } = buildGoogleOAuthCallbackHelpers({
+    const {
+      buildLoginHandoffRedirect,
+      buildSignupRedirect,
+      failureRedirect,
+      handleOAuthCallbackError,
+      handleStateCookieMismatch,
+      normalizeCompletionNextPath,
+      resolveStateCookie,
+    } = buildGoogleOAuthCallbackHelpers({
       req,
       response,
       state,
@@ -108,35 +113,28 @@ export class ConsumerGoogleOAuthController {
       originResolver: this.originResolver,
       oauthStateStore: this.oauthStateStore,
       supportService: this.supportService,
+      maxOAuthNextPathLength: this.maxOAuthNextPathLength,
       oauthStateTtlMs: this.oauthStateTtlMs,
     });
+    const stateCookie = resolveStateCookie();
 
-    if (error) {
-      const errorAppScope = await consumeStateAppScope(state);
-      return failureRedirect(`access_denied`, errorAppScope);
+    const errorHandled = await handleOAuthCallbackError(error);
+    if (errorHandled) {
+      return;
     }
 
     if (!state) return failureRedirect(`invalid_state`);
-    if (stateCookie && stateCookie !== state) {
-      if (!this.supportService.isOAuthStateCookieFallbackAllowedInEnv()) {
-        const mismatchAppScope = await consumeStateAppScope(state);
-        return failureRedirect(`invalid_state`, mismatchAppScope);
-      }
+    const stateCookieCheck = await handleStateCookieMismatch(stateCookie);
+    if (stateCookieCheck.handled) {
+      return;
+    }
+    if (stateCookieCheck.warningEvent) {
       this.logger.warn({
-        event: `oauth_state_cookie_mismatch_auto_fallback_dev_or_test`,
+        event: stateCookieCheck.warningEvent,
         nodeEnv: envs.NODE_ENV,
       });
     }
-    if (!stateCookie) {
-      if (!this.supportService.isOAuthStateCookieFallbackAllowedInEnv()) {
-        const fallbackBlockedAppScope = await consumeStateAppScope(state);
-        return failureRedirect(`invalid_state`, fallbackBlockedAppScope);
-      }
-      this.logger.warn({
-        event: `oauth_state_cookie_missing_auto_fallback_dev_or_test`,
-        nodeEnv: envs.NODE_ENV,
-      });
-    }
+
     const stateRecord = await this.oauthStateStore.consume(state);
     if (!stateRecord) return failureRedirect(`expired_state`);
     if (Date.now() - stateRecord.createdAt > this.oauthStateTtlMs)
@@ -179,39 +177,28 @@ export class ConsumerGoogleOAuthController {
           this.googleSignupSessionTtlMs,
         );
 
-        clearStateCookie(stateRecord.appScope);
-        const redirectUrl = this.supportService.buildConsumerSignupRedirect(
-          stateRecord.appScope,
-          googleSignupHandoff,
-          stateRecord.signupEntryPath ??
-            this.supportService.getSignupEntryPathFromNext(stateRecord.nextPath, this.maxOAuthNextPathLength),
-          stateRecord.accountType,
-          stateRecord.contractorKind,
-        );
+        const redirectUrl = buildSignupRedirect(stateRecord, googleSignupHandoff);
         return response.redirect(redirectUrl);
       }
 
       const consumer = await this.googleOAuthService.loginWithPayload(email, payload);
       const oauthHandoff = this.oauthStateStore.createEphemeralToken();
+      const nextPath = normalizeCompletionNextPath(stateRecord.nextPath);
       await this.oauthStateStore.saveLoginHandoff(
         oauthHandoff,
         {
           identityId: consumer.id,
-          nextPath: this.supportService.normalizeSignupCompletionPath(
-            stateRecord.nextPath,
-            this.maxOAuthNextPathLength,
-          ),
+          nextPath,
           appScope: stateRecord.appScope,
         },
         this.oauthLoginHandoffTtlMs,
       );
 
-      clearStateCookie(stateRecord.appScope);
-      const redirectUrl = this.supportService.buildConsumerRedirect(
-        stateRecord.appScope,
-        this.supportService.normalizeSignupCompletionPath(stateRecord.nextPath, this.maxOAuthNextPathLength),
-        { oauthHandoff },
-      );
+      const redirectUrl = buildLoginHandoffRedirect({
+        appScope: stateRecord.appScope,
+        nextPath,
+        oauthHandoff,
+      });
       return response.redirect(redirectUrl);
     } catch (error: unknown) {
       this.logger.error(`OAuth callback failed`, {
