@@ -106,4 +106,27 @@ describe(`route grid contracts`, () => {
     const src = readRoute(`contacts/ContactDetailFilesSection.tsx`);
     expect(src).toContain(`shellEmptyState`);
   });
+
+  it(`exchange schedule form section imports FieldHint`, () => {
+    const src = readRoute(`exchange/ExchangeScheduleFormSection.tsx`);
+    expect(src).toContain(`FieldHint`);
+    expect(src).toMatch(/from\s+['"`]\.\/exchange-shared['"`]/);
+  });
+
+  it(`exchange scheduled list calls formatScheduleStatus + formatScheduledSecondaryStatus`, () => {
+    const src = readRoute(`exchange/ExchangeScheduledList.tsx`);
+    expect(src).toContain(`formatScheduleStatus`);
+    expect(src).toContain(`formatScheduledSecondaryStatus`);
+  });
+
+  it(`exchange scheduled pagination keeps Previous and Next labels`, () => {
+    const src = readRoute(`exchange/ExchangeScheduledPagination.tsx`);
+    expect(src).toContain(`Previous`);
+    expect(src).toContain(`Next`);
+  });
+
+  it(`exchange scheduled composer preserves the data-testid`, () => {
+    const src = readRoute(`exchange/ExchangeScheduledSection.tsx`);
+    expect(src).toContain(`exchange-scheduled-section`);
+  });
 });
