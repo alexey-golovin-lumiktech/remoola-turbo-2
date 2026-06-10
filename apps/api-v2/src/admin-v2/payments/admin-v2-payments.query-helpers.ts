@@ -72,21 +72,16 @@ export function buildPaymentRequestListWhere(params: ListPaymentRequestsParams):
   };
 }
 
-export function buildPaymentRequestListFindManyArgs(
-  params: ListPaymentRequestsParams,
-): Prisma.PaymentRequestModelFindManyArgs {
+export function buildPaymentRequestListFindManyArgs(params: ListPaymentRequestsParams) {
   return {
     where: buildPaymentRequestListWhere(params),
     orderBy: [{ createdAt: `desc` }, { id: `desc` }],
     take: params.limit + 1,
     select: paymentListSelect,
-  };
+  } satisfies Prisma.PaymentRequestModelFindManyArgs;
 }
 
-export function buildOverdueQueueFindManyArgs(params: {
-  now: Date;
-  limitPerBucket: number;
-}): Prisma.PaymentRequestModelFindManyArgs {
+export function buildOverdueQueueFindManyArgs(params: { now: Date; limitPerBucket: number }) {
   return {
     where: {
       deletedAt: null,
@@ -96,10 +91,10 @@ export function buildOverdueQueueFindManyArgs(params: {
     orderBy: [{ dueDate: `asc` }, { updatedAt: `desc` }, { id: `desc` }],
     take: params.limitPerBucket,
     select: paymentOperationsQueueSelect,
-  };
+  } satisfies Prisma.PaymentRequestModelFindManyArgs;
 }
 
-export function buildUncollectibleQueueFindManyArgs(limitPerBucket: number): Prisma.PaymentRequestModelFindManyArgs {
+export function buildUncollectibleQueueFindManyArgs(limitPerBucket: number) {
   return {
     where: {
       deletedAt: null,
@@ -108,13 +103,13 @@ export function buildUncollectibleQueueFindManyArgs(limitPerBucket: number): Pri
     orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
     take: limitPerBucket,
     select: paymentOperationsQueueSelect,
-  };
+  } satisfies Prisma.PaymentRequestModelFindManyArgs;
 }
 
 export function buildStaleApprovalQueueFindManyArgs(params: {
   staleWaitingRecipientApprovalThreshold: Date;
   limitPerBucket: number;
-}): Prisma.PaymentRequestModelFindManyArgs {
+}) {
   return {
     where: {
       deletedAt: null,
@@ -124,10 +119,10 @@ export function buildStaleApprovalQueueFindManyArgs(params: {
     orderBy: [{ dueDate: `asc` }, { updatedAt: `asc` }, { id: `desc` }],
     take: params.limitPerBucket,
     select: paymentOperationsQueueSelect,
-  };
+  } satisfies Prisma.PaymentRequestModelFindManyArgs;
 }
 
-export function buildInconsistentQueueFindManyArgs(limitPerBucket: number): Prisma.PaymentRequestModelFindManyArgs {
+export function buildInconsistentQueueFindManyArgs(limitPerBucket: number) {
   return {
     where: {
       deletedAt: null,
@@ -141,12 +136,10 @@ export function buildInconsistentQueueFindManyArgs(limitPerBucket: number): Pris
     orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
     take: limitPerBucket * 3,
     select: paymentOperationsQueueSelect,
-  };
+  } satisfies Prisma.PaymentRequestModelFindManyArgs;
 }
 
-export function buildMissingAttachmentQueueFindManyArgs(
-  limitPerBucket: number,
-): Prisma.PaymentRequestModelFindManyArgs {
+export function buildMissingAttachmentQueueFindManyArgs(limitPerBucket: number) {
   return {
     where: {
       deletedAt: null,
@@ -154,5 +147,5 @@ export function buildMissingAttachmentQueueFindManyArgs(
     orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
     take: limitPerBucket * 3,
     select: paymentOperationsQueueSelect,
-  };
+  } satisfies Prisma.PaymentRequestModelFindManyArgs;
 }

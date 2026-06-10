@@ -3,7 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 
 import {
+  type AdminV2PaymentsListRow,
   type AdminV2PaymentsQueueBuckets,
+  type AdminV2PaymentsQueueRow,
   paymentAuditSelect,
   paymentCaseSelect,
 } from './admin-v2-payments.query-definitions';
@@ -16,11 +18,7 @@ import {
   buildUncollectibleQueueFindManyArgs,
 } from './admin-v2-payments.query-helpers';
 import { PrismaService } from '../../shared/prisma.service';
-export type {
-  AdminV2PaymentsListRow,
-  AdminV2PaymentsQueueBuckets,
-  AdminV2PaymentsQueueRow,
-} from './admin-v2-payments.query-definitions';
+export type { AdminV2PaymentsListRow, AdminV2PaymentsQueueBuckets, AdminV2PaymentsQueueRow };
 
 type ListPaymentRequestsParams = {
   cursor: { createdAt: Date; id: string } | null;
@@ -43,7 +41,7 @@ type ListPaymentRequestsParams = {
 export class AdminV2PaymentsQuery {
   constructor(private readonly prisma: PrismaService) {}
 
-  listPaymentRequests(params: ListPaymentRequestsParams) {
+  listPaymentRequests(params: ListPaymentRequestsParams): Promise<AdminV2PaymentsListRow[]> {
     return this.prisma.paymentRequestModel.findMany(buildPaymentRequestListFindManyArgs(params));
   }
 
