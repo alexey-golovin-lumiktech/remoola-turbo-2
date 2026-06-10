@@ -24,6 +24,11 @@ describe(`StatusPill`, () => {
     const html = renderToStaticMarkup(<StatusPill status="SomeUnknownStatus" />);
     expect(html).toContain(`bg-(--app-surface-muted)`);
   });
+
+  it(`applies danger tone classes for Failed`, () => {
+    const html = renderToStaticMarkup(<StatusPill status="Failed" />);
+    expect(html).toContain(`bg-(--app-danger-soft)`);
+  });
 });
 
 describe(`ChecklistItem`, () => {

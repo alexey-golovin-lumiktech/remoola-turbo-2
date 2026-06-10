@@ -8,7 +8,9 @@ import {
   SHELL_SIDEBAR_BASE_CLASS,
   SHELL_SIDEBAR_WIDTH_CLASS,
   shellMainAsideBalanced,
+  shellMainAsideLeftSlight,
   shellMainAsidePrimary,
+  shellMainAsideWideMain,
 } from './shell-layout-tokens';
 
 describe(`shell layout tokens`, () => {
@@ -75,5 +77,40 @@ describe(`shellMainAsidePrimary`, () => {
 
   it(`contains grid-cols-1 gap-5`, () => {
     expect(shellMainAsidePrimary).toContain(`grid-cols-1 gap-5`);
+  });
+});
+
+describe(`shellMainAsideWideMain`, () => {
+  it(`pins the exact class string`, () => {
+    expect(shellMainAsideWideMain).toBe(`grid grid-cols-1 gap-5 xl:grid-cols-[1.5fr_1fr]`);
+  });
+
+  it(`uses 1.5fr_1fr ratio (dashboard main panels)`, () => {
+    expect(shellMainAsideWideMain).toContain(`xl:grid-cols-[1.5fr_1fr]`);
+  });
+});
+
+describe(`shellMainAsideLeftSlight`, () => {
+  it(`pins the exact class string`, () => {
+    expect(shellMainAsideLeftSlight).toBe(`grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1fr]`);
+  });
+
+  it(`uses 1.35fr_1fr ratio (help hub)`, () => {
+    expect(shellMainAsideLeftSlight).toContain(`xl:grid-cols-[1.35fr_1fr]`);
+  });
+});
+
+describe(`mainAside ratio family`, () => {
+  it(`every variant stacks to a single column below xl`, () => {
+    for (const variant of [
+      shellMainAsideBalanced,
+      shellMainAsidePrimary,
+      shellMainAsideWideMain,
+      shellMainAsideLeftSlight,
+    ]) {
+      expect(variant).toContain(`grid-cols-1`);
+      expect(variant).toContain(`gap-5`);
+      expect(variant).toMatch(/xl:grid-cols-\[/);
+    }
   });
 });

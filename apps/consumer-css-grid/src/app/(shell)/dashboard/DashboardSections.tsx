@@ -14,9 +14,11 @@ import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
 import { HelpContextualGuides } from '../../../features/help/ui';
 import { type DashboardData } from '../../../lib/consumer-api.server';
 import { ActionCard } from '../../../shared/ui/shell-actions';
+import { shellEmptyStateFaint } from '../../../shared/ui/shell-card-tokens';
 import { MetricCard } from '../../../shared/ui/shell-data-display';
 import { shellGridMetrics4 } from '../../../shared/ui/shell-grid-tokens';
 import { ChecklistItem, StatusPill } from '../../../shared/ui/shell-indicators';
+import { shellMainAsideWideMain } from '../../../shared/ui/shell-layout-tokens';
 import { Panel } from '../../../shared/ui/shell-panel';
 
 type DashboardSummary = DashboardData[`summary`];
@@ -285,7 +287,7 @@ export function DashboardMainPanelsSection({
   tasks: DashboardTask[];
 }) {
   return (
-    <section className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[1.5fr_1fr]">
+    <section className={`mt-5 ${shellMainAsideWideMain}`}>
       <div className="space-y-5">
         <DashboardPaymentsSection pendingRequests={pendingRequests} paymentsHelpGuides={paymentsHelpGuides} />
         <DashboardPendingWithdrawalsSection
@@ -314,9 +316,7 @@ function DashboardPaymentsSection({
     <Panel title="Open Payment Requests" aside={`${pendingRequests.length} total`}>
       {pendingRequests.length === 0 ? (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-faint)">
-            No open payment requests yet.
-          </div>
+          <div className={shellEmptyStateFaint}>No open payment requests yet.</div>
           <HelpContextualGuides
             guides={paymentsHelpGuides}
             compact
@@ -417,9 +417,7 @@ function DashboardActivitySection({
     <Panel title="Activity Timeline">
       {activity.length === 0 ? (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-faint)">
-            No activity yet.
-          </div>
+          <div className={shellEmptyStateFaint}>No activity yet.</div>
           <HelpContextualGuides
             guides={activityHelpGuides}
             compact
@@ -481,9 +479,7 @@ function DashboardQuickDocsSection({
     <Panel title="Quick Docs" aside="View all">
       {quickDocs.length === 0 ? (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-faint)">
-            No documents yet.
-          </div>
+          <div className={shellEmptyStateFaint}>No documents yet.</div>
           <HelpContextualGuides
             guides={quickDocsHelpGuides}
             compact

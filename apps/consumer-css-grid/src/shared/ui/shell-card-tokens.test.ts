@@ -1,6 +1,13 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { shellBadgePrimary, shellCardSm, shellContainerBase, shellEmptyState } from './shell-card-tokens';
+import {
+  shellBadgePrimary,
+  shellCardSm,
+  shellContainerBase,
+  shellEmptyState,
+  shellEmptyStateCompact,
+  shellEmptyStateFaint,
+} from './shell-card-tokens';
 
 describe(`shellEmptyState`, () => {
   it(`pins the exact class string`, () => {
@@ -12,6 +19,32 @@ describe(`shellEmptyState`, () => {
   it(`contains py-10 text-center (distinguishes from other containers)`, () => {
     expect(shellEmptyState).toContain(`py-10`);
     expect(shellEmptyState).toContain(`text-center`);
+  });
+});
+
+describe(`shellEmptyStateFaint`, () => {
+  it(`pins the exact class string`, () => {
+    expect(shellEmptyStateFaint).toBe(
+      `rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-10 text-center text-sm text-(--app-text-faint)`,
+    );
+  });
+
+  it(`differs from shellEmptyState only in text tone (faint vs muted)`, () => {
+    expect(shellEmptyStateFaint).toContain(`text-(--app-text-faint)`);
+    expect(shellEmptyStateFaint).not.toContain(`text-(--app-text-muted)`);
+  });
+});
+
+describe(`shellEmptyStateCompact`, () => {
+  it(`pins the exact class string`, () => {
+    expect(shellEmptyStateCompact).toBe(
+      `rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-8 text-center text-sm text-(--app-text-muted)`,
+    );
+  });
+
+  it(`uses py-8 (tighter than shellEmptyState py-10)`, () => {
+    expect(shellEmptyStateCompact).toContain(`py-8`);
+    expect(shellEmptyStateCompact).not.toContain(`py-10`);
   });
 });
 

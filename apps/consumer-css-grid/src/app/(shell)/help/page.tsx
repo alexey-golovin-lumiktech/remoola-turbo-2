@@ -6,6 +6,7 @@ import { type PublicHelpGuideRegistryEntry } from '../../../features/help/guide-
 import { helpGuideFeatureLabels, helpGuideTypeLabels, helpHubData } from '../../../features/help/help-hub-data';
 import { HelpHubBrowseClient } from '../../../features/help/ui/HelpHubBrowseClient';
 import { shellBadgePrimary, shellCardSm } from '../../../shared/ui/shell-card-tokens';
+import { shellMainAsideLeftSlight } from '../../../shared/ui/shell-layout-tokens';
 import { PageHeader } from '../../../shared/ui/shell-page-layout';
 import { Panel } from '../../../shared/ui/shell-panel';
 
@@ -68,7 +69,7 @@ export default function HelpPage() {
         icon={<SearchIcon size={40} className="h-10 w-10 text-(--app-text)" />}
       />
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1fr]">
+      <section className={shellMainAsideLeftSlight}>
         <Panel title="Start here" aside={`${helpHubData.startHereGuides.length} recommended guides`}>
           <div className="space-y-4">
             <p className="text-sm leading-7 text-(--app-text-soft)">

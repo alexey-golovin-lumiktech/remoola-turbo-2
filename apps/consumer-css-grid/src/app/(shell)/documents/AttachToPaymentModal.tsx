@@ -9,6 +9,7 @@ import {
   getDraftPaymentRequestsAction,
 } from '../../../lib/mutations/payments.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+import { shellEmptyStateCompact } from '../../../shared/ui/shell-card-tokens';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_SCOPE_PAGE_SIZE = 100;
@@ -178,11 +179,9 @@ export function AttachToPaymentModal({
           ) : null}
 
           {isLoading ? (
-            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-8 text-center text-sm text-(--app-text-muted)">
-              Loading draft payment requests...
-            </div>
+            <div className={shellEmptyStateCompact}>Loading draft payment requests...</div>
           ) : scopedDraftPayments.length === 0 ? (
-            <div className="rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-8 text-center text-sm text-(--app-text-muted)">
+            <div className={shellEmptyStateCompact}>
               {scopeLabel
                 ? `No draft payment requests are available for this contract yet.`
                 : `No draft payment requests are available yet.`}

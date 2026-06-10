@@ -12,3 +12,5 @@ export const SHELL_LOADING_CARD_CLASS = `rounded-[28px] border border-(--app-bor
 
 export const shellMainAsideBalanced = `grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]`;
 export const shellMainAsidePrimary = `grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_0.75fr]`;
+export const shellMainAsideWideMain = `grid grid-cols-1 gap-5 xl:grid-cols-[1.5fr_1fr]`;
+export const shellMainAsideLeftSlight = `grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1fr]`;
