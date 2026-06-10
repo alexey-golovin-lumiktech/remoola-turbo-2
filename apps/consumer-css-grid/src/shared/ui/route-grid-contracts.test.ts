@@ -85,4 +85,25 @@ describe(`route grid contracts`, () => {
     const src = readRoute(`contracts/ContractDetailFilesSection.tsx`);
     expect(src).toContain(`shellEmptyState`);
   });
+
+  it(`contact detail composer uses shellMainAsideBalanced`, () => {
+    const src = readRoute(`contacts/ContactDetailView.tsx`);
+    expect(src).toContain(`shellMainAsideBalanced`);
+    expect(src).toMatch(/from\s+['"`][^'"`]*shell-layout-tokens['"`]/);
+  });
+
+  it(`contact detail metrics use shellGridDetail3`, () => {
+    const src = readRoute(`contacts/ContactDetailMetricsSection.tsx`);
+    expect(src).toContain(`shellGridDetail3`);
+  });
+
+  it(`contact payment records use shellEmptyState`, () => {
+    const src = readRoute(`contacts/ContactDetailPaymentRecordsSection.tsx`);
+    expect(src).toContain(`shellEmptyState`);
+  });
+
+  it(`contact files section uses shellEmptyState`, () => {
+    const src = readRoute(`contacts/ContactDetailFilesSection.tsx`);
+    expect(src).toContain(`shellEmptyState`);
+  });
 });
