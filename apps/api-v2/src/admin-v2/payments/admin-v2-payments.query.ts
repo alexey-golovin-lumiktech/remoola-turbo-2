@@ -18,7 +18,7 @@ import {
   buildUncollectibleQueueFindManyArgs,
 } from './admin-v2-payments.query-helpers';
 import { PrismaService } from '../../shared/prisma.service';
-export type { AdminV2PaymentsListRow, AdminV2PaymentsQueueBuckets, AdminV2PaymentsQueueRow };
+export type { AdminV2PaymentsListRow, AdminV2PaymentsQueueRow };
 
 type ListPaymentRequestsParams = {
   cursor: { createdAt: Date; id: string } | null;

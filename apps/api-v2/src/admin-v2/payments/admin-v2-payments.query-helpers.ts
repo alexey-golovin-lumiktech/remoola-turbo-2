@@ -26,7 +26,7 @@ type ListPaymentRequestsParams = {
   now: Date;
 };
 
-export function buildPaymentRequestListWhere(params: ListPaymentRequestsParams): Prisma.PaymentRequestModelWhereInput {
+function buildPaymentRequestListWhere(params: ListPaymentRequestsParams): Prisma.PaymentRequestModelWhereInput {
   const dueDateRange = buildDateRangeFilter(params.dueDateFrom, params.dueDateTo);
   const createdAtRange = buildDateRangeFilter(params.createdFrom, params.createdTo);
 

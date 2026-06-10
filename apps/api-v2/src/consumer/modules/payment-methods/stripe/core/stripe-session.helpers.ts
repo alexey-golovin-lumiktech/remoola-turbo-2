@@ -15,7 +15,7 @@ type CheckoutSessionPaymentRequest = {
   requesterEmail?: string | null;
 };
 
-export function buildStripeSessionReturnUrl(
+function buildStripeSessionReturnUrl(
   frontendBaseUrl: string,
   paymentRequestId: string,
   outcome: `success` | `canceled`,

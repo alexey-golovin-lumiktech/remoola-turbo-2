@@ -48,7 +48,7 @@ function parseMetadata(metadata: Prisma.JsonValue | null | undefined): Record<st
   return JSON.parse(JSON.stringify(metadata ?? {})) as Record<string, unknown>;
 }
 
-export function getExternalReference(entry: {
+function getExternalReference(entry: {
   stripeId: string | null;
   metadata?: Prisma.JsonValue | null;
   outcomes?: Array<{ externalId: string | null }>;
@@ -68,7 +68,7 @@ export function getExternalReference(entry: {
   return entry.stripeId?.trim() || null;
 }
 
-export function mapPayoutEscalationState(
+function mapPayoutEscalationState(
   escalation:
     | {
         id: string;

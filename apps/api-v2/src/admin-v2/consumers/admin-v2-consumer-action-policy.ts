@@ -6,7 +6,7 @@ const FLAG_MAX_LEN = 64;
 const REASON_MAX_LEN = 500;
 const NOTE_MAX_LEN = 4000;
 
-export function normalizeFlag(raw: string): string {
+function normalizeFlag(raw: string): string {
   return raw
     .trim()
     .toLowerCase()

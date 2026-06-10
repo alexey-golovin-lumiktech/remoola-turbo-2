@@ -1,7 +1,7 @@
 import { $Enums, type Prisma } from '@remoola/database-2';
 
-export const DEFAULT_LIMIT = 25;
-export const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 25;
+const MAX_LIMIT = 100;
 export const PAYOUT_TYPES = [$Enums.LedgerEntryType.USER_PAYOUT, $Enums.LedgerEntryType.USER_PAYOUT_REVERSAL] as const;
 
 export function normalizeLimit(limit?: number): number {
