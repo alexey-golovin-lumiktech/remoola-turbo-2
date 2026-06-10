@@ -10,13 +10,13 @@ import {
   type ExchangeMessage,
   type ExchangeMutationResult,
   type ExchangeRule,
-  FieldHint,
-  formatMajorCurrency,
   getExchangeCurrencyOptions,
   type UpdateRuleData,
 } from './exchange-shared';
+import { ExchangeRuleFormSection } from './ExchangeRuleFormSection';
+import { ExchangeRulesList } from './ExchangeRulesList';
+import { ExchangeRulesPagination } from './ExchangeRulesPagination';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
-import { shellContainerBase, shellEmptyState } from '../../../shared/ui/shell-card-tokens';
 import { Panel } from '../../../shared/ui/shell-panel';
 
 type ExchangeRulesSectionProps = {
@@ -118,6 +118,80 @@ export function ExchangeRulesSection({
     );
   };
 
+  const handleTargetBalanceChange = (value: string) => {
+    setRuleTargetBalanceTouched(true);
+    updateRuleForm({ targetBalance: value });
+  };
+
+  const handleSubmitRule = () => {
+    setMessage(null);
+    startTransition(async () => {
+      const result = editingRuleId ? await onUpdateRule(editingRuleId, ruleForm) : await onCreateRule(ruleForm);
+      if (!handleMutationResult(result)) return;
+      resetRuleEditor();
+      setMessage({
+        type: `success`,
+        text: result.ok ? (result.message ?? (editingRuleId ? `Rule updated` : `Rule created`)) : `Rule updated`,
+      });
+      router.refresh();
+    });
+  };
+
+  const handleCancelEdit = () => {
+    resetRuleEditor();
+    setMessage(null);
+  };
+
+  const handleEditRule = (rule: ExchangeRule) => {
+    setEditingRuleId(rule.id);
+    setRuleTargetBalanceTouched(false);
+    setRuleForm({
+      from: rule.fromCurrency,
+      to: rule.toCurrency,
+      targetBalance: String(rule.targetBalance),
+      maxConvertAmount: rule.maxConvertAmount != null ? String(rule.maxConvertAmount) : ``,
+      minIntervalMinutes: String(rule.minIntervalMinutes),
+      enabled: rule.enabled,
+    });
+    setMessage(null);
+  };
+
+  const handleToggleRule = (rule: ExchangeRule) => {
+    setMessage(null);
+    setPendingActionId(`toggle-rule:${rule.id}`);
+    startTransition(async () => {
+      const result = await onUpdateRule(rule.id, { enabled: !rule.enabled });
+      setPendingActionId(null);
+      if (!handleMutationResult(result)) return;
+      if (editingRuleId === rule.id) {
+        setRuleForm((current) => ({ ...current, enabled: !rule.enabled }));
+      }
+      setMessage({
+        type: `success`,
+        text: result.ok ? (result.message ?? `Rule updated`) : `Rule updated`,
+      });
+      router.refresh();
+    });
+  };
+
+  const handleDeleteRule = (ruleId: string) => {
+    setMessage(null);
+    setPendingActionId(`delete-rule:${ruleId}`);
+    startTransition(async () => {
+      const result = await onDeleteRule(ruleId);
+      setPendingActionId(null);
+      if (!handleMutationResult(result)) return;
+      if (editingRuleId === ruleId) {
+        resetRuleEditor();
+      }
+      setMessage({
+        type: `success`,
+        text: result.ok ? (result.message ?? `Rule deleted`) : `Rule deleted`,
+      });
+      router.refresh();
+    });
+  };
+
   return (
     <Panel
       title="Auto conversion rules"
@@ -141,268 +215,42 @@ export function ExchangeRulesSection({
         </div>
       ) : null}
 
-      <div data-testid={`exchange-create-rule-form`}>
-        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <select
-            aria-label={`Source currency for auto-conversion rule`}
-            value={ruleForm.from}
-            onChange={(event) => updateRuleForm({ from: event.target.value })}
-            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
-          >
-            {currencyOptions.map((currency) => (
-              <option key={`rule-from-${currency.code}`} value={currency.code}>
-                {`From: ${currency.code}`}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label={`Target currency for auto-conversion rule`}
-            value={ruleForm.to}
-            onChange={(event) => updateRuleForm({ to: event.target.value })}
-            className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-strong) px-4 py-3 text-(--app-text) outline-none"
-          >
-            {currencyOptions.map((currency) => (
-              <option key={`rule-to-${currency.code}`} value={currency.code}>
-                {`To: ${currency.code}`}
-              </option>
-            ))}
-          </select>
-          {!ruleCurrenciesDiffer ? (
-            <div className="md:col-span-2">
-              <FieldHint message="Choose two different currencies." tone="error" />
-            </div>
-          ) : null}
-          <div>
-            <input
-              aria-label={`Target balance threshold`}
-              value={ruleForm.targetBalance}
-              onChange={(event) => {
-                setRuleTargetBalanceTouched(true);
-                updateRuleForm({ targetBalance: event.target.value });
-              }}
-              placeholder="Target balance"
-              aria-invalid={targetBalanceShowError}
-              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
-            />
-            <FieldHint
-              message={
-                targetBalanceMissing
-                  ? ruleTargetBalanceTouched
-                    ? `Target balance is required.`
-                    : `Enter a target balance to create a rule.`
-                  : targetBalanceValid
-                    ? `Zero is allowed.`
-                    : `Enter a valid target balance.`
-              }
-              tone={targetBalanceShowError ? `error` : `muted`}
-            />
-          </div>
-          <div>
-            <input
-              aria-label={`Maximum conversion amount per execution`}
-              value={ruleForm.maxConvertAmount}
-              onChange={(event) => updateRuleForm({ maxConvertAmount: event.target.value })}
-              placeholder="Max convert amount (optional)"
-              aria-invalid={!maxConvertAmountValid}
-              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
-            />
-            {maxConvertAmountProvided ? (
-              <FieldHint
-                message={maxConvertAmountValid ? `Cap will limit each run.` : `Enter a valid limit greater than zero.`}
-                tone={maxConvertAmountValid ? `muted` : `error`}
-              />
-            ) : (
-              <FieldHint message="Leave blank to remove the cap." />
-            )}
-          </div>
-          <div>
-            <input
-              aria-label={`Minimum interval between executions in minutes`}
-              value={ruleForm.minIntervalMinutes}
-              onChange={(event) => updateRuleForm({ minIntervalMinutes: event.target.value })}
-              placeholder="Min interval minutes"
-              aria-invalid={!minIntervalValid}
-              className="w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--app-text-faint)"
-            />
-            {minIntervalProvided ? (
-              <FieldHint
-                message={
-                  minIntervalValid
-                    ? `Rule can run no more often than this interval.`
-                    : `Interval must be at least 1 minute.`
-                }
-                tone={minIntervalValid ? `muted` : `error`}
-              />
-            ) : (
-              <FieldHint
-                message={editingRuleId ? `Leave blank to keep the current interval.` : `Leave blank to use 60 minutes.`}
-              />
-            )}
-          </div>
-          <label className="flex items-center gap-3 rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 text-sm text-(--app-text-soft)">
-            <input
-              type="checkbox"
-              checked={ruleForm.enabled}
-              onChange={(event) => updateRuleForm({ enabled: event.target.checked })}
-            />
-            Enable immediately
-          </label>
-        </div>
+      <ExchangeRuleFormSection
+        currencyOptions={currencyOptions}
+        editingRuleId={editingRuleId}
+        isPending={isPending}
+        maxConvertAmountProvided={maxConvertAmountProvided}
+        maxConvertAmountValid={maxConvertAmountValid}
+        minIntervalProvided={minIntervalProvided}
+        minIntervalValid={minIntervalValid}
+        onCancelEdit={handleCancelEdit}
+        onSubmit={handleSubmitRule}
+        onTargetBalanceChange={handleTargetBalanceChange}
+        onUpdate={updateRuleForm}
+        ruleCurrenciesDiffer={ruleCurrenciesDiffer}
+        ruleForm={ruleForm}
+        ruleFormValid={ruleFormValid}
+        ruleTargetBalanceTouched={ruleTargetBalanceTouched}
+        targetBalanceMissing={targetBalanceMissing}
+        targetBalanceShowError={targetBalanceShowError}
+        targetBalanceValid={targetBalanceValid}
+      />
 
-        <button
-          type="button"
-          disabled={isPending || !ruleFormValid}
-          onClick={() => {
-            setMessage(null);
-            startTransition(async () => {
-              const result = editingRuleId ? await onUpdateRule(editingRuleId, ruleForm) : await onCreateRule(ruleForm);
-              if (!handleMutationResult(result)) return;
-              resetRuleEditor();
-              setMessage({
-                type: `success`,
-                text: result.ok
-                  ? (result.message ?? (editingRuleId ? `Rule updated` : `Rule created`))
-                  : `Rule updated`,
-              });
-              router.refresh();
-            });
-          }}
-          className="mb-3 w-full rounded-2xl bg-(--app-primary) px-4 py-3 font-medium text-(--app-primary-contrast) disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isPending ? `Saving...` : editingRuleId ? `Save rule changes` : `Create rule`}
-        </button>
+      <ExchangeRulesList
+        isPending={isPending}
+        onDelete={handleDeleteRule}
+        onEdit={handleEditRule}
+        onToggle={handleToggleRule}
+        pendingActionId={pendingActionId}
+        rules={rules}
+      />
 
-        {editingRuleId ? (
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => {
-              resetRuleEditor();
-              setMessage(null);
-            }}
-            className="mb-5 w-full rounded-2xl border border-(--app-border) bg-(--app-surface-muted) px-4 py-3 font-medium text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Cancel edit
-          </button>
-        ) : null}
-      </div>
-
-      <div data-testid={`exchange-rules-list`}>
-        {rules.length === 0 ? (
-          <div className={shellEmptyState}>No auto-rules configured yet.</div>
-        ) : (
-          <div className="space-y-3">
-            {rules.map((rule) => (
-              <div key={rule.id} className={shellContainerBase}>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="font-medium text-(--app-text)">
-                      {rule.fromCurrency} {`->`} {rule.toCurrency}
-                    </div>
-                    <div className="mt-1 text-sm text-(--app-text-muted)">
-                      {`Keep ${formatMajorCurrency(rule.targetBalance, rule.fromCurrency)}`}
-                      {rule.maxConvertAmount != null
-                        ? ` • cap ${formatMajorCurrency(rule.maxConvertAmount, rule.fromCurrency)}`
-                        : ``}
-                      {` • every ${rule.minIntervalMinutes} min`}
-                    </div>
-                  </div>
-                  <div className="text-sm text-(--app-text-muted)">{rule.enabled ? `Enabled` : `Paused`}</div>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => {
-                      setEditingRuleId(rule.id);
-                      setRuleTargetBalanceTouched(false);
-                      setRuleForm({
-                        from: rule.fromCurrency,
-                        to: rule.toCurrency,
-                        targetBalance: String(rule.targetBalance),
-                        maxConvertAmount: rule.maxConvertAmount != null ? String(rule.maxConvertAmount) : ``,
-                        minIntervalMinutes: String(rule.minIntervalMinutes),
-                        enabled: rule.enabled,
-                      });
-                      setMessage(null);
-                    }}
-                    className="rounded-xl border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => {
-                      setMessage(null);
-                      setPendingActionId(`toggle-rule:${rule.id}`);
-                      startTransition(async () => {
-                        const result = await onUpdateRule(rule.id, { enabled: !rule.enabled });
-                        setPendingActionId(null);
-                        if (!handleMutationResult(result)) return;
-                        if (editingRuleId === rule.id) {
-                          setRuleForm((current) => ({ ...current, enabled: !rule.enabled }));
-                        }
-                        setMessage({
-                          type: `success`,
-                          text: result.ok ? (result.message ?? `Rule updated`) : `Rule updated`,
-                        });
-                        router.refresh();
-                      });
-                    }}
-                    className="rounded-xl border border-transparent bg-(--app-primary-soft) px-3 py-2 text-sm text-(--app-primary) disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {pendingActionId === `toggle-rule:${rule.id}` ? `Updating...` : rule.enabled ? `Pause` : `Enable`}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => {
-                      setMessage(null);
-                      setPendingActionId(`delete-rule:${rule.id}`);
-                      startTransition(async () => {
-                        const result = await onDeleteRule(rule.id);
-                        setPendingActionId(null);
-                        if (!handleMutationResult(result)) return;
-                        if (editingRuleId === rule.id) {
-                          resetRuleEditor();
-                        }
-                        setMessage({
-                          type: `success`,
-                          text: result.ok ? (result.message ?? `Rule deleted`) : `Rule deleted`,
-                        });
-                        router.refresh();
-                      });
-                    }}
-                    className="rounded-xl border border-transparent bg-(--app-danger-soft) px-3 py-2 text-sm text-(--app-danger-text) disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {pendingActionId === `delete-rule:${rule.id}` ? `Deleting...` : `Delete`}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={rulesPage <= 1}
-          onClick={() => applyRulesPage(rulesPage - 1)}
-          className="rounded-xl border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <button
-          type="button"
-          disabled={rulesPage >= rulesTotalPages}
-          onClick={() => applyRulesPage(rulesPage + 1)}
-          className="rounded-xl border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+      <ExchangeRulesPagination
+        onNext={() => applyRulesPage(rulesPage + 1)}
+        onPrev={() => applyRulesPage(rulesPage - 1)}
+        page={rulesPage}
+        totalPages={rulesTotalPages}
+      />
     </Panel>
   );
 }

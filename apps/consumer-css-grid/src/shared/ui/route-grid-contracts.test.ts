@@ -129,4 +129,27 @@ describe(`route grid contracts`, () => {
     const src = readRoute(`exchange/ExchangeScheduledSection.tsx`);
     expect(src).toContain(`exchange-scheduled-section`);
   });
+
+  it(`exchange rule form section imports FieldHint`, () => {
+    const src = readRoute(`exchange/ExchangeRuleFormSection.tsx`);
+    expect(src).toContain(`FieldHint`);
+    expect(src).toMatch(/from\s+['"`]\.\/exchange-shared['"`]/);
+  });
+
+  it(`exchange rules list pins per-row pendingActionId patterns`, () => {
+    const src = readRoute(`exchange/ExchangeRulesList.tsx`);
+    expect(src).toContain(`toggle-rule:`);
+    expect(src).toContain(`delete-rule:`);
+  });
+
+  it(`exchange rules pagination keeps Previous and Next labels`, () => {
+    const src = readRoute(`exchange/ExchangeRulesPagination.tsx`);
+    expect(src).toContain(`Previous`);
+    expect(src).toContain(`Next`);
+  });
+
+  it(`exchange rules composer preserves the data-testid`, () => {
+    const src = readRoute(`exchange/ExchangeRulesSection.tsx`);
+    expect(src).toContain(`exchange-rules-section`);
+  });
 });
