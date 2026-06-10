@@ -211,8 +211,149 @@ describe(`AdminV2AdminInvitationsService`, () => {
     repository.getRoleById.mockResolvedValueOnce({ key: `OPS_ADMIN` });
     repository.consumeInvitation.mockResolvedValueOnce({ count: 0 });
 
-    await expect(service.acceptInvitation({ token: `jwt`, password: `VerySecurePass1!` })).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    const error = await service.acceptInvitation({ token: `jwt`, password: `VerySecurePass1!` }).catch((e) => e);
+    expect(error).toBeInstanceOf(ConflictException);
+    expect((error as Error).message).toBe(`Invitation has already been accepted`);
+  });
+
+  // Characterization coverage for exception contract (status type + verbatim message)
+  // pinned before extracting shared invitation exception helpers.
+
+  function acceptPayload() {
+    return { token: `jwt`, password: `VerySecurePass1!` };
+  }
+
+  it(`rejects invitation tokens whose type or scope does not match`, async () => {
+    const { service, jwtService } = await buildService();
+    jwtService.verify.mockReturnValueOnce({
+      sub: `inv-1`,
+      email: `invitee@example.com`,
+      roleId: `role-ops`,
+      typ: `something_else`,
+      scope: `admin_v2`,
+    });
+
+    const error = await service.acceptInvitation(acceptPayload()).catch((e) => e);
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect((error as Error).message).toBe(`Invitation token is invalid`);
+  });
+
+  it(`rejects invitation tokens that fail jwt verification`, async () => {
+    const { service, jwtService } = await buildService();
+    jwtService.verify.mockImplementationOnce(() => {
+      throw new Error(`bad signature`);
+    });
+
+    const error = await service.acceptInvitation(acceptPayload()).catch((e) => e);
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect((error as Error).message).toBe(`Invitation token is invalid`);
+  });
+
+  it(`rejects invitation tokens that do not match the stored invitation`, async () => {
+    const { service, repository, jwtService } = await buildService();
+    jwtService.verify.mockReturnValueOnce({
+      sub: `inv-1`,
+      email: `invitee@example.com`,
+      roleId: `role-ops`,
+      typ: `admin_invitation`,
+      scope: `admin_v2`,
+    });
+    repository.getInvitationForAcceptance.mockResolvedValueOnce(null);
+
+    const error = await service.acceptInvitation(acceptPayload()).catch((e) => e);
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect((error as Error).message).toBe(`Invitation token is invalid`);
+  });
+
+  it(`rejects invites when an active admin already owns the email`, async () => {
+    const { service, repository } = await buildService();
+    repository.getAdminByEmail.mockResolvedValueOnce({ deletedAt: null });
+    repository.getRoleByKey.mockResolvedValueOnce({ id: `role-ops`, key: `OPS_ADMIN` });
+
+    const error = await service
+      .inviteAdmin(`admin-1`, { email: `invitee@example.com`, roleKey: `OPS_ADMIN` }, { idempotencyKey: `idem-a` })
+      .catch((e) => e);
+    expect(error).toBeInstanceOf(ConflictException);
+    expect((error as Error).message).toBe(`An active admin with this email already exists`);
+  });
+
+  it(`rejects invites when the email belongs to an inactive admin`, async () => {
+    const { service, repository } = await buildService();
+    repository.getAdminByEmail.mockResolvedValueOnce({ deletedAt: new Date(`2026-01-01T00:00:00.000Z`) });
+    repository.getRoleByKey.mockResolvedValueOnce({ id: `role-ops`, key: `OPS_ADMIN` });
+
+    const error = await service
+      .inviteAdmin(`admin-1`, { email: `invitee@example.com`, roleKey: `OPS_ADMIN` }, { idempotencyKey: `idem-b` })
+      .catch((e) => e);
+    expect(error).toBeInstanceOf(ConflictException);
+    expect((error as Error).message).toBe(`This email belongs to an inactive admin. Use restore instead of invite.`);
+  });
+
+  it(`rejects acceptance when an active admin already owns the email`, async () => {
+    const { service, repository, jwtService } = await buildService();
+    jwtService.verify.mockReturnValueOnce({
+      sub: `inv-1`,
+      email: `invitee@example.com`,
+      roleId: `role-ops`,
+      typ: `admin_invitation`,
+      scope: `admin_v2`,
+    });
+    repository.getInvitationForAcceptance.mockResolvedValueOnce({
+      id: `inv-1`,
+      email: `invitee@example.com`,
+      roleId: `role-ops`,
+      expiresAt: new Date(Date.now() + 60_000),
+      acceptedAt: null,
+    });
+    repository.getAdminByEmail.mockResolvedValueOnce({ deletedAt: null });
+
+    const error = await service.acceptInvitation(acceptPayload()).catch((e) => e);
+    expect(error).toBeInstanceOf(ConflictException);
+    expect((error as Error).message).toBe(`An active admin with this email already exists`);
+  });
+
+  it(`rejects acceptance when the email belongs to an inactive admin`, async () => {
+    const { service, repository, jwtService } = await buildService();
+    jwtService.verify.mockReturnValueOnce({
+      sub: `inv-1`,
+      email: `invitee@example.com`,
+      roleId: `role-ops`,
+      typ: `admin_invitation`,
+      scope: `admin_v2`,
+    });
+    repository.getInvitationForAcceptance.mockResolvedValueOnce({
+      id: `inv-1`,
+      email: `invitee@example.com`,
+      roleId: `role-ops`,
+      expiresAt: new Date(Date.now() + 60_000),
+      acceptedAt: null,
+    });
+    repository.getAdminByEmail.mockResolvedValueOnce({ deletedAt: new Date(`2026-01-01T00:00:00.000Z`) });
+
+    const error = await service.acceptInvitation(acceptPayload()).catch((e) => e);
+    expect(error).toBeInstanceOf(ConflictException);
+    expect((error as Error).message).toBe(`This invitation belongs to an inactive admin. Restore that admin instead.`);
+  });
+
+  it(`rejects acceptance of invitations already marked accepted`, async () => {
+    const { service, repository, jwtService } = await buildService();
+    jwtService.verify.mockReturnValueOnce({
+      sub: `inv-1`,
+      email: `invitee@example.com`,
+      roleId: `role-ops`,
+      typ: `admin_invitation`,
+      scope: `admin_v2`,
+    });
+    repository.getInvitationForAcceptance.mockResolvedValueOnce({
+      id: `inv-1`,
+      email: `invitee@example.com`,
+      roleId: `role-ops`,
+      expiresAt: new Date(Date.now() + 60_000),
+      acceptedAt: new Date(`2026-01-02T00:00:00.000Z`),
+    });
+
+    const error = await service.acceptInvitation(acceptPayload()).catch((e) => e);
+    expect(error).toBeInstanceOf(ConflictException);
+    expect((error as Error).message).toBe(`Invitation has already been accepted`);
   });
 });

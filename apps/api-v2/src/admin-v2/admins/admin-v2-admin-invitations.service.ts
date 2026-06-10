@@ -1,11 +1,25 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { envs } from '../../envs';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
-import { constants, passwordUtils } from '../../shared-common';
+import { passwordUtils } from '../../shared-common';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 import { AdminV2AdminAuditTrail } from './admin-v2-admin-audit-trail';
+import {
+  assertAdminEmailAvailable,
+  assertInvitationMatchesPayload,
+  assertInvitationNotExpired,
+  buildAcceptedInvitationResult,
+  buildCreatedInvitationResult,
+  buildPendingInvitationResult,
+  requireInvitationPassword,
+  requireInvitationToken,
+  requireInviteEmail,
+  requireInviteRoleKey,
+  throwInvalidInvitationToken,
+  throwInvitationAlreadyAccepted,
+} from './admin-v2-admin-invitations.helpers';
 import { AdminV2AdminInvitationsRepository } from './admin-v2-admin-invitations.repository';
 import { AdminV2AdminLinks } from './admin-v2-admin-links';
 import {
@@ -13,10 +27,8 @@ import {
   INVITATION_EXPIRY_MS,
   type AdminInvitationTokenPayload,
   type RequestMeta,
-  buildActiveInvitationStatus,
-  normalizeEmail,
   toAdminType,
-  toNullableIso,
+  normalizeEmail,
 } from './admin-v2-admins.utils';
 
 @Injectable()
@@ -53,14 +65,14 @@ export class AdminV2AdminInvitationsService {
         secret: envs.JWT_REFRESH_SECRET,
       });
       if (payload.typ !== `admin_invitation` || payload.scope !== `admin_v2`) {
-        throw new BadRequestException(`Invitation token is invalid`);
+        throwInvalidInvitationToken();
       }
       return payload;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException(`Invitation token is invalid`);
+      throwInvalidInvitationToken();
     }
   }
 
@@ -73,14 +85,8 @@ export class AdminV2AdminInvitationsService {
   }
 
   async inviteAdmin(actorAdminId: string, body: { email?: string; roleKey?: string }, meta: RequestMeta) {
-    const email = normalizeEmail(String(body.email ?? ``));
-    if (!email) {
-      throw new BadRequestException(`Invite email is required`);
-    }
-    const roleKey = String(body.roleKey ?? ``).trim();
-    if (!ALLOWED_ROLE_KEYS.has(roleKey)) {
-      throw new BadRequestException(`Unsupported invite role`);
-    }
+    const email = requireInviteEmail(body.email);
+    const roleKey = requireInviteRoleKey(body.roleKey);
 
     return this.idempotency.execute({
       adminId: actorAdminId,
@@ -96,25 +102,15 @@ export class AdminV2AdminInvitationsService {
         if (!role) {
           throw new BadRequestException(`Invite role is not available`);
         }
-        if (existingAdmin && existingAdmin.deletedAt == null) {
-          throw new ConflictException(`An active admin with this email already exists`);
-        }
-        if (existingAdmin && existingAdmin.deletedAt != null) {
-          throw new ConflictException(`This email belongs to an inactive admin. Use restore instead of invite.`);
-        }
+        assertAdminEmailAvailable(
+          existingAdmin,
+          `This email belongs to an inactive admin. Use restore instead of invite.`,
+        );
 
         const existingPending = await this.repository.getPendingInvitation(email, role.id);
 
         if (existingPending) {
-          return {
-            invitationId: existingPending.id,
-            email: existingPending.email,
-            roleKey: role.key,
-            expiresAt: toNullableIso(existingPending.expiresAt),
-            createdAt: existingPending.createdAt.toISOString(),
-            alreadyPending: true,
-            status: buildActiveInvitationStatus(existingPending.expiresAt, null),
-          };
+          return buildPendingInvitationResult(existingPending, role.key);
         }
 
         const expiresAt = new Date(Date.now() + INVITATION_EXPIRY_MS);
@@ -158,54 +154,29 @@ export class AdminV2AdminInvitationsService {
           notificationSent,
         });
 
-        return {
-          invitationId: created.id,
-          email: created.email,
-          roleKey: role.key,
-          expiresAt: toNullableIso(created.expiresAt),
-          createdAt: created.createdAt.toISOString(),
-          alreadyPending: false,
-          notificationSent,
-          deliveryStatus: notificationSent ? `sent` : `failed`,
-        };
+        return buildCreatedInvitationResult(created, role.key, notificationSent);
       },
     });
   }
 
   async acceptInvitation(body: { token?: string; password?: string }) {
-    const token = String(body.token ?? ``).trim();
-    const password = String(body.password ?? ``);
-    if (!token) {
-      throw new BadRequestException(`Invitation token is required`);
-    }
-    if (!constants.PASSWORD_RE.test(password)) {
-      throw new BadRequestException(constants.INVALID_PASSWORD);
-    }
+    const token = requireInvitationToken(body.token);
+    const password = requireInvitationPassword(body.password);
 
     const payload = await this.verifyInvitationToken(token);
     const invitation = await this.repository.getInvitationForAcceptance(payload.sub);
-    if (
-      !invitation ||
-      normalizeEmail(invitation.email) !== normalizeEmail(payload.email) ||
-      invitation.roleId !== payload.roleId
-    ) {
-      throw new BadRequestException(`Invitation token is invalid`);
-    }
+    assertInvitationMatchesPayload(invitation, payload);
     if (invitation.acceptedAt) {
-      throw new ConflictException(`Invitation has already been accepted`);
+      throwInvitationAlreadyAccepted();
     }
-    if (invitation.expiresAt && invitation.expiresAt.getTime() <= Date.now()) {
-      throw new ConflictException(`Invitation has expired`);
-    }
+    assertInvitationNotExpired(invitation.expiresAt);
 
     const normalizedInvitationEmail = normalizeEmail(invitation.email);
     const existingAdmin = await this.repository.getAdminByEmail(normalizedInvitationEmail);
-    if (existingAdmin && existingAdmin.deletedAt == null) {
-      throw new ConflictException(`An active admin with this email already exists`);
-    }
-    if (existingAdmin && existingAdmin.deletedAt != null) {
-      throw new ConflictException(`This invitation belongs to an inactive admin. Restore that admin instead.`);
-    }
+    assertAdminEmailAvailable(
+      existingAdmin,
+      `This invitation belongs to an inactive admin. Restore that admin instead.`,
+    );
 
     const roleKey = await this.getResolvedRoleKey(invitation.roleId);
     const { hash, salt } = await passwordUtils.hashPassword(password);
@@ -224,14 +195,10 @@ export class AdminV2AdminInvitationsService {
         type: toAdminType(roleKey),
       });
 
-      return {
-        adminId: admin.id,
-        email: admin.email,
-        accepted: true as const,
-      };
+      return buildAcceptedInvitationResult(admin);
     });
     if (!accepted) {
-      throw new ConflictException(`Invitation has already been accepted`);
+      throwInvitationAlreadyAccepted();
     }
 
     return accepted;
