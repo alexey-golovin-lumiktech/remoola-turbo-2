@@ -8,21 +8,32 @@ import {
 } from '@nestjs/common';
 import Stripe from 'stripe';
 
-import { sanitizeNextForRedirect } from '@remoola/api-types';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { StripeCustomerAccessRepository } from './stripe-customer-access.repository';
 import { StripePaymentOutcomesRepository } from './stripe-payment-outcomes.repository';
 import { StripePaymentRequestAccessRepository } from './stripe-payment-request-access.repository';
+import {
+  buildSavedMethodIdempotencyKey,
+  buildSavedMethodPaymentIntentCreateInput,
+  buildSavedMethodPendingResult,
+  buildSavedMethodSuccessResult,
+  isNonReusableSavedMethodError as isNonReusableSavedMethodErrorHelper,
+  isTransientStripeError as isTransientStripeErrorHelper,
+  shouldAppendDeniedOutcome as shouldAppendDeniedOutcomeHelper,
+} from './stripe-saved-method.helpers';
 import { StripeSavedPaymentMethodsRepository } from './stripe-saved-payment-methods.repository';
+import {
+  buildCheckoutSessionCreateInput,
+  buildCheckoutSessionIdempotencyKey,
+  buildEnsureCustomerIdempotencyKey,
+  buildSetupIntentCreateInput,
+  type StripeSessionRedirectContext,
+} from './stripe-session.helpers';
 import { StripeSetupIntentPersistenceRepository } from './stripe-setup-intent-persistence.repository';
 import { STRIPE_CLIENT } from '../../../../../shared/stripe-client';
 import { getCurrencyFractionDigits } from '../../../../../shared-common';
 import { ConfirmStripeSetupIntent, PayWithSavedPaymentMethod } from '../../dto/payment-method.dto';
-type StripeSessionRedirectContext = {
-  contractId?: string | null;
-  returnTo?: string | null;
-};
 
 @Injectable()
 export class ConsumerStripeService {
@@ -38,84 +49,19 @@ export class ConsumerStripeService {
   ) {}
 
   private isTransientStripeError(error: unknown): boolean {
-    if (!(error instanceof Stripe.errors.StripeError)) return false;
-    return (
-      error.type === `StripeAPIError` ||
-      error.type === `StripeConnectionError` ||
-      error.type === `StripeRateLimitError` ||
-      error.type === `StripeIdempotencyError`
-    );
+    return isTransientStripeErrorHelper(error);
   }
 
   private shouldAppendDeniedOutcome(error: unknown): boolean {
-    if (error instanceof Stripe.errors.StripeError) {
-      return error.type === `StripeCardError`;
-    }
-    if (typeof error === `object` && error != null && `type` in error) {
-      return (error as { type?: unknown }).type === `StripeCardError`;
-    }
-    return false;
-  }
-
-  private buildStripeSessionReturnUrl(
-    frontendBaseUrl: string,
-    paymentRequestId: string,
-    outcome: `success` | `canceled`,
-    context?: StripeSessionRedirectContext,
-  ) {
-    const url = new URL(`${frontendBaseUrl}/payments/${paymentRequestId}`);
-    const contractId = context?.contractId?.trim() ?? ``;
-    const returnTo = sanitizeNextForRedirect(context?.returnTo, ``);
-
-    if (contractId) {
-      url.searchParams.set(`contractId`, contractId);
-    }
-    if (returnTo) {
-      url.searchParams.set(`returnTo`, returnTo);
-    } else if (contractId) {
-      url.searchParams.set(`returnTo`, `/contracts/${contractId}`);
-    }
-    url.searchParams.set(outcome, `1`);
-
-    return url.toString();
+    return shouldAppendDeniedOutcomeHelper(error);
   }
 
   private isNonReusableSavedMethodError(error: unknown): boolean {
-    const stripeType = error instanceof Stripe.errors.StripeError ? error.type : null;
-    const err = error as { type?: string; message?: string } | null | undefined;
-    const normalizedType = (stripeType ?? err?.type ?? ``).toLowerCase();
-    const normalizedMessage = (err?.message ?? ``).toLowerCase();
-
-    if (!normalizedMessage) {
-      return false;
-    }
-
-    const looksLikeInvalidRequest =
-      normalizedType === `stripeinvalidrequesterror`.toLowerCase() || normalizedType === `invalid_request_error`;
-
-    return (
-      looksLikeInvalidRequest &&
-      (normalizedMessage.includes(`previously used without being attached`) ||
-        normalizedMessage.includes(`without customer attachment`) ||
-        normalizedMessage.includes(`detached from a customer`) ||
-        normalizedMessage.includes(`attach it to a customer first`))
-    );
+    return isNonReusableSavedMethodErrorHelper(error);
   }
 
   private async invalidateNonReusableSavedMethod(paymentMethodId: string) {
     await this.savedPaymentMethodsRepository.invalidateNonReusableSavedMethod(paymentMethodId);
-  }
-
-  private buildCheckoutSessionIdempotencyKey(paymentRequestId: string): string {
-    return `checkout-session:${paymentRequestId}`;
-  }
-
-  private buildSavedMethodIdempotencyKey(paymentRequestId: string): string {
-    return `saved-method:${paymentRequestId}`;
-  }
-
-  private buildEnsureCustomerIdempotencyKey(consumerId: string): string {
-    return `ensure-customer:${consumerId}`;
   }
 
   private async getPaymentRequestForPayer(consumerId: string, paymentRequestId: string) {
@@ -135,30 +81,15 @@ export class ConsumerStripeService {
     const amountMinor = Math.round(Number(pr.amount) * 10 ** digits);
 
     const session = await this.stripe.checkout.sessions.create(
-      {
-        payment_method_types: [`card`],
-        mode: `payment`,
-        customer: customerId,
-        line_items: [
-          {
-            price_data: {
-              currency: pr.currencyCode.toLowerCase(),
-              product_data: {
-                name: `Payment to ${pr.requester?.email ?? pr.requesterEmail ?? `recipient`}`,
-              },
-              unit_amount: amountMinor,
-            },
-            quantity: 1,
-          },
-        ],
-        payment_intent_data: {
-          setup_future_usage: `off_session`,
-        },
-        success_url: this.buildStripeSessionReturnUrl(frontendBaseUrl, pr.id, `success`, context),
-        cancel_url: this.buildStripeSessionReturnUrl(frontendBaseUrl, pr.id, `canceled`, context),
-        metadata: { paymentRequestId: pr.id, consumerId },
-      },
-      { idempotencyKey: this.buildCheckoutSessionIdempotencyKey(pr.id) },
+      buildCheckoutSessionCreateInput({
+        paymentRequest: pr,
+        customerId,
+        amountMinor,
+        consumerId,
+        frontendBaseUrl,
+        context,
+      }),
+      { idempotencyKey: buildCheckoutSessionIdempotencyKey(pr.id) },
     );
 
     await this.paymentRequestAccessRepository.ensureCardPaymentRailForRequest(pr.id, consumerId);
@@ -184,7 +115,7 @@ export class ConsumerStripeService {
       {
         email: consumer.email,
       },
-      { idempotencyKey: this.buildEnsureCustomerIdempotencyKey(consumer.id) },
+      { idempotencyKey: buildEnsureCustomerIdempotencyKey(consumer.id) },
     );
 
     const claimed = await this.customerAccessRepository.claimStripeCustomerId(consumer.id, customer.id);
@@ -201,11 +132,7 @@ export class ConsumerStripeService {
   async createStripeSetupIntent(consumerId: string) {
     const { customerId } = await this.ensureStripeCustomer(consumerId);
 
-    const intent = await this.stripe.setupIntents.create({
-      customer: customerId,
-      usage: `off_session`,
-      payment_method_types: [`card`],
-    });
+    const intent = await this.stripe.setupIntents.create(buildSetupIntentCreateInput(customerId));
 
     if (!intent.client_secret) {
       throw new BadRequestException(errorCodes.STRIPE_NO_CLIENT_SECRET);
@@ -310,22 +237,16 @@ export class ConsumerStripeService {
 
     try {
       const paymentIntent = await this.stripe.paymentIntents.create(
-        {
-          amount: amountMinor,
-          currency: pr.currencyCode.toLowerCase(),
-          customer: customerId,
-          payment_method: paymentMethod.stripePaymentMethodId,
-          confirm: true,
-          off_session: true,
-          metadata: {
-            paymentRequestId: pr.id,
-            consumerId,
-            paymentMethodId: paymentMethod.id,
-            clientIdempotencyKey: idempotencyKey,
-          },
-          description: `Payment to ${pr.requester?.email ?? pr.requesterEmail ?? `recipient`}`,
-        },
-        { idempotencyKey: this.buildSavedMethodIdempotencyKey(paymentRequestId) },
+        buildSavedMethodPaymentIntentCreateInput({
+          paymentRequest: pr,
+          amountMinor,
+          customerId,
+          stripePaymentMethodId: paymentMethod.stripePaymentMethodId,
+          paymentMethodId: paymentMethod.id,
+          consumerId,
+          clientIdempotencyKey: idempotencyKey,
+        }),
+        { idempotencyKey: buildSavedMethodIdempotencyKey(paymentRequestId) },
       );
 
       if (paymentIntent.status === `succeeded`) {
@@ -335,18 +256,9 @@ export class ConsumerStripeService {
           logger: this.logger,
         });
 
-        return {
-          success: true,
-          paymentIntentId: paymentIntent.id,
-          status: paymentIntent.status,
-        };
+        return buildSavedMethodSuccessResult(paymentIntent.id, paymentIntent.status);
       } else {
-        return {
-          success: false,
-          paymentIntentId: paymentIntent.id,
-          status: paymentIntent.status,
-          nextAction: paymentIntent.next_action,
-        };
+        return buildSavedMethodPendingResult(paymentIntent.id, paymentIntent.status, paymentIntent.next_action);
       }
     } catch (error) {
       this.logger.warn({
