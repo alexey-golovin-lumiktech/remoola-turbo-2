@@ -1,6 +1,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminV2PaymentReversalPolicyProvider } from './admin-v2-payment-reversal-policy';
 import { AdminV2PaymentReversalWorkflowService } from './admin-v2-payment-reversal-workflow.service';
@@ -170,6 +171,75 @@ describe(`AdminV2PaymentReversalWorkflowService`, () => {
       existingStripeRefundId: null,
       needsRefundFinalize: true,
     });
+
+    expect(repository.createReversalEntry).not.toHaveBeenCalled();
+    expect(adminActionAudit.recordRequiredWithClient).not.toHaveBeenCalled();
+  });
+
+  it(`reuses the full payment-request reversal when already fully reversed without explicit amount`, async () => {
+    const { workflow, repository, adminActionAudit } = buildWorkflow();
+    repository.findReversalEntriesForPaymentRequest.mockResolvedValue([
+      { amount: 25, status: $Enums.TransactionStatus.COMPLETED, outcomes: [] },
+    ]);
+    repository.findPayerReversalByIdempotencyKey.mockResolvedValue({
+      id: `reversal-2`,
+      ledgerId: `ledger-completed`,
+      amount: 25,
+      stripeId: `re_456`,
+      status: $Enums.TransactionStatus.COMPLETED,
+      outcomes: [],
+    });
+
+    await expect(
+      workflow.executeReversal({
+        paymentRequestId: `pr-1`,
+        paymentRequest,
+        body: { kind: `REFUND` },
+        adminId: `admin-3`,
+        requestAmount: 25,
+        stripePaymentIntentId: `pi_456`,
+        originalLedgerId: `payer-ledger`,
+        requesterSettlementEntry: null,
+        requesterReversalType: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+      }),
+    ).resolves.toEqual({
+      ledgerId: `ledger-completed`,
+      amount: new Prisma.Decimal(25),
+      remaining: new Prisma.Decimal(0),
+      kind: `REFUND`,
+      alreadyExisted: true,
+      idempotencyKeyBase: expect.any(String),
+      stripePaymentIntentId: `pi_456`,
+      existingStripeRefundId: `re_456`,
+      needsRefundFinalize: false,
+    });
+
+    expect(repository.queueRefundFinalization).not.toHaveBeenCalled();
+    expect(repository.createReversalEntry).not.toHaveBeenCalled();
+    expect(adminActionAudit.recordRequiredWithClient).not.toHaveBeenCalled();
+  });
+
+  it(`rejects explicit reversal amounts that exceed the remaining balance`, async () => {
+    const { workflow, repository, adminActionAudit } = buildWorkflow();
+    repository.findReversalEntriesForPaymentRequest.mockResolvedValue([
+      { amount: 20, status: $Enums.TransactionStatus.COMPLETED, outcomes: [] },
+    ]);
+    repository.findPayerReversalByIdempotencyKey.mockResolvedValue(null);
+
+    await expect(
+      workflow.executeReversal({
+        paymentRequestId: `pr-1`,
+        paymentRequest,
+        body: { kind: `CHARGEBACK`, amount: 10 },
+        adminId: `admin-4`,
+        requestAmount: 25,
+        requestedAmount: 10,
+        stripePaymentIntentId: null,
+        originalLedgerId: `payer-ledger`,
+        requesterSettlementEntry: null,
+        requesterReversalType: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+      }),
+    ).rejects.toThrow(adminErrorCodes.ADMIN_REVERSAL_AMOUNT_EXCEEDS_REMAINING_BALANCE);
 
     expect(repository.createReversalEntry).not.toHaveBeenCalled();
     expect(adminActionAudit.recordRequiredWithClient).not.toHaveBeenCalled();

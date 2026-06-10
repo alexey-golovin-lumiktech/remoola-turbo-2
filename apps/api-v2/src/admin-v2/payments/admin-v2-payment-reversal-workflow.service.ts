@@ -6,10 +6,19 @@ import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { AdminV2PaymentReversalPolicyProvider } from './admin-v2-payment-reversal-policy';
 import {
+  buildExistingReversalResult,
+  buildPayerReversalCreateInput,
+  buildRefundFinalizationPayload,
+  buildRequesterReversalCreateInput,
+  buildReversalBaseMetadata,
+  getExistingReversalStatus,
+  isReusableExistingReversal,
+} from './admin-v2-payment-reversal-workflow.helpers';
+import {
   type PaymentReversalPaymentRequest,
   type PaymentReversalRequesterSettlementEntry,
 } from './admin-v2-payment-reversal.query';
-import { AdminV2PaymentReversalRepository, type ExistingReversalRow } from './admin-v2-payment-reversal.repository';
+import { AdminV2PaymentReversalRepository } from './admin-v2-payment-reversal.repository';
 import { type PaymentReversalCreateInput } from './admin-v2-payment-reversal.types';
 import { AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { BalanceCalculationMode, BalanceCalculationService } from '../../shared/balance-calculation.service';
@@ -26,7 +35,6 @@ import {
   buildPaymentRequestOperationLockName,
 } from '../../shared/prisma-advisory-locks';
 import { PrismaTransactionRunner } from '../../shared/prisma-transaction.runner';
-import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
 
 export type PaymentReversalExecutionResult = {
   ledgerId: string;
@@ -49,22 +57,6 @@ export class AdminV2PaymentReversalWorkflowService {
     private readonly adminActionAudit: AdminActionAuditService,
     private readonly policyProvider: AdminV2PaymentReversalPolicyProvider,
   ) {}
-
-  private getExistingReversalStatus(existingReversal: ExistingReversalRow): $Enums.TransactionStatus | null {
-    if (!existingReversal.status) {
-      return null;
-    }
-    return getEffectiveLedgerStatus(existingReversal as Required<Pick<ExistingReversalRow, `status`>>);
-  }
-
-  private isReusableExistingReversal(existingReversal: ExistingReversalRow): boolean {
-    const status = this.getExistingReversalStatus(existingReversal);
-    return (
-      status === $Enums.TransactionStatus.COMPLETED ||
-      status === $Enums.TransactionStatus.PENDING ||
-      status === $Enums.TransactionStatus.DENIED
-    );
-  }
 
   async executeReversal(params: {
     paymentRequestId: string;
@@ -122,11 +114,44 @@ export class AdminV2PaymentReversalWorkflowService {
         );
         return { idempotencyKeyBase, existingReversal };
       };
+      const reuseExistingReversal = async (params: {
+        existingReversal: NonNullable<Awaited<ReturnType<typeof findExistingReversal>>[`existingReversal`]>;
+        idempotencyKeyBase: string;
+      }) => {
+        const existingStatus = getExistingReversalStatus(params.existingReversal);
+        const needsRefundFinalize = policy.shouldFinalizeExistingStatus(existingStatus);
+        if (needsRefundFinalize && stripePaymentIntentId) {
+          await this.repository.queueRefundFinalization(
+            tx,
+            buildRefundFinalizationPayload({
+              paymentRequestId,
+              ledgerId: params.existingReversal.ledgerId,
+              adminId,
+              stripePaymentIntentId,
+              idempotencyKeyBase: params.idempotencyKeyBase,
+              existingStripeRefundId: params.existingReversal.stripeId ?? null,
+              amount: params.existingReversal.amount,
+              currencyCode: paymentRequest.currencyCode,
+              reason: body.reason ?? null,
+            }),
+          );
+        }
+
+        return buildExistingReversalResult({
+          existingReversal: params.existingReversal,
+          requestAmount: requestAmountDecimal,
+          alreadyReversed,
+          kind: body.kind,
+          idempotencyKeyBase: params.idempotencyKeyBase,
+          stripePaymentIntentId,
+          needsRefundFinalize,
+        });
+      };
 
       let idempotencyKeyBase: string;
       let finalRequestedAmount: Prisma.Decimal;
       let remainingBefore: Prisma.Decimal;
-      let existingReversal: ExistingReversalRow | null;
+      let existingReversal: Awaited<ReturnType<typeof findExistingReversal>>[`existingReversal`];
 
       if (requestedAmount != null) {
         const requestedAmountDecimal = toMoneyDecimal(requestedAmount, `requestedAmount`);
@@ -142,36 +167,8 @@ export class AdminV2PaymentReversalWorkflowService {
         });
         if (amountResolution.ok === false) {
           const existing = await findExistingReversal(requestAmountDecimal);
-          if (existing.existingReversal && this.isReusableExistingReversal(existing.existingReversal)) {
-            const needsRefundFinalize = policy.shouldFinalizeExistingStatus(
-              this.getExistingReversalStatus(existing.existingReversal),
-            );
-            if (needsRefundFinalize && stripePaymentIntentId) {
-              await this.repository.queueRefundFinalization(tx, {
-                paymentRequestId,
-                ledgerId: existing.existingReversal.ledgerId,
-                adminId,
-                stripePaymentIntentId,
-                idempotencyKeyBase: existing.idempotencyKeyBase,
-                existingStripeRefundId: existing.existingReversal.stripeId ?? null,
-                amount: toMoneyDecimal(existing.existingReversal.amount).toString(),
-                currencyCode: paymentRequest.currencyCode,
-                reason: body.reason ?? null,
-              });
-            }
-            return {
-              ledgerId: existing.existingReversal.ledgerId,
-              amount: toMoneyDecimal(existing.existingReversal.amount),
-              remaining: requestAmountDecimal.minus(alreadyReversed).gt(0)
-                ? requestAmountDecimal.minus(alreadyReversed)
-                : new Prisma.Decimal(0),
-              kind: body.kind,
-              alreadyExisted: true,
-              idempotencyKeyBase: existing.idempotencyKeyBase,
-              stripePaymentIntentId,
-              existingStripeRefundId: existing.existingReversal.stripeId ?? null,
-              needsRefundFinalize,
-            };
+          if (existing.existingReversal && isReusableExistingReversal(existing.existingReversal)) {
+            return reuseExistingReversal(existing);
           }
           throw new BadRequestException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_ALREADY_FULLY_REVERSED);
         }
@@ -182,36 +179,8 @@ export class AdminV2PaymentReversalWorkflowService {
         existingReversal = existing.existingReversal;
       }
 
-      if (existingReversal && this.isReusableExistingReversal(existingReversal)) {
-        const needsRefundFinalize = policy.shouldFinalizeExistingStatus(
-          this.getExistingReversalStatus(existingReversal),
-        );
-        if (needsRefundFinalize && stripePaymentIntentId) {
-          await this.repository.queueRefundFinalization(tx, {
-            paymentRequestId,
-            ledgerId: existingReversal.ledgerId,
-            adminId,
-            stripePaymentIntentId,
-            idempotencyKeyBase,
-            existingStripeRefundId: existingReversal.stripeId ?? null,
-            amount: toMoneyDecimal(existingReversal.amount).toString(),
-            currencyCode: paymentRequest.currencyCode,
-            reason: body.reason ?? null,
-          });
-        }
-        return {
-          ledgerId: existingReversal.ledgerId,
-          amount: toMoneyDecimal(existingReversal.amount),
-          remaining: requestAmountDecimal.minus(alreadyReversed).gt(0)
-            ? requestAmountDecimal.minus(alreadyReversed)
-            : new Prisma.Decimal(0),
-          kind: body.kind,
-          alreadyExisted: true,
-          idempotencyKeyBase,
-          stripePaymentIntentId,
-          existingStripeRefundId: existingReversal.stripeId ?? null,
-          needsRefundFinalize,
-        };
+      if (existingReversal && isReusableExistingReversal(existingReversal)) {
+        return reuseExistingReversal({ existingReversal, idempotencyKeyBase });
       }
 
       const amountResolution = resolveStrictReversalDecimalAmount({
@@ -260,69 +229,68 @@ export class AdminV2PaymentReversalWorkflowService {
         }
       }
 
-      const baseMetadata = {
-        rail: policy.paymentRail,
-        reversalKind: body.kind,
-        source: `admin`,
+      const baseMetadata = buildReversalBaseMetadata({
+        paymentRail: policy.paymentRail,
+        kind: body.kind,
         stripeObjectType: policy.stripeObjectType,
         reason: body.reason ?? null,
         stripePaymentIntentId,
         stripeRefundId,
         idempotencyKeyBase,
-      } as const;
-      const payerMetadata = {
-        ...baseMetadata,
-        reversalOfLedgerId: originalLedgerId ?? null,
-      } as Prisma.InputJsonValue;
-      const requesterMetadata = {
-        ...baseMetadata,
-        reversalOfLedgerId: requesterSettlementEntry?.ledgerId ?? null,
-      } as Prisma.InputJsonValue;
-
-      await this.repository.createReversalEntry(tx, {
-        ledgerId,
-        consumerId: paymentRequest.payerId,
-        paymentRequestId,
-        type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-        currencyCode: paymentRequest.currencyCode,
-        status: reversalStatus,
-        amount: finalRequestedAmount,
-        createdBy: adminId,
-        updatedBy: adminId,
-        metadata: payerMetadata,
-        idempotencyKey: `${idempotencyKeyBase}:payer`,
-        stripeId: stripeRefundId ?? undefined,
       });
 
-      if (paymentRequest.requesterId) {
-        await this.repository.createReversalEntry(tx, {
+      await this.repository.createReversalEntry(
+        tx,
+        buildPayerReversalCreateInput({
           ledgerId,
-          consumerId: paymentRequest.requesterId,
           paymentRequestId,
-          type: requesterReversalType,
+          payerId: paymentRequest.payerId,
           currencyCode: paymentRequest.currencyCode,
           status: reversalStatus,
-          amount: finalRequestedAmount.negated(),
-          createdBy: adminId,
-          updatedBy: adminId,
-          metadata: requesterMetadata,
-          idempotencyKey: `${idempotencyKeyBase}:requester`,
-          stripeId: stripeRefundId ?? undefined,
-        });
+          amount: finalRequestedAmount,
+          adminId,
+          baseMetadata,
+          originalLedgerId: originalLedgerId ?? null,
+          idempotencyKeyBase,
+          stripeRefundId,
+        }),
+      );
+
+      if (paymentRequest.requesterId) {
+        await this.repository.createReversalEntry(
+          tx,
+          buildRequesterReversalCreateInput({
+            ledgerId,
+            paymentRequestId,
+            requesterId: paymentRequest.requesterId,
+            requesterReversalType,
+            currencyCode: paymentRequest.currencyCode,
+            status: reversalStatus,
+            amount: finalRequestedAmount,
+            adminId,
+            baseMetadata,
+            requesterSettlementLedgerId: requesterSettlementEntry?.ledgerId ?? null,
+            idempotencyKeyBase,
+            stripeRefundId,
+          }),
+        );
       }
 
       if (policy.queuesRefundFinalization && stripePaymentIntentId) {
-        await this.repository.queueRefundFinalization(tx, {
-          paymentRequestId,
-          ledgerId,
-          adminId,
-          stripePaymentIntentId,
-          idempotencyKeyBase,
-          existingStripeRefundId: null,
-          amount: finalRequestedAmount.toString(),
-          currencyCode: paymentRequest.currencyCode,
-          reason: body.reason ?? null,
-        });
+        await this.repository.queueRefundFinalization(
+          tx,
+          buildRefundFinalizationPayload({
+            paymentRequestId,
+            ledgerId,
+            adminId,
+            stripePaymentIntentId,
+            idempotencyKeyBase,
+            existingStripeRefundId: null,
+            amount: finalRequestedAmount,
+            currencyCode: paymentRequest.currencyCode,
+            reason: body.reason ?? null,
+          }),
+        );
       }
 
       return {
