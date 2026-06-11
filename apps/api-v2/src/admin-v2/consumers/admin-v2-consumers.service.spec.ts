@@ -5,10 +5,13 @@ import { Test } from '@nestjs/testing';
 import { CURRENT_CONSUMER_APP_SCOPE } from '@remoola/api-types';
 
 import { AdminV2ConsumerActivityQuery } from './admin-v2-consumer-activity.query';
+import { AdminV2ConsumerAdminActionsService } from './admin-v2-consumer-admin-actions.service';
 import { AdminV2ConsumerCaseQuery } from './admin-v2-consumer-case.query';
 import { AdminV2ConsumerFlagsRepository } from './admin-v2-consumer-flags.repository';
 import { AdminV2ConsumerLedgerQuery } from './admin-v2-consumer-ledger.query';
+import { AdminV2ConsumerNotesFlagsService } from './admin-v2-consumer-notes-flags.service';
 import { AdminV2ConsumerNotesRepository } from './admin-v2-consumer-notes.repository';
+import { AdminV2ConsumerReadService } from './admin-v2-consumer-read.service';
 import { AdminV2ConsumerRepository } from './admin-v2-consumer.repository';
 import { AdminV2ConsumersModule } from './admin-v2-consumers.module';
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
@@ -126,6 +129,9 @@ describe(`AdminV2ConsumersService`, () => {
         AdminV2ConsumerActivityQuery,
         AdminV2ConsumerNotesRepository,
         AdminV2ConsumerFlagsRepository,
+        AdminV2ConsumerReadService,
+        AdminV2ConsumerNotesFlagsService,
+        AdminV2ConsumerAdminActionsService,
         AdminV2ConsumersService,
         AdminV2ConsumerCaseQuery,
         { provide: PrismaService, useValue: {} },
@@ -159,14 +165,20 @@ describe(`AdminV2ConsumersService`, () => {
       }),
     };
     const service = new AdminV2ConsumersService(
-      consumerRepository as never,
-      consumerActivityQuery as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
+      {
+        getConsumerAuthHistory: async (...args: any[]) => {
+          const [consumerId, params] = args;
+          const consumer = await consumerRepository.findSummaryById(consumerId);
+          return consumerActivityQuery.getConsumerAuthHistory({
+            consumerId,
+            consumerEmail: consumer.email,
+            page: params?.page,
+            pageSize: params?.pageSize,
+            dateFrom: params?.dateFrom,
+            dateTo: params?.dateTo,
+          });
+        },
+      } as never,
       {} as never,
       {} as never,
     );
@@ -213,14 +225,20 @@ describe(`AdminV2ConsumersService`, () => {
       }),
     };
     const service = new AdminV2ConsumersService(
-      consumerRepository as never,
-      consumerActivityQuery as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
+      {
+        getConsumerActionLog: async (...args: any[]) => {
+          const [consumerId, params] = args;
+          await consumerRepository.findSummaryById(consumerId);
+          return consumerActivityQuery.getConsumerActionLog({
+            consumerId,
+            action: params?.action,
+            page: params?.page,
+            pageSize: params?.pageSize,
+            dateFrom: params?.dateFrom,
+            dateTo: params?.dateTo,
+          });
+        },
+      } as never,
       {} as never,
       {} as never,
     );
@@ -268,16 +286,15 @@ describe(`AdminV2ConsumersService`, () => {
         .mockResolvedValue({ id: `consumer-1`, email: `consumer@example.com` }),
     };
     const service = new AdminV2ConsumersService(
-      consumerRepository as never,
+      {
+        getConsumerLedgerSummary: async (consumerId: string) => {
+          await consumerRepository.findSummaryById(consumerId);
+          return consumerLedgerQuery.getLedgerSummary(consumerId);
+        },
+        getConsumerCase: async (consumerId: string) => consumerCaseQuery.getConsumerCase(consumerId),
+      } as never,
       {} as never,
-      consumerLedgerQuery as never,
       {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      consumerCaseQuery as never,
     );
 
     await expect(service.getConsumerLedgerSummary(`consumer-1`)).resolves.toEqual({
@@ -436,16 +453,23 @@ describe(`AdminV2ConsumersService`, () => {
 
     return {
       service: new AdminV2ConsumersService(
-        new AdminV2ConsumerRepository(prisma as never),
-        new AdminV2ConsumerActivityQuery(prisma as never),
-        consumerLedgerQuery,
-        new AdminV2ConsumerNotesRepository(prisma as never, transactions),
-        new AdminV2ConsumerFlagsRepository(prisma as never, transactions),
-        consumerContractsService as never,
-        adminActionAudit as never,
-        consumerAuthService as never,
-        idempotency as never,
-        new AdminV2ConsumerCaseQuery(prisma as never, consumerLedgerQuery),
+        new AdminV2ConsumerReadService(
+          new AdminV2ConsumerRepository(prisma as never),
+          new AdminV2ConsumerActivityQuery(prisma as never),
+          consumerLedgerQuery,
+          consumerContractsService as never,
+          new AdminV2ConsumerCaseQuery(prisma as never, consumerLedgerQuery),
+        ),
+        new AdminV2ConsumerNotesFlagsService(
+          new AdminV2ConsumerNotesRepository(prisma as never, transactions),
+          new AdminV2ConsumerFlagsRepository(prisma as never, transactions),
+        ),
+        new AdminV2ConsumerAdminActionsService(
+          new AdminV2ConsumerRepository(prisma as never),
+          adminActionAudit as never,
+          consumerAuthService as never,
+          idempotency as never,
+        ),
       ),
       prisma,
       adminActionAudit,
@@ -735,12 +759,60 @@ describe(`AdminV2ConsumersService`, () => {
   it(`requires confirmation and reason for consumer suspension`, async () => {
     const { service } = buildService();
 
+    await expect(service.forceLogout(`consumer-1`, `admin-1`, { confirmed: false })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
     await expect(
       service.suspendConsumer(`consumer-1`, `admin-1`, { confirmed: false, reason: `risk` }),
     ).rejects.toBeInstanceOf(BadRequestException);
     await expect(
       service.suspendConsumer(`consumer-1`, `admin-1`, { confirmed: true, reason: ` ` }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it(`routes consumer force logout through admin-v2 idempotency with exact scope`, async () => {
+    const { service, idempotency, adminActionAudit, consumerAuthService } = buildService();
+    const result = await service.forceLogout(
+      `consumer-1`,
+      `admin-1`,
+      { confirmed: true },
+      { ipAddress: `127.0.0.1`, userAgent: `jest`, idempotencyKey: `logout-idem-1` },
+    );
+
+    expect(idempotency.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminId: `admin-1`,
+        scope: `consumer-force-logout:consumer-1`,
+        key: `logout-idem-1`,
+        payload: {
+          consumerId: `consumer-1`,
+          confirmed: true,
+        },
+      }),
+    );
+    expect(consumerAuthService.revokeAllSessionsByConsumerIdAndAudit).toHaveBeenCalledWith(`consumer-1`, {
+      ipAddress: `127.0.0.1`,
+      userAgent: `jest`,
+    });
+    expect(adminActionAudit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminId: `admin-1`,
+        action: `consumer_force_logout`,
+        resource: `consumer`,
+        resourceId: `consumer-1`,
+        metadata: {
+          activeSessionsBefore: 0,
+          consumerEmail: `consumer@example.com`,
+        },
+        ipAddress: `127.0.0.1`,
+        userAgent: `jest`,
+      }),
+    );
+    expect(result).toEqual({
+      consumerId: `consumer-1`,
+      revokedSessionsCount: 0,
+      alreadyRevoked: true,
+    });
   });
 
   it(`routes consumer suspension through admin-v2 idempotency with exact scope`, async () => {
