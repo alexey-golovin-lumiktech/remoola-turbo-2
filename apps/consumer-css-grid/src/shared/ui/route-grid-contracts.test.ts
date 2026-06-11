@@ -174,4 +174,31 @@ describe(`route grid contracts`, () => {
     expect(src).toContain(`ActionMini`);
     expect(src).toMatch(/from\s+['"`][^'"`]*shared\/ui\/shell-actions['"`]/);
   });
+
+  it(`payments composer delegates to the three new section components`, () => {
+    const src = readRoute(`payments/PaymentsClient.tsx`);
+    expect(src).toContain(`PaymentsMetricsSection`);
+    expect(src).toContain(`PaymentsFiltersPanel`);
+    expect(src).toContain(`PaymentsListSection`);
+    expect(src).toContain(`usePaymentsFiltersState`);
+  });
+
+  it(`payments list section uses ShellPagination`, () => {
+    const src = readRoute(`payments/PaymentsListSection.tsx`);
+    expect(src).toContain(`ShellPagination`);
+    expect(src).toMatch(/from\s+['"`][^'"`]*shared\/ui\/ShellPagination['"`]/);
+  });
+
+  it(`payments composer no longer hand-rolls Previous/Next pagination`, () => {
+    const src = readRoute(`payments/PaymentsClient.tsx`);
+    expect(src).not.toMatch(/<button[^>]*>\s*Previous\s*<\/button>/);
+    expect(src).not.toMatch(/<button[^>]*>\s*Next\s*<\/button>/);
+  });
+
+  it(`payments siblings preserve the data-testid values`, () => {
+    const filtersSrc = readRoute(`payments/PaymentsFiltersPanel.tsx`);
+    const listSrc = readRoute(`payments/PaymentsListSection.tsx`);
+    expect(filtersSrc).toContain(`payments-filters`);
+    expect(listSrc).toContain(`payments-list`);
+  });
 });
