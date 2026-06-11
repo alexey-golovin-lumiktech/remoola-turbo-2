@@ -13,10 +13,10 @@ import {
   type ScheduledConversion,
 } from './exchange-shared';
 import { ExchangeScheduledList } from './ExchangeScheduledList';
-import { ExchangeScheduledPagination } from './ExchangeScheduledPagination';
 import { ExchangeScheduleFormSection } from './ExchangeScheduleFormSection';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { Panel } from '../../../shared/ui/shell-panel';
+import { ShellPagination } from '../../../shared/ui/ShellPagination';
 
 type ExchangeScheduledSectionProps = {
   scheduled: ScheduledConversion[];
@@ -217,7 +217,7 @@ export function ExchangeScheduledSection({
         totalScheduled={scheduled.length}
       />
 
-      <ExchangeScheduledPagination
+      <ShellPagination
         onNext={() => applyScheduledPage(scheduledPage + 1)}
         onPrev={() => applyScheduledPage(scheduledPage - 1)}
         page={scheduledPage}

@@ -15,9 +15,9 @@ import {
 } from './exchange-shared';
 import { ExchangeRuleFormSection } from './ExchangeRuleFormSection';
 import { ExchangeRulesList } from './ExchangeRulesList';
-import { ExchangeRulesPagination } from './ExchangeRulesPagination';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { Panel } from '../../../shared/ui/shell-panel';
+import { ShellPagination } from '../../../shared/ui/ShellPagination';
 
 type ExchangeRulesSectionProps = {
   rules: ExchangeRule[];
@@ -245,7 +245,7 @@ export function ExchangeRulesSection({
         rules={rules}
       />
 
-      <ExchangeRulesPagination
+      <ShellPagination
         onNext={() => applyRulesPage(rulesPage + 1)}
         onPrev={() => applyRulesPage(rulesPage - 1)}
         page={rulesPage}

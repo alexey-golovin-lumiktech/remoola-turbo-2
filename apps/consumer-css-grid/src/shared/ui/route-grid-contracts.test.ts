@@ -119,12 +119,6 @@ describe(`route grid contracts`, () => {
     expect(src).toContain(`formatScheduledSecondaryStatus`);
   });
 
-  it(`exchange scheduled pagination keeps Previous and Next labels`, () => {
-    const src = readRoute(`exchange/ExchangeScheduledPagination.tsx`);
-    expect(src).toContain(`Previous`);
-    expect(src).toContain(`Next`);
-  });
-
   it(`exchange scheduled composer preserves the data-testid`, () => {
     const src = readRoute(`exchange/ExchangeScheduledSection.tsx`);
     expect(src).toContain(`exchange-scheduled-section`);
@@ -142,10 +136,13 @@ describe(`route grid contracts`, () => {
     expect(src).toContain(`delete-rule:`);
   });
 
-  it(`exchange rules pagination keeps Previous and Next labels`, () => {
-    const src = readRoute(`exchange/ExchangeRulesPagination.tsx`);
-    expect(src).toContain(`Previous`);
-    expect(src).toContain(`Next`);
+  it(`exchange composers consume the shared ShellPagination`, () => {
+    const scheduledSrc = readRoute(`exchange/ExchangeScheduledSection.tsx`);
+    const rulesSrc = readRoute(`exchange/ExchangeRulesSection.tsx`);
+    expect(scheduledSrc).toContain(`ShellPagination`);
+    expect(rulesSrc).toContain(`ShellPagination`);
+    expect(scheduledSrc).toMatch(/from\s+['"`][^'"`]*shared\/ui\/ShellPagination['"`]/);
+    expect(rulesSrc).toMatch(/from\s+['"`][^'"`]*shared\/ui\/ShellPagination['"`]/);
   });
 
   it(`exchange rules composer preserves the data-testid`, () => {

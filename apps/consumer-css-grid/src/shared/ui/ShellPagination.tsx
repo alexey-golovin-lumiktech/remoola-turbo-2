@@ -1,6 +1,4 @@
-'use client';
-
-export function ExchangeRulesPagination({
+export function ShellPagination({
   onNext,
   onPrev,
   page,
