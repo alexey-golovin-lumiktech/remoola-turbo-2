@@ -1,45 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { type AdminV2AdminRef as AdminRef } from '@remoola/api-types';
-import { $Enums, Prisma } from '@remoola/database-2';
+import { $Enums } from '@remoola/database-2';
 
-import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { buildDateRangeFilter } from '../admin-v2-query.utils';
-import { AdminV2LedgerQuery, type AdminV2LedgerListItemRecord } from './admin-v2-ledger.query';
+import {
+  mapLedgerDisputeItem,
+  mapLedgerEntryCase,
+  mapLedgerListItem,
+  normalizeAmountSign,
+  normalizeEnumValue,
+  normalizeLimit,
+  normalizeSearch,
+} from './admin-v2-ledger-read.helpers';
+import { AdminV2LedgerQuery } from './admin-v2-ledger.query';
 import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
-
-const DEFAULT_LIMIT = 25;
-const MAX_LIMIT = 100;
-const SEARCH_MAX_LENGTH = 200;
-
-function normalizeLimit(limit?: number): number {
-  return Math.min(MAX_LIMIT, Math.max(1, limit ?? DEFAULT_LIMIT));
-}
-
-function normalizeSearch(q?: string): string | undefined {
-  const search = q?.trim();
-  return search ? search.slice(0, SEARCH_MAX_LENGTH) : undefined;
-}
-
-function normalizeEnumValue<T extends string>(value: string | undefined, values: readonly T[]): T | undefined {
-  if (!value?.trim()) {
-    return undefined;
-  }
-
-  return values.includes(value.trim() as T) ? (value.trim() as T) : undefined;
-}
-
-type AmountSignFilter = `positive` | `negative` | `zero`;
-
-function normalizeAmountSign(value: string | undefined): AmountSignFilter | undefined {
-  if (!value?.trim()) {
-    return undefined;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  return normalized === `positive` || normalized === `negative` || normalized === `zero` ? normalized : undefined;
-}
 
 @Injectable()
 export class AdminV2LedgerService {
@@ -47,41 +23,6 @@ export class AdminV2LedgerService {
     private readonly query: AdminV2LedgerQuery,
     private readonly assignmentsService: AdminV2AssignmentsService,
   ) {}
-
-  private parseMetadata(metadata: Prisma.JsonValue | null | undefined): Record<string, unknown> {
-    return JSON.parse(JSON.stringify(metadata ?? {})) as Record<string, unknown>;
-  }
-
-  private deriveRail(entry: {
-    metadata?: Prisma.JsonValue | null;
-    paymentRequest?: { paymentRail: $Enums.PaymentRail | null } | null;
-  }): $Enums.PaymentRail | null {
-    const metadata = this.parseMetadata(entry.metadata);
-    return (metadata.rail as $Enums.PaymentRail | undefined) ?? entry.paymentRequest?.paymentRail ?? null;
-  }
-
-  private mapLedgerRow(entry: AdminV2LedgerListItemRecord) {
-    const effectiveStatus = getEffectiveLedgerStatus(entry);
-    return {
-      id: entry.id,
-      ledgerId: entry.ledgerId,
-      type: entry.type,
-      amount: entry.amount.toString(),
-      currencyCode: entry.currencyCode,
-      persistedStatus: entry.status,
-      effectiveStatus,
-      paymentRail: this.deriveRail(entry),
-      consumerId: entry.consumerId,
-      consumerEmail: entry.consumer?.email ?? null,
-      paymentRequestId: entry.paymentRequestId,
-      paymentRequestStatus: entry.paymentRequest?.status ?? null,
-      createdAt: entry.createdAt,
-      updatedAt: entry.updatedAt,
-      disputeCount: entry.disputes?.length ?? 0,
-      staleWarning: effectiveStatus !== entry.status,
-      dataFreshnessClass: `exact`,
-    };
-  }
 
   async listLedgerEntries(params?: {
     cursor?: string;
@@ -123,7 +64,7 @@ export class AdminV2LedgerService {
       createdAt,
     });
 
-    const items = rows.map((row) => this.mapLedgerRow(row));
+    const items = rows.map((row) => mapLedgerListItem(row));
 
     const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
       `ledger_entry`,
@@ -153,79 +94,7 @@ export class AdminV2LedgerService {
 
     const assignment = await this.assignmentsService.getAssignmentContextForResource(`ledger_entry`, entry.id);
 
-    const effectiveStatus = getEffectiveLedgerStatus(entry);
-
-    return {
-      id: entry.id,
-      core: {
-        id: entry.id,
-        ledgerId: entry.ledgerId,
-        type: entry.type,
-        amount: entry.amount.toString(),
-        currencyCode: entry.currencyCode,
-        persistedStatus: entry.status,
-        effectiveStatus,
-        paymentRail: this.deriveRail(entry),
-        feesType: entry.feesType,
-        feesAmount: entry.feesAmount?.toString() ?? null,
-        stripeId: entry.stripeId,
-        idempotencyKey: entry.idempotencyKey,
-        createdAt: entry.createdAt,
-        updatedAt: entry.updatedAt,
-      },
-      consumer: {
-        id: entry.consumerId,
-        email: entry.consumer?.email ?? null,
-      },
-      paymentRequest:
-        entry.paymentRequest == null
-          ? null
-          : {
-              id: entry.paymentRequest.id,
-              amount: entry.paymentRequest.amount.toString(),
-              currencyCode: entry.paymentRequest.currencyCode,
-              status: entry.paymentRequest.status,
-              paymentRail: entry.paymentRequest.paymentRail,
-              payerId: entry.paymentRequest.payerId,
-              payerEmail: entry.paymentRequest.payer?.email ?? null,
-              requesterId: entry.paymentRequest.requesterId,
-              requesterEmail: entry.paymentRequest.requester?.email ?? null,
-            },
-      metadata: this.parseMetadata(entry.metadata),
-      outcomes: entry.outcomes.map((outcome) => ({
-        id: outcome.id,
-        status: outcome.status,
-        source: outcome.source,
-        externalId: outcome.externalId,
-        createdAt: outcome.createdAt,
-      })),
-      disputes: entry.disputes.map((dispute) => ({
-        id: dispute.id,
-        stripeDisputeId: dispute.stripeDisputeId,
-        metadata: this.parseMetadata(dispute.metadata),
-        createdAt: dispute.createdAt,
-      })),
-      relatedEntries: relatedEntries.map((item) => ({
-        id: item.id,
-        ledgerId: item.ledgerId,
-        type: item.type,
-        amount: item.amount.toString(),
-        currencyCode: item.currencyCode,
-        effectiveStatus: getEffectiveLedgerStatus(item),
-        createdAt: item.createdAt,
-      })),
-      auditContext: auditContext.map((row) => ({
-        id: row.id,
-        action: row.action,
-        resource: row.resource,
-        resourceId: row.resourceId,
-        adminEmail: row.admin?.email ?? null,
-        createdAt: row.createdAt,
-      })),
-      assignment,
-      staleWarning: effectiveStatus !== entry.status,
-      dataFreshnessClass: `exact`,
-    };
+    return mapLedgerEntryCase({ entry, relatedEntries, auditContext }, assignment);
   }
 
   async listDisputes(params?: {
@@ -250,35 +119,7 @@ export class AdminV2LedgerService {
       createdAt,
     });
     return {
-      items: rows.map((row) => {
-        const metadata = this.parseMetadata(row.metadata);
-        return {
-          id: row.id,
-          stripeDisputeId: row.stripeDisputeId,
-          disputeStatus:
-            typeof metadata.status === `string`
-              ? metadata.status
-              : typeof metadata.disputeStatus === `string`
-                ? metadata.disputeStatus
-                : null,
-          reason: typeof metadata.reason === `string` ? metadata.reason : null,
-          amountMinor: typeof metadata.amount === `number` ? metadata.amount : null,
-          updatedAt: typeof metadata.updatedAt === `string` ? metadata.updatedAt : null,
-          createdAt: row.createdAt,
-          metadata,
-          ledgerEntry: {
-            id: row.ledgerEntry.id,
-            ledgerId: row.ledgerEntry.ledgerId,
-            paymentRequestId: row.ledgerEntry.paymentRequestId,
-            consumerId: row.ledgerEntry.consumerId,
-            type: row.ledgerEntry.type,
-            amount: row.ledgerEntry.amount.toString(),
-            currencyCode: row.ledgerEntry.currencyCode,
-            paymentRail: row.ledgerEntry.paymentRequest?.paymentRail ?? null,
-          },
-          dataFreshnessClass: `append-only-log`,
-        };
-      }),
+      items: rows.map((row) => mapLedgerDisputeItem(row)),
       pageInfo: {
         nextCursor: nextCursorSource ? encodeAdminV2Cursor(nextCursorSource) : null,
         limit,
