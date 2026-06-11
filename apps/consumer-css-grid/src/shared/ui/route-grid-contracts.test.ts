@@ -201,4 +201,33 @@ describe(`route grid contracts`, () => {
     expect(filtersSrc).toContain(`payments-filters`);
     expect(listSrc).toContain(`payments-list`);
   });
+
+  it(`documents composer delegates to the four new section components`, () => {
+    const src = readRoute(`documents/DocumentsClient.tsx`);
+    expect(src).toContain(`DocumentsHeaderSection`);
+    expect(src).toContain(`DocumentsEmptyState`);
+    expect(src).toContain(`DocumentsFilterBar`);
+    expect(src).toContain(`DocumentsMetricsSection`);
+    expect(src).toContain(`buildDocumentsViewModel`);
+  });
+
+  it(`documents composer uses ShellPagination`, () => {
+    const src = readRoute(`documents/DocumentsClient.tsx`);
+    expect(src).toContain(`ShellPagination`);
+    expect(src).toMatch(/from\s+['"`][^'"`]*shared\/ui\/ShellPagination['"`]/);
+  });
+
+  it(`documents composer no longer hand-rolls Previous/Next pagination`, () => {
+    const src = readRoute(`documents/DocumentsClient.tsx`);
+    expect(src).not.toMatch(/<button[^>]*>\s*Previous\s*<\/button>/);
+    expect(src).not.toMatch(/<button[^>]*>\s*Next\s*<\/button>/);
+  });
+
+  it(`documents empty state uses shellEmptyState; metrics section imports MetricLine`, () => {
+    const emptySrc = readRoute(`documents/DocumentsEmptyState.tsx`);
+    const metricsSrc = readRoute(`documents/DocumentsMetricsSection.tsx`);
+    expect(emptySrc).toContain(`shellEmptyState`);
+    expect(metricsSrc).toContain(`MetricLine`);
+    expect(metricsSrc).toMatch(/from\s+['"`][^'"`]*shared\/ui\/shell-data-display['"`]/);
+  });
 });

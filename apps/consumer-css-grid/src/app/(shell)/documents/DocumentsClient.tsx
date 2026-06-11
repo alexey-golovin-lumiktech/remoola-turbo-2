@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
 
@@ -11,17 +10,19 @@ import { DocumentList } from './DocumentList';
 import { DocumentPreviewPanel } from './DocumentPreviewPanel';
 import { buildDocumentsViewModel } from './documents-view-model';
 import { DocumentSelectionToolbar } from './DocumentSelectionToolbar';
+import { DocumentsEmptyState } from './DocumentsEmptyState';
+import { DocumentsFilterBar } from './DocumentsFilterBar';
+import { DocumentsHeaderSection } from './DocumentsHeaderSection';
+import { DocumentsMetricsSection } from './DocumentsMetricsSection';
 import { DocumentUploadControl } from './DocumentUploadControl';
-import { HelpContextualGuides, HelpInlineGuides } from '../../../features/help/ui';
 import {
   bulkDeleteDocumentsMutation,
   deleteDocumentMutation,
   updateDocumentTagsMutation,
 } from '../../../lib/mutations/documents.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
-import { shellEmptyState } from '../../../shared/ui/shell-card-tokens';
-import { MetricLine } from '../../../shared/ui/shell-data-display';
 import { shellMainAsidePrimary } from '../../../shared/ui/shell-layout-tokens';
+import { ShellPagination } from '../../../shared/ui/ShellPagination';
 
 type Props = {
   documents: DocumentItem[];
@@ -168,46 +169,13 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
   return (
     <section className={shellMainAsidePrimary}>
       <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface-muted) p-5 backdrop-blur">
-        {contractContext ? (
-          <div className="mb-4 rounded-2xl border border-(--app-primary-soft) bg-(--app-primary-soft) px-4 py-4 text-sm text-(--app-primary)">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="font-medium text-blue-50">Contract files mode</div>
-                <div className="mt-1 text-blue-100/80">
-                  Showing relationship files for {contractContext.name} ({contractContext.email}).
-                </div>
-              </div>
-              <Link
-                href={contractContext.returnTo}
-                className="rounded-xl border border-blue-300/20 px-3 py-2 text-sm text-(--app-primary) transition hover:bg-(--app-primary-soft)"
-              >
-                Back to contract
-              </Link>
-            </div>
-          </div>
-        ) : null}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <div className="text-lg font-semibold text-(--app-text)">
-              {contractContext ? `Relationship files` : `Document library`}
-            </div>
-            <div className="mt-1 text-sm text-(--app-text-muted)">
-              {contractContext
-                ? `Preview, tag, and attach files already connected to this contract. Page ${page} of ${viewModel.totalPages} shows ${documents.length} of ${total} files.`
-                : `Upload new files or remove outdated ones. Page ${page} of ${viewModel.totalPages} shows ${documents.length} of ${total} documents.`}
-            </div>
-          </div>
-        </div>
-        <HelpContextualGuides
-          guides={viewModel.documentsHelpGuides}
-          compact
-          className="mb-4"
-          title={contractContext ? `Need help using contract-linked files?` : `Need help managing documents?`}
-          description={
-            contractContext
-              ? `These guides explain how contract-linked files, document uploads, and payment attachments fit together without leaving this route family.`
-              : `These guides explain uploads, attachments, and the delete restrictions that appear once a file becomes part of a payment flow.`
-          }
+        <DocumentsHeaderSection
+          contractContext={contractContext}
+          documentsHelpGuides={viewModel.documentsHelpGuides}
+          documentsLength={documents.length}
+          page={page}
+          total={total}
+          totalPages={viewModel.totalPages}
         />
         {viewModel.isContractMode ? (
           <div className="mb-4 text-sm text-(--app-text-muted)">
@@ -238,62 +206,22 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
           </div>
         ) : null}
         {documents.length === 0 ? (
-          <div className={shellEmptyState}>
-            <div>
-              {viewModel.hasDocumentsOnAnotherPage
-                ? contractContext
-                  ? `No files are visible on this page right now.`
-                  : `No documents are visible on this page right now.`
-                : contractContext
-                  ? `No files are linked to this contract yet.`
-                  : `No documents uploaded yet.`}
-            </div>
-            {viewModel.hasDocumentsOnAnotherPage ? (
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={returnToFirstPage}
-                  className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) transition hover:border-(--app-border-strong) hover:text-(--app-text)"
-                >
-                  Go to page 1
-                </button>
-              </div>
-            ) : null}
-            <HelpInlineGuides
-              guides={viewModel.emptyStateHelpGuides}
-              title={
-                viewModel.hasDocumentsOnAnotherPage
-                  ? contractContext
-                    ? `Need help getting back to the first contract files page?`
-                    : `Need help getting back to the first documents page?`
-                  : contractContext
-                    ? `Need help understanding how files reach this contract view?`
-                    : `Need help uploading the first document or attaching it later?`
-              }
-              className="mx-auto mt-4 max-w-3xl text-left"
-            />
-          </div>
+          <DocumentsEmptyState
+            contractContext={contractContext}
+            emptyStateHelpGuides={viewModel.emptyStateHelpGuides}
+            hasDocumentsOnAnotherPage={viewModel.hasDocumentsOnAnotherPage}
+            onReturnToFirstPage={returnToFirstPage}
+          />
         ) : (
           <div>
-            <div className="mb-4 flex flex-wrap gap-2">
-              {[...viewModel.filterOptions].map((filter) => (
-                <button
-                  key={filter.value}
-                  type="button"
-                  onClick={() => {
-                    setFilterKind(filter.value);
-                    setSelectedDocumentIds([]);
-                  }}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-                    filterKind === filter.value
-                      ? `bg-indigo-600 text-(--app-text)`
-                      : `bg-(--app-surface-muted) text-(--app-text-soft) hover:bg-white/10 hover:text-(--app-text-soft)`
-                  }`}
-                >
-                  {filter.label} ({filter.count})
-                </button>
-              ))}
-            </div>
+            <DocumentsFilterBar
+              filterKind={filterKind}
+              filterOptions={viewModel.filterOptions}
+              onFilterChange={(next) => {
+                setFilterKind(next);
+                setSelectedDocumentIds([]);
+              }}
+            />
             <div className="space-y-3">
               {viewModel.filteredDocuments.length > 1 ? (
                 <DocumentSelectionToolbar
@@ -354,41 +282,23 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
             </div>
           </div>
         )}
-        <div className="mt-5 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={isPending || page <= 1}
-            onClick={() => applyPage(page - 1)}
-            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            disabled={isPending || page >= viewModel.totalPages}
-            onClick={() => applyPage(page + 1)}
-            className="rounded-xl border border-(--app-border) px-3 py-2 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
+        <ShellPagination
+          disabled={isPending}
+          onNext={() => applyPage(page + 1)}
+          onPrev={() => applyPage(page - 1)}
+          page={page}
+          totalPages={viewModel.totalPages}
+        />
       </div>
 
-      <div className="rounded-[28px] border border-(--app-border) bg-(--app-surface-muted) p-5 backdrop-blur">
-        <div className="mb-4 text-lg font-semibold text-(--app-text)">
-          {contractContext ? `Contract files summary` : `Storage summary`}
-        </div>
-        <div className="space-y-4">
-          <MetricLine label="Visible on page" value={String(documents.length)} />
-          <MetricLine label={contractContext ? `Total contract files` : `Total files`} value={String(total)} />
-          <MetricLine label="Compliance docs" value={String(viewModel.complianceCount)} />
-          <MetricLine label="Payment docs" value={String(viewModel.paymentCount)} />
-          <MetricLine label="Contracts" value={String(viewModel.contractsCount)} />
-          {contractContext ? (
-            <MetricLine label="Draft payments in scope" value={String(contractContext.draftPaymentRequestIds.length)} />
-          ) : null}
-        </div>
-      </div>
+      <DocumentsMetricsSection
+        complianceCount={viewModel.complianceCount}
+        contractContext={contractContext}
+        contractsCount={viewModel.contractsCount}
+        documentsLength={documents.length}
+        paymentCount={viewModel.paymentCount}
+        total={total}
+      />
       {previewDoc ? <DocumentPreviewPanel document={previewDoc} onClose={() => setPreviewDoc(null)} /> : null}
       {attachDocument ? (
         <AttachToPaymentModal

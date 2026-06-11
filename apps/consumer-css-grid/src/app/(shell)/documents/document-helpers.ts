@@ -19,6 +19,14 @@ export type DocumentContractContext = {
   returnTo: string;
 } | null;
 
+export type DocumentsClientContractContext = {
+  id: string;
+  name: string;
+  email: string;
+  returnTo: string;
+  draftPaymentRequestIds: string[];
+};
+
 export function formatDate(value: string) {
   return new Date(value).toLocaleDateString(`en-US`, {
     year: `numeric`,
