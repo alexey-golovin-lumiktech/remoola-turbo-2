@@ -1,27 +1,25 @@
 import { Injectable } from '@nestjs/common';
 
-import { $Enums, Prisma } from '@remoola/database-2';
+import { Prisma } from '@remoola/database-2';
 
 import {
-  DUPLICATE_RISK_WINDOW_DAYS,
-  LARGE_VALUE_THRESHOLDS,
-  ORPHANED_ENTRY_GRACE_HOURS,
-  TERMINAL_OUTCOME_STATUSES,
-} from './admin-v2-ledger-anomalies.dto';
+  SUMMARY_OUTLIER_WINDOW_DAYS,
+  type CountRow,
+  buildDuplicateIdempotencyRiskPredicateSql,
+  buildImpossibleTransitionCountLateralSql,
+  buildImpossibleTransitionListLateralSql,
+  buildImpossibleTransitionRangeCountLateralSql,
+  buildLargeValueThresholdLateralSql,
+  buildLargeValueThresholdPredicateSql,
+  buildOrphanedEntryPredicateSql,
+} from './admin-v2-ledger-anomalies-value-integrity.query-helpers';
+import { DUPLICATE_RISK_WINDOW_DAYS, ORPHANED_ENTRY_GRACE_HOURS } from './admin-v2-ledger-anomalies.dto';
 import {
   type AnomalyRow,
   type LedgerAnomalyListQueryParams,
   buildAnomalyCursorSql,
 } from './admin-v2-ledger-anomalies.query.types';
-import { sqlInList } from '../../../shared/prisma-raw.utils';
 import { PrismaService } from '../../../shared/prisma.service';
-
-const SUMMARY_OUTLIER_WINDOW_DAYS = 30;
-const LARGE_VALUE_THRESHOLD_ENTRIES = Object.entries(LARGE_VALUE_THRESHOLDS) as Array<[$Enums.CurrencyCode, number]>;
-
-type CountRow = {
-  count: number;
-};
 
 @Injectable()
 export class AdminV2LedgerAnomaliesValueIntegrityQuery {
@@ -35,7 +33,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
       WHERE le.deleted_at IS NULL
         AND le.created_at >= ${windowStart}
         AND le.created_at <= ${now}
-        AND (${this.buildLargeValueThresholdSql()})
+        AND (${buildLargeValueThresholdPredicateSql()})
     `);
 
     return rows[0]?.count ?? 0;
@@ -48,11 +46,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
       FROM ledger_entry le
       WHERE le.deleted_at IS NULL
         AND le.created_at < ${cutoff}
-        AND NOT EXISTS (
-          SELECT 1
-          FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-        )
+        ${buildOrphanedEntryPredicateSql()}
     `);
 
     return rows[0]?.count ?? 0;
@@ -64,8 +58,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
       SELECT COUNT(*)::int AS "count"
       FROM ledger_entry le
       WHERE le.deleted_at IS NULL
-        AND le.idempotency_key IS NULL
-        AND le.stripe_id IS NOT NULL
+        ${buildDuplicateIdempotencyRiskPredicateSql()}
         AND le.created_at >= ${windowStart}
         AND le.created_at <= ${now}
     `);
@@ -78,18 +71,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
     const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
       SELECT COUNT(*)::int AS "count"
       FROM ledger_entry le
-      JOIN LATERAL (
-        SELECT 1
-        FROM (
-          SELECT
-            o.status,
-            LAG(o.status) OVER (ORDER BY o.created_at, o.id) AS prev_status
-          FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-        ) chain
-        WHERE chain.prev_status::text IN (${sqlInList(TERMINAL_OUTCOME_STATUSES)})
-        LIMIT 1
-      ) violation ON true
+      ${buildImpossibleTransitionCountLateralSql()}
       WHERE le.deleted_at IS NULL
     `);
 
@@ -113,18 +95,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
         le.created_at AS "anomalyAt",
         thresholds.threshold AS "threshold"
       FROM ledger_entry le
-      JOIN LATERAL (
-        SELECT threshold
-        FROM (
-          VALUES ${Prisma.join(
-            LARGE_VALUE_THRESHOLD_ENTRIES.map(
-              ([currencyCode, threshold]) => Prisma.sql`(${currencyCode}, ${threshold})`,
-            ),
-            `, `,
-          )}
-        ) AS threshold_map(currency_code, threshold)
-        WHERE threshold_map.currency_code = le.currency_code::text
-      ) thresholds ON true
+      ${buildLargeValueThresholdLateralSql()}
       WHERE le.deleted_at IS NULL
         AND le.created_at >= ${params.dateFrom}
         AND le.created_at <= ${params.dateTo}
@@ -160,11 +131,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
         AND le.created_at < ${cutoff}
         AND le.created_at >= ${params.dateFrom}
         AND le.created_at <= ${params.dateTo}
-        AND NOT EXISTS (
-          SELECT 1
-          FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-        )
+        ${buildOrphanedEntryPredicateSql()}
         ${buildAnomalyCursorSql(Prisma.sql`le.created_at`, params.cursor)}
       ORDER BY le.created_at DESC, le.id DESC
       LIMIT ${params.limit + 1}
@@ -192,8 +159,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
         NULL::text AS "nextStatus"
       FROM ledger_entry le
       WHERE le.deleted_at IS NULL
-        AND le.idempotency_key IS NULL
-        AND le.stripe_id IS NOT NULL
+        ${buildDuplicateIdempotencyRiskPredicateSql()}
         AND le.created_at >= ${params.dateFrom}
         AND le.created_at <= ${params.dateTo}
         ${buildAnomalyCursorSql(Prisma.sql`le.created_at`, params.cursor)}
@@ -222,25 +188,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
         violation.prev_status::text AS "prevStatus",
         violation.next_status::text AS "nextStatus"
       FROM ledger_entry le
-      JOIN LATERAL (
-        SELECT
-          chain.prev_status,
-          chain.next_status,
-          chain.violation_at
-        FROM (
-          SELECT
-            o.status AS next_status,
-            o.created_at AS violation_at,
-            LAG(o.status) OVER (ORDER BY o.created_at, o.id) AS prev_status
-          FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-        ) chain
-        WHERE chain.prev_status::text IN (${sqlInList(TERMINAL_OUTCOME_STATUSES)})
-          AND chain.violation_at >= ${params.dateFrom}
-          AND chain.violation_at <= ${params.dateTo}
-        ORDER BY chain.violation_at DESC
-        LIMIT 1
-      ) violation ON true
+      ${buildImpossibleTransitionListLateralSql(params.dateFrom, params.dateTo)}
       WHERE le.deleted_at IS NULL
         ${buildAnomalyCursorSql(Prisma.sql`violation.violation_at`, params.cursor)}
       ORDER BY violation.violation_at DESC, le.id DESC
@@ -252,18 +200,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
     const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
       SELECT COUNT(*)::int AS "count"
       FROM ledger_entry le
-      JOIN LATERAL (
-        SELECT threshold
-        FROM (
-          VALUES ${Prisma.join(
-            LARGE_VALUE_THRESHOLD_ENTRIES.map(
-              ([currencyCode, threshold]) => Prisma.sql`(${currencyCode}, ${threshold})`,
-            ),
-            `, `,
-          )}
-        ) AS threshold_map(currency_code, threshold)
-        WHERE threshold_map.currency_code = le.currency_code::text
-      ) thresholds ON true
+      ${buildLargeValueThresholdLateralSql()}
       WHERE le.deleted_at IS NULL
         AND le.created_at >= ${dateFrom}
         AND le.created_at <= ${dateTo}
@@ -282,11 +219,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
         AND le.created_at < ${cutoff}
         AND le.created_at >= ${dateFrom}
         AND le.created_at <= ${dateTo}
-        AND NOT EXISTS (
-          SELECT 1
-          FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-        )
+        ${buildOrphanedEntryPredicateSql()}
     `);
 
     return rows[0]?.count ?? 0;
@@ -297,8 +230,7 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
       SELECT COUNT(*)::int AS "count"
       FROM ledger_entry le
       WHERE le.deleted_at IS NULL
-        AND le.idempotency_key IS NULL
-        AND le.stripe_id IS NOT NULL
+        ${buildDuplicateIdempotencyRiskPredicateSql()}
         AND le.created_at >= ${dateFrom}
         AND le.created_at <= ${dateTo}
     `);
@@ -310,34 +242,10 @@ export class AdminV2LedgerAnomaliesValueIntegrityQuery {
     const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
       SELECT COUNT(*)::int AS "count"
       FROM ledger_entry le
-      JOIN LATERAL (
-        SELECT 1
-        FROM (
-          SELECT
-            o.status AS next_status,
-            o.created_at AS violation_at,
-            LAG(o.status) OVER (ORDER BY o.created_at, o.id) AS prev_status
-          FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-        ) chain
-        WHERE chain.prev_status::text IN (${sqlInList(TERMINAL_OUTCOME_STATUSES)})
-          AND chain.violation_at >= ${dateFrom}
-          AND chain.violation_at <= ${dateTo}
-        LIMIT 1
-      ) violation ON true
+      ${buildImpossibleTransitionRangeCountLateralSql(dateFrom, dateTo)}
       WHERE le.deleted_at IS NULL
     `);
 
     return rows[0]?.count ?? 0;
-  }
-
-  private buildLargeValueThresholdSql() {
-    return Prisma.join(
-      LARGE_VALUE_THRESHOLD_ENTRIES.map(
-        ([currencyCode, threshold]) =>
-          Prisma.sql`(le.currency_code::text = ${currencyCode} AND ABS(le.amount) >= ${threshold})`,
-      ),
-      ` OR `,
-    );
   }
 }
