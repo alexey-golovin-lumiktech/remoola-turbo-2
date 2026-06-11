@@ -3317,7 +3317,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-06-10</summary>
 
 - **2026-06-10:**
@@ -3345,6 +3345,26 @@
 
   ### ⚠️ Notes
   - **Visible class change on shell status pills:** `StatusPill` now renders danger-tone classes (`bg-(--app-danger-soft) text-(--app-danger-text)`) for previously-neutral domain statuses (Failed, Rejected, Cancelled, Terminated, Declined, Expired, Reverted, "Rejected by payee", "Verification failed", etc.). The CSS vars already exist for both light and dark themes; the commit body calls for an eyeball pass on dashboard withdrawals, payments list, contract detail, and contacts detail before deploy. Everything else recorded today is behavior-preserving refactor: no DB migrations, no DTO/controller/API contract changes, no auth or money-flow behavior changes, and all section splits keep sole-caller imports byte-unchanged.
+
+</details>
+
+<details open>
+<summary>2026-06-11</summary>
+
+- **2026-06-11:**
+
+  ### 🧪 Testing
+  - **api-v2 admin-v2 read/helper characterization suites:** Add dedicated spec files alongside each helper extraction — `admin-document-read.helpers.spec.ts` (+387 LOC), `admin-v2-ledger-read.helpers.spec.ts` (+333 LOC), `admin-v2-system-summary.helpers.spec.ts` (+155 LOC), and `admin-v2-ledger-anomalies-value-integrity.query-helpers.spec.ts` (+61 LOC) — pinning the pure read/mapping/anomaly-SQL behavior that just moved out of the service facades. The consumers facade split also expands `admin-v2-consumers.service.spec.ts` to cover the new read / notes-flags / admin-actions service seams.
+  - **consumer-css-grid route-grid-contracts probes for the new section splits:** Extend `shared/ui/route-grid-contracts.test.ts` with render-free import/usage assertions covering the documents, payments, contacts, and payment-attachments composer-plus-section splits, plus a probe that pins `PaymentAttachmentsLibrarySection` onto `shared/ui/ShellPagination` (with negative assertions against re-introducing the prior `Previous page` / `Next page` copy). `ShellPagination.test.tsx` extended to cover the new optional `disabled` prop.
+
+  ### 🛠 DevEx
+  - **consumer-css-grid composer + dumb-sections decomposition wave:** Behavior-preserving splits of four oversized `'use client'` files into composer-plus-siblings. `payments/PaymentsClient.tsx` (−219 LOC) becomes a thin composer over `PaymentsFiltersPanel`, `PaymentsListSection`, `PaymentsMetricsSection`, with shared list formatters extracted to `payments-list-formatters.ts`. `documents/DocumentsClient.tsx` (−131 LOC) splits into `DocumentsHeaderSection`, `DocumentsMetricsSection`, `DocumentsFilterBar`, `DocumentsEmptyState`, plus `document-helpers.ts`. `payments/PaymentAttachmentsClient.tsx` (−244 LOC) splits into `PaymentAttachmentsList`, `PaymentAttachmentsUploadForm`, `PaymentAttachmentsLibrarySection`, plus `payment-attachments-formatters.ts`. `contacts/contacts-sections.tsx` (−273 LOC) splits into `ContactsFormSection`, `ContactsListSection`, `ContactsSearchForm`, `ContactsSummaryPanel`. Hooks, transitions, server-action wiring, `data-testid` values, hrefs, copy, and prop signatures preserved across all four splits.
+  - **Shared `ShellPagination` becomes the single pagination primitive:** Promote the duplicate `Exchange*Pagination` component into `shared/ui/ShellPagination` (the prior per-route copies are deleted), teach `ShellPagination` an optional `disabled` prop that ORs with its existing page-bound checks (consumed by `ContactsListSection`), and migrate `PaymentAttachmentsLibrarySection`'s hand-rolled Previous/Next buttons onto it. The unification carries an intentional visible delta on the payment-attachments library: copy `Previous page` / `Next page` → `Previous` / `Next`, button styling shifts from `rounded-2xl px-4 py-3` to the shared `rounded-xl bg-(--app-surface) px-3 py-2` look, and the pagination row moves out of the `Attach selected` flex row into its own `mt-5 flex flex-wrap gap-2` wrapper — matching the other four paginated pages.
+  - **api-v2 admin-v2 service-facade thinning across documents, ledger, system, and consumers:** Pull pure read/mapping/aggregation logic out of large service files into dedicated helper modules, leaving the services as orchestration over Prisma and external collaborators. `admin-document.service.ts` (−251 LOC) → `admin-document-read.helpers.ts` (+324 LOC). `admin-v2-ledger.service.ts` (−173 LOC) → `admin-v2-ledger-read.helpers.ts` (+265 LOC). `admin-v2-system.service.ts` (−198 LOC) → `admin-v2-system-summary.helpers.ts` (+252 LOC) of pure card builders. `admin-v2-consumers.service.ts` (−330 LOC) split into three sibling services — `admin-v2-consumer-read.service.ts`, `admin-v2-consumer-notes-flags.service.ts`, `admin-v2-consumer-admin-actions.service.ts` — wired through `admin-v2-consumers.module.ts` with the boundary allowlist updated accordingly. Public controller contracts, DTO shapes, transaction sequencing, and idempotency semantics preserved.
+  - **admin-v2 ledger query split into definitions, query-helpers, and anomaly SQL helpers:** Extract Prisma read-model definitions into `admin-v2-ledger.query-definitions.ts` (+164 LOC) and `findMany` arg builders into `admin-v2-ledger-query-helpers.ts` (+61 LOC), thinning `admin-v2-ledger.query.ts` by ~200 LOC. Separately, lift the value-integrity anomaly raw SQL builder out of `admin-v2-ledger-anomalies-value-integrity.query.ts` (−124 LOC net) into `admin-v2-ledger-anomalies-value-integrity.query-helpers.ts` (+116 LOC) so the anomaly SQL becomes independently unit-testable. Public query method signatures, row/column type exports, filter/ordering, and bucket-sourcing semantics unchanged.
+
+  ### ⚠️ Notes
+  - **Refactor-only day:** All twelve commits are behavior-preserving extractions / composer-plus-section splits across `apps/consumer-css-grid` and `apps/api-v2/src/admin-v2`. No DB migrations, no Prisma schema changes, no DTO / controller / route contract changes, no auth, session, ledger, money-flow, webhook, or PII surface touched. The single intentional visible delta is the payment-attachments library pagination adopting the shared `ShellPagination` look and `Previous` / `Next` copy described above.
 
 </details>
 
