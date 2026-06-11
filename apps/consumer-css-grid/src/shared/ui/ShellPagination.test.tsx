@@ -30,4 +30,10 @@ describe(`ShellPagination`, () => {
     expect(html).toMatch(/<button[^>]*\bdisabled="[^"]*"[^>]*>Previous/);
     expect(html).toMatch(/<button[^>]*\bdisabled="[^"]*"[^>]*>Next/);
   });
+
+  it(`disables both when the optional disabled prop is true`, () => {
+    const html = renderToStaticMarkup(<ShellPagination page={2} totalPages={5} onPrev={noop} onNext={noop} disabled />);
+    expect(html).toMatch(/<button[^>]*\bdisabled="[^"]*"[^>]*>Previous/);
+    expect(html).toMatch(/<button[^>]*\bdisabled="[^"]*"[^>]*>Next/);
+  });
 });

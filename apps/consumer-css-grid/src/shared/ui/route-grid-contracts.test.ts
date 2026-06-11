@@ -149,4 +149,29 @@ describe(`route grid contracts`, () => {
     const src = readRoute(`exchange/ExchangeRulesSection.tsx`);
     expect(src).toContain(`exchange-rules-section`);
   });
+
+  it(`contacts composer uses shellMainAsidePrimary and ShellPagination`, () => {
+    const src = readRoute(`contacts/contacts-sections.tsx`);
+    expect(src).toContain(`shellMainAsidePrimary`);
+    expect(src).toContain(`ShellPagination`);
+    expect(src).toMatch(/from\s+['"`][^'"`]*shared\/ui\/ShellPagination['"`]/);
+  });
+
+  it(`contacts composer no longer hand-rolls Previous/Next pagination`, () => {
+    const src = readRoute(`contacts/contacts-sections.tsx`);
+    expect(src).not.toMatch(/<button[^>]*>\s*Previous\s*<\/button>/);
+    expect(src).not.toMatch(/<button[^>]*>\s*Next\s*<\/button>/);
+  });
+
+  it(`contacts list section uses shellContainerBase and shellEmptyState`, () => {
+    const src = readRoute(`contacts/ContactsListSection.tsx`);
+    expect(src).toContain(`shellContainerBase`);
+    expect(src).toContain(`shellEmptyState`);
+  });
+
+  it(`contacts summary panel imports ActionMini`, () => {
+    const src = readRoute(`contacts/ContactsSummaryPanel.tsx`);
+    expect(src).toContain(`ActionMini`);
+    expect(src).toMatch(/from\s+['"`][^'"`]*shared\/ui\/shell-actions['"`]/);
+  });
 });

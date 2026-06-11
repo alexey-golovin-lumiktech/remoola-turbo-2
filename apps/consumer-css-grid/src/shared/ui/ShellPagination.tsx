@@ -1,9 +1,11 @@
 export function ShellPagination({
+  disabled,
   onNext,
   onPrev,
   page,
   totalPages,
 }: {
+  disabled?: boolean;
   onNext: () => void;
   onPrev: () => void;
   page: number;
@@ -13,7 +15,7 @@ export function ShellPagination({
     <div className="mt-5 flex flex-wrap gap-2">
       <button
         type="button"
-        disabled={page <= 1}
+        disabled={disabled || page <= 1}
         onClick={onPrev}
         className="rounded-xl border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
       >
@@ -21,7 +23,7 @@ export function ShellPagination({
       </button>
       <button
         type="button"
-        disabled={page >= totalPages}
+        disabled={disabled || page >= totalPages}
         onClick={onNext}
         className="rounded-xl border border-(--app-border) bg-(--app-surface) px-3 py-2 text-sm text-(--app-text) disabled:cursor-not-allowed disabled:opacity-50"
       >
