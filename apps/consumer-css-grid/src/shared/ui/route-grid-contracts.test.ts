@@ -230,4 +230,33 @@ describe(`route grid contracts`, () => {
     expect(metricsSrc).toContain(`MetricLine`);
     expect(metricsSrc).toMatch(/from\s+['"`][^'"`]*shared\/ui\/shell-data-display['"`]/);
   });
+
+  it(`payment attachments composer delegates to the three new section components`, () => {
+    const src = readRoute(`payments/PaymentAttachmentsClient.tsx`);
+    expect(src).toContain(`PaymentAttachmentsUploadForm`);
+    expect(src).toContain(`PaymentAttachmentsLibrarySection`);
+    expect(src).toContain(`PaymentAttachmentsList`);
+    expect(src).toContain(`getPaymentAttachmentsLibraryState`);
+  });
+
+  it(`payment attachments composer no longer renders the upload form / library JSX inline`, () => {
+    const src = readRoute(`payments/PaymentAttachmentsClient.tsx`);
+    // Composer should not embed the file input or per-document checkbox JSX.
+    expect(src).not.toMatch(/<input[^>]*type="file"/);
+    expect(src).not.toMatch(/<input[^>]*type="checkbox"/);
+  });
+
+  it(`payment attachments library section preserves the original Previous/Next page copy`, () => {
+    const src = readRoute(`payments/PaymentAttachmentsLibrarySection.tsx`);
+    expect(src).toContain(`Previous page`);
+    expect(src).toContain(`Next page`);
+  });
+
+  it(`payment attachments list uses shared formatters and shellEmptyState`, () => {
+    const src = readRoute(`payments/PaymentAttachmentsList.tsx`);
+    expect(src).toContain(`formatDateTime`);
+    expect(src).toContain(`formatFileSize`);
+    expect(src).toContain(`shellEmptyState`);
+    expect(src).toMatch(/from\s+['"`]\.\/payment-attachments-formatters['"`]/);
+  });
 });
