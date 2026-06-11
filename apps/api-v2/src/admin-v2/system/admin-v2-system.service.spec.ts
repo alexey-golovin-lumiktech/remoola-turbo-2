@@ -4,8 +4,15 @@ import { adminV2SystemSummaryResponseSchema } from '@remoola/api-types';
 
 import { type AdminV2SystemQuery } from './admin-v2-system.query';
 import { AdminV2SystemService } from './admin-v2-system.service';
+import { envs } from '../../envs';
 
 describe(`AdminV2SystemService`, () => {
+  const originalExchangeRateMaxAgeHours = envs.EXCHANGE_RATE_MAX_AGE_HOURS;
+
+  afterEach(() => {
+    envs.EXCHANGE_RATE_MAX_AGE_HOURS = originalExchangeRateMaxAgeHours;
+  });
+
   function makeService() {
     const query = {
       getStripeCheckoutLag: jest.fn<(...a: any[]) => any>(async () => ({ count: 0, oldestAt: null })),
@@ -182,5 +189,19 @@ describe(`AdminV2SystemService`, () => {
     expect(card.status).toBe(`temporarily-unavailable`);
     expect(card.primaryAction).toBeNull();
     expect(card.escalationHint).toContain(`Escalate mail delivery degradation`);
+  });
+
+  it(`falls back to 24 hours when EXCHANGE_RATE_MAX_AGE_HOURS is invalid or non-positive`, () => {
+    const { service } = makeService();
+    const serviceWithPrivates = service as any;
+    const now = new Date(`2026-04-17T12:00:00.000Z`);
+
+    envs.EXCHANGE_RATE_MAX_AGE_HOURS = Number.NaN;
+    expect(serviceWithPrivates.getRateMaxAgeHours()).toBe(24);
+    expect(serviceWithPrivates.getRateStaleCutoff(now)).toEqual(new Date(`2026-04-16T12:00:00.000Z`));
+
+    envs.EXCHANGE_RATE_MAX_AGE_HOURS = 0;
+    expect(serviceWithPrivates.getRateMaxAgeHours()).toBe(24);
+    expect(serviceWithPrivates.getRateStaleCutoff(now)).toEqual(new Date(`2026-04-16T12:00:00.000Z`));
   });
 });
