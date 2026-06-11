@@ -246,10 +246,12 @@ describe(`route grid contracts`, () => {
     expect(src).not.toMatch(/<input[^>]*type="checkbox"/);
   });
 
-  it(`payment attachments library section preserves the original Previous/Next page copy`, () => {
+  it(`payment attachments library section uses ShellPagination`, () => {
     const src = readRoute(`payments/PaymentAttachmentsLibrarySection.tsx`);
-    expect(src).toContain(`Previous page`);
-    expect(src).toContain(`Next page`);
+    expect(src).toContain(`ShellPagination`);
+    expect(src).toMatch(/from\s+['"`][^'"`]*shared\/ui\/ShellPagination['"`]/);
+    expect(src).not.toContain(`Previous page`);
+    expect(src).not.toContain(`Next page`);
   });
 
   it(`payment attachments list uses shared formatters and shellEmptyState`, () => {

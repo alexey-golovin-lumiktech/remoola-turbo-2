@@ -2,6 +2,7 @@
 
 import { formatDateTime, formatFileSize } from './payment-attachments-formatters';
 import { type getPaymentAttachmentsLibraryState } from './payment-attachments-library-state';
+import { ShellPagination } from '../../../shared/ui/ShellPagination';
 
 type LibraryState = ReturnType<typeof getPaymentAttachmentsLibraryState>;
 
@@ -110,27 +111,16 @@ export function PaymentAttachmentsLibrarySection({
             {isPending ? `Attaching...` : selectedDocumentIds.length === 0 ? `Select documents` : `Attach selected`}
           </button>
         ) : null}
-        {attachmentLibraryState.showPagination ? (
-          <>
-            <button
-              type="button"
-              disabled={isPending || availableDocumentsPage <= 1}
-              onClick={onPrevPage}
-              className="rounded-2xl border border-(--app-border) px-4 py-3 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Previous page
-            </button>
-            <button
-              type="button"
-              disabled={isPending || availableDocumentsPage >= availableDocumentPages}
-              onClick={onNextPage}
-              className="rounded-2xl border border-(--app-border) px-4 py-3 text-sm text-(--app-text-soft) disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Next page
-            </button>
-          </>
-        ) : null}
       </div>
+      {attachmentLibraryState.showPagination ? (
+        <ShellPagination
+          disabled={isPending}
+          onNext={onNextPage}
+          onPrev={onPrevPage}
+          page={availableDocumentsPage}
+          totalPages={availableDocumentPages}
+        />
+      ) : null}
     </div>
   );
 }
