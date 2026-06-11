@@ -1,6 +1,10 @@
 import { type $Enums, type Prisma } from '@remoola/database-2';
 
-import { type AdminV2LedgerListItemRecord } from './admin-v2-ledger.query';
+import {
+  type AdminV2LedgerCaseRecord,
+  type AdminV2LedgerDisputeRow,
+  type AdminV2LedgerListItemRecord,
+} from './admin-v2-ledger.query';
 import { getEffectiveLedgerStatus } from '../../shared/transaction-status.utils';
 
 const DEFAULT_LIMIT = 25;
@@ -12,89 +16,6 @@ export type AmountSignFilter = `positive` | `negative` | `zero`;
 type LedgerRailSource = {
   metadata?: Prisma.JsonValue | null;
   paymentRequest?: { paymentRail: $Enums.PaymentRail | null } | null;
-};
-
-type LedgerCaseRecord = {
-  entry: {
-    id: string;
-    ledgerId: string;
-    type: $Enums.LedgerEntryType;
-    amount: Prisma.Decimal;
-    currencyCode: $Enums.CurrencyCode;
-    status: $Enums.TransactionStatus;
-    feesType: $Enums.TransactionFeesType | null;
-    feesAmount: Prisma.Decimal | null;
-    stripeId: string | null;
-    idempotencyKey: string | null;
-    metadata: Prisma.JsonValue | null;
-    consumerId: string;
-    createdAt: Date;
-    updatedAt: Date;
-    consumer: { email: string | null } | null;
-    paymentRequest: {
-      id: string;
-      amount: Prisma.Decimal;
-      currencyCode: $Enums.CurrencyCode;
-      status: $Enums.TransactionStatus;
-      paymentRail: $Enums.PaymentRail | null;
-      payerId: string;
-      requesterId: string;
-      payer: { email: string | null } | null;
-      requester: { email: string | null } | null;
-    } | null;
-    outcomes: Array<{
-      id: string;
-      status: $Enums.TransactionStatus;
-      source: string | null;
-      externalId: string | null;
-      createdAt: Date;
-    }>;
-    disputes: Array<{
-      id: string;
-      stripeDisputeId: string | null;
-      metadata: Prisma.JsonValue | null;
-      createdAt: Date;
-    }>;
-  };
-  relatedEntries: Array<{
-    id: string;
-    ledgerId: string;
-    type: $Enums.LedgerEntryType;
-    amount: Prisma.Decimal;
-    currencyCode: $Enums.CurrencyCode;
-    createdAt: Date;
-    status: $Enums.TransactionStatus;
-    outcomes?: Array<{
-      status: $Enums.TransactionStatus;
-    }>;
-  }>;
-  auditContext: Array<{
-    id: string;
-    action: string;
-    resource: string;
-    resourceId: string;
-    createdAt: Date;
-    admin: { email: string | null } | null;
-  }>;
-};
-
-type LedgerDisputeRow = {
-  id: string;
-  stripeDisputeId: string | null;
-  metadata: Prisma.JsonValue | null;
-  createdAt: Date;
-  ledgerEntry: {
-    id: string;
-    ledgerId: string;
-    paymentRequestId: string | null;
-    consumerId: string;
-    type: $Enums.LedgerEntryType;
-    amount: Prisma.Decimal;
-    currencyCode: $Enums.CurrencyCode;
-    paymentRequest: {
-      paymentRail: $Enums.PaymentRail | null;
-    } | null;
-  };
 };
 
 export function normalizeLimit(limit?: number): number {
@@ -156,7 +77,7 @@ export function mapLedgerListItem(entry: AdminV2LedgerListItemRecord) {
   };
 }
 
-export function mapLedgerEntryCase<TAssignment>(ledgerCase: LedgerCaseRecord, assignment: TAssignment) {
+export function mapLedgerEntryCase<TAssignment>(ledgerCase: AdminV2LedgerCaseRecord, assignment: TAssignment) {
   const { entry, relatedEntries, auditContext } = ledgerCase;
   const effectiveStatus = getEffectiveLedgerStatus(entry);
 
@@ -233,7 +154,7 @@ export function mapLedgerEntryCase<TAssignment>(ledgerCase: LedgerCaseRecord, as
   };
 }
 
-export function mapLedgerDisputeItem(row: LedgerDisputeRow) {
+export function mapLedgerDisputeItem(row: AdminV2LedgerDisputeRow) {
   const metadata = parseLedgerMetadata(row.metadata);
 
   return {

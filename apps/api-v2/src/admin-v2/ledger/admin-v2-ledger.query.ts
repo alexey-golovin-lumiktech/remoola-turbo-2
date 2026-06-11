@@ -1,143 +1,30 @@
 import { Injectable } from '@nestjs/common';
 
-import { $Enums, Prisma } from '@remoola/database-2';
+import { $Enums, type Prisma } from '@remoola/database-2';
 
 import {
-  buildLedgerDisputesWhere,
-  buildLedgerListWhere,
+  buildLedgerAuditContextFindManyArgs,
+  buildLedgerCaseFindUniqueArgs,
+  buildLedgerDisputesFindManyArgs,
+  buildLedgerListFindManyArgs,
+  buildRelatedLedgerEntriesFindManyArgs,
   buildRawPageNextCursor,
+  buildStatusHydrationFindManyArgs,
   buildStatusFilteredLedgerPageIdsSql,
   parsePageIdRows,
   sortLedgerRowsToPageOrder,
   type AmountSignFilter,
   type LedgerCursor,
 } from './admin-v2-ledger-query-helpers';
+import {
+  type AdminV2LedgerAuditContextRecord,
+  type AdminV2LedgerCaseRecord,
+  type AdminV2LedgerDisputeRow,
+  type AdminV2LedgerListItemRecord,
+} from './admin-v2-ledger.query-definitions';
 import { PrismaService } from '../../shared/prisma.service';
 
-const ledgerListInclude = Prisma.validator<Prisma.LedgerEntryModelInclude>()({
-  consumer: { select: { email: true } },
-  paymentRequest: {
-    select: {
-      paymentRail: true,
-      status: true,
-      payerId: true,
-      requesterId: true,
-    },
-  },
-  outcomes: {
-    orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-    take: 1,
-    select: { status: true },
-  },
-  disputes: {
-    select: { id: true },
-  },
-});
-
-const ledgerCaseSelect = Prisma.validator<Prisma.LedgerEntryModelSelect>()({
-  id: true,
-  ledgerId: true,
-  type: true,
-  currencyCode: true,
-  status: true,
-  amount: true,
-  feesType: true,
-  feesAmount: true,
-  stripeId: true,
-  idempotencyKey: true,
-  metadata: true,
-  consumerId: true,
-  paymentRequestId: true,
-  createdAt: true,
-  updatedAt: true,
-  consumer: {
-    select: {
-      email: true,
-    },
-  },
-  paymentRequest: {
-    select: {
-      id: true,
-      status: true,
-      paymentRail: true,
-      payerId: true,
-      requesterId: true,
-      amount: true,
-      currencyCode: true,
-      payer: { select: { email: true } },
-      requester: { select: { email: true } },
-    },
-  },
-  outcomes: {
-    orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-    select: {
-      id: true,
-      status: true,
-      source: true,
-      externalId: true,
-      createdAt: true,
-    },
-  },
-  disputes: {
-    orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-    select: {
-      id: true,
-      stripeDisputeId: true,
-      metadata: true,
-      createdAt: true,
-    },
-  },
-});
-
-const relatedLedgerEntrySelect = Prisma.validator<Prisma.LedgerEntryModelSelect>()({
-  id: true,
-  ledgerId: true,
-  type: true,
-  amount: true,
-  currencyCode: true,
-  status: true,
-  createdAt: true,
-  outcomes: {
-    orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-    take: 1,
-    select: { status: true },
-  },
-});
-
-const adminActionAuditContextInclude = Prisma.validator<Prisma.AdminActionAuditLogModelInclude>()({
-  admin: {
-    select: {
-      email: true,
-    },
-  },
-});
-
-const ledgerDisputeInclude = Prisma.validator<Prisma.LedgerEntryDisputeModelInclude>()({
-  ledgerEntry: {
-    select: {
-      id: true,
-      ledgerId: true,
-      paymentRequestId: true,
-      consumerId: true,
-      type: true,
-      amount: true,
-      currencyCode: true,
-      paymentRequest: {
-        select: {
-          paymentRail: true,
-        },
-      },
-    },
-  },
-});
-
-export type AdminV2LedgerListItemRecord = Prisma.LedgerEntryModelGetPayload<{
-  include: typeof ledgerListInclude;
-}>;
-
-type AdminV2LedgerAuditContextRecord = Prisma.AdminActionAuditLogModelGetPayload<{
-  include: typeof adminActionAuditContextInclude;
-}>;
+export type { AdminV2LedgerCaseRecord, AdminV2LedgerDisputeRow, AdminV2LedgerListItemRecord };
 
 type AdminV2LedgerListQueryParams = {
   limit: number;
@@ -165,7 +52,10 @@ type AdminV2LedgerDisputesQueryParams = {
 export class AdminV2LedgerQuery {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listLedgerEntries(params: AdminV2LedgerListQueryParams) {
+  async listLedgerEntries(params: AdminV2LedgerListQueryParams): Promise<{
+    rows: AdminV2LedgerListItemRecord[];
+    nextCursorSource: LedgerCursor;
+  }> {
     const { limit, cursor, search, type, status, currencyCode, paymentRequestId, consumerId, amountSign, createdAt } =
       params;
 
@@ -190,10 +80,7 @@ export class AdminV2LedgerQuery {
       const rows: AdminV2LedgerListItemRecord[] =
         pageIds.length === 0
           ? []
-          : await this.prisma.ledgerEntryModel.findMany({
-              where: { id: { in: pageIds } },
-              include: ledgerListInclude,
-            });
+          : await this.prisma.ledgerEntryModel.findMany(buildStatusHydrationFindManyArgs(pageIds));
 
       return {
         rows: sortLedgerRowsToPageOrder(pageIds, rows),
@@ -201,8 +88,9 @@ export class AdminV2LedgerQuery {
       };
     }
 
-    const rows = await this.prisma.ledgerEntryModel.findMany({
-      where: buildLedgerListWhere({
+    const rows = await this.prisma.ledgerEntryModel.findMany(
+      buildLedgerListFindManyArgs({
+        limit,
         cursor,
         search,
         type,
@@ -212,10 +100,7 @@ export class AdminV2LedgerQuery {
         amountSign,
         createdAt,
       }),
-      include: ledgerListInclude,
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: limit + 1,
-    });
+    );
 
     const next = rows[limit];
     return {
@@ -224,35 +109,18 @@ export class AdminV2LedgerQuery {
     };
   }
 
-  async getLedgerEntryCase(ledgerEntryId: string) {
-    const entry = await this.prisma.ledgerEntryModel.findUnique({
-      where: { id: ledgerEntryId },
-      select: ledgerCaseSelect,
-    });
+  async getLedgerEntryCase(ledgerEntryId: string): Promise<AdminV2LedgerCaseRecord | null> {
+    const entry = await this.prisma.ledgerEntryModel.findUnique(buildLedgerCaseFindUniqueArgs(ledgerEntryId));
 
     if (!entry) {
       return null;
     }
 
     const [relatedEntries, auditContext] = await Promise.all([
-      this.prisma.ledgerEntryModel.findMany({
-        where: {
-          ledgerId: entry.ledgerId,
-          deletedAt: null,
-        },
-        orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-        select: relatedLedgerEntrySelect,
-      }),
+      this.prisma.ledgerEntryModel.findMany(buildRelatedLedgerEntriesFindManyArgs(entry.ledgerId)),
       entry.paymentRequestId == null
         ? Promise.resolve([] as AdminV2LedgerAuditContextRecord[])
-        : this.prisma.adminActionAuditLogModel.findMany({
-            where: {
-              resourceId: entry.paymentRequestId,
-            },
-            include: adminActionAuditContextInclude,
-            orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-            take: 20,
-          }),
+        : this.prisma.adminActionAuditLogModel.findMany(buildLedgerAuditContextFindManyArgs(entry.paymentRequestId)),
     ]);
 
     return {
@@ -262,20 +130,21 @@ export class AdminV2LedgerQuery {
     };
   }
 
-  async listDisputes(params: AdminV2LedgerDisputesQueryParams) {
+  async listDisputes(params: AdminV2LedgerDisputesQueryParams): Promise<{
+    rows: AdminV2LedgerDisputeRow[];
+    nextCursorSource: LedgerCursor;
+  }> {
     const { limit, cursor, search, paymentRequestId, consumerId, createdAt } = params;
-    const rows = await this.prisma.ledgerEntryDisputeModel.findMany({
-      where: buildLedgerDisputesWhere({
+    const rows = await this.prisma.ledgerEntryDisputeModel.findMany(
+      buildLedgerDisputesFindManyArgs({
+        limit,
         cursor,
         search,
         paymentRequestId,
         consumerId,
         createdAt,
       }),
-      include: ledgerDisputeInclude,
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: limit + 1,
-    });
+    );
 
     const next = rows[limit];
     return {

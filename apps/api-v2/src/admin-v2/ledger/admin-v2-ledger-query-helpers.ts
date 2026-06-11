@@ -1,6 +1,13 @@
 import { type $Enums, Prisma } from '@remoola/database-2';
 
 import {
+  adminActionAuditContextInclude,
+  ledgerCaseSelect,
+  ledgerDisputeInclude,
+  ledgerListInclude,
+  relatedLedgerEntrySelect,
+} from './admin-v2-ledger.query-definitions';
+import {
   assertRawDate,
   assertRawUuid,
   buildDateRangeSql,
@@ -176,6 +183,51 @@ export function buildLedgerListWhere(params: LedgerListWhereParams): Prisma.Ledg
   };
 }
 
+export function buildLedgerListFindManyArgs(params: LedgerListWhereParams & { limit: number }) {
+  return {
+    where: buildLedgerListWhere(params),
+    include: ledgerListInclude,
+    orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+    take: params.limit + 1,
+  } satisfies Prisma.LedgerEntryModelFindManyArgs;
+}
+
+export function buildStatusHydrationFindManyArgs(pageIds: readonly string[]) {
+  return {
+    where: { id: { in: [...pageIds] } },
+    include: ledgerListInclude,
+  } satisfies Prisma.LedgerEntryModelFindManyArgs;
+}
+
+export function buildLedgerCaseFindUniqueArgs(ledgerEntryId: string) {
+  return {
+    where: { id: ledgerEntryId },
+    select: ledgerCaseSelect,
+  } satisfies Prisma.LedgerEntryModelFindUniqueArgs;
+}
+
+export function buildRelatedLedgerEntriesFindManyArgs(ledgerId: string) {
+  return {
+    where: {
+      ledgerId,
+      deletedAt: null,
+    },
+    orderBy: [{ createdAt: `asc` }, { id: `asc` }],
+    select: relatedLedgerEntrySelect,
+  } satisfies Prisma.LedgerEntryModelFindManyArgs;
+}
+
+export function buildLedgerAuditContextFindManyArgs(paymentRequestId: string) {
+  return {
+    where: {
+      resourceId: paymentRequestId,
+    },
+    include: adminActionAuditContextInclude,
+    orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+    take: 20,
+  } satisfies Prisma.AdminActionAuditLogModelFindManyArgs;
+}
+
 export function buildLedgerDisputesWhere(params: LedgerDisputesWhereParams): Prisma.LedgerEntryDisputeModelWhereInput {
   const where: Prisma.LedgerEntryDisputeModelWhereInput[] = [];
 
@@ -211,6 +263,15 @@ export function buildLedgerDisputesWhere(params: LedgerDisputesWhereParams): Pri
   }
 
   return where.length > 0 ? { AND: where } : {};
+}
+
+export function buildLedgerDisputesFindManyArgs(params: LedgerDisputesWhereParams & { limit: number }) {
+  return {
+    where: buildLedgerDisputesWhere(params),
+    include: ledgerDisputeInclude,
+    orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+    take: params.limit + 1,
+  } satisfies Prisma.LedgerEntryDisputeModelFindManyArgs;
 }
 
 export function sortLedgerRowsToPageOrder<T extends { id: string }>(
